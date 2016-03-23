@@ -295,12 +295,11 @@ static int xhci_stop_device(struct xhci_hcd *xhci, int slot_id, int suspend)
 	spin_unlock_irqrestore(&xhci->lock, flags);
 
 	/* Wait for last stop endpoint command to finish */
-	timeleft = wait_for_completion_interruptible_timeout(
+	timeleft = wait_for_completion_timeout(
 			cmd->completion,
 			XHCI_CMD_DEFAULT_TIMEOUT);
 	if (timeleft <= 0) {
-		xhci_warn(xhci, "%s while waiting for stop endpoint command\n",
-				timeleft == 0 ? "Timeout" : "Signal");
+		xhci_warn(xhci, "Timeout while waiting for Stop Endpoint\n");
 		spin_lock_irqsave(&xhci->lock, flags);
 		/* The timeout might have raced with the event ring handler, so
 		 * only delete from the list if the item isn't poisoned.

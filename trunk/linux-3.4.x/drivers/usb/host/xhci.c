@@ -2782,15 +2782,14 @@ static int xhci_configure_endpoint(struct xhci_hcd *xhci,
 	spin_unlock_irqrestore(&xhci->lock, flags);
 
 	/* Wait for the configure endpoint command to complete */
-	timeleft = wait_for_completion_interruptible_timeout(
+	timeleft = wait_for_completion_timeout(
 			cmd_completion,
 			XHCI_CMD_DEFAULT_TIMEOUT);
 	if (timeleft <= 0) {
-		xhci_warn(xhci, "%s while waiting for %s command\n",
-				timeleft == 0 ? "Timeout" : "Signal",
+		xhci_warn(xhci, "Timeout while waiting for %s\n",
 				ctx_change == 0 ?
-					"configure endpoint" :
-					"evaluate context");
+					"Configure Endpoint" :
+					"Evaluate Context");
 		/* cancel the configure endpoint command */
 		ret = xhci_cancel_cmd(xhci, command, cmd_trb);
 		if (ret < 0)
@@ -3544,12 +3543,11 @@ int xhci_discover_or_reset_device(struct usb_hcd *hcd, struct usb_device *udev)
 	spin_unlock_irqrestore(&xhci->lock, flags);
 
 	/* Wait for the Reset Device command to finish */
-	timeleft = wait_for_completion_interruptible_timeout(
+	timeleft = wait_for_completion_timeout(
 			reset_device_cmd->completion,
 			XHCI_CMD_DEFAULT_TIMEOUT);
 	if (timeleft <= 0) {
-		xhci_warn(xhci, "%s while waiting for reset device command\n",
-				timeleft == 0 ? "Timeout" : "Signal");
+		xhci_warn(xhci, "Timeout while waiting for Reset Device\n");
 		spin_lock_irqsave(&xhci->lock, flags);
 		/* The timeout might have raced with the event ring handler, so
 		 * only delete from the list if the item isn't poisoned.
@@ -3745,11 +3743,10 @@ int xhci_alloc_dev(struct usb_hcd *hcd, struct usb_device *udev)
 	spin_unlock_irqrestore(&xhci->lock, flags);
 
 	/* XXX: how much time for xHC slot assignment? */
-	timeleft = wait_for_completion_interruptible_timeout(&xhci->addr_dev,
+	timeleft = wait_for_completion_timeout(&xhci->addr_dev,
 			XHCI_CMD_DEFAULT_TIMEOUT);
 	if (timeleft <= 0) {
-		xhci_warn(xhci, "%s while waiting for a slot\n",
-				timeleft == 0 ? "Timeout" : "Signal");
+		xhci_warn(xhci, "Timeout while waiting for a slot\n");
 		/* cancel the enable slot request */
 		return xhci_cancel_cmd(xhci, NULL, cmd_trb);
 	}
@@ -3873,15 +3870,14 @@ int xhci_address_device(struct usb_hcd *hcd, struct usb_device *udev)
 	spin_unlock_irqrestore(&xhci->lock, flags);
 
 	/* ctrl tx can take up to 5 sec; XXX: need more time for xHC? */
-	timeleft = wait_for_completion_interruptible_timeout(&xhci->addr_dev,
+	timeleft = wait_for_completion_timeout(&xhci->addr_dev,
 			XHCI_CMD_DEFAULT_TIMEOUT);
 	/* FIXME: From section 4.3.4: "Software shall be responsible for timing
 	 * the SetAddress() "recovery interval" required by USB and aborting the
 	 * command on a timeout.
 	 */
 	if (timeleft <= 0) {
-		xhci_warn(xhci, "%s while waiting for address device command\n",
-				timeleft == 0 ? "Timeout" : "Signal");
+		xhci_warn(xhci, "Timeout while waiting for Address Device\n");
 		/* cancel the address device command */
 		ret = xhci_cancel_cmd(xhci, NULL, cmd_trb);
 		if (ret < 0)

@@ -41,7 +41,6 @@
 #include <linux/spinlock.h>
 #include <asm/io.h>
 
-#include <asm/rt2880/surfboard.h>
 #include <asm/rt2880/rt_mmap.h>
 #include <asm/rt2880/rt_serial.h>
 

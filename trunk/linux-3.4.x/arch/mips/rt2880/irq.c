@@ -40,41 +40,50 @@
 #include <linux/sched.h>
 #include <linux/slab.h>
 #include <linux/interrupt.h>
-#include <linux/kernel_stat.h>
-#include <linux/hardirq.h>
-#include <linux/preempt.h>
 
 #include <asm/irq_cpu.h>
 #include <asm/mipsregs.h>
 
-#include <asm/irq.h>
-#include <asm/rt2880/surfboard.h>
-#include <asm/rt2880/surfboardint.h>
 #include <asm/rt2880/rt_mmap.h>
 #include <asm/rt2880/eureka_ep430.h>
 
 static void mask_ralink_irq(struct irq_data *id)
 {
-	if (id->irq > 5) {
-		*(volatile u32 *)(RALINK_INTDIS) = (1 << id->irq);
-	}
+	unsigned int irq_mask = BIT(id->irq - MIPS_INTC_IRQ_BASE);
+
+	*(volatile u32 *)(RALINK_INTDIS) = irq_mask;
 }
 
 static void unmask_ralink_irq(struct irq_data *id)
 {
-	if (id->irq > 5) {
-		*(volatile u32 *)(RALINK_INTENA) = (1 << id->irq);
-	}
+	unsigned int irq_mask = BIT(id->irq - MIPS_INTC_IRQ_BASE);
+
+	*(volatile u32 *)(RALINK_INTENA) = irq_mask;
 }
 
 static struct irq_chip ralink_irq_chip = {
-	.name		= "Ralink",
+	.name		= "INTC",
 	.irq_mask	= mask_ralink_irq,
 	.irq_mask_ack	= mask_ralink_irq,
 	.irq_unmask	= unmask_ralink_irq,
 	.irq_disable	= mask_ralink_irq,
 	.irq_enable	= unmask_ralink_irq,
 };
+
+static void ralink_intc_handler(unsigned int irq, struct irq_desc *desc)
+{
+	unsigned int int_status;
+
+	if (irq == MIPS_INTC_CHAIN_HW1)
+		int_status = *(volatile u32 *)(RALINK_IRQ1STAT);
+	else
+		int_status = *(volatile u32 *)(RALINK_IRQ0STAT);
+
+	if (unlikely(!int_status))
+		return;
+
+	generic_handle_irq(MIPS_INTC_IRQ_BASE + __ffs(int_status));
+}
 
 unsigned int __cpuinit get_c0_compare_int(void)
 {
@@ -92,65 +101,24 @@ void __init arch_init_irq(void)
 
 	mips_cpu_irq_init();
 
-	for (i = 0; i <= SURFBOARDINT_END; i++)
-		irq_set_chip_and_handler(i, &ralink_irq_chip, handle_level_irq);
+	/* disable all INTC interrupts */
+	*(volatile u32 *)(RALINK_INTDIS) = ~0u;
 
-	set_c0_status(ST0_IM);
+	for (i = 0; i < INTC_NUM_INTRS; i++) {
+		irq_set_chip_and_handler(MIPS_INTC_IRQ_BASE + i,
+			&ralink_irq_chip, handle_level_irq);
+	}
 
-	/* Enable global interrupt bit */
-	*(volatile u32 *)(RALINK_INTENA) = M_SURFBOARD_GLOBAL_INT;
-}
+	irq_set_chained_handler(MIPS_INTC_CHAIN_HW0, ralink_intc_handler);
+	irq_set_chained_handler(MIPS_INTC_CHAIN_HW1, ralink_intc_handler);
 
-static inline int ls1bit32(unsigned int x)
-{
-	int b = 31, s;
-
-	s = 16; if (x << 16 == 0) s = 0; b -= s; x <<= s;
-	s =  8; if (x <<  8 == 0) s = 0; b -= s; x <<= s;
-	s =  4; if (x <<  4 == 0) s = 0; b -= s; x <<= s;
-	s =  2; if (x <<  2 == 0) s = 0; b -= s; x <<= s;
-	s =  1; if (x <<  1 == 0) s = 0; b -= s;
-
-	return b;
-}
-
-static void ralink_hw0_irqdispatch(int prio)
-{
-	unsigned long int_status;
-	int irq;
-
-	if (prio)
-		int_status = *(volatile u32 *)(RALINK_IRQ1STAT);
-	else
-		int_status = *(volatile u32 *)(RALINK_IRQ0STAT);
-
-	if (int_status == 0)
-		return;
-
-	irq = ls1bit32(int_status);
-
-	/*
-	 * Remapped IRQ 0..5 to 32..37:
-	 * bit[5] UART: UARTF Interrupt Status after mask
-	 * bit[4] PCM: PCM interrupt status after mask
-	 * bit[3] ILL_ACC: Illegal access interrupt status after mask
-	 * bit[2] WDTIMER: Timer 1 (Watchdog) timer interrupt status after mask
-	 * bit[1] TIMER0: Timer 0 (DFS) interrupt status after mask
-	 * bit[0] SYSCTL: System control interrupt status after mask
-	 */
-	if (irq < 6)
-		irq += 32;
-
-	do_IRQ(irq);
+	/* Enable global INTC interrupt bit */
+	*(volatile u32 *)(RALINK_INTENA) = BIT(31);
 }
 
 asmlinkage void plat_irq_dispatch(void)
 {
 	unsigned int pending;
-#if defined (CONFIG_RALINK_RT3883) || defined (CONFIG_RALINK_MT7620) || \
-    defined (CONFIG_RALINK_MT7628)
-	unsigned int pci_status;
-#endif
 
 	pending = read_c0_status() & read_c0_cause() & ST0_IM;
 	if (unlikely(!pending)) {
@@ -158,39 +126,33 @@ asmlinkage void plat_irq_dispatch(void)
 		return;
 	}
 
-	if (pending & CAUSEF_IP7) {
-		do_IRQ(SURFBOARDINT_MIPS_TIMER);	// CPU Timer
-		return;
-	}
+	if (pending & CAUSEF_IP7)
+		do_IRQ(SURFBOARDINT_MIPS_TIMER);
 
 	if (pending & CAUSEF_IP5)
-		do_IRQ(SURFBOARDINT_FE);		// Frame Engine
+		do_IRQ(SURFBOARDINT_FE);
 
 	if (pending & CAUSEF_IP6)
-		do_IRQ(SURFBOARDINT_WLAN);		// Wireless
+		do_IRQ(SURFBOARDINT_WLAN);
 
 	if (pending & CAUSEF_IP4) {
 #if defined (CONFIG_RALINK_RT3883)
-		pci_status = RALINK_PCI_PCIINT_ADDR;
-		if (pci_status & 0x100000)
-			do_IRQ(SURFBOARDINT_PCIE0);
 #if defined (CONFIG_PCI_ONLY) || defined (CONFIG_PCIE_PCI_CONCURRENT)
-		else if (pci_status & 0x040000)
+		unsigned int pci_status = RALINK_PCI_PCIINT_ADDR;
+		if (pci_status & 0x040000)
 			do_IRQ(SURFBOARDINT_PCI0);
-		else
+		else if (pci_status & 0x080000)
 			do_IRQ(SURFBOARDINT_PCI1);
+		else
 #endif
-#elif defined (CONFIG_RALINK_MT7620) || defined (CONFIG_RALINK_MT7628)
-		pci_status = RALINK_PCI_PCIINT_ADDR;
-		if (pci_status & 0x100000)
-			do_IRQ(SURFBOARDINT_PCIE0);
 #endif
+		do_IRQ(SURFBOARDINT_PCIE0);
 	}
 
 	if (pending & CAUSEF_IP3)
-		ralink_hw0_irqdispatch(1);
-	else
+		do_IRQ(MIPS_INTC_CHAIN_HW1);
+
 	if (pending & CAUSEF_IP2)
-		ralink_hw0_irqdispatch(0);
+		do_IRQ(MIPS_INTC_CHAIN_HW0);
 }
 

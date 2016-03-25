@@ -7,7 +7,6 @@
 #include <linux/platform_device.h>
 
 #include <asm/irq.h>
-#include <asm/rt2880/surfboardint.h>
 #include <asm/rt2880/rt_mmap.h>
 
 #include <ralink/mtk_mmc_dev.h>

@@ -45,7 +45,6 @@
 #include <linux/delay.h>
 
 #include <asm/mipsregs.h>
-#include <asm/ptrace.h>
 #include <asm/hardirq.h>
 #include <asm/div64.h>
 #include <asm/cpu.h>
@@ -57,8 +56,6 @@
 #include <asm/rt2880/generic.h>
 #include <asm/rt2880/prom.h>
 #include <asm/rt2880/rt_mmap.h>
-#include <asm/rt2880/surfboardint.h>
-#include <asm/rt2880/surfboard.h>
 
 extern unsigned int mips_hpt_frequency;
 extern u32 mips_cpu_feq;
@@ -192,6 +189,8 @@ static int ra_systick_clockevent_init(void)
 	 * interrupt number of it's liking.
 	 */
 	irq = MIPS_CPU_IRQ_BASE + cp0_compare_irq;
+	if (get_c0_compare_int)
+		irq = get_c0_compare_int();
 
 	cd = &ra_systick;
 

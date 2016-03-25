@@ -50,6 +50,7 @@
 #include <linux/timer.h>
 #include <asm/uaccess.h>
 
+#include <asm/irq.h>
 #include <asm/rt2880/surfboard.h>
 
 #include "rt_timer.h"

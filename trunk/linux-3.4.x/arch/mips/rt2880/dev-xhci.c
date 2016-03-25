@@ -10,7 +10,6 @@
 #endif
 
 #include <asm/irq.h>
-#include <asm/rt2880/surfboardint.h>
 #include <asm/rt2880/rt_mmap.h>
 
 #define MT7621_XHCI_MEM_START	RALINK_USB_HOST_BASE

@@ -53,7 +53,6 @@
 #include <asm/irq.h>
 
 #include <asm/rt2880/eureka_ep430.h>
-#include <asm/rt2880/surfboardint.h>
 
 #ifdef CONFIG_PCI
 

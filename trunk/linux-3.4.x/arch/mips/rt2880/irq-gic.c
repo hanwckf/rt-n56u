@@ -40,24 +40,16 @@
 #include <linux/sched.h>
 #include <linux/slab.h>
 #include <linux/interrupt.h>
-#include <linux/kernel_stat.h>
-#include <linux/hardirq.h>
-#include <linux/preempt.h>
 
+#include <asm/setup.h>
 #include <asm/irq_cpu.h>
 #include <asm/mipsregs.h>
-#include <asm/gic.h>
 #include <asm/gcmpregs.h>
+#include <asm/gic.h>
 
-#include <asm/irq.h>
-#include <asm/setup.h>
-
-#include <asm/rt2880/surfboard.h>
-#include <asm/rt2880/surfboardint.h>
 #include <asm/rt2880/rt_mmap.h>
-#include <asm/rt2880/eureka_ep430.h>
 
-int gcmp_present;
+static int gcmp_present;
 unsigned long _gcmp_base;
 
 /*
@@ -307,7 +299,8 @@ void __init arch_init_irq(void)
 		}
 
 #if defined (CONFIG_MIPS_GIC_IPI)
-		set_c0_status(STATUSF_IP7 | STATUSF_IP6 | STATUSF_IP5 | STATUSF_IP4 | STATUSF_IP3 | STATUSF_IP2);
+		set_c0_status(STATUSF_IP7 | STATUSF_IP6 | STATUSF_IP5 | STATUSF_IP2 |
+			      STATUSF_IP4 | STATUSF_IP3);
 		
 		/* setup ipi interrupts */
 		for (i = 0; i < nr_cpu_ids; i++) {
@@ -317,12 +310,15 @@ void __init arch_init_irq(void)
 #else
 		set_c0_status(STATUSF_IP7 | STATUSF_IP6 | STATUSF_IP5 | STATUSF_IP2);
 #endif
-	}
-
-	/* set hardware irq (skip 0, 1, 2, 5, 7) */
-	for (i = 3; i <= 31; i++) {
-		if (i != 5 && i != 7)
-			irq_set_handler(MIPS_GIC_IRQ_BASE + i, handle_level_irq);
+		/* set hardware irq, mapped to GIC shared (skip 0, 1, 2, 5, 7) */
+		for (i = 3; i <= 31; i++) {
+			if (i != 5 && i != 7)
+				irq_set_handler(MIPS_GIC_IRQ_BASE + i, handle_level_irq);
+		}
+		
+	} else {
+		/* Hardware without GCMP/GIC, not applicable for MT7621 */
+		BUG();
 	}
 }
 

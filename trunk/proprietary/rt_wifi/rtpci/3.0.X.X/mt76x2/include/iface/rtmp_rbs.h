@@ -34,7 +34,7 @@
   *
   ************************************************************************/  
 
-#define RTMP_MAC_IRQ_NUM		4
+#define RTMP_MAC_IRQ_NUM		SURFBOARDINT_WLAN
 
 //#define DEFAULT_RF_OFFSET		0x40000
 

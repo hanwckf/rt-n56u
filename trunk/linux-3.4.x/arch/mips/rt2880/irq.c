@@ -47,18 +47,32 @@
 #include <asm/rt2880/rt_mmap.h>
 #include <asm/rt2880/eureka_ep430.h>
 
+#if defined (CONFIG_RALINK_MT7628)
+static unsigned int fiq_mask;
+#endif
+
 static void mask_ralink_irq(struct irq_data *id)
 {
 	unsigned int irq_mask = BIT(id->irq - MIPS_INTC_IRQ_BASE);
 
-	*(volatile u32 *)(RALINK_INTDIS) = irq_mask;
+#if defined (CONFIG_RALINK_MT7628)
+	if (irq_mask & fiq_mask)
+		*(volatile u32 *)(RALINK_FIQDIS) = irq_mask;
+	else
+#endif
+		*(volatile u32 *)(RALINK_INTDIS) = irq_mask;
 }
 
 static void unmask_ralink_irq(struct irq_data *id)
 {
 	unsigned int irq_mask = BIT(id->irq - MIPS_INTC_IRQ_BASE);
 
-	*(volatile u32 *)(RALINK_INTENA) = irq_mask;
+#if defined (CONFIG_RALINK_MT7628)
+	if (irq_mask & fiq_mask)
+		*(volatile u32 *)(RALINK_FIQENA) = irq_mask;
+	else
+#endif
+		*(volatile u32 *)(RALINK_INTENA) = irq_mask;
 }
 
 static struct irq_chip ralink_irq_chip = {
@@ -98,11 +112,28 @@ void __init prom_init_irq(void)
 void __init arch_init_irq(void)
 {
 	int i;
+	unsigned int int_type = 0;
 
 	mips_cpu_irq_init();
 
 	/* disable all INTC interrupts */
+#if defined (CONFIG_RALINK_MT7628)
+	*(volatile u32 *)(RALINK_FIQDIS) = ~0u;
+#endif
 	*(volatile u32 *)(RALINK_INTDIS) = ~0u;
+
+	/* route some INTC interrupts to MIPS HW1 interrupt (high priority) */
+#ifdef RALINK_INTCTL_UHST
+	int_type |= RALINK_INTCTL_UHST;
+#endif
+#ifdef RALINK_INTCTL_SDXC
+	int_type |= RALINK_INTCTL_SDXC;
+#endif
+#ifdef RALINK_INTCTL_CRYPTO
+	int_type |= RALINK_INTCTL_CRYPTO;
+#endif
+	int_type |= RALINK_INTCTL_DMA;
+	*(volatile u32 *)(RALINK_INTTYPE) = int_type;
 
 	for (i = 0; i < INTC_NUM_INTRS; i++) {
 		irq_set_chip_and_handler(MIPS_INTC_IRQ_BASE + i,
@@ -113,6 +144,10 @@ void __init arch_init_irq(void)
 	irq_set_chained_handler(MIPS_INTC_CHAIN_HW1, ralink_intc_handler);
 
 	/* Enable global INTC interrupt bit */
+#if defined (CONFIG_RALINK_MT7628)
+	fiq_mask = int_type;
+	*(volatile u32 *)(RALINK_FIQENA) = BIT(31);
+#endif
 	*(volatile u32 *)(RALINK_INTENA) = BIT(31);
 }
 

@@ -103,6 +103,7 @@ struct lns *new_lns ()
     tmp->hostname[0] = 0;
     tmp->entname[0] = 0;
     tmp->range = NULL;
+    tmp->localrange = NULL;
     tmp->assign_ip = 1;                /* default to 'yes' */
     tmp->lacs = NULL;
     tmp->passwdauth = 0;
@@ -988,6 +989,34 @@ int set_iprange (char *word, char *value, int context, void *item)
     return 0;
 }
 
+int set_localiprange (char *word, char *value, int context, void *item)
+{
+    struct lns *lns = (struct lns *) item;
+    switch (context & ~CONTEXT_DEFAULT)
+    {
+    case CONTEXT_LNS:
+        break;
+    default:
+        snprintf (filerr, sizeof (filerr), "'%s' not valid in this context\n",
+                  word);
+        return -1;
+    }
+
+    if (lns->localaddr) {
+        snprintf (filerr, sizeof (filerr), "'local ip range' and 'local ip' are mutually exclusive\n");
+        return -1;
+    }
+
+    lns->localrange = set_range (word, value, lns->localrange);
+    if (!lns->localrange)
+        return -1;
+#ifdef DEBUG_FILE
+    l2tp_log (LOG_DEBUG, "range start = %x, end = %x, sense=%ud\n",
+         ntohl (lns->range->start), ntohl (lns->range->end), lns->range->sense);
+#endif
+    return 0;
+}
+
 int set_lac (char *word, char *value, int context, void *item)
 {
     struct lns *lns = (struct lns *) item;
@@ -1071,6 +1100,11 @@ int set_localaddr (char *word, char *value, int context, void *item)
         return set_ip (word, value, &(l->localaddr));
     case CONTEXT_LNS:
         n = (struct lns *) item;
+        if (n->localrange) {
+            snprintf (filerr, sizeof (filerr),
+                    "'local ip range' and 'local ip' are mutually exclusive\n");
+            return -1;
+        }
         return set_ip (word, value, &(n->localaddr));
     default:
         snprintf (filerr, sizeof (filerr), "'%s' not valid in this context\n",
@@ -1532,6 +1566,7 @@ struct keyword words[] = {
     {"no lac", &set_lac},
     {"assign ip", &set_assignip},
     {"local ip", &set_localaddr},
+    {"local ip range", &set_localiprange},
     {"remote ip", &set_remoteaddr},
     {"defaultroute", &set_defaultroute},
     {"route_rdgw", &set_route_rdgw},

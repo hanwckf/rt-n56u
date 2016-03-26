@@ -81,6 +81,7 @@ struct lns
     char entname[STRLEN];       /* Name of this entry */
     struct iprange *lacs;       /* Hosts permitted to connect */
     struct iprange *range;      /* Range of IP's we provide */
+    struct iprange *localrange; /* Range of local IP's we provide */
     int assign_ip;              /* Do we actually provide IP addresses? */
     int passwdauth;             /* Authenticate by passwd file? (or PAM) */
     int pap_require;            /* Require PAP auth for PPP */

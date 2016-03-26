@@ -158,6 +158,28 @@ void control_zlb (struct buffer *buf, struct tunnel *t, struct call *c)
     udp_xmit (buf, t);
 }
 
+/*
+ * Get a local address from the local range, if configured.
+ */
+static int get_local_addr(struct tunnel *t, struct call *c)
+{
+#ifdef IP_ALLOCATION
+    if (t->lns->localrange) {
+        c->lns->localaddr = get_addr (t->lns->localrange);
+        if (!c->lns->localaddr)
+        {
+            set_error (c, ERROR_NORES, "No available local IP addresses");
+            call_close (c);
+            l2tp_log (LOG_DEBUG, "%s: Out of local IP addresses on tunnel %d!\n",
+                     __FUNCTION__, t->tid);
+            return -EINVAL;
+        }
+        reserve_addr (c->lns->localaddr);
+    }
+#endif
+    return 0;
+}
+
 int control_finish (struct tunnel *t, struct call *c)
 {
     /*
@@ -951,6 +973,8 @@ int control_finish (struct tunnel *t, struct call *c)
             */
         }
         c->state = ICCN;
+        if (get_local_addr(t, c))
+            return -EINVAL;
         strncpy (ip1, IPADDY (c->lns->localaddr), sizeof (ip1));
         strncpy (ip2, IPADDY (c->addr), sizeof (ip2));
         po = NULL;

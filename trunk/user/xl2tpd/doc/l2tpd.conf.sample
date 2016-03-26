@@ -29,6 +29,7 @@
 ; no lac = untrusted.marko.net			; * This guy can't connect
 ; hidden bit = no						; * Use hidden AVP's?
 ; local ip = 192.168.1.2				; * Our local IP to use
+; local ip range = 192.168.200.0-192.168.200.20   ; Alternatively, use a range for local addressing
 ; length bit = yes						; * Use length bit in payload?
 ; require chap = yes					; * Require CHAP auth. by peer
 ; refuse pap = yes						; * Refuse PAP authentication

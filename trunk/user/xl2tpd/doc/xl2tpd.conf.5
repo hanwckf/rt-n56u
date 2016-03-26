@@ -120,6 +120,19 @@ more information about hidden AVP's and AVP in general, refer to rfc2661
 .B local ip
 Use the following IP as xl2tpd's own ip address.
 
+.TP
+.B local ip range
+Specify the range of addresses the LNS will assign as the local address
+to connecting LAC PPP tunnels.  This option is mutually exclusive with
+the
+.B local ip
+option and is useful in cases where it is desirable to have a unique IP
+address for each tunnel.  Specify the range value exactly like the
+.B ip range
+option.  Note that the
+.B assign ip
+option has no effect on this option.
+
 .TP 
 .B length bit
 If set to yes, the length bit present in the l2tp packet payload
@@ -207,7 +220,7 @@ If set to yes, xl2tpd will automatically dial the LAC during startup.
 
 .TP 
 .B redial
-If set to yes, xl2tpd will attempts to redial if the call get
+If set to yes, xl2tpd will attempt to redial if the call get
 disconected.  Note that, if enabled, xl2tpd will keep passwords in
 memory: a potental security risk.
 
@@ -231,7 +244,7 @@ Please address bugs and comment to xl2tpdv@lists.xelerance.com
 
 \fB\fRxl2tpd(8)
 .SH "AUTHORS"
-Forked from xl2tpd by Xelerance (http://www.xelerance.com/software/xl2tpd/
+Forked from xl2tpd by Xelerance (https://www.xelerance.com/software/xl2tpd/)
 
 Michael Richardson <mcr@xelerance.com>
 Paul Wouters <paul@xelerance.com>

@@ -135,6 +135,14 @@ struct client_type_s client_types[] =
 	  EXAVClientInfo
 	},
 
+	/* USER-AGENT: Linux/2.6.35 UPnP/1.0 DLNADOC/1.50 INTEL_NMPR/2.0 LGE_DLNA_SDK/1.6.0 */
+	{ ELGNetCastDevice,
+	  FLAG_DLNA | FLAG_CAPTION_RES,
+	  "LG",
+	  "LGE_DLNA_SDK/1.6.0",
+	  EUserAgent
+	},
+
 	/* User-Agent: Linux/2.6.31-1.0 UPnP/1.0 DLNADOC/1.50 INTEL_NMPR/2.0 LGE_DLNA_SDK/1.5.0 */
 	{ ELGDevice,
 	  FLAG_DLNA | FLAG_CAPTION_RES,

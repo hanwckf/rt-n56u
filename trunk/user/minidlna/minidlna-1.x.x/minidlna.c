@@ -759,6 +759,10 @@ init(int argc, char **argv)
 			if (strtobool(ary_options[i].value))
 				SETFLAG(MERGE_MEDIA_DIRS_MASK);
 			break;
+		case WIDE_LINKS:
+			if (strtobool(ary_options[i].value))
+				SETFLAG(WIDE_LINKS_MASK);
+			break;
 		default:
 			DPRINTF(E_ERROR, L_GENERAL, "Unknown option in file %s\n",
 				optionsfile);

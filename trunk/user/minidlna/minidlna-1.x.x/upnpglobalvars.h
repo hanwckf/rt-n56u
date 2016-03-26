@@ -191,7 +191,8 @@ extern uint32_t runtime_flags;
 #define NO_PLAYLIST_MASK      0x0008
 #define SYSTEMD_MASK          0x0010
 #define MERGE_MEDIA_DIRS_MASK 0x0020
-#define UPDATE_SCAN_MASK      0x0040
+#define WIDE_LINKS_MASK       0x0040
+#define UPDATE_SCAN_MASK      0x0080
 
 #define SETFLAG(mask)	(runtime_flags |= mask)
 #define GETFLAG(mask)	(runtime_flags & mask)

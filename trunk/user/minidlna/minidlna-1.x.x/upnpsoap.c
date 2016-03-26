@@ -1055,6 +1055,7 @@ callback(void *args, int argc, char **argv, char **azColName)
 					break;
 				case ESamsungSeriesCDE:
 				case ELGDevice:
+				case ELGNetCastDevice:
 				case EAsusOPlay:
 				default:
 					if( passed_args->flags & FLAG_HAS_CAPTIONS )
@@ -1924,14 +1925,21 @@ SamsungSetBookmark(struct upnphttp * h, const char * action)
 	ParseNameValue(h->req_buf + h->req_contentoff, h->req_contentlen, &data, 0);
 	ObjectID = GetValueFromNameValueList(&data, "ObjectID");
 	PosSecond = GetValueFromNameValueList(&data, "PosSecond");
+
+	if ( atoi(PosSecond) < 30 )
+		PosSecond = "0";
+
 	if( ObjectID && PosSecond )
 	{
 		int ret;
+		const char *rid = ObjectID;
+
+		in_magic_container(ObjectID, 0, &rid);
 		ret = sql_exec(db, "INSERT OR REPLACE into BOOKMARKS"
 		                   " VALUES "
-		                   "((select DETAIL_ID from OBJECTS where OBJECT_ID = '%q'), %q)", ObjectID, PosSecond);
+		                   "((select DETAIL_ID from OBJECTS where OBJECT_ID = '%q'), %q)", rid, PosSecond);
 		if( ret != SQLITE_OK )
-			DPRINTF(E_WARN, L_METADATA, "Error setting bookmark %s on ObjectID='%s'\n", PosSecond, ObjectID);
+			DPRINTF(E_WARN, L_METADATA, "Error setting bookmark %s on ObjectID='%s'\n", PosSecond, rid);
 		BuildSendAndCloseSoapResp(h, resp, sizeof(resp)-1);
 	}
 	else

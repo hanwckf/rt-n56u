@@ -350,9 +350,8 @@ inotify_insert_file(char * name, const char * path)
 			if( !is_image(path) )
 				return -1;
 			break;
-                default:
+		default:
 			return -1;
-			break;
 	}
 	
 	/* If it's already in the database and hasn't been modified, skip it. */

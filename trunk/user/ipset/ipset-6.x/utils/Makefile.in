@@ -84,7 +84,6 @@
 # as -version-info 2:0:0. This release has a new, but backwards incompatible
 # interface. 
 
-
 VPATH = @srcdir@
 am__is_gnu_make = test -n '$(MAKEFILE_LIST)' && test -n '$(MAKELEVEL)'
 am__make_running_with_option = \
@@ -149,16 +148,11 @@ PRE_UNINSTALL = :
 POST_UNINSTALL = :
 build_triplet = @build@
 host_triplet = @host@
-DIST_COMMON = $(top_srcdir)/Make_global.am \
-	$(top_srcdir)/lib/Make_extra.am $(srcdir)/Makefile.in \
-	$(srcdir)/Makefile.am $(srcdir)/libipset.pc.in \
-	$(top_srcdir)/build-aux/depcomp
+DIST_COMMON = $(top_srcdir)/Make_global.am $(srcdir)/Makefile.in \
+	$(srcdir)/Makefile.am $(dist_bashcomp_DATA)
 @ENABLE_DEBUG_TRUE@am__append_1 = -g -g3 -ggdb -gdwarf-2 -DIPSET_DEBUG -Wall -Werror
 @ENABLE_DEBUG_FALSE@am__append_2 = -O2 -DNDEBUG
-@ENABLE_SETTYPE_MODULES_TRUE@am__append_3 = -DENABLE_SETTYPE_MODULES \
-@ENABLE_SETTYPE_MODULES_TRUE@	         -DIPSET_MODSDIR="\"$(IPSET_MODSDIR)\""
-
-subdir = lib
+subdir = utils
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
 am__aclocal_m4_deps = $(top_srcdir)/m4/argz.m4 \
 	$(top_srcdir)/m4/ax_cflags_gcc_option.m4 \
@@ -170,8 +164,27 @@ am__configure_deps = $(am__aclocal_m4_deps) $(CONFIGURE_DEPENDENCIES) \
 	$(ACLOCAL_M4)
 mkinstalldirs = $(install_sh) -d
 CONFIG_HEADER = $(top_builddir)/config.h
-CONFIG_CLEAN_FILES = libipset.pc
+CONFIG_CLEAN_FILES =
 CONFIG_CLEAN_VPATH_FILES =
+AM_V_P = $(am__v_P_@AM_V@)
+am__v_P_ = $(am__v_P_@AM_DEFAULT_V@)
+am__v_P_0 = false
+am__v_P_1 = :
+AM_V_GEN = $(am__v_GEN_@AM_V@)
+am__v_GEN_ = $(am__v_GEN_@AM_DEFAULT_V@)
+am__v_GEN_0 = @echo "  GEN     " $@;
+am__v_GEN_1 = 
+AM_V_at = $(am__v_at_@AM_V@)
+am__v_at_ = $(am__v_at_@AM_DEFAULT_V@)
+am__v_at_0 = @
+am__v_at_1 = 
+SOURCES =
+DIST_SOURCES =
+am__can_run_installinfo = \
+  case $$AM_UPDATE_INFO_DIR in \
+    n|no|NO) false;; \
+    *) (install-info --version) >/dev/null 2>&1;; \
+  esac
 am__vpath_adj_setup = srcdirstrip=`echo "$(srcdir)" | sed 's|.|.|g'`;
 am__vpath_adj = case $$p in \
     $(srcdir)/*) f=`echo "$$p" | sed "s|^$$srcdirstrip/||"`;; \
@@ -199,82 +212,9 @@ am__uninstall_files_from_dir = { \
     || { echo " ( cd '$$dir' && rm -f" $$files ")"; \
          $(am__cd) "$$dir" && rm -f $$files; }; \
   }
-am__installdirs = "$(DESTDIR)$(libdir)" "$(DESTDIR)$(pkgconfigdir)"
-LTLIBRARIES = $(lib_LTLIBRARIES)
-am__DEPENDENCIES_1 =
-libipset_la_DEPENDENCIES = $(am__DEPENDENCIES_1) \
-	$(IPSET_SETTYPE_STATIC_OBJECTS) $(am__DEPENDENCIES_1)
-am_libipset_la_OBJECTS = data.lo errcode.lo icmp.lo icmpv6.lo mnl.lo \
-	parse.lo print.lo session.lo types.lo ui.lo types_init.lo
-libipset_la_OBJECTS = $(am_libipset_la_OBJECTS)
-AM_V_lt = $(am__v_lt_@AM_V@)
-am__v_lt_ = $(am__v_lt_@AM_DEFAULT_V@)
-am__v_lt_0 = --silent
-am__v_lt_1 = 
-libipset_la_LINK = $(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) \
-	$(LIBTOOLFLAGS) --mode=link $(CCLD) $(AM_CFLAGS) $(CFLAGS) \
-	$(libipset_la_LDFLAGS) $(LDFLAGS) -o $@
-AM_V_P = $(am__v_P_@AM_V@)
-am__v_P_ = $(am__v_P_@AM_DEFAULT_V@)
-am__v_P_0 = false
-am__v_P_1 = :
-AM_V_GEN = $(am__v_GEN_@AM_V@)
-am__v_GEN_ = $(am__v_GEN_@AM_DEFAULT_V@)
-am__v_GEN_0 = @echo "  GEN     " $@;
-am__v_GEN_1 = 
-AM_V_at = $(am__v_at_@AM_V@)
-am__v_at_ = $(am__v_at_@AM_DEFAULT_V@)
-am__v_at_0 = @
-am__v_at_1 = 
-DEFAULT_INCLUDES = -I.@am__isrc@ -I$(top_builddir)
-depcomp = $(SHELL) $(top_srcdir)/build-aux/depcomp
-am__depfiles_maybe = depfiles
-am__mv = mv -f
-COMPILE = $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) \
-	$(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS)
-LTCOMPILE = $(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) \
-	$(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) \
-	$(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) \
-	$(AM_CFLAGS) $(CFLAGS)
-AM_V_CC = $(am__v_CC_@AM_V@)
-am__v_CC_ = $(am__v_CC_@AM_DEFAULT_V@)
-am__v_CC_0 = @echo "  CC      " $@;
-am__v_CC_1 = 
-CCLD = $(CC)
-LINK = $(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) \
-	$(LIBTOOLFLAGS) --mode=link $(CCLD) $(AM_CFLAGS) $(CFLAGS) \
-	$(AM_LDFLAGS) $(LDFLAGS) -o $@
-AM_V_CCLD = $(am__v_CCLD_@AM_V@)
-am__v_CCLD_ = $(am__v_CCLD_@AM_DEFAULT_V@)
-am__v_CCLD_0 = @echo "  CCLD    " $@;
-am__v_CCLD_1 = 
-SOURCES = $(libipset_la_SOURCES) $(EXTRA_libipset_la_SOURCES)
-DIST_SOURCES = $(libipset_la_SOURCES) $(EXTRA_libipset_la_SOURCES)
-am__can_run_installinfo = \
-  case $$AM_UPDATE_INFO_DIR in \
-    n|no|NO) false;; \
-    *) (install-info --version) >/dev/null 2>&1;; \
-  esac
-DATA = $(pkgconfig_DATA)
+am__installdirs = "$(DESTDIR)$(bashcompdir)"
+DATA = $(dist_bashcomp_DATA)
 am__tagged_files = $(HEADERS) $(SOURCES) $(TAGS_FILES) $(LISP)
-# Read a list of newline-separated strings from the standard input,
-# and print each of them once, without duplicates.  Input order is
-# *not* preserved.
-am__uniquify_input = $(AWK) '\
-  BEGIN { nonempty = 0; } \
-  { items[$$0] = 1; nonempty = 1; } \
-  END { if (nonempty) { for (i in items) print i; }; } \
-'
-# Make sure the list of sources is unique.  This is necessary because,
-# e.g., the same source file might be shared among _SOURCES variables
-# for different programs/libraries.
-am__define_uniq_tagged_files = \
-  list='$(am__tagged_files)'; \
-  unique=`for i in $$list; do \
-    if test -f "$$i"; then echo $$i; else echo $(srcdir)/$$i; fi; \
-  done | $(am__uniquify_input)`
-ETAGS = etags
-CTAGS = ctags
 DISTFILES = $(DIST_COMMON) $(DIST_SOURCES) $(TEXINFOS) $(EXTRA_DIST)
 ACLOCAL = @ACLOCAL@
 AMTAR = @AMTAR@
@@ -446,79 +386,17 @@ top_srcdir = @top_srcdir@
 #            curr:rev:age
 LIBVERSION = 9:0:6
 AM_CPPFLAGS = $(kinclude_CFLAGS) $(all_includes) -I$(top_srcdir)/include
-AM_CFLAGS = -std=gnu99 $(am__append_1) $(am__append_2) \
-	${libmnl_CFLAGS} $(am__append_3)
+AM_CFLAGS = -std=gnu99 $(am__append_1) $(am__append_2)
 SPARSE = sparse
 SPARSE_FLAGS = -Wsparse-all -I../include $(SPARSE_EXT_FLAGS)
 IPSET_AM_V_CHECK = $(ipset_am__v_CHECK_$(V))
 ipset_am__v_CHECK_ = $(ipset_am__v_CHECK_$(AM_DEFAULT_VERBOSITY))
 ipset_am__v_CHECK_0 = @echo "  CHECK " $<;
-IPSET_SETTYPE_LIST = \
-	ipset_bitmap_ip.c \
-	ipset_bitmap_ipmac.c \
-	ipset_bitmap_port.c \
-	ipset_hash_ip.c \
-	ipset_hash_ipport.c \
-	ipset_hash_ipmark.c \
-	ipset_hash_ipportip.c \
-	ipset_hash_ipportnet.c \
-	ipset_hash_net.c \
-	ipset_hash_netnet.c \
-	ipset_hash_netportnet.c \
-	ipset_hash_netport.c \
-	ipset_hash_netiface.c \
-	ipset_hash_mac.c \
-	ipset_list_set.c
-
-lib_LTLIBRARIES = libipset.la
-IPSET_MODSDIR = ${libdir}/ipset
-@ENABLE_SETTYPE_MODULES_TRUE@IPSET_SETTYPE_MODULES = yes
-@ENABLE_SETTYPE_MODULES_FALSE@IPSET_SETTYPE_DYN = 
-@ENABLE_SETTYPE_MODULES_TRUE@IPSET_SETTYPE_DYN = $(if $(findstring all,$(SETTYPE_MODLIST)), \
-@ENABLE_SETTYPE_MODULES_TRUE@	                           $(IPSET_SETTYPE_LIST), $(SETTYPE_MODLIST))
-
-IPSET_SETTYPE_STATIC = $(filter-out $(IPSET_SETTYPE_DYN), \
-	                     $(IPSET_SETTYPE_LIST))
-
-IPSET_SETTYPE_DYNAMIC = $(filter $(IPSET_SETTYPE_LIST), \
-	                     $(IPSET_SETTYPE_DYN))
-
-IPSET_SETTYPE_STATIC_OBJECTS = $(patsubst %.c, %.lo, $(IPSET_SETTYPE_STATIC))
-IPSET_SETTYPE_DYNAMIC_OBJECTS = $(patsubst %.c, %.lo, $(IPSET_SETTYPE_DYNAMIC))
-IPSET_SETTYPE_DYNAMIC_MODULES = $(patsubst %.c, %.la, $(IPSET_SETTYPE_DYNAMIC))
-IPSET_SETTYPE_DYNAMIC_LTFLAGS = -shared -module -avoid-version
-IPSET_SETTYPE_ALL_MODULES = $(patsubst %.c, %.la, $(IPSET_SETTYPE_STATIC)) \
-	$(IPSET_SETTYPE_DYNAMIC_MODULES)
-
-BUILT_SOURCES = ipset_settype_check types_init.c ipset_settype_modules
-CLEANFILES = ipset_settype_check types_init.c $(IPSET_SETTYPE_ALL_MODULES)
-libipset_la_LDFLAGS = -Wl,--version-script=$(top_srcdir)/lib/libipset.map -version-info $(LIBVERSION)
-libipset_la_LIBADD = ${libmnl_LIBS} $(IPSET_SETTYPE_STATIC_OBJECTS) $(LIBADD_DLOPEN)
-libipset_la_SOURCES = \
-	data.c \
-	errcode.c \
-	icmp.c \
-	icmpv6.c \
-	mnl.c \
-	parse.c \
-	print.c \
-	session.c \
-	types.c \
-	ui.c \
-	types_init.c
-
-EXTRA_libipset_la_SOURCES = \
-	debug.c
-
-EXTRA_DIST = $(IPSET_SETTYPE_LIST) libipset.map
-pkgconfigdir = $(libdir)/pkgconfig
-pkgconfig_DATA = libipset.pc
-all: $(BUILT_SOURCES)
-	$(MAKE) $(AM_MAKEFLAGS) all-am
+dist_bashcomp_DATA = ipset_bash_completion/ipset
+all: all-am
 
 .SUFFIXES:
-.SUFFIXES: .c .lo .o .obj
-$(srcdir)/Makefile.in:  $(srcdir)/Makefile.am $(top_srcdir)/Make_global.am $(top_srcdir)/lib/Make_extra.am $(am__configure_deps)
+$(srcdir)/Makefile.in:  $(srcdir)/Makefile.am $(top_srcdir)/Make_global.am $(am__configure_deps)
 	@for dep in $?; do \
 	  case '$(am__configure_deps)' in \
 	    *$$dep*) \
@@ -527,9 +405,9 @@ $(srcdir)/Makefile.in:  $(srcdir)/Makefile.am $(top_srcdir)/Make_global.am $(top
 	      exit 1;; \
 	  esac; \
 	done; \
-	echo ' cd $(top_srcdir) && $(AUTOMAKE) --foreign lib/Makefile'; \
+	echo ' cd $(top_srcdir) && $(AUTOMAKE) --foreign utils/Makefile'; \
 	$(am__cd) $(top_srcdir) && \
-	  $(AUTOMAKE) --foreign lib/Makefile
+	  $(AUTOMAKE) --foreign utils/Makefile
 .PRECIOUS: Makefile
 Makefile: $(srcdir)/Makefile.in $(top_builddir)/config.status
 	@case '$?' in \
@@ -539,7 +417,7 @@ Makefile: $(srcdir)/Makefile.in $(top_builddir)/config.status
 	    echo ' cd $(top_builddir) && $(SHELL) ./config.status $(subdir)/$@ $(am__depfiles_maybe)'; \
 	    cd $(top_builddir) && $(SHELL) ./config.status $(subdir)/$@ $(am__depfiles_maybe);; \
 	esac;
-$(top_srcdir)/Make_global.am $(top_srcdir)/lib/Make_extra.am:
+$(top_srcdir)/Make_global.am:
 
 $(top_builddir)/config.status: $(top_srcdir)/configure $(CONFIG_STATUS_DEPENDENCIES)
 	cd $(top_builddir) && $(MAKE) $(AM_MAKEFLAGS) am--refresh
@@ -549,168 +427,39 @@ $(top_srcdir)/configure:  $(am__configure_deps)
 $(ACLOCAL_M4):  $(am__aclocal_m4_deps)
 	cd $(top_builddir) && $(MAKE) $(AM_MAKEFLAGS) am--refresh
 $(am__aclocal_m4_deps):
-libipset.pc: $(top_builddir)/config.status $(srcdir)/libipset.pc.in
-	cd $(top_builddir) && $(SHELL) ./config.status $(subdir)/$@
-
-install-libLTLIBRARIES: $(lib_LTLIBRARIES)
-	@$(NORMAL_INSTALL)
-	@list='$(lib_LTLIBRARIES)'; test -n "$(libdir)" || list=; \
-	list2=; for p in $$list; do \
-	  if test -f $$p; then \
-	    list2="$$list2 $$p"; \
-	  else :; fi; \
-	done; \
-	test -z "$$list2" || { \
-	  echo " $(MKDIR_P) '$(DESTDIR)$(libdir)'"; \
-	  $(MKDIR_P) "$(DESTDIR)$(libdir)" || exit 1; \
-	  echo " $(LIBTOOL) $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=install $(INSTALL) $(INSTALL_STRIP_FLAG) $$list2 '$(DESTDIR)$(libdir)'"; \
-	  $(LIBTOOL) $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=install $(INSTALL) $(INSTALL_STRIP_FLAG) $$list2 "$(DESTDIR)$(libdir)"; \
-	}
-
-uninstall-libLTLIBRARIES:
-	@$(NORMAL_UNINSTALL)
-	@list='$(lib_LTLIBRARIES)'; test -n "$(libdir)" || list=; \
-	for p in $$list; do \
-	  $(am__strip_dir) \
-	  echo " $(LIBTOOL) $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=uninstall rm -f '$(DESTDIR)$(libdir)/$$f'"; \
-	  $(LIBTOOL) $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=uninstall rm -f "$(DESTDIR)$(libdir)/$$f"; \
-	done
-
-clean-libLTLIBRARIES:
-	-test -z "$(lib_LTLIBRARIES)" || rm -f $(lib_LTLIBRARIES)
-	@list='$(lib_LTLIBRARIES)'; \
-	locs=`for p in $$list; do echo $$p; done | \
-	      sed 's|^[^/]*$$|.|; s|/[^/]*$$||; s|$$|/so_locations|' | \
-	      sort -u`; \
-	test -z "$$locs" || { \
-	  echo rm -f $${locs}; \
-	  rm -f $${locs}; \
-	}
-
-libipset.la: $(libipset_la_OBJECTS) $(libipset_la_DEPENDENCIES) $(EXTRA_libipset_la_DEPENDENCIES) 
-	$(AM_V_CCLD)$(libipset_la_LINK) -rpath $(libdir) $(libipset_la_OBJECTS) $(libipset_la_LIBADD) $(LIBS)
-
-mostlyclean-compile:
-	-rm -f *.$(OBJEXT)
-
-distclean-compile:
-	-rm -f *.tab.c
-
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/data.Plo@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/debug.Plo@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/errcode.Plo@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/icmp.Plo@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/icmpv6.Plo@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/mnl.Plo@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/parse.Plo@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/print.Plo@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/session.Plo@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/types.Plo@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/types_init.Plo@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ui.Plo@am__quote@
-
-.c.o:
-@am__fastdepCC_TRUE@	$(AM_V_CC)depbase=`echo $@ | sed 's|[^/]*$$|$(DEPDIR)/&|;s|\.o$$||'`;\
-@am__fastdepCC_TRUE@	$(COMPILE) -MT $@ -MD -MP -MF $$depbase.Tpo -c -o $@ $< &&\
-@am__fastdepCC_TRUE@	$(am__mv) $$depbase.Tpo $$depbase.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='$<' object='$@' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(COMPILE) -c -o $@ $<
-
-.c.obj:
-@am__fastdepCC_TRUE@	$(AM_V_CC)depbase=`echo $@ | sed 's|[^/]*$$|$(DEPDIR)/&|;s|\.obj$$||'`;\
-@am__fastdepCC_TRUE@	$(COMPILE) -MT $@ -MD -MP -MF $$depbase.Tpo -c -o $@ `$(CYGPATH_W) '$<'` &&\
-@am__fastdepCC_TRUE@	$(am__mv) $$depbase.Tpo $$depbase.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='$<' object='$@' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(COMPILE) -c -o $@ `$(CYGPATH_W) '$<'`
-
-.c.lo:
-@am__fastdepCC_TRUE@	$(AM_V_CC)depbase=`echo $@ | sed 's|[^/]*$$|$(DEPDIR)/&|;s|\.lo$$||'`;\
-@am__fastdepCC_TRUE@	$(LTCOMPILE) -MT $@ -MD -MP -MF $$depbase.Tpo -c -o $@ $< &&\
-@am__fastdepCC_TRUE@	$(am__mv) $$depbase.Tpo $$depbase.Plo
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='$<' object='$@' libtool=yes @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(LTCOMPILE) -c -o $@ $<
 
 mostlyclean-libtool:
 	-rm -f *.lo
 
 clean-libtool:
 	-rm -rf .libs _libs
-install-pkgconfigDATA: $(pkgconfig_DATA)
+install-dist_bashcompDATA: $(dist_bashcomp_DATA)
 	@$(NORMAL_INSTALL)
-	@list='$(pkgconfig_DATA)'; test -n "$(pkgconfigdir)" || list=; \
+	@list='$(dist_bashcomp_DATA)'; test -n "$(bashcompdir)" || list=; \
 	if test -n "$$list"; then \
-	  echo " $(MKDIR_P) '$(DESTDIR)$(pkgconfigdir)'"; \
-	  $(MKDIR_P) "$(DESTDIR)$(pkgconfigdir)" || exit 1; \
+	  echo " $(MKDIR_P) '$(DESTDIR)$(bashcompdir)'"; \
+	  $(MKDIR_P) "$(DESTDIR)$(bashcompdir)" || exit 1; \
 	fi; \
 	for p in $$list; do \
 	  if test -f "$$p"; then d=; else d="$(srcdir)/"; fi; \
 	  echo "$$d$$p"; \
 	done | $(am__base_list) | \
 	while read files; do \
-	  echo " $(INSTALL_DATA) $$files '$(DESTDIR)$(pkgconfigdir)'"; \
-	  $(INSTALL_DATA) $$files "$(DESTDIR)$(pkgconfigdir)" || exit $$?; \
+	  echo " $(INSTALL_DATA) $$files '$(DESTDIR)$(bashcompdir)'"; \
+	  $(INSTALL_DATA) $$files "$(DESTDIR)$(bashcompdir)" || exit $$?; \
 	done
 
-uninstall-pkgconfigDATA:
+uninstall-dist_bashcompDATA:
 	@$(NORMAL_UNINSTALL)
-	@list='$(pkgconfig_DATA)'; test -n "$(pkgconfigdir)" || list=; \
+	@list='$(dist_bashcomp_DATA)'; test -n "$(bashcompdir)" || list=; \
 	files=`for p in $$list; do echo $$p; done | sed -e 's|^.*/||'`; \
-	dir='$(DESTDIR)$(pkgconfigdir)'; $(am__uninstall_files_from_dir)
+	dir='$(DESTDIR)$(bashcompdir)'; $(am__uninstall_files_from_dir)
+tags TAGS:
 
-ID: $(am__tagged_files)
-	$(am__define_uniq_tagged_files); mkid -fID $$unique
-tags: tags-am
-TAGS: tags
+ctags CTAGS:
 
-tags-am: $(TAGS_DEPENDENCIES) $(am__tagged_files)
-	set x; \
-	here=`pwd`; \
-	$(am__define_uniq_tagged_files); \
-	shift; \
-	if test -z "$(ETAGS_ARGS)$$*$$unique"; then :; else \
-	  test -n "$$unique" || unique=$$empty_fix; \
-	  if test $$# -gt 0; then \
-	    $(ETAGS) $(ETAGSFLAGS) $(AM_ETAGSFLAGS) $(ETAGS_ARGS) \
-	      "$$@" $$unique; \
-	  else \
-	    $(ETAGS) $(ETAGSFLAGS) $(AM_ETAGSFLAGS) $(ETAGS_ARGS) \
-	      $$unique; \
-	  fi; \
-	fi
-ctags: ctags-am
+cscope cscopelist:
 
-CTAGS: ctags
-ctags-am: $(TAGS_DEPENDENCIES) $(am__tagged_files)
-	$(am__define_uniq_tagged_files); \
-	test -z "$(CTAGS_ARGS)$$unique" \
-	  || $(CTAGS) $(CTAGSFLAGS) $(AM_CTAGSFLAGS) $(CTAGS_ARGS) \
-	     $$unique
-
-GTAGS:
-	here=`$(am__cd) $(top_builddir) && pwd` \
-	  && $(am__cd) $(top_srcdir) \
-	  && gtags -i $(GTAGS_ARGS) "$$here"
-cscopelist: cscopelist-am
-
-cscopelist-am: $(am__tagged_files)
-	list='$(am__tagged_files)'; \
-	case "$(srcdir)" in \
-	  [\\/]* | ?:[\\/]*) sdir="$(srcdir)" ;; \
-	  *) sdir=$(subdir)/$(srcdir) ;; \
-	esac; \
-	for i in $$list; do \
-	  if test -f "$$i"; then \
-	    echo "$(subdir)/$$i"; \
-	  else \
-	    echo "$$sdir/$$i"; \
-	  fi; \
-	done >> $(top_builddir)/cscope.files
-
-distclean-tags:
-	-rm -f TAGS ID GTAGS GRTAGS GSYMS GPATH tags
 
 distdir: $(DISTFILES)
 	@srcdirstrip=`echo "$(srcdir)" | sed 's/[].[^$$\\*]/\\\\&/g'`; \
@@ -743,15 +492,13 @@ distdir: $(DISTFILES)
 	  fi; \
 	done
 check-am: all-am
-check: $(BUILT_SOURCES)
-	$(MAKE) $(AM_MAKEFLAGS) check-am
-all-am: Makefile $(LTLIBRARIES) $(DATA)
+check: check-am
+all-am: Makefile $(DATA)
 installdirs:
-	for dir in "$(DESTDIR)$(libdir)" "$(DESTDIR)$(pkgconfigdir)"; do \
+	for dir in "$(DESTDIR)$(bashcompdir)"; do \
 	  test -z "$$dir" || $(MKDIR_P) "$$dir"; \
 	done
-install: $(BUILT_SOURCES)
-	$(MAKE) $(AM_MAKEFLAGS) install-am
+install: install-am
 install-exec: install-exec-am
 install-data: install-data-am
 uninstall: uninstall-am
@@ -773,7 +520,6 @@ install-strip:
 mostlyclean-generic:
 
 clean-generic:
-	-test -z "$(CLEANFILES)" || rm -f $(CLEANFILES)
 
 distclean-generic:
 	-test -z "$(CONFIG_CLEAN_FILES)" || rm -f $(CONFIG_CLEAN_FILES)
@@ -782,17 +528,13 @@ distclean-generic:
 maintainer-clean-generic:
 	@echo "This command is intended for maintainers to use"
 	@echo "it deletes files that may require special tools to rebuild."
-	-test -z "$(BUILT_SOURCES)" || rm -f $(BUILT_SOURCES)
 clean: clean-am
 
-clean-am: clean-generic clean-libLTLIBRARIES clean-libtool \
-	mostlyclean-am
+clean-am: clean-generic clean-libtool mostlyclean-am
 
 distclean: distclean-am
-	-rm -rf ./$(DEPDIR)
 	-rm -f Makefile
-distclean-am: clean-am distclean-compile distclean-generic \
-	distclean-tags
+distclean-am: clean-am distclean-generic
 
 dvi: dvi-am
 
@@ -806,13 +548,13 @@ info: info-am
 
 info-am:
 
-install-data-am: install-data-local install-pkgconfigDATA
+install-data-am: install-dist_bashcompDATA
 
 install-dvi: install-dvi-am
 
 install-dvi-am:
 
-install-exec-am: install-libLTLIBRARIES
+install-exec-am:
 
 install-html: install-html-am
 
@@ -835,14 +577,12 @@ install-ps-am:
 installcheck-am:
 
 maintainer-clean: maintainer-clean-am
-	-rm -rf ./$(DEPDIR)
 	-rm -f Makefile
 maintainer-clean-am: distclean-am maintainer-clean-generic
 
 mostlyclean: mostlyclean-am
 
-mostlyclean-am: mostlyclean-compile mostlyclean-generic \
-	mostlyclean-libtool
+mostlyclean-am: mostlyclean-generic mostlyclean-libtool
 
 pdf: pdf-am
 
@@ -852,108 +592,23 @@ ps: ps-am
 
 ps-am:
 
-uninstall-am: uninstall-libLTLIBRARIES uninstall-local \
-	uninstall-pkgconfigDATA
+uninstall-am: uninstall-dist_bashcompDATA
 
-.MAKE: all check install install-am install-strip
+.MAKE: install-am install-strip
 
-.PHONY: CTAGS GTAGS TAGS all all-am check check-am clean clean-generic \
-	clean-libLTLIBRARIES clean-libtool cscopelist-am ctags \
-	ctags-am distclean distclean-compile distclean-generic \
-	distclean-libtool distclean-tags distdir dvi dvi-am html \
-	html-am info info-am install install-am install-data \
-	install-data-am install-data-local install-dvi install-dvi-am \
+.PHONY: all all-am check check-am clean clean-generic clean-libtool \
+	cscopelist-am ctags-am distclean distclean-generic \
+	distclean-libtool distdir dvi dvi-am html html-am info info-am \
+	install install-am install-data install-data-am \
+	install-dist_bashcompDATA install-dvi install-dvi-am \
 	install-exec install-exec-am install-html install-html-am \
-	install-info install-info-am install-libLTLIBRARIES \
-	install-man install-pdf install-pdf-am install-pkgconfigDATA \
-	install-ps install-ps-am install-strip installcheck \
-	installcheck-am installdirs maintainer-clean \
-	maintainer-clean-generic mostlyclean mostlyclean-compile \
-	mostlyclean-generic mostlyclean-libtool pdf pdf-am ps ps-am \
-	tags tags-am uninstall uninstall-am uninstall-libLTLIBRARIES \
-	uninstall-local uninstall-pkgconfigDATA
+	install-info install-info-am install-man install-pdf \
+	install-pdf-am install-ps install-ps-am install-strip \
+	installcheck installcheck-am installdirs maintainer-clean \
+	maintainer-clean-generic mostlyclean mostlyclean-generic \
+	mostlyclean-libtool pdf pdf-am ps ps-am tags-am uninstall \
+	uninstall-am uninstall-dist_bashcompDATA
 
-
-ipset_%.lo: ipset_%.c
-@am__fastdepCC_TRUE@	$(AM_V_CC)depbase=`echo $@ | sed 's|[^/]*$$|$(DEPDIR)/&|;s|\.lo$$||'`; \
-@am__fastdepCC_TRUE@	$(LTCOMPILE) -D_INIT=ipset_$*_init \
-		$(if $(findstring ipset_$*.c,$(IPSET_SETTYPE_STATIC)), -DTYPE_INCLUSIVE,)\
-		-MT $@ -MD -MP -MF $$depbase.Tpo -c -o $@ $< && \
-@am__fastdepCC_TRUE@	$(am__mv) $$depbase.Tpo $$depbase.Plo
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='$<' object='$@' libtool=yes @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(LTCOMPILE) -D_INIT=ipset_$*_init \
-		$(if $(findstring ipset_$*.c,$(IPSET_SETTYPE_STATIC)), -DTYPE_INCLUSIVE,)\
-		-c -o $@ $<
-
-ipset_%.la: $(lib_LTLIBRARIES) ipset_%.lo
-	$(AM_V_CCLD)lobj="$(patsubst %.la, %.lo, $@)"; \
-	$(LIBTOOL) --silent --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=link $(CCLD) \
-		$(CFLAGS) $(IPSET_SETTYPE_DYNAMIC_LTFLAGS) $(LDFLAGS) -o $@ \
-		-rpath $(IPSET_MODSDIR) $$lobj $(LIBS) $(top_builddir)/lib/libipset.la
-
-types_init.c: $(IPSET_SETTYPE_STATIC_OBJECTS)
-	$(AM_V_GEN)static_list=`echo $(patsubst %.c,%,$(IPSET_SETTYPE_STATIC))`; \
-	echo -n "" > $@; \
-	for i in $$static_list; do \
-		echo "extern void $${i}_init(void);" >> $@; \
-	done; \
-	echo "void ipset_types_init(void);" >> $@; \
-	echo "void ipset_types_init(void)" >> $@; \
-	echo "{" >> $@; \
-	for i in $$static_list; do \
-		echo "	""$${i}_init();" >> $@; \
-	done; \
-	echo "}" >> $@;
-
-ipset_settype_check:
-	@list="$(IPSET_SETTYPE_MODULES) $(IPSET_SETTYPE_STATIC_OBJECTS)"; \
-	test -f $@ || echo "$$list" > $@; \
-	if test "$$list" != "`cat $@`"; then \
-		$(MAKE) clean; \
-		echo "$$list" > $@; \
-	fi
-
-ipset_settype_modules: $(lib_LTLIBRARIES) $(IPSET_SETTYPE_DYNAMIC_OBJECTS) \
-	$(IPSET_SETTYPE_DYNAMIC_MODULES)
-
-install-data-local: install-settype-modules
-uninstall-local: uninstall-settype-modules
-
-install-settype-modules: ipset_settype_modules
-	@$(NORMAL_INSTALL)
-	@list='$(IPSET_SETTYPE_DYNAMIC_MODULES)'; \
-	test -n "$(IPSET_MODSDIR)" || list=; \
-	list2=; for p in $$list; do \
-		if test -f $$p; then \
-			list2="$$list2 $$p"; \
-		else :; fi; \
-	done; \
-	test -z "$$list2" || { \
-		echo " $(MKDIR_P) '$(DESTDIR)$(IPSET_MODSDIR)'"; \
-		$(MKDIR_P) "$(DESTDIR)$(IPSET_MODSDIR)" || exit 1; \
-		echo " $(LIBTOOL) $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=install $(INSTALL) $(INSTALL_STRIP_FLAG) $$list2 '$(DESTDIR)$(IPSET_MODSDIR)'"; \
-		$(LIBTOOL) $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=install $(INSTALL) $(INSTALL_STRIP_FLAG) $$list2 "$(DESTDIR)$(IPSET_MODSDIR)"; \
-	}
-
-uninstall-settype-modules:
-	@$(NORMAL_UNINSTALL)
-	@list='$(IPSET_SETTYPE_DYNAMIC_MODULES)'; \
-	test -n "$(IPSET_MODSDIR)" || list=; \
-	for p in $$list; do \
-		$(am__strip_dir) \
-		echo " $(LIBTOOL) $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=uninstall rm -f '$(DESTDIR)$(IPSET_MODSDIR)/$$f'"; \
-		$(LIBTOOL) $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=uninstall rm -f "$(DESTDIR)$(IPSET_MODSDIR)/$$f"; \
-	done
-
-.PHONY: ipset_settype_check ipset_settype_modules ipset_settype_modules-stamp \
-	install-settype-modules uninstall-settype-modules
-
-sparse-check: $(libipset_la_SOURCES:.c=.d)
-
-%.d: %.c
-	$(IPSET_AM_V_CHECK)\
-	$(SPARSE) $(SPARSE_FLAGS) $(AM_CFLAGS) $(AM_CPPFLAGS) $< || :
 
 # Tell versions [3.59,3.63) of GNU make to not export all variables.
 # Otherwise a system limit (for SysV at least) may be exceeded.

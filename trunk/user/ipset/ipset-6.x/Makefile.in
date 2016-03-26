@@ -309,11 +309,13 @@ HAVE_CHECKENTRY_BOOL = @HAVE_CHECKENTRY_BOOL@
 HAVE_ETHER_ADDR_COPY = @HAVE_ETHER_ADDR_COPY@
 HAVE_ETHER_ADDR_EQUAL = @HAVE_ETHER_ADDR_EQUAL@
 HAVE_EXPORT_H = @HAVE_EXPORT_H@
+HAVE_EXPORT_SYMBOL_GPL_IN_MODULE_H = @HAVE_EXPORT_SYMBOL_GPL_IN_MODULE_H@
 HAVE_IPV6_SKIP_EXTHDR_ARGS = @HAVE_IPV6_SKIP_EXTHDR_ARGS@
 HAVE_KVFREE = @HAVE_KVFREE@
 HAVE_LIST_LAST_ENTRY = @HAVE_LIST_LAST_ENTRY@
 HAVE_LIST_NEXT_ENTRY = @HAVE_LIST_NEXT_ENTRY@
 HAVE_NETLINK_DUMP_START_ARGS = @HAVE_NETLINK_DUMP_START_ARGS@
+HAVE_NET_IN_NFNL_CALLBACK_FN = @HAVE_NET_IN_NFNL_CALLBACK_FN@
 HAVE_NET_OPS_ID = @HAVE_NET_OPS_ID@
 HAVE_NFNL_LOCK_SUBSYS = @HAVE_NFNL_LOCK_SUBSYS@
 HAVE_NF_BRIDGE_GET_PHYSDEV = @HAVE_NF_BRIDGE_GET_PHYSDEV@
@@ -396,6 +398,7 @@ am__leading_dot = @am__leading_dot@
 am__quote = @am__quote@
 am__tar = @am__tar@
 am__untar = @am__untar@
+bashcompdir = @bashcompdir@
 bindir = @bindir@
 build = @build@
 build_alias = @build_alias@
@@ -456,7 +459,8 @@ ipset_am__v_CHECK_0 = @echo "  CHECK " $<;
 @WITH_KBUILDDIR_TRUE@KBUILD_OUTPUT = $(KBUILDDIR)
 @WITH_MAXSETS_FALSE@IP_SET_MAX = 256
 @WITH_MAXSETS_TRUE@IP_SET_MAX = $(MAXSETS)
-SUBDIRS = include/libipset lib src
+SUBDIRS = include/libipset lib src utils
+INSTALL_MOD_PATH = /
 cleanup_dirs := . include/libipset lib src tests
 DISTCHECK_CONFIGURE_FLAGS = --with-kmod=no
 all: config.h
@@ -987,7 +991,7 @@ export MODULE_WARNING
 modules_install:
 @WITH_KMOD_TRUE@	${MAKE} -C $(KBUILD_OUTPUT) M=$$PWD/kernel/net \
 @WITH_KMOD_TRUE@			KDIR=$$PWD/kernel modules_install
-@WITH_KMOD_TRUE@	@modinfo ip_set_hash_ip | ${GREP} /extra/ >/dev/null || echo "$$DEPMOD_WARNING"
+@WITH_KMOD_TRUE@	@modinfo -b ${INSTALL_MOD_PATH} ip_set_hash_ip | ${GREP} /extra/ >/dev/null || echo "$$DEPMOD_WARNING"
 @WITH_KMOD_TRUE@	@lsmod | ${GREP} '^ip_set' >/dev/null && echo "$$MODULE_WARNING"
 @WITH_KMOD_FALSE@	@echo Skipping kernel modules due to --with-kmod=no
 

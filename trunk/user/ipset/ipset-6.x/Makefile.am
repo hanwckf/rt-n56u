@@ -15,7 +15,8 @@ else
 IP_SET_MAX=$(MAXSETS)
 endif
 
-SUBDIRS		= include/libipset lib src
+SUBDIRS		= include/libipset lib src utils
+INSTALL_MOD_PATH = /
 
 sparse:
 	$(MAKE) -C lib sparse-check
@@ -71,7 +72,7 @@ modules_install:
 if WITH_KMOD
 	${MAKE} -C $(KBUILD_OUTPUT) M=$$PWD/kernel/net \
 			KDIR=$$PWD/kernel modules_install
-	@modinfo ip_set_hash_ip | ${GREP} /extra/ >/dev/null || echo "$$DEPMOD_WARNING"
+	@modinfo -b ${INSTALL_MOD_PATH} ip_set_hash_ip | ${GREP} /extra/ >/dev/null || echo "$$DEPMOD_WARNING"
 	@lsmod | ${GREP} '^ip_set' >/dev/null && echo "$$MODULE_WARNING"
 else
 	@echo Skipping kernel modules due to --with-kmod=no

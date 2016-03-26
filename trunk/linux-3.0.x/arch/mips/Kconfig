@@ -171,8 +171,8 @@ config RALINK_MT7628
 config MIPS_ALCHEMY
 	bool "Alchemy processor based machines"
 	select 64BIT_PHYS_ADDR
-	select CEVT_R4K_LIB
-	select CSRC_R4K_LIB
+	select CEVT_R4K
+	select CSRC_R4K
 	select IRQ_CPU
 	select SYS_HAS_CPU_MIPS32_R1
 	select SYS_SUPPORTS_32BIT_KERNEL
@@ -400,6 +400,7 @@ config MIPS_MALTA
 	select BOOT_RAW
 	select CEVT_R4K
 	select CSRC_R4K
+	select CSRC_GIC
 	select DMA_NONCOHERENT
 	select GENERIC_ISA_DMA
 	select IRQ_CPU
@@ -1008,11 +1009,10 @@ config CEVT_DS1287
 config CEVT_GT641XX
 	bool
 
-config CEVT_R4K_LIB
+config CEVT_R4K
 	bool
 
-config CEVT_R4K
-	select CEVT_R4K_LIB
+config CEVT_GIC
 	bool
 
 config CEVT_SB1250
@@ -1030,11 +1030,10 @@ config CSRC_IOASIC
 config CSRC_POWERTV
 	bool
 
-config CSRC_R4K_LIB
+config CSRC_R4K
 	bool
 
-config CSRC_R4K
-	select CSRC_R4K_LIB
+config CSRC_GIC
 	bool
 
 config CSRC_SB1250
@@ -1982,8 +1981,8 @@ config MIPS_MT_DISABLED
 config MIPS_MT_SMP
 	bool "Use 1 TC on each available VPE for SMP"
 	depends on SYS_SUPPORTS_MULTITHREADING
-	select CPU_MIPSR2_IRQ_VI if !RALINK_MT7621
-	select CPU_MIPSR2_IRQ_EI if !RALINK_MT7621
+	select CPU_MIPSR2_IRQ_VI
+	select CPU_MIPSR2_IRQ_EI
 	select SYNC_R4K
 	select MIPS_GIC_IPI
 	select MIPS_MT

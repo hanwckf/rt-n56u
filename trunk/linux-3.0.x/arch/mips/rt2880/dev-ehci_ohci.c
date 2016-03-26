@@ -45,7 +45,7 @@
 #include <linux/usb/ohci_pdriver.h>
 #endif
 
-#include <asm/rt2880/surfboardint.h>
+#include <asm/irq.h>
 #include <asm/rt2880/rt_mmap.h>
 
 #define RT3XXX_EHCI_MEM_START	(RALINK_USB_HOST_BASE)

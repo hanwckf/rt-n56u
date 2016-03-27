@@ -800,6 +800,7 @@ void update_minidlna_conf(const char *link_path, const char *conf_path)
 	fprintf(fp, "db_dir=%s\n", link_path);
 	fprintf(fp, "log_dir=%s\n", link_path);
 	fprintf(fp, "album_art_names=%s\n", "Cover.jpg/cover.jpg/AlbumArtSmall.jpg/albumartsmall.jpg/AlbumArt.jpg/albumart.jpg/Album.jpg/album.jpg/Folder.jpg/folder.jpg/Thumb.jpg/thumb.jpg");
+	fprintf(fp, "wide_links=%s\n", "yes");
 	fprintf(fp, "inotify=%s\n", "yes");
 	fprintf(fp, "enable_tivo=%s\n", "no");
 	fprintf(fp, "strict_dlna=%s\n", "no");

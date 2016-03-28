@@ -227,7 +227,7 @@ static void br_multicast_free_pg(struct rcu_head *head)
 		container_of(head, struct net_bridge_port_group, rcu);
 
 #if defined (CONFIG_BRIDGE_IGMP_EVENT_HOOK)
-	br_pg_notify_switch(p, NULL, 1);
+	br_pg_notify_switch(p, NULL, 2);
 #endif
 
 	kfree(p);
@@ -1176,7 +1176,6 @@ static void br_multicast_leave_group(struct net_bridge *br,
 	struct net_bridge_mdb_entry *mp;
 	struct net_bridge_port_group *p;
 	unsigned long time;
-	int querier_exist;
 
 	spin_lock(&br->multicast_lock);
 	if (!netif_running(br->dev) ||
@@ -1199,7 +1198,7 @@ static void br_multicast_leave_group(struct net_bridge *br,
 
 #if defined (CONFIG_BRIDGE_IGMP_EVENT_HOOK)
 			/* direct notify switch for this source MAC */
-			if (src && !ether_addr_equal(src, p->src_addr))
+			if (src)
 				br_pg_notify_switch(p, src, 1);
 #endif
 			rcu_assign_pointer(*pp, p->next);
@@ -1214,16 +1213,28 @@ static void br_multicast_leave_group(struct net_bridge *br,
 		goto out;
 	}
 
-	querier_exist = timer_pending(&br->multicast_querier_timer);
-#if !defined (CONFIG_BRIDGE_IGMP_EVENT_HOOK)
-	if (querier_exist)
-		goto out;
+#if defined (CONFIG_BRIDGE_IGMP_EVENT_HOOK)
+	if (port && src) {
+		for (p = mlock_dereference(mp->ports, br);
+		     p != NULL;
+		     p = mlock_dereference(p->next, br)) {
+			if (!br_port_group_equal(p, port, src))
+				continue;
+			
+			/* direct notify switch for this source MAC */
+			br_pg_notify_switch(p, src, 1);
+			
+			break;
+		}
+	}
 #endif
+	if (timer_pending(&br->multicast_querier_timer))
+		goto out;
 
 	time = jiffies + br->multicast_last_member_count *
 			 br->multicast_last_member_interval;
 
-	if (!querier_exist && br->multicast_querier) {
+	if (br->multicast_querier) {
 		__br_multicast_send_query(br, port, &mp->addr);
 
 		mod_timer(port ? &port->multicast_query_timer :
@@ -1231,7 +1242,7 @@ static void br_multicast_leave_group(struct net_bridge *br,
 	}
 
 	if (!port) {
-		if (!querier_exist && mp->mglist &&
+		if (mp->mglist &&
 		    (timer_pending(&mp->timer) ?
 		     time_after(mp->timer.expires, time) :
 		     try_to_del_timer_sync(&mp->timer) >= 0)) {
@@ -1247,13 +1258,6 @@ static void br_multicast_leave_group(struct net_bridge *br,
 		if (!br_port_group_equal(p, port, src))
 			continue;
 
-#if defined (CONFIG_BRIDGE_IGMP_EVENT_HOOK)
-		/* direct notify switch for this source MAC */
-		if (src && !ether_addr_equal(src, p->src_addr))
-			br_pg_notify_switch(p, src, 1);
-		if (querier_exist)
-			break;
-#endif
 		if (!hlist_unhashed(&p->mglist) &&
 		    (timer_pending(&p->timer) ?
 		     time_after(p->timer.expires, time) :

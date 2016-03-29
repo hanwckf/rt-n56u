@@ -358,8 +358,13 @@ static void esw_igmp_ports_config(u32 wan_bridge_mode)
 		mask_no_learn |= get_ports_mask_lan(0, 0);
 
 	reg_isc = esw_reg_get(REG_ESW_ISC);
-	reg_isc &= ~0xFF0000FF;
+	reg_isc &= ~0xFF1C00FF;
 	reg_isc |= mask_no_learn;
+
+	/* also enable upstream router port learning (in AP mode) */
+	if (g_igmp_static_ports)
+		reg_isc |= (1u << 19) | (1u << 18);
+
 	esw_reg_set(REG_ESW_ISC, reg_isc);
 }
 
@@ -375,6 +380,7 @@ static void esw_igmp_mld_snooping(u32 enable_igmp, u32 enable_mld)
 	if (enable_mld) {
 		dst_igmp |= (1u << 9);		// IPM_33
 		
+		src_join |= (1u << 13);		// MLD_HW_LEAVE
 		src_join |= (1u << 7);		// MLD2_JOIN_EN
 		src_join |= (1u << 5);		// MLD_JOIN_EN
 	}
@@ -382,9 +388,13 @@ static void esw_igmp_mld_snooping(u32 enable_igmp, u32 enable_mld)
 	if (enable_igmp) {
 		dst_igmp |= (1u << 8);		// IPM_01
 		
+		src_join |= (1u << 12);		// IGMP_HW_LEAVE
 		src_join |= (1u << 6);		// IGMP3_JOIN_EN
 		src_join |= (1u << 4);		// IGMP_JOIN_EN
 	}
+
+	if (enable_mld || enable_igmp)
+		dst_igmp |= (7u << 16);		// IGMP_MIS = Drop
 
 	mask_lan = get_ports_mask_lan(0, 0);
 	for (i = 0; i <= ESW_EPHY_ID_MAX; i++) {
@@ -2023,6 +2033,7 @@ static void change_igmp_static_ports(u32 ports_mask)
 		
 		if (g_igmp_snooping_enabled) {
 			esw_igmp_ports_config(g_wan_bridge_mode);
+			esw_igmp_flood_to_cpu( (!ports_mask) ? 1 : 0 );
 			esw_igmp_mld_snooping(1, 1);
 		}
 	}
@@ -2042,6 +2053,7 @@ static void change_igmp_snooping_control(u32 igmp_snooping_enabled)
 		printk("%s - hardware IGMP/MLD snooping: %s\n", MTK_ESW_DEVNAME, (igmp_snooping_enabled) ? "on" : "off");
 		
 		esw_igmp_ports_config(g_wan_bridge_mode);
+		esw_igmp_flood_to_cpu( (igmp_snooping_enabled && !g_igmp_static_ports) ? 1 : 0 );
 		esw_igmp_mld_snooping(igmp_snooping_enabled, igmp_snooping_enabled);
 	}
 #elif defined (CONFIG_RAETH_ESW_IGMP_SNOOP_SW)
@@ -2124,6 +2136,7 @@ int esw_ioctl_init_post(void)
 
 #if defined (CONFIG_RAETH_ESW_IGMP_SNOOP_HW)
 	/* configure igmp/mld snooping */
+	esw_igmp_flood_to_cpu( (g_igmp_snooping_enabled && !g_igmp_static_ports) ? 1 : 0 );
 	esw_igmp_mld_snooping(g_igmp_snooping_enabled, g_igmp_snooping_enabled);
 #endif
 

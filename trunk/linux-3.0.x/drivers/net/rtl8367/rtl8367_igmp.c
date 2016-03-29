@@ -78,8 +78,8 @@ struct mcast_work
 	struct work_struct ws;
 	u8 mac_src[ETHER_ADDR_LEN];
 	u8 mac_dst[ETHER_ADDR_LEN];
-	u16 is_leave:1;
-	u16 port_efid:3;
+	u16 is_leave:2;
+	u16 port_efid:2;	// always 0 for LAN group
 	u16 port_cvid_fid:12;
 };
 
@@ -156,7 +156,8 @@ asic_update_mcast_mask(const u8 *mcast_mac, u16 port_efid, u16 port_cvid_fid, u3
 		l2t.portmask |= port_dst_msk;
 	} else {
 		l2t.portmask &= ~port_dst_msk;
-		if (!(l2t.portmask & ~uports_static)) {
+		/* try to remove static entry */
+		if (!(l2t.portmask & ~uports_static) && is_leave > 1) {
 			l2t.static_bit = 0;
 			l2t.portmask = 0;
 		}
@@ -198,7 +199,8 @@ asic_update_mcast_mask(const u8 *mcast_mac, u16 port_efid, u16 port_cvid_fid, u3
 		l2t.mbr |= port_dst_msk;
 	} else {
 		l2t.mbr &= ~port_dst_msk;
-		if (!(l2t.mbr & ~uports_static)) {
+		/* try to remove static entry */
+		if (!(l2t.mbr & ~uports_static) && is_leave > 1) {
 			l2t.nosalearn = 0;
 			l2t.mbr = 0;
 		}
@@ -242,7 +244,7 @@ lookup_mcast_member_entry(struct mcast_group_entry* mge, const u8 *haddr, u32 po
 		return NULL;
 
 	/* create new member entry */
-	mme = kzalloc(sizeof(struct mcast_member_entry), GFP_ATOMIC);
+	mme = kzalloc(sizeof(struct mcast_member_entry), GFP_KERNEL);
 	if (mme) {
 		memcpy(mme->haddr, haddr, ETHER_ADDR_LEN);
 		
@@ -564,7 +566,6 @@ asic_enum_mcast_table(int clear_all)
 #endif
 }
 
-
 static void
 mcast_group_event_wq(struct work_struct *work)
 {
@@ -573,8 +574,15 @@ mcast_group_event_wq(struct work_struct *work)
 	struct mcast_work *mw = container_of(work, struct mcast_work, ws);
 
 #ifdef RTL8367_DBG
+	const char *s_event = "enter";
+
+	if (mw->is_leave == 2)
+		s_event = "leave_last";
+	else if (mw->is_leave == 1)
+		s_event = "leave";
+
 	printk("rtl8367_mcast_group_%s(SRC: %02X-%02X-%02X-%02X-%02X-%02X, DST: %02X-%02X-%02X-%02X-%02X-%02X, cvid_fid: %d)\n", 
-			(!mw->is_leave) ? "enter" : "leave",
+			s_event,
 			mw->mac_src[0], mw->mac_src[1], mw->mac_src[2],
 			mw->mac_src[3], mw->mac_src[4], mw->mac_src[5],
 			mw->mac_dst[0], mw->mac_dst[1], mw->mac_dst[2],
@@ -650,7 +658,7 @@ rtl8367_mcast_group_event(const u8 *mac_src, const u8 *mac_dst, const char *dev_
 		INIT_WORK(&mw->ws, mcast_group_event_wq);
 		memcpy(mw->mac_src, mac_src, ETHER_ADDR_LEN);
 		memcpy(mw->mac_dst, mac_dst, ETHER_ADDR_LEN);
-		mw->is_leave = (is_leave) ? 1 : 0;
+		mw->is_leave = (u16)is_leave;
 		mw->port_efid = port_efid;
 		mw->port_cvid_fid = port_cvid_fid;
 		if (!schedule_work(&mw->ws))

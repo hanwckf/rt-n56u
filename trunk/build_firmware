@@ -377,6 +377,7 @@ if [ "$CONFIG_FIRMWARE_INCLUDE_HID" != "y" ] ; then
 	func_disable_kernel_param "CONFIG_INPUT"
 	func_disable_kernel_param "CONFIG_HID_SUPPORT"
 	func_disable_kernel_param "CONFIG_USB_HID"
+	func_disable_kernel_param "CONFIG_INPUT_EVDEV"
 fi
 ############################# UART ####################################
 if [ "$CONFIG_FIRMWARE_INCLUDE_SERIAL" != "y" ] ; then

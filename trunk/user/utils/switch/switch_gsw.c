@@ -1405,18 +1405,21 @@ void sip_clear(void)
 
 void table_dump(void)
 {
-	int i, j, value, mac, mac2, value2;
+	int i, j, k, value, mac, mac2, value2;
 
-	reg_write(REG_ESW_WT_MAC_ATC, 0x8004);
 #if defined (CONFIG_RALINK_MT7620) || defined (CONFIG_RALINK_MT7621)
 	printf("hash  port(0:6)   fid   vid  age   mac-address     filter my_mac\n");
 #else
 	printf("hash  port(0:6)   fid   vid  age   mac-address     filter\n");
 #endif
-	for (i = 0; i < 0x800; i++) {
-		while(1) {
-			reg_read(REG_ESW_WT_MAC_ATC, &value);
 
+	reg_write(REG_ESW_WT_MAC_ATC, 0x8004);
+	for (i = 0; i < 0x800; i++) {
+		for (k = 0; k < 20; k++) {
+			usleep(5000);
+			reg_read(REG_ESW_WT_MAC_ATC, &value);
+			if (value & (0x1 << 15))
+				continue;
 			if (value & (0x1 << 13)) { //search_rdy
 				printf("%03x:   ", (value >> 16) & 0xfff); //hash_addr_lu
 				reg_read(REG_ESW_TABLE_ATRD, &value2);
@@ -1454,10 +1457,8 @@ void table_dump(void)
 				printf("found the last entry %d (not ready)\n", i);
 				return;
 			}
-			usleep(5000);
 		}
 		reg_write(REG_ESW_WT_MAC_ATC, 0x8005); //search for next address
-		usleep(5000);
 	}
 }
 

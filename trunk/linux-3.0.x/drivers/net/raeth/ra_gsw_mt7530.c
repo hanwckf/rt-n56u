@@ -487,6 +487,12 @@ void mt7530_gsw_init(void)
 		mii_mgr_write(MT7530_MDIO_ADDR, REG_ESW_MAC_CKGCR, 0x1e02);
 	}
 
+	/* TO_CPU check VLAN members */
+	mii_mgr_write(MT7530_MDIO_ADDR, REG_ESW_AGC, 0x0007181d);
+
+	/* Set P6 as CPU Port */
+	mii_mgr_write(MT7530_MDIO_ADDR, REG_ESW_MFC, 0x7f7f7fe0);
+
 #if !defined (CONFIG_RAETH_ESW_CONTROL)
 	/* disable 802.3az EEE by default */
 	mt7530_gsw_eee_enable(0);

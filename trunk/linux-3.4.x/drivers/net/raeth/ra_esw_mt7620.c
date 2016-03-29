@@ -314,6 +314,7 @@ void mt7620_esw_init(void)
 
 	/* Port 6 (CPU) */
 	sysRegWrite(RALINK_ETH_SW_BASE+0x3600, 0x0005e33b);	// (P6, Force mode, Link Up, 1000Mbps, Full-Duplex, FC ON)
+	sysRegWrite(RALINK_ETH_SW_BASE+0x000c, 0x0007181d);	// TO_CPU check VLAN members
 	sysRegWrite(RALINK_ETH_SW_BASE+0x0010, 0x7f7f7fe0);	// Set Port6 CPU Port
 
 	/* Port 5 */

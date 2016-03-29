@@ -50,6 +50,8 @@
 #define MCAST_ADDR_HASH(addr)		(addr[0]^addr[1]^addr[2]^addr[3]^addr[4]^addr[5])
 #define MCAST_ADDR_HASH_INDEX(addr)	(MCAST_ADDR_HASH(addr) & (MCAST_TABLE_HASH_SIZE - 1))
 
+#define MAC_LOOKUP_RETRY_MAX		20
+
 struct mcast_member_entry
 {
 	struct mcast_member_entry*	next;
@@ -79,8 +81,8 @@ struct mcast_work
 	struct work_struct ws;
 	u8 mac_src[ETH_ALEN];
 	u8 mac_dst[ETH_ALEN];
-	u16 is_leave:1;
-	u16 unused:3;
+	u16 is_leave:2;
+	u16 unused:2;
 	u16 port_cvid:12;
 };
 
@@ -94,20 +96,6 @@ static u32 g_igmp_sn_static_ports = 0;
 extern void (*br_mcast_group_event_hook)(const u8 *mac_src, const u8 *mac_dst, const char *dev_name, int is_leave);
 
 #if defined (CONFIG_MT7530_GSW) || defined (CONFIG_RALINK_MT7620)
-
-static void
-esw_flood_igmp_to_cpu(int flood_to_cpu)
-{
-#if !defined (CONFIG_MT7530_GSW)
-	u32 reg_imc;
-
-	reg_imc = esw_reg_get(REG_ESW_IMC);
-	reg_imc &= ~((0x7<<28)|(0x7<<12));
-	if (flood_to_cpu)
-		reg_imc |= (0x6<<28)|(0x6<<12);
-	esw_reg_set(REG_ESW_IMC, reg_imc);
-#endif
-}
 
 static int
 esw_mac_table_lookup(const u8 *mac, u32 cvid, int static_only)
@@ -128,11 +116,13 @@ esw_mac_table_lookup(const u8 *mac, u32 cvid, int static_only)
 
 	esw_reg_set(REG_ESW_WT_MAC_ATC, atc_val);
 
-	for (i = 0; i < 0x7fe; i++) {
+	for (i = 0; i < 0x800; i++) {
 		for (j = 0; j < 100; j++) {
-			usleep_range(100, 300);
+			usleep_range(300, 500);
 			value[0] = esw_reg_get(REG_ESW_WT_MAC_ATC);
-			if ((value[0] & BIT(13)) && !(value[0] & BIT(15))) {
+			if (value[0] & BIT(15))
+				continue;
+			if (value[0] & BIT(13)) {
 				value[1] = esw_reg_get(REG_ESW_TABLE_ATRD);
 				/* skip invalid entry */
 				if ((value[1] >> 24) == 0)
@@ -161,6 +151,9 @@ esw_mac_table_lookup(const u8 *mac, u32 cvid, int static_only)
 			}
 			else if (value[0] & BIT(14)) {
 				/* end of table */
+				if (((value[0] >> 16) & 0xfff) != 0x7ff)
+					return -EIO;
+				
 				return -1;
 			}
 		}
@@ -174,7 +167,7 @@ next_entry:
 static int
 esw_update_mcast_mask(const u8 *mcast_mac, u32 cvid, u32 port_id, int is_leave)
 {
-	int portmask_old;
+	int portmask_old, i;
 	u32 portmask_new;
 	u32 port_dst_msk = (1u << port_id);
 	u32 uports_static = (MASK_LAN_PORT_CPU | g_igmp_sn_static_ports);
@@ -189,7 +182,11 @@ esw_update_mcast_mask(const u8 *mcast_mac, u32 cvid, u32 port_id, int is_leave)
 	mac_esw[1] |= BIT(15);
 	mac_esw[1] |= (cvid & 0xfff);
 
-	portmask_old = esw_mac_table_lookup(mcast_mac, cvid, 1);
+	for (i = 0; i < MAC_LOOKUP_RETRY_MAX; i++) {
+		portmask_old = esw_mac_table_lookup(mcast_mac, cvid, 1);
+		if (portmask_old != -EIO)
+			break;
+	}
 	if (portmask_old < 0)
 		portmask_old = 0; // entry not exist, reset mask to 0
 
@@ -203,7 +200,8 @@ esw_update_mcast_mask(const u8 *mcast_mac, u32 cvid, u32 port_id, int is_leave)
 		portmask_new |= port_dst_msk;
 	} else {
 		portmask_new &= ~(port_dst_msk);
-		if (!(portmask_new & ~uports_static)) {
+		/* try to remove static entry */
+		if (!(portmask_new & ~uports_static) && is_leave > 1) {
 			value = 0;	// invalid
 			portmask_new = 0;
 		}
@@ -238,19 +236,6 @@ esw_mac_table_clear_static(void)
 
 #else
 
-static void
-esw_flood_igmp_to_cpu(int flood_to_cpu)
-{
-	u32 reg_pfc1;
-
-	reg_pfc1 = esw_reg_get(REG_ESW_PFC1);
-	if (flood_to_cpu)
-		reg_pfc1 |=  BIT(23);
-	else
-		reg_pfc1 &= ~BIT(23);
-	esw_reg_set(REG_ESW_PFC1, reg_pfc1);
-}
-
 static int
 esw_mac_table_lookup(const u8 *mac, u32 vidx, int static_only)
 {
@@ -265,7 +250,7 @@ esw_mac_table_lookup(const u8 *mac, u32 vidx, int static_only)
 
 	for (i = 0; i < 0x3fe; i++) {
 		for (j = 0; j < 100; j++) {
-			usleep_range(300, 500);
+			usleep_range(500, 800);
 			value = esw_reg_get(REG_ESW_TABLE_STATUS0);
 			if (value & 0x1) {
 				/* skip invalid entry */
@@ -327,7 +312,8 @@ esw_update_mcast_mask(const u8 *mcast_mac, u32 vidx, u32 port_id, int is_leave)
 		portmask_new |= port_dst_msk;
 	} else {
 		portmask_new &= ~(port_dst_msk);
-		if (!(portmask_new & ~uports_static)) {
+		/* try to remove static entry */
+		if (!(portmask_new & ~uports_static) && is_leave > 1) {
 			value &= ~(7 << 4);	// invalid
 			portmask_new = 0;
 		}
@@ -355,9 +341,14 @@ esw_mac_table_clear_static(void)
 static int
 esw_find_port_with_ucast_mac(const u8 *ucast_mac, u16 port_cvid)
 {
-	int port_map;
+	int i, port_map;
 
-	port_map = esw_mac_table_lookup(ucast_mac, port_cvid, 0);
+	for (i = 0; i < MAC_LOOKUP_RETRY_MAX; i++) {
+		port_map = esw_mac_table_lookup(ucast_mac, port_cvid, 0);
+		if (port_map != -EIO)
+			break;
+	}
+
 	if (port_map < 1)
 		return -1;
 
@@ -413,7 +404,7 @@ lookup_mcast_member_entry(struct mcast_group_entry* mge, const u8 *haddr, u32 po
 		return NULL;
 
 	/* create new member entry */
-	mme = kzalloc(sizeof(struct mcast_member_entry), GFP_ATOMIC);
+	mme = kzalloc(sizeof(struct mcast_member_entry), GFP_KERNEL);
 	if (mme) {
 		memcpy(mme->haddr, haddr, ETH_ALEN);
 		
@@ -529,8 +520,7 @@ mcast_table_clear(void)
 static void
 on_mcast_group_event(const u8 *maddr, const u8 *haddr, u16 port_cvid, u32 port_id, int is_leave)
 {
-	int port_members_exist = 0;
-	int retVal;
+	int retVal, port_members_exist = 0;
 	struct mcast_group_entry *mge;
 	struct mcast_member_entry *mme;
 
@@ -661,8 +651,14 @@ mcast_group_event_wq(struct work_struct *work)
 	struct mcast_work *mw = container_of(work, struct mcast_work, ws);
 
 #ifdef IGMP_SN_DBG
+	const char *s_event = "enter";
+
+	if (mw->is_leave == 2)
+		s_event = "leave_last";
+	else if (mw->is_leave == 1)
+		s_event = "leave";
 	printk("mcast_group_%s(SRC: %02X-%02X-%02X-%02X-%02X-%02X, DST: %02X-%02X-%02X-%02X-%02X-%02X, cvid: %d)\n", 
-			(!mw->is_leave) ? "enter" : "leave",
+			s_event,
 			mw->mac_src[0], mw->mac_src[1], mw->mac_src[2],
 			mw->mac_src[3], mw->mac_src[4], mw->mac_src[5],
 			mw->mac_dst[0], mw->mac_dst[1], mw->mac_dst[2],
@@ -733,7 +729,7 @@ esw_mcast_group_event(const u8 *mac_src, const u8 *mac_dst, const char *dev_name
 		INIT_WORK(&mw->ws, mcast_group_event_wq);
 		memcpy(mw->mac_src, mac_src, ETH_ALEN);
 		memcpy(mw->mac_dst, mac_dst, ETH_ALEN);
-		mw->is_leave = (is_leave) ? 1 : 0;
+		mw->is_leave = (u16)is_leave;
 		mw->port_cvid = port_cvid;
 		if (!schedule_work(&mw->ws))
 			kfree(mw);
@@ -765,9 +761,9 @@ igmp_sn_set_enable(u32 igmp_sn_enabled)
 		g_igmp_sn_enabled = igmp_sn_enabled;
 		if (!igmp_sn_enabled) {
 			mcast_reset_table_and_cancel();
-			esw_flood_igmp_to_cpu(0);
+			esw_igmp_flood_to_cpu(0);
 		} else {
-			esw_flood_igmp_to_cpu( (g_igmp_sn_static_ports) ? 0 : 1);
+			esw_igmp_flood_to_cpu( (g_igmp_sn_static_ports) ? 0 : 1);
 			
 			/* set expired timer at least group_expired time */
 			mod_timer(&g_membership_expired_timer, jiffies + (MCAST_GROUP_MEMBERSHIP_EXPIRED + 10 * HZ));
@@ -792,7 +788,7 @@ igmp_sn_set_static_ports(u32 ports_mask)
 
 	if (g_igmp_sn_enabled && !g_igmp_sn_static_ports)
 		flood_to_cpu = 1;
-	esw_flood_igmp_to_cpu(flood_to_cpu);
+	esw_igmp_flood_to_cpu(flood_to_cpu);
 }
 
 void

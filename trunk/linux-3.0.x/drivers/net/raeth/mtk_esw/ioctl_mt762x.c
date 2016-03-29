@@ -320,6 +320,19 @@ static void esw_vlan_pvid_set(u32 port_id, u32 pvid, u32 prio)
 	esw_reg_set(REG_ESW_PORT_PPBV1_P0 + 0x100*port_id, reg_ppbv);
 }
 
+#if !defined (CONFIG_RAETH_ESW_IGMP_SNOOP_OFF)
+void esw_igmp_flood_to_cpu(int flood_to_cpu)
+{
+	u32 reg_imc;
+
+	reg_imc = esw_reg_get(REG_ESW_IMC);
+	reg_imc &= ~((0x7<<28)|(0x7<<12));
+	if (flood_to_cpu)
+		reg_imc |= (0x6<<28)|(0x6<<12);
+	esw_reg_set(REG_ESW_IMC, reg_imc);
+}
+#endif
+
 #if defined (CONFIG_RAETH_ESW_IGMP_SNOOP_HW)
 static void esw_igmp_ports_config(u32 wan_bridge_mode)
 {

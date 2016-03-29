@@ -331,6 +331,31 @@ static void esw_vlan_pvid_set(u32 port_id, u32 pvid, u32 prio)
 	esw_reg_set(REG_ESW_PFC1, reg_pfc1);
 }
 
+#if !defined (CONFIG_RAETH_ESW_IGMP_SNOOP_OFF)
+void esw_igmp_flood_to_cpu(int flood_to_cpu)
+{
+	u32 reg_val;
+
+	/* IGMP */
+	reg_val = esw_reg_get(REG_ESW_PFC1);
+	if (flood_to_cpu)
+		reg_val |=  BIT(23);
+	else
+		reg_val &= ~BIT(23);
+	esw_reg_set(REG_ESW_PFC1, reg_val);
+
+#if !defined (CONFIG_RALINK_RT3052)
+	/* MLD */
+	reg_val = esw_reg_get(REG_ESW_POC2);
+	if (flood_to_cpu)
+		reg_val |=  BIT(25);
+	else
+		reg_val &= ~BIT(25);
+	esw_reg_set(REG_ESW_POC2, reg_val);
+#endif
+}
+#endif
+
 static void esw_mac_table_clear(void)
 {
 	rt305x_esw_mac_table_clear(0);

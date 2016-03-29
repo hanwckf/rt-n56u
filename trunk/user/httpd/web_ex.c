@@ -1618,7 +1618,13 @@ wanlink_hook(int eid, webs_t wp, int argc, char **argv)
 			} else {
 				wan_ifstate = get_if_state(man_ifname, addr4_wan);
 				
-				if (wan_ifstate > 0 && wisp) {
+				if (wan_ifstate > 0 && (wisp ||
+#if !defined (USE_SINGLE_MAC)
+								strcmp(man_ifname, IFNAME_MAC2) == 0 ||
+#endif
+								nvram_get_int("hw_nat_mode") == 2
+							)
+				    ) {
 					wan_bytes_rx = get_ifstats_bytes_rx(man_ifname);
 					wan_bytes_tx = get_ifstats_bytes_tx(man_ifname);
 				}

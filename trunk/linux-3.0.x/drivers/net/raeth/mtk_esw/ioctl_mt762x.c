@@ -327,8 +327,11 @@ void esw_igmp_flood_to_cpu(int flood_to_cpu)
 
 	reg_imc = esw_reg_get(REG_ESW_IMC);
 	reg_imc &= ~((0x7<<28)|(0x7<<12));
+	/* Note: TO_CPU applied to P5 port too and IGMP/MLD P5->WAN will be dropped */
+#if !defined (CONFIG_P4_RGMII_TO_MT7530_GMAC_P5) && !defined (CONFIG_GE2_INTERNAL_GMAC_P5)
 	if (flood_to_cpu)
 		reg_imc |= (0x6<<28)|(0x6<<12);
+#endif
 	esw_reg_set(REG_ESW_IMC, reg_imc);
 }
 #endif

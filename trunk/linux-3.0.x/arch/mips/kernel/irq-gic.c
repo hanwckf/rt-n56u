@@ -124,6 +124,9 @@ static void __init vpe_local_setup(unsigned int numvpes)
 #if defined (CONFIG_CEVT_GIC)
 	GICWRITE(GIC_REG(VPE_LOCAL, GIC_VPE_COMPARE_MAP),
 		GIC_MAP_TO_PIN_MSK | GIC_CPU_INT0);
+#else
+	/* Program MIPS GIC to turn off(mask) local compare interrupt. */
+	GICWRITE(GIC_REG(VPE_LOCAL, GIC_VPE_RMASK), GIC_VPE_RMASK_CMP_MSK);
 #endif
 
 	/*

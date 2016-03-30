@@ -94,11 +94,12 @@ function applyRule(){
 }
 
 function validForm(){
-	var re = new RegExp('^[a-zA-Z0-9][a-zA-Z0-9\-\_\.]*[a-zA-Z0-9\-\_]$','gi');
-	if((document.form.lan_domain.value != "") && (!re.test(document.form.lan_domain.value))){
+	var re = new RegExp('^(?=[a-z0-9])[a-z0-9\-\.]*[a-z0-9]$','gi');
+	var o_dom = document.form.lan_domain;
+	if((o_dom.value != "") && (!re.test(o_dom.value))){
 		alert("<#JS_validchar#>");
-		document.form.lan_domain.focus();
-		document.form.lan_domain.select();
+		o_dom.focus();
+		o_dom.select();
 		return false;
 	}
 

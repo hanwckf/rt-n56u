@@ -240,7 +240,7 @@ fill_dnsmasq_servers(void)
 	if (nvram_get_int("vpnc_pdns") > 0) {
 		wan_dom = nvram_safe_get("vpnc_dom_t");
 		wan_dns = nvram_safe_get("vpnc_dns_t");
-		if (strlen(wan_dom) > 1 && strlen(wan_dns) > 6) {
+		if (strlen(wan_dom) > 0 && strlen(wan_dns) > 6) {
 			foreach(word, wan_dns, next) {
 				if (is_valid_ipv4(word))
 					fprintf(fp, "server=/%s/%s\n", wan_dom, word);
@@ -251,7 +251,7 @@ fill_dnsmasq_servers(void)
 	/* add DNS servers (via specific domain) for MAN subnet */
 	wan_dom = nvram_safe_get("wanx_domain");
 	wan_dns = nvram_safe_get("wanx_dns");
-	if (strlen(wan_dom) > 1 && strlen(wan_dns) > 6) {
+	if (strlen(wan_dom) > 0 && strlen(wan_dns) > 6) {
 		foreach(word, wan_dns, next) {
 			if (is_valid_ipv4(word))
 				fprintf(fp, "server=/%s/%s\n", wan_dom, word);
@@ -350,7 +350,7 @@ start_dns_dhcpd(int is_ap_mode)
 		fprintf(fp, "port=%d\n", 0);
 	}
 
-	if (strlen(domain) > 1) {
+	if (strlen(domain) > 0) {
 		fprintf(fp, "domain=%s\n"
 			    "expand-hosts\n", domain);
 	}
@@ -398,7 +398,7 @@ start_dns_dhcpd(int is_ap_mode)
 			fprintf(fp, "dhcp-option=%d,%s\n", 6, dns_all);
 		
 		/* DOMAIN search */
-		if (strlen(domain) > 1)
+		if (strlen(domain) > 0)
 			fprintf(fp, "dhcp-option=%d,%s\n", 15, domain);
 		
 		/* WINS */
@@ -440,7 +440,7 @@ start_dns_dhcpd(int is_ap_mode)
 			fprintf(fp, "dhcp-option=option6:%d,[::]\n", 23);
 			
 			/* DOMAIN search */
-			if (strlen(domain) > 1)
+			if (strlen(domain) > 0)
 				fprintf(fp, "dhcp-option=option6:%d,%s\n", 24, domain);
 			
 			/* Information Refresh Time */

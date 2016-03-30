@@ -700,17 +700,19 @@ esw_mcast_group_event(const u8 *mac_src, const u8 *mac_dst, const char *dev_name
 	if (mac_src[0] & 0x01)
 		return;
 
-	/* check destination MAC is mapped as reserved IPv4 group (01:00:5E:00:00:XX) */
+	/* check destination MAC is mapped as some reserved IPv4 group (01:00:5E:00:00:XX) */
 	if (mac_dst[0] == 0x01 &&
 	    mac_dst[3] == 0x00 &&
-	    mac_dst[4] == 0x00)
+	    mac_dst[4] == 0x00 &&
+	   (mac_dst[5] <= 0x02 || mac_dst[5] == 0x16 || mac_dst[5] >= 0xFB))
 		return;
 
-	/* check destination MAC is mapped as reserved IPv6 group (33:33:00:00:00:XX) */
+	/* check destination MAC is mapped as some reserved IPv6 group (33:33:00:00:00:XX) */
 	if (mac_dst[0] == 0x33 &&
 	    mac_dst[2] == 0x00 &&
 	    mac_dst[3] == 0x00 &&
-	    mac_dst[4] == 0x00)
+	    mac_dst[4] == 0x00 &&
+	   (mac_dst[5] <= 0x16 || mac_dst[5] == 0xFB))
 		return;
 
 	/* listen eth2.x events only */

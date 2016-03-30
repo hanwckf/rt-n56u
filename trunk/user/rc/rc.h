@@ -121,12 +121,18 @@
  #define KERNEL_MIN_FREE_KBYTES		4096
  #define DNS_RELAY_CACHE_MAX		512
  #define LOG_ROTATE_SIZE_MAX		256
-#else
+#elif BOARD_RAM_SIZE > 16
  #define KERNEL_NET_CORE_RMEM		327680
  #define KERNEL_NET_CORE_WMEM		327680
  #define KERNEL_MIN_FREE_KBYTES		2048
  #define DNS_RELAY_CACHE_MAX		256
  #define LOG_ROTATE_SIZE_MAX		128
+#else
+ #define KERNEL_NET_CORE_RMEM		163840
+ #define KERNEL_NET_CORE_WMEM		163840
+ #define KERNEL_MIN_FREE_KBYTES		1024
+ #define DNS_RELAY_CACHE_MAX		160
+ #define LOG_ROTATE_SIZE_MAX		80
 #endif
 
 //////////////////////////////////////////////////////////

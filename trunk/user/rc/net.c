@@ -764,7 +764,10 @@ void
 set_nf_conntrack(void)
 {
 	int i_nf_nat, i_nf_val;
-#if (BOARD_RAM_SIZE < 64)
+
+#if (BOARD_RAM_SIZE < 32)
+	int i_nf_lim = 4096;
+#elif (BOARD_RAM_SIZE < 64)
 	int i_nf_lim = 16384;
 #elif (BOARD_RAM_SIZE < 128)
 	int i_nf_lim = 65536;

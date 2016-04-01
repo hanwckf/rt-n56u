@@ -396,9 +396,6 @@ static void esw_igmp_mld_snooping(u32 enable_igmp, u32 enable_mld)
 		src_join |= (1u << 4);		// IGMP_JOIN_EN
 	}
 
-	if (enable_mld || enable_igmp)
-		dst_igmp |= (7u << 16);		// IGMP_MIS = Drop
-
 	mask_lan = get_ports_mask_lan(0, 0);
 	for (i = 0; i <= ESW_EPHY_ID_MAX; i++) {
 		if ((mask_lan >> i) & 0x1) {

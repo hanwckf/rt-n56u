@@ -2083,8 +2083,8 @@ ipt_nat_default(void)
 void
 start_firewall_ex(void)
 {
-	int unit, wan_proto, i_tcp_mss, i_use_man;
-	char rp_path[64], logaccept[16], logdrop[16];
+	int unit, wan_proto, i_tcp_mss, i_use_man, i_rp;
+	char logaccept[16], logdrop[16];
 	char wan_if[16], man_if[16], lan_if[16];
 	char wan_ip[16], man_ip[16], lan_ip[16], lan_net[24] = {0};
 	const char *opt_iptables_script = "/opt/bin/update_iptables.sh";
@@ -2115,15 +2115,14 @@ start_firewall_ex(void)
 	}
 
 	/* mcast needs rp filter to be turned off only for non default iface */
-	snprintf(rp_path, sizeof(rp_path), "/proc/sys/net/ipv4/conf/%s/rp_filter", man_if);
+	i_rp = 1;
 	if (nvram_match("mr_enable_x", "1") || nvram_invmatch("udpxy_enable_x", "0")
 #if defined (APP_XUPNPD)
 	 || nvram_invmatch("xupnpd_enable_x", "0")
 #endif
-	)
-		fput_int(rp_path, 0);
-	else
-		fput_int(rp_path, 1);
+	    )
+		i_rp = 0;
+	set_interface_conf_int("ipv4", man_if, "rp_filter", i_rp);
 
 	/* Determine the log type */
 	if (nvram_match("fw_log_x", "accept") || nvram_match("fw_log_x", "both"))

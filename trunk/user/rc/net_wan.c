@@ -270,20 +270,35 @@ get_vlan_vid_wan(void)
 	return vlan_vid;
 }
 
-static void
-remove_vlan_iface(char *vlan_ifname)
+int
+get_wan_bridge_mode(void)
 {
-	doSystem("ifconfig %s %s", vlan_ifname, "down");
-	doSystem("vconfig rem %s", vlan_ifname);
+	int bridge_mode = nvram_get_int("wan_stb_x");
+
+	if (bridge_mode < 0 || bridge_mode > 7)
+		bridge_mode = SWAPI_WAN_BRIDGE_DISABLE;
+
+	return bridge_mode;
+}
+
+int
+get_wan_bridge_iso_mode(int bridge_mode)
+{
+	int bwan_isolation = nvram_get_int("wan_stb_iso");
+
+	if (bwan_isolation < 0 || bwan_isolation > 2 || bridge_mode == SWAPI_WAN_BRIDGE_DISABLE)
+		bwan_isolation = SWAPI_WAN_BWAN_ISOLATION_NONE;
+
+	return bwan_isolation;
 }
 
 static void
 config_vinet_wan(void)
 {
-	char vinet_ifname[32];
 	int vlan_vid[2], vlan_pri, pvid_wan;
 	int is_vlan_filter, is_vlan_ifname;
-	char *vinet_iflast;
+	char vinet_ifname[24];
+	const char *vinet_iflast, *wan_hwaddr;
 #if defined (USE_SINGLE_MAC)
 	const char *ifname_wan_cpu = IFNAME_MAC;
 #else
@@ -315,6 +330,8 @@ config_vinet_wan(void)
 	hw_vlan_tx_map(6, vlan_vid[0]);
 	hw_vlan_tx_map(7, vlan_vid[1]);
 
+	wan_hwaddr = nvram_safe_get("wan_hwaddr");
+
 	is_vlan_ifname = 1;
 	snprintf(vinet_ifname, sizeof(vinet_ifname), "%s.%d", ifname_wan_cpu, vlan_vid[0]);
 #if !defined (USE_SINGLE_MAC)
@@ -330,32 +347,33 @@ config_vinet_wan(void)
 		is_vlan_ifname = 0;
 		snprintf(vinet_ifname, sizeof(vinet_ifname), "%s", IFNAME_MAC2);
 	}
-	
+
 	/* always prepare eth3 interface */
-	doSystem("ifconfig %s hw ether %s", IFNAME_MAC2, nvram_safe_get("wan_hwaddr"));
-	doSystem("ifconfig %s mtu %d up %s", IFNAME_MAC2, 1500, "0.0.0.0");
+	ifconfig(IFNAME_MAC2, 0, NULL, NULL);
+	set_interface_hwaddr(IFNAME_MAC2, wan_hwaddr);
+	set_interface_mtu(IFNAME_MAC2, 1500);
+	ifconfig(IFNAME_MAC2, IFUP, "0.0.0.0", NULL);
 #endif
 
-	/* prevent delete apcli0/apclii0 and default eth2.2/eth3 */
-	vinet_iflast = get_man_ifname(0);
-	if (*vinet_iflast && strstr(vinet_iflast, ".") && strcmp(vinet_iflast, vinet_ifname) &&
-	                     strcmp(vinet_iflast, IFNAME_WAN) && is_interface_exist(vinet_iflast))
+	/* remove previous VLAN interface */
+	vinet_iflast = get_wan_unit_value(0, "viflast");
+	if (*vinet_iflast && strcmp(vinet_iflast, vinet_ifname))
 		remove_vlan_iface(vinet_iflast);
 
 	/* create VLAN interface for INET */
 	if (is_vlan_ifname) {
-		if (!is_interface_exist(vinet_ifname))
-			doSystem("vconfig add %s %d", ifname_wan_cpu, vlan_vid[0]);
-		doSystem("vconfig set_egress_map %s %d %d", vinet_ifname, 0, vlan_pri);
-		doSystem("ifconfig %s hw ether %s", vinet_ifname, nvram_safe_get("wan_hwaddr"));
-		doSystem("ifconfig %s mtu %d up %s", vinet_ifname, 1500, "0.0.0.0");
+#if defined (USE_IPV6)
+		control_if_ipv6(ifname_wan_cpu, 0);
+#endif
+		create_vlan_iface(ifname_wan_cpu, vlan_vid[0], vlan_pri, 1500, wan_hwaddr, 1);
 	}
+
+	set_wan_unit_value(0, "viflast", (is_vlan_ifname) ? vinet_ifname : "");
 
 #if defined (USE_IPV6)
 	if (get_ipv6_type() != IPV6_DISABLED)
 		control_if_ipv6(vinet_ifname, 1);
 #endif
-
 	set_wan_unit_value(0, "ifname", vinet_ifname);
 }
 
@@ -399,8 +417,8 @@ launch_viptv_wan(void)
 {
 	int vlan_vid[2], vlan_pri, pvid_wan;
 	int is_vlan_filter, viptv_mode;
-	char *viptv_iflast, *vinet_iflast, *viptv_addr, *viptv_mask, *viptv_gate;
-	char viptv_ifname[32], rp_path[64];
+	char viptv_ifname[24], *viptv_addr, *viptv_mask, *viptv_gate;
+	const char *viptv_iflast, *vinet_iflast, *wan_hwaddr;
 #if defined (USE_SINGLE_MAC)
 	const char *ifname_wan_cpu = IFNAME_MAC;
 #else
@@ -428,15 +446,14 @@ launch_viptv_wan(void)
 		vlan_pri = 0;
 	}
 
-	vinet_iflast = get_man_ifname(0);
+	vinet_iflast = get_wan_unit_value(0, "viflast");
 	viptv_iflast = nvram_safe_get("viptv_ifname");
 
 	if (vlan_vid[1] == vlan_vid[0]) {
 		/* case1: CPU Internet tagged: n, CPU IPTV tagged: n */
 		/* case2: CPU Internet tagged: y, CPU IPTV tagged: y (common VID) */
 		
-		if (*viptv_iflast && strcmp(viptv_iflast, vinet_iflast) && strcmp(viptv_iflast, IFNAME_WAN) &&
-		                    is_interface_exist(viptv_iflast))
+		if (*viptv_iflast && strcmp(viptv_iflast, vinet_iflast))
 			remove_vlan_iface(viptv_iflast);
 		
 		viptv_ifname[0] = 0;
@@ -453,23 +470,18 @@ launch_viptv_wan(void)
 	snprintf(viptv_ifname, sizeof(viptv_ifname), "%s.%d", ifname_wan_cpu, vlan_vid[1]);
 
 	/* remove previous VLAN interface */
-	if (*viptv_iflast && strcmp(viptv_iflast, vinet_iflast) && strcmp(viptv_iflast, IFNAME_WAN) &&
-	                     strcmp(viptv_iflast, viptv_ifname) && is_interface_exist(viptv_iflast))
+	if (*viptv_iflast && strcmp(viptv_iflast, vinet_iflast) && strcmp(viptv_iflast, viptv_ifname))
 		remove_vlan_iface(viptv_iflast);
 
+	wan_hwaddr = nvram_safe_get("wan_hwaddr");
+
 	/* create VLAN interface for IPTV */
-	if (!is_interface_exist(viptv_ifname))
-		doSystem("vconfig add %s %d", ifname_wan_cpu, vlan_vid[1]);
-
-	doSystem("vconfig set_egress_map %s %d %d", viptv_ifname, 0, vlan_pri);
-	doSystem("ifconfig %s hw ether %s", viptv_ifname, nvram_safe_get("wan_hwaddr"));
-	doSystem("ifconfig %s mtu %d up %s", viptv_ifname, 1500, "0.0.0.0");
-
-	/* disable rp_filter */
-	sprintf(rp_path, "/proc/sys/net/ipv4/conf/%s/rp_filter", viptv_ifname);
-	fput_int(rp_path, 0);
+	create_vlan_iface(ifname_wan_cpu, vlan_vid[1], vlan_pri, 1500, wan_hwaddr, 1);
 
 	nvram_set_temp("viptv_ifname", viptv_ifname);
+
+	/* disable rp_filter */
+	set_interface_conf_int("ipv4", viptv_ifname, "rp_filter", 0);
 
 	viptv_mode = nvram_get_int("viptv_mode");
 	viptv_addr = nvram_safe_get("viptv_ipaddr");
@@ -534,7 +546,7 @@ launch_wanx(char *man_ifname, int unit, int wait_dhcpc, int use_zcip)
 		char *lan_mask = nvram_safe_get("lan_netmask");
 		
 		if (man_mtu >= 1300 && man_mtu < 1500)
-			doSystem("ifconfig %s mtu %d", man_ifname, man_mtu);
+			set_interface_mtu(man_ifname, man_mtu);
 		
 		if (is_same_subnet2(man_addr, lan_addr, man_mask, lan_mask)) {
 			man_err = 1;
@@ -786,7 +798,7 @@ start_wan(void)
 				char *lan_mask = nvram_safe_get("lan_netmask");
 				
 				if (wan_mtu >= 1300 && wan_mtu < 1500)
-					doSystem("ifconfig %s mtu %d", wan_ifname, wan_mtu);
+					set_interface_mtu(wan_ifname, wan_mtu);
 				
 				if (is_same_subnet2(wan_addr, lan_addr, wan_mask, lan_mask)) {
 					wan_err = 1;
@@ -1993,7 +2005,7 @@ udhcpc_bound(char *wan_ifname, int is_renew_mode)
 			ifconfig(wan_ifname, IFUP, "0.0.0.0", NULL);
 		
 		if (!is_renew_mode && (dhcp_mtu >= 1300 && dhcp_mtu < 1500))
-			doSystem("ifconfig %s mtu %d", wan_ifname, dhcp_mtu);
+			set_interface_mtu(wan_ifname, dhcp_mtu);
 		
 		ifconfig(wan_ifname, IFUP, wan_ip, wan_nm);
 		
@@ -2090,7 +2102,7 @@ udhcpc_viptv_bound(char *man_ifname, int is_renew_mode)
 			ifconfig(man_ifname, IFUP, "0.0.0.0", NULL);
 		
 		if (!is_renew_mode && (dhcp_mtu >= 1300 && dhcp_mtu < 1500))
-			doSystem("ifconfig %s mtu %d", man_ifname, dhcp_mtu);
+			set_interface_mtu(man_ifname, dhcp_mtu);
 		
 		ifconfig(man_ifname, IFUP, ip, nm);
 		

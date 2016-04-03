@@ -44,6 +44,7 @@
 
 #include "rc.h"
 #include "switch.h"
+#include "gpio_pins.h"
 
 void
 safe_remove_usb_device(int port, const char *dev_name)

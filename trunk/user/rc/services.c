@@ -418,8 +418,8 @@ start_services_once(int is_ap_mode)
 			start_upnp();
 		
 		if (!nvram_match("lan_stp", "0")) {
-			doSystem("brctl stp %s %d", IFNAME_BR, 1);
-			doSystem("brctl setfd %s %d", IFNAME_BR, 15);
+			br_set_stp(IFNAME_BR, 1);
+			br_set_fd(IFNAME_BR, 15);
 		}
 	} else {
 		start_udpxy(IFNAME_BR);

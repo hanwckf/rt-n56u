@@ -440,7 +440,7 @@ init_sysctl(void)
 	fput_int("/proc/sys/net/core/rmem_max", KERNEL_NET_CORE_RMEM);
 	fput_int("/proc/sys/net/core/wmem_max", KERNEL_NET_CORE_WMEM);
 
-	fput_int("/proc/sys/net/ipv4/conf/all/rp_filter", 0); // new logic for new kernels
+	set_interface_conf_int("ipv4", "all", "rp_filter", 0); // new logic for new kernels
 
 	fput_int("/proc/sys/vm/min_free_kbytes", KERNEL_MIN_FREE_KBYTES);
 	fput_int("/proc/sys/vm/overcommit_memory", 0);

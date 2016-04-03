@@ -113,7 +113,7 @@ init_bridge(int is_ap_mode)
 #if BOARD_RAM_SIZE < 64
 	doSystem("ifconfig %s txqueuelen %d", IFNAME_MAC, SHRINK_TX_QUEUE_LEN);
 #endif
-	doSystem("ifconfig %s hw ether %s", IFNAME_MAC, lan_hwaddr);
+	set_interface_hwaddr(IFNAME_MAC, lan_hwaddr);
 	ifconfig(IFNAME_MAC, IFUP, NULL, NULL);
 
 	switch_config_base();
@@ -127,26 +127,21 @@ init_bridge(int is_ap_mode)
 	if (!is_ap_mode)
 	{
 		/* create VLAN1/2 */
-		doSystem("vconfig add %s %d", IFNAME_MAC, 1);
-		doSystem("vconfig add %s %d", IFNAME_MAC, 2);
-		doSystem("ifconfig %s hw ether %s", IFNAME_LAN, lan_hwaddr);
-		ifconfig(IFNAME_LAN, IFUP, NULL, NULL);
+		create_vlan_iface(IFNAME_MAC, 1, -1, -1, lan_hwaddr, 1);
+		create_vlan_iface(IFNAME_MAC, 2, -1, -1, NULL, 0);
 	}
 #if defined (AP_MODE_LAN_TAGGED)
 	else
 	{
 		/* create VLAN1 */
-		doSystem("vconfig add %s %d", IFNAME_MAC, 1);
-		doSystem("ifconfig %s hw ether %s", IFNAME_LAN, lan_hwaddr);
-		ifconfig(IFNAME_LAN, IFUP, NULL, NULL);
+		create_vlan_iface(IFNAME_MAC, 1, -1, -1, lan_hwaddr, 1);
 	}
 #endif
 #endif
 
 #if defined (USE_RT3352_MII)
 	/* create VLAN3 for guest AP */
-	doSystem("vconfig add %s %d", IFNAME_MAC, INIC_GUEST_VLAN_VID);
-	ifconfig(IFNAME_INIC_GUEST_VLAN, IFUP, NULL, NULL);
+	create_vlan_iface(IFNAME_MAC, INIC_GUEST_VLAN_VID, -1, -1, lan_hwaddr, 1);
 #endif
 
 #if BOARD_2G_IN_SOC
@@ -185,29 +180,26 @@ init_bridge(int is_ap_mode)
 #endif
 #endif
 
-	doSystem("brctl addbr %s", IFNAME_BR);
-	doSystem("brctl stp %s %d", IFNAME_BR, 0);
-	doSystem("brctl setfd %s %d", IFNAME_BR, 2);
-	doSystem("ifconfig %s hw ether %s", IFNAME_BR, lan_hwaddr);
+	br_add_del_bridge(IFNAME_BR, 1);
+	br_set_stp(IFNAME_BR, 0);
+	br_set_fd(IFNAME_BR, 2);
+	set_interface_hwaddr(IFNAME_BR, lan_hwaddr);
 
-	if (!is_ap_mode)
-	{
+	if (!is_ap_mode) {
 		/* add eth2 (or eth2.1) to bridge */
-		doSystem("brctl addif %s %s", IFNAME_BR, IFNAME_LAN);
-	}
-	else
-	{
+		br_add_del_if(IFNAME_BR, IFNAME_LAN, 1);
+	} else {
 #if defined (AP_MODE_LAN_TAGGED)
 		/* add eth2 (or eth2.1) to bridge */
-		doSystem("brctl addif %s %s", IFNAME_BR, IFNAME_LAN);
+		br_add_del_if(IFNAME_BR, IFNAME_LAN, 1);
 #else
 		/* add only eth2 to bridge */
-		doSystem("brctl addif %s %s", IFNAME_BR, IFNAME_MAC);
+		br_add_del_if(IFNAME_BR, IFNAME_MAC, 1);
 #endif
 #if defined (USE_GMAC2_TO_GPHY) || defined (USE_GMAC2_TO_GSW)
 		/* add eth3 to bridge */
-		doSystem("ifconfig %s %s", IFNAME_MAC2, "up");
-		doSystem("brctl addif %s %s", IFNAME_BR, IFNAME_MAC2);
+		ifconfig(IFNAME_MAC2, IFUP, NULL, NULL);
+		br_add_del_if(IFNAME_BR, IFNAME_MAC2, 1);
 #if defined (USE_HW_NAT)
 		/* enable PPE to forward bridge traffic */
 		module_smart_load("hw_nat", "ttl_regen=0");
@@ -299,7 +291,7 @@ init_bridge(int is_ap_mode)
 void
 config_bridge(int is_ap_mode)
 {
-	char bridge_path[64], *wired_ifname;
+	const char *wired_ifname;
 	int multicast_router, multicast_querier, igmp_static_port;
 	int igmp_snoop = nvram_get_int("ether_igmp");
 	int wired_m2u = nvram_get_int("ether_m2u");
@@ -325,18 +317,13 @@ config_bridge(int is_ap_mode)
 #endif
 	}
 
-	snprintf(bridge_path, sizeof(bridge_path), "/sys/class/net/%s/bridge/%s", IFNAME_BR, "multicast_router");
-	fput_int(bridge_path, multicast_router);
-
-	snprintf(bridge_path, sizeof(bridge_path), "/sys/class/net/%s/bridge/%s", IFNAME_BR, "multicast_querier");
-	fput_int(bridge_path, multicast_querier);
+	br_set_param_int(IFNAME_BR, "multicast_router", multicast_router);
+	br_set_param_int(IFNAME_BR, "multicast_querier", multicast_querier);
 
 	/* allow use bridge IP address as IGMP/MLD query source IP (avoid cisco issue) */
-	snprintf(bridge_path, sizeof(bridge_path), "/sys/class/net/%s/bridge/%s", IFNAME_BR, "multicast_query_use_ifaddr");
-	fput_int(bridge_path, 1);
+	br_set_param_int(IFNAME_BR, "multicast_query_use_ifaddr", 1);
 
-	snprintf(bridge_path, sizeof(bridge_path), "/sys/class/net/%s/bridge/%s", IFNAME_BR, "multicast_snooping");
-	fput_int(bridge_path, (igmp_snoop) ? 1 : 0);
+	br_set_param_int(IFNAME_BR, "multicast_snooping", (igmp_snoop) ? 1 : 0);
 
 	brport_set_m2u(wired_ifname, (igmp_snoop && wired_m2u == 1) ? 1 : 0);
 
@@ -421,16 +408,8 @@ switch_config_vlan(int first_call)
 	int vlan_tag[SWAPI_VLAN_RULE_NUM] = {0};
 	unsigned int vrule;
 
-	if (get_ap_mode())
-		return;
-
-	bridge_mode = nvram_get_int("wan_stb_x");
-	if (bridge_mode < 0 || bridge_mode > 7)
-		bridge_mode = SWAPI_WAN_BRIDGE_DISABLE;
-
-	bwan_isolation = nvram_get_int("wan_stb_iso");
-	if (bwan_isolation < 0 || bwan_isolation > 2)
-		bwan_isolation = SWAPI_WAN_BWAN_ISOLATION_NONE;
+	bridge_mode = get_wan_bridge_mode();
+	bwan_isolation = get_wan_bridge_iso_mode(bridge_mode);
 
 	is_vlan_filter = (nvram_match("vlan_filter", "1")) ? 1 : 0;
 	if (is_vlan_filter) {
@@ -484,6 +463,21 @@ switch_config_vlan(int first_call)
 			phy_isolate_inic(0);
 	}
 #endif
+}
+
+void
+restart_switch_config_vlan(void)
+{
+	int pvid_wan = phy_vlan_pvid_wan_get();
+
+	if (get_ap_mode())
+		return;
+
+	notify_reset_detect_link();
+	switch_config_vlan(0);
+
+	if (phy_vlan_pvid_wan_get() != pvid_wan)
+		full_restart_wan();
 }
 
 int
@@ -699,8 +693,8 @@ full_restart_lan(void)
 	reset_lan_vars();
 
 	if (!is_ap_mode) {
-		doSystem("brctl stp %s %d", IFNAME_BR, 0);
-		doSystem("brctl setfd %s %d", IFNAME_BR, 2);
+		br_set_stp(IFNAME_BR, 0);
+		br_set_fd(IFNAME_BR, 2);
 	}
 
 	/* down and up all LAN ports link */
@@ -724,8 +718,8 @@ full_restart_lan(void)
 
 	if (!is_ap_mode) {
 		if (is_lan_stp) {
-			doSystem("brctl stp %s %d", IFNAME_BR, 1);
-			doSystem("brctl setfd %s %d", IFNAME_BR, 15);
+			br_set_stp(IFNAME_BR, 1);
+			br_set_fd(IFNAME_BR, 15);
 		}
 		
 		if (is_wan_err) {

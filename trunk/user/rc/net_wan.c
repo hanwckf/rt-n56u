@@ -292,6 +292,168 @@ get_wan_bridge_iso_mode(int bridge_mode)
 	return bwan_isolation;
 }
 
+#if defined (USE_GMAC2_TO_GPHY) || defined (USE_GMAC2_TO_GSW)
+
+#define BRPREFIX_WAN	"brwan"
+
+static void
+config_soft_bridge_lan(void)
+{
+	char lan_ifname[24];
+	const char *wired_ifname;
+	int igmp_snoop = nvram_get_int("ether_igmp");
+	int wired_m2u = nvram_get_int("ether_m2u");
+
+	snprintf(lan_ifname, sizeof(lan_ifname), "%s.%d", IFNAME_MAC, 1);
+
+	if (get_wan_bridge_mode() != SWAPI_WAN_BRIDGE_DISABLE) {
+		create_vlan_iface(IFNAME_MAC, 1, -1, -1, nvram_safe_get("lan_hwaddr"), 1);
+#if defined (USE_IPV6)
+		control_if_ipv6(lan_ifname, 0);
+#endif
+		br_add_del_if(IFNAME_BR, IFNAME_MAC, 0);
+		br_add_del_if(IFNAME_BR, lan_ifname, 1);
+		wired_ifname = lan_ifname;
+	} else {
+		br_add_del_if(IFNAME_BR, lan_ifname, 0);
+		br_add_del_if(IFNAME_BR, IFNAME_MAC, 1);
+		remove_vlan_iface(lan_ifname);
+		wired_ifname = IFNAME_MAC;
+	}
+
+	brport_set_m2u(wired_ifname, (igmp_snoop && wired_m2u == 1) ? 1 : 0);
+}
+
+static void
+disassembly_bridges_wan(void)
+{
+	int i;
+	char br_ifname[16];
+
+	/* disassembly all wan bridges brwan5..brwan0 */
+	for (i = 5; i >= 0; i--) {
+		snprintf(br_ifname, sizeof(br_ifname), "%s%d", BRPREFIX_WAN, i);
+		if (!is_interface_exist(br_ifname))
+			continue;
+		ifconfig(br_ifname, 0, NULL, NULL);
+		br_del_all_ifs(br_ifname, 1, 1);
+		br_add_del_bridge(br_ifname, 0);
+	}
+}
+
+static void
+config_soft_bridge_wan(int br_id, int vid, int prio, const char *wan_ifname, const char *wan_hwaddr)
+{
+	char br_ifname[16], bwan_ifname[24];
+
+	snprintf(br_ifname, sizeof(br_ifname), "%s%d", BRPREFIX_WAN, br_id);
+
+	if (!is_interface_exist(br_ifname)) {
+		br_add_del_bridge(br_ifname, 1);
+		br_set_stp(br_ifname, 0);
+		br_set_fd(br_ifname, 2);
+		br_set_param_int(br_ifname, "multicast_snooping", 0);
+	} else {
+		ifconfig(br_ifname, 0, NULL, NULL);
+	}
+
+	set_interface_hwaddr(br_ifname, wan_hwaddr);
+	set_interface_mtu(br_ifname, 1500);
+
+	snprintf(bwan_ifname, sizeof(bwan_ifname), "%s.%d", IFNAME_MAC, vid);
+	create_vlan_iface(IFNAME_MAC, vid, prio, -1, wan_hwaddr, 1);
+
+#if defined (USE_IPV6)
+	control_if_ipv6(wan_ifname, 0);
+	control_if_ipv6(bwan_ifname, 0);
+#endif
+	br_add_del_if(br_ifname, wan_ifname, 1);
+	br_add_del_if(br_ifname, bwan_ifname, 1);
+
+	if (br_id < 2) {
+		/* set isolation for INET and IPTV bridges */
+		if (nvram_get_int("wan_stb_iso") == SWAPI_WAN_BWAN_ISOLATION_BETWEEN) {
+			brport_set_param_int(wan_ifname, "isolate_mode", 1);
+			brport_set_param_int(bwan_ifname, "isolate_mode", 1);
+		}
+	} else {
+#if defined (USE_IPV6)
+		control_if_ipv6(br_ifname, 0);
+#endif
+	}
+
+	ifconfig(br_ifname, IFUP, "0.0.0.0", NULL);
+}
+
+static void
+config_soft_bridges_other(int vinet_vid, int viptv_vid, int pvid_wan, const char *wan_hwaddr, int bridge_mode)
+{
+	int i, br_id, port_vid[4], port_pri[4] = {0};
+	char port_ifname[24];
+
+	for (i = 0; i < 4; i++)
+		port_vid[i] = -1;
+
+	switch (bridge_mode)
+	{
+	case SWAPI_WAN_BRIDGE_LAN1:
+	case SWAPI_WAN_BRIDGE_LAN1_LAN2:
+	case SWAPI_WAN_BRIDGE_LAN1_LAN2_LAN3:
+		port_vid[0] = nvram_get_int("vlan_vid_lan1");
+		port_pri[0] = nvram_get_int("vlan_pri_lan1") & 0x07;
+		break;
+	}
+
+	switch (bridge_mode)
+	{
+	case SWAPI_WAN_BRIDGE_LAN2:
+	case SWAPI_WAN_BRIDGE_LAN1_LAN2:
+	case SWAPI_WAN_BRIDGE_LAN1_LAN2_LAN3:
+		port_vid[1] = nvram_get_int("vlan_vid_lan2");
+		port_pri[1] = nvram_get_int("vlan_pri_lan2") & 0x07;
+		break;
+	}
+
+	switch (bridge_mode)
+	{
+	case SWAPI_WAN_BRIDGE_LAN3:
+	case SWAPI_WAN_BRIDGE_LAN3_LAN4:
+	case SWAPI_WAN_BRIDGE_LAN1_LAN2_LAN3:
+		port_vid[2] = nvram_get_int("vlan_vid_lan3");
+		port_pri[2] = nvram_get_int("vlan_pri_lan3") & 0x07;
+		break;
+	}
+
+	switch (bridge_mode)
+	{
+	case SWAPI_WAN_BRIDGE_LAN4:
+	case SWAPI_WAN_BRIDGE_LAN3_LAN4:
+		port_vid[3] = nvram_get_int("vlan_vid_lan4");
+		port_pri[3] = nvram_get_int("vlan_pri_lan4") & 0x07;
+		break;
+	}
+
+	for (i = 0; i < 4; i++) {
+		if (port_vid[i] < 0)
+			continue;
+		if (!is_vlan_vid_valid(port_vid[i]))
+			port_vid[i] = pvid_wan;
+		if (port_vid[i] == vinet_vid || port_vid[i] == viptv_vid)
+			port_vid[i] = 0;
+	}
+
+	br_id = 2;
+	for (i = 0; i < 4; i++) {
+		if (port_vid[i] < 2)
+			continue;
+		snprintf(port_ifname, sizeof(port_ifname), "%s.%d", IFNAME_MAC2, port_vid[i]);
+		create_vlan_iface(IFNAME_MAC2, port_vid[i], port_pri[i], 1500, wan_hwaddr, 1);
+		config_soft_bridge_wan(br_id, port_vid[i], port_pri[i], port_ifname, wan_hwaddr);
+		br_id++;
+	}
+}
+#endif
+
 static void
 config_vinet_wan(void)
 {
@@ -303,6 +465,9 @@ config_vinet_wan(void)
 	const char *ifname_wan_cpu = IFNAME_MAC;
 #else
 	const char *ifname_wan_cpu = IFNAME_MAC2;
+#endif
+#if defined (USE_GMAC2_TO_GPHY) || defined (USE_GMAC2_TO_GSW)
+	int bridge_mode = get_wan_bridge_mode();
 #endif
 
 	is_vlan_filter = (nvram_match("vlan_filter", "1")) ? 1 : 0;
@@ -335,13 +500,13 @@ config_vinet_wan(void)
 	is_vlan_ifname = 1;
 	snprintf(vinet_ifname, sizeof(vinet_ifname), "%s.%d", ifname_wan_cpu, vlan_vid[0]);
 #if !defined (USE_SINGLE_MAC)
-#if !defined (USE_GMAC2_TO_GPHY)
+#if !defined (USE_GMAC2_TO_GPHY) && !defined (USE_GMAC2_TO_GSW)
 	/* case1: CPU Internet tagged: n, CPU IPTV tagged: n */
 	/* case2: CPU Internet tagged: y, CPU IPTV tagged: y (common VID) */
 	if (vlan_vid[0] == vlan_vid[1])
 #else
-	/* case1: CPU Internet tagged: n, CPU IPTV tagged: y or n */
-	if (vlan_vid[0] == pvid_wan)
+	/* case: no VLAN filter */
+	if (!is_vlan_filter)
 #endif
 	{
 		is_vlan_ifname = 0;
@@ -369,6 +534,15 @@ config_vinet_wan(void)
 	}
 
 	set_wan_unit_value(0, "viflast", (is_vlan_ifname) ? vinet_ifname : "");
+
+#if defined (USE_GMAC2_TO_GPHY) || defined (USE_GMAC2_TO_GSW)
+	if (bridge_mode != SWAPI_WAN_BRIDGE_DISABLE && is_vlan_filter)
+		config_soft_bridges_other(vlan_vid[0], vlan_vid[1], pvid_wan, wan_hwaddr, bridge_mode);
+	if (bridge_mode != SWAPI_WAN_BRIDGE_DISABLE) {
+		config_soft_bridge_wan(0, vlan_vid[0], vlan_pri, vinet_ifname, wan_hwaddr);
+		snprintf(vinet_ifname, sizeof(vinet_ifname), "%s%d", BRPREFIX_WAN, 0);
+	}
+#endif
 
 #if defined (USE_IPV6)
 	if (get_ipv6_type() != IPV6_DISABLED)
@@ -479,6 +653,13 @@ launch_viptv_wan(void)
 	create_vlan_iface(ifname_wan_cpu, vlan_vid[1], vlan_pri, 1500, wan_hwaddr, 1);
 
 	nvram_set_temp("viptv_ifname", viptv_ifname);
+
+#if defined (USE_GMAC2_TO_GPHY) || defined (USE_GMAC2_TO_GSW)
+	if (get_wan_bridge_mode() != SWAPI_WAN_BRIDGE_DISABLE) {
+		config_soft_bridge_wan(1, vlan_vid[1], vlan_pri, viptv_ifname, wan_hwaddr);
+		snprintf(viptv_ifname, sizeof(viptv_ifname), "%s%d", BRPREFIX_WAN, 1);
+	}
+#endif
 
 	/* disable rp_filter */
 	set_interface_conf_int("ipv4", viptv_ifname, "rp_filter", 0);
@@ -1282,6 +1463,11 @@ full_restart_wan(void)
 
 	notify_reset_detect_link();
 	switch_config_vlan(0);
+
+#if defined (USE_GMAC2_TO_GPHY) || defined (USE_GMAC2_TO_GSW)
+	disassembly_bridges_wan();
+	config_soft_bridge_lan();
+#endif
 
 	start_wan();
 

@@ -80,14 +80,6 @@ function initial(){
 		document.form.wan_stb_iso.remove(2);
 	}
 
-	if (typeof(support_wan_bridge) === 'function'){
-		if (!support_wan_bridge()) {
-			document.form.wan_stb_x.SelectedIndex = 0;
-			document.form.wan_src_phy.SelectedIndex = 0;
-			showhide_div('row_wan_stb_x', 0);
-		}
-	}
-
 	change_wan_type(document.form.wan_proto.value, 0);
 	fixed_change_wan_type(document.form.wan_proto.value);
 
@@ -1046,7 +1038,7 @@ function simplyMAC(fullMAC){
                                         <tr>
                                             <th colspan="2" style="background-color: #E3E3E3;"><#WAN_Bridge#></th>
                                         </tr>
-                                        <tr id="row_wan_stb_x">
+                                        <tr>
                                             <th><a class="help_tooltip" href="javascript:void(0);" onmouseover="openTooltip(this,7,22);"><#Layer3Forwarding_x_STB_itemname#></a></th>
                                             <td>
                                                 <select name="wan_stb_x" class="input" onChange="change_stb_port_and_vlan();">

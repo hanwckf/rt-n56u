@@ -2150,11 +2150,6 @@ ej_firmware_caps_hook(int eid, webs_t wp, int argc, char **argv)
 	int has_switch_type = 10; // RT3052/RT3352/RT5350 Embedded ESW
 #endif
 #endif
-#if defined (USE_GMAC2_TO_GPHY) || defined (USE_GMAC2_TO_GSW)
-	int has_wan_bridge = 0;
-#else
-	int has_wan_bridge = 1;
-#endif
 #if defined (BOARD_GPIO_BTN_ROUTER) || defined (BOARD_GPIO_BTN_AP)
 	int has_btn_mode = 1;
 #else
@@ -2225,7 +2220,6 @@ ej_firmware_caps_hook(int eid, webs_t wp, int argc, char **argv)
 		"function support_num_usb() { return %d;}\n"
 		"function support_storage() { return %d;}\n"
 		"function support_switch_type() { return %d;}\n"
-		"function support_wan_bridge() { return %d;}\n"
 		"function support_num_ephy() { return %d;}\n"
 		"function support_ephy_w1000() { return %d;}\n"
 		"function support_ephy_l1000() { return %d;}\n"
@@ -2253,7 +2247,6 @@ ej_firmware_caps_hook(int eid, webs_t wp, int argc, char **argv)
 		BOARD_NUM_USB_PORTS,
 		has_stor,
 		has_switch_type,
-		has_wan_bridge,
 		BOARD_NUM_ETH_EPHY,
 		BOARD_HAS_EPHY_W1000,
 		BOARD_HAS_EPHY_L1000,

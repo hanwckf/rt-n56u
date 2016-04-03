@@ -187,6 +187,12 @@ init_bridge(int is_ap_mode)
 
 	if (!is_ap_mode) {
 		/* add eth2 (or eth2.1) to bridge */
+#if defined (USE_GMAC2_TO_GPHY) || defined (USE_GMAC2_TO_GSW)
+		if (get_wan_bridge_mode() != SWAPI_WAN_BRIDGE_DISABLE) {
+			create_vlan_iface(IFNAME_MAC, 1, -1, -1, lan_hwaddr, 1);
+			br_add_del_if(IFNAME_BR, "eth2.1", 1);
+		} else
+#endif
 		br_add_del_if(IFNAME_BR, IFNAME_LAN, 1);
 	} else {
 #if defined (AP_MODE_LAN_TAGGED)
@@ -306,6 +312,10 @@ config_bridge(int is_ap_mode)
 			multicast_querier = 1;  // bridge is needed internal mcast querier (for eth2-ra0-rai0 snooping work)
 		}
 		wired_ifname = IFNAME_LAN;
+#if defined (USE_GMAC2_TO_GPHY) || defined (USE_GMAC2_TO_GSW)
+		if (get_wan_bridge_mode() != SWAPI_WAN_BRIDGE_DISABLE)
+			wired_ifname = "eth2.1";
+#endif
 	} else {
 		igmp_static_port = nvram_get_int("ether_uport");
 		multicast_router = 0;   // bridge is not mcast router path
@@ -468,7 +478,9 @@ switch_config_vlan(int first_call)
 void
 restart_switch_config_vlan(void)
 {
+#if !defined (USE_GMAC2_TO_GPHY) && !defined (USE_GMAC2_TO_GSW)
 	int pvid_wan = phy_vlan_pvid_wan_get();
+#endif
 
 	if (get_ap_mode())
 		return;
@@ -476,7 +488,9 @@ restart_switch_config_vlan(void)
 	notify_reset_detect_link();
 	switch_config_vlan(0);
 
+#if !defined (USE_GMAC2_TO_GPHY) && !defined (USE_GMAC2_TO_GSW)
 	if (phy_vlan_pvid_wan_get() != pvid_wan)
+#endif
 		full_restart_wan();
 }
 

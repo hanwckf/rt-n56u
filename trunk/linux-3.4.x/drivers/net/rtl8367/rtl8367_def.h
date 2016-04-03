@@ -21,7 +21,7 @@
 
 //#define RTL8367_DBG 1
 
-#define RTL8367_VERSION				"v3.0"
+#define RTL8367_VERSION				"v3.1"
 
 #define RTL8367_DEVNAME				"rtl8367"
 
@@ -134,6 +134,9 @@
  #define MASK_LAN_PORT_6			0
  #define MASK_LAN_PORT_7			0
 #endif
+
+#define MASK_LAN_PORTS_ALL			(MASK_LAN_PORT_1|MASK_LAN_PORT_2|MASK_LAN_PORT_3|MASK_LAN_PORT_4| \
+						 MASK_LAN_PORT_5|MASK_LAN_PORT_6|MASK_LAN_PORT_7)
 
 #if defined(CONFIG_RTL8367_ASIC_RB)
  #define ASIC_NAME "RTL8367RB"

@@ -285,8 +285,7 @@ u32 get_phy_ports_mask_lan(u32 include_cpu)
 
 	wan_bridge_mode = g_wan_bridge_mode;
 
-	portmask_lan = MASK_LAN_PORT_1 | MASK_LAN_PORT_2 | MASK_LAN_PORT_3 | MASK_LAN_PORT_4 |
-		       MASK_LAN_PORT_5 | MASK_LAN_PORT_6 | MASK_LAN_PORT_7;
+	portmask_lan = MASK_LAN_PORTS_ALL;
 	if (include_cpu)
 		portmask_lan |= MASK_LAN_PORT_CPU;
 
@@ -528,61 +527,25 @@ static void asic_bridge_isolate(u32 wan_bridge_mode, u32 bwan_isolated_mode)
 #if defined(RTL8367_SINGLE_EXTIF)
 			if (i == WAN_PORT_CPU) {
 				/* force add all LAN ports to forward from CPU */
-				fwd_mask.bits[0] |= MASK_LAN_PORT_1 | MASK_LAN_PORT_2 | MASK_LAN_PORT_3 | MASK_LAN_PORT_4 |
-						    MASK_LAN_PORT_5 | MASK_LAN_PORT_6 | MASK_LAN_PORT_7;
+				fwd_mask.bits[0] |= MASK_LAN_PORTS_ALL;
 #if defined(EXT_PORT_INIC)
 				/* force add iNIC port to forward from CPU */
 				fwd_mask.bits[0] |= (1u << EXT_PORT_INIC);
 #endif
 			}
 #endif
+#if !defined(MCM_WAN_PORT_X)
 			if (bwan_isolated_mode == SWAPI_WAN_BWAN_ISOLATION_FROM_CPU) {
-				switch(i)
-				{
-				case WAN_PORT_CPU:
-					fwd_mask.bits[0] &= ~(fwd_mask_bwan_lan);
-					break;
-				case LAN_PORT_1:
-				case LAN_PORT_2:
-				case LAN_PORT_3:
-				case LAN_PORT_4:
-#if defined(CONFIG_RTL8370_ASIC_M)
-				case LAN_PORT_5:
-				case LAN_PORT_6:
-				case LAN_PORT_7:
-#endif
+				if (i == WAN_PORT_CPU)
+					fwd_mask.bits[0] &= ~fwd_mask_bwan_lan;
+				else if ((1u << i) & MASK_LAN_PORTS_ALL)
 					fwd_mask.bits[0] &= ~MASK_WAN_PORT_CPU;
-					break;
-				}
-			} else if (bwan_isolated_mode == SWAPI_WAN_BWAN_ISOLATION_BETWEEN) {
-				switch(i)
-				{
-				case WAN_PORT_X:
-					fwd_mask.bits[0] &= ~(MASK_LAN_PORT_1|MASK_LAN_PORT_2|MASK_LAN_PORT_3|MASK_LAN_PORT_4|MASK_LAN_PORT_5|MASK_LAN_PORT_6|MASK_LAN_PORT_7);
-					break;
-				case LAN_PORT_1:
-					fwd_mask.bits[0] &= ~(MASK_WAN_PORT_X|MASK_LAN_PORT_2|MASK_LAN_PORT_3|MASK_LAN_PORT_4|MASK_LAN_PORT_5|MASK_LAN_PORT_6|MASK_LAN_PORT_7);
-					break;
-				case LAN_PORT_2:
-					fwd_mask.bits[0] &= ~(MASK_WAN_PORT_X|MASK_LAN_PORT_1|MASK_LAN_PORT_3|MASK_LAN_PORT_4|MASK_LAN_PORT_5|MASK_LAN_PORT_6|MASK_LAN_PORT_7);
-					break;
-				case LAN_PORT_3:
-					fwd_mask.bits[0] &= ~(MASK_WAN_PORT_X|MASK_LAN_PORT_1|MASK_LAN_PORT_2|MASK_LAN_PORT_4|MASK_LAN_PORT_5|MASK_LAN_PORT_6|MASK_LAN_PORT_7);
-					break;
-				case LAN_PORT_4:
-					fwd_mask.bits[0] &= ~(MASK_WAN_PORT_X|MASK_LAN_PORT_1|MASK_LAN_PORT_2|MASK_LAN_PORT_3|MASK_LAN_PORT_5|MASK_LAN_PORT_6|MASK_LAN_PORT_7);
-					break;
-#if defined(CONFIG_RTL8370_ASIC_M)
-				case LAN_PORT_5:
-					fwd_mask.bits[0] &= ~(MASK_WAN_PORT_X|MASK_LAN_PORT_1|MASK_LAN_PORT_2|MASK_LAN_PORT_3|MASK_LAN_PORT_4|MASK_LAN_PORT_6|MASK_LAN_PORT_7);
-					break;
-				case LAN_PORT_6:
-					fwd_mask.bits[0] &= ~(MASK_WAN_PORT_X|MASK_LAN_PORT_1|MASK_LAN_PORT_2|MASK_LAN_PORT_3|MASK_LAN_PORT_4|MASK_LAN_PORT_5|MASK_LAN_PORT_7);
-					break;
-				case LAN_PORT_7:
-					fwd_mask.bits[0] &= ~(MASK_WAN_PORT_X|MASK_LAN_PORT_1|MASK_LAN_PORT_2|MASK_LAN_PORT_3|MASK_LAN_PORT_4|MASK_LAN_PORT_5|MASK_LAN_PORT_6);
-					break;
+			} else
 #endif
+			if (bwan_isolated_mode == SWAPI_WAN_BWAN_ISOLATION_BETWEEN) {
+				if (i <= RTK_PHY_ID_MAX) {
+					fwd_mask.bits[0] &= ~(MASK_WAN_PORT_X|MASK_LAN_PORTS_ALL);
+					fwd_mask.bits[0] |= (1u << i);
 				}
 			}
 			
@@ -991,7 +954,7 @@ static void asic_vlan_apply_rules(u32 wan_bridge_mode)
 		}
 	}
 
-#if !defined(RTL8367_SINGLE_EXTIF) || defined(MCM_WAN_PORT_X)
+#if !defined(RTL8367_SINGLE_EXTIF)
 	/* if INET and IPTV tagged with common VID, untag WAN_CPU + use PVID */
 	if (tagg[SWAPI_VLAN_RULE_WAN_INET] && pvid[SWAPI_VLAN_RULE_WAN_INET] == pvid[SWAPI_VLAN_RULE_WAN_IPTV]) {
 		/* update VID #2 members (do not forward untagged packets to WAN_CPU) */
@@ -1003,6 +966,16 @@ static void asic_vlan_apply_rules(u32 wan_bridge_mode)
 		pvlan_member_cpu_wan.pvid = cvid;
 		pvlan_member_cpu_wan.prio = prio[SWAPI_VLAN_RULE_WAN_IPTV];
 	} else if (!tagg[SWAPI_VLAN_RULE_WAN_INET] && !tagg[SWAPI_VLAN_RULE_WAN_IPTV]) {
+		/* update VID #2 untag members */
+		vlan_entry[1].port_untag |= MASK_WAN_PORT_CPU;
+	} else {
+		/* mark CPU WAN as tagged */
+		pvlan_member_cpu_wan.tagg = 1;
+	}
+#endif
+
+#if defined(MCM_WAN_PORT_X)
+	if (!vlan_filter_on) {
 		/* update VID #2 untag members */
 		vlan_entry[1].port_untag |= MASK_WAN_PORT_CPU;
 	} else {
@@ -1047,7 +1020,10 @@ static void asic_vlan_apply_rules(u32 wan_bridge_mode)
 					vlan_entry[vlan_idx].cvid = cvid;
 				}
 				vlan_entry[vlan_idx].port_member |= ((1u << i) | (1u << WAN_PORT_X));
-				if (g_wan_bridge_isolated_mode != SWAPI_WAN_BWAN_ISOLATION_FROM_CPU) {
+#if !defined(MCM_WAN_PORT_X)
+				if (g_wan_bridge_isolated_mode != SWAPI_WAN_BWAN_ISOLATION_FROM_CPU)
+#endif
+				{
 					vlan_entry[vlan_idx].port_member |= MASK_WAN_PORT_CPU;
 #if !defined(RTL8367_SINGLE_EXTIF)
 					/* mark CPU WAN as tagged */
@@ -1082,6 +1058,8 @@ static void asic_vlan_apply_rules(u32 wan_bridge_mode)
 	for (i = 0; i <= VLAN_ENTRY_ID_MAX; i++) {
 		if (!vlan_entry[i].valid)
 			continue;
+		if (wan_bridge_mode != SWAPI_WAN_BRIDGE_DISABLE)
+			vlan_entry[i].port_untag &= ~MASK_LAN_PORT_CPU;
 		if (vlan_entry[i].port_member & (1u << WAN_PORT_X))
 			vlan_entry[i].port_member &= ~(1u << WAN_PORT_X);
 		if (vlan_entry[i].port_untag & (1u << WAN_PORT_X))
@@ -1528,8 +1506,7 @@ static void asic_reset_mib_all(void)
 {
 	u32 i, portmask;
 
-	portmask = MASK_WAN_PORT_X | MASK_LAN_PORT_1 | MASK_LAN_PORT_2 | MASK_LAN_PORT_3 |
-		   MASK_LAN_PORT_4 | MASK_LAN_PORT_5 | MASK_LAN_PORT_6 | MASK_LAN_PORT_7 |
+	portmask = MASK_WAN_PORT_X | MASK_LAN_PORTS_ALL |
 		   MASK_LAN_PORT_CPU | MASK_WAN_PORT_CPU;
 #if defined(EXT_PORT_INIC)
 	portmask |= (1u << EXT_PORT_INIC);

@@ -89,7 +89,7 @@ u32 get_ports_mask_lan(u32 include_cpu, int is_phy_id)
 
 	wan_bridge_mode = g_wan_bridge_mode;
 
-	portmask_lan = MASK_LAN_PORT_1|MASK_LAN_PORT_2|MASK_LAN_PORT_3|MASK_LAN_PORT_4|MASK_LAN_PORT_5;
+	portmask_lan = MASK_LAN_PORTS_ALL;
 	if (include_cpu)
 		portmask_lan |= MASK_LAN_PORT_CPU;
 
@@ -885,7 +885,10 @@ static void esw_vlan_apply_rules(u32 wan_bridge_mode, u32 wan_bwan_isolation)
 					vlan_entry[vlan_idx].cvid = cvid;
 				}
 				vlan_entry[vlan_idx].port_member |= ((1u << i) | MASK_WAN_PORT_X);
-				if (wan_bwan_isolation != SWAPI_WAN_BWAN_ISOLATION_FROM_CPU) {
+#if !defined (RAETH_GE2_MAC_TO_GPHY)
+				if (wan_bwan_isolation != SWAPI_WAN_BWAN_ISOLATION_FROM_CPU)
+#endif
+				{
 					vlan_entry[vlan_idx].port_member |= MASK_WAN_PORT_CPU;
 #if defined (CONFIG_P4_RGMII_TO_MT7530_GMAC_P5) || defined (CONFIG_GE2_INTERNAL_GMAC_P5)
 					/* mark CPU WAN as tagged */
@@ -909,6 +912,19 @@ static void esw_vlan_apply_rules(u32 wan_bridge_mode, u32 wan_bwan_isolation)
 			}
 		}
 	}
+
+#if defined (RAETH_GE2_MAC_TO_GPHY)
+	for (i = 0; i <= VLAN_ENTRY_ID_MAX; i++) {
+		if (!vlan_entry[i].valid)
+			continue;
+		if (!vlan_entry[i].port_member)
+			continue;
+		if (wan_bridge_mode != SWAPI_WAN_BRIDGE_DISABLE) {
+			vlan_entry[i].port_member |= MASK_LAN_PORT_CPU;
+			vlan_entry[i].port_untag &= ~MASK_LAN_PORT_CPU;
+		}
+	}
+#endif
 
 #if defined (ESW_PORT_PPE)
 	/* add PPE port to members with CPU port */
@@ -939,10 +955,11 @@ static void esw_vlan_apply_rules(u32 wan_bridge_mode, u32 wan_bwan_isolation)
 	/* configure CPU LAN port */
 	esw_vlan_pvid_set(LAN_PORT_CPU, 1, 0);
 	esw_port_accept_set(LAN_PORT_CPU, PORT_ACCEPT_FRAMES_ALL);
-#if defined (MT7530_P6_UNTAGGED)
+#if defined (RAETH_GE2_MAC_TO_GPHY)
+	esw_port_attrib_set(LAN_PORT_CPU, (wan_bridge_mode != SWAPI_WAN_BRIDGE_DISABLE) ? PORT_ATTRIBUTE_USER : PORT_ATTRIBUTE_TRANSPARENT);
+#elif defined (MT7530_P6_UNTAGGED)
 	esw_port_attrib_set(LAN_PORT_CPU, PORT_ATTRIBUTE_TRANSPARENT);
 #else
-	/* P6 always is trunk port */
 	esw_port_attrib_set(LAN_PORT_CPU, PORT_ATTRIBUTE_USER);
 #endif
 
@@ -1060,55 +1077,36 @@ static void esw_mask_bridge_isolate(u32 wan_bridge_mode, u32 wan_bwan_isolation)
 	fwd_mask_wan = get_ports_mask_wan(1, 0);
 	fwd_mask_bwan_lan = fwd_mask_wan & ~(MASK_WAN_PORT_X|MASK_WAN_PORT_CPU);
 
+#if defined (RAETH_GE2_MAC_TO_GPHY)
+	if (wan_bridge_mode != SWAPI_WAN_BRIDGE_DISABLE)
+		fwd_mask_wan |= MASK_LAN_PORT_CPU;
+#endif
+
 	/* WAN forward mask */
 	for (i = 0; i <= ESW_PORT_ID_MAX; i++) {
 		if ((fwd_mask_wan >> i) & 0x1) {
 			fwd_mask = fwd_mask_wan;
+#if defined (RAETH_GE2_MAC_TO_GPHY)
+			/* force add all LAN ports to forward from CPU */
+			if (i == LAN_PORT_CPU)
+				fwd_mask |= MASK_LAN_PORTS_ALL;
+#else
 #if !defined (MT7530_P6_UNTAGGED)
-			if (i == WAN_PORT_CPU) {
-				/* force add all LAN ports to forward from CPU */
-				fwd_mask |= (MASK_LAN_PORT_1|MASK_LAN_PORT_2|MASK_LAN_PORT_3|MASK_LAN_PORT_4|MASK_LAN_PORT_5);
-			}
+			/* force add all LAN ports to forward from CPU */
+			if (i == WAN_PORT_CPU)
+				fwd_mask |= MASK_LAN_PORTS_ALL;
 #endif
 			if (wan_bwan_isolation == SWAPI_WAN_BWAN_ISOLATION_FROM_CPU) {
-				switch(i)
-				{
-				case WAN_PORT_CPU:
-					fwd_mask &= ~(fwd_mask_bwan_lan);
-					break;
-				case LAN_PORT_1:
-				case LAN_PORT_2:
-				case LAN_PORT_3:
-				case LAN_PORT_4:
-#if defined (LAN_PORT_5)
-				case LAN_PORT_5:
+				if (i == WAN_PORT_CPU)
+					fwd_mask &= ~fwd_mask_bwan_lan;
+				else if ((1u << i) & MASK_LAN_PORTS_ALL)
+					fwd_mask &= ~MASK_WAN_PORT_CPU;
+			} else
 #endif
-					fwd_mask &= ~(MASK_WAN_PORT_CPU);
-					break;
-				}
-			} else if (wan_bwan_isolation == SWAPI_WAN_BWAN_ISOLATION_BETWEEN) {
-				switch(i)
-				{
-				case WAN_PORT_X:
-					fwd_mask &= ~(MASK_LAN_PORT_1|MASK_LAN_PORT_2|MASK_LAN_PORT_3|MASK_LAN_PORT_4|MASK_LAN_PORT_5);
-					break;
-				case LAN_PORT_1:
-					fwd_mask &= ~(MASK_WAN_PORT_X|MASK_LAN_PORT_2|MASK_LAN_PORT_3|MASK_LAN_PORT_4|MASK_LAN_PORT_5);
-					break;
-				case LAN_PORT_2:
-					fwd_mask &= ~(MASK_WAN_PORT_X|MASK_LAN_PORT_1|MASK_LAN_PORT_3|MASK_LAN_PORT_4|MASK_LAN_PORT_5);
-					break;
-				case LAN_PORT_3:
-					fwd_mask &= ~(MASK_WAN_PORT_X|MASK_LAN_PORT_1|MASK_LAN_PORT_2|MASK_LAN_PORT_4|MASK_LAN_PORT_5);
-					break;
-				case LAN_PORT_4:
-					fwd_mask &= ~(MASK_WAN_PORT_X|MASK_LAN_PORT_1|MASK_LAN_PORT_2|MASK_LAN_PORT_3|MASK_LAN_PORT_5);
-					break;
-#if defined (LAN_PORT_5)
-				case LAN_PORT_5:
-					fwd_mask &= ~(MASK_WAN_PORT_X|MASK_LAN_PORT_1|MASK_LAN_PORT_2|MASK_LAN_PORT_3|MASK_LAN_PORT_4);
-					break;
-#endif
+			if (wan_bwan_isolation == SWAPI_WAN_BWAN_ISOLATION_BETWEEN) {
+				if (i <= ESW_EPHY_ID_MAX) {
+					fwd_mask &= ~(MASK_WAN_PORT_X|MASK_LAN_PORTS_ALL);
+					fwd_mask |= (1u << i);
 				}
 			}
 			
@@ -1167,7 +1165,7 @@ static void esw_mac_to_phy_enable(void)
 	/* full AN */
 	reg_pmcr = 0x00056330;
 
-	mac_mask = MASK_WAN_PORT_X|MASK_LAN_PORT_1|MASK_LAN_PORT_2|MASK_LAN_PORT_3|MASK_LAN_PORT_4|MASK_LAN_PORT_5;
+	mac_mask = MASK_WAN_PORT_X | MASK_LAN_PORTS_ALL;
 
 	for (i = 0; i <= ESW_EPHY_ID_MAX; i++) {
 		if ((mac_mask >> i) & 0x1)

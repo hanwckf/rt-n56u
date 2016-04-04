@@ -72,7 +72,7 @@
 
 static int checkpubkey(char* algo, unsigned int algolen,
 		unsigned char* keyblob, unsigned int keybloblen);
-static int checkpubkeyperms();
+static int checkpubkeyperms(void);
 static void send_msg_userauth_pk_ok(char* algo, unsigned int algolen,
 		unsigned char* keyblob, unsigned int keybloblen);
 static int checkfileperm(char * filename);

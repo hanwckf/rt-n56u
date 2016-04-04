@@ -32,7 +32,7 @@
 /* this is used to generate unique output from the same hashpool */
 static uint32_t counter = 0;
 /* the max value for the counter, so it won't integer overflow */
-#define MAX_COUNTER 1<<30 
+#define MAX_COUNTER (1<<30)
 
 static unsigned char hashpool[SHA1_HASH_SIZE] = {0};
 static int donerandinit = 0;

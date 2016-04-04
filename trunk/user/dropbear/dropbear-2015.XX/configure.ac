@@ -375,6 +375,9 @@ AC_CHECK_FUNCS(logout updwtmp logwtmp)
 AC_CHECK_HEADERS([mach/mach_time.h])
 AC_CHECK_FUNCS(mach_absolute_time)
 
+AC_CHECK_FUNCS(explicit_bzero memset_s)
+
+
 AC_ARG_ENABLE(bundled-libtom,
 [  --enable-bundled-libtom       Force using bundled libtomcrypt/libtommath even if a system version exists.
   --disable-bundled-libtom      Force using system libtomcrypt/libtommath, fail if it does not exist.

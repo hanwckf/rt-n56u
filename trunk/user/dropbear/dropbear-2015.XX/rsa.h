@@ -30,7 +30,7 @@
 
 #ifdef DROPBEAR_RSA 
 
-#define RSA_SIGNATURE_SIZE 4+7+4+40
+#define RSA_SIGNATURE_SIZE (4+7+4+40)
 
 typedef struct {
 

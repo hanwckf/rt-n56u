@@ -25,8 +25,7 @@
 #ifndef DROPBEAR_BIGNUM_H_
 #define DROPBEAR_BIGNUM_H_
 
-#include "includes.h"
-#include "dbutil.h"
+#include "dbhelpers.h"
 
 void m_mp_init(mp_int *mp);
 void m_mp_init_multi(mp_int *mp, ...) ATTRIB_SENTINEL;

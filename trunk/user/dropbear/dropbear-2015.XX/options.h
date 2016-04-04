@@ -168,6 +168,11 @@ If you test it please contact the Dropbear author */
  * ECDSA above */
 #define DROPBEAR_ECDH
 
+/* Group14 (2048 bit) is recommended. Group1 is less secure (1024 bit) though
+   is the only option for interoperability with some older SSH programs */
+#define DROPBEAR_DH_GROUP1 1
+#define DROPBEAR_DH_GROUP14 1
+
 /* Control the memory/performance/compression tradeoff for zlib.
  * Set windowBits=8 for least memory usage, see your system's
  * zlib.h for full details.

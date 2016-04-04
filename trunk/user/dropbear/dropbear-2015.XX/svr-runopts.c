@@ -152,13 +152,13 @@ void svr_getopts(int argc, char ** argv) {
 	opts.compress_mode = DROPBEAR_COMPRESS_ON;
 #endif
 #endif
-	svr_opts.ipfamily = AF_UNSPEC;
 #ifdef DO_MOTD
 	svr_opts.domotd = 1;
 #endif
 #ifndef DISABLE_SYSLOG
-	svr_opts.usingsyslog = 1;
+	opts.usingsyslog = 1;
 #endif
+	svr_opts.ipfamily = AF_UNSPEC;
 	opts.recv_window = DEFAULT_RECV_WINDOW;
 	opts.keepalive_secs = DEFAULT_KEEPALIVE;
 	opts.idle_timeout_secs = DEFAULT_IDLE_TIMEOUT;
@@ -188,7 +188,7 @@ void svr_getopts(int argc, char ** argv) {
 					break;
 #ifndef DISABLE_SYSLOG
 				case 'E':
-					svr_opts.usingsyslog = 0;
+					opts.usingsyslog = 0;
 					break;
 #endif
 #ifdef ENABLE_SVR_LOCALTCPFWD

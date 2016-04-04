@@ -44,9 +44,9 @@ char *basename(const char* path);
 #endif
 
 #ifndef HAVE_GETUSERSHELL
-char *getusershell();
-void setusershell();
-void endusershell();
+char *getusershell(void);
+void setusershell(void);
+void endusershell(void);
 #endif
 
 #ifndef DROPBEAR_PATH_DEVNULL

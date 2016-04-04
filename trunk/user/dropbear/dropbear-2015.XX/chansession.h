@@ -86,14 +86,14 @@ struct ChildPid {
 
 void addnewvar(const char* param, const char* var);
 
-void cli_send_chansess_request();
-void cli_tty_cleanup();
-void cli_chansess_winchange();
+void cli_send_chansess_request(void);
+void cli_tty_cleanup(void);
+void cli_chansess_winchange(void);
 #ifdef ENABLE_CLI_NETCAT
-void cli_send_netcat_request();
+void cli_send_netcat_request(void);
 #endif
 
-void svr_chansessinitialise();
+void svr_chansessinitialise(void);
 extern const struct ChanType svrchansess;
 
 struct SigMap {

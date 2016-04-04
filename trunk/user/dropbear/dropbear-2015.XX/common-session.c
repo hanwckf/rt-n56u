@@ -36,10 +36,10 @@
 #include "runopts.h"
 #include "netio.h"
 
-static void checktimeouts();
-static long select_timeout();
+static void checktimeouts(void);
+static long select_timeout(void);
 static int ident_readln(int fd, char* buf, int count);
-static void read_session_identification();
+static void read_session_identification(void);
 
 struct sshsession ses; /* GLOBAL */
 

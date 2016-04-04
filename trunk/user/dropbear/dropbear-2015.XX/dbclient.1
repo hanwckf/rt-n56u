@@ -114,7 +114,8 @@ Disconnect the session if no traffic is transmitted or received for \fIidle_time
 .B \-J \fIproxy_command
 Use the standard input/output of the program \fIproxy_command\fR rather than using
 a normal TCP connection. A hostname should be still be provided, as this is used for
-comparing saved hostkeys.
+comparing saved hostkeys. This command will be executed as "exec proxy_command ..." with the
+default shell.
 .TP
 .B \-B \fIendhost:endport
 "Netcat-alike" mode, where Dropbear will connect to the given host, then create a
@@ -126,6 +127,22 @@ Specify a comma separated list of ciphers to enable. Use \fI-c help\fR to list p
 .TP
 .B \-m \fIMAClist
 Specify a comma separated list of authentication MACs to enable. Use \fI-m help\fR to list possibilities.
+.TP
+.B \-o \fIoption
+Can be used to give options in the format used by OpenSSH config file. This is
+useful for specifying options for which there is no separate command-line flag.
+For full details of the options listed below, and their possible values, see
+ssh_config(5).
+
+For now following options have been implemented:
+.RS
+.TP
+.B ExitOnForwardFailure
+Specifies whether dbclient should terminate the connection if it cannot set up all requested local and remote port forwardings. The argument must be “yes” or “no”.  The default is “no”.
+.TP
+.B UseSyslog
+Send dbclient log messages to syslog in addition to stderr.
+.RE
 .TP
 .B \-s 
 The specified command will be requested as a subsystem, used for sftp. Dropbear doesn't implement sftp itself but the OpenSSH sftp client can be used eg \fIsftp -S dbclient user@host\fR

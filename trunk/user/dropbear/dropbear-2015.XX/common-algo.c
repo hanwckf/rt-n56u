@@ -27,7 +27,7 @@
 #include "algo.h"
 #include "session.h"
 #include "dbutil.h"
-#include "kex.h"
+#include "dh_groups.h"
 #include "ltc_prng.h"
 #include "ecc.h"
 
@@ -248,20 +248,30 @@ algo_type sshhostkey[] = {
 	{NULL, 0, NULL, 0, NULL}
 };
 
+#if DROPBEAR_DH_GROUP1
 static const struct dropbear_kex kex_dh_group1 = {DROPBEAR_KEX_NORMAL_DH, dh_p_1, DH_P_1_LEN, NULL, &sha1_desc };
-static const struct dropbear_kex kex_dh_group14 = {DROPBEAR_KEX_NORMAL_DH, dh_p_14, DH_P_14_LEN, NULL, &sha1_desc };
+#endif
+#if DROPBEAR_DH_GROUP14
+static const struct dropbear_kex kex_dh_group14_sha1 = {DROPBEAR_KEX_NORMAL_DH, dh_p_14, DH_P_14_LEN, NULL, &sha1_desc };
+#if DROPBEAR_DH_GROUP14_256
+static const struct dropbear_kex kex_dh_group14_sha256 = {DROPBEAR_KEX_NORMAL_DH, dh_p_14, DH_P_14_LEN, NULL, &sha256_desc };
+#endif
+#endif
+#if DROPBEAR_DH_GROUP16
+static const struct dropbear_kex kex_dh_group16_sha512 = {DROPBEAR_KEX_NORMAL_DH, dh_p_16, DH_P_16_LEN, NULL, &sha512_desc };
+#endif
 
 /* These can't be const since dropbear_ecc_fill_dp() fills out
  ecc_curve at runtime */
 #ifdef DROPBEAR_ECDH
 #ifdef DROPBEAR_ECC_256
-static struct dropbear_kex kex_ecdh_nistp256 = {DROPBEAR_KEX_ECDH, NULL, 0, &ecc_curve_nistp256, &sha256_desc };
+static const struct dropbear_kex kex_ecdh_nistp256 = {DROPBEAR_KEX_ECDH, NULL, 0, &ecc_curve_nistp256, &sha256_desc };
 #endif
 #ifdef DROPBEAR_ECC_384
-static struct dropbear_kex kex_ecdh_nistp384 = {DROPBEAR_KEX_ECDH, NULL, 0, &ecc_curve_nistp384, &sha384_desc };
+static const struct dropbear_kex kex_ecdh_nistp384 = {DROPBEAR_KEX_ECDH, NULL, 0, &ecc_curve_nistp384, &sha384_desc };
 #endif
 #ifdef DROPBEAR_ECC_521
-static struct dropbear_kex kex_ecdh_nistp521 = {DROPBEAR_KEX_ECDH, NULL, 0, &ecc_curve_nistp521, &sha512_desc };
+static const struct dropbear_kex kex_ecdh_nistp521 = {DROPBEAR_KEX_ECDH, NULL, 0, &ecc_curve_nistp521, &sha512_desc };
 #endif
 #endif /* DROPBEAR_ECDH */
 
@@ -285,8 +295,18 @@ algo_type sshkex[] = {
 	{"ecdh-sha2-nistp256", 0, &kex_ecdh_nistp256, 1, NULL},
 #endif
 #endif
-	{"diffie-hellman-group14-sha1", 0, &kex_dh_group14, 1, NULL},
+#if DROPBEAR_DH_GROUP14
+#if DROPBEAR_DH_GROUP14_256
+	{"diffie-hellman-group14-sha256", 0, &kex_dh_group14_sha256, 1, NULL},
+#endif
+	{"diffie-hellman-group14-sha1", 0, &kex_dh_group14_sha1, 1, NULL},
+#endif
+#if DROPBEAR_DH_GROUP1
 	{"diffie-hellman-group1-sha1", 0, &kex_dh_group1, 1, NULL},
+#endif
+#if DROPBEAR_DH_GROUP16
+	{"diffie-hellman-group16-sha512", 0, &kex_dh_group16_sha512, 1, NULL},
+#endif
 #ifdef USE_KEXGUESS2
 	{KEXGUESS2_ALGO_NAME, KEXGUESS2_ALGO_ID, NULL, 1, NULL},
 #endif
@@ -318,7 +338,7 @@ void buf_put_algolist(buffer * buf, algo_type localalgos[]) {
 	unsigned int donefirst = 0;
 	buffer *algolist = NULL;
 
-	algolist = buf_new(200);
+	algolist = buf_new(300);
 	for (i = 0; localalgos[i].name != NULL; i++) {
 		if (localalgos[i].usable) {
 			if (donefirst)

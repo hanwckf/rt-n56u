@@ -138,7 +138,7 @@ static void svr_ensure_hostkey() {
 			break;
 #endif
 		default:
-			(void)0;
+			dropbear_assert(0);
 	}
 
 	if (readhostkey(fn, svr_opts.hostkey, &type) == DROPBEAR_SUCCESS) {

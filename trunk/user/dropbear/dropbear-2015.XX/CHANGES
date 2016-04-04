@@ -1,8 +1,44 @@
+2016.73 - 18 March 2016
+
+- Support syslog in dbclient, option -o usesyslog=yes. Patch from Konstantin Tokarev
+
+- Kill a proxycommand when dbclient exits, patch from Konstantin Tokarev
+
+- Option to exit when a TCP forward fails, patch from Konstantin Tokarev
+
+- New "-o" option parsing from Konstantin Tokarev. This allows handling some extra options
+  in the style of OpenSSH, though implementing all OpenSSH options is not planned.
+
+- Fix crash when fallback initshells() is used, reported by Michael Nowak and Mike Tzou
+
+- Allow specifying commands eg "dropbearmulti dbclient ..." instead of symlinks
+
+- Various cleanups for issues found by a lint tool, patch from Francois Perrad
+
+- Fix tab indent consistency, patch from Francois Perrad
+
+- Fix issues found by cppcheck, reported by Mike Tzou
+
+- Use system memset_s() or explicit_bzero() if available to clear memory. Also make
+  libtomcrypt/libtommath routines use that (or Dropbear's own m_burn()).
+
+- Prevent scp failing when the local user doesn't exist. Based on patch from Michael Witten.
+
+- Improved Travis CI test running, thanks to Mike Tzou
+
+- Improve some code that was flagged by Coverity and Fortify Static Code Analyzer
+
+2016.72 - 9 March 2016
+
+- Validate X11 forwarding input. Could allow bypass of authorized_keys command= restrictions,
+  found by github.com/tintinweb. Thanks for Damien Miller for a patch. CVE-2016-3116
+
 2015.71 - 3 December 2015
 
 - Fix "bad buf_incrpos" when data is transferred, broke in 2015.69
 
-- Fix crash on exit when -p address:port is used, broke in 2015.68
+- Fix crash on exit when -p address:port is used, broke in 2015.68, thanks to
+  Frank Stollenwerk for reporting and investigation
 
 - Fix building with only ENABLE_CLI_REMOTETCPFWD given, patch from Konstantin Tokarev
 

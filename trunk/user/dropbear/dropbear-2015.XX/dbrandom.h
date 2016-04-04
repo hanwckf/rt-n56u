@@ -27,7 +27,7 @@
 
 #include "includes.h"
 
-void seedrandom();
+void seedrandom(void);
 void genrandom(unsigned char* buf, unsigned int len);
 void addrandom(unsigned char * buf, unsigned int len);
 void gen_random_mpint(mp_int *max, mp_int *rand);

@@ -52,28 +52,28 @@ out:
 /* returns 0 on failure */
 static int get_default_bits(enum signkey_type keytype)
 {
-        switch (keytype) {
+	switch (keytype) {
 #ifdef DROPBEAR_RSA
-            case DROPBEAR_SIGNKEY_RSA:
-				return RSA_DEFAULT_SIZE;
+		case DROPBEAR_SIGNKEY_RSA:
+			return RSA_DEFAULT_SIZE;
 #endif
 #ifdef DROPBEAR_DSS
-            case DROPBEAR_SIGNKEY_DSS:
-                return DSS_DEFAULT_SIZE;
+		case DROPBEAR_SIGNKEY_DSS:
+			return DSS_DEFAULT_SIZE;
 #endif
 #ifdef DROPBEAR_ECDSA
-            case DROPBEAR_SIGNKEY_ECDSA_KEYGEN:
-                return ECDSA_DEFAULT_SIZE;
-            case DROPBEAR_SIGNKEY_ECDSA_NISTP521:
-            	return 521;
-            case DROPBEAR_SIGNKEY_ECDSA_NISTP384:
-            	return 384;
-            case DROPBEAR_SIGNKEY_ECDSA_NISTP256:
-            	return 256;
+		case DROPBEAR_SIGNKEY_ECDSA_KEYGEN:
+			return ECDSA_DEFAULT_SIZE;
+		case DROPBEAR_SIGNKEY_ECDSA_NISTP521:
+			return 521;
+		case DROPBEAR_SIGNKEY_ECDSA_NISTP384:
+			return 384;
+		case DROPBEAR_SIGNKEY_ECDSA_NISTP256:
+			return 256;
 #endif
-            default:
-                return 0;
-		}
+		default:
+			return 0;
+	}
 }
 
 int signkey_generate(enum signkey_type keytype, int bits, const char* filename)

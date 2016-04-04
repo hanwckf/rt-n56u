@@ -36,7 +36,7 @@ void set_connect_fds(fd_set *writefd);
 /* Handles ready sockets after select() */
 void handle_connect_fds(fd_set *writefd);
 /* Cleanup */
-void remove_connect_pending();
+void remove_connect_pending(void);
 
 /* Doesn't actually stop the connect, but adds a dummy callback instead */
 void cancel_connect(struct dropbear_progress_connection *c);

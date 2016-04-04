@@ -587,7 +587,7 @@ static void __cpuinit build_tlb_write_entry(u32 **p, struct uasm_label **l,
 static __cpuinit __maybe_unused void build_convert_pte_to_entrylo(u32 **p,
 								  unsigned int reg)
 {
-	if (kernel_uses_smartmips_rixi) {
+	if (cpu_has_rixi) {
 		UASM_i_SRL(p, reg, reg, ilog2(_PAGE_NO_EXEC));
 		UASM_i_ROTR(p, reg, reg, ilog2(_PAGE_GLOBAL) - ilog2(_PAGE_NO_EXEC));
 	} else {
@@ -991,7 +991,7 @@ static void __cpuinit build_update_entries(u32 **p, unsigned int tmp,
 	if (cpu_has_64bits) {
 		uasm_i_ld(p, tmp, 0, ptep); /* get even pte */
 		uasm_i_ld(p, ptep, sizeof(pte_t), ptep); /* get odd pte */
-		if (kernel_uses_smartmips_rixi) {
+		if (cpu_has_rixi) {
 			UASM_i_SRL(p, tmp, tmp, ilog2(_PAGE_NO_EXEC));
 			UASM_i_SRL(p, ptep, ptep, ilog2(_PAGE_NO_EXEC));
 			UASM_i_ROTR(p, tmp, tmp, ilog2(_PAGE_GLOBAL) - ilog2(_PAGE_NO_EXEC));
@@ -1018,7 +1018,7 @@ static void __cpuinit build_update_entries(u32 **p, unsigned int tmp,
 	UASM_i_LW(p, ptep, sizeof(pte_t), ptep); /* get odd pte */
 	if (r45k_bvahwbug())
 		build_tlb_probe_entry(p);
-	if (kernel_uses_smartmips_rixi) {
+	if (cpu_has_rixi) {
 		UASM_i_SRL(p, tmp, tmp, ilog2(_PAGE_NO_EXEC));
 		UASM_i_SRL(p, ptep, ptep, ilog2(_PAGE_NO_EXEC));
 		UASM_i_ROTR(p, tmp, tmp, ilog2(_PAGE_GLOBAL) - ilog2(_PAGE_NO_EXEC));
@@ -1186,7 +1186,7 @@ build_fast_tlb_refill_handler (u32 **p, struct uasm_label **l,
 		UASM_i_LW(p, even, 0, ptr); /* get even pte */
 		UASM_i_LW(p, odd, sizeof(pte_t), ptr); /* get odd pte */
 	}
-	if (kernel_uses_smartmips_rixi) {
+	if (cpu_has_rixi) {
 		uasm_i_dsrl_safe(p, even, even, ilog2(_PAGE_NO_EXEC));
 		uasm_i_dsrl_safe(p, odd, odd, ilog2(_PAGE_NO_EXEC));
 		uasm_i_drotr(p, even, even,
@@ -1552,7 +1552,7 @@ build_pte_present(u32 **p, struct uasm_reloc **r,
 {
 	int t = scratch >= 0 ? scratch : pte;
 
-	if (kernel_uses_smartmips_rixi) {
+	if (cpu_has_rixi) {
 		if (use_bbit_insns()) {
 			uasm_il_bbit0(p, r, pte, ilog2(_PAGE_PRESENT), lid);
 			uasm_i_nop(p);
@@ -1882,7 +1882,7 @@ static void __cpuinit build_r4000_tlb_load_handler(void)
 	if (m4kc_tlbp_war())
 		build_tlb_probe_entry(&p);
 
-	if (kernel_uses_smartmips_rixi) {
+	if (cpu_has_rixi) {
 		/*
 		 * If the page is not _PAGE_VALID, RI or XI could not
 		 * have triggered it.  Skip the expensive test..
@@ -1936,7 +1936,7 @@ static void __cpuinit build_r4000_tlb_load_handler(void)
 	build_pte_present(&p, &r, wr.r1, wr.r2, wr.r3, label_nopage_tlbl);
 	build_tlb_probe_entry(&p);
 
-	if (kernel_uses_smartmips_rixi) {
+	if (cpu_has_rixi) {
 		/*
 		 * If the page is not _PAGE_VALID, RI or XI could not
 		 * have triggered it.  Skip the expensive test..

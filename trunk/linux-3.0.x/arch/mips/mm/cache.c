@@ -94,7 +94,7 @@ void __flush_dcache_page(struct page *page)
 	 * get faulted into the tlb (and thus flushed) anyways.
 	 */
 	if (PageHighMem(page))
-		addr = (unsigned long)kmap_atomic(page);
+		addr = (unsigned long)__kmap_atomic(page);
 	else
 		addr = (unsigned long)page_address(page);
 
@@ -136,7 +136,7 @@ void __update_cache(unsigned long address, pte_t pte)
 	page = pfn_to_page(pfn);
 	if (Page_dcache_dirty(page)) {
 		if (PageHighMem(page))
-			addr = (unsigned long)kmap_atomic(page);
+			addr = (unsigned long)__kmap_atomic(page);
 		else
 			addr = (unsigned long)page_address(page);
 

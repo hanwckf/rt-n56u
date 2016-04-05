@@ -312,7 +312,7 @@ void stop_sit_tunnel(void)
 
 void wan6_up(char *wan_ifname, int unit)
 {
-	int ipv6_type, allow_ra, start_radvd_now;
+	int ipv6_type, allow_ra;
 	char *wan_addr6, *wan_gate6, *wan_addr4;
 
 	ipv6_type = get_ipv6_type();
@@ -324,8 +324,6 @@ void wan6_up(char *wan_ifname, int unit)
 	build_dns6_var();
 
 	control_if_ipv6_dad(IFNAME_BR, 1);
-
-	start_radvd_now = 1;
 
 	if (ipv6_type == IPV6_6IN4 || ipv6_type == IPV6_6TO4 || ipv6_type == IPV6_6RD) {
 		wan_addr4 = get_wan_unit_value(unit, "ipaddr");
@@ -355,13 +353,8 @@ void wan6_up(char *wan_ifname, int unit)
 			/* wait for interface ready */
 			sleep(2);
 			start_dhcp6c(wan_ifname);
-			if (nvram_match("ip6_lan_auto", "1"))
-				start_radvd_now = 0;
 		}
 	}
-
-	if (start_radvd_now)
-		reload_radvd();
 }
 
 void wan6_down(char *wan_ifname, int unit)
@@ -373,7 +366,6 @@ void wan6_down(char *wan_ifname, int unit)
 	if (ipv6_type == IPV6_DISABLED)
 		return;
 
-	stop_radvd();
 	stop_dhcp6c();
 	control_if_ipv6_radv(wan_ifname, 0);
 	control_if_ipv6_autoconf(wan_ifname, 0);
@@ -404,7 +396,7 @@ void wan6_down(char *wan_ifname, int unit)
 
 int dhcp6c_main(int argc, char **argv)
 {
-	int ipv6_type, dns6_auto, lan6_auto, is_need_notify_radvd;
+	int ipv6_type, dns6_auto, lan6_auto;
 	char *dns6_new, *lan_addr6_new;
 	char addr6s[INET6_ADDRSTRLEN];
 
@@ -414,25 +406,18 @@ int dhcp6c_main(int argc, char **argv)
 	if (ipv6_type != IPV6_NATIVE_DHCP6)
 		return 0;
 
-	is_need_notify_radvd = 0;
 	lan6_auto = nvram_get_int("ip6_lan_auto");
 	if (lan6_auto) {
 		lan_addr6_new = get_ifaddr6(IFNAME_BR, 0, addr6s);
-		if (store_lan_addr6(lan_addr6_new))
-			is_need_notify_radvd = 1;
+		store_lan_addr6(lan_addr6_new);
 	}
 
 	dns6_auto = nvram_get_int("ip6_dns_auto");
 	if (dns6_auto) {
 		dns6_new = getenv("new_domain_name_servers");
-		if (store_wan_dns6(dns6_new)) {
+		if (store_wan_dns6(dns6_new))
 			update_resolvconf(0, 0);
-			is_need_notify_radvd = 1;
-		}
 	}
-
-	if (is_need_notify_radvd || !pids("radvd"))
-		reload_radvd();
 
 	return 0;
 }

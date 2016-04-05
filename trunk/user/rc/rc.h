@@ -359,9 +359,6 @@ void clear_lan_addr6(void);
 void reset_lan6_vars(void);
 char *get_lan_addr6_host(char *p_addr6s);
 char *get_lan_addr6_prefix(char *p_addr6s);
-int reload_radvd(void);
-void stop_radvd(void);
-void restart_radvd(void);
 
 /* net_wan6.c */
 int is_wan_dns6_static(void);

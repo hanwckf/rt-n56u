@@ -412,19 +412,37 @@ start_dns_dhcpd(int is_ap_mode)
 		if (i_verbose == 0 || i_verbose == 2)
 			fprintf(fp, "quiet-dhcp\n");
 		
-		is_dhcp_used = 1;
+		is_dhcp_used |= 0x1;
 	}
 
 #if defined (USE_IPV6)
 	if (!is_ap_mode && is_lan_radv_on() == 1) {
 		int i_dhcp6s_mode = get_lan_dhcp6s_mode();
-		if (i_dhcp6s_mode > 0) {
+		
+		fprintf(fp, "enable-ra\n");
+		if (i_verbose == 0 || i_verbose == 1)
+			fprintf(fp, "quiet-ra\n");
+		fprintf(fp, "ra-param=%s,%d,%d\n", IFNAME_BR, 30, 1800);
+		
+		is_dhcp_used |= 0x2;
+		
+		if (i_dhcp6s_mode == 0) {
+			int i_pref_lifetime = 600;
+			
+			if (is_lan_addr6_static() == 1)
+				i_pref_lifetime = 1800;
+			
+			/* Router Advertisement only, disable Stateful, disable SLAAC */
+			fprintf(fp, "dhcp-range=::,constructor:%s%s,%d\n",
+				IFNAME_BR, ",ra-only,ra-names", i_pref_lifetime);
+		} else {
 			int i_dhcp6s_irt = get_lan_dhcp6s_irt();
 			
 			if (i_dhcp6s_mode == 1) {
-				/* Disable Stateful and SLAAC */
-				fprintf(fp, "dhcp-range=::,static,%d\n", 600);
+				fprintf(fp, "dhcp-range=::,constructor:%s%s,%d\n",
+					IFNAME_BR, ",ra-stateless,ra-names", i_dhcp6s_irt);
 			} else {
+				const char *range_mode = "";
 				int i_sflt = nvram_safe_get_int("ip6_lan_sflt", 1800, 120, 604800);
 				int i_sfps = nvram_safe_get_int("ip6_lan_sfps", 4096, 2, 65534);
 				int i_sfpe = nvram_safe_get_int("ip6_lan_sfpe", 4352, 2, 65534);
@@ -432,8 +450,12 @@ start_dns_dhcpd(int is_ap_mode)
 				if (i_sfpe < i_sfps)
 					i_sfpe = i_sfps;
 				
-				/* Enable Stateful, Disable SLAAC */
-				fprintf(fp, "dhcp-range=::%x,::%x,constructor:%s,%d\n", i_sfps, i_sfpe, IFNAME_BR, i_sflt);
+				if (i_dhcp6s_mode > 2)
+					range_mode = ",slaac,ra-names";
+				
+				/* Enable Stateful, Enable/Disable SLAAC */
+				fprintf(fp, "dhcp-range=::%x,::%x,constructor:%s%s,%d\n",
+					i_sfps, i_sfpe, IFNAME_BR, range_mode, i_sflt);
 			}
 			
 			/* DNS server */
@@ -446,16 +468,15 @@ start_dns_dhcpd(int is_ap_mode)
 			/* Information Refresh Time */
 			fprintf(fp, "dhcp-option=option6:%d,%d\n", 32, i_dhcp6s_irt);
 			
-			if (i_verbose == 0 || i_verbose == 1) {
-				fprintf(fp, "quiet-ra\n");
+			if (i_verbose == 0 || i_verbose == 1)
 				fprintf(fp, "quiet-dhcp6\n");
-			}
 			
-			is_dhcp_used = 1;
+			is_dhcp_used |= 0x1;
 		}
 	}
 #endif
-	if (is_dhcp_used) {
+
+	if (is_dhcp_used & 0x1) {
 		fprintf(fp, "dhcp-hostsfile=%s\n", DHCPD_HOSTS_DIR);
 		fprintf(fp, "dhcp-leasefile=%s\n", DHCPD_LEASE_FILE);
 		fprintf(fp, "dhcp-authoritative\n");

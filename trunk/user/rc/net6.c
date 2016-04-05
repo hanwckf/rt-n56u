@@ -148,7 +148,6 @@ void full_restart_ipv6(int ipv6_type_old)
 	}
 
 	stop_upnp();
-	stop_radvd();
 	stop_dhcp6c();
 	stop_dns_dhcpd();
 

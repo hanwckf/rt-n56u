@@ -978,10 +978,9 @@ handle_notifications(void)
 				nvram_ipv6_type = get_ipv6_type();
 			}
 		}
-		else if (strcmp(entry->d_name, RCN_RESTART_RADVD) == 0)
+		else if (strcmp(entry->d_name, RCN_RESTART_RADV) == 0)
 		{
 			restart_dhcpd();
-			restart_radvd();
 		}
 #endif
 		else if (!strcmp(entry->d_name, RCN_RESTART_WAN))

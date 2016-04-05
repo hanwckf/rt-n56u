@@ -35,6 +35,7 @@
 
 #define DHCPD_STATIC_MAX	64
 #define DHCPD_MULTIMAC_MAX	8
+#define DHCPD_RANGE_DEF_TAG	"lan"
 #define DHCPD_HOSTS_DIR		"/etc/dnsmasq/dhcp"
 #define DHCPD_LEASE_FILE	"/tmp/dnsmasq.leases"
 #define UPNPD_LEASE_FILE	"/tmp/miniupnpd.leases"
@@ -183,7 +184,7 @@ fill_static_ethers(const char *lan_ip, const char *lan_mask)
 						smac[0], smac[1], smac[2], smac[3], smac[4], smac[5],
 						smac[6], smac[7], smac[8], smac[9], smac[10], smac[11]);
 				}
-				fprintf(fp[0], "%s\n", sip4);
+				fprintf(fp[0], "set:%s,%s\n", DHCPD_RANGE_DEF_TAG, sip4);
 			}
 			
 			/* use only unique IP for /etc/ethers (ARP binds) */
@@ -365,14 +366,15 @@ start_dns_dhcpd(int is_ap_mode)
 			nvram_set("dhcp_end", dhcp_end);
 		}
 		
-		fprintf(fp, "dhcp-range=%s,%s,%s,%d\n", dhcp_start, dhcp_end, netmask, nvram_get_int("dhcp_lease"));
+		fprintf(fp, "dhcp-range=set:%s,%s,%s,%s,%d\n",
+			DHCPD_RANGE_DEF_TAG, dhcp_start, dhcp_end, netmask, nvram_get_int("dhcp_lease"));
 		
 		/* GATEWAY */
 		gw = nvram_safe_get("dhcp_gateway_x");
 		if (!is_valid_ipv4(gw))
 			gw = (!is_ap_mode) ? ipaddr : NULL;
 		if (gw)
-			fprintf(fp, "dhcp-option=%d,%s\n", 3, gw);
+			fprintf(fp, "dhcp-option=tag:%s,%d,%s\n", DHCPD_RANGE_DEF_TAG, 3, gw);
 		
 		/* DNS server */
 		memset(dns_all, 0, sizeof(dns_all));
@@ -395,19 +397,19 @@ start_dns_dhcpd(int is_ap_mode)
 		if (strlen(dns_all) == 0 && !is_ap_mode)
 			strcat(dns_all, ipaddr);
 		if (strlen(dns_all) > 0)
-			fprintf(fp, "dhcp-option=%d,%s\n", 6, dns_all);
+			fprintf(fp, "dhcp-option=tag:%s,%d,%s\n", DHCPD_RANGE_DEF_TAG, 6, dns_all);
 		
 		/* DOMAIN search */
 		if (strlen(domain) > 0)
-			fprintf(fp, "dhcp-option=%d,%s\n", 15, domain);
+			fprintf(fp, "dhcp-option=tag:%s,%d,%s\n", DHCPD_RANGE_DEF_TAG, 15, domain);
 		
 		/* WINS */
 		wins = nvram_safe_get("dhcp_wins_x");
 		if (is_valid_ipv4(wins))
-			fprintf(fp, "dhcp-option=%d,%s\n", 44, wins);
+			fprintf(fp, "dhcp-option=tag:%s,%d,%s\n", DHCPD_RANGE_DEF_TAG, 44, wins);
 #if defined(APP_SMBD) || defined(APP_NMBD)
 		else if (nvram_get_int("wins_enable"))
-			fprintf(fp, "dhcp-option=%d,%s\n", 44, ipaddr);
+			fprintf(fp, "dhcp-option=tag:%s,%d,%s\n", DHCPD_RANGE_DEF_TAG, 44, ipaddr);
 #endif
 		if (i_verbose == 0 || i_verbose == 2)
 			fprintf(fp, "quiet-dhcp\n");
@@ -433,14 +435,14 @@ start_dns_dhcpd(int is_ap_mode)
 				i_pref_lifetime = 1800;
 			
 			/* Router Advertisement only, disable Stateful, disable SLAAC */
-			fprintf(fp, "dhcp-range=::,constructor:%s%s,%d\n",
-				IFNAME_BR, ",ra-only,ra-names", i_pref_lifetime);
+			fprintf(fp, "dhcp-range=set:%s,::,constructor:%s%s,%d\n",
+				DHCPD_RANGE_DEF_TAG, IFNAME_BR, ",ra-only,ra-names", i_pref_lifetime);
 		} else {
 			int i_dhcp6s_irt = get_lan_dhcp6s_irt();
 			
 			if (i_dhcp6s_mode == 1) {
-				fprintf(fp, "dhcp-range=::,constructor:%s%s,%d\n",
-					IFNAME_BR, ",ra-stateless,ra-names", i_dhcp6s_irt);
+				fprintf(fp, "dhcp-range=set:%s,::,constructor:%s%s,%d\n",
+					DHCPD_RANGE_DEF_TAG, IFNAME_BR, ",ra-stateless,ra-names", i_dhcp6s_irt);
 			} else {
 				const char *range_mode = "";
 				int i_sflt = nvram_safe_get_int("ip6_lan_sflt", 1800, 120, 604800);
@@ -454,19 +456,19 @@ start_dns_dhcpd(int is_ap_mode)
 					range_mode = ",slaac,ra-names";
 				
 				/* Enable Stateful, Enable/Disable SLAAC */
-				fprintf(fp, "dhcp-range=::%x,::%x,constructor:%s%s,%d\n",
-					i_sfps, i_sfpe, IFNAME_BR, range_mode, i_sflt);
+				fprintf(fp, "dhcp-range=set:%s,::%x,::%x,constructor:%s%s,%d\n",
+					DHCPD_RANGE_DEF_TAG, i_sfps, i_sfpe, IFNAME_BR, range_mode, i_sflt);
 			}
 			
 			/* DNS server */
-			fprintf(fp, "dhcp-option=option6:%d,[::]\n", 23);
+			fprintf(fp, "dhcp-option=tag:%s,option6:%d,[::]\n", DHCPD_RANGE_DEF_TAG, 23);
 			
 			/* DOMAIN search */
 			if (strlen(domain) > 0)
-				fprintf(fp, "dhcp-option=option6:%d,%s\n", 24, domain);
+				fprintf(fp, "dhcp-option=tag:%s,option6:%d,%s\n", DHCPD_RANGE_DEF_TAG, 24, domain);
 			
 			/* Information Refresh Time */
-			fprintf(fp, "dhcp-option=option6:%d,%d\n", 32, i_dhcp6s_irt);
+			fprintf(fp, "dhcp-option=tag:%s,option6:%d,%d\n", DHCPD_RANGE_DEF_TAG, 32, i_dhcp6s_irt);
 			
 			if (i_verbose == 0 || i_verbose == 1)
 				fprintf(fp, "quiet-dhcp6\n");

@@ -435,14 +435,14 @@ start_dns_dhcpd(int is_ap_mode)
 				i_pref_lifetime = 1800;
 			
 			/* Router Advertisement only, disable Stateful, disable SLAAC */
-			fprintf(fp, "dhcp-range=set:%s,::,constructor:%s%s,%d\n",
-				DHCPD_RANGE_DEF_TAG, IFNAME_BR, ",ra-only,ra-names", i_pref_lifetime);
+			fprintf(fp, "dhcp-range=set:%s,::,constructor:%s%s,%d,%d\n",
+				DHCPD_RANGE_DEF_TAG, IFNAME_BR, ",ra-only,ra-names", 64, i_pref_lifetime);
 		} else {
 			int i_dhcp6s_irt = get_lan_dhcp6s_irt();
 			
 			if (i_dhcp6s_mode == 1) {
-				fprintf(fp, "dhcp-range=set:%s,::,constructor:%s%s,%d\n",
-					DHCPD_RANGE_DEF_TAG, IFNAME_BR, ",ra-stateless,ra-names", i_dhcp6s_irt);
+				fprintf(fp, "dhcp-range=set:%s,::,constructor:%s%s,%d,%d\n",
+					DHCPD_RANGE_DEF_TAG, IFNAME_BR, ",ra-stateless,ra-names", 64, i_dhcp6s_irt);
 			} else {
 				const char *range_mode = "";
 				int i_sflt = nvram_safe_get_int("ip6_lan_sflt", 1800, 120, 604800);
@@ -456,8 +456,8 @@ start_dns_dhcpd(int is_ap_mode)
 					range_mode = ",slaac,ra-names";
 				
 				/* Enable Stateful, Enable/Disable SLAAC */
-				fprintf(fp, "dhcp-range=set:%s,::%x,::%x,constructor:%s%s,%d\n",
-					DHCPD_RANGE_DEF_TAG, i_sfps, i_sfpe, IFNAME_BR, range_mode, i_sflt);
+				fprintf(fp, "dhcp-range=set:%s,::%x,::%x,constructor:%s%s,%d,%d\n",
+					DHCPD_RANGE_DEF_TAG, i_sfps, i_sfpe, IFNAME_BR, range_mode, 64, i_sflt);
 			}
 			
 			/* DNS server */

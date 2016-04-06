@@ -211,6 +211,7 @@ void start_sit_tunnel(int ipv6_type, char *wan_ifname, char *wan_addr4, char *wa
 	if (size6 < 0)
 		size6 = 0;
 
+	sit_ep = NULL;
 	sit_relay = "";
 	sit_remote = "any";
 	if (ipv6_type == IPV6_6IN4) {

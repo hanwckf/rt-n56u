@@ -310,9 +310,10 @@ static int
 openvpn_create_server_conf(const char *conf_file, int is_tun)
 {
 	FILE *fp;
-	int i, i_prot, i_atls, i_rdgw, i_dhcp, i_items;
+	int i, i_prot, i_prot_ori, i_atls, i_rdgw, i_dhcp, i_items;
 	unsigned int laddr, lmask;
 	char *lanip, *lannm, *wins, *dns1, *dns2;
+	const char *p_prot;
 	struct in_addr pool_in;
 
 	i_atls = nvram_get_int("vpns_ov_atls");
@@ -335,124 +336,141 @@ openvpn_create_server_conf(const char *conf_file, int is_tun)
 	laddr = ntohl(inet_addr(lanip));
 	lmask = ntohl(inet_addr(lannm));
 
-	fp = fopen(conf_file, "w+");
-	if (fp) {
-		if (i_prot > 0)
-			fprintf(fp, "proto %s\n", "tcp-server");
-		else
-			fprintf(fp, "proto %s\n", "udp");
-		fprintf(fp, "port %d\n", nvram_safe_get_int("vpns_ov_port", 1194, 1, 65535));
-		
-		if (is_tun) {
-			unsigned int vnet, vmsk;
-			
-			vnet = ntohl(inet_addr(nvram_safe_get("vpns_vnet")));
-			vmsk = ntohl(inet_addr(VPN_SERVER_SUBNET_MASK));
-			pool_in.s_addr = htonl(vnet & vmsk);
-			
-			fprintf(fp, "dev %s\n", IFNAME_SERVER_TUN);
-			fprintf(fp, "topology %s\n", "subnet");
-			fprintf(fp, "server %s %s\n", inet_ntoa(pool_in), VPN_SERVER_SUBNET_MASK);
-			fprintf(fp, "client-config-dir %s\n", "ccd");
-			
-			openvpn_create_server_acl(fp, "ccd", vnet, vmsk);
-			
-			pool_in.s_addr = htonl(laddr & lmask);
-			fprintf(fp, "push \"route %s %s\"\n", inet_ntoa(pool_in), lannm);
-		} else {
-			char sp_b[INET_ADDRSTRLEN], sp_e[INET_ADDRSTRLEN];
-			unsigned int vp_b, vp_e, lnet;
-			
-			lnet = ~(lmask) - 1;
-			vp_b = (unsigned int)nvram_safe_get_int("vpns_cli0", 245, 1, 254);
-			vp_e = (unsigned int)nvram_safe_get_int("vpns_cli1", 254, 2, 254);
-			if (vp_b > lnet)
-				vp_b = lnet;
-			if (vp_e > lnet)
-				vp_e = lnet;
-			if (vp_e < vp_b)
-				vp_e = vp_b;
-			
-			pool_in.s_addr = htonl((laddr & lmask) | vp_b);
-			strcpy(sp_b, inet_ntoa(pool_in));
-			
-			pool_in.s_addr = htonl((laddr & lmask) | vp_e);
-			strcpy(sp_e, inet_ntoa(pool_in));
-			
-			fprintf(fp, "dev %s\n", IFNAME_SERVER_TAP);
-			fprintf(fp, "server-bridge %s %s %s %s\n", lanip, lannm, sp_b, sp_e);
-		}
-		
-		openvpn_add_auth(fp, nvram_get_int("vpns_ov_mdig"));
-		openvpn_add_cipher(fp, nvram_get_int("vpns_ov_ciph"));
-		openvpn_add_lzo(fp, nvram_get_int("vpns_ov_clzo"), 1);
-		
-		i_items = 0;
-		if (i_rdgw) {
-			fprintf(fp, "push \"redirect-gateway def1 %s\"\n", "bypass-dhcp");
-			
-			if (i_dhcp) {
-				dns1 = nvram_safe_get("dhcp_dns1_x");
-				dns2 = nvram_safe_get("dhcp_dns2_x");
-				if (is_valid_ipv4(dns1)) {
-					i_items++;
-					fprintf(fp, "push \"dhcp-option %s %s\"\n", "DNS", dns1);
-				}
-				if (is_valid_ipv4(dns2) && strcmp(dns2, dns1)) {
-					i_items++;
-					fprintf(fp, "push \"dhcp-option %s %s\"\n", "DNS", dns2);
-				}
-			}
-			
-			if (i_items < 1)
-				fprintf(fp, "push \"dhcp-option %s %s\"\n", "DNS", lanip);
-		}
-		
-		i_items = 0;
-		if (i_dhcp) {
-			wins = nvram_safe_get("dhcp_wins_x");
-			if (is_valid_ipv4(wins)) {
-				i_items++;
-				fprintf(fp, "push \"dhcp-option %s %s\"\n", "WINS", wins);
-			}
-		}
-		
-#if defined(APP_SMBD) || defined(APP_NMBD)
-		if ((i_items < 1) && nvram_get_int("wins_enable"))
-			fprintf(fp, "push \"dhcp-option %s %s\"\n", "WINS", lanip);
+	i_prot_ori = i_prot;
+	if (i_prot > 1 && get_ipv6_type() == IPV6_DISABLED)
+		i_prot &= 1;
+
+	/* note: upcoming openvpn 2.4 will need direct set udp4/tcp4-server for ipv4 only */
+#if defined (USE_IPV6)
+	if (i_prot == 3)
+		p_prot = "tcp6-server";
+	else if (i_prot == 2)
+		p_prot = "udp6";
+	else
 #endif
+	if (i_prot == 1)
+		p_prot = "tcp-server";
+	else
+		p_prot = "udp";
+
+	/* fixup ipv4/ipv6 mismatch */
+	if (i_prot != i_prot_ori)
+		nvram_set_int("vpns_ov_prot", i_prot);
+
+	fp = fopen(conf_file, "w+");
+	if (!fp)
+		return 1;
+
+	fprintf(fp, "proto %s\n", p_prot);
+	fprintf(fp, "port %d\n", nvram_safe_get_int("vpns_ov_port", 1194, 1, 65535));
+
+	if (is_tun) {
+		unsigned int vnet, vmsk;
 		
-		fprintf(fp, "ca %s/%s\n", SERVER_CERT_DIR, openvpn_server_keys[0]);
-		fprintf(fp, "dh %s/%s\n", SERVER_CERT_DIR, openvpn_server_keys[1]);
-		fprintf(fp, "cert %s/%s\n", SERVER_CERT_DIR, openvpn_server_keys[2]);
-		fprintf(fp, "key %s/%s\n", SERVER_CERT_DIR, openvpn_server_keys[3]);
+		vnet = ntohl(inet_addr(nvram_safe_get("vpns_vnet")));
+		vmsk = ntohl(inet_addr(VPN_SERVER_SUBNET_MASK));
+		pool_in.s_addr = htonl(vnet & vmsk);
 		
-		if (i_atls)
-			fprintf(fp, "tls-auth %s/%s %d\n", SERVER_CERT_DIR, openvpn_server_keys[4], 0);
+		fprintf(fp, "dev %s\n", IFNAME_SERVER_TUN);
+		fprintf(fp, "topology %s\n", "subnet");
+		fprintf(fp, "server %s %s\n", inet_ntoa(pool_in), VPN_SERVER_SUBNET_MASK);
+		fprintf(fp, "client-config-dir %s\n", "ccd");
 		
-		fprintf(fp, "persist-key\n");
-		fprintf(fp, "persist-tun\n");
-		fprintf(fp, "user %s\n", SYS_USER_NOBODY);
-		fprintf(fp, "group %s\n", SYS_GROUP_NOGROUP);
-		fprintf(fp, "script-security %d\n", 2);
-		fprintf(fp, "tmp-dir %s\n", COMMON_TEMP_DIR);
-		fprintf(fp, "writepid %s\n", SERVER_PID_FILE);
+		openvpn_create_server_acl(fp, "ccd", vnet, vmsk);
 		
-		fprintf(fp, "client-connect %s\n", SCRIPT_OVPN_SERVER);
-		fprintf(fp, "client-disconnect %s\n", SCRIPT_OVPN_SERVER);
+		pool_in.s_addr = htonl(laddr & lmask);
+		fprintf(fp, "push \"route %s %s\"\n", inet_ntoa(pool_in), lannm);
+	} else {
+		char sp_b[INET_ADDRSTRLEN], sp_e[INET_ADDRSTRLEN];
+		unsigned int vp_b, vp_e, lnet;
 		
-		fprintf(fp, "\n### User params:\n");
+		lnet = ~(lmask) - 1;
+		vp_b = (unsigned int)nvram_safe_get_int("vpns_cli0", 245, 1, 254);
+		vp_e = (unsigned int)nvram_safe_get_int("vpns_cli1", 254, 2, 254);
+		if (vp_b > lnet)
+			vp_b = lnet;
+		if (vp_e > lnet)
+			vp_e = lnet;
+		if (vp_e < vp_b)
+			vp_e = vp_b;
 		
-		load_user_config(fp, SERVER_CERT_DIR, "server.conf", forbidden_list);
+		pool_in.s_addr = htonl((laddr & lmask) | vp_b);
+		strcpy(sp_b, inet_ntoa(pool_in));
 		
-		fclose(fp);
+		pool_in.s_addr = htonl((laddr & lmask) | vp_e);
+		strcpy(sp_e, inet_ntoa(pool_in));
 		
-		chmod(conf_file, 0644);
-		
-		return 0;
+		fprintf(fp, "dev %s\n", IFNAME_SERVER_TAP);
+		fprintf(fp, "server-bridge %s %s %s %s\n", lanip, lannm, sp_b, sp_e);
 	}
 
-	return 1;
+	openvpn_add_auth(fp, nvram_get_int("vpns_ov_mdig"));
+	openvpn_add_cipher(fp, nvram_get_int("vpns_ov_ciph"));
+	openvpn_add_lzo(fp, nvram_get_int("vpns_ov_clzo"), 1);
+
+	i_items = 0;
+	if (i_rdgw) {
+		fprintf(fp, "push \"redirect-gateway def1 %s\"\n", "bypass-dhcp");
+		
+		if (i_dhcp) {
+			dns1 = nvram_safe_get("dhcp_dns1_x");
+			dns2 = nvram_safe_get("dhcp_dns2_x");
+			if (is_valid_ipv4(dns1)) {
+				i_items++;
+				fprintf(fp, "push \"dhcp-option %s %s\"\n", "DNS", dns1);
+			}
+			if (is_valid_ipv4(dns2) && strcmp(dns2, dns1)) {
+				i_items++;
+				fprintf(fp, "push \"dhcp-option %s %s\"\n", "DNS", dns2);
+			}
+		}
+		
+		if (i_items < 1)
+			fprintf(fp, "push \"dhcp-option %s %s\"\n", "DNS", lanip);
+	}
+
+	i_items = 0;
+	if (i_dhcp) {
+		wins = nvram_safe_get("dhcp_wins_x");
+		if (is_valid_ipv4(wins)) {
+			i_items++;
+			fprintf(fp, "push \"dhcp-option %s %s\"\n", "WINS", wins);
+		}
+	}
+
+#if defined(APP_SMBD) || defined(APP_NMBD)
+	if ((i_items < 1) && nvram_get_int("wins_enable"))
+		fprintf(fp, "push \"dhcp-option %s %s\"\n", "WINS", lanip);
+#endif
+
+	fprintf(fp, "ca %s/%s\n", SERVER_CERT_DIR, openvpn_server_keys[0]);
+	fprintf(fp, "dh %s/%s\n", SERVER_CERT_DIR, openvpn_server_keys[1]);
+	fprintf(fp, "cert %s/%s\n", SERVER_CERT_DIR, openvpn_server_keys[2]);
+	fprintf(fp, "key %s/%s\n", SERVER_CERT_DIR, openvpn_server_keys[3]);
+
+	if (i_atls)
+		fprintf(fp, "tls-auth %s/%s %d\n", SERVER_CERT_DIR, openvpn_server_keys[4], 0);
+
+	fprintf(fp, "persist-key\n");
+	fprintf(fp, "persist-tun\n");
+	fprintf(fp, "user %s\n", SYS_USER_NOBODY);
+	fprintf(fp, "group %s\n", SYS_GROUP_NOGROUP);
+	fprintf(fp, "script-security %d\n", 2);
+	fprintf(fp, "tmp-dir %s\n", COMMON_TEMP_DIR);
+	fprintf(fp, "writepid %s\n", SERVER_PID_FILE);
+
+	fprintf(fp, "client-connect %s\n", SCRIPT_OVPN_SERVER);
+	fprintf(fp, "client-disconnect %s\n", SCRIPT_OVPN_SERVER);
+
+	fprintf(fp, "\n### User params:\n");
+
+	load_user_config(fp, SERVER_CERT_DIR, "server.conf", forbidden_list);
+
+	fclose(fp);
+
+	chmod(conf_file, 0644);
+
+	return 0;
 }
 
 static int
@@ -603,6 +621,11 @@ on_server_client_connect(int is_tun)
 	char *peer_addr_r = safe_getenv("trusted_ip");
 	char *peer_addr_l = safe_getenv("ifconfig_pool_remote_ip");
 
+#if defined (USE_IPV6)
+	if (!is_valid_ipv4(peer_addr_r))
+		peer_addr_r = safe_getenv("trusted_ip6");
+#endif
+
 	logmessage(SERVER_LOG_NAME, "peer %s (%s) connected - local IP: %s",
 		peer_addr_r, common_name, peer_addr_l);
 
@@ -625,6 +648,11 @@ on_server_client_disconnect(int is_tun)
 	char *peer_addr_l = safe_getenv("ifconfig_pool_remote_ip");
 	uint64_t llsent = strtoll(safe_getenv("bytes_sent"), NULL, 10);
 	uint64_t llrecv = strtoll(safe_getenv("bytes_received"), NULL, 10);
+
+#if defined (USE_IPV6)
+	if (!is_valid_ipv4(peer_addr_r))
+		peer_addr_r = safe_getenv("trusted_ip6");
+#endif
 
 	logmessage(SERVER_LOG_NAME, "peer %s (%s) disconnected, sent: %llu KB, received: %llu KB",
 		peer_addr_r, common_name, llsent / 1024, llrecv / 1024);
@@ -915,10 +943,13 @@ int
 ovpn_server_expcli_main(int argc, char **argv)
 {
 	FILE *fp;
-	int i, i_atls, rsa_bits, days_valid;
-	char *wan_addr;
+	int i, i_prot, i_atls, rsa_bits, days_valid;
+	const char *p_prot, *wan_addr;
 	const char *tmp_ovpn_path = "/tmp/export_ovpn";
 	const char *tmp_ovpn_conf = "/tmp/client.ovpn";
+#if defined (USE_IPV6)
+	char addr6s[INET6_ADDRSTRLEN];
+#endif
 
 	if (argc < 2 || strlen(argv[1]) < 1) {
 		printf("Usage: %s common_name [rsa_bits] [days_valid]\n", argv[0]);
@@ -950,6 +981,39 @@ ovpn_server_expcli_main(int argc, char **argv)
 	doSystem("/usr/bin/openvpn-cert.sh %s -n '%s' -b %d -d %d", "client", argv[1], rsa_bits, days_valid);
 	unsetenv("CRT_PATH_CLI");
 
+	i_prot = nvram_get_int("vpns_ov_prot");
+	if (i_prot > 1 && get_ipv6_type() == IPV6_DISABLED)
+		i_prot &= 1;
+#if defined (USE_IPV6)
+	if (i_prot == 3)
+		p_prot = "tcp6-client";
+	else if (i_prot == 2)
+		p_prot = "udp6";
+	else
+#endif
+	if (i_prot == 1)
+		p_prot = "tcp-client";
+	else
+		p_prot = "udp";
+
+	wan_addr = get_ddns_fqdn();
+	if (!wan_addr) {
+#if defined (USE_IPV6)
+		if (i_prot > 1) {
+			/* use LANv6 address */
+			wan_addr = get_lan_addr6_host(addr6s);
+		} else
+#endif
+		{
+			wan_addr = get_wan_unit_value(0, "ipaddr");
+			if (!is_valid_ipv4(wan_addr))
+				wan_addr = NULL;
+		}
+	}
+
+	if (!wan_addr)
+		wan_addr = "{wan_address}";
+
 	fp = fopen(tmp_ovpn_conf, "w+");
 	if (!fp) {
 		doSystem("rm -rf %s", tmp_ovpn_path);
@@ -957,19 +1021,9 @@ ovpn_server_expcli_main(int argc, char **argv)
 		return 1;
 	}
 
-	wan_addr = get_ddns_fqdn();
-	if (!wan_addr) {
-		wan_addr = get_wan_unit_value(0, "ipaddr");
-		if (!is_valid_ipv4(wan_addr))
-			wan_addr = NULL;
-	}
-
-	if (!wan_addr)
-		wan_addr = "{wan_address}";
-
 	fprintf(fp, "client\n");
 	fprintf(fp, "dev %s\n", (nvram_get_int("vpns_ov_mode") == 1) ? "tun" : "tap");
-	fprintf(fp, "proto %s\n", (nvram_get_int("vpns_ov_prot") > 0) ? "tcp-client" : "udp");
+	fprintf(fp, "proto %s\n", p_prot);
 	fprintf(fp, "remote %s %d\n", wan_addr, nvram_safe_get_int("vpns_ov_port", 1194, 1, 65535));
 	fprintf(fp, "resolv-retry %s\n", "infinite");
 	fprintf(fp, ";float\n");

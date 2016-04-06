@@ -966,11 +966,14 @@ ipt_filter_rules(char *man_if, char *wan_if, char *lan_if, char *lan_ip,
 			int i_need_vpnlist = 1;
 #if defined (APP_OPENVPN)
 			if (i_vpns_type == 2) {
-				char *ov_prot = (nvram_get_int("vpns_ov_prot") > 0) ? "tcp" : "udp";
+				const char *ov_prot = "udp";
+				int i_ov_prot = nvram_get_int("vpns_ov_prot");
 				int i_ov_port = nvram_safe_get_int("vpns_ov_port", 1194, 1, 65535);
 				
 				if (i_vpns_ov_mode == 0)
 					i_need_vpnlist = 0;
+				if (i_ov_prot == 1 || i_ov_prot == 3)
+					ov_prot = "tcp";
 				fprintf(fp, "-A %s -p %s --dport %d -j %s\n", dtype, ov_prot, i_ov_port, logaccept);
 			} else
 #endif
@@ -1493,9 +1496,11 @@ ip6t_filter_rules(char *man_if, char *wan_if, char *lan_if,
 			int i_vpns_type = nvram_get_int("vpns_type");
 #if defined (APP_OPENVPN)
 			if (i_vpns_type == 2) {
-				char *ov_prot = "udp";
+				const char *ov_prot = "udp";
 				int i_ov_port = nvram_safe_get_int("vpns_ov_port", 1194, 1, 65535);
-				if (nvram_get_int("vpns_ov_prot") > 0)
+				int i_ov_prot = nvram_get_int("vpns_ov_prot");
+				
+				if (i_ov_prot == 1 || i_ov_prot == 3)
 					ov_prot = "tcp";
 				fprintf(fp, "-A %s -p %s --dport %d -j %s\n", dtype, ov_prot, i_ov_port, logaccept);
 			} else
@@ -1924,11 +1929,15 @@ ipt_nat_rules(char *man_if, char *man_ip,
 			if (i_vpns_enable) {
 #if defined (APP_OPENVPN)
 				if (i_vpns_type == 2) {
-					/* OpenVPN */
-					vpn_proto_mask |= 0x04;
-					ovpns_hash = nvram_safe_get_int("vpns_ov_port", 1194, 1, 65535);
-					if (nvram_get_int("vpns_ov_prot") > 0)
-						ovpns_hash |= (1u << 16);
+					int i_prot = nvram_get_int("vpns_ov_prot");
+					
+					/* OpenVPN IPv4 */
+					if (i_prot < 2) {
+						vpn_proto_mask |= 0x04;
+						ovpns_hash = nvram_safe_get_int("vpns_ov_port", 1194, 1, 65535);
+						if (i_prot == 1)
+							ovpns_hash |= (1u << 16);
+					}
 				} else
 #endif
 				if (i_vpns_type == 1) {

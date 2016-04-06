@@ -816,7 +816,7 @@ static int get_prefix6_len(struct sockaddr_in6 *mask6)
 	return prefix;
 }
 
-char *get_ifaddr6(char *ifname, int linklocal, char *p_addr6s)
+char *get_ifaddr6(const char *ifname, int linklocal, char *p_addr6s)
 #if defined (HAVE_GETIFADDRS)
 {
 	char *ret = NULL;

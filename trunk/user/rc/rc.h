@@ -368,7 +368,7 @@ int is_wan_ipv6_if_ppp(void);
 int  store_wan_dns6(char *dns6_new);
 void reset_wan6_vars(void);
 void store_ip6rd_from_dhcp(const char *env_value, const char *prefix);
-void start_sit_tunnel(int ipv6_type, char *wan_addr4, char *wan_addr6);
+void start_sit_tunnel(int ipv6_type, char *wan_ifname, char *wan_addr4, char *wan_gate4, char *wan_addr6);
 void stop_sit_tunnel(void);
 void wan6_up(char *wan_ifname, int unit);
 void wan6_down(char *wan_ifname, int unit);

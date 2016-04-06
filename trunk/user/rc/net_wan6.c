@@ -187,10 +187,10 @@ int store_wan_dns6(char *dns6_new)
 	return 0;
 }
 
-void start_sit_tunnel(int ipv6_type, char *wan_addr4, char *wan_addr6)
+void start_sit_tunnel(int ipv6_type, char *wan_ifname, char *wan_addr4, char *wan_gate4, char *wan_addr6)
 {
 	int sit_ttl, sit_mtu, size4, size6;
-	char *sit_remote, *sit_relay, *wan_gate6;
+	char *sit_remote, *sit_relay, *sit_ep, *wan_gate6;
 	char addr6s[INET6_ADDRSTRLEN];
 	struct in_addr addr4;
 	struct in6_addr addr6;
@@ -208,18 +208,21 @@ void start_sit_tunnel(int ipv6_type, char *wan_addr4, char *wan_addr6)
 
 	memset(&addr6, 0, sizeof(addr6));
 	size6 = ipv6_from_string(wan_addr6, &addr6);
-	if (size6 < 0) size6 = 0;
+	if (size6 < 0)
+		size6 = 0;
 
 	sit_relay = "";
 	sit_remote = "any";
-	if (ipv6_type == IPV6_6IN4)
+	if (ipv6_type == IPV6_6IN4) {
 		sit_remote = nvram_safe_get("ip6_6in4_remote");
-	
+		sit_ep = sit_remote;
+	}
+
 	if (is_interface_exist(IFNAME_SIT))
 		doSystem("ip tunnel del %s", IFNAME_SIT);
-	
+
 	doSystem("ip tunnel %s %s mode sit remote %s local %s ttl %d", "add", IFNAME_SIT, sit_remote, wan_addr4, sit_ttl);
-	
+
 	if (ipv6_type == IPV6_6TO4) {
 		size6 = 16;
 		memset(&addr6, 0, sizeof(addr6));
@@ -227,6 +230,7 @@ void start_sit_tunnel(int ipv6_type, char *wan_addr4, char *wan_addr6)
 		ipv6_to_ipv4_map(&addr6, size6, &addr4, 0);
 		addr6.s6_addr16[7] = htons(0x0001);
 		sit_relay = nvram_safe_get("ip6_6to4_relay");
+		sit_ep = sit_relay;
 	}
 	else if (ipv6_type == IPV6_6RD) {
 		struct in_addr net4;
@@ -251,9 +255,13 @@ void start_sit_tunnel(int ipv6_type, char *wan_addr4, char *wan_addr6)
 		ipv6_to_ipv4_map(&addr6, size6, &addr4, size4);
 		addr6.s6_addr16[7] = htons(0x0001);
 		sit_relay = get_wan_unit_value(0, "6rd_relay");
+		sit_ep = sit_relay;
 	}
 
-	// WAN IPv6 address
+	/* direct route to SIT IPv4 endpoint via WAN dgw */
+	route_add(wan_ifname, 0, sit_ep, wan_gate4, "255.255.255.255");
+
+	/* WAN IPv6 address */
 	inet_ntop(AF_INET6, &addr6, addr6s, INET6_ADDRSTRLEN);
 	if (size6 > 0)
 		sprintf(addr6s, "%s/%d", addr6s, size6);
@@ -270,8 +278,7 @@ void start_sit_tunnel(int ipv6_type, char *wan_addr4, char *wan_addr6)
 		wan_gate6 = addr6s;
 		/* add direct default gateway for workaround "No route to host" on new kernel */
 		doSystem("ip -6 route add default dev %s metric %d", IFNAME_SIT, 2048);
-	}
-	else {
+	} else {
 		wan_gate6 = get_wan_unit_value(0, "gate6");
 	}
 	if (*wan_gate6)
@@ -285,8 +292,7 @@ void start_sit_tunnel(int ipv6_type, char *wan_addr4, char *wan_addr6)
 			ipv6_to_ipv4_map(&addr6, 16, &addr4, 0);
 			addr6.s6_addr16[3] = htons(0x0001);
 			addr6.s6_addr16[7] = htons(0x0001);
-		}
-		else {
+		} else {
 			ipv6_from_string(wan_addr6, &addr6);
 			ipv6_to_ipv4_map(&addr6, size6, &addr4, size4);
 			addr6.s6_addr16[7] = htons(0x0001);
@@ -313,7 +319,7 @@ void stop_sit_tunnel(void)
 void wan6_up(char *wan_ifname, int unit)
 {
 	int ipv6_type, allow_ra;
-	char *wan_addr6, *wan_gate6, *wan_addr4;
+	char *wan_addr6, *wan_gate6, *wan_addr4, *wan_gate4;
 
 	ipv6_type = get_ipv6_type();
 	if (ipv6_type == IPV6_DISABLED)
@@ -327,8 +333,11 @@ void wan6_up(char *wan_ifname, int unit)
 
 	if (ipv6_type == IPV6_6IN4 || ipv6_type == IPV6_6TO4 || ipv6_type == IPV6_6RD) {
 		wan_addr4 = get_wan_unit_value(unit, "ipaddr");
+		wan_gate4 = get_wan_unit_value(unit, "gateway");
 		wan_addr6 = get_wan_unit_value(unit, "addr6");
-		start_sit_tunnel(ipv6_type, wan_addr4, wan_addr6);
+		if (!is_valid_ipv4(wan_gate4))
+			wan_gate4 = NULL;
+		start_sit_tunnel(ipv6_type, wan_ifname, wan_addr4, wan_gate4, wan_addr6);
 	} else {
 		control_if_ipv6_dad(wan_ifname, 1);
 		

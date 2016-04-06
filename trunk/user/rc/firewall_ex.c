@@ -1944,11 +1944,15 @@ ipt_nat_rules(char *man_if, char *man_ip,
 			if (i_vpnc_enable) {
 #if defined (APP_OPENVPN)
 				if (i_vpnc_type == 2) {
-					/* OpenVPN */
-					vpn_proto_mask |= 0x04;
-					ovpnc_hash = nvram_safe_get_int("vpnc_ov_port", 1194, 1, 65535);
-					if (nvram_get_int("vpnc_ov_prot") > 0)
-						ovpnc_hash |= (1u << 16);
+					int i_prot = nvram_get_int("vpnc_ov_prot");
+					
+					/* OpenVPN IPv4 */
+					if (i_prot < 2) {
+						vpn_proto_mask |= 0x04;
+						ovpnc_hash = nvram_safe_get_int("vpnc_ov_port", 1194, 1, 65535);
+						if (i_prot == 1)
+							ovpnc_hash |= (1u << 16);
+					}
 				} else
 #endif
 				if (i_vpnc_type == 1) {

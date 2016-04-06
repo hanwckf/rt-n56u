@@ -39,6 +39,7 @@ lan_ipaddr_x = '<% nvram_get_x("", "lan_ipaddr"); %>';
 lan_netmask_x = '<% nvram_get_x("", "lan_netmask"); %>';
 fw_enable_x = '<% nvram_get_x("", "fw_enable_x"); %>';
 vpnc_state_last = '<% nvram_get_x("", "vpnc_state_t"); %>';
+ip6_service = '<% nvram_get_x("", "ip6_service"); %>';
 
 <% login_state_hook(); %>
 <% openvpn_cli_cert_hook(); %>
@@ -50,6 +51,12 @@ function initial(){
 
 	if (!found_app_ovpn())
 		document.form.vpnc_type.remove(2);
+	else
+	if (!support_ipv6() || ip6_service == ''){
+		var o = document.form.vpnc_ov_prot;
+		o.remove(2);
+		o.remove(2);
+	}
 
 	if (fw_enable_x == "0"){
 		var o1 = document.form.vpnc_sfw;
@@ -387,6 +394,8 @@ function getHash(){
                                         <select name="vpnc_ov_prot" class="input">
                                             <option value="0" <% nvram_match_x("", "vpnc_ov_prot", "0","selected"); %>>UDP (*)</option>
                                             <option value="1" <% nvram_match_x("", "vpnc_ov_prot", "1","selected"); %>>TCP</option>
+                                            <option value="2" <% nvram_match_x("", "vpnc_ov_prot", "2","selected"); %>>UDP over IPv6</option>
+                                            <option value="3" <% nvram_match_x("", "vpnc_ov_prot", "3","selected"); %>>TCP over IPv6</option>
                                         </select>
                                     </td>
                                 </tr>

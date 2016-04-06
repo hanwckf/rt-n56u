@@ -459,7 +459,8 @@ static int
 openvpn_create_client_conf(const char *conf_file, int is_tun)
 {
 	FILE *fp;
-	int i, i_prot, i_auth, i_atls;
+	int i, i_prot, i_prot_ori, i_auth, i_atls;
+	const char *p_peer, *p_prot;
 
 	i_auth = nvram_get_int("vpnc_ov_auth");
 	i_atls = nvram_get_int("vpnc_ov_atls");
@@ -474,61 +475,85 @@ openvpn_create_client_conf(const char *conf_file, int is_tun)
 	}
 
 	i_prot = nvram_get_int("vpnc_ov_prot");
+	i_prot_ori = i_prot;
+	if (i_prot > 1 && get_ipv6_type() == IPV6_DISABLED)
+		i_prot &= 1;
+
+	p_peer = nvram_safe_get("vpnc_peer");
+
+	/* note: upcoming openvpn 2.4 will need direct set udp4/tcp4-client for ipv4 only */
+#if defined (USE_IPV6)
+	/* check peer address is direct ipv4/ipv6 */
+	if (i_prot > 1 && is_valid_ipv4(p_peer))
+		i_prot &= 1;
+	else
+	if (i_prot < 2 && is_valid_ipv6(p_peer))
+		i_prot += 2;
+
+	if (i_prot == 3)
+		p_prot = "tcp6-client";
+	else if (i_prot == 2)
+		p_prot = "udp6";
+	else
+#endif
+	if (i_prot == 1)
+		p_prot = "tcp-client";
+	else
+		p_prot = "udp";
+
+	/* fixup ipv4/ipv6 mismatch */
+	if (i_prot != i_prot_ori)
+		nvram_set_int("vpnc_ov_prot", i_prot);
 
 	fp = fopen(conf_file, "w+");
-	if (fp) {
-		fprintf(fp, "client\n");
-		if (i_prot > 0)
-			fprintf(fp, "proto %s\n", "tcp-client");
-		else
-			fprintf(fp, "proto %s\n", "udp");
-		
-		fprintf(fp, "remote %s %d\n", nvram_safe_get("vpnc_peer"), nvram_safe_get_int("vpnc_ov_port", 1194, 1, 65535));
-		fprintf(fp, "resolv-retry %s\n", "infinite");
-		fprintf(fp, "nobind\n");
-		
-		fprintf(fp, "dev %s\n", (is_tun) ? IFNAME_CLIENT_TUN : IFNAME_CLIENT_TAP);
-		
-		fprintf(fp, "ca %s/%s\n", CLIENT_CERT_DIR, openvpn_client_keys[0]);
-		if (i_auth == 0) {
-			fprintf(fp, "cert %s/%s\n", CLIENT_CERT_DIR, openvpn_client_keys[1]);
-			fprintf(fp, "key %s/%s\n", CLIENT_CERT_DIR, openvpn_client_keys[2]);
-		}
-		
-		if (i_atls)
-			fprintf(fp, "tls-auth %s/%s %d\n", CLIENT_CERT_DIR, openvpn_client_keys[3], 1);
-		
-		openvpn_add_auth(fp, nvram_get_int("vpnc_ov_mdig"));
-		openvpn_add_cipher(fp, nvram_get_int("vpnc_ov_ciph"));
-		openvpn_add_lzo(fp, nvram_get_int("vpnc_ov_clzo"), 0);
-		
-		if (i_auth == 1) {
-			fprintf(fp, "auth-user-pass %s\n", "secret");
-			openvpn_create_client_secret("secret");
-		}
-		
-		if (nvram_match("vpnc_dgw", "1"))
-			fprintf(fp, "redirect-gateway def1 bypass-dhcp\n");
-		
-		fprintf(fp, "persist-key\n");
-		fprintf(fp, "script-security %d\n", 2);
-		fprintf(fp, "writepid %s\n", CLIENT_PID_FILE);
-		
-		fprintf(fp, "up %s\n",  SCRIPT_OVPN_CLIENT);
-		fprintf(fp, "down %s\n",  SCRIPT_OVPN_CLIENT);
-		
-		fprintf(fp, "\n### User params:\n");
-		
-		load_user_config(fp, CLIENT_CERT_DIR, "client.conf", forbidden_list);
-		
-		fclose(fp);
-		
-		chmod(conf_file, 0644);
-		
-		return 0;
+	if (!fp)
+		return 1;
+
+	fprintf(fp, "client\n");
+	fprintf(fp, "proto %s\n", p_prot);
+	fprintf(fp, "remote %s %d\n", p_peer, nvram_safe_get_int("vpnc_ov_port", 1194, 1, 65535));
+	fprintf(fp, "resolv-retry %s\n", "infinite");
+	fprintf(fp, "nobind\n");
+
+	fprintf(fp, "dev %s\n", (is_tun) ? IFNAME_CLIENT_TUN : IFNAME_CLIENT_TAP);
+
+	fprintf(fp, "ca %s/%s\n", CLIENT_CERT_DIR, openvpn_client_keys[0]);
+	if (i_auth == 0) {
+		fprintf(fp, "cert %s/%s\n", CLIENT_CERT_DIR, openvpn_client_keys[1]);
+		fprintf(fp, "key %s/%s\n", CLIENT_CERT_DIR, openvpn_client_keys[2]);
 	}
 
-	return 1;
+	if (i_atls)
+		fprintf(fp, "tls-auth %s/%s %d\n", CLIENT_CERT_DIR, openvpn_client_keys[3], 1);
+
+	openvpn_add_auth(fp, nvram_get_int("vpnc_ov_mdig"));
+	openvpn_add_cipher(fp, nvram_get_int("vpnc_ov_ciph"));
+	openvpn_add_lzo(fp, nvram_get_int("vpnc_ov_clzo"), 0);
+
+	if (i_auth == 1) {
+		fprintf(fp, "auth-user-pass %s\n", "secret");
+		openvpn_create_client_secret("secret");
+	}
+
+	if (nvram_match("vpnc_dgw", "1"))
+		fprintf(fp, "redirect-gateway def1 bypass-dhcp\n");
+
+	fprintf(fp, "persist-key\n");
+	fprintf(fp, "script-security %d\n", 2);
+	fprintf(fp, "writepid %s\n", CLIENT_PID_FILE);
+
+	fprintf(fp, "up %s\n",  SCRIPT_OVPN_CLIENT);
+	fprintf(fp, "down %s\n",  SCRIPT_OVPN_CLIENT);
+
+	fprintf(fp, "\n### User params:\n");
+
+	load_user_config(fp, CLIENT_CERT_DIR, "client.conf", forbidden_list);
+
+	fclose(fp);
+
+	chmod(conf_file, 0644);
+
+	return 0;
 }
 
 static void

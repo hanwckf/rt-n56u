@@ -199,6 +199,7 @@ extern uint64_t    get_ifstats_bytes_rx(const char* ifname);
 extern uint64_t    get_ifstats_bytes_tx(const char* ifname);
 
 #if defined (USE_IPV6)
+extern int  is_valid_ipv6(const char *cp);
 extern char *get_ifaddr6(char *ifname, int linklocal, char *p_addr6s);
 #endif
 

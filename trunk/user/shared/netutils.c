@@ -786,6 +786,19 @@ int get_ipv6_type(void)
 }
 
 #if defined (USE_IPV6)
+int is_valid_ipv6(const char *cp)
+{
+	struct in6_addr a6;
+
+	if (!cp)
+		return 0;
+
+	if (inet_pton(AF_INET6, cp, &a6) != 1)
+		return 0;
+
+	return 1;
+}
+
 static int get_prefix6_len(struct sockaddr_in6 *mask6)
 {
 	int i, j, prefix = 0;

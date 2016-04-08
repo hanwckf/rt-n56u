@@ -948,7 +948,7 @@ ovpn_server_expcli_main(int argc, char **argv)
 	const char *tmp_ovpn_path = "/tmp/export_ovpn";
 	const char *tmp_ovpn_conf = "/tmp/client.ovpn";
 #if defined (USE_IPV6)
-	char addr6s[INET6_ADDRSTRLEN];
+	char addr6s[INET6_ADDRSTRLEN] = {0};
 #endif
 
 	if (argc < 2 || strlen(argv[1]) < 1) {
@@ -1000,8 +1000,9 @@ ovpn_server_expcli_main(int argc, char **argv)
 	if (!wan_addr) {
 #if defined (USE_IPV6)
 		if (i_prot > 1) {
-			/* use LANv6 address */
-			wan_addr = get_lan_addr6_host(addr6s);
+			wan_addr = get_wan_addr6_host(addr6s);
+			if (!wan_addr)
+				wan_addr = get_lan_addr6_host(addr6s);
 		} else
 #endif
 		{

@@ -71,6 +71,7 @@ void reset_wan6_vars(void)
 		}
 	}
 
+	set_wan_unit_value(0, "ifname6", "");
 	set_wan_unit_value(0, "addr6", addr6s);
 	set_wan_unit_value(0, "gate6", wan_gate6);
 	set_wan_unit_value(0, "6rd_relay", nvram_safe_get("ip6_6rd_relay"));
@@ -185,6 +186,21 @@ int store_wan_dns6(char *dns6_new)
 	}
 
 	return 0;
+}
+
+char *get_wan_addr6_host(char *p_addr6s)
+{
+	char *tmp = p_addr6s;
+	char *wan6_ifname = get_wan_unit_value(0, "ifname6");
+
+	if (strlen(wan6_ifname) > 0) {
+		if (get_ifaddr6(wan6_ifname, 0, p_addr6s)) {
+			strsep(&tmp, "/");
+			return p_addr6s;
+		}
+	}
+
+	return NULL;
 }
 
 void start_sit_tunnel(int ipv6_type, char *wan_ifname, char *wan_addr4, char *wan_gate4, char *wan_addr6)
@@ -333,6 +349,8 @@ void wan6_up(char *wan_ifname, int unit)
 	control_if_ipv6_dad(IFNAME_BR, 1);
 
 	if (ipv6_type == IPV6_6IN4 || ipv6_type == IPV6_6TO4 || ipv6_type == IPV6_6RD) {
+		set_wan_unit_value(unit, "ifname6", IFNAME_SIT);
+		
 		wan_addr4 = get_wan_unit_value(unit, "ipaddr");
 		wan_gate4 = get_wan_unit_value(unit, "gateway");
 		wan_addr6 = get_wan_unit_value(unit, "addr6");
@@ -340,6 +358,8 @@ void wan6_up(char *wan_ifname, int unit)
 			wan_gate4 = NULL;
 		start_sit_tunnel(ipv6_type, wan_ifname, wan_addr4, wan_gate4, wan_addr6);
 	} else {
+		set_wan_unit_value(unit, "ifname6", wan_ifname);
+		
 		control_if_ipv6_dad(wan_ifname, 1);
 		
 		if (ipv6_type == IPV6_NATIVE_STATIC) {

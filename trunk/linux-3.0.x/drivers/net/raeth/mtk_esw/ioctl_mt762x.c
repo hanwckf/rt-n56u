@@ -963,7 +963,7 @@ static void esw_vlan_apply_rules(u32 wan_bridge_mode, u32 wan_bwan_isolation)
 	esw_port_attrib_set(LAN_PORT_CPU, PORT_ATTRIBUTE_USER);
 #endif
 
-#if defined (CONFIG_RALINK_MT7620) && !defined (CONFIG_MT7530_GSW)
+#if defined (CONFIG_RALINK_MT7620) && defined (ESW_PORT_PPE)
 #if defined (CONFIG_RA_HW_NAT) || defined (CONFIG_RA_HW_NAT_MODULE)
 	if (ra_sw_nat_hook_rx != NULL)
 		esw_port_ingress_mode_set(LAN_PORT_CPU, PVLAN_INGRESS_MODE_FALLBACK);
@@ -1011,6 +1011,9 @@ static void esw_vlan_init_vid1(void)
 	port_member = 0xFF;
 	port_member &= ~(ESW_MASK_EXCLUDE);
 	port_untag = port_member;
+#if defined (ESW_PORT_PPE)
+	port_untag &= ~(1u << ESW_PORT_PPE);
+#endif
 
 	/* configure physical LAN ports */
 	for (i = 0; i <= ESW_EPHY_ID_MAX; i++) {
@@ -1030,7 +1033,14 @@ static void esw_vlan_init_vid1(void)
 #else
 	esw_port_attrib_set(LAN_PORT_CPU, PORT_ATTRIBUTE_TRANSPARENT);
 #endif
-	esw_port_ingress_mode_set(LAN_PORT_CPU, PVLAN_INGRESS_MODE_SECURITY);
+#if defined (CONFIG_RALINK_MT7620) && defined (ESW_PORT_PPE)
+#if defined (CONFIG_RA_HW_NAT) || defined (CONFIG_RA_HW_NAT_MODULE)
+	if (ra_sw_nat_hook_rx != NULL)
+		esw_port_ingress_mode_set(LAN_PORT_CPU, PVLAN_INGRESS_MODE_FALLBACK);
+	else
+#endif
+#endif
+		esw_port_ingress_mode_set(LAN_PORT_CPU, PVLAN_INGRESS_MODE_SECURITY);
 
 	/* reset VLAN table */
 	esw_vlan_reset_table();

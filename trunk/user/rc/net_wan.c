@@ -569,6 +569,10 @@ config_apcli_wisp(void)
 #endif
 	}
 
+#if defined (USE_IPV6)
+	if (get_ipv6_type() != IPV6_DISABLED)
+		control_if_ipv6(wisp_ifname, 1);
+#endif
 	set_wan_unit_value(0, "ifname", wisp_ifname);
 }
 

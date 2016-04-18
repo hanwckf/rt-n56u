@@ -138,6 +138,14 @@ static int slave_configure(struct scsi_device *sdev)
 		 * better throughput on most devices.
 		 */
 		blk_queue_max_hw_sectors(sdev->request_queue, 1024);
+	} else if (us->pusb_dev->speed == USB_SPEED_HIGH) {
+#if IS_ENABLED(CONFIG_USB_XHCI_HCD)
+		/* USB2 devices will be limited to 360 sectors. */
+		blk_queue_max_hw_sectors(sdev->request_queue, 360);
+#else
+		/* USB2 devices will be limited to 256 sectors. */
+		blk_queue_max_hw_sectors(sdev->request_queue, 256);
+#endif
 	}
 
 	/* Some USB host controllers can't do DMA; they have to use PIO.
@@ -585,8 +593,25 @@ struct scsi_host_template usb_stor_host_template = {
 	/* lots of sg segments can be handled */
 	.sg_tablesize =			SCSI_MAX_SG_CHAIN_SEGMENTS,
 
-	/* limit the total size of a transfer to 180 KB */
-	.max_sectors =                  360,
+
+	/*
+	 * Limit the total size of a transfer to 120 KB.
+	 *
+	 * Some devices are known to choke with anything larger. It seems like
+	 * the problem stems from the fact that original IDE controllers had
+	 * only an 8-bit register to hold the number of sectors in one transfer
+	 * and even those couldn't handle a full 256 sectors.
+	 *
+	 * Because we want to make sure we interoperate with as many devices as
+	 * possible, we will maintain a 240 sector transfer size limit for USB
+	 * Mass Storage devices.
+	 *
+	 * Tests show that other operating have similar limits with Microsoft
+	 * Windows 7 limiting transfers to 128 sectors for both USB2 and USB3
+	 * and Apple Mac OS X 10.11 limiting transfers to 256 sectors for USB2
+	 * and 2048 for USB3 devices.
+	 */
+	.max_sectors =			240,
 
 	/* merge commands... this seems to help performance, but
 	 * periodically someone should test to see which setting is more

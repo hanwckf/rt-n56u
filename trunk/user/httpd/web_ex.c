@@ -3518,6 +3518,7 @@ struct mime_handler mime_handlers[] = {
 	{ "**.gif", "image/gif", NULL, NULL, do_file, 0 }, // 2012.06 Eagle23
 	{ "**.jpg", "image/jpeg", NULL, NULL, do_file, 0 }, // 2012.06 Eagle23
 	{ "**.ico", "image/x-icon", NULL, NULL, do_file, 0 }, // 2013.04 Eagle23
+	{ "**.svg", "image/svg+xml", NULL, NULL, do_file, 0 }, // 2016.04 Volt1
 
 	/* no-cached html/asp files with translations */
 	{ "**.htm*", "text/html", no_cache_IE, do_html_apply_post, do_ej, 1 },

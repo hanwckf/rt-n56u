@@ -12,11 +12,10 @@
   <title ng-bind="$root.pageTitle">Aria2 WebUI</title>
 
   <link rel="stylesheet" href="css/aria2web.min.css">
- 
-  <!-- external javascript dependencies -->
+
+<!-- external javascript dependencies -->
   <script src="js/aria2web.min.js"></script>
   <script src="configuration.js"></script>
- 
 </head>
 <!-- }}} -->
 
@@ -27,7 +26,7 @@
   <div class="container">
     <div class="navbar-header">
       <button type="button" class="navbar-toggle collapsed" ng-click="collapsed = !collapsed">
-        <span class="sr-only">Toggle navigation</span>
+        <span class="sr-only">{{ 'Toggle navigation' | translate }}</span>
         <span class="icon-bar"></span>
         <span class="icon-bar"></span>
         <span class="icon-bar"></span>
@@ -37,7 +36,7 @@
 
     <form class="navbar-form navbar-right" role="search">
       <div class="form-group">
-        <input class="form-control" type="text" placeholder="Search" ng-model="downloadFilter" autocomplete="off" ng-change="onDownloadFilter()" />
+        <input class="form-control" type="text" placeholder="{{ 'Search' | translate }}" ng-model="downloadFilter" autocomplete="off" ng-change="onDownloadFilter()" />
       </div>
     </form>
 
@@ -46,44 +45,44 @@
       <ul class="nav navbar-nav">
         <li class="dropdown" dropdown>
           <a class="dropdown-toggle" href="#" dropdown-toggle>
-            Add <span class="caret"></span>
+            {{ 'Add' | translate }} <span class="caret"></span>
           </a>
           <ul class="dropdown-menu">
             <li>
               <a href="#" ng-click="addUris()">
-                <span class="fa fa-fw fa-arrow-circle-o-down">&nbsp;</span> By URIs
+                <span class="fa fa-fw fa-arrow-circle-o-down">&nbsp;</span> {{ 'By URIs' | translate }}
               </a>
             </li>
             <li ng-show="isFeatureEnabled('BitTorrent') && enable.torrent">
               <a href="#" ng-click="addTorrents()">
-                <span class="fa fa-fw fa-cloud-download">&nbsp;</span> By Torrents
+                <span class="fa fa-fw fa-cloud-download">&nbsp;</span> {{ 'By Torrents' | translate }}
               </a>
             </li>
             <li ng-show="isFeatureEnabled('Metalink') && enable.metalink">
               <a href="#" ng-click="addMetalinks()">
-                <span class="fa fa-fw fa-file-text-o">&nbsp;</span> By Metalinks
+                <span class="fa fa-fw fa-file-text-o">&nbsp;</span> {{ 'By Metalinks' | translate }}
               </a>
             </li>
           </ul>
         </li>
 
         <li class="dropdown" dropdown>
-          <a class="dropdown-toggle" href="#" dropdown-toggle> Manage <span class="caret"></span></a>
+          <a class="dropdown-toggle" href="#" dropdown-toggle> {{ 'Manage' | translate }} <span class="caret"></span></a>
           <ul class="dropdown-menu">
             <li>
               <a
                 href="#"
-                ng-click="forcePauseAll()"><span class="fa fa-fw fa-pause">&nbsp;</span> Pause All</a>
+                ng-click="forcePauseAll()"><span class="fa fa-fw fa-pause">&nbsp;</span> {{ 'Pause All' | translate }}</a>
             </li>
             <li>
               <a
                 href="#"
-                ng-click="unpauseAll()"><span class="fa fa-fw fa-play">&nbsp;</span> Resume Paused</a>
+                ng-click="unpauseAll()"><span class="fa fa-fw fa-play">&nbsp;</span> {{ 'Resume Paused' | translate }}</a>
             </li>
             <li>
               <a
                 href="#"
-                ng-click="purgeDownloadResult()"><span class="fa fa-fw fa-times-circle">&nbsp;</span> Purge Completed</a>
+                ng-click="purgeDownloadResult()"><span class="fa fa-fw fa-times-circle">&nbsp;</span> {{ 'Purge Completed' | translate }}</a>
             </li>
 
             <!-- not adding remove all as requires many rpc syscalls to finish
@@ -102,31 +101,31 @@
         <li class="dropdown" dropdown>
           <a
             href="#"
-            class="dropdown-toggle" dropdown-toggle>Settings <span class="caret"></span></a>
+            class="dropdown-toggle" dropdown-toggle>{{ 'Settings' | translate }} <span class="caret"></span></a>
 
           <ul class="dropdown-menu">
             <li>
               <a
                 ng-click="changeCSettings()"
-                href="#"><span class="fa fa-fw fa-wrench">&nbsp;</span> Connection Settings</a>
+                href="#"><span class="fa fa-fw fa-wrench">&nbsp;</span> {{ 'Connection Settings' | translate }}</a>
             </li>
 
             <li>
               <a
                 ng-click="changeGSettings()"
-                href="#"><span class="fa fa-fw fa-wrench">&nbsp;</span> Global Settings</a>
+                href="#"><span class="fa fa-fw fa-wrench">&nbsp;</span> {{ 'Global Settings' | translate }}</a>
             </li>
 
             <li>
               <a
                 ng-click="showServerInfo()"
-                href="#"><span class="fa fa-fw fa-info-circle">&nbsp;</span> Server info</a>
+                href="#"><span class="fa fa-fw fa-info-circle">&nbsp;</span> {{ 'Server info' | translate }}</a>
             </li>
 
             <li>
               <a
                 ng-click="showAbout()"
-                href="#"><span class="fa fa-fw fa-question-circle">&nbsp;</span> About and contribute</a>
+                href="#"><span class="fa fa-fw fa-question-circle">&nbsp;</span> {{ 'About and contribute' | translate }}</a>
             </li>
           </ul>
         </li>
@@ -136,17 +135,40 @@
         <li class="dropdown" dropdown>
           <a
             class="dropdown-toggle" dropdown-toggle
-            href="#">Miscellaneous <span class="caret"></span></a>
+            href="#">{{ 'Miscellaneous' | translate }} <span class="caret"></span></a>
           <ul class="dropdown-menu">
             <li>
-              <a href="#"><span class="fa fa-fw fa-list-alt">&nbsp;</span> Global Statistics</a>
+              <a href="#"><span class="fa fa-fw fa-list-alt">&nbsp;</span> {{ 'Global Statistics' | translate }}</a>
             </li>
             <li>
-              <a href="#"><span class="fa fa-fw fa-info-circle">&nbsp;</span> About</a>
+              <a href="#"><span class="fa fa-fw fa-info-circle">&nbsp;</span> {{ 'About' | translate }}</a>
             </li>
           </ul>
         </li>
       </ul>
+
+
+      <ul class="nav navbar-nav">
+        <li class="dropdown" dropdown>
+          <a
+                  href="#"
+                  class="dropdown-toggle" dropdown-toggle>{{ 'Language' | translate }} <span class="caret"></span></a>
+
+          <ul class="dropdown-menu">
+            <li>
+              <a
+                      ng-click="changeLanguage('en_US')"
+                      href="#"><span class="fa fa-fw flag-icon flag-icon-us">&nbsp;</span> English</a>
+            </li>        
+            <li>
+              <a
+                      ng-click="changeLanguage('ru_RU')"
+                      href="#"><span class="fa fa-fw flag-icon flag-icon-ru">&nbsp;</span> Русский</a>
+            </li>		
+          </ul>
+        </li>
+      </ul>
+
     </div>
     <!-- }}} -->
 
@@ -174,7 +196,7 @@
 
       <!-- {{{ global statistics -->
       <ul class="nav nav-list" ng-if="enable.sidebar.stats">
-        <li class="nav-header" ng-show="totalAria2Downloads()">Global Statistics</li>
+        <li class="nav-header" ng-show="totalAria2Downloads()">{{ 'Global Statistics' | translate }}</li>
         <li>
           <div
             yticks="3"
@@ -189,78 +211,78 @@
       </ul>
       <!-- }}} -->
 
-      <br>
+      <br />
 
 
       <!-- {{{ download filters -->
       <ul id="filters" class="clearfix nav nav-list" ng-show="enable.sidebar.filters">
-        <li class="nav-header">Download Filters</li>
+        <li class="nav-header">{{ 'Download Filters' | translate }}</li>
         <li class="checkbox">
           <label for="filter-speed">
             <input type="checkbox" ng-model="filterSpeed" ng-change="persistFilters()" id="filter-speed">
-            Running
+            {{ 'Running' | translate }}
           </label>
         </li>
         <li class="active checkbox">
           <label for="filter-active">
             <input type="checkbox" ng-model="filterActive" ng-change="persistFilters()" id="filter-active">
-            Active
+            {{ 'Active' | translate }}
           </label>
         </li>
         <li class="checkbox">
           <label for="filter-waiting">
             <input type="checkbox" ng-model="filterWaiting" ng-change="persistFilters()" id="filter-waiting">
-            Waiting
+            {{ 'Waiting' | translate }}
           </label>
         </li>
         <li class="checkbox">
           <label for="filter-complete">
             <input type="checkbox" ng-model="filterComplete" ng-change="persistFilters()" id="filter-complete">
-            Complete
+            {{ 'Complete' | translate }}
           </label>
         </li>
         <li class="checkbox">
           <label for="filter-error">
             <input type="checkbox" ng-model="filterError" ng-change="persistFilters()" id="filter-error">
-            Error
+            {{ 'Error' | translate }}
           </label>
         </li>
         <li class="checkbox">
           <label for="filter-paused">
             <input type="checkbox" ng-model="filterPaused" ng-change="persistFilters()" id="filter-paused">
-            Paused
+            {{ 'Paused' | translate }}
           </label>
         </li>
         <li class="checkbox">
           <label for="filter-removed">
             <input type="checkbox" ng-model="filterRemoved" ng-change="persistFilters()" id="filter-removed">
-            Removed
+            {{ 'Removed' | translate }}
           </label>
         </li>
         <li class="checkbox">
           <label>
             <input type="checkbox" ng-model="hideLinkedMetadata" id="hide-linked-metadata">
-            Hide linked meta-data
+            {{ 'Hide linked meta-data' | translate }}
           </label>
         </li>
         <li>
           <p>
-          Displaying <strong>{{totalDownloads}}</strong> of <em>{{totalAria2Downloads()}}</em> downloads
+          {{ 'Displaying' | translate }} <strong>{{totalDownloads}}</strong> {{ 'of' | translate }} <em>{{totalAria2Downloads()}}</em> {{ 'downloads' | translate }}
           </p>
           <p>
-            <button ng-click="toggleStateFilters()" class="btn btn-default btn-xs">Toggle</button>
-            <button ng-click="resetFilters()" class="btn btn-default btn-xs">Reset filters</button>
+            <button ng-click="toggleStateFilters()" class="btn btn-default btn-xs">{{ 'Toggle' | translate }}</button>
+            <button ng-click="resetFilters()" class="btn btn-default btn-xs">{{ 'Reset filters' | translate }}</button>
           </p>
         </li>
       </ul>
       <!-- }}} -->
 
-      <br>
+      <br />
 
 
       <!-- {{{ starred properties -->
       <ul class="clearfix nav nav-list" ng-controller="StarredPropsCtrl" ng-show="properties.length && enable.sidebar.starredProps">
-        <li class="nav-header">Quick Access Settings</li>
+        <li class="nav-header">{{ 'Quick Access Settings' | translate }}</li>
         <li ng-repeat="prop in properties" class="form-group">
           <label title="{{prop.desc}}" style="width: 100%;">{{prop.name}}</label>
           <div class="form-group">
@@ -269,7 +291,7 @@
           </div>
         </li>
         <li>
-          <button ng-disabled="!enabled()" ng-click="save()" class="btn btn-default btn-sm">Save settings</button>
+          <button ng-disabled="!enabled()" ng-click="save()" class="btn btn-default btn-sm">{{ 'Save settings' | translate }}</button>
         </li>
       </ul>
       <!-- }}} -->
@@ -283,7 +305,7 @@
     <!-- {{{ downloads -->
     <!-- Bug?? <div ng-show="!totalAria2Downloads() && totalAria2Downloads() > getDownloads()" class="hero-unit">-->
     <div ng-show="!totalAria2Downloads()" class="jumbotron">
-      Currently no download in line to display, use the '<strong>Add</strong>' download button to start downloading files!
+      {{ 'Currently no download in line to display, use the' | translate }} <strong>{{ 'Add' | translate }}</strong> {{ 'download button to start downloading files!' | translate }}
     </div>
 
 
@@ -347,21 +369,21 @@
                 <a
                   ng-click="showSettings(download)"
                   ng-show="['waiting', 'active'].indexOf( getType(download) )!= -1"
-                  href="#"><span class="fa fa-fw fa-cog">&nbsp;</span> Settings</a>
+                  href="#"><span class="fa fa-fw fa-cog">&nbsp;</span> {{ 'Settings' | translate }}</a>
               </li>
 
               <li ng-show="download.bittorrent && false">
-                <a href="#"><span class="fa fa-fw fa-list-alt">&nbsp;</span> Peers</a>
+                <a href="#"><span class="fa fa-fw fa-list-alt">&nbsp;</span> {{ 'Peers' | translate }}</a>
               </li>
 
               <li>
                 <a ng-click="toggleCollapsed(download)"
-                   href="#"><span class="fa fa-fw fa-info-circle">&nbsp;</span> More Info</a>
+                   href="#"><span class="fa fa-fw fa-info-circle">&nbsp;</span> {{ 'More Info' | translate }}</a>
               </li>
 
               <li class="visible-phone">
                 <a ng-click="remove(download)"
-                   href="#"><span class="fa fa-fw fa-times">&nbsp;</span> Remove</a>
+                   href="#"><span class="fa fa-fw fa-times">&nbsp;</span> {{ 'Remove' | translate }}</a>
               </li>
             </ul>
           </div>
@@ -378,31 +400,31 @@
         <ul class="stats pull-left" ng-switch-when="active">
           <!-- {{{ active download statistics -->
           <li class="label label-active hidden-phone hidden-tablet">
-            <span title="Download status"><span class="fa fa-fw fa-play">&nbsp;</span> {{download.status}}</span>
+            <span title="{{ 'Download status' | translate }}"><span class="fa fa-fw fa-play">&nbsp;</span> {{download.status}}</span>
           </li>
 
           <li class="label label-default" ng-class="{'label-active': download.downloadSpeed > 2048, 'label-warning': download.downloadSpeed <= 2048}">
-            <span title="Download Speed"><span class="fa fa-fw fa-arrow-circle-o-down">&nbsp;</span> {{download.downloadSpeed | bspeed}}</span>
+            <span title="{{ 'Download Speed' | translate }}"><span class="fa fa-fw fa-arrow-circle-o-down">&nbsp;</span> {{download.downloadSpeed | bspeed}}</span>
           </li>
 
           <li ng-show="download.bittorrent" class="label label-default hidden-phone" ng-class="{'label-info': download.uploadSpeed > 2048}">
-            <span title="Upload Speed"><span class="fa fa-fw fa-arrow-circle-o-up">&nbsp;</span> {{download.uploadSpeed | bspeed}}</span>
+            <span title="{{ 'Upload Speed' | translate }}"><span class="fa fa-fw fa-arrow-circle-o-up">&nbsp;</span> {{download.uploadSpeed | bspeed}}</span>
           </li>
 
           <li class="label label-active">
-            <span title="Estimated time"><span class="fa fa-fw fa-clock-o">&nbsp;</span> {{getEta(download) | time}}</span>
+            <span title="{{ 'Estimated time' | translate }}"><span class="fa fa-fw fa-clock-o">&nbsp;</span> {{getEta(download) | time}}</span>
           </li>
 
           <li class="label label-active hidden-phone">
-            <span title="Download Size"><span class="fa fa-fw fa-cloud-download">&nbsp;</span> {{download.fmtTotalLength}}</span>
+            <span title="{{ 'Download Size' | translate }}"><span class="fa fa-fw fa-cloud-download">&nbsp;</span> {{download.fmtTotalLength}}</span>
           </li>
 
           <li class="label label-active hidden-phone">
-            <span title="Downloaded"><span class="fa fa-fw fa-arrow-circle-o-down">&nbsp;</span> {{download.fmtCompletedLength}}</span>
+            <span title="{{ 'Downloaded' | translate }}"><span class="fa fa-fw fa-arrow-circle-o-down">&nbsp;</span> {{download.fmtCompletedLength}}</span>
           </li>
 
           <li class="label label-active hidden-phone hidden-tablet">
-            <span title="Progress"><span class="fa fa-fw fa-chevron-right">&nbsp;</span> {{getProgress(download)}}%</span>
+            <span title="{{ 'Progress' | translate }}"><span class="fa fa-fw fa-chevron-right">&nbsp;</span> {{getProgress(download)}}%</span>
           </li>
 
           <!-- }}} -->
@@ -411,19 +433,19 @@
         <ul class="stats pull-left" ng-switch-when="paused">
           <!-- {{{ paused download statistics -->
           <li class="label label-info">
-            <span title="Download Status"><span class="fa fa-fw fa-pause">&nbsp;</span> {{download.status}}</span>
+            <span title="{{ 'Download Status' | translate }}"><span class="fa fa-fw fa-pause">&nbsp;</span> {{download.status}}</span>
           </li>
 
           <li class="label label-info">
-            <span title="Download Size"><span class="fa fa-fw fa-cloud-download">&nbsp;</span> {{download.fmtTotalLength}}</span>
+            <span title="{{ 'Download Size' | translate }}"><span class="fa fa-fw fa-cloud-download">&nbsp;</span> {{download.fmtTotalLength}}</span>
           </li>
 
           <li class="label label-info hidden-phone">
-            <span title="Downloaded"><span class="fa fa-fw fa-download">&nbsp;</span> {{download.fmtCompletedLength}}</span>
+            <span title="{{ 'Downloaded' | translate }}"><span class="fa fa-fw fa-download">&nbsp;</span> {{download.fmtCompletedLength}}</span>
           </li>
 
           <li class="label label-info hidden-phone">
-            <span title="Download Path"><span class="fa fa-fw fa-folder-open">&nbsp;</span> {{download.dir}}</span>
+            <span title="{{ 'Download Path' | translate }}"><span class="fa fa-fw fa-folder-open">&nbsp;</span> {{download.dir}}</span>
           </li>
 
           <!--  }}} -->
@@ -432,19 +454,19 @@
         <ul class="stats pull-left" ng-switch-when="waiting">
           <!-- {{{ paused download statistics -->
           <li class="label label-default">
-            <span title="Download Status"><span class="fa fa-fw fa-caret-right">&nbsp;</span> {{download.status}}</span>
+            <span title="{{ 'Download status' | translate }}"><span class="fa fa-fw fa-caret-right">&nbsp;</span> {{download.status}}</span>
           </li>
 
           <li class="label label-default">
-            <span title="Download Size"><span class="fa fa-fw fa-cloud-download">&nbsp;</span> {{download.fmtTotalLength}}</span>
+            <span title="{{ 'Download Size' | translate }}"><span class="fa fa-fw fa-cloud-download">&nbsp;</span> {{download.fmtTotalLength}}</span>
           </li>
 
           <li class="label label-default hidden-phone">
-            <span title="Downloaded"><span class="fa fa-fw fa-download">&nbsp;</span> {{download.fmtCompletedLength}}</span>
+            <span title="{{ 'Downloaded' | translate }}"><span class="fa fa-fw fa-download">&nbsp;</span> {{download.fmtCompletedLength}}</span>
           </li>
 
           <li class="label label-default hidden-phone">
-            <span title="Download Path"><span class="fa fa-fw fa-folder-open">&nbsp;</span> {{download.dir}}</span>
+            <span title="{{ 'Download Path' | translate }}"><span class="fa fa-fw fa-folder-open">&nbsp;</span> {{download.dir}}</span>
           </li>
 
           <!--  }}} -->
@@ -454,15 +476,15 @@
           <!-- {{{ complete download statistics -->
 
           <li class="label label-success">
-            <span title="Download Status"><span class="fa fa-fw fa-check-square-o">&nbsp;</span> {{download.status}}</span>
+            <span title="{{ 'Download Status' | translate }}"><span class="fa fa-fw fa-check-square-o">&nbsp;</span> {{download.status}}</span>
           </li>
 
           <li class="label label-success">
-            <span title="Download Size"><span class="fa fa-fw fa-cloud-download">&nbsp;</span> {{download.fmtTotalLength}}</span>
+            <span title="{{ 'Download Size' | translate }}"><span class="fa fa-fw fa-cloud-download">&nbsp;</span> {{download.fmtTotalLength}}</span>
           </li>
 
           <li class="label label-success hidden-phone">
-            <span title="Download Path"><span class="fa fa-fw fa-folder-open">&nbsp;</span> {{download.dir}}</span>
+            <span title="{{ 'Download Path' | translate }}"><span class="fa fa-fw fa-folder-open">&nbsp;</span> {{download.dir}}</span>
           </li>
 
           <!-- }}} -->
@@ -471,15 +493,15 @@
         <ul class="stats pull-left" ng-switch-when="removed">
           <!-- {{{ removed download statistics -->
           <li class="label label-warning">
-            <span title="Download Status"><span class="fa fa-fw fa-times">&nbsp;</span> {{download.status}}</span>
+            <span title="{{ 'Download Status' | translate }}"><span class="fa fa-fw fa-times">&nbsp;</span> {{download.status}}</span>
           </li>
 
           <li class="label label-warning">
-            <span title="Download Size"><span class="fa fa-fw fa-cloud-download">&nbsp;</span> {{download.fmtTotalLength}}</span>
+            <span title="{{ 'Download Size' | translate }}"><span class="fa fa-fw fa-cloud-download">&nbsp;</span> {{download.fmtTotalLength}}</span>
           </li>
 
           <li class="label label-warning hidden-phone">
-            <span title="Download Path"><span class="fa fa-fw fa-folder-open">&nbsp;</span> {{download.dir}}</span>
+            <span title="{{ 'Download Path' | translate }}"><span class="fa fa-fw fa-folder-open">&nbsp;</span> {{download.dir}}</span>
           </li>
 
           <!-- }}} -->
@@ -489,15 +511,15 @@
 
           <!-- {{{ error download statistics -->
           <li class="label label-danger">
-            <span title="Error "><span class="fa fa-fw fa-times-circle">&nbsp;</span> {{getErrorStatus(download.errorCode)}}</span>
+            <span title="{{ 'Error ' | translate }}"><span class="fa fa-fw fa-times-circle">&nbsp;</span> {{getErrorStatus(download.errorCode)}}</span>
           </li>
 
           <li class="label label-default">
-            <span title="Download Size"><span class="fa fa-fw fa-cloud-download">&nbsp;</span> {{download.fmtTotalLength}}</span>
+            <span title="{{ 'Download Size' | translate }}"><span class="fa fa-fw fa-cloud-download">&nbsp;</span> {{download.fmtTotalLength}}</span>
           </li>
 
           <li class="label label-default hidden-phone">
-            <span title="Download Path"><span class="fa fa-fw fa-folder-open">&nbsp;</span> {{download.dir}}</span>
+            <span title="{{ 'Download Path' | translate }}"><span class="fa fa-fw fa-folder-open">&nbsp;</span> {{download.dir}}</span>
           </li>
 
           <!-- }}} -->
@@ -507,7 +529,7 @@
       </div>
       <div class="download-progress download-item">
         <div class="progress">
-          <div ng-class="'progress-bar progress-bar-striped ' + getProgressClass(download)" ng-attr-style="width: {{getProgress(download)}}%;" style="width: {{getProgress(download)}}%;"></div>
+          <div ng-class="'progress-bar progress-bar-striped ' + getProgressClass(download)" style="width: {{getProgress(download)}}%;"></div>
         </div>
       </div>
       <div ng-switch="download.collapsed">
@@ -516,20 +538,20 @@
             <canvas bitfield="download.bitfield" draw="!download.collapsed" pieces="download.numPieces" class="progress chunk-canvas" width="1400" chunkbar></canvas>
           </div>
           <ul class="stats download-item">
-            <li class="label label-default" title="Estimated Time"><i class="fa fa-fw fa-clock-o">&nbsp;</i> <span class="download-eta">{{getEta(download) | time}}</span></li>
-            <li class="label label-default" title="Download Size"><i class="fa fa-fw fa-cloud-download">&nbsp;</i> <span class="download-totalLength">{{download.fmtTotalLength}}</span></li>
-            <li class="label label-default" title="Downloaded"><i class="fa fa-fw fa-download">&nbsp;</i> <span class="download-completedLength">{{download.fmtCompletedLength}}</span></li>
-            <li class="label label-default" title="Download Speed"><i class="fa fa-fw fa-arrow-circle-o-down">&nbsp;</i> <span class="download-downloadSpeed">{{download.fmtDownloadSpeed}}</span></li>
+            <li class="label label-default" title="{{ 'Estimated Time' | translate }}"><i class="fa fa-fw fa-clock-o">&nbsp;</i> <span class="download-eta">{{getEta(download) | time}}</span></li>
+            <li class="label label-default" title="{{ 'Download Size' | translate }}"><i class="fa fa-fw fa-cloud-download">&nbsp;</i> <span class="download-totalLength">{{download.fmtTotalLength}}</span></li>
+            <li class="label label-default" title="{{ 'Downloaded' | translate }}"><i class="fa fa-fw fa-download">&nbsp;</i> <span class="download-completedLength">{{download.fmtCompletedLength}}</span></li>
+            <li class="label label-default" title="{{ 'Download Speed' | translate }}"><i class="fa fa-fw fa-arrow-circle-o-down">&nbsp;</i> <span class="download-downloadSpeed">{{download.fmtDownloadSpeed}}</span></li>
 
-            <li class="label label-default" title="Upload Speed" ng-show="download.bittorrent"><i class="fa fa-fw fa-arrow-circle-o-up">&nbsp;</i> <span class="download-uploadSpeed">{{download.fmtUploadSpeed}}</span></li>
-            <li class="label label-default" title="Uploaded" ng-show="download.bittorrent"><i class="fa fa-fw fa-upload">&nbsp;</i> <span class="download-uploadLength">{{download.fmtUploadLength}}</span></li>
+            <li class="label label-default" title="{{ 'Upload Speed' | translate }}" ng-show="download.bittorrent"><i class="fa fa-fw fa-arrow-circle-o-up">&nbsp;</i> <span class="download-uploadSpeed">{{download.fmtUploadSpeed}}</span></li>
+            <li class="label label-default" title="{{ 'Uploaded' | translate }}" ng-show="download.bittorrent"><i class="fa fa-fw fa-upload">&nbsp;</i> <span class="download-uploadLength">{{download.fmtUploadLength}}</span></li>
 
             <li class="label label-default" title={{download.connectionsTitle}}><i class="fa fa-fw fa-link">&nbsp;</i> <span class="download-connections">{{download.connections}}{{download.numSeeders}}</span></li>
 
-            <li class="label label-default" title="Download GID"><i class="fa fa-fw fa-bars">&nbsp;</i> <span class="download-gid">{{download.gid}}</span></li>
-            <li class="label label-default" title="Number of Pieces"># of <i class="fa fa-fw fa-puzzle-piece">&nbsp;</i> <span class="download-numPieces">{{download.numPieces}}</span></li>
-            <li class="label label-default" title="Piece Length"><i class="fa fa-fw fa-puzzle-piece"></i> Length&nbsp; <span class="download-pieceLength">{{download.fmtPieceLength}}</span></li>
-            <li class="label label-default" title="Download Path"><i class="fa fa-fw fa-folder-open">&nbsp;</i> <span class="download-dir">{{download.dir}}</span></li>
+            <li class="label label-default" title="{{ 'Download GID' | translate }}"><i class="fa fa-fw fa-bars">&nbsp;</i> <span class="download-gid">{{download.gid}}</span></li>
+            <li class="label label-default" title="{{ 'Number of Pieces' | translate }}">{{ '# of' | translate }} <i class="fa fa-fw fa-puzzle-piece">&nbsp;</i> <span class="download-numPieces">{{download.numPieces}}</span></li>
+            <li class="label label-default" title="{{ 'Piece Length' | translate }}"><i class="fa fa-fw fa-puzzle-piece"></i> {{ 'Length' | translate }}&nbsp; <span class="download-pieceLength">{{download.fmtPieceLength}}</span></li>
+            <li class="label label-default" title="{{ 'Download Path' | translate }}"><i class="fa fa-fw fa-folder-open">&nbsp;</i> <span class="download-dir">{{download.dir}}</span></li>
           </ul>
           <ul class="download-files hidden-phone download-item">
             <li class="label label-default" ng-repeat="file in download.files" ng-class="{'label-success': file.selected}">
@@ -579,22 +601,15 @@
 <script type="text/ng-template" id="getUris.html">
   <div class="modal-header">
     <button class="close" ng-click="$dismiss()">&times;</button>
-    <h4>Add Downloads By URIs</h4>
+    <h4>{{ 'Add Downloads By URIs' | translate }}</h4>
   </div>
   <form class="modal-body">
     <fieldset>
       <p class="help-block">
-        - You can add multiple downloads (files)
-        at the same time by putting uris for each
-        file on a separate line. <br>
-        - You can also add multiple uris (mirrors) for the
-        *same* file. To do this separate the uris
-        by a space. <br>
-        - A URI can be HTTP(S)/FTP/BitTorrent Magnet URI. </br>
-        E.g. To add 2 files (downloads) f1.jpg
-        and f2.mp4 with 2 uris (mirrors) each,
-        add uris as following:
-        <br>
+    {{ '- You can add multiple downloads (files) at the same time by putting URIs for each file on a separate line.' | translate }}<br />
+    {{ '- You can also add multiple URIs (mirrors) for the *same* file. To do this, separate the URIs by a space.' | translate }}<br />
+    {{ '- A URI can be HTTP(S)/FTP/BitTorrent-Magnet.' | translate }}</br>
+    {{ 'E.g. to add 2 files (downloads) f1.jpg and f2.mp4 with 2 URIs (mirrors) each, add URIs as follows' | translate }}:<br />
         <!-- pre tags print tabs, so do not indent them! -->
 <pre>
 http://ex1.com/f1.jpg http://ex2.com/f1.jpg
@@ -607,7 +622,7 @@ http://ex1.com/f2.mp4 http://ex2.com/f2.mp4 --out=file2.mp4
 
         <div>
           <div class="modal-advanced-title">
-            Download settings
+            {{ 'Download settings' | translate }}
           </div>
           <div class="form-horizontal modal-advanced-options">
             <div class="form-group" ng-repeat="(name, set) in getUris.settings">
@@ -618,13 +633,13 @@ http://ex1.com/f2.mp4 http://ex2.com/f2.mp4 --out=file2.mp4
                 </select>
                 <input ng-show="!set.options.length" type="text" class="form-control input-xxlarge modal-form-input-verylarge" ng-model="set.val"/>
               </div>
-              <br>
+              <br />
             </div>
           </div>
 
           <br />
           <div ng-click="getUris.collapsed = !getUris.collapsed" class="modal-advanced-title">
-            Advanced settings
+            {{ 'Advanced settings' | translate }}
             <i ng-hide="!getUris.collapsed" class="fa fa-fw fa-caret-right"></i>
             <i ng-hide="getUris.collapsed" class="fa fa-fw fa-caret-down"></i>
           </div>
@@ -645,8 +660,8 @@ http://ex1.com/f2.mp4 http://ex2.com/f2.mp4 --out=file2.mp4
     </fieldset>
   </form>
   <div class="modal-footer">
-    <button class="btn btn-default" ng-click="$dismiss()">Cancel</button>
-    <button class="btn btn-default btn-primary" ng-click="$close()">Start</button>
+    <button class="btn btn-default" ng-click="$dismiss()">{{ 'Cancel' | translate }}</button>
+    <button class="btn btn-default btn-primary" ng-click="$close()">{{ 'Start' | translate }}</button>
   </div>
 </script>
 <!-- }}} -->
@@ -655,18 +670,18 @@ http://ex1.com/f2.mp4 http://ex2.com/f2.mp4 --out=file2.mp4
 <script type="text/ng-template" id="getTorrents.html">
   <div class="modal-header">
     <button class="close" ng-click="$dismiss()">x</button>
-    <h4>Add Downloads By Torrents</h4>
+    <h4>{{ 'Add Downloads By Torrents' | translate }}</h4>
   </div>
   <form class="modal-body">
     <fieldset>
-      <legend>Select Torrents</legend>
+      <legend>{{ 'Select Torrents' | translate }}</legend>
       <p class="help-block">
-        - Select the torrent from the local filesystem to start the download. <br>
-        - You can select multiple torrents to start multiple downloads <br>
-        - To add a magnet torrent url, use the add url option and add it there.
+    {{ '- Select the torrent from the local filesystem to start the download.' | translate }}<br />
+    {{ '- You can select multiple torrents to start multiple downloads.' | translate }}<br />
+    {{ '- To add a BitTorrent-Magnet URL, use the add URI option and add it there.' | translate }}
       </p>
       <div class="form-horizontal form-group">
-        <label class="control-label" style="text-align: left;"><b>Select a Torrent:</b></label>
+        <label class="control-label" style="text-align: left;"><b>{{ 'Select a Torrent' | translate }}:</b></label>
         <div class="controls">
           <input type="file" class="input-xlarge" fselect="getTorrents.files" multiple/>
         </div>
@@ -675,7 +690,7 @@ http://ex1.com/f2.mp4 http://ex2.com/f2.mp4 --out=file2.mp4
 
       <div>
         <div class="modal-advanced-title">
-          Download settings
+          {{ 'Download settings' | translate }}
         </div>
         <div class="form-horizontal modal-advanced-options">
           <div class="form-group" ng-repeat="(name, set) in getTorrents.settings">
@@ -686,13 +701,13 @@ http://ex1.com/f2.mp4 http://ex2.com/f2.mp4 --out=file2.mp4
               </select>
               <input ng-show="!set.options.length" type="text" class="form-control input-xxlarge modal-form-input-verylarge" ng-model="set.val"/>
             </div>
-            <br>
+            <br />
           </div>
         </div>
 
         <br />
         <div ng-click="getTorrents.collapsed = !getTorrents.collapsed" class="modal-advanced-title">
-          Advanced settings
+          {{ 'Advanced settings' | translate }}
           <i ng-hide="!getTorrents.collapsed" class="fa fa-fw fa-caret-right"></i>
           <i ng-hide="getTorrents.collapsed" class="fa fa-fw fa-caret-down"></i>
         </div>
@@ -713,8 +728,8 @@ http://ex1.com/f2.mp4 http://ex2.com/f2.mp4 --out=file2.mp4
     </fieldset>
   </form>
   <div class="modal-footer">
-    <button class="btn btn-default" ng-click="$dismiss()">Cancel</button>
-    <button class="btn btn-default btn-primary" ng-click="$close()">Start</button>
+    <button class="btn btn-default" ng-click="$dismiss()">{{ 'Cancel' | translate }}</button>
+    <button class="btn btn-default btn-primary" ng-click="$close()">{{ 'Start' | translate }}</button>
   </div>
 </script>
 <!-- }}} -->
@@ -723,17 +738,17 @@ http://ex1.com/f2.mp4 http://ex2.com/f2.mp4 --out=file2.mp4
 <script type="text/ng-template" id="getMetalinks.html">
   <div class="modal-header">
     <button class="close" ng-click="$dismiss()">x</button>
-    <h4>Add Downloads By Metalinks</h4>
+    <h4>{{ 'Add Downloads By Metalinks' | translate }}</h4>
   </div>
   <form class="modal-body">
     <fieldset>
-      <legend>Select Metalinks</legend>
+      <legend>{{ 'Select Metalinks' | translate }}</legend>
       <p class="help-block">
-        - Select the metalink from the local filesystem to start the download. <br>
-        - You can select multiple metalinks to start multiple downloads
+    {{ '- Select the Metalink from the local filesystem to start the download.' | translate }}<br />
+    {{ '- You can select multiple Metalinks to start multiple downloads.' | translate }}
       </p>
       <div class="form-horizontal form-group">
-        <label class="control-label" style="text-align: left;"><b>Select a Metalinks:</b></label>
+        <label class="control-label" style="text-align: left;"><b>{{ 'Select a Metalink' | translate }}:</b></label>
         <div class="controls">
           <input type="file" class="input-xlarge" fselect="getMetalinks.files" multiple/>
         </div>
@@ -742,7 +757,7 @@ http://ex1.com/f2.mp4 http://ex2.com/f2.mp4 --out=file2.mp4
 
       <div>
         <div class="modal-advanced-title">
-          Download settings
+          {{ 'Download settings' | translate }}
         </div>
         <div class="form-horizontal modal-advanced-options">
           <div class="form-group" ng-repeat="(name, set) in getMetalinks.settings">
@@ -753,13 +768,13 @@ http://ex1.com/f2.mp4 http://ex2.com/f2.mp4 --out=file2.mp4
               </select>
               <input ng-show="!set.options.length" type="text" class="form-control input-xxlarge modal-form-input-verylarge" ng-model="set.val"/>
             </div>
-            <br>
+            <br />
           </div>
         </div>
 
         <br />
         <div ng-click="getMetalinks.collapsed = !getMetalinks.collapsed" class="modal-advanced-title">
-          Advanced settings
+          {{ 'Advanced settings' | translate }}
           <i ng-hide="!getMetalinks.collapsed" class="fa fa-fw fa-caret-right"></i>
           <i ng-hide="getMetalinks.collapsed" class="fa fa-fw fa-caret-down"></i>
         </div>
@@ -780,8 +795,8 @@ http://ex1.com/f2.mp4 http://ex2.com/f2.mp4 --out=file2.mp4
     </fieldset>
   </form>
   <div class="modal-footer">
-    <button class="btn btn-default" ng-click="$dismiss()">Cancel</button>
-    <button class="btn btn-default btn-primary" ng-click="$close()">Start</button>
+    <button class="btn btn-default" ng-click="$dismiss()">{{ 'Cancel' | translate }}</button>
+    <button class="btn btn-default btn-primary" ng-click="$close()">{{ 'Start' | translate }}</button>
   </div>
 </script>
 <!-- }}} -->
@@ -790,29 +805,29 @@ http://ex1.com/f2.mp4 http://ex2.com/f2.mp4 --out=file2.mp4
 <script type="text/ng-template" id="selectFiles.html">
   <div class="modal-header">
     <button class="close" ng-click="$dismiss()">x</button>
-    <h4>Choose files to start download for</h4>
+    <h4>{{ 'Choose files to start download for' | translate }}</h4>
   </div>
 
   <form class="form-horizontal modal-body">
     <fieldset>
       <div class="form-group">
         <div ng-repeat="file in selectFiles.files">
-          <label class="control-label">Select to download </label>
+          <label class="control-label">{{ 'Select to download' | translate }}</label>
 
           <div class="controls">
             <label class="checkbox">
               <input type="checkbox" ng-model="file.selected"/>{{file.relpath}}
             </label>
           </div>
-          <br><br>
+          <br /><br />
         </div>
       </div>
     </fieldset>
   </form>
 
   <div class="modal-footer">
-    <button class="btn btn-default" ng-click="$dismiss()">Cancel</button>
-    <button class="btn btn-default btn-primary" ng-click="$close()">Choose</button>
+    <button class="btn btn-default" ng-click="$dismiss()">{{ 'Cancel' | translate }}</button>
+    <button class="btn btn-default btn-primary" ng-click="$close()">{{ 'Choose' | translate }}</button>
   </div>
 </script>
 <!-- }}} -->
@@ -837,7 +852,7 @@ http://ex1.com/f2.mp4 http://ex2.com/f2.mp4 --out=file2.mp4
             <div class="checkbox" ng-show="set.starred != undefined">
               <label>
                 <input type="checkbox" ng-model="set.starred"/>
-                Quick Access (shown on the main page)
+                {{ 'Quick Access (shown on the main page)' | translate }}
               </label>
             </div>
             <p class="help-block">{{set.desc}}</p>
@@ -848,7 +863,7 @@ http://ex1.com/f2.mp4 http://ex2.com/f2.mp4 --out=file2.mp4
   </div>
 
   <div class="modal-footer">
-    <button class="btn btn-default" ng-click="$dismiss()">Cancel</button>
+    <button class="btn btn-default" ng-click="$dismiss()">{{ 'Cancel' | translate }}</button>
     <button class="btn btn-default btn-primary" ng-click="$close()">{{settings.actionText}}</button>
   </div>
 </script>
@@ -858,14 +873,14 @@ http://ex1.com/f2.mp4 http://ex2.com/f2.mp4 --out=file2.mp4
 <script type="text/ng-template" id="connection.html">
   <div class="modal-header">
     <button class="close" ng-click="$dismiss()">x</button>
-    <h4>Connection Settings</h4>
+    <h4>{{ 'Connection Settings' | translate }}</h4>
   </div>
   <div class="modal-body">
     <form class="form-horizontal">
       <fieldset>
-        <legend>Aria2 RPC host and port</legend>
+        <legend>{{ 'Aria2 RPC host and port' | translate }}</legend>
         <div class="form-group">
-          <label class="col-sm-3 control-label">Enter the host:</label>
+          <label class="col-sm-3 control-label">{{ 'Enter the host' | translate }}:</label>
           <div class="col-sm-9 controls">
             <div class="input-group">
               <span class="input-group-addon">http(s)://</span>
@@ -873,26 +888,24 @@ http://ex1.com/f2.mp4 http://ex2.com/f2.mp4 --out=file2.mp4
                 ng-model="connection.conf.host"/>
             </div>
             <p class="help-block">
-              Enter the ip or dns name of the server on which the
-              rpc for aria2 is running (default = localhost)
+          {{ 'Enter the IP or DNS name of the server on which the RPC for Aria2 is running (default: localhost)' | translate }}
             </p>
           </div>
         </div>
 
         <div class="form-group">
-          <label class="col-sm-3 control-label">Enter the port:</label>
+          <label class="col-sm-3 control-label">{{ 'Enter the port' | translate }}:</label>
           <div class="col-sm-9 controls">
             <input type="text" class="form-control input-xlarge modal-form-input-number"
               ng-model="connection.conf.port"/>
             <p class="help-block">
-              Enter the port of the server on which the rpc for
-              aria2 is running (default = 6800)
+          {{ 'Enter the port of the server on which the RPC for Aria2 is running (default: 6800)' | translate }}
             </p>
           </div>
         </div>
 
         <div class="form-group">
-          <label class="col-sm-3 control-label">Enter the rpc path:</label>
+          <label class="col-sm-3 control-label">{{ 'Enter the RPC path' | translate }}:</label>
           <div class="col-sm-9 controls">
             <div class="input-group">
 			  <span class="input-group-addon">http(s)://{{connection.conf.host + ':' + connection.conf.port}}</span>
@@ -900,70 +913,68 @@ http://ex1.com/f2.mp4 http://ex2.com/f2.mp4 --out=file2.mp4
                 ng-model="connection.conf.path"/>
             </div>
             <p class="help-block">
-              Enter path for the aria2 rpc endpoint (default = /jsonrpc)
+          {{ 'Enter the path for the Aria2 RPC endpoint (default: /jsonrpc)' | translate }}
             </p>
           </div>
         </div>
 
         <div class="form-group">
-          <label class="col-sm-3 control-label">SSL/TLS encryption:</label>
+          <label class="col-sm-3 control-label">{{ 'SSL/TLS encryption' | translate }}:</label>
           <div class="col-sm-9 controls">
             <div class="checkbox">
               <label>
                 <input type="checkbox" ng-model="connection.conf.encrypt"/>
-                Enable SSL/TLS encryption.
+                {{ 'Enable SSL/TLS encryption' | translate }}
               </label>
             </div>
           </div>
         </div>
 
         <div class="form-group">
-          <label class="col-sm-3 control-label">Enter the secret token (optional):</label>
+          <label class="col-sm-3 control-label">{{ 'Enter the secret token (optional)' | translate }}:</label>
           <div class="col-sm-9 controls">
             <label>
               <input type="text" class="form-control input-xlarge" ng-model="connection.conf.auth.token"/>
               <p class="help-block">
-              Enter the aria2 RPC secret token (leave empty if authentication is not enabled)
+          {{ 'Enter the Aria2 RPC secret token (leave empty if authentication is not enabled)' | translate }}
               </p>
             </label>
           </div>
         </div>
 
         <div class="form-group">
-          <label class="col-sm-3 control-label">Enter the username (optional):</label>
+          <label class="col-sm-3 control-label">{{ 'Enter the username (optional)' | translate }}:</label>
           <div class="col-sm-9 controls">
             <input type="text" class="form-control input-xlarge"
               ng-model="connection.conf.auth.user"/>
             <p class="help-block">
-              Enter the aria2 RPC username
-              (empty if authentication not enabled)
+          {{ 'Enter the Aria2 RPC username (empty if authentication not enabled)' | translate }}
             </p>
           </div>
         </div>
 
         <div class="form-group">
-          <label class="col-sm-3 control-label">Enter the password (optional):</label>
+          <label class="col-sm-3 control-label">{{ 'Enter the password (optional)' | translate }}:</label>
           <div class="col-sm-9 controls">
             <input type="password" class="form-control input-xlarge"
               ng-model="connection.conf.auth.pass"/>
             <p class="help-block">
-              Enter the aria2 RPC password
-              (empty if authentication not enabled)
+          {{ 'Enter the Aria2 RPC password (empty if authentication not enabled)' | translate }}
             </p>
           </div>
         </div>
       </fieldset>
 
       <fieldset>
-        <legend>Direct Download</legend>
+        <legend>{{ 'Direct Download' | translate }}</legend>
         <div class="form-group">
-          <label class="col-sm-3 control-label">Enter base URL (optional):</label>
+          <label class="col-sm-3 control-label">{{ 'Enter base URL (optional)' | translate }}:</label>
           <div class="col-sm-9 controls">
             <input type="text" class="form-control input-xlarge"
               ng-model="connection.conf.directURL"/>
             <p class="help-block">
-              If supplied, links will be created to enable direct download from the
-              aria2 server, requires appropriate webserver to be configured
+              {{ 'If supplied, links will be created to enable direct download from the Aria2 server.' | translate }}<br />
+              {{ '(Requires an appropriate webserver to be configured.)' | translate }}
             </p>
           </div>
         </div>
@@ -971,9 +982,9 @@ http://ex1.com/f2.mp4 http://ex2.com/f2.mp4 --out=file2.mp4
     </form>
   </div>
   <div class="modal-footer">
-    <button href="#" class="btn btn-default" ng-click="$dismiss()">Cancel</button>
+    <button href="#" class="btn btn-default" ng-click="$dismiss()">{{ 'Cancel' | translate }}</button>
     <button href="#" class="btn btn-default btn-primary" ng-click="$close()">
-      Save Connection configuration
+      {{ 'Save Connection configuration' | translate }}
     </button>
   </div>
 </script>
@@ -984,12 +995,12 @@ http://ex1.com/f2.mp4 http://ex2.com/f2.mp4 --out=file2.mp4
 <script type="text/ng-template" id="server_info.html">
   <div class="modal-header">
     <button class="close" ng-click="$dismiss()">x</button>
-    <h4>Aria2 server info</h4>
+    <h4>{{ 'Aria2 server info' | translate }}</h4>
   </div>
   <div class="modal-body">
-      <b>Aria2 Version {{miscellaneous.version}}</b>
-      <br><br>
-      <b>Features Enabled</b>
+      <b>{{ 'Aria2 Version' | translate }} {{miscellaneous.version}}</b>
+      <br /><br />
+      <b>{{ 'Features Enabled' | translate }}</b>
         <ul>
         <li
           ng-repeat="feature in miscellaneous.enabledFeatures">
@@ -998,7 +1009,7 @@ http://ex1.com/f2.mp4 http://ex2.com/f2.mp4 --out=file2.mp4
         </ul>
   </div>
   <div class="modal-footer">
-    <button class="btn btn-default" ng-click="$dismiss()">Close</button>
+    <button class="btn btn-default" ng-click="$dismiss()">{{ 'Close' | translate }}</button>
   </div>
 </script>
 <!-- }}} -->
@@ -1007,20 +1018,19 @@ http://ex1.com/f2.mp4 http://ex2.com/f2.mp4 --out=file2.mp4
 <script type="text/ng-template" id="about.html">
   <div class="modal-header">
     <button class="close" ng-click="$dismiss()">x</button>
-    <h4>About and contribute</h4>
+    <h4>{{ 'About and contribute' | translate }}</h4>
   </div>
   <div class="modal-body">
       <p>
-        To download the latest version of the project,<br />
-         add issues or to contribute back head on to:<br />
+        {{ 'To download the latest version of the project, add issues or to contribute back, head on to' | translate }}:<br />
         <a href="https://github.com/ziahamza/webui-aria2">http://github.com/ziahamza/webui-aria2</a>
         <br /><br />
-        Or you can open the latest version in browser through:<br />
+        {{ 'Or you can open the latest version in browser through' | translate }}:<br />
         <a href="http://ziahamza.github.io/webui-aria2">http://ziahamza.github.io/webui-aria2</a>
       </p>
   </div>
   <div class="modal-footer">
-    <button class="btn btn-default" ng-click="$dismiss()">Close</button>
+    <button class="btn btn-default" ng-click="$dismiss()">{{ 'Close' | translate }}</button>
   </div>
 </script>
 <!-- }}} -->

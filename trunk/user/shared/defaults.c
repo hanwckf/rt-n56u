@@ -360,11 +360,7 @@ struct nvram_pair router_defaults[] = {
 	{ "apps_itunes", "0"},
 	{ "sh_num", "0" },
 	{ "computer_name", BOARD_NAME },
-#if BOARD_RAM_SIZE < 128
 	{ "pcache_reclaim", "2" },
-#else
-	{ "pcache_reclaim", "0" },
-#endif
 	{ "usb3_disable", "0" },
 	{ "u2ec_enable", "1" },
 	{ "lprd_enable", "1" },

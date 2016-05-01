@@ -702,6 +702,8 @@ reload_nat_modules(void)
 	{
 		hwnat_loaded = 0;
 		module_smart_unload("hw_nat", 0);
+		if (hwnat_allow)
+			sleep(1);
 	}
 #endif
 

@@ -42,14 +42,13 @@ func_start()
 	
 	tr_pport=`nvram get trmd_pport`
 	tr_rport=`nvram get trmd_rport`
-	tr_bind4="0.0.0.0"
-	tr_bind6="::"
 	
 	# create default settings.json
 	if [ ! -f "$DIR_CFG/settings.json" ] ; then
 		tr_user=`nvram get http_username`
 		tr_pass=`nvram get http_passwd`
-		$SVC_PATH -a "127.0.0.1, *.*.*.*" -i "$tr_bind4" -r "$tr_bind4" -w "$DIR_DL1" --incomplete-dir "$DIR_DL2" -c "$DIR_DL3" --no-incomplete-dir -ep -y -L 90 -l 30 --no-utp -M -t -u "$tr_user" -v "$tr_pass" -P "$tr_pport" -p "$tr_rport" -d 2>/tmp/settings.json
+		$SVC_PATH -w "$DIR_DL1" --incomplete-dir "$DIR_DL2" -c "$DIR_DL3" --no-incomplete-dir -y -L 90 -l 30 --no-utp -M -t -u "$tr_user" -v "$tr_pass" -P "$tr_pport" -p "$tr_rport" -x /var/run/transmission.pid -d 2>/tmp/settings.json
+		sed -i 's|"umask": 18,|"umask": 0,|g' /tmp/settings.json
 		mv /tmp/settings.json "$DIR_CFG/settings.json"
 	fi
 	
@@ -64,7 +63,7 @@ func_start()
 		svc_user=" -c nobody"
 	fi
 	
-	start-stop-daemon -S -N $SVC_PRIORITY$svc_user -x $SVC_PATH -- -g "$DIR_CFG" -i "$tr_bind4" -r "$tr_bind4" -P "$tr_pport" -p "$tr_rport" -M -e "${DIR_LINK}/transmission.log" -x /var/run/transmission.pid
+	start-stop-daemon -S -N $SVC_PRIORITY$svc_user -x $SVC_PATH -- -g "$DIR_CFG" -P "$tr_pport" -p "$tr_rport" -e "${DIR_LINK}/transmission.log"
 	
 	if [ $? -eq 0 ] ; then
 		echo "[  OK  ]"

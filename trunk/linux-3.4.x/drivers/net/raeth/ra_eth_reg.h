@@ -690,6 +690,8 @@ struct PDMA_txdesc {
 	unsigned int txd_info4;
 };
 
+#define TXD_MAX_SEG_SIZE		0x3fff
+
 #define TX2_DMA_SDL1(_x)		((_x) & 0x3fff)
 #define TX2_DMA_LS1			BIT(14)
 #define TX2_DMA_BURST			BIT(15)
@@ -717,6 +719,7 @@ struct PDMA_txdesc {
 #define TX4_DMA_PN(_x)			((_x) << 24)
 #endif
 #define TX4_DMA_TUI_CO(_x)		((_x) << 29)
+
 
 #if defined (CONFIG_RALINK_MT7621)
 

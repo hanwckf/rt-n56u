@@ -364,7 +364,7 @@ inc_rx_drop(END_DEVICE *ei_local, int gmac_no)
 static inline int
 dma_recv(struct net_device* dev, END_DEVICE* ei_local, int work_todo)
 {
-	struct PDMA_rxdesc *rxd_ring;
+	struct PDMA_rxdesc *rxd;
 	struct sk_buff *new_skb, *rx_skb;
 	int gmac_no = PSE_PORT_GMAC1;
 	int work_done = 0;
@@ -381,20 +381,21 @@ dma_recv(struct net_device* dev, END_DEVICE* ei_local, int work_todo)
 
 	while (work_done < work_todo) {
 		rxd_dma_owner_idx = (rxd_dma_owner_idx + 1) % NUM_RX_DESC;
-		rxd_ring = &ei_local->rxd_ring[rxd_dma_owner_idx];
+		rxd = &ei_local->rxd_ring[rxd_dma_owner_idx];
 		
-		if (!(rxd_ring->rxd_info2 & RX2_DMA_DONE))
+		rxd_info2 = ACCESS_ONCE(rxd->rxd_info2);
+		
+		if (!(rxd_info2 & RX2_DMA_DONE))
 			break;
+		
+		/* copy RX desc to CPU */
+#if defined (CONFIG_RAETH_HW_VLAN_RX)
+		rxd_info3 = ACCESS_ONCE(rxd->rxd_info3);
+#endif
+		rxd_info4 = ACCESS_ONCE(rxd->rxd_info4);
 		
 		/* load completed skb pointer */
 		rx_skb = ei_local->rxd_buff[rxd_dma_owner_idx];
-		
-		/* copy RX desc to CPU */
-		rxd_info2 = rxd_ring->rxd_info2;
-#if defined (CONFIG_RAETH_HW_VLAN_RX)
-		rxd_info3 = rxd_ring->rxd_info3;
-#endif
-		rxd_info4 = rxd_ring->rxd_info4;
 		
 #if defined (CONFIG_PSEUDO_SUPPORT)
 		gmac_no = RX4_DMA_SP(rxd_info4);
@@ -404,9 +405,9 @@ dma_recv(struct net_device* dev, END_DEVICE* ei_local, int work_todo)
 		new_skb = __dev_alloc_skb(MAX_RX_LENGTH + NET_IP_ALIGN, GFP_ATOMIC);
 		if (unlikely(new_skb == NULL)) {
 #if defined (RAETH_PDMA_V2)
-			rxd_ring->rxd_info2 = RX2_DMA_SDL0_SET(MAX_RX_LENGTH);
+			ACCESS_ONCE(rxd->rxd_info2) = RX2_DMA_SDL0_SET(MAX_RX_LENGTH);
 #else
-			rxd_ring->rxd_info2 = RX2_DMA_LS0;
+			ACCESS_ONCE(rxd->rxd_info2) = RX2_DMA_LS0;
 #endif
 			wmb();
 			
@@ -432,11 +433,11 @@ dma_recv(struct net_device* dev, END_DEVICE* ei_local, int work_todo)
 		
 		/* map new skb to ring (unmap is not required on generic mips mm) */
 #if defined (RAETH_PDMA_V2)
-		rxd_ring->rxd_info1 = (u32)dma_map_single(NULL, new_skb->data, MAX_RX_LENGTH + NET_IP_ALIGN, DMA_FROM_DEVICE);
-		rxd_ring->rxd_info2 = RX2_DMA_SDL0_SET(MAX_RX_LENGTH);
+		ACCESS_ONCE(rxd->rxd_info1) = (u32)dma_map_single(NULL, new_skb->data, MAX_RX_LENGTH + NET_IP_ALIGN, DMA_FROM_DEVICE);
+		ACCESS_ONCE(rxd->rxd_info2) = RX2_DMA_SDL0_SET(MAX_RX_LENGTH);
 #else
-		rxd_ring->rxd_info1 = (u32)dma_map_single(NULL, new_skb->data, MAX_RX_LENGTH, DMA_FROM_DEVICE);
-		rxd_ring->rxd_info2 = RX2_DMA_LS0;
+		ACCESS_ONCE(rxd->rxd_info1) = (u32)dma_map_single(NULL, new_skb->data, MAX_RX_LENGTH, DMA_FROM_DEVICE);
+		ACCESS_ONCE(rxd->rxd_info2) = RX2_DMA_LS0;
 #endif
 		wmb();
 		

@@ -28,6 +28,12 @@ fe_dma_ring_free(END_DEVICE *ei_local)
 	}
 
 #if !defined (CONFIG_RAETH_QDMATX_QDMARX)
+	/* free QDMA RX stub buffer */
+	if (ei_local->qrx_buff) {
+		dev_kfree_skb(ei_local->qrx_buff);
+		ei_local->qrx_buff = NULL;
+	}
+
 	/* free QDMA RX stub descriptors */
 	if (ei_local->qrx_ring) {
 		dma_free_coherent(NULL, NUM_QRX_DESC * sizeof(struct PDMA_rxdesc), ei_local->qrx_ring, ei_local->qrx_ring_phy);
@@ -84,11 +90,16 @@ fe_dma_ring_alloc(END_DEVICE *ei_local)
 	ei_local->qrx_ring = dma_alloc_coherent(NULL, NUM_QRX_DESC * sizeof(struct PDMA_rxdesc), &ei_local->qrx_ring_phy, GFP_KERNEL);
 	if (!ei_local->qrx_ring)
 		goto err_cleanup;
+
+	/* allocate QDMA RX stub buffer */
+	ei_local->qrx_buff = __dev_alloc_skb(MAX_RX_LENGTH + NET_IP_ALIGN, GFP_KERNEL);
+	if (!ei_local->qrx_buff)
+		goto err_cleanup;
 #endif
 
 	/* allocate PDMA (or QDMA) RX buffers */
 	for (i = 0; i < NUM_RX_DESC; i++) {
-		ei_local->rxd_buff[i] = dev_alloc_skb(MAX_RX_LENGTH + NET_IP_ALIGN);
+		ei_local->rxd_buff[i] = __dev_alloc_skb(MAX_RX_LENGTH + NET_IP_ALIGN, GFP_KERNEL);
 		if (!ei_local->rxd_buff[i])
 			goto err_cleanup;
 	}
@@ -107,26 +118,19 @@ get_txd_offset(END_DEVICE *ei_local, dma_addr_t txd_ptr_phy)
 }
 
 static inline dma_addr_t
-get_txd_ptr_phys(END_DEVICE *ei_local, u32 txd_offset)
+get_txd_ptr_phy(END_DEVICE *ei_local, u32 txd_offset)
 {
 	return (ei_local->txd_pool_phy + (txd_offset * sizeof(struct QDMA_txdesc)));
 }
 
-static inline struct QDMA_txdesc *
-get_txd_ptr_virt(END_DEVICE *ei_local, u32 txd_offset)
-{
-	return (ei_local->txd_pool + txd_offset);
-}
-
 /* must be spinlock protected */
 static u32
-get_free_txd(END_DEVICE *ei_local, dma_addr_t *free_txd)
+get_free_txd(END_DEVICE *ei_local)
 {
 	u32 txd_idx = ei_local->txd_pool_free_head;
 
 	ei_local->txd_pool_free_head = ei_local->txd_pool_info[txd_idx];
-	ei_local->txd_pool_free_num -= 1;
-	*free_txd = get_txd_ptr_phys(ei_local, txd_idx);
+	ei_local->txd_pool_free_num--;
 
 	return txd_idx;
 }
@@ -137,38 +141,46 @@ put_free_txd(END_DEVICE *ei_local, u32 free_txd_idx)
 {
 	ei_local->txd_pool_info[ei_local->txd_pool_free_tail] = free_txd_idx;
 	ei_local->txd_pool_free_tail = free_txd_idx;
-	ei_local->txd_pool_free_num += 1;
+	ei_local->txd_pool_free_num++;
 }
 
 /* must be spinlock protected */
 static void
 fe_dma_init(END_DEVICE *ei_local)
 {
-	u32 i, regVal;
-	dma_addr_t fq_tail_phy;
-	dma_addr_t txd_free_phy = 0;
+	u32 i, txd_idx, regVal;
+	dma_addr_t rxd_buf_phy, fq_tail_phy, txd_free_phy;
 
 	/* init QDMA HW TX pool */
 	for (i = 0; i < NUM_QDMA_PAGE; i++) {
-		ei_local->fq_head[i].txd_info1 = (u32)(ei_local->fq_head_page_phy + (i * QDMA_PAGE_SIZE));
+		struct QDMA_txdesc *txd = &ei_local->fq_head[i];
+		dma_addr_t fq_buf_phy, fq_ndp_phy;
+		
+		fq_buf_phy = ei_local->fq_head_page_phy + (i * QDMA_PAGE_SIZE);
 		if (i < (NUM_QDMA_PAGE-1))
-			ei_local->fq_head[i].txd_info2 = (u32)(ei_local->fq_head_phy + ((i+1) * sizeof(struct QDMA_txdesc)));
+			fq_ndp_phy = ei_local->fq_head_phy + ((i+1) * sizeof(struct QDMA_txdesc));
 		else
-			ei_local->fq_head[i].txd_info2 = 0;
-		ei_local->fq_head[i].txd_info3 = TX3_QDMA_SDL(QDMA_PAGE_SIZE);
-		ei_local->fq_head[i].txd_info4 = 0;
+			fq_ndp_phy = ei_local->fq_head_phy;
+		
+		ACCESS_ONCE(txd->txd_info1) = (u32)fq_buf_phy;
+		ACCESS_ONCE(txd->txd_info2) = (u32)fq_ndp_phy;
+		ACCESS_ONCE(txd->txd_info3) = TX3_QDMA_SDL(QDMA_PAGE_SIZE);
+		ACCESS_ONCE(txd->txd_info4) = 0;
 	}
 
 	fq_tail_phy = ei_local->fq_head_phy + ((NUM_QDMA_PAGE-1) * sizeof(struct QDMA_txdesc));
 
 	/* init QDMA SW TX pool */
 	for (i = 0; i < NUM_TX_DESC; i++) {
+		struct QDMA_txdesc *txd = &ei_local->txd_pool[i];
+		
 		ei_local->txd_buff[i] = NULL;
 		ei_local->txd_pool_info[i] = i + 1;
-		ei_local->txd_pool[i].txd_info1 = 0;
-		ei_local->txd_pool[i].txd_info2 = 0;
-		ei_local->txd_pool[i].txd_info3 = TX3_QDMA_LS | TX3_QDMA_OWN;
-		ei_local->txd_pool[i].txd_info4 = 0;
+		
+		ACCESS_ONCE(txd->txd_info1) = 0;
+		ACCESS_ONCE(txd->txd_info2) = 0;
+		ACCESS_ONCE(txd->txd_info3) = TX3_QDMA_LS | TX3_QDMA_OWN;
+		ACCESS_ONCE(txd->txd_info4) = 0;
 	}
 
 	ei_local->txd_pool_free_head = 0;
@@ -177,19 +189,27 @@ fe_dma_init(END_DEVICE *ei_local)
 
 	/* init PDMA (or QDMA) RX ring */
 	for (i = 0; i < NUM_RX_DESC; i++) {
-		ei_local->rxd_ring[i].rxd_info1 = (u32)dma_map_single(NULL, ei_local->rxd_buff[i]->data, MAX_RX_LENGTH + NET_IP_ALIGN, DMA_FROM_DEVICE);
-		ei_local->rxd_ring[i].rxd_info2 = RX2_DMA_SDL0_SET(MAX_RX_LENGTH);
-		ei_local->rxd_ring[i].rxd_info3 = 0;
-		ei_local->rxd_ring[i].rxd_info4 = 0;
+		struct PDMA_rxdesc *rxd = &ei_local->rxd_ring[i];
+		
+		rxd_buf_phy = dma_map_single(NULL, ei_local->rxd_buff[i]->data, MAX_RX_LENGTH + NET_IP_ALIGN, DMA_FROM_DEVICE);
+		
+		ACCESS_ONCE(rxd->rxd_info1) = (u32)rxd_buf_phy;
+		ACCESS_ONCE(rxd->rxd_info2) = RX2_DMA_SDL0_SET(MAX_RX_LENGTH);
+		ACCESS_ONCE(rxd->rxd_info3) = 0;
+		ACCESS_ONCE(rxd->rxd_info4) = 0;
 	}
 
 #if !defined (CONFIG_RAETH_QDMATX_QDMARX)
-	/* init QDMA RX stub ring (map PDMA buffers, this is not safe on real RX) */
+	/* init QDMA RX stub ring (map one buffer to all RXD) */
+	rxd_buf_phy = dma_map_single(NULL, ei_local->qrx_buff->data, MAX_RX_LENGTH + NET_IP_ALIGN, DMA_FROM_DEVICE);
+
 	for (i = 0; i < NUM_QRX_DESC; i++) {
-		ei_local->qrx_ring[i].rxd_info1 = ei_local->rxd_ring[i].rxd_info1;
-		ei_local->qrx_ring[i].rxd_info2 = RX2_DMA_SDL0_SET(MAX_RX_LENGTH);
-		ei_local->qrx_ring[i].rxd_info3 = 0;
-		ei_local->qrx_ring[i].rxd_info4 = 0;
+		struct PDMA_rxdesc *rxd = &ei_local->qrx_ring[i];
+		
+		ACCESS_ONCE(rxd->rxd_info1) = (u32)rxd_buf_phy;
+		ACCESS_ONCE(rxd->rxd_info2) = RX2_DMA_SDL0_SET(MAX_RX_LENGTH);
+		ACCESS_ONCE(rxd->rxd_info3) = 0;
+		ACCESS_ONCE(rxd->rxd_info4) = 0;
 	}
 #endif
 
@@ -235,16 +255,19 @@ fe_dma_init(END_DEVICE *ei_local)
 		sysRegWrite(QTX_CFG_0 + 0x10*i, ((NUM_PQ_RESV << 8) | NUM_PQ_RESV));
 
 	/* get free txd from pool for RLS (release) */
-	get_free_txd(ei_local, &txd_free_phy);
+	txd_idx = get_free_txd(ei_local);
+	txd_free_phy = get_txd_ptr_phy(ei_local, txd_idx);
 	sysRegWrite(QTX_CRX_PTR, (u32)txd_free_phy);
 	sysRegWrite(QTX_DRX_PTR, (u32)txd_free_phy);
 
 	/* get free txd from pool for FWD (forward) */
-	get_free_txd(ei_local, &txd_free_phy);
-	ei_local->txd_last_ctx = txd_free_phy;
+	txd_idx = get_free_txd(ei_local);
+	txd_free_phy = get_txd_ptr_phy(ei_local, txd_idx);
+	ei_local->txd_last_idx = txd_idx;
 	sysRegWrite(QTX_CTX_PTR, (u32)txd_free_phy);
 	sysRegWrite(QTX_DTX_PTR, (u32)txd_free_phy);
 
+	/* reset TX indexes for queues 0~15 */
 	sysRegWrite(QDMA_RST_CFG, 0xffff);
 
 	/* enable random early drop and set drop threshold automatically */
@@ -266,10 +289,7 @@ fe_dma_uninit(END_DEVICE *ei_local)
 	/* free uncompleted QDMA TX buffers */
 	for (i = 0; i < NUM_TX_DESC; i++) {
 		if (ei_local->txd_buff[i]) {
-#if defined (CONFIG_RAETH_SG_DMA_TX)
-			if (ei_local->txd_buff[i] != (struct sk_buff *)0xFFFFFFFF)
-#endif
-				dev_kfree_skb(ei_local->txd_buff[i]);
+			dev_kfree_skb(ei_local->txd_buff[i]);
 			ei_local->txd_buff[i] = NULL;
 		}
 	}
@@ -298,20 +318,61 @@ fe_dma_clear_addr(void)
 	sysRegWrite(RX_MAX_CNT0,  0);
 }
 
+static inline void
+qdma_write_skb_fragment(END_DEVICE *ei_local,
+			dma_addr_t frag_addr,
+			u32 frag_size,
+			const u32 txd_info3,
+			const u32 txd_info4,
+			struct sk_buff *skb,
+			const bool ls)
+{
+	u32 fwd_idx = ei_local->txd_last_idx;
+
+	while (frag_size > 0) {
+		const u32 part_addr = (u32)frag_addr;
+		const u32 part_size = min_t(u32, frag_size, TXD_MAX_SEG_SIZE);
+		struct QDMA_txdesc *txd;
+		u32 ndp_idx, info3;
+		
+		frag_addr += part_size;
+		frag_size -= part_size;
+		
+		info3 = txd_info3 | TX3_QDMA_SDL(part_size);
+		if (ls && frag_size == 0) {
+			info3 |= TX3_QDMA_LS;
+			
+			/* store skb with LS bit */
+			ei_local->txd_buff[fwd_idx] = skb;
+		}
+		
+		ndp_idx = get_free_txd(ei_local);
+		
+		txd = &ei_local->txd_pool[fwd_idx];
+		
+		ACCESS_ONCE(txd->txd_info1) = part_addr;
+		ACCESS_ONCE(txd->txd_info2) = (u32)get_txd_ptr_phy(ei_local, ndp_idx);
+		ACCESS_ONCE(txd->txd_info4) = txd_info4;
+		ACCESS_ONCE(txd->txd_info3) = info3;
+		
+		fwd_idx = ndp_idx;
+	}
+
+	ei_local->txd_last_idx = fwd_idx;
+}
+
 static inline int
 dma_xmit(struct sk_buff *skb, struct net_device *dev, END_DEVICE *ei_local, int gmac_no)
 {
-	struct QDMA_txdesc *cpu_ptr;
 	struct netdev_queue *txq;
-	dma_addr_t txd_free_phy = 0;
-	u32 ctx_offset, skb_len;
+	dma_addr_t frag_addr;
+	u32 frag_size, nr_desc;
 	u32 txd_info3, txd_info4;
 #if defined (CONFIG_RAETH_SG_DMA_TX)
-	u32 i, nr_slots, nr_frags;
+	u32 i, nr_frags;
 	const skb_frag_t *tx_frag;
 	const struct skb_shared_info *shinfo;
 #else
-#define nr_slots 1
 #define nr_frags 0
 #endif
 
@@ -358,17 +419,57 @@ dma_xmit(struct sk_buff *skb, struct net_device *dev, END_DEVICE *ei_local, int 
 
 #if defined (CONFIG_RAETH_SG_DMA_TX)
 	shinfo = skb_shinfo(skb);
-	nr_frags = shinfo->nr_frags;
-	nr_slots = nr_frags + 1;
+#endif
+
+#if defined (CONFIG_RAETH_TSO)
+	/* fill MSS info in tcp checksum field */
+	if (shinfo->gso_size) {
+		u32 hdr_len;
+		
+		if (!(shinfo->gso_type & (SKB_GSO_TCPV4|SKB_GSO_TCPV6))) {
+			dev_kfree_skb(skb);
+			return NETDEV_TX_OK;
+		}
+		
+		if (skb_header_cloned(skb)) {
+			if (pskb_expand_head(skb, 0, 0, GFP_ATOMIC)) {
+				dev_kfree_skb(skb);
+				return NETDEV_TX_OK;
+			}
+		}
+		
+		hdr_len = (skb_transport_offset(skb) + tcp_hdrlen(skb));
+		if (hdr_len >= skb->len) {
+			dev_kfree_skb(skb);
+			return NETDEV_TX_OK;
+		}
+		
+		tcp_hdr(skb)->check = htons(shinfo->gso_size);
+		txd_info4 |= TX4_DMA_TSO;
+	}
+#endif
+
+	nr_desc = DIV_ROUND_UP(skb_headlen(skb), TXD_MAX_SEG_SIZE);
+#if defined (CONFIG_RAETH_SG_DMA_TX)
+	nr_frags = (u32)shinfo->nr_frags;
+
+	for (i = 0; i < nr_frags; i++) {
+		tx_frag = &shinfo->frags[i];
+		nr_desc += DIV_ROUND_UP(skb_frag_size(tx_frag), TXD_MAX_SEG_SIZE);
+	}
 #endif
 
 	txq = netdev_get_tx_queue(dev, 0);
 
+	/* flush main skb part before spin_lock() */
+	frag_size = (u32)skb_headlen(skb);
+	frag_addr = dma_map_single(NULL, skb->data, frag_size, DMA_TO_DEVICE);
+
 	/* protect TX ring access (from eth2/eth3 queues) */
 	spin_lock(&ei_local->page_lock);
 
-	/* check nr_slots+2 free descriptors */
-	if (ei_local->txd_pool_free_num < (nr_slots+2)) {
+	/* check nr_desc+2 free descriptors (2 need to prevent head/tail overlap) */
+	if (ei_local->txd_pool_free_num < (nr_desc+2)) {
 		spin_unlock(&ei_local->page_lock);
 		netif_tx_stop_queue(txq);
 #if defined (CONFIG_RAETH_DEBUG)
@@ -378,71 +479,15 @@ dma_xmit(struct sk_buff *skb, struct net_device *dev, END_DEVICE *ei_local, int 
 		return NETDEV_TX_BUSY;
 	}
 
-#if defined (CONFIG_RAETH_TSO)
-	/* fill MSS info in tcp checksum field */
-	if (shinfo->gso_size) {
-		if (skb_header_cloned(skb)) {
-			if (pskb_expand_head(skb, 0, 0, GFP_ATOMIC)) {
-				spin_unlock(&ei_local->page_lock);
-				dev_kfree_skb(skb);
-#if defined (CONFIG_RAETH_DEBUG)
-				if (net_ratelimit())
-					printk(KERN_ERR "%s: pskb_expand_head for TSO failed!\n", RAETH_DEV_NAME);
-#endif
-				return NETDEV_TX_OK;
-			}
-		}
-		if (shinfo->gso_type & (SKB_GSO_TCPV4|SKB_GSO_TCPV6)) {
-			u32 hdr_len = (skb_transport_offset(skb) + tcp_hdrlen(skb));
-			if (skb->len > hdr_len) {
-				tcp_hdr(skb)->check = htons(shinfo->gso_size);
-				txd_info4 |= TX4_DMA_TSO;
-			}
-		}
-	}
-#endif
-
-	ctx_offset = get_txd_offset(ei_local, ei_local->txd_last_ctx);
-	cpu_ptr = get_txd_ptr_virt(ei_local, ctx_offset);
-
-	ei_local->txd_buff[ctx_offset] = skb;
-
-	ctx_offset = get_free_txd(ei_local, &txd_free_phy);
-	ei_local->txd_last_ctx = txd_free_phy;
-
-#if defined (CONFIG_RAETH_SG_DMA_TX)
-	if (nr_frags)
-		skb_len = skb_headlen(skb);
-	else
-#endif
-	{
-		skb_len = skb->len;
-		txd_info3 |= TX3_QDMA_LS;
-	}
-
-	/* write QDMA TX desc (QDMA_OWN must be cleared last) */
-	cpu_ptr->txd_info1 = (u32)dma_map_single(NULL, skb->data, skb_len, DMA_TO_DEVICE);
-	cpu_ptr->txd_info2 = (u32)txd_free_phy;
-	cpu_ptr->txd_info4 = txd_info4;
-	cpu_ptr->txd_info3 = txd_info3 | TX3_QDMA_SDL(skb_len);
-
+	qdma_write_skb_fragment(ei_local, frag_addr, frag_size,
+				txd_info3, txd_info4, skb, nr_frags == 0);
 #if defined (CONFIG_RAETH_SG_DMA_TX)
 	for (i = 0; i < nr_frags; i++) {
 		tx_frag = &shinfo->frags[i];
-		cpu_ptr = get_txd_ptr_virt(ei_local, ctx_offset);
-		
-		ei_local->txd_buff[ctx_offset] = (struct sk_buff *)0xFFFFFFFF; //MAGIC ID
-		
-		ctx_offset = get_free_txd(ei_local, &txd_free_phy);
-		ei_local->txd_last_ctx = txd_free_phy;
-		
-		if ((i + 1) == nr_frags) // last segment
-			txd_info3 |= TX3_QDMA_LS;
-		
-		cpu_ptr->txd_info1 = (u32)skb_frag_dma_map(NULL, tx_frag, 0, skb_frag_size(tx_frag), DMA_TO_DEVICE);
-		cpu_ptr->txd_info2 = (u32)txd_free_phy;
-		cpu_ptr->txd_info4 = txd_info4;
-		cpu_ptr->txd_info3 = txd_info3 | TX3_QDMA_SDL(tx_frag->size);
+		frag_size = skb_frag_size(tx_frag);
+		frag_addr = skb_frag_dma_map(NULL, tx_frag, 0, frag_size, DMA_TO_DEVICE);
+		qdma_write_skb_fragment(ei_local, frag_addr, frag_size,
+					txd_info3, txd_info4, skb, i == nr_frags - 1);
 	}
 #endif
 
@@ -456,12 +501,7 @@ dma_xmit(struct sk_buff *skb, struct net_device *dev, END_DEVICE *ei_local, int 
 #endif
 
 	/* kick the QDMA TX */
-	sysRegWrite(QTX_CTX_PTR, (u32)ei_local->txd_last_ctx);
-
-	/* check 1+2 free descriptors */
-	if (ei_local->txd_pool_free_num < 3) {
-		netif_tx_stop_queue(txq);
-	}
+	sysRegWrite(QTX_CTX_PTR, (u32)get_txd_ptr_phy(ei_local, ei_local->txd_last_idx));
 
 	spin_unlock(&ei_local->page_lock);
 
@@ -472,10 +512,8 @@ static inline void
 dma_xmit_clean(struct net_device *dev, END_DEVICE *ei_local)
 {
 	struct netdev_queue *txq;
-	struct sk_buff *txd_buff;
 	int cpu, clean_done = 0;
-	struct QDMA_txdesc *cpu_ptr, *dma_ptr;
-	u32 hrx_ptr, crx_offset, drx_offset;
+	u32 cpu_ptr, dma_ptr, cpu_idx;
 #if defined (CONFIG_RAETH_BQL)
 	u32 bytes_sent_ge1 = 0;
 #if defined (CONFIG_PSEUDO_SUPPORT)
@@ -485,54 +523,55 @@ dma_xmit_clean(struct net_device *dev, END_DEVICE *ei_local)
 
 	spin_lock(&ei_local->page_lock);
 
-	crx_offset = get_txd_offset(ei_local, sysRegRead(QTX_CRX_PTR));
-	drx_offset = get_txd_offset(ei_local, sysRegRead(QTX_DRX_PTR));
+	cpu_ptr = sysRegRead(QTX_CRX_PTR);
+	dma_ptr = sysRegRead(QTX_DRX_PTR);
 
-	cpu_ptr = get_txd_ptr_virt(ei_local, crx_offset);
-	dma_ptr = get_txd_ptr_virt(ei_local, drx_offset);
+	/* get current CPU TXD index */
+	cpu_idx = get_txd_offset(ei_local, cpu_ptr);
 
-	while (cpu_ptr != dma_ptr && (cpu_ptr->txd_info3 & TX3_QDMA_OWN)) {
-		/* hold cpu next TXD */
-		hrx_ptr = cpu_ptr->txd_info2;
+	while (cpu_ptr != dma_ptr) {
+		struct QDMA_txdesc *txd;
+		struct sk_buff *skb;
 		
-		/* release TXD */
-		put_free_txd(ei_local, crx_offset);
+		txd = &ei_local->txd_pool[cpu_idx];
 		
-		/* update cpu crx_offset */
-		crx_offset = get_txd_offset(ei_local, hrx_ptr);
-		
-		/* free skb */
-		txd_buff = ei_local->txd_buff[crx_offset];
-#if defined (CONFIG_RAETH_DEBUG)
-		WARN_ON(!txd_buff);
-#endif
-		if (txd_buff
-#if defined (CONFIG_RAETH_SG_DMA_TX)
-		 && txd_buff != (struct sk_buff *)0xFFFFFFFF
-#endif
-		    ) {
-#if defined (CONFIG_RAETH_BQL)
-#if defined (CONFIG_PSEUDO_SUPPORT)
-			if (txd_buff->dev == ei_local->PseudoDev)
-				bytes_sent_ge2 += txd_buff->len;
-			else
-#endif
-				bytes_sent_ge1 += txd_buff->len;
-#endif
-			dev_kfree_skb(txd_buff);
-		}
-		
-		ei_local->txd_buff[crx_offset] = NULL;
-		
-		if (++clean_done > (NUM_TX_DESC-4))
+		/* check TXD not owned by DMA */
+		if (!(ACCESS_ONCE(txd->txd_info3) & TX3_QDMA_OWN))
 			break;
 		
-		/* update cpu_ptr */
-		cpu_ptr = get_txd_ptr_virt(ei_local, crx_offset);
+		/* hold next TXD ptr */
+		cpu_ptr = ACCESS_ONCE(txd->txd_info2);
+		
+		/* release current TXD */
+		put_free_txd(ei_local, cpu_idx);
+		
+		/* get next TXD index */
+		cpu_idx = get_txd_offset(ei_local, cpu_ptr);
+		
+		/* free skb */
+		skb = ei_local->txd_buff[cpu_idx];
+		if (skb) {
+#if defined (CONFIG_RAETH_BQL)
+#if defined (CONFIG_PSEUDO_SUPPORT)
+			if (skb->dev == ei_local->PseudoDev)
+				bytes_sent_ge2 += skb->len;
+			else
+#endif
+				bytes_sent_ge1 += skb->len;
+#endif
+			ei_local->txd_buff[cpu_idx] = NULL;
+			dev_kfree_skb(skb);
+		}
+		
+		clean_done++;
+		
+		/* prevent infinity loop when something wrong */
+		if (clean_done > (NUM_TX_DESC-4))
+			break;
 	}
 
 	if (clean_done)
-		sysRegWrite(QTX_CRX_PTR, get_txd_ptr_phys(ei_local, crx_offset));
+		sysRegWrite(QTX_CRX_PTR, cpu_ptr);
 
 	spin_unlock(&ei_local->page_lock);
 

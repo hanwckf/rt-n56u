@@ -139,7 +139,10 @@ static int br_handle_local_finish(struct sk_buff *skb)
 	struct net_bridge_port *p = br_port_get_rcu(skb->dev);
 
 	br_fdb_update(p->br, p, eth_hdr(skb)->h_source);
-	return 0;	 /* process further */
+
+	BR_INPUT_SKB_CB(skb)->brdev = p->br->dev;
+	br_pass_frame_up(skb);
+	return 0;
 }
 
 /* Does address match the link local multicast address.
@@ -211,13 +214,9 @@ rx_handler_result_t br_handle_frame(struct sk_buff **pskb)
 		}
 
 		/* Deliver packet to local host only */
-		if (BR_HOOK(NFPROTO_BRIDGE, NF_BR_LOCAL_IN, skb, skb->dev,
-			    NULL, br_handle_local_finish)) {
-			return RX_HANDLER_CONSUMED; /* consumed by filter */
-		} else {
-			*pskb = skb;
-			return RX_HANDLER_PASS;	/* continue processing */
-		}
+		BR_HOOK(NFPROTO_BRIDGE, NF_BR_LOCAL_IN, skb, skb->dev,
+			NULL, br_handle_local_finish);
+		return RX_HANDLER_CONSUMED;
 	}
 
 forward:

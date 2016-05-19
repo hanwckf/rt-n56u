@@ -29,7 +29,7 @@
 #include <linux/ipv6.h>
 #endif
 
-#define MAX_INET_PROTOS	64		/* Must be a power of 2		*/
+#define MAX_INET_PROTOS	256		/* Must be a power of 2		*/
 
 
 /* This is used to register protocols. */

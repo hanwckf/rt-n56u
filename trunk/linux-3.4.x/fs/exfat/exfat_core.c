@@ -3758,7 +3758,7 @@ s32 fat_find_dir_entry(struct super_block *sb, CHAIN_T *p_dir, UNI_NAME_T *p_uni
    -2 : entry with the name does not exist */
 s32 exfat_find_dir_entry(struct super_block *sb, CHAIN_T *p_dir, UNI_NAME_T *p_uniname, s32 num_entries, DOS_NAME_T *p_dosname, u32 type)
 {
-	int i, dentry = 0, num_ext_entries = 0, len;
+	int i = 0, dentry = 0, num_ext_entries = 0, len, step;
 	s32 order = 0, is_feasible_entry = FALSE;
 	s32 dentries_per_clu, num_empty = 0;
 	u32 entry_type;
@@ -3792,12 +3792,13 @@ s32 exfat_find_dir_entry(struct super_block *sb, CHAIN_T *p_dir, UNI_NAME_T *p_u
 		if (p_fs->dev_ejected)
 			break;
 
-		for (i = 0; i < dentries_per_clu; i++, dentry++) {
+		while (i < dentries_per_clu) {
 			ep = get_entry_in_dir(sb, &clu, i, NULL);
 			if (!ep)
 				return -2;
 
 			entry_type = p_fs->fs_func->get_entry_type(ep);
+			step = 1;
 
 			if ((entry_type == TYPE_UNUSED) || (entry_type == TYPE_DELETED)) {
 				is_feasible_entry = FALSE;
@@ -3820,20 +3821,23 @@ s32 exfat_find_dir_entry(struct super_block *sb, CHAIN_T *p_dir, UNI_NAME_T *p_u
 				num_empty = 0;
 
 				if ((entry_type == TYPE_FILE) || (entry_type == TYPE_DIR)) {
+					file_ep = (FILE_DENTRY_T *) ep;
 					if ((type == TYPE_ALL) || (type == entry_type)) {
-						file_ep = (FILE_DENTRY_T *) ep;
 						num_ext_entries = file_ep->num_ext;
 						is_feasible_entry = TRUE;
 					} else {
 						is_feasible_entry = FALSE;
+						step = file_ep->num_ext + 1;
 					}
 				} else if (entry_type == TYPE_STREAM) {
 					if (is_feasible_entry) {
 						strm_ep = (STRM_DENTRY_T *) ep;
-						if (p_uniname->name_len == strm_ep->name_len) {
+						if (p_uniname->name_hash == GET16_A(strm_ep->name_hash) &&
+						    p_uniname->name_len == strm_ep->name_len) {
 							order = 1;
 						} else {
 							is_feasible_entry = FALSE;
+							step = num_ext_entries;
 						}
 					}
 				} else if (entry_type == TYPE_EXTEND) {
@@ -3852,6 +3856,7 @@ s32 exfat_find_dir_entry(struct super_block *sb, CHAIN_T *p_dir, UNI_NAME_T *p_u
 
 						if (nls_uniname_cmp(sb, uniname, entry_uniname)) {
 							is_feasible_entry = FALSE;
+							step = num_ext_entries - order + 1;
 						} else if (order == num_ext_entries) {
 							p_fs->hint_uentry.dir = CLUSTER_32(~0);
 							p_fs->hint_uentry.entry = -1;
@@ -3864,7 +3869,12 @@ s32 exfat_find_dir_entry(struct super_block *sb, CHAIN_T *p_dir, UNI_NAME_T *p_u
 					is_feasible_entry = FALSE;
 				}
 			}
+
+			i += step;
+			dentry += step;
 		}
+
+		i -= dentries_per_clu;
 
 		if (p_dir->dir == CLUSTER_32(0))
 			break; /* FAT16 root_dir */

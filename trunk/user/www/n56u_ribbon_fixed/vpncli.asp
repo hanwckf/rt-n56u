@@ -500,6 +500,9 @@ function getHash(){
                                             <option value="6" <% nvram_match_x("", "vpnc_ov_ciph", "6","selected"); %>>[DES-EDE3-CBC] 3DES, 192 bit</option>
                                             <option value="7" <% nvram_match_x("", "vpnc_ov_ciph", "7","selected"); %>>[DESX-CBC] DES-X, 192 bit</option>
                                             <option value="8" <% nvram_match_x("", "vpnc_ov_ciph", "8","selected"); %>>[AES-256-CBC] AES, 256 bit</option>
+					    <option value="9" <% nvram_match_x("", "vpnc_ov_ciph", "9","selected"); %>>[CAMELLIA-128-CBC] CAM, 128</option>
+					    <option value="10" <% nvram_match_x("", "vpnc_ov_ciph", "10","selected"); %>>[CAMELLIA-192-CBC] CAM, 192</option>
+					    <option value="11" <% nvram_match_x("", "vpnc_ov_ciph", "11","selected"); %>>[CAMELLIA-256-CBC] CAM, 256</option>
                                         </select>
                                     </td>
                                 </tr>

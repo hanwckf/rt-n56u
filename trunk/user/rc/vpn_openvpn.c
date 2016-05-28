@@ -248,6 +248,15 @@ openvpn_add_cipher(FILE *fp, int cipher_idx)
 	case 8:
 		cipher_str = "AES-256-CBC";
 		break;
+	case 9:
+		cipher_str = "CAMELLIA-128-CBC";
+		break;
+	case 10:
+		cipher_str = "CAMELLIA-192-CBC";
+		break;
+	case 11:
+		cipher_str = "CAMELLIA-256-CBC";
+		break;
 	default:
 		return;
 	}

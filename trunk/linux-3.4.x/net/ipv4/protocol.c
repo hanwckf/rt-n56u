@@ -30,28 +30,18 @@
 
 const struct net_protocol __rcu *inet_protos[MAX_INET_PROTOS] __read_mostly;
 
-/*
- *	Add a protocol handler to the hash tables
- */
-
 int inet_add_protocol(const struct net_protocol *prot, unsigned char protocol)
 {
-	int hash = protocol & (MAX_INET_PROTOS - 1);
-
-	return !cmpxchg((const struct net_protocol **)&inet_protos[hash],
+	return !cmpxchg((const struct net_protocol **)&inet_protos[protocol],
 			NULL, prot) ? 0 : -1;
 }
 EXPORT_SYMBOL(inet_add_protocol);
 
-/*
- *	Remove a protocol from the hash tables.
- */
-
 int inet_del_protocol(const struct net_protocol *prot, unsigned char protocol)
 {
-	int ret, hash = protocol & (MAX_INET_PROTOS - 1);
+	int ret;
 
-	ret = (cmpxchg((const struct net_protocol **)&inet_protos[hash],
+	ret = (cmpxchg((const struct net_protocol **)&inet_protos[protocol],
 		       prot, NULL) == prot) ? 0 : -1;
 
 	synchronize_net();

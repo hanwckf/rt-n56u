@@ -638,12 +638,12 @@ EXPORT_SYMBOL(icmp_send);
 
 static void icmp_unreach(struct sk_buff *skb)
 {
+	const struct net_protocol *ipprot;
 	const struct iphdr *iph;
 	struct icmphdr *icmph;
-	int hash, protocol;
-	const struct net_protocol *ipprot;
-	u32 info = 0;
 	struct net *net;
+	u32 info = 0;
+	int protocol;
 
 	net = dev_net(skb_dst(skb)->dev);
 
@@ -730,8 +730,7 @@ static void icmp_unreach(struct sk_buff *skb)
 	 */
 	raw_icmp_error(skb, protocol, info);
 
-	hash = protocol & (MAX_INET_PROTOS - 1);
-	ipprot = rcu_dereference(inet_protos[hash]);
+	ipprot = rcu_dereference(inet_protos[protocol]);
 	if (ipprot && ipprot->err_handler)
 		ipprot->err_handler(skb, info);
 

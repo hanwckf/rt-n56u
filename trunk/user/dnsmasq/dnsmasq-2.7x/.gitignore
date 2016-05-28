@@ -4,8 +4,9 @@ src/dnsmasq.pot
 src/dnsmasq
 src/dnsmasq_baseline
 src/.copts_*
-contrib/wrt/dhcp_lease_time
-contrib/wrt/dhcp_release
+contrib/lease-tools/dhcp_lease_time
+contrib/lease-tools/dhcp_release
+contrib/lease-tools/dhcp_release6
 debian/base/
 debian/daemon/
 debian/files

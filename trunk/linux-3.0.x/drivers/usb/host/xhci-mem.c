@@ -1682,6 +1682,10 @@ void xhci_mem_cleanup(struct xhci_hcd *xhci)
 	kfree(xhci->usb3_ports);
 	kfree(xhci->port_array);
 
+	xhci->usb2_ports = NULL;
+	xhci->usb3_ports = NULL;
+	xhci->port_array = NULL;
+
 	xhci->page_size = 0;
 	xhci->page_shift = 0;
 	xhci->bus_state[0].bus_suspended = 0;

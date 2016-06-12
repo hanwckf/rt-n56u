@@ -6693,6 +6693,8 @@ varvalue(char *name, int varflags, int flags, struct strlist *var_str_list)
 		if (subtype == VSLENGTH && len > 0) {
 			reinit_unicode_for_ash();
 			if (unicode_status == UNICODE_ON) {
+				STADJUST(-len, expdest);
+				discard = 0;
 				len = unicode_strlen(p);
 			}
 		}

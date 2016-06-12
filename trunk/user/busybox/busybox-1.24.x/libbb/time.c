@@ -186,6 +186,7 @@ void FAST_FUNC parse_datestr(const char *date_str, struct tm *ptm)
 		} else {
 			bb_error_msg_and_die(bb_msg_invalid_date, date_str);
 		}
+		ptm->tm_sec = 0; /* assume zero if [.SS] is not given */
 		if (end == '.') {
 			/* xxx.SS */
 			if (sscanf(strchr(date_str, '.') + 1, "%u%c",

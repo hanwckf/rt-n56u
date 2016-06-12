@@ -1531,11 +1531,11 @@ int usb_hcd_submit_urb (struct urb *urb, gfp_t mem_flags)
  * soon as practical.  we've already set up the urb's return status,
  * but we can't know if the callback completed already.
  */
-static int unlink1(struct usb_hcd *hcd, struct urb *urb, int status)
+static int unlink1(struct usb_hcd *hcd, struct urb *urb, struct usb_device *udev, int status)
 {
 	int		value;
 
-	if (is_root_hub(urb->dev))
+	if (is_root_hub(udev))
 		value = usb_rh_urb_dequeue(hcd, urb, status);
 	else {
 
@@ -1572,8 +1572,8 @@ int usb_hcd_unlink_urb (struct urb *urb, int status)
 	}
 	spin_unlock_irqrestore(&hcd_urb_unlink_lock, flags);
 	if (retval == 0) {
-		hcd = bus_to_hcd(urb->dev->bus);
-		retval = unlink1(hcd, urb, status);
+		hcd = bus_to_hcd(udev->bus);
+		retval = unlink1(hcd, urb, udev, status);
 		if (retval == 0)
 			retval = -EINPROGRESS;
 		else if (retval != -EIDRM && retval != -EBUSY)
@@ -1657,7 +1657,7 @@ rescan:
 		spin_unlock(&hcd_urb_list_lock);
 
 		/* kick hcd */
-		unlink1(hcd, urb, -ESHUTDOWN);
+		unlink1(hcd, urb, urb->dev, -ESHUTDOWN);
 		dev_dbg (hcd->self.controller,
 			"shutdown urb %p ep%d%s%s\n",
 			urb, usb_endpoint_num(&ep->desc),

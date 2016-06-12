@@ -481,7 +481,7 @@ static __inline__ int __sk_del_node_init(struct sock *sk)
    modifications.
  */
 
-static inline void sock_hold(struct sock *sk)
+static __always_inline void sock_hold(struct sock *sk)
 {
 	atomic_inc(&sk->sk_refcnt);
 }
@@ -489,7 +489,7 @@ static inline void sock_hold(struct sock *sk)
 /* Ungrab socket in the context, which assumes that socket refcnt
    cannot hit zero, f.e. it is true in context of any socketcall.
  */
-static inline void __sock_put(struct sock *sk)
+static __always_inline void __sock_put(struct sock *sk)
 {
 	atomic_dec(&sk->sk_refcnt);
 }

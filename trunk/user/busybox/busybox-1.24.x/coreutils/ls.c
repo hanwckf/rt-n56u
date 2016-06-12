@@ -668,7 +668,7 @@ static void display_files(struct dnode **dn, unsigned nfiles)
 			if (column_width < len)
 				column_width = len;
 		}
-		column_width += 1 +
+		column_width += 2 +
 			IF_SELINUX( ((G.all_fmt & LIST_CONTEXT) ? 33 : 0) + )
 				((G.all_fmt & LIST_INO) ? 8 : 0) +
 				((G.all_fmt & LIST_BLOCKS) ? 5 : 0);
@@ -696,8 +696,8 @@ static void display_files(struct dnode **dn, unsigned nfiles)
 			if (i < nfiles) {
 				if (column > 0) {
 					nexttab -= column;
-					printf("%*s ", nexttab, "");
-					column += nexttab + 1;
+					printf("%*s", nexttab, "");
+					column += nexttab;
 				}
 				nexttab = column + column_width;
 				column += display_single(dn[i]);

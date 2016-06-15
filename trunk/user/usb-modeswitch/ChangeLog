@@ -2,6 +2,19 @@
 History of USB_ModeSwitch
 =========================
 
+Version 2.4.0, 2016/06/12
+    ATTENTION: All ad-hoc driver binding code (using new_id driver attribute)
+    removed - was a potential source of side effects and should now be
+    obsoleted by good kernel support for modems; Added "dummy" setting for
+    config files, to conditionally refrain from handling a device (see this
+    topic: www.draisberghof.de/usb_modeswitch/bb/viewtopic.php?f=4&t=2458 );
+    extended StandardEject sequence to include LUN 1, required for some D-Link
+    devices; add device class 239 ("miscellaneous") to sanity check (thanks to
+    Daniel Drake for reporting); udev shell script - removed driver binding,
+    removed almost all waiting and forking, improved check for systemd (thanks
+    to Daniel Drake for problem analysis and solution, see this topic/patch:
+    www.draisberghof.de/usb_modeswitch/bb/viewtopic.php?p=16777#p16777 ,
+    gist.github.com/dsd/9f83c4830ab78ce94078aedb2cf16a8f )
 Version 2.3.0, 2016/01/12
     ATTENTION: -I flag is now history and being ignored - determining SCSI
     attributes is really an 'outside task'; -n flag (NeedResponse) is being

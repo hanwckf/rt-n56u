@@ -1,8 +1,8 @@
 /*
   Mode switching tool for controlling mode of 'multi-state' USB devices
-  Version 2.3.0, 2016/01/12
+  Version 2.4.0, 2016/06/12
 
-  Copyright (C) 2007 - 2016 Josua Dietze (mail to "digidietze" at the domain
+  Copyright (C) 2007 - 2016 Josua Dietze (mail to "usb_admin" at the domain
   of the home page; or write a personal message through the forum to "Josh".
   NO SUPPORT VIA E-MAIL - please use the forum for that)
 
@@ -45,7 +45,7 @@
 
 /* Recommended tab size: 4 */
 
-#define VERSION "2.3.0"
+#define VERSION "2.4.0"
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -98,6 +98,7 @@ static int usb_interrupt_io(libusb_device_handle *handle, int ep, unsigned char 
 
 
 #define LINE_DIM 1024
+#define MSG_DIM 11
 #define MAXLINES 50
 #define BUF_SIZE 4096
 #define DESCR_MAX 129
@@ -152,6 +153,7 @@ char TargetProductList[LINE_DIM];
 char DefaultProductList[5];
 unsigned char ByteString[LINE_DIM/2];
 unsigned char buffer[BUF_SIZE];
+char **Messages = NULL;
 
 FILE *output;
 
@@ -429,7 +431,7 @@ int readArguments(int argc, char **argv)
 
 int main(int argc, char **argv)
 {
-	int ret=0, numDefaults=0, sonySuccess=0;
+	int ret=0, numDefaults=0, sonySuccess=0, i;
 	int currentConfigVal=0, defaultClass=0, interfaceClass=0;
 	struct libusb_device_descriptor descriptor;
 	enum libusb_error libusbError;
@@ -580,9 +582,15 @@ int main(int argc, char **argv)
 	/* Get class of default device/interface */
 	interfaceClass = get_interface_class();
 
-	/* Check or get endpoints */
+	/* Check or get endpoints and alloc message list if needed*/
 	if (strlen(MessageContent) || StandardEject || InquireDevice || ModeMap & CISCO_MODE
 				|| ModeMap & HUAWEINEW_MODE || ModeMap & OPTION_MODE) {
+
+		Messages = (char**) calloc(MSG_DIM, sizeof(char*));
+		for (i = 0; i < MSG_DIM; i++) {
+			Messages[i] = (char*) calloc(LINE_DIM, sizeof(char));
+			Messages[i][0] = '\0';
+		}
 
 		if (!MessageEndpoint)
 			MessageEndpoint = find_first_bulk_endpoint(LIBUSB_ENDPOINT_OUT);
@@ -606,11 +614,11 @@ int main(int argc, char **argv)
 		abortExit();
 	}
 
-	if (defaultClass == 0)
+	if (defaultClass == 0 || defaultClass == 0xef)
 		defaultClass = interfaceClass;
 	else
 		if (interfaceClass == LIBUSB_CLASS_MASS_STORAGE && defaultClass != LIBUSB_CLASS_MASS_STORAGE
-				&& defaultClass != 0xef && defaultClass != LIBUSB_CLASS_VENDOR_SPEC) {
+				&& defaultClass != LIBUSB_CLASS_VENDOR_SPEC) {
 
 			/* Unexpected default class combined with differing interface class */
 			SHOW_PROGRESS(output,"Bogus Class/InterfaceClass: 0x%02x/0x08\n", defaultClass);
@@ -732,26 +740,29 @@ int main(int argc, char **argv)
 	if (StandardEject) {
 		SHOW_PROGRESS(output,"Sending standard EJECT sequence\n");
 		detachDriver();
+
+		strcpy(Messages[0],"5553424387654321000000000000061e000000000000000000000000000000");
+		strcpy(Messages[1],"5553424397654321000000000000061b000000020000000000000000000000");
+		strcpy(Messages[2],"5553424387654321000000000001061e000000000000000000000000000000");
+		strcpy(Messages[3],"5553424397654321000000000001061b000000020000000000000000000000");
 		if (MessageContent[0] != '\0')
-			strcpy(MessageContent3, MessageContent);
-		else
-			MessageContent3[0] = '\0';
-		strcpy(MessageContent,"5553424387654321000000000000061e000000000000000000000000000000");
-		strcpy(MessageContent2,"5553424397654321000000000000061b000000020000000000000000000000");
+			strcpy(Messages[4], MessageContent);
+
 		switchSendMessage();
 	} else if (ModeMap & HUAWEINEW_MODE) {
 		SHOW_PROGRESS(output,"Using standard Huawei switching message\n");
 		detachDriver();
-		strcpy(MessageContent,"55534243123456780000000000000011062000000101000100000000000000");
+		strcpy(Messages[0],"55534243123456780000000000000011062000000101000100000000000000");
 		switchSendMessage();
 	} else if (ModeMap & OPTION_MODE) {
 		SHOW_PROGRESS(output,"Using standard Option switching message\n");
 		detachDriver();
 //		strcpy(MessageContent,"55534243123456780100000080000601000000000000000000000000000000");
-		strcpy(MessageContent,"55534243123456780000000000000601000000000000000000000000000000");
+		strcpy(Messages[0],"55534243123456780000000000000601000000000000000000000000000000");
 		switchSendMessage();
 	} else if (strlen(MessageContent)) {
 		detachDriver();
+		strcpy(Messages[0],MessageContent);
 		switchSendMessage();
 	}
 
@@ -1045,11 +1056,11 @@ int switchSendMessage ()
 {
 	const char* cmdHead = "55534243";
 	int ret, i;
-	char* msg[3];
+/*	char* msg[3];
 	msg[0] = MessageContent;
 	msg[1] = MessageContent2;
 	msg[2] = MessageContent3;
-
+*/
 	SHOW_PROGRESS(output,"Set up interface %d\n", Interface);
 	if (InquireDevice != 2) {
 		ret = libusb_claim_interface(devh, Interface);
@@ -1063,22 +1074,25 @@ int switchSendMessage ()
 	if (show_progress)
 		fflush(stdout);
 
-	for (i=0; i<3; i++) {
-		if ( strlen(msg[i]) == 0)
-			continue;
+	for (i=0; i<MSG_DIM; i++) {
+		if ( strlen(Messages[i]) == 0)
+			break;
 
-		if ( sendMessage(msg[i], i+1) )
+		if ( sendMessage(Messages[i], i+1) )
 			goto skip;
 
-		if ( strstr(msg[i],cmdHead) != NULL ) {
+		if ( strstr(Messages[i],cmdHead) != NULL ) {
 			// UFI command
 			SHOW_PROGRESS(output,"Read the response to message %d (CSW) ...\n", i+1);
 			ret = read_bulk(ResponseEndpoint, ByteString, 13);
+			if (ret >= 0)
+				SHOW_PROGRESS(output,", status %d",ByteString[12]);
 		} else {
 			// Other bulk transfer
 			SHOW_PROGRESS(output,"Read the response to message %d ...\n", i+1);
-			ret = read_bulk(ResponseEndpoint, ByteString, strlen(msg[i])/2 );
+			ret = read_bulk(ResponseEndpoint, ByteString, strlen(Messages[i])/2 );
 		}
+		SHOW_PROGRESS(output,"\n");
 		if (ret < 0)
 			goto skip;
 	}
@@ -1336,7 +1350,8 @@ void switchActionMode ()
 	ret = usb_interrupt_io(devh, EP_OUT, buffer, SIZE, 1000);
 	usb_interrupt_io(devh, EP_IN, buffer, SIZE, 1000);
 	if (ret < 0) {
-		SHOW_PROGRESS(output," MobileAction control sequence did not complete\n Last error was %d\n",ret);
+		SHOW_PROGRESS(output," MobileAction control sequence did not complete\n"
+			" Last error was %d\n",ret);
 	} else {
 		SHOW_PROGRESS(output," MobileAction control sequence complete\n");
 	}
@@ -1355,8 +1370,9 @@ void switchSequansMode()
 
 	int ret;
 	SHOW_PROGRESS(output,"Send Sequans control message\n");
-	ret = libusb_control_transfer(devh, LIBUSB_REQUEST_TYPE_VENDOR | LIBUSB_RECIPIENT_DEVICE | LIBUSB_ENDPOINT_OUT,
-			SQN_SET_DEVICE_MODE_REQUEST, SQN_CUSTOM_DEVICE_MODE, 0, buffer, 0, 1000);
+	ret = libusb_control_transfer(devh, LIBUSB_REQUEST_TYPE_VENDOR | LIBUSB_RECIPIENT_DEVICE
+			| LIBUSB_ENDPOINT_OUT, SQN_SET_DEVICE_MODE_REQUEST, SQN_CUSTOM_DEVICE_MODE,
+			0, buffer, 0, 1000);
 
 	if (ret < 0) {
 		fprintf(stderr, "Error: Sequans request failed (error %d). Abort\n\n", ret);
@@ -1368,19 +1384,18 @@ void switchSequansMode()
 void switchCiscoMode()
 {
 	int ret, i, j;
-	char* msg[11];
 
-	msg[0] = "55534243f83bcd810002000080000afd000000030000000100000000000000";
-	msg[1] = "55534243984300820002000080000afd000000070000000100000000000000";
-	msg[2] = "55534243984300820000000000000afd000100071000000000000000000000";
-	msg[3] = "55534243984300820002000080000afd000200230000000100000000000000";
-	msg[4] = "55534243984300820000000000000afd000300238200000000000000000000";
-	msg[5] = "55534243984300820002000080000afd000200260000000100000000000000";
-	msg[6] = "55534243984300820000000000000afd00030026c800000000000000000000";
-	msg[7] = "55534243d84c04820002000080000afd000010730000000100000000000000";
-	msg[8] = "55534243d84c04820002000080000afd000200240000000100000000000000";
-	msg[9] = "55534243d84c04820000000000000afd000300241300000000000000000000";
-	msg[10] = "55534243d84c04820000000000000afd000110732400000000000000000000";
+	strcpy(Messages[0],"55534243f83bcd810002000080000afd000000030000000100000000000000");
+	strcpy(Messages[1],"55534243984300820002000080000afd000000070000000100000000000000");
+	strcpy(Messages[2],"55534243984300820000000000000afd000100071000000000000000000000");
+	strcpy(Messages[3],"55534243984300820002000080000afd000200230000000100000000000000");
+	strcpy(Messages[4],"55534243984300820000000000000afd000300238200000000000000000000");
+	strcpy(Messages[5],"55534243984300820002000080000afd000200260000000100000000000000");
+	strcpy(Messages[6],"55534243984300820000000000000afd00030026c800000000000000000000");
+	strcpy(Messages[7],"55534243d84c04820002000080000afd000010730000000100000000000000");
+	strcpy(Messages[8],"55534243d84c04820002000080000afd000200240000000100000000000000");
+	strcpy(Messages[9],"55534243d84c04820000000000000afd000300241300000000000000000000");
+	strcpy(Messages[10],"55534243d84c04820000000000000afd000110732400000000000000000000");
 
 	SHOW_PROGRESS(output,"Set up Cisco interface %d\n", Interface);
 	ret = libusb_claim_interface(devh, Interface);
@@ -1396,13 +1411,14 @@ void switchCiscoMode()
 //	SHOW_PROGRESS(output," Extra response (CSW) read, result %d\n",ret);
 
 	for (i=0; i<11; i++) {
-		if ( sendMessage(msg[i], i+1) )
+		if ( sendMessage(Messages[i], i+1) )
 			goto skip;
 
 		for (j=1; j<4; j++) {
 
 			SHOW_PROGRESS(output," Read the CSW for bulk message %d (attempt %d) ...\n",i+1,j);
 			ret = read_bulk(ResponseEndpoint, ByteString, 13);
+			SHOW_PROGRESS(output,"\n");
 
 			if (ret < 0)
 				goto skip;
@@ -1413,11 +1429,10 @@ void switchCiscoMode()
 	libusb_clear_halt(devh, MessageEndpoint);
 	libusb_clear_halt(devh, ResponseEndpoint);
 
-ReleaseDelay = 2000;
-	if (ReleaseDelay) {
-		SHOW_PROGRESS(output,"Wait for %d ms before releasing interface ...\n", ReleaseDelay);
-		usleep(ReleaseDelay*1000);
-	}
+	ReleaseDelay = 2000;
+	SHOW_PROGRESS(output,"Wait for %d ms before releasing interface ...\n", ReleaseDelay);
+	usleep(ReleaseDelay*1000);
+
 	ret = libusb_release_interface(devh, Interface);
 	if (ret < 0)
 		goto skip;
@@ -1440,8 +1455,8 @@ int switchSonyMode ()
 	}
 
 	SHOW_PROGRESS(output,"Send Sony control message\n");
-	ret = libusb_control_transfer(devh, LIBUSB_REQUEST_TYPE_VENDOR | LIBUSB_RECIPIENT_DEVICE | LIBUSB_ENDPOINT_IN,
-			0x11, 2, 0, buffer, 3, 100);
+	ret = libusb_control_transfer(devh, LIBUSB_REQUEST_TYPE_VENDOR | LIBUSB_RECIPIENT_DEVICE
+			| LIBUSB_ENDPOINT_IN, 0x11, 2, 0, buffer, 3, 100);
 
 	if (ret < 0) {
 		fprintf(stderr, "Error: Sony control message failed (error %d). Abort\n\n", ret);
@@ -1459,7 +1474,8 @@ int switchSonyMode ()
 	dev = 0;
 	while ( dev == 0 && i < 30 ) {
 		if ( i > 5 ) {
-			dev = search_devices(&found, DefaultVendor, DefaultProductList, TargetClass, 0, SEARCH_TARGET);
+			dev = search_devices(&found, DefaultVendor, DefaultProductList, TargetClass,
+					0, SEARCH_TARGET);
 		}
 		if ( dev != 0 )
 			break;
@@ -1485,8 +1501,8 @@ int switchSonyMode ()
 	sleep(1);
 
 	SHOW_PROGRESS(output,"Send Sony control message again ...\n");
-	ret = libusb_control_transfer(devh, LIBUSB_REQUEST_TYPE_VENDOR | LIBUSB_RECIPIENT_DEVICE | LIBUSB_ENDPOINT_IN,
-			0x11, 2, 0, buffer, 3, 100);
+	ret = libusb_control_transfer(devh, LIBUSB_REQUEST_TYPE_VENDOR | LIBUSB_RECIPIENT_DEVICE
+			| LIBUSB_ENDPOINT_IN, 0x11, 2, 0, buffer, 3, 100);
 
 	if (ret < 0) {
 		fprintf(stderr, "Error: Sony control message (2) failed (error %d)\n", ret);
@@ -1618,8 +1634,8 @@ int checkSuccess()
 		 */
 		for (i=i; i < CheckSuccess; i++) {
 			SHOW_PROGRESS(output," Search for target devices ...\n");
-			dev = search_devices(&newTargetCount, TargetVendor, TargetProductList, TargetClass,
-					0, SEARCH_TARGET);
+			dev = search_devices(&newTargetCount, TargetVendor, TargetProductList,
+					TargetClass, 0, SEARCH_TARGET);
 
 			if (dev && (newTargetCount > targetDeviceCount)) {
 				if (verbose) {
@@ -1700,12 +1716,12 @@ int read_bulk(int endpoint, unsigned char *buffer, int length)
 {
 	int ret = usb_bulk_io(devh, endpoint, buffer, length, 3000);
 	if (ret >= 0 ) {
-		SHOW_PROGRESS(output," Response successfully read (%d bytes).\n", ret);
+		SHOW_PROGRESS(output," Response successfully read (%d bytes)", ret);
 	} else
 		if (ret == LIBUSB_ERROR_NO_DEVICE) {
-			SHOW_PROGRESS(output," Device seems to have vanished after reading. Good.\n");
+			SHOW_PROGRESS(output," Device seems to have vanished after reading. Good.");
 		} else
-			SHOW_PROGRESS(output," Response reading failed (error %d)\n", ret);
+			SHOW_PROGRESS(output," Response reading failed (error %d)", ret);
 	return ret;
 
 }
@@ -2081,6 +2097,14 @@ int hexstr2bin(const char *hex, unsigned char *buffer, int len)
 
 void close_all()
 {
+	int i;
+	if (Messages) {
+		for ( i = 0; i < MSG_DIM; i++ ) {
+			free(Messages[i]);
+		}
+		free(Messages);
+		Messages = NULL;
+	}
 	if (active_config)
 		libusb_free_config_descriptor(active_config);
 	if (devh)
@@ -2102,7 +2126,7 @@ void printVersion()
 {
 	char* version = VERSION;
 	fprintf(output,"\n * usb_modeswitch: handle USB devices with multiple modes\n"
-		" * Version %s (C) Josua Dietze 2015\n"
+		" * Version %s (C) Josua Dietze 2016\n"
 		" * Based on libusb1/libusbx\n\n"
 		" ! PLEASE REPORT NEW CONFIGURATIONS !\n\n", version);
 }

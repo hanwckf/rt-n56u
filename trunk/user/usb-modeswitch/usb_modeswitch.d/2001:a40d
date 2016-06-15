@@ -1,0 +1,4 @@
+# D-Link DWR-910
+TargetVendor=0x2001
+TargetProduct=0x7e38
+StandardEject=1

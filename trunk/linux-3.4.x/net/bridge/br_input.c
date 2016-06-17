@@ -202,7 +202,9 @@ rx_handler_result_t br_handle_frame(struct sk_buff **pskb)
 			   then must forward to keep loop detection */
 			if (p->br->stp_enabled == BR_NO_STP)
 				goto forward;
-			break;
+			*pskb = skb;
+			br_fdb_update(p->br, p, eth_hdr(skb)->h_source);
+			return RX_HANDLER_PASS;
 
 		case 0x01:	/* IEEE MAC (Pause) */
 			goto drop;

@@ -1,8 +1,15 @@
                 Ralink/MediaTek U-Boot for MIPS SoC
         RT3052/RT3352/RT3883/RT5350/MT7620/MT7621/MT7628/MT7688
-                  Based on MediaTek SDK 5.0.0.0
+                  Based on MediaTek SDK 5.0.1.0
 
                           LIST OF CHANGES
+
+5.0.1.0-6:
+----------------------------------------------------------
+- Disable MT7628AN/MT7688AN calibration for DDR2 (DQS delay issue).
+- Update MT7628KN/7688KN DDR calibration flow.
+- Add support two SPI flash chips from GigaDevice.
+
 
 5.0.0.5:
 ----------------------------------------------------------
@@ -131,4 +138,4 @@ NOTE:
 
 -
 Padavan
-02/28/2016
+06/18/2016

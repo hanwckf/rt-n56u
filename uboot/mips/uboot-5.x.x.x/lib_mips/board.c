@@ -2946,6 +2946,9 @@ void disable_pcie(void)
 #include <asm/mipsregs.h>
 #include <asm/cache.h>
 
+#if defined (CONFIG_TINY_UBOOT)
+__attribute__((nomips16))
+#endif
 static inline void cal_memcpy(void* src, void* dst, unsigned int size)
 {
 	int i;
@@ -2954,6 +2957,9 @@ static inline void cal_memcpy(void* src, void* dst, unsigned int size)
 		(*pdst) = (*psrc);
 	return;
 }
+#if defined (CONFIG_TINY_UBOOT)
+__attribute__((nomips16))
+#endif
 static inline void cal_memset(void* src, unsigned char pat, unsigned int size)
 {
 	int i;
@@ -2996,6 +3002,9 @@ __attribute__((nomips16)) static void inline cal_invalidate_dcache_range(ulong s
 	}
 }	
 
+#if defined (CONFIG_TINY_UBOOT)
+__attribute__((nomips16))
+#endif
 static void inline cal_patgen(unsigned long* start_addr, unsigned int size, unsigned bias)
 {
 	int i = 0;
@@ -3011,6 +3020,19 @@ static void inline cal_patgen(unsigned long* start_addr, unsigned int size, unsi
 #define MAX_START 7
 #define MAX_FINE_START	0x0
 #define cal_debug debug
+								
+#define HWDLL_FIXED	1
+#if defined (HWDLL_FIXED)								
+#define DU_COARSE_WIDTH	16
+#define DU_FINE_WIDTH 16
+#define C2F_RATIO 8
+#define HWDLL_AVG	1
+#define HWDLL_LV	1
+//#define HWDLL_HV	1
+#define HWDLL_MINSCAN	1
+#endif
+
+#define MAX_TEST_LOOP   8								
 								
 __attribute__((nomips16)) void dram_cali(void)
 {
@@ -3043,12 +3065,28 @@ __attribute__((nomips16)) void dram_cali(void)
 	unsigned int fine_dqs[2];
 	unsigned int min_dqs[2];
 	unsigned int max_dqs[2];
-	int reg = 0, ddr_cfg2_reg = 0;
+	unsigned int total_min_comp_dqs[2];
+	unsigned int total_max_comp_dqs[2];
+	unsigned int avg_min_cg_comp_dqs[2];
+	unsigned int avg_max_cg_comp_dqs[2];
+	unsigned int avg_min_fg_comp_dqs[2];
+	unsigned int avg_max_fg_comp_dqs[2];
+	unsigned int min_comp_dqs[2][MAX_TEST_LOOP];
+	unsigned int max_comp_dqs[2][MAX_TEST_LOOP];
+	unsigned int reg = 0, ddr_cfg2_reg = 0, dqs_dly_reg = 0;
+	unsigned int reg_avg = 0, reg_with_dll = 0, hw_dll_reg = 0;
 	int ret = 0;
 	int flag = 0, min_failed_pos[2], max_failed_pos[2], min_fine_failed_pos[2], max_fine_failed_pos[2];
 	int i,j, k;
 	int dqs = 0;
 	unsigned int min_coarse_dqs_bnd, min_fine_dqs_bnd, coarse_dqs_dll, fine_dqs_dll;
+	unsigned int reg_minscan = 0;
+	unsigned int avg_cg_dly[2],avg_fg_dly[2];
+	unsigned int g_min_coarse_dqs_dly[2], g_min_fine_dqs_dly[2];
+#if defined(MT7628_FPGA_BOARD) || defined(MT7628_ASIC_BOARD)		
+	unsigned int cid = (RALINK_REG(RALINK_SYSCTL_BASE+0xC)>>16)&0x01;
+#endif
+
 #if (NUM_OF_CACHELINE > 40)
 #else	
 	unsigned int cache_pat[8*40];
@@ -3083,14 +3121,30 @@ __attribute__((nomips16)) void dram_cali(void)
 	cal_memcpy(cache_pat+32*6+32, pattern_ken, 32*13);
 #endif
 
+#if defined (HWDLL_LV)
+#if defined (HWDLL_HV)
+	RALINK_REG(RALINK_RGCTRL_BASE+0x108) = 0x01300;
+	mdelay(100);
+#else
+	//RALINK_REG(RALINK_RGCTRL_BASE+0x108) = 0x0F00;//0x0d00;//0x0b00;
+#endif
+	//cal_debug("\nSet [0x10001108]=%08X\n",RALINK_REG(RALINK_RGCTRL_BASE+0x108));
+	//mdelay(100);
+#endif
+	
 #if defined(MT7628_FPGA_BOARD) || defined(MT7628_ASIC_BOARD)	
 	RALINK_REG(RALINK_MEMCTRL_BASE+0x10) &= ~(0x1<<4);
 #else
 	RALINK_REG(RALINK_MEMCTRL_BASE+0x18) = &= ~(0x1<<4);
 #endif
 	ddr_cfg2_reg = RALINK_REG(RALINK_MEMCTRL_BASE+0x48);
+	dqs_dly_reg = RALINK_REG(RALINK_MEMCTRL_BASE+0x64);
 	RALINK_REG(RALINK_MEMCTRL_BASE+0x48)&=(~((0x3<<28)|(0x3<<26)));
 
+	total_min_comp_dqs[0] = 0;
+	total_min_comp_dqs[1] = 0;
+	total_max_comp_dqs[0] = 0;
+	total_max_comp_dqs[1] = 0;
 TEST_LOOP:
 	min_coarse_dqs[0] = MIN_START;
 	min_coarse_dqs[1] = MIN_START;
@@ -3180,7 +3234,7 @@ DQS_CAL:
 				}
 			}
 MAX_FAILED:
-			if (flag==-1)		
+			if (flag==-1)
 			{
 				break;
 			}
@@ -3276,18 +3330,18 @@ MIN_FAILED:
 			}
 			else
 			{
-			if (flag==-1)
-			{
+				if (flag==-1)
+				{
 					test_dqs++;
 					break;
 				}
 				else if (test_dqs==min_fine_dqs_bnd)
 				{
-				break;
-			}
-			else
+					break;
+				}
+				else
 				{	
-				test_dqs--;		
+					test_dqs--;                    
 				}
 				
 				if (test_dqs < min_fine_dqs_bnd)
@@ -3316,6 +3370,21 @@ MIN_FAILED:
 		}
 	}
 
+	min_comp_dqs[dqs][test_count] = (8-min_coarse_dqs[dqs])*8+(8-min_fine_dqs[dqs]);
+	total_min_comp_dqs[dqs] += min_comp_dqs[dqs][test_count];
+	max_comp_dqs[dqs][test_count] = (max_coarse_dqs[dqs]-8)*8+(max_fine_dqs[dqs]-8);
+	total_max_comp_dqs[dqs] += max_comp_dqs[dqs][test_count];
+
+	if (max_comp_dqs[dqs][test_count]+ min_comp_dqs[dqs][test_count] <=(2*8))
+	{
+		reg_minscan = 0x18180000;
+		reg_with_dll = 0x88880000;
+		g_min_coarse_dqs_dly[0] = g_min_coarse_dqs_dly[1] = 0;
+		g_min_fine_dqs_dly[0] = g_min_fine_dqs_dly[1] = 0;
+		hw_dll_reg = RALINK_REG(RALINK_MEMCTRL_BASE+0x20);
+		goto FINAL_SETUP;
+	}	
+
 	if (dqs==0)
 	{
 		dqs = 1;	
@@ -3336,20 +3405,312 @@ MIN_FAILED:
 		{
 			fine_dqs[i] = temp;
 		}
-#if (MAX_TEST_LOOP > 1)	
-		min_statistic[i][min_coarse_dqs[i]][min_fine_dqs[i]]++;
-		max_statistic[i][max_coarse_dqs[i]][max_fine_dqs[i]]++;
-		center_statistic[i][coarse_dqs[i]][fine_dqs[i]]++;
-#endif
 	}
 	reg = (coarse_dqs[1]<<12)|(fine_dqs[1]<<8)|(coarse_dqs[0]<<4)|fine_dqs[0];
 	
 #if defined(MT7628_FPGA_BOARD) || defined(MT7628_ASIC_BOARD)
-	RALINK_REG(RALINK_MEMCTRL_BASE+0x10) &= ~(0x1<<4);
+	if (cid == 1)
+		RALINK_REG(RALINK_MEMCTRL_BASE+0x10) &= ~(0x1<<4);
 #else
 	RALINK_REG(RALINK_MEMCTRL_BASE+0x18) = &= ~(0x1<<4);
 #endif
-	RALINK_REG(RALINK_MEMCTRL_BASE+0x64) = reg;
+	if (cid == 1) {
+		RALINK_REG(RALINK_MEMCTRL_BASE+0x64) = reg;
+		RALINK_REG(RALINK_MEMCTRL_BASE+0x48) = ddr_cfg2_reg;
+	}
+#if defined(MT7628_FPGA_BOARD) || defined(MT7628_ASIC_BOARD)	
+	if (cid == 1)
+		RALINK_REG(RALINK_MEMCTRL_BASE+0x10) |= (0x1<<4);
+#else
+	RALINK_REG(RALINK_MEMCTRL_BASE+0x18) |= (0x1<<4);
+#endif
+
+	test_count++;
+
+
+FINAL:
+#if defined(MT7628_FPGA_BOARD) || defined(MT7628_ASIC_BOARD)	
+	if (cid==1)
+#endif	
+	{	
+		for (j = 0; j < 2; j++)	
+			cal_debug("[%02X%02X%02X%02X]",min_coarse_dqs[j],min_fine_dqs[j], max_coarse_dqs[j],max_fine_dqs[j]);
+		cal_debug("\nDDR Calibration DQS reg = %08X\n",reg);
+		goto EXIT;
+	}
+	if (test_count < MAX_TEST_LOOP)
+		goto TEST_LOOP;
+
+	for (j = 0; j < 2; j++)	
+	{
+		unsigned int min_count = MAX_TEST_LOOP;
+		unsigned int max_count = MAX_TEST_LOOP;
+		
+		unsigned int tmp_min_comp_dqs = total_min_comp_dqs[j]>>3;
+		unsigned int tmp_total_min_comp_dqs = total_min_comp_dqs[j];
+		
+		unsigned int tmp_max_comp_dqs = total_max_comp_dqs[j]>>3;
+		unsigned int tmp_total_max_comp_dqs = total_max_comp_dqs[j];
+		
+		for (k = 0; k < MAX_TEST_LOOP; k++)
+		{
+			int diff_min = ((tmp_min_comp_dqs-min_comp_dqs[j][k]) > 0) ? (tmp_min_comp_dqs-min_comp_dqs[j][k]) : (min_comp_dqs[j][k]-tmp_min_comp_dqs);
+			int diff_max = ((tmp_max_comp_dqs-max_comp_dqs[j][k]) > 0) ? (tmp_max_comp_dqs-max_comp_dqs[j][k]) : (max_comp_dqs[j][k]-tmp_max_comp_dqs);
+
+			if (diff_min > 5)
+			{
+				//cal_debug("remove the %d min comp dqs %d (%d)\n" ,k ,min_comp_dqs[j][k],tmp_min_comp_dqs);
+				tmp_total_min_comp_dqs-= min_comp_dqs[j][k];
+				tmp_total_min_comp_dqs += tmp_min_comp_dqs;
+				min_count--;
+			}
+			if (diff_max > 5)
+			{
+				//cal_debug("remove the %d (diff=%d) max comp dqs %d (%d)\n" ,k ,diff_max,max_comp_dqs[j][k],tmp_max_comp_dqs);
+				tmp_total_max_comp_dqs-= max_comp_dqs[j][k];
+				tmp_total_max_comp_dqs += tmp_max_comp_dqs;
+				max_count--;
+			}
+		}	
+		tmp_min_comp_dqs = tmp_total_min_comp_dqs>>3;
+		avg_min_cg_comp_dqs[j] = 8-(tmp_min_comp_dqs>>3);
+		avg_min_fg_comp_dqs[j] = 8-(tmp_min_comp_dqs&0x7);
+		
+		tmp_max_comp_dqs = tmp_total_max_comp_dqs>>3;
+		avg_max_cg_comp_dqs[j] = 8+(tmp_max_comp_dqs>>3);
+		avg_max_fg_comp_dqs[j] = 8+(tmp_max_comp_dqs&0x7);
+		
+	}
+	//cal_debug("\n\r");
+	//for (j = 0; j < 2; j++)	
+	//		cal_debug("[%02X%02X%02X%02X]", avg_min_cg_comp_dqs[j],avg_min_fg_comp_dqs[j], avg_max_cg_comp_dqs[j],avg_max_fg_comp_dqs[j]);
+	
+	for (i=0 ; i < 2; i++)
+	{
+		unsigned int temp;
+		coarse_dqs[i] = (avg_max_cg_comp_dqs[i] + avg_min_cg_comp_dqs[i])>>1; 
+		temp = (((avg_max_cg_comp_dqs[i] + avg_min_cg_comp_dqs[i])%2)*4)  +  ((avg_max_fg_comp_dqs[i] + avg_min_fg_comp_dqs[i])>>1);
+		if (temp >= 0x10)
+		{
+		   coarse_dqs[i] ++;
+		   fine_dqs[i] = (temp-0x10) +0x8;
+		}
+		else
+		{
+			fine_dqs[i] = temp;
+		}
+	}
+
+	reg = (coarse_dqs[1]<<12)|(fine_dqs[1]<<8)|(coarse_dqs[0]<<4)|fine_dqs[0];
+	
+#if defined (HWDLL_FIXED)
+/* Read DLL HW delay */
+{
+	unsigned int sel_fine[2],sel_coarse[2];
+	unsigned int sel_mst_coarse, sel_mst_fine;
+	unsigned int avg_cg_dly[2],avg_fg_dly[2];
+	
+	hw_dll_reg = RALINK_REG(RALINK_MEMCTRL_BASE+0x20);
+	sel_mst_coarse = (hw_dll_reg >> 8) & 0x0F;
+	sel_mst_fine = (hw_dll_reg >> 4) & 0x0F;	
+	for (j = 0; j < 2; j++)
+	{	
+		unsigned int cg_dly_adj, fg_dly_adj,sel_fine_tmp,sel_coarse_tmp;
+
+		cg_dly_adj = coarse_dqs[j];
+		fg_dly_adj = fine_dqs[j]; 	
+		
+		sel_fine_tmp = sel_mst_fine + fg_dly_adj - 8;
+		sel_coarse_tmp = ((sel_mst_coarse + cg_dly_adj - 8) > DU_COARSE_WIDTH -1) ? DU_COARSE_WIDTH-1 : \
+			  ((sel_mst_coarse + cg_dly_adj -8) < 0) ? 0 : sel_mst_coarse + cg_dly_adj -8;
+		
+		if (sel_fine_tmp > (DU_FINE_WIDTH-1)) {
+			if (sel_coarse_tmp < (DU_COARSE_WIDTH-1)) {
+				sel_fine[j] = sel_fine_tmp - C2F_RATIO;
+				sel_coarse[j] = 	sel_coarse_tmp + 1;
+			}
+			else {
+				sel_fine[j] = DU_FINE_WIDTH-1;
+				sel_coarse[j] = 	sel_coarse_tmp;
+			}
+		}
+		else if (sel_fine_tmp < 0){
+			if (sel_coarse_tmp > 0) {
+				sel_fine[j] = sel_fine_tmp + C2F_RATIO;
+				sel_coarse[j] = 	sel_coarse_tmp - 1;
+			}
+			else {
+				//saturate
+				sel_fine[j] = 0;
+				sel_coarse[j] = 	sel_coarse_tmp;
+			}
+		}
+		else {
+			sel_fine[j] = sel_fine_tmp;
+			sel_coarse[j] = 	sel_coarse_tmp;
+		}
+	}
+	reg_with_dll = (sel_coarse[1]<<28)|(sel_fine[1]<<24)|(sel_coarse[0]<<20)|(sel_fine[0]<<16);
+	
+#if defined(HWDLL_AVG)
+	for (j = 0; j < 2; j++)
+	{
+		unsigned int avg;
+		int min_coarse_dqs_dly,min_fine_dqs_dly; 
+		min_coarse_dqs_dly = sel_mst_coarse - (8 - min_coarse_dqs[j]);
+		min_fine_dqs_dly = sel_mst_fine - (8 -min_fine_dqs[j]);
+		min_coarse_dqs_dly = (min_coarse_dqs_dly < 0) ? 0 : min_coarse_dqs_dly;
+		min_fine_dqs_dly = (min_fine_dqs_dly < 0) ? 0 : min_fine_dqs_dly;
+		
+		
+		avg_cg_dly[j] = ((min_coarse_dqs_dly<<1) + (sel_coarse[j]<<1))>>1;
+		avg_cg_dly[j] = avg_cg_dly[j]&0x01 ? ((avg_cg_dly[j]>>1)+1) : (avg_cg_dly[j]>>1);
+			
+		avg_fg_dly[j] = ((min_fine_dqs_dly<<1) + (sel_fine[j]<<1))>>1;
+		avg_fg_dly[j] = avg_fg_dly[j]&0x01 ? ((avg_fg_dly[j]>>1)+1) : (avg_fg_dly[j]>>1);
+		
+		g_min_coarse_dqs_dly[j] = min_coarse_dqs_dly;
+		g_min_fine_dqs_dly[j] = min_fine_dqs_dly;
+	}
+	reg_avg = (avg_cg_dly[1]<<28)|(avg_fg_dly[1]<<24)|(avg_cg_dly[0]<<20)|(avg_fg_dly[0]<<16);
+#endif
+
+#if defined (HWDLL_MINSCAN)
+{
+	unsigned int min_scan_cg_dly[2], min_scan_fg_dly[2], adj_dly[2], reg_scan;
+	
+	RALINK_REG(RALINK_RGCTRL_BASE+0x108) = 0x01300;
+
+	k=9583000;
+	do {k--; }while(k>0);
+		
+	RALINK_REG(RALINK_MEMCTRL_BASE+0x64) = reg_with_dll;
+	RALINK_REG(RALINK_MEMCTRL_BASE+0x68) |= (0x1<<4);
+	
+	for (j = 0; j < 2; j++)
+	{
+		min_scan_cg_dly[j] = 0;
+		min_scan_fg_dly[j] = 0;
+	
+		do
+		{	
+				int diff_dly;
+				for (nc_addr = 0xA0000000; nc_addr < (0xA0000000+DRAM_BUTTOM-NUM_OF_CACHELINE*32); nc_addr+=((DRAM_BUTTOM>>6)+1*0x400))
+				{
+					
+					RALINK_REG(RALINK_MEMCTRL_BASE+0x64) = reg_with_dll;
+					wmb();
+					c_addr = (unsigned int*)((ulong)nc_addr & 0xDFFFFFFF);
+					cal_memset(((unsigned char*)c_addr), 0x1F, NUM_OF_CACHELINE*32);
+#if (NUM_OF_CACHELINE > 40)
+					cal_patgen(nc_addr, NUM_OF_CACHELINE*8, 2);
+#else			
+					cal_memcpy(((unsigned char*)nc_addr), ((unsigned char*)cache_pat), NUM_OF_CACHELINE*32);
+#endif			
+					if (j == 0)
+						reg_scan = (reg_with_dll&0xFF000000)|(min_scan_cg_dly[j]<<20)|(min_scan_fg_dly[j]<<16);
+					else		
+						reg_scan = (reg_with_dll&0x00FF0000)|(min_scan_cg_dly[j]<<28)|(min_scan_fg_dly[j]<<24);	
+					
+					RALINK_REG(RALINK_MEMCTRL_BASE+0x64) = reg_scan;
+					wmb();		
+					cal_invalidate_dcache_range(((unsigned char*)c_addr), ((unsigned char*)c_addr)+NUM_OF_CACHELINE*32);
+					wmb();
+
+					for (i = 0; i < NUM_OF_CACHELINE*8; i ++)
+					{
+						if (i % 8 ==0)
+							pref_op(0, &c_addr[i]);
+					}		
+					for (i = 0; i < NUM_OF_CACHELINE*8; i ++)
+					{
+#if (NUM_OF_CACHELINE > 40)
+						if (c_addr[i] != (ulong)nc_addr+i+2)
+#else				
+						if (c_addr[i] != cache_pat[i])
+#endif				
+						{
+							goto MINSCAN_FAILED;
+						}
+					}
+				}	
+				diff_dly = (avg_cg_dly[j]*8 + avg_fg_dly[j])-(min_scan_cg_dly[j]*8+min_scan_fg_dly[j]);
+				if (diff_dly < 0)
+					cal_debug("diff_dly=%d\n",diff_dly);
+					
+				if (diff_dly < 6)
+					adj_dly[j] = (avg_cg_dly[j]*8 + avg_fg_dly[j]) + (6 - diff_dly);
+				else
+					adj_dly[j] = (avg_cg_dly[j]*8 + avg_fg_dly[j]);
+
+				break;
+MINSCAN_FAILED:
+				min_scan_fg_dly[j] ++;
+				if (min_scan_fg_dly[j] > 8)
+				{	
+					min_scan_fg_dly[j] = 0;
+					min_scan_cg_dly[j]++;
+					if ((min_scan_cg_dly[j]*8+min_scan_fg_dly[j]) >= (avg_cg_dly[j]*8 + avg_fg_dly[j]))
+					{
+						if (j==0)
+							adj_dly[0] = ((reg_with_dll>>20) &0x0F)*8 + ((reg_with_dll>>16) &0x0F);
+						else
+							adj_dly[1] = ((reg_with_dll>>28) &0x0F)*8 + ((reg_with_dll>>24) &0x0F);				
+						break;
+					}	
+				}
+		}while(1);		
+	} /* dqs loop */
+	{
+		unsigned int tmp_cg_dly[2],tmp_fg_dly[2];
+		for (j = 0; j < 2; j++)
+		{
+			if (adj_dly[j]==(avg_cg_dly[j]*8+avg_fg_dly[j]))
+			{
+				tmp_cg_dly[j] = avg_cg_dly[j];
+				tmp_fg_dly[j] = avg_fg_dly[j];
+			}
+			else
+			{
+				tmp_cg_dly[j] = adj_dly[j]>>3;
+				tmp_fg_dly[j] = adj_dly[j]&0x7;
+			}
+		}		
+		reg_minscan = (tmp_cg_dly[1]<<28) | (tmp_fg_dly[1]<<24) | (tmp_cg_dly[0]<<20) | (tmp_fg_dly[0]<<16);
+	}
+}
+
+#endif /* HWDLL_MINSCAN */
+
+#if defined (HWDLL_LV)
+	RALINK_REG(RALINK_RGCTRL_BASE+0x108) = 0x0f00;
+
+	k=9583000;
+	do {k--; }while(k>0);
+#endif			
+
+FINAL_SETUP:
+#if (defined(HWDLL_AVG) && (!defined(HWDLL_MINSCAN)))
+	RALINK_REG(RALINK_MEMCTRL_BASE+0x64) = (reg_avg&0xFFFF0000)|((reg_with_dll>>16)&0x0FFFF);		
+#elif defined(HWDLL_MINSCAN)
+	RALINK_REG(RALINK_MEMCTRL_BASE+0x64) = (reg_minscan&0xFFFF0000)|((reg_with_dll>>16)&0x0FFFF);		
+#else	
+	RALINK_REG(RALINK_MEMCTRL_BASE+0x64) = (reg_with_dll&0xFFFF0000)|(reg&0x0FFFF);
+#endif		
+	
+	RALINK_REG(RALINK_MEMCTRL_BASE+0x68) |= (0x1<<4);
+	cal_debug("\n\r");
+	for (j = 0; j < 2; j++)	
+			cal_debug("[%02X%02X%02X%02X]", avg_min_cg_comp_dqs[j],avg_min_fg_comp_dqs[j], avg_max_cg_comp_dqs[j],avg_max_fg_comp_dqs[j]);
+
+	cal_debug("[%04X%02X%02X][%08X][00%04X%02X]\n", reg&0x0FFFF,\
+						(g_min_coarse_dqs_dly[0]<<4)|g_min_coarse_dqs_dly[0], \
+						(g_min_coarse_dqs_dly[1]<<4)|g_min_coarse_dqs_dly[1], \
+						RALINK_REG(RALINK_MEMCTRL_BASE+0x64),
+						(reg_avg&0xFFFF0000)>>16,
+						(hw_dll_reg>>4)&0x0FF
+						);
+	cal_debug("DU Setting Cal Done\n");
 	RALINK_REG(RALINK_MEMCTRL_BASE+0x48) = ddr_cfg2_reg;
 #if defined(MT7628_FPGA_BOARD) || defined(MT7628_ASIC_BOARD)	
 	RALINK_REG(RALINK_MEMCTRL_BASE+0x10) |= (0x1<<4);
@@ -3357,17 +3718,15 @@ MIN_FAILED:
 	RALINK_REG(RALINK_MEMCTRL_BASE+0x18) |= (0x1<<4);
 #endif
 
-	test_count++;
-	
-	
-FINAL:
-		for (j = 0; j < 2; j++)	
-			cal_debug("[%02X%02X%02X%02X]",min_coarse_dqs[j],min_fine_dqs[j], max_coarse_dqs[j],max_fine_dqs[j]);
-		cal_debug("\nDDR Calibration DQS reg = %08X\n",reg);
+#endif	
+}
+
+EXIT:
 
 	return ;
 }
 #endif /* #defined (CONFIG_DDR_CAL) */
+
 
 /* Restore to default. */
 int reset_to_default(void)

@@ -2383,7 +2383,7 @@ tRFCinit:
 	nop
 	bal		fill_icache
 	nop
-	li		sp, 0x89000000+0x1F00
+	li		sp, 0x89000000+0x2F00
 #endif	
 #endif	
 	la	t9, board_init_f
@@ -2962,7 +2962,7 @@ DDR2_CFG4_TBL:
 lock_dcache:
 		lui	$14, 0x8900		# Get a KSeg0 address for cacheops
 		move	$12, $14
-		li		$10, 4
+		li		$10, 4*2
 2:	
 		# Set TagLo registers
 		li	$13, 0x1FFFF800
@@ -2980,6 +2980,11 @@ lock_dcache:
 		add	$9, $11		# Get next line address
 				
 		addiu	$12, 0x800
+		li  $13, 0x1FFFF800
+		and $13, $13, $12
+		ori $13, $13, (0x1<<5)|(0x1<<7)
+		mtc0    $13, $28, 2
+
 		subu	$10, 1
 		bgtz	$10, 2b
 		nop
@@ -2995,7 +3000,7 @@ lock_dcache:
 unlock_dcache:
 		lui	$14, 0x8000		# Get a KSeg0 address for cacheops
 		move	$12, $14
-		li		$10, 4
+		li		$10, 4*2
 2:	
 		# Clear TagLo/TagHi registers
 		mtc0	$0, $28, 2

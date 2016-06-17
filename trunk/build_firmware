@@ -208,7 +208,7 @@ if [ -n "$CONFIG_MT76X3_AP" ] ; then
 	cp -rfL "$dir_wifi_src/rtpci/$dir_wifi_ver/mt76x3_ap" "$dir_wifi_dst/"
 fi
 if [ -n "$CONFIG_MT7628_AP" ] ; then
-	dir_wifi_ver="4.0.X.X"
+	dir_wifi_ver="4.1.X.X"
 	cp -rfL "$dir_wifi_src/rtsoc/$dir_wifi_ver/mt7628" "$dir_wifi_dst/"
 	cp -rfL "$dir_wifi_src/rtsoc/$dir_wifi_ver/mt7628_ap" "$dir_wifi_dst/"
 fi

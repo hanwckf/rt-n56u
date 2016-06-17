@@ -1125,7 +1125,7 @@ UINT32 MtAsicGetWmmParam(RTMP_ADAPTER *pAd, UINT32 ac, UINT32 type)
 	}
 
 	NdisCopyMemory(&pAd->CurrEdcaParam[ac], pAcParam, sizeof(TX_AC_PARAM_T));
-	CmdEdcaParameterSet(pAd,EdcaParam);
+	RTEnqueueInternalCmd(pAd, CMDTHREAD_EDCA_PARAM_SET, (VOID *)&EdcaParam, sizeof(CMD_EDCA_SET_T));
 	return TRUE;
 }
 
@@ -1153,7 +1153,7 @@ static INT MtAsicSetAllWmmParam(RTMP_ADAPTER *pAd,PEDCA_PARM pEdcaParm)
 		NdisCopyMemory(&pAd->CurrEdcaParam[index], pAcParam, sizeof(TX_AC_PARAM_T));
 	}
 
-	CmdEdcaParameterSet(pAd,EdcaParam);
+	RTEnqueueInternalCmd(pAd, CMDTHREAD_EDCA_PARAM_SET, (VOID *)&EdcaParam, sizeof(CMD_EDCA_SET_T));
 
 	return TRUE;
 

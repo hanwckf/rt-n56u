@@ -2832,6 +2832,15 @@ VOID CMDHandler(RTMP_ADAPTER *pAd)
 						Set_Channel_Proc(pAd, ChStr);
 					}
 					break;
+
+				case CMDTHREAD_EDCA_PARAM_SET:
+					{
+						CMD_EDCA_SET_T EdcaParam;
+
+						NdisMoveMemory(&EdcaParam , pData, sizeof(CMD_EDCA_SET_T));
+						CmdEdcaParameterSet(pAd, EdcaParam);
+					}
+					break;
 #endif /* MT_MAC */
 #ifdef CONFIG_AP_SUPPORT
 				case CMDTHREAD_AP_UPDATE_CAPABILITY_AND_ERPIE:

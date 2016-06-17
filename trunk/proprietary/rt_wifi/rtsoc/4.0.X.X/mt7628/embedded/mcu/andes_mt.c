@@ -4319,7 +4319,7 @@ INT32 CmdEdcaParameterSet(RTMP_ADAPTER *pAd, CMD_EDCA_SET_T EdcaParam)
 		goto error;
 	}
 
-	AndesInitCmdMsg(msg, P1_Q0, EXT_CID, CMD_SET, EXT_CMD_ID_EDCA_SET, FALSE, 0, FALSE, FALSE, 0, NULL, NULL);
+	AndesInitCmdMsg(msg, P1_Q0, EXT_CID, CMD_SET, EXT_CMD_ID_EDCA_SET, TRUE, 0, TRUE, TRUE, 0, NULL, NULL);
 
 	AndesAppendCmdMsg(msg, (char *)&EdcaParam,size);
 

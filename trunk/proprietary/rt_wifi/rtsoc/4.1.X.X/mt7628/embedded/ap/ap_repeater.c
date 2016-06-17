@@ -1,0 +1,917 @@
+/*
+ ***************************************************************************
+ * Ralink Tech Inc.
+ * 4F, No. 2 Technology 5th Rd.
+ * Science-based Industrial Park
+ * Hsin-chu, Taiwan, R.O.C.
+ *
+ * (c) Copyright 2002-2012, Ralink Technology, Inc.
+ *
+ * All rights reserved. Ralink's source code is an unpublished work and the
+ * use of a copyright notice does not imply otherwise. This source code
+ * contains confidential trade secret material of Ralink Tech. Any attemp
+ * or participation in deciphering, decoding, reverse engineering or in any
+ * way altering the source code is stricitly prohibited, unless the prior
+ * written consent of Ralink Technology, Inc. is obtained.
+ ***************************************************************************
+
+    Module Name:
+    ap_repeater.c
+
+    Abstract:
+    Support MAC Repeater function.
+
+    Revision History:
+    Who             		When              What
+    --------------  ----------      ----------------------------------------------
+    Arvin				11-16-2012      created
+*/
+
+#ifdef MAC_REPEATER_SUPPORT
+
+#include "rt_config.h"
+
+
+REPEATER_CLIENT_ENTRY *RTMPLookupRepeaterCliEntry(
+	IN PVOID pData,
+	IN BOOLEAN bRealMAC,
+	IN PUCHAR pAddr,
+	IN BOOLEAN bIsPad,
+	OUT PUCHAR pIsLinkValid)
+
+{
+	ULONG HashIdx;
+	UCHAR tempMAC[6];
+	REPEATER_CLIENT_ENTRY *pEntry = NULL;
+	REPEATER_CLIENT_ENTRY_MAP *pMapEntry = NULL;
+	*pIsLinkValid  = TRUE;
+
+	if (bIsPad == TRUE) {
+		NdisAcquireSpinLock(&((PRTMP_ADAPTER)pData)->ApCfg.ReptCliEntryLock);
+	} else {
+		NdisAcquireSpinLock(((REPEATER_ADAPTER_DATA_TABLE *)pData)->EntryLock);
+	}
+	COPY_MAC_ADDR(tempMAC, pAddr);
+	HashIdx = MAC_ADDR_HASH_INDEX(tempMAC);
+
+	if (bRealMAC == TRUE)
+	{
+		if (bIsPad == TRUE) {
+			pMapEntry = ((PRTMP_ADAPTER)pData)->ApCfg.ReptMapHash[HashIdx];
+		} else
+			pMapEntry = *((((REPEATER_ADAPTER_DATA_TABLE *)pData)->MapHash) + HashIdx) ;
+
+		while (pMapEntry)
+		{
+			pEntry = pMapEntry->pReptCliEntry;
+
+			if (MAC_ADDR_EQUAL(pEntry->OriginalAddress, tempMAC))
+			{
+				if (pEntry->CliValid == FALSE) {
+					*pIsLinkValid = FALSE;
+					pEntry = NULL;
+				}
+				
+				break;			
+			}
+			else
+			{
+				pEntry = NULL;
+				pMapEntry = pMapEntry->pNext;
+			}
+		}
+	}
+	else
+	{
+		if (bIsPad == TRUE) {
+			pEntry = ((PRTMP_ADAPTER)pData)->ApCfg.ReptCliHash[HashIdx];
+		} else {
+			pEntry = *((((REPEATER_ADAPTER_DATA_TABLE *)pData)->CliHash) + HashIdx) ;
+		}
+
+		while (pEntry)
+		{
+			if (MAC_ADDR_EQUAL(pEntry->CurrentAddress, tempMAC))
+			{
+				if (pEntry->CliValid == FALSE) {
+					*pIsLinkValid = FALSE;
+					pEntry = NULL;
+				}
+				break;
+			}
+			else
+				pEntry = pEntry->pNext;
+		}
+	}
+	
+	if (bIsPad == TRUE) {
+		NdisReleaseSpinLock(&((PRTMP_ADAPTER)pData)->ApCfg.ReptCliEntryLock);
+	} else {
+		NdisReleaseSpinLock(((REPEATER_ADAPTER_DATA_TABLE *)pData)->EntryLock);
+	}
+
+
+	return pEntry;
+}
+
+BOOLEAN RTMPQueryLookupRepeaterCliEntryMT(
+	IN PRTMP_ADAPTER pAd,
+	IN PUCHAR pAddr)
+{
+	UCHAR isLinkValid;
+
+	MTWF_LOG(DBG_CAT_ALL, DBG_SUBCAT_ALL, DBG_LVL_INFO, 
+					("%s:: %02x:%02x:%02x:%02x:%02x:%02x\n", 
+							__FUNCTION__,
+							pAddr[0],
+							pAddr[1],
+							pAddr[2], 
+							pAddr[3],
+							pAddr[4],
+							pAddr[5]));
+
+	if (RTMPLookupRepeaterCliEntry(pAd, FALSE, pAddr, TRUE, &isLinkValid) == NULL) {
+		MTWF_LOG(DBG_CAT_ALL, DBG_SUBCAT_ALL, DBG_LVL_INFO, 
+					("%s:: not the repeater client\n", __FUNCTION__));
+		return FALSE;
+	} else {
+		MTWF_LOG(DBG_CAT_ALL, DBG_SUBCAT_ALL, DBG_LVL_INFO, 
+					("%s:: is the repeater client\n", __FUNCTION__));
+		return TRUE;
+	}
+}
+
+#if defined (CONFIG_WIFI_PKT_FWD)
+EXPORT_SYMBOL(RTMPQueryLookupRepeaterCliEntryMT);
+#endif /* CONFIG_WIFI_PKT_FWD */
+
+
+VOID RTMPInsertRepeaterEntry(
+	IN PRTMP_ADAPTER pAd,
+	IN UCHAR apidx,
+	IN PUCHAR pAddr)
+{
+	INT CliIdx, idx;
+	UCHAR HashIdx;
+	BOOLEAN Cancelled;
+	UCHAR tempMAC[MAC_ADDR_LEN];
+	APCLI_CTRL_MSG_STRUCT ApCliCtrlMsg;
+	PREPEATER_CLIENT_ENTRY pReptCliEntry = NULL, pCurrEntry = NULL;
+	PREPEATER_CLIENT_ENTRY_MAP pReptCliMap;
+	UCHAR SPEC_ADDR[6][3] = {{0x02, 0x0F, 0xB5}, {0x02, 0x09, 0x5B},
+								{0x02, 0x14, 0x6C}, {0x02, 0x18, 0x4D},
+								{0x02, 0x1B, 0x2F}, {0x02, 0x1E, 0x2A}};
+
+ 	MAC_TABLE_ENTRY *pMacEntry = NULL; 	
+	STA_TR_ENTRY *tr_entry = NULL;
+
+	
+	MTWF_LOG(DBG_CAT_ALL, DBG_SUBCAT_ALL, DBG_LVL_TRACE, (" %s.\n", __FUNCTION__));
+
+	pMacEntry = MacTableLookup(pAd, pAddr);
+
+ 	if (pMacEntry && IS_ENTRY_CLIENT(pMacEntry)) 	
+	{
+
+		tr_entry = &pAd->MacTab.tr_entry[pMacEntry->wcid];
+		if (tr_entry && tr_entry->PortSecured == WPA_802_1X_PORT_NOT_SECURED)
+		{
+			MTWF_LOG(DBG_CAT_ALL, DBG_SUBCAT_ALL, DBG_LVL_ERROR, (" wireless client is not ready !!!\n"));
+			return ;
+		} 	
+	}
+	
+	NdisAcquireSpinLock(&pAd->ApCfg.ReptCliEntryLock);
+
+	if (pAd->ApCfg.RepeaterCliSize >= MAX_EXT_MAC_ADDR_SIZE)
+	{
+		MTWF_LOG(DBG_CAT_ALL, DBG_SUBCAT_ALL, DBG_LVL_ERROR, (" Repeater Client Full !!!\n"));
+		NdisReleaseSpinLock(&pAd->ApCfg.ReptCliEntryLock);
+		return ;
+	}
+
+	if (pAd->ApCfg.ApCliTab[apidx].Enable == FALSE)
+	{
+		MTWF_LOG(DBG_CAT_ALL, DBG_SUBCAT_ALL, DBG_LVL_ERROR, (" ApCli Interface is Down !!!\n"));
+		NdisReleaseSpinLock(&pAd->ApCfg.ReptCliEntryLock);
+		return ;
+	}
+
+	for (CliIdx = 0; CliIdx < MAX_EXT_MAC_ADDR_SIZE; CliIdx++)
+	{
+		pReptCliEntry = &pAd->ApCfg.ApCliTab[apidx].RepeaterCli[CliIdx];
+
+		if ((pReptCliEntry->CliEnable) && 
+			(MAC_ADDR_EQUAL(pReptCliEntry->OriginalAddress, pAddr) || MAC_ADDR_EQUAL(pReptCliEntry->CurrentAddress, pAddr)))
+		{
+			MTWF_LOG(DBG_CAT_ALL, DBG_SUBCAT_ALL, DBG_LVL_ERROR, ("\n  receive mac :%02x:%02x:%02x:%02x:%02x:%02x !!!\n", 
+						pAddr[0], pAddr[1], pAddr[2], pAddr[3], pAddr[4], pAddr[5]));
+			MTWF_LOG(DBG_CAT_ALL, DBG_SUBCAT_ALL, DBG_LVL_ERROR, (" duplicate Insert !!!\n"));
+			NdisReleaseSpinLock(&pAd->ApCfg.ReptCliEntryLock);
+			return ;
+		}
+
+		if (pReptCliEntry->CliEnable == FALSE)
+			break;
+	}
+
+	if (CliIdx >= MAX_EXT_MAC_ADDR_SIZE)
+	{
+		MTWF_LOG(DBG_CAT_ALL, DBG_SUBCAT_ALL, DBG_LVL_ERROR, (" Repeater Client Full !!!\n"));
+		NdisReleaseSpinLock(&pAd->ApCfg.ReptCliEntryLock);
+		return ;
+	}
+
+	pReptCliEntry = &pAd->ApCfg.ApCliTab[apidx].RepeaterCli[CliIdx];
+	pReptCliMap = &pAd->ApCfg.ApCliTab[apidx].RepeaterCliMap[CliIdx];
+
+	/* ENTRY PREEMPTION: initialize the entry */
+	RTMPCancelTimer(&pReptCliEntry->ApCliAuthTimer, &Cancelled);
+	RTMPCancelTimer(&pReptCliEntry->ApCliAssocTimer, &Cancelled);
+	pReptCliEntry->CtrlCurrState = APCLI_CTRL_DISCONNECTED;
+	pReptCliEntry->AuthCurrState = APCLI_AUTH_REQ_IDLE;
+	pReptCliEntry->AssocCurrState = APCLI_ASSOC_IDLE;
+	pReptCliEntry->CliConnectState = 0;
+	pReptCliEntry->CliValid = FALSE;
+	pReptCliEntry->bEthCli = FALSE;
+	pReptCliEntry->MacTabWCID = 0xFF;
+	pReptCliEntry->AuthReqCnt = 0;
+	pReptCliEntry->AssocReqCnt = 0;
+	pReptCliEntry->CliTriggerTime = 0;
+	pReptCliEntry->pNext = NULL;
+	pReptCliMap->pReptCliEntry = pReptCliEntry;
+	pReptCliMap->pNext = NULL;
+
+	COPY_MAC_ADDR(pReptCliEntry->OriginalAddress, pAddr);
+	COPY_MAC_ADDR(tempMAC, pAddr);
+
+	if (pAd->ApCfg.MACRepeaterOuiMode == 1)
+	{
+		MTWF_LOG(DBG_CAT_ALL, DBG_SUBCAT_ALL, DBG_LVL_ERROR, (" todo !!!\n"));
+	}
+	else if (pAd->ApCfg.MACRepeaterOuiMode == 2)
+	{
+		INT IdxToUse;
+		
+		for (idx = 0; idx < 6; idx++)
+		{
+			if (RTMPEqualMemory(SPEC_ADDR[idx], pAddr, 3))
+				break;
+		}
+
+		/* If there is a matched one, use the next one; otherwise, use the first one. */
+		if (idx >= 0  && idx < 5)
+			IdxToUse = idx + 1;
+		else 
+			IdxToUse = 0;
+		NdisCopyMemory(tempMAC, SPEC_ADDR[IdxToUse], 3);
+	}
+	else
+	{
+		NdisCopyMemory(tempMAC, pAd->ApCfg.ApCliTab[apidx].wdev.if_addr, 3);
+	}
+
+	COPY_MAC_ADDR(pReptCliEntry->CurrentAddress, tempMAC);
+	pReptCliEntry->CliEnable = TRUE;
+	pReptCliEntry->CliConnectState = 1;
+	pReptCliEntry->pNext = NULL;
+	NdisGetSystemUpTime(&pReptCliEntry->CliTriggerTime);
+
+	AsicInsertRepeaterEntry(pAd, CliIdx, tempMAC);
+		
+	HashIdx = MAC_ADDR_HASH_INDEX(tempMAC);
+	if (pAd->ApCfg.ReptCliHash[HashIdx] == NULL)
+	{
+		pAd->ApCfg.ReptCliHash[HashIdx] = pReptCliEntry;
+	}
+	else
+	{
+		pCurrEntry = pAd->ApCfg.ReptCliHash[HashIdx];
+		while (pCurrEntry->pNext != NULL)
+			pCurrEntry = pCurrEntry->pNext;
+		pCurrEntry->pNext = pReptCliEntry;
+	}
+
+	HashIdx = MAC_ADDR_HASH_INDEX(pReptCliEntry->OriginalAddress);
+	if (pAd->ApCfg.ReptMapHash[HashIdx] == NULL)
+		pAd->ApCfg.ReptMapHash[HashIdx] = pReptCliMap;
+	else
+	{
+		PREPEATER_CLIENT_ENTRY_MAP pCurrMapEntry;
+	
+		pCurrMapEntry = pAd->ApCfg.ReptMapHash[HashIdx];
+
+		while (pCurrMapEntry->pNext != NULL)
+			pCurrMapEntry = pCurrMapEntry->pNext;
+		pCurrMapEntry->pNext = pReptCliMap;
+	}
+
+	pAd->ApCfg.RepeaterCliSize++;
+	NdisReleaseSpinLock(&pAd->ApCfg.ReptCliEntryLock);
+
+	NdisZeroMemory(&ApCliCtrlMsg, sizeof(APCLI_CTRL_MSG_STRUCT));
+	ApCliCtrlMsg.Status = MLME_SUCCESS;
+	COPY_MAC_ADDR(&ApCliCtrlMsg.SrcAddr[0], tempMAC);
+	ApCliCtrlMsg.BssIdx = apidx;
+	ApCliCtrlMsg.CliIdx = CliIdx;
+
+	MlmeEnqueue(pAd, APCLI_CTRL_STATE_MACHINE, APCLI_CTRL_MT2_AUTH_REQ,
+			sizeof(APCLI_CTRL_MSG_STRUCT), &ApCliCtrlMsg, apidx);
+
+}
+
+VOID RTMPRemoveRepeaterEntry(
+	IN PRTMP_ADAPTER pAd,
+	IN UCHAR func_tb_idx,
+	IN UCHAR CliIdx)
+{
+	USHORT HashIdx;
+	REPEATER_CLIENT_ENTRY *pEntry, *pPrevEntry, *pProbeEntry;
+	REPEATER_CLIENT_ENTRY_MAP *pMapEntry, *pPrevMapEntry, *pProbeMapEntry;
+	BOOLEAN bVaild;
+
+	MTWF_LOG(DBG_CAT_ALL, DBG_SUBCAT_ALL, DBG_LVL_ERROR, (" %s.\n", __FUNCTION__));
+
+	AsicRemoveRepeaterEntry(pAd, CliIdx);
+
+	NdisAcquireSpinLock(&pAd->ApCfg.ReptCliEntryLock);
+	pEntry = &pAd->ApCfg.ApCliTab[func_tb_idx].RepeaterCli[CliIdx];
+
+	bVaild = TRUE;
+
+	HashIdx = MAC_ADDR_HASH_INDEX(pEntry->CurrentAddress);
+
+	pPrevEntry = NULL;
+	pProbeEntry = pAd->ApCfg.ReptCliHash[HashIdx];
+
+	ASSERT(pProbeEntry);
+
+	if (pProbeEntry == NULL)
+	{
+		bVaild = FALSE;
+		goto done;
+	}
+
+	if (pProbeEntry != NULL)
+	{
+		/* update Hash list*/
+		do
+		{
+			if (pProbeEntry == pEntry)
+			{
+				if (pPrevEntry == NULL)
+				{
+					pAd->ApCfg.ReptCliHash[HashIdx] = pEntry->pNext;
+				}
+				else
+				{
+					pPrevEntry->pNext = pEntry->pNext;
+				}
+				break;
+			}
+
+			pPrevEntry = pProbeEntry;
+			pProbeEntry = pProbeEntry->pNext;
+		} while (pProbeEntry);
+	}
+
+	/* not found !!!*/
+	ASSERT(pProbeEntry != NULL);
+
+	if (pProbeEntry == NULL)
+	{
+		bVaild = FALSE;
+		goto done;
+	}
+
+	pMapEntry = &pAd->ApCfg.ApCliTab[func_tb_idx].RepeaterCliMap[CliIdx];
+
+	HashIdx = MAC_ADDR_HASH_INDEX(pEntry->OriginalAddress);
+
+	pPrevMapEntry = NULL;
+	pProbeMapEntry = pAd->ApCfg.ReptMapHash[HashIdx];
+	ASSERT(pProbeMapEntry);
+	if (pProbeMapEntry != NULL)
+	{
+		/* update Hash list*/
+		do
+		{
+			if (pProbeMapEntry == pMapEntry)
+			{
+				if (pPrevMapEntry == NULL)
+				{
+					pAd->ApCfg.ReptMapHash[HashIdx] = pMapEntry->pNext;
+				}
+				else
+				{
+					pPrevMapEntry->pNext = pMapEntry->pNext;
+				}
+				break;
+			}
+
+			pPrevMapEntry = pProbeMapEntry;
+			pProbeMapEntry = pProbeMapEntry->pNext;
+		} while (pProbeMapEntry);
+	}
+	/* not found !!!*/
+	ASSERT(pProbeMapEntry != NULL);
+
+done:
+
+	pAd->ApCfg.ApCliTab[func_tb_idx].RepeaterCli[CliIdx].CliConnectState = 0;
+	NdisZeroMemory(pAd->ApCfg.ApCliTab[func_tb_idx].RepeaterCli[CliIdx].OriginalAddress, MAC_ADDR_LEN);
+	/* set the apcli interface be invalid. */
+	pAd->ApCfg.ApCliTab[func_tb_idx].RepeaterCli[CliIdx].CliValid = FALSE;
+	pAd->ApCfg.ApCliTab[func_tb_idx].RepeaterCli[CliIdx].CliEnable = FALSE;
+
+	if ((bVaild == TRUE) && (pAd->ApCfg.RepeaterCliSize > 0))
+		pAd->ApCfg.RepeaterCliSize--;
+
+	NdisReleaseSpinLock(&pAd->ApCfg.ReptCliEntryLock);
+
+	return;
+}
+
+MAC_TABLE_ENTRY *RTMPInsertRepeaterMacEntry(
+	IN  RTMP_ADAPTER *pAd,
+	IN  UCHAR *pAddr,
+	IN struct wifi_dev *wdev,
+	IN  UCHAR apIdx,
+	IN  UCHAR cliIdx,
+	IN BOOLEAN CleanAll)
+{
+	UCHAR HashIdx;
+	int i;
+	MAC_TABLE_ENTRY *pEntry = NULL, *pCurrEntry;
+	BOOLEAN Cancelled;
+
+	if (pAd->MacTab.Size >= MAX_LEN_OF_MAC_TABLE)
+		return NULL;
+
+	/* allocate one MAC entry*/
+	NdisAcquireSpinLock(&pAd->MacTabLock);
+
+	i = (MAX_NUMBER_OF_MAC + ((MAX_EXT_MAC_ADDR_SIZE + 1) * (apIdx - MIN_NET_DEVICE_FOR_APCLI)));
+
+	if (cliIdx != 0xFF)
+		i  = i + cliIdx + 1;
+
+	/* pick up the first available vacancy*/
+	if (IS_ENTRY_NONE(&pAd->MacTab.Content[i]))
+	{
+		pEntry = &pAd->MacTab.Content[i];
+
+		/* ENTRY PREEMPTION: initialize the entry */
+		if (pEntry->RetryTimer.Valid)
+			RTMPCancelTimer(&pEntry->RetryTimer, &Cancelled);
+		if (pEntry->EnqueueStartForPSKTimer.Valid)
+			RTMPCancelTimer(&pEntry->EnqueueStartForPSKTimer, &Cancelled);
+#ifdef DOT11W_PMF_SUPPORT
+		RTMPCancelTimer(&pEntry->SAQueryTimer, &Cancelled);
+		RTMPCancelTimer(&pEntry->SAQueryConfirmTimer, &Cancelled);
+#endif /* DOT11W_PMF_SUPPORT */
+
+		NdisZeroMemory(pEntry, sizeof(MAC_TABLE_ENTRY));
+
+		if (CleanAll == TRUE)
+		{
+			pEntry->MaxSupportedRate = RATE_11;
+			pEntry->CurrTxRate = RATE_11;
+			NdisZeroMemory(pEntry, sizeof(MAC_TABLE_ENTRY));
+			pEntry->PairwiseKey.KeyLen = 0;
+			pEntry->PairwiseKey.CipherAlg = CIPHER_NONE;
+		}
+
+#ifdef CONFIG_AP_SUPPORT
+#ifdef APCLI_SUPPORT
+		if (apIdx >= MIN_NET_DEVICE_FOR_APCLI)
+		{
+			SET_ENTRY_APCLI(pEntry);
+		}
+#endif /* APCLI_SUPPORT */
+#endif /* CONFIG_AP_SUPPORT */
+
+		pEntry->wdev = wdev;
+		pEntry->wcid = i;
+		//SET_ENTRY_AP(pEntry);//Carter, why set Apcli Entry then set to AP entry?
+		pAd->MacTab.tr_entry[i].isCached = FALSE;
+		//tr_entry->isCached = FALSE;
+		pEntry->bIAmBadAtheros = FALSE;
+
+		RTMPInitTimer(pAd, &pEntry->EnqueueStartForPSKTimer, GET_TIMER_FUNCTION(EnqueueStartForPSKExec), pEntry, FALSE);
+
+#ifdef APCLI_SUPPORT
+		if (IS_ENTRY_APCLI(pEntry))
+		{
+			RTMPInitTimer(pAd, &pEntry->RetryTimer, GET_TIMER_FUNCTION(WPARetryExec), pEntry, FALSE);
+		}
+#endif /* APCLI_SUPPORT */
+		
+
+
+		pEntry->pAd = pAd;
+		pEntry->CMTimerRunning = FALSE;
+		pEntry->EnqueueEapolStartTimerRunning = EAPOL_START_DISABLE;
+		pEntry->RSNIE_Len = 0;
+		NdisZeroMemory(pEntry->R_Counter, sizeof(pEntry->R_Counter));
+		pEntry->ReTryCounter = PEER_MSG1_RETRY_TIMER_CTR;
+		pEntry->func_tb_idx = (apIdx - MIN_NET_DEVICE_FOR_APCLI);
+
+		if (IS_ENTRY_APCLI(pEntry))
+			pEntry->func_tb_idx = (apIdx - MIN_NET_DEVICE_FOR_APCLI);
+
+		pEntry->pMbss = NULL;
+
+#ifdef APCLI_SUPPORT
+		if (IS_ENTRY_APCLI(pEntry))
+		{
+			pEntry->AuthMode = pAd->ApCfg.ApCliTab[pEntry->func_tb_idx].wdev.AuthMode;
+			pEntry->WepStatus = pAd->ApCfg.ApCliTab[pEntry->func_tb_idx].wdev.WepStatus;
+
+			if (pEntry->AuthMode < Ndis802_11AuthModeWPA)
+			{
+				pEntry->WpaState = AS_NOTUSE;
+				pEntry->PrivacyFilter = Ndis802_11PrivFilterAcceptAll;
+			}
+			else
+			{
+				pEntry->WpaState = AS_PTKSTART;
+				pEntry->PrivacyFilter = Ndis802_11PrivFilter8021xWEP;
+			}
+		}
+#endif /* APCLI_SUPPORT */	
+
+		pEntry->GTKState = REKEY_NEGOTIATING;
+		pEntry->PairwiseKey.KeyLen = 0;
+		pEntry->PairwiseKey.CipherAlg = CIPHER_NONE;
+		pAd->MacTab.tr_entry[i].PortSecured = WPA_802_1X_PORT_NOT_SECURED;
+		//pEntry->PortSecured = WPA_802_1X_PORT_NOT_SECURED;
+
+		pEntry->PMKID_CacheIdx = ENTRY_NOT_FOUND;
+		COPY_MAC_ADDR(pEntry->Addr, pAddr);
+
+#ifdef APCLI_SUPPORT
+		if (IS_ENTRY_APCLI(pEntry))
+		{
+			COPY_MAC_ADDR(pEntry->bssid, pAddr);
+		}
+#endif // APCLI_SUPPORT //
+
+		pEntry->Sst = SST_NOT_AUTH;
+		pEntry->AuthState = AS_NOT_AUTH;
+		pEntry->Aid = (USHORT)i;
+		pEntry->CapabilityInfo = 0;
+		pEntry->PsMode = PWR_ACTIVE;
+		pAd->MacTab.tr_entry[i].PsQIdleCount = 0;
+		//pEntry->PsQIdleCount = 0;
+		pEntry->NoDataIdleCount = 0;
+		pEntry->AssocDeadLine = MAC_TABLE_ASSOC_TIMEOUT;
+		pEntry->ContinueTxFailCnt = 0;
+		pEntry->TimeStamp_toTxRing = 0;
+		// TODO: shiang-usw,  remove upper setting becasue we need to migrate to tr_entry!
+		pAd->MacTab.tr_entry[i].PsMode = PWR_ACTIVE;
+		pAd->MacTab.tr_entry[i].NoDataIdleCount = 0;
+		pAd->MacTab.tr_entry[i].ContinueTxFailCnt = 0;
+		pAd->MacTab.tr_entry[i].LockEntryTx = FALSE;
+		pAd->MacTab.tr_entry[i].TimeStamp_toTxRing = 0;
+
+		pAd->MacTab.Size ++;
+
+		/* Set the security mode of this entry as OPEN-NONE in ASIC */
+		RTMP_REMOVE_PAIRWISE_KEY_ENTRY(pAd, (UCHAR)i);
+
+		/* Add this entry into ASIC RX WCID search table */
+		RTMP_STA_ENTRY_ADD(pAd, pEntry);
+
+
+		MTWF_LOG(DBG_CAT_ALL, DBG_SUBCAT_ALL, DBG_LVL_TRACE, ("%s - allocate entry #%d, Aid = %d, Total= %d\n",__FUNCTION__, i, pEntry->Aid, pAd->MacTab.Size));
+
+	}
+	else
+	{
+		MTWF_LOG(DBG_CAT_ALL, DBG_SUBCAT_ALL, DBG_LVL_ERROR, ("%s - exist entry #%d, Aid = %d, Total= %d\n", __FUNCTION__, i, pEntry->Aid, pAd->MacTab.Size));
+		NdisReleaseSpinLock(&pAd->MacTabLock);
+		return pEntry;
+	}
+
+	/* add this MAC entry into HASH table */
+	if (pEntry)
+	{
+		HashIdx = MAC_ADDR_HASH_INDEX(pAddr);
+		if (pAd->MacTab.Hash[HashIdx] == NULL)
+		{
+			pAd->MacTab.Hash[HashIdx] = pEntry;
+		}
+		else
+		{
+			pCurrEntry = pAd->MacTab.Hash[HashIdx];
+			while (pCurrEntry->pNext != NULL)
+				pCurrEntry = pCurrEntry->pNext;
+			pCurrEntry->pNext = pEntry;
+		}
+
+	}
+
+	NdisReleaseSpinLock(&pAd->MacTabLock);
+	rtmp_tx_burst_set(pAd);
+
+	return pEntry;
+}
+
+VOID RTMPRepeaterReconnectionCheck(
+	IN PRTMP_ADAPTER pAd)
+{
+#ifdef APCLI_AUTO_CONNECT_SUPPORT
+	INT i;
+	PCHAR	pApCliSsid, pApCliCfgSsid;
+	UCHAR	CfgSsidLen;
+	NDIS_802_11_SSID Ssid;
+	
+	if (pAd->ApCfg.bMACRepeaterEn &&
+		pAd->ApCfg.MACRepeaterOuiMode == 2 &&
+		pAd->ApCfg.ApCliAutoConnectRunning == FALSE &&
+		pAd->ScanCtrl.PartialScan.bScanning == FALSE)
+	{
+		for (i = 0; i < MAX_APCLI_NUM; i++)
+		{
+			pApCliSsid = pAd->ApCfg.ApCliTab[i].Ssid;
+			pApCliCfgSsid = pAd->ApCfg.ApCliTab[i].CfgSsid;
+			CfgSsidLen = pAd->ApCfg.ApCliTab[i].CfgSsidLen;
+			if ((pAd->ApCfg.ApCliTab[i].CtrlCurrState < APCLI_CTRL_AUTH ||
+				!NdisEqualMemory(pApCliSsid, pApCliCfgSsid, CfgSsidLen)) &&
+				pAd->ApCfg.ApCliTab[i].CfgSsidLen > 0 && 
+				pAd->Mlme.OneSecPeriodicRound % 23 == 0)
+			{
+				MTWF_LOG(DBG_CAT_ALL, DBG_SUBCAT_ALL, DBG_LVL_TRACE, (" %s(): Scan channels for AP (%s)\n", 
+							__FUNCTION__, pApCliCfgSsid));
+				pAd->ApCfg.ApCliAutoConnectRunning = TRUE;
+				/* pAd->ScanCtrl.PartialScan.bScanning = TRUE; */
+				Ssid.SsidLength = CfgSsidLen;
+				NdisCopyMemory(Ssid.Ssid, pApCliCfgSsid, CfgSsidLen);
+				ApSiteSurvey(pAd, &Ssid, SCAN_ACTIVE, FALSE);
+			}	
+		}
+	}
+#endif /* APCLI_AUTO_CONNECT_SUPPORT */
+}
+
+BOOLEAN RTMPRepeaterVaildMacEntry(
+	IN PRTMP_ADAPTER pAd,
+	IN PUCHAR pAddr)
+{
+	INVAILD_TRIGGER_MAC_ENTRY *pEntry = NULL;
+
+	if (pAd->ApCfg.RepeaterCliSize >= MAX_EXT_MAC_ADDR_SIZE)
+		return FALSE;
+
+	if(IS_MULTICAST_MAC_ADDR(pAddr))
+		return FALSE;
+
+	if(IS_BROADCAST_MAC_ADDR(pAddr))
+		return FALSE;
+
+	pEntry = RepeaterInvaildMacLookup(pAd, pAddr);
+
+	if (pEntry)
+		return FALSE;
+	else
+		return TRUE;
+}
+
+INVAILD_TRIGGER_MAC_ENTRY *RepeaterInvaildMacLookup(
+	IN PRTMP_ADAPTER pAd,
+	IN PUCHAR pAddr)
+{
+	ULONG HashIdx;
+	INVAILD_TRIGGER_MAC_ENTRY *pEntry = NULL;
+	
+	HashIdx = MAC_ADDR_HASH_INDEX(pAddr);
+	pEntry = pAd->ApCfg.ReptControl.ReptInvaildHash[HashIdx];
+
+	while (pEntry)
+	{
+		if (MAC_ADDR_EQUAL(pEntry->MacAddr, pAddr))
+		{
+			break;
+		}
+		else
+			pEntry = pEntry->pNext;
+	}
+
+	if (pEntry && pEntry->bInsert)
+		return pEntry;
+	else
+		return NULL;
+}
+
+VOID RTMPRepeaterInsertInvaildMacEntry(
+	IN PRTMP_ADAPTER pAd,
+	IN PUCHAR pAddr)
+{
+	UCHAR HashIdx, idx = 0;
+	INVAILD_TRIGGER_MAC_ENTRY *pEntry = NULL;
+	INVAILD_TRIGGER_MAC_ENTRY *pCurrEntry = NULL;
+
+	if (pAd->ApCfg.ReptControl.ReptInVaildMacSize >= 32)
+		return;
+
+	if (MAC_ADDR_EQUAL(pAddr, ZERO_MAC_ADDR))
+		return;
+
+	NdisAcquireSpinLock(&pAd->ApCfg.ReptCliEntryLock);
+	for (idx = 0; idx< 32; idx++)
+	{
+		pEntry = &pAd->ApCfg.ReptControl.RepeaterInvaildEntry[idx];
+
+		if (MAC_ADDR_EQUAL(pEntry->MacAddr, pAddr))
+		{
+			if (pEntry->bInsert)
+			{
+				NdisReleaseSpinLock(&pAd->ApCfg.ReptCliEntryLock);
+				return;
+			}
+		}
+
+		/* pick up the first available vacancy*/
+		if (pEntry->bInsert == FALSE)
+		{
+			NdisZeroMemory(pEntry->MacAddr, MAC_ADDR_LEN);
+			COPY_MAC_ADDR(pEntry->MacAddr, pAddr);
+			pEntry->entry_idx = idx;
+			pEntry->bInsert = TRUE;
+			break;
+		}
+	}
+
+	/* add this entry into HASH table */
+	if (pEntry)
+	{
+		HashIdx = MAC_ADDR_HASH_INDEX(pAddr);
+		pEntry->pNext = NULL;
+		if (pAd->ApCfg.ReptControl.ReptInvaildHash[HashIdx] == NULL)
+		{
+			pAd->ApCfg.ReptControl.ReptInvaildHash[HashIdx] = pEntry;
+		}
+		else
+		{
+			pCurrEntry = pAd->ApCfg.ReptControl.ReptInvaildHash[HashIdx];
+			while (pCurrEntry->pNext != NULL)
+				pCurrEntry = pCurrEntry->pNext;
+			pCurrEntry->pNext = pEntry;
+		}
+	}
+
+	MTWF_LOG(DBG_CAT_ALL, DBG_SUBCAT_ALL, DBG_LVL_ERROR, (" Store Invaild MacAddr = %02x:%02x:%02x:%02x:%02x:%02x. !!!\n",
+				PRINT_MAC(pEntry->MacAddr)));
+
+	pAd->ApCfg.ReptControl.ReptInVaildMacSize++;
+	NdisReleaseSpinLock(&pAd->ApCfg.ReptCliEntryLock);
+
+	return;
+}
+
+BOOLEAN RTMPRepeaterRemoveInvaildMacEntry(
+	IN PRTMP_ADAPTER pAd,
+	IN UCHAR idx,
+	IN PUCHAR pAddr)
+{
+	USHORT HashIdx;
+	INVAILD_TRIGGER_MAC_ENTRY *pEntry = NULL;
+	INVAILD_TRIGGER_MAC_ENTRY *pPrevEntry, *pProbeEntry;
+
+	NdisAcquireSpinLock(&pAd->ApCfg.ReptCliEntryLock);
+
+	HashIdx = MAC_ADDR_HASH_INDEX(pAddr);
+	pEntry = &pAd->ApCfg.ReptControl.RepeaterInvaildEntry[idx];
+
+	if (pEntry && pEntry->bInsert)
+	{
+		pPrevEntry = NULL;
+		pProbeEntry = pAd->ApCfg.ReptControl.ReptInvaildHash[HashIdx];
+		ASSERT(pProbeEntry);
+		if (pProbeEntry != NULL)
+		{
+			/* update Hash list*/
+			do
+			{
+				if (pProbeEntry == pEntry)
+				{
+					if (pPrevEntry == NULL)
+					{
+						pAd->ApCfg.ReptControl.ReptInvaildHash[HashIdx] = pEntry->pNext;
+					}
+					else
+					{
+						pPrevEntry->pNext = pEntry->pNext;
+					}
+					break;
+				}
+		
+				pPrevEntry = pProbeEntry;
+				pProbeEntry = pProbeEntry->pNext;
+			} while (pProbeEntry);
+		}
+		/* not found !!!*/
+		ASSERT(pProbeEntry != NULL);
+
+		pAd->ApCfg.ReptControl.ReptInVaildMacSize--;
+	}
+
+	NdisZeroMemory(pEntry->MacAddr, MAC_ADDR_LEN);
+	pEntry->bInsert = FALSE;
+
+	NdisReleaseSpinLock(&pAd->ApCfg.ReptCliEntryLock);
+
+	return TRUE;
+}
+
+INT Show_Repeater_Cli_Proc(RTMP_ADAPTER *pAd, RTMP_STRING *arg)
+{
+	INT i;
+	ULONG DataRate=0;
+
+	if (!pAd->ApCfg.bMACRepeaterEn)
+		return TRUE;
+
+	printk("\n");
+
+#ifdef DOT11_N_SUPPORT
+	printk("HT Operating Mode : %d\n", pAd->CommonCfg.AddHTInfo.AddHtInfo2.OperaionMode);
+	printk("\n");
+#endif /* DOT11_N_SUPPORT */
+	
+	printk("\n%-19s%-4s%-4s%-4s%-4s%-8s%-7s%-7s%-7s%-10s%-6s%-6s%-6s%-6s%-7s%-7s\n",
+		   "MAC", "AID", "BSS", "PSM", "WMM", "MIMOPS", "RSSI0", "RSSI1", 
+		   "RSSI2", "PhMd", "BW", "MCS", "SGI", "STBC", "Idle", "Rate");
+
+	for (i = 0; i < MAX_LEN_OF_MAC_TABLE; i++)
+	{
+		PMAC_TABLE_ENTRY pEntry = &pAd->MacTab.Content[i];
+		if (pEntry && IS_ENTRY_APCLI(pEntry)&& (pEntry->Sst == SST_ASSOC) && (pEntry->bReptCli))
+		{
+			DataRate=0;
+			getRate(pEntry->HTPhyMode, &DataRate);
+
+			printk("%02X:%02X:%02X:%02X:%02X:%02X  ",
+					pEntry->ReptCliAddr[0], pEntry->ReptCliAddr[1], pEntry->ReptCliAddr[2],
+					pEntry->ReptCliAddr[3], pEntry->ReptCliAddr[4], pEntry->ReptCliAddr[5]);
+
+			printk("%-4d", (int)pEntry->Aid);
+			printk("%-4d-%d", (int)pEntry->func_tb_idx, pEntry->func_tb_idx);
+			printk("%-4d", (int)pEntry->PsMode);
+			printk("%-4d", (int)CLIENT_STATUS_TEST_FLAG(pEntry, fCLIENT_STATUS_WMM_CAPABLE));
+#ifdef DOT11_N_SUPPORT
+			printk("%-8d", (int)pEntry->MmpsMode);
+#endif /* DOT11_N_SUPPORT */
+			printk("%-7d", pEntry->RssiSample.AvgRssi[0]);
+			printk("%-7d", pEntry->RssiSample.AvgRssi[1]);
+			printk("%-7d", pEntry->RssiSample.AvgRssi[2]);
+			printk("%-10s", get_phymode_str(pEntry->HTPhyMode.field.MODE));
+			printk("%-6s", get_bw_str(pEntry->HTPhyMode.field.BW));
+			printk("%-6d", pEntry->HTPhyMode.field.MCS);
+			printk("%-6d", pEntry->HTPhyMode.field.ShortGI);
+			printk("%-6d", pEntry->HTPhyMode.field.STBC);
+			printk("%-7d", (int)(pEntry->StaIdleTimeout - pEntry->NoDataIdleCount));
+			printk("%-7d", (int)DataRate);
+			printk("%-10d, %d, %d%%\n", pEntry->DebugFIFOCount, pEntry->DebugTxCount, 
+						(pEntry->DebugTxCount) ? ((pEntry->DebugTxCount-pEntry->DebugFIFOCount)*100/pEntry->DebugTxCount) : 0);
+			printk("\n");
+		}
+	} 
+
+	return TRUE;
+}
+
+INT	Show_Repeater_Cli_Dump_Proc(RTMP_ADAPTER *pAd, RTMP_STRING *arg)
+{
+	INT CliIdx;
+	
+	printk("\n%-19s%-19s%-12s%-12s%-12s%-12s%-12s\n",
+		   "C_MAC","O_MAC", "CliEnable", "CliValid", "bEthCli", "MacTabWCID","MatchLinkIdx");
+	
+	for (CliIdx = 0; CliIdx < MAX_EXT_MAC_ADDR_SIZE; CliIdx++)
+	{
+			REPEATER_CLIENT_ENTRY *pReptEntry = NULL;
+			pReptEntry = &pAd->ApCfg.ApCliTab[0].RepeaterCli[CliIdx];
+			
+			{
+
+				printk("%02X:%02X:%02X:%02X:%02X:%02X  ",
+						pReptEntry->CurrentAddress[0], pReptEntry->CurrentAddress[1], pReptEntry->CurrentAddress[2],
+						pReptEntry->CurrentAddress[3], pReptEntry->CurrentAddress[4], pReptEntry->CurrentAddress[5]);
+				printk("%02X:%02X:%02X:%02X:%02X:%02X  ",
+						pReptEntry->OriginalAddress[0], pReptEntry->OriginalAddress[1], pReptEntry->OriginalAddress[2],
+						pReptEntry->OriginalAddress[3], pReptEntry->OriginalAddress[4], pReptEntry->OriginalAddress[5]);
+				
+				printk("%-12d", (int)pReptEntry->CliEnable);
+				printk("%-12d", (int)pReptEntry->CliValid);
+				printk("%-12d", (int)pReptEntry->bEthCli);
+				printk("%-12d", (int)pReptEntry->MacTabWCID);
+				printk("%-12d", (int)pReptEntry->MatchLinkIdx);
+				printk("\n");
+			}
+	}	
+	return TRUE;
+}
+#endif /* MAC_REPEATER_SUPPORT */
+

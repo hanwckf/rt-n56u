@@ -39,11 +39,23 @@ config  MT7628_AP_APCLI
 	depends on MT7628_AP
 	default y
 
-config  MT7628_AP_MULTI_APCLI
-	bool "Multi AP-Client support"
+config  MT7628_AP_APCLI_AUTO_BW
+	bool "AP-Client Auto Bandwidth Support"
 	depends on MT7628_AP
 	depends on MT7628_AP_APCLI
 	default n
+
+config  MT7628_AP_APCLI_CERT
+	bool "AP-Client TGn Cert support"
+	depends on MT7628_AP
+	depends on MT7628_AP_APCLI
+	default n
+
+#config  MT7628_AP_MULTI_APCLI
+#	bool "Multi AP-Client support"
+#	depends on MT7628_AP
+#	depends on MT7628_AP_APCLI
+#	default n
 
 config  MT7628_AP_MAC_REPEATER
 	bool "MAC Repeater Mode support"
@@ -66,6 +78,11 @@ config  MT7628_AP_CARRIER
 	bool "Carrier Detection support"
 	depends on MT7628_AP
 	default n
+
+config  MT7628_AP_SMART_CARRIER_SENSE
+	bool "Smart Carrier Sense support"
+	depends on MT7628_AP
+	default y
 
 config  MT7628_AP_GREENAP
 	bool "Green AP mode support"

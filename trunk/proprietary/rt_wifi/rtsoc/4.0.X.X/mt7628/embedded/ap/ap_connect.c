@@ -1303,14 +1303,14 @@ VOID APUpdateBeaconFrame(RTMP_ADAPTER *pAd, INT apidx)
 	/* step 7. move BEACON TXWI and frame content to on-chip memory */
 	RT28xx_UpdateBeaconToAsic(pAd, apidx, FrameLen, UpdatePos);
 
-#if defined(DBG) && defined(MT_MAC)
+#if defined(MT_MAC)
 	{
 	    UINT32   Lowpart, Highpart;
 
 	    AsicGetTsfTime(pAd, &Highpart, &Lowpart);
 	    pMbss->WriteBcnDoneTime[pMbss->timer_loop] = Lowpart;
 	}
-#endif /* DBG && MT_MAC */
+#endif /* MT_MAC */
 }
 
 

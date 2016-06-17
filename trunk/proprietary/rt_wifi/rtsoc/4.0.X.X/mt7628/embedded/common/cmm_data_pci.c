@@ -2765,11 +2765,12 @@ VOID RTMPHandleBcnDmaDoneInterrupt(RTMP_ADAPTER *pAd)
 	UCHAR *tmac_info = NULL;
 
 #ifdef CONFIG_AP_SUPPORT
-#ifdef DBG
 	BSS_STRUCT *pMbss = &pAd->ApCfg.MBSSID[0];
 	UCHAR bss_idx = 0;
+#ifdef DBG
 	UINT32   Lowpart, Highpart;
 #endif
+
 	MTWF_LOG(DBG_CAT_FPGA, DBG_SUBCAT_ALL, DBG_LVL_NOISY, ("-->%s():bcn_state=%d\n", __FUNCTION__, pAd->ApCfg.MBSSID[0].bcn_buf.bcn_state));
 #endif /* CONFIG_AP_SUPPORT */
 
@@ -2802,7 +2803,6 @@ VOID RTMPHandleBcnDmaDoneInterrupt(RTMP_ADAPTER *pAd)
 		RTMP_DCACHE_FLUSH(pBcnRing->Cell[pBcnRing->TxSwFreeIdx].AllocPa, TXD_SIZE);
 
 #ifdef CONFIG_AP_SUPPORT//Carter commented for update beacon by TxS, instead of dma_done
-#ifdef DBG
 		// TODO: shiang-MT7603, big endian!!
 		if (tmac_info) {
 //+++Add by Carter for MT7603
@@ -2832,8 +2832,10 @@ VOID RTMPHandleBcnDmaDoneInterrupt(RTMP_ADAPTER *pAd)
 			if (pMbss->bcn_buf.bcn_state == BCN_TX_WRITE_TO_DMA)
 				pMbss->bcn_buf.bcn_state = BCN_TX_DMA_DONE;
 
+#ifdef DBG
 			AsicGetTsfTime(pAd, &Highpart, &Lowpart);
 			pMbss->BcnDmaDoneTime[pMbss->timer_loop] = Lowpart;//update TSF time to corresponding field.
+#endif /* DBG */
 
 			MTWF_LOG(DBG_CAT_ALL, DBG_SUBCAT_ALL, DBG_LVL_LOUD, ("%s():change state as idle\n", __FUNCTION__));
 		}
@@ -2841,7 +2843,6 @@ VOID RTMPHandleBcnDmaDoneInterrupt(RTMP_ADAPTER *pAd)
 		{
 			MTWF_LOG(DBG_CAT_ALL, DBG_SUBCAT_ALL, DBG_LVL_ERROR, ("%s():Err, cannot found tmac_info!\n", __FUNCTION__));
 		}
-#endif /* DBG */
 #endif /* CONFIG_AP_SUPPORT */
 
 		INC_RING_INDEX(pBcnRing->TxSwFreeIdx, BCN_RING_SIZE);

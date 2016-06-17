@@ -69,17 +69,19 @@ INT32 BcnTxSHandler(RTMP_ADAPTER *pAd, CHAR *Data)
 		pMbss->bcn_not_idle_time = 0;
 		DBGPRINT(RT_DEBUG_LOUD, ("%s():idx: %x, change state as idle\n", __FUNCTION__, bss_idx));
 
-#ifdef DBG
 		{
+#ifdef DBG
 			TXS_D_1 *txs_d1 = &txs_entry->txs_d1;
-				
+			
 			pMbss->TXS_TSF[pMbss->timer_loop] = txs_d1->timestamp;
 			pMbss->TXS_SN[pMbss->timer_loop] = txs_d4->sn;
-			pMbss->timer_loop++;
-			if (pMbss->timer_loop >= MAX_TIME_RECORD)
+#endif /* DBG */
+			if (pMbss->timer_loop < MAX_TIME_RECORD - 1)
+				pMbss->timer_loop++;
+			else
 				pMbss->timer_loop = 0;
 		}
-#endif /* DBG */
+
 	}
 #endif /* CONFIG_AP_SUPPORT */
 

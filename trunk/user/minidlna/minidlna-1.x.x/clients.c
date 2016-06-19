@@ -53,6 +53,16 @@ struct client_type_s client_types[] =
 	  EXAVClientInfo
 	},
 
+	/* User-Agent: DLNADOC/1.50 SEC_HHP_[PC]LPC001/1.0  MS-DeviceCaps/1024 */
+	/* This is AllShare running on a PC.  We don't want to respond with Samsung
+	 * capabilities, or Windows (and AllShare) might get grumpy. */
+	{ 0,
+	  FLAG_DLNA,
+	  "AllShare",
+	  "SEC_HHP_[PC]",
+	  EUserAgent
+	},
+
 	/* Samsung Series [CDE] BDPs and TVs must be separated, or some of our
 	 * advertised extra features trigger a folder browsing bug on BDPs. */
 	/* User-Agent: DLNADOC/1.50 SEC_HHP_BD-D5100/1.0 */
@@ -227,6 +237,13 @@ struct client_type_s client_types[] =
 	  FLAG_CAPTION_RES,
 	  "BubbleUPnP",
 	  "BubbleUPnP",
+	  EUserAgent
+	},
+
+	{ 0,
+	  FLAG_DLNA | FLAG_MIME_AVI_AVI,
+	  "Windows",
+	  "FDSSDP",
 	  EUserAgent
 	},
 

@@ -584,8 +584,8 @@ static VOID ApCliCtrlJoinReqAction(
 		NdisMoveMemory(&(JoinReq.Ssid), pApCliEntry->CfgSsid, JoinReq.SsidLen);
 	}
 
-	DBGPRINT(RT_DEBUG_TRACE, ("(%s) Probe Ssid=%s, Bssid=%02x:%02x:%02x:%02x:%02x:%02x\n",
-		__FUNCTION__, JoinReq.Ssid, PRINT_MAC(JoinReq.Bssid)));
+	printk(KERN_INFO "AP-Client probe: SSID=%s, BSSID=%02x:%02x:%02x:%02x:%02x:%02x\n",
+		JoinReq.Ssid, PRINT_MAC(JoinReq.Bssid));
 
 	*pCurrState = APCLI_CTRL_PROBE;
 
@@ -628,10 +628,10 @@ static VOID ApCliCtrlJoinReqTimeoutAction(
 	DBGPRINT(RT_DEBUG_TRACE, ("(%s) Probe Req Timeout. ProbeReqCnt=%d\n",
 				__FUNCTION__, pApCliEntry->ProbeReqCnt));
 
-	if (pApCliEntry->ProbeReqCnt > 7)
+	if (pApCliEntry->ProbeReqCnt > APCLI_MAX_PROBE_RETRY_NUM)
 	{
 		/*
-			if exceed the APCLI_MAX_PROBE_RETRY_NUM (7),
+			if exceed the APCLI_MAX_PROBE_RETRY_NUM,
 			switch to try next candidate AP.
 		*/
 		*pCurrState = APCLI_CTRL_DISCONNECTED;
@@ -641,6 +641,18 @@ static VOID ApCliCtrlJoinReqTimeoutAction(
 		
 		if (pAd->ApCfg.ApCliAutoConnectRunning == TRUE)
 			ApCliSwitchCandidateAP(pAd, ifIndex);
+		
+		if ((pAd->ApCfg.ApCliAutoConnectRunning == FALSE) && (pAd->ApCfg.ApCliTab[ifIndex].AutoConnectFlag == TRUE))
+		{
+			NDIS_802_11_SSID Ssid;
+			
+			NdisZeroMemory(&Ssid, sizeof(NDIS_802_11_SSID));
+			
+			pAd->ApCfg.ApCliAutoConnectRunning = TRUE;
+			Set_ApCli_Enable_Proc(pAd, "0");
+			ApCliSiteSurvey(pAd, &Ssid, SCAN_ACTIVE, FALSE);
+		}
+		
 		return;
 	}
 #endif /* APCLI_AUTO_CONNECT_SUPPORT */
@@ -680,9 +692,9 @@ static VOID ApCliCtrlJoinReqTimeoutAction(
 		NdisMoveMemory(&(JoinReq.Ssid), pApCliEntry->CfgSsid, JoinReq.SsidLen);
 	}
 
-	DBGPRINT(RT_DEBUG_TRACE, ("(%s) Probe Ssid=%s, Bssid=%02x:%02x:%02x:%02x:%02x:%02x\n",
-		__FUNCTION__, JoinReq.Ssid, JoinReq.Bssid[0], JoinReq.Bssid[1], JoinReq.Bssid[2],
-		JoinReq.Bssid[3], JoinReq.Bssid[4], JoinReq.Bssid[5]));
+	printk(KERN_INFO "AP-Client probe: SSID=%s, BSSID=%02x:%02x:%02x:%02x:%02x:%02x\n",
+		JoinReq.Ssid, PRINT_MAC(JoinReq.Bssid));
+
 	MlmeEnqueue(pAd, APCLI_SYNC_STATE_MACHINE, APCLI_MT2_MLME_PROBE_REQ,
 		sizeof(APCLI_MLME_JOIN_REQ_STRUCT), &JoinReq, ifIndex);
 
@@ -740,8 +752,10 @@ static VOID ApCliCtrlProbeRspAction(
 
 	if (Status == MLME_SUCCESS)
 	{
-		DBGPRINT(RT_DEBUG_TRACE, ("%s():ProbeResp success. SSID=%s, Bssid=%02x:%02x:%02x:%02x:%02x:%02x\n",
-					__FUNCTION__, pApCliEntry->Ssid, PRINT_MAC(pApCliEntry->MlmeAux.Bssid)));
+		if (pApCliEntry->SsidLen > 0) {
+			printk(KERN_INFO "AP-Client probe response: SSID=%s, BSSID=%02x:%02x:%02x:%02x:%02x:%02x\n",
+				pApCliEntry->Ssid, PRINT_MAC(pApCliEntry->MlmeAux.Bssid));
+		}
 
 		if ((pAd->CommonCfg.Channel <= 14)
 #ifdef MAC_REPEATER_SUPPORT
@@ -1051,7 +1065,7 @@ static VOID ApCliCtrlAuth2RspAction(
 	} 
 	else
 	{
-		DBGPRINT(RT_DEBUG_TRACE, ("(%s) Apcli Auth Rsp Failure.\n", __FUNCTION__));
+		printk(KERN_WARNING "AP-Client: authentication failed!\n");
 
 		*pCurrState = APCLI_CTRL_DISCONNECTED;
 #ifdef APCLI_AUTO_CONNECT_SUPPORT
@@ -1570,7 +1584,7 @@ static VOID ApCliCtrlPeerDeAssocReqAction(
 		UCHAR CliIdx = 0xFF;
 #endif /* MAC_REPEATER_SUPPORT */
 
-	DBGPRINT(RT_DEBUG_TRACE, ("(%s) Peer DeAssoc Req.\n", __FUNCTION__));
+	printk(KERN_INFO "AP-Client: disconnected by peer\n");
 
 	if ((ifIndex >= MAX_APCLI_NUM)
 #ifdef MAC_REPEATER_SUPPORT
@@ -2058,9 +2072,8 @@ static VOID ApCliCtrlTrialConnectAction(
 		NdisMoveMemory(&(JoinReq.Ssid), pApCliEntry->CfgSsid, JoinReq.SsidLen);
 	}
 
-	DBGPRINT(RT_DEBUG_TRACE, ("(%s) Probe Ssid=%s, Bssid=%02x:%02x:%02x:%02x:%02x:%02x\n",
-		__func__, JoinReq.Ssid, JoinReq.Bssid[0], JoinReq.Bssid[1], JoinReq.Bssid[2],
-		JoinReq.Bssid[3], JoinReq.Bssid[4], JoinReq.Bssid[5]));
+	printk(KERN_INFO "AP-Client probe: SSID=%s, BSSID=%02x:%02x:%02x:%02x:%02x:%02x\n",
+		JoinReq.Ssid, PRINT_MAC(JoinReq.Bssid));
 
 	*pCurrState = APCLI_CTRL_PROBE;
 

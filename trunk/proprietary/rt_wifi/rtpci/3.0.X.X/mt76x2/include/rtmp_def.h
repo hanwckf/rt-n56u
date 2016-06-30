@@ -1355,6 +1355,8 @@ enum WIFI_MODE{
 
 #define APCLI_ASSOC_FUNC_SIZE              (APCLI_MAX_ASSOC_STATE * APCLI_MAX_ASSOC_MSG)
 
+#define APCLI_MAX_PROBE_RETRY_NUM         4
+
 /*ApCli sync state machine */
 #define APCLI_SYNC_IDLE                   0	/* merge NO_BSS,IBSS_IDLE,IBSS_ACTIVE and BSS in to 1 state */
 #define APCLI_JOIN_WAIT_PROBE_RSP         1

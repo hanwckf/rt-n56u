@@ -111,6 +111,9 @@
 
 #define BSS_NOT_FOUND                    0xFFFFFFFF
 
+#ifdef EAPOL_QUEUE_SUPPORT
+#define MAX_LEN_OF_EAP_QUEUE            (40)
+#endif /* EAPOL_QUEUE_SUPPORT */
 #ifdef CONFIG_AP_SUPPORT
 #ifndef CONFIG_STA_SUPPORT
 #define MAX_LEN_OF_MLME_QUEUE            64 /*20*/ /*10 */
@@ -911,6 +914,7 @@ typedef struct _BSS_ENTRY{
 	UCHAR SupRateLen;
 	UCHAR ExtRate[MAX_LEN_OF_SUPPORTED_RATES];
 	UCHAR ExtRateLen;
+	UCHAR Erp;
 	HT_CAPABILITY_IE HtCapability;
 	UCHAR HtCapabilityLen;
 	ADD_HT_INFO_IE AddHtInfo;	/* AP might use this additional ht info IE */
@@ -1005,17 +1009,35 @@ typedef struct _BSS_ENTRY{
 	UCHAR CountryString[3];
 	BOOLEAN bHasCountryIE;
 #endif /* EXT_BUILD_CHANNEL_LIST */
-#ifdef DOT11R_FT_SUPPORT
+#endif /* CONFIG_STA_SUPPORT */
+#if defined(DOT11R_FT_SUPPORT) || defined(DOT11K_RRM_SUPPORT)
 	BOOLEAN	 bHasMDIE;
 	FT_MDIE FT_MDIE;
-#endif /* DOT11R_FT_SUPPORT */
-#endif /* CONFIG_STA_SUPPORT */
+#endif /* (DOT11R_FT_SUPPORT) || defined(DOT11K_RRM_SUPPORT) */
 
 #ifdef DOT11K_RRM_SUPPORT
 	UINT8 RegulatoryClass;
 	UINT8 CondensedPhyType;
 	UINT8 RSNI;
 #endif /* DOT11K_RRM_SUPPORT */
+
+#ifdef SMART_MESH
+	BOOLEAN		bDfsAP;             /* Determine If specified peer is in DFS channel */
+	BOOLEAN		bSupportSmartMesh; 	/* Determine If own smart mesh capability */
+	BOOLEAN     bHyperFiPeer;       /* Determine If peer is Hyper-Fi device */	
+	UCHAR       VIEFlag;       		/* Store the flag byte inside VIE */	
+	USHORT      BW;	
+#endif /* SMART_MESH */
+#ifdef MWDS
+	BOOLEAN		bSupportMWDS; 		/* Determine If own MWDS capability */
+#endif /* MWDS */
+#ifdef WSC_AP_SUPPORT
+#ifdef SMART_MESH_HIDDEN_WPS
+    BOOLEAN		bSupportHiddenWPS; 	/* Determine If own HiddenWPS capability */
+    BOOLEAN		bRunningHiddenWPS; 	/* Determine If HiddenWPS is running now */
+    BOOLEAN		bHiddenWPSRegistrar;/* Determine which role for this bss with HiddenWPS */
+#endif /* SMART_MESH_HIDDEN_WPS */
+#endif /* WSC_AP_SUPPORT */
 } BSS_ENTRY;
 
 typedef struct {
@@ -1051,10 +1073,26 @@ typedef struct _MLME_QUEUE_ELEM {
 	ULONG Priv;
 } MLME_QUEUE_ELEM, *PMLME_QUEUE_ELEM;
 
+#ifdef EAPOL_QUEUE_SUPPORT
+typedef struct _EAP_MLME_QUEUE {
+    ULONG             Num;
+    ULONG             Head;
+    ULONG             Tail;
+#ifdef SMART_MESH
+    ULONG             QueueFullCnt;
+#endif /* SMART_MESH */
+    NDIS_SPIN_LOCK   Lock;
+    MLME_QUEUE_ELEM  Entry[MAX_LEN_OF_EAP_QUEUE];
+} EAP_MLME_QUEUE, *PEAP_MLME_QUEUE;
+#endif /* EAPOL_QUEUE_SUPPORT */
+
 typedef struct _MLME_QUEUE {
 	ULONG Num;
 	ULONG Head;
 	ULONG Tail;
+#ifdef SMART_MESH
+    ULONG             QueueFullCnt;
+#endif /* SMART_MESH */
 	NDIS_SPIN_LOCK Lock;
 	MLME_QUEUE_ELEM Entry[MAX_LEN_OF_MLME_QUEUE];
 } MLME_QUEUE, *PMLME_QUEUE;
@@ -1147,7 +1185,7 @@ typedef struct _MLME_AUX {
     ULONG               BssIdx;
     ULONG               RoamIdx;
 	BOOLEAN				CurrReqIsFromNdis;
-
+	INT					ScanInfType;
     RALINK_TIMER_STRUCT BeaconTimer, ScanTimer, APScanTimer;
     RALINK_TIMER_STRUCT AuthTimer;
     RALINK_TIMER_STRUCT AssocTimer, ReassocTimer, DisassocTimer;
@@ -1174,6 +1212,13 @@ typedef struct _MLME_AUX {
 #endif /* DOT11R_FT_SUPPORT */
 #endif /* CONFIG_STA_SUPPORT */
 
+#ifdef SMART_MESH
+	BOOLEAN		bSupportSmartMesh; 	/* Determine If own smart mesh capability */
+	BOOLEAN     bHyperFiPeer;       /* Determine If peer is Hyper-Fi device */
+#endif /* SMART_MESH */
+#ifdef MWDS
+	BOOLEAN		bSupportMWDS; 		/* Determine If own MWDS capability */
+#endif /* MWDS */
 } MLME_AUX, *PMLME_AUX;
 
 typedef struct _MLME_ADDBA_REQ_STRUCT{
@@ -1394,6 +1439,24 @@ typedef struct _bcn_ie_list {
 	OPERATING_MODE operating_mode;
 	UCHAR vht_op_mode_len;
 #endif /* DOT11_VHT_AC */
+#ifdef SMART_MESH
+	UCHAR VIEFlag;       		/* Store the flag byte inside VIE*/	
+	BOOLEAN	bSupportSmartMesh; 	/* Determine If own smart mesh capability */
+#endif /* SMART_MESH */
+#ifdef MWDS
+	BOOLEAN	bSupportMWDS; 		/* Determine If own MWDS capability */
+#endif /* MWDS */
+#ifdef WSC_AP_SUPPORT
+#ifdef SMART_MESH_HIDDEN_WPS
+    BOOLEAN	bSupportHiddenWPS; 	/* Determine If own HiddenWPS capability */
+    BOOLEAN bRunningHiddenWPS;  /* Determine HiddenWPS is running */
+    BOOLEAN	bHiddenWPSRegistrar;/* Determine which role for this bss with HiddenWPS */
+#endif /* SMART_MESH_HIDDEN_WPS */
+#endif /* WSC_AP_SUPPORT */
+#ifdef SMART_MESH_MONITOR
+	UCHAR vendor_ie_len;
+	UCHAR vendor_ie[NTGR_IE_TOTAL_LEN];
+#endif /* SMART_MESH_MONITOR */
 }BCN_IE_LIST;
 
 #define ACTION_QOSMAP_CONFIG	4

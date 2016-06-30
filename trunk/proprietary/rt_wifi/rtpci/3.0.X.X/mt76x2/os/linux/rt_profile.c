@@ -359,7 +359,92 @@ void tbtt_tasklet(unsigned long data)
 		if (pAd->ApCfg.DtimCount == 0)
 #endif /* RTMP_MAC_PCI */
 		{
-			QUEUE_ENTRY *pEntry;
+			if (pAd->CommonCfg.bMcastTest == TRUE)
+			{
+				if (pAd->MacTab.fMcastPsQEnable == TRUE)
+				{
+					UINT32 macValue = 0, idx = 0, mask = 0;
+
+					for (idx = 0; idx < 40; idx++)
+					{
+#ifdef RLT_MAC
+						if (pAd->chipCap.hif_type == HIF_RLT)
+						{
+							RTMP_IO_READ32(pAd, TXQ_STA, &macValue);
+						}
+						else
+						{
+#endif /* RLT_MAC */
+#ifdef RTMP_MAC
+							if (pAd->chipCap.hif_type == HIF_RTMP)
+								RTMP_IO_READ32(pAd, TXRXQ_STA, &macValue);
+#endif /* RTMP_MAC */
+#ifdef RLT_MAC
+						}
+#endif /* RLT_MAC */
+						if (macValue & 0x0000F800)
+							break;
+						else
+							RtmpusecDelay(50);
+					}
+
+					RTMP_IO_WRITE32(pAd, TX_WCID_DROP_MASK0, 0xFFFFFFFE);
+#ifdef RLT_MAC
+					if (pAd->chipCap.hif_type == HIF_RLT) 
+					{
+						RTMP_IO_READ32(pAd, RLT_PBF_CFG, &macValue);
+						macValue |= 0x2;
+						RTMP_IO_WRITE32(pAd, RLT_PBF_CFG, macValue);
+
+						RTMP_IO_READ32(pAd, RLT_PBF_CFG, &macValue);
+						macValue |= 0x4;
+						RTMP_IO_WRITE32(pAd, RLT_PBF_CFG, macValue);
+
+						RTMP_IO_READ32(pAd, RLT_PBF_CFG, &macValue);
+						macValue |= 0x8;
+						RTMP_IO_WRITE32(pAd, RLT_PBF_CFG, macValue);
+					}
+					else
+					{
+#endif /* RLT_MAC */
+#ifdef RTMP_MAC
+						if (pAd->chipCap.hif_type == HIF_RTMP)
+						{
+							RTMP_IO_READ32(pAd, PBF_CFG, &macValue);
+							macValue |= 0x8;
+							RTMP_IO_WRITE32(pAd, PBF_CFG, macValue);
+
+							RTMP_IO_READ32(pAd, PBF_CFG, &macValue);
+							macValue |= 0x4;
+							RTMP_IO_WRITE32(pAd, PBF_CFG, macValue);
+						}
+#endif /* RTMP_MAC */
+#ifdef RLT_MAC
+					}
+#endif /* RLT_MAC */
+
+					for (idx = 0; idx < 200; idx++)
+					{
+						RTMP_IO_READ32(pAd, MCU_INT_STA, &macValue);
+#ifdef RLT_MAC
+						if (pAd->chipCap.hif_type == HIF_RLT) 
+							mask = 0x02;
+						else
+#endif /* RLT_MAC */
+							mask = 0x04;
+
+						if (macValue & mask)
+							break;
+						else
+							RtmpusecDelay(50);
+					}
+
+					RTMP_IO_WRITE32(pAd, TX_WCID_DROP_MASK0, 0x0);
+				}
+			}
+			else
+			{
+				PQUEUE_ENTRY pEntry;
 			BOOLEAN bPS = FALSE;
 			UINT count = 0;
 			unsigned long IrqFlags;
@@ -402,6 +487,115 @@ void tbtt_tasklet(unsigned long data)
 				RTMPDeQueuePacket(pAd, FALSE, NUM_OF_TX_RING, /*MAX_TX_IN_TBTT*/MAX_PACKETS_IN_MCAST_PS_QUEUE);
 			}
 		}
+	}
+
+		if (pAd->CommonCfg.bMcastTest == TRUE)
+		{
+#ifdef RLT_MAC
+			if (pAd->chipCap.hif_type == HIF_RLT) 
+				RTMP_IO_WRITE32(pAd, MCU_INT_STA, 0x2);
+			else
+#endif /* RLT_MAC */
+				RTMP_IO_WRITE32(pAd, MCU_INT_STA, 0x4);
+
+			pAd->MacTab.fMcastPsQEnable = FALSE;
+		}
+	}
+#endif /* CONFIG_AP_SUPPORT */
+}
+
+
+#ifdef WORKQUEUE_BH
+void pretbtt_workq(struct work_struct *work)
+#else
+void pretbtt_tasklet(unsigned long data)
+#endif /* WORKQUEUE_BH */
+{
+#ifdef CONFIG_AP_SUPPORT
+	UINT32 mac_414_value = 0;
+
+#ifdef WORKQUEUE_BH
+	POS_COOKIE pObj = container_of(work, struct os_cookie, pretbtt_work);
+	PRTMP_ADAPTER pAd = pObj->pAd_va;
+#else
+	PRTMP_ADAPTER pAd = (PRTMP_ADAPTER) data;
+#endif /* WORKQUEUE_BH */
+
+#ifdef RLT_MAC
+	if (pAd->chipCap.hif_type == HIF_RLT) 
+		RTMP_IO_WRITE32(pAd, MCU_INT_STA, 0x2);
+	else
+#endif /* RLT_MAC */
+		RTMP_IO_WRITE32(pAd, MCU_INT_STA, 0x4);
+	pAd->MacTab.fMcastPsQEnable = FALSE;
+	
+	if ((pAd->ApCfg.DtimCount == 0) && (pAd->MacTab.McastPsQueue.Head))
+	{
+		UINT32 macValue;
+		PQUEUE_ENTRY pEntry;
+		BOOLEAN bPS = FALSE;
+		UINT count = 0;
+		unsigned long IrqFlags;
+
+#ifdef RLT_MAC
+		if (pAd->chipCap.hif_type == HIF_RLT) 
+		{
+			RTMP_IO_READ32(pAd, RLT_PBF_CFG, &macValue);
+			macValue &= (~0xE);
+			RTMP_IO_WRITE32(pAd, RLT_PBF_CFG, macValue);
+		}
+		else
+		{
+#endif /* RLT_MAC */
+#ifdef RTMP_MAC
+			if (pAd->chipCap.hif_type == HIF_RTMP)
+			{
+				RTMP_IO_READ32(pAd, PBF_CFG, &macValue);
+				macValue &= (~0xC);
+				RTMP_IO_WRITE32(pAd, PBF_CFG, macValue);
+			}
+#endif /* RTMP_MAC */
+#ifdef RLT_MAC
+		}
+#endif /* RLT_MAC */
+		RTMP_IRQ_LOCK(&pAd->irq_lock, IrqFlags);
+		
+		while (pAd->MacTab.McastPsQueue.Head)
+		{
+			bPS = TRUE;
+			
+			if (pAd->TxSwQueue[QID_AC_BE].Number <= (MAX_PACKETS_IN_QUEUE + MAX_PACKETS_IN_MCAST_PS_QUEUE))
+			{
+				pEntry = RemoveHeadQueue(&pAd->MacTab.McastPsQueue);
+				
+				if (count)
+					RTMP_SET_PACKET_MOREDATA(pEntry, TRUE);
+
+				InsertHeadQueue(&pAd->TxSwQueue[QID_AC_BE], pEntry);
+				count++;
+			}
+			else
+				break;
+		}
+		
+		RTMP_IRQ_UNLOCK(&pAd->irq_lock, IrqFlags);
+
+		if (pAd->MacTab.McastPsQueue.Number == 0)
+		{
+			UINT bss_index = 0;
+
+			/* clear MCAST/BCAST backlog bit for all BSS */
+			for (bss_index = BSS0; bss_index < pAd->ApCfg.BssidNum; bss_index++)
+				WLAN_MR_TIM_BCMC_CLEAR(bss_index);
+		}
+		pAd->MacTab.PsQIdleCount = 0;
+
+		/* dequeue outgoing frames from TxSwQueue0 queue and process it */
+		if (bPS == TRUE)
+		{
+			RTMPDeQueuePacket(pAd, FALSE, QID_AC_BE, /*MAX_TX_IN_TBTT*/MAX_PACKETS_IN_MCAST_PS_QUEUE);
+			pAd->MacTab.fMcastPsQEnable = TRUE; 
+		} 	
 	}
 #endif /* CONFIG_AP_SUPPORT */
 }
@@ -455,6 +649,50 @@ static INT process_nbns_packet(
 }
 #endif /* INF_PPA_SUPPORT */
 
+#if defined (CONFIG_WIFI_PKT_FWD)
+struct net_device *rlt_dev_get_by_name(const char *name)
+{
+#if LINUX_VERSION_CODE > KERNEL_VERSION(2,6,35)
+	return dev_get_by_name(&init_net, name);
+#else
+	return dev_get_by_name(name);
+#endif
+}
+
+
+VOID ApCliLinkCoverRxPolicy(
+	IN PRTMP_ADAPTER pAd,
+	IN PNDIS_PACKET pPacket,
+	OUT BOOLEAN *DropPacket)
+{
+	void *opp_band_tbl =NULL;
+	void *band_tbl =NULL;
+	INVAILD_TRIGGER_MAC_ENTRY *pInvalidEntry = NULL;
+	REPEATER_CLIENT_ENTRY *pReptEntry = NULL, *pOtherBandReptEntry = NULL;
+	PNDIS_PACKET pRxPkt = pPacket;
+	UCHAR *pPktHdr = NULL , isLinkValid;
+
+	pPktHdr = GET_OS_PKT_DATAPTR(pRxPkt);
+
+	if (wf_fwd_feedback_map_table)
+		wf_fwd_feedback_map_table(pAd, &band_tbl, &opp_band_tbl);
+
+	if (opp_band_tbl == NULL)
+		return;
+
+	if (IS_GROUP_MAC(pPktHdr)) {
+		pInvalidEntry = RepeaterInvaildMacLookup(pAd, pPktHdr+6);
+		pOtherBandReptEntry = RTMPLookupRepeaterCliEntry(opp_band_tbl, FALSE, pPktHdr+6, FALSE, &isLinkValid);
+
+		if ((pInvalidEntry != NULL) || (pOtherBandReptEntry != NULL)) {
+			DBGPRINT(RT_DEBUG_INFO, ("%s, recv broadcast from InvalidRept Entry, drop this packet\n", __func__));
+			*DropPacket = TRUE;
+		}
+	}
+}
+#endif /* CONFIG_WIFI_PKT_FWD */
+
+
 void announce_802_3_packet(
 	IN VOID *pAdSrc,
 	IN PNDIS_PACKET pNetPkt,
@@ -474,7 +712,19 @@ void announce_802_3_packet(
 	{
 #ifdef MAT_SUPPORT
 		if (RTMP_MATPktRxNeedConvert(pAd, pRxPkt->dev))
+		{
+#if defined (CONFIG_WIFI_PKT_FWD)
+			BOOLEAN	 need_drop = FALSE;
+
+			ApCliLinkCoverRxPolicy(pAd, pNetPkt, &need_drop);
+			
+			if (need_drop == TRUE) {
+				RELEASE_NDIS_PACKET(pAd, pRxPkt, NDIS_STATUS_FAILURE);
+				return;
+			}
+#endif /* CONFIG_WIFI_PKT_FWD */
 			RTMP_MATEngineRxHandle(pAd, pNetPkt, 0);
+		}
 #endif /* MAT_SUPPORT */
 	}
 #endif /* APCLI_SUPPORT */
@@ -593,30 +843,109 @@ void announce_802_3_packet(
 #endif /* BG_FT_SUPPORT */
 #endif /* CONFIG_AP_SUPPORT */
 
+#ifdef REDUCE_TCP_ACK_SUPPORT
+	ReduceAckUpdateDataCnx(pAd,pRxPkt);
+#endif /* REDUCE_TCP_ACK_SUPPORT */
+
 	pRxPkt->protocol = eth_type_trans(pRxPkt, pRxPkt->dev);
 
 #if defined (CONFIG_WIFI_PKT_FWD)
-	if (wf_fwd_rx_hook!= NULL)
-	{
-		unsigned int flags;
-		int ret = 0;
-		RTMP_IRQ_LOCK(&pAd->page_lock, flags);
+		struct sk_buff *pOsRxPkt = RTPKT_TO_OSPKT(pRxPkt);
+		PNET_DEV rx_dev = RtmpOsPktNetDevGet(pRxPkt);
 
-		ret = wf_fwd_rx_hook(pNetPkt);
-		if (ret == 0)
-		{
-			RTMP_IRQ_UNLOCK(&pAd->page_lock, flags);
-			return;
-		}
-		else if (ret == 2)
-		{
-			RELEASE_NDIS_PACKET(pAd, pNetPkt, NDIS_STATUS_FAILURE);
-			RTMP_IRQ_UNLOCK(&pAd->page_lock, flags);
-			return;
+		/* all incoming packets should set CB to mark off which net device received and in which band */
+		if ((rx_dev == rlt_dev_get_by_name("rai0")) || (rx_dev == rlt_dev_get_by_name("apclii0")) ||
+			(rx_dev == rlt_dev_get_by_name("rai1")) || (rx_dev == rlt_dev_get_by_name("apclii1"))) {
+			RTMP_SET_PACKET_BAND(pOsRxPkt, RTMP_PACKET_SPECIFIC_5G);
+
+			if (NdisEqualMemory(pOsRxPkt->dev->name, "apcli", 5))
+			{
+				if (NdisEqualMemory(pOsRxPkt->dev->name, "apclii0", 7))
+					RTMP_SET_PACKET_RECV_FROM(pOsRxPkt, RTMP_PACKET_RECV_FROM_5G_CLIENT);
+				else
+					RTMP_SET_PACKET_RECV_FROM(pOsRxPkt, RTMP_PACKET_RECV_FROM_5G_GUEST_CLIENT);
+			}
+			else
+			{
+				if (NdisEqualMemory(pOsRxPkt->dev->name, "rai0", 4))
+					RTMP_SET_PACKET_RECV_FROM(pOsRxPkt, RTMP_PACKET_RECV_FROM_5G_AP);
+				else
+					RTMP_SET_PACKET_RECV_FROM(pOsRxPkt, RTMP_PACKET_RECV_FROM_5G_GUEST_AP);
+			}
+		} else {
+			RTMP_SET_PACKET_BAND(pOsRxPkt, RTMP_PACKET_SPECIFIC_2G);
+		
+			if (NdisEqualMemory(pOsRxPkt->dev->name, "apcli", 5))
+			{
+				if (NdisEqualMemory(pOsRxPkt->dev->name, "apcli0", 6))
+					RTMP_SET_PACKET_RECV_FROM(pOsRxPkt, RTMP_PACKET_RECV_FROM_2G_CLIENT);
+				else
+					RTMP_SET_PACKET_RECV_FROM(pOsRxPkt, RTMP_PACKET_RECV_FROM_2G_GUEST_CLIENT);
+			}
+			else
+			{
+				if (NdisEqualMemory(pOsRxPkt->dev->name, "ra0", 3))
+					RTMP_SET_PACKET_RECV_FROM(pOsRxPkt, RTMP_PACKET_RECV_FROM_2G_AP);
+				else
+					RTMP_SET_PACKET_RECV_FROM(pOsRxPkt, RTMP_PACKET_RECV_FROM_2G_GUEST_AP);
+			}
 		}
 
-		RTMP_IRQ_UNLOCK(&pAd->page_lock, flags);
-	}
+		if (wf_fwd_rx_hook != NULL)
+		{
+			struct ethhdr *mh = eth_hdr(pRxPkt);
+			int ret = 0;
+
+			if ((mh->h_dest[0] & 0x1) == 0x1)
+			{
+				if (NdisEqualMemory(pOsRxPkt->dev->name, "apcli", 5)) 
+				{
+#ifdef MAC_REPEATER_SUPPORT
+					if ((pAd->ApCfg.bMACRepeaterEn == TRUE) &&
+						(RTMPQueryLookupRepeaterCliEntry(pAd, mh->h_source) == TRUE)) {
+						RELEASE_NDIS_PACKET(pAd, pRxPkt, NDIS_STATUS_FAILURE);
+						return;
+					}
+					else
+#endif /* MAC_REPEATER_SUPPORT */
+					{
+						VOID *opp_band_tbl = NULL;
+						VOID *band_tbl = NULL;
+
+						if (wf_fwd_feedback_map_table)
+							wf_fwd_feedback_map_table(pAd, &band_tbl, &opp_band_tbl);
+
+#ifdef APCLI_GUEST_NETWORK_SUPPORT						
+						if ((NdisEqualMemory(pOsRxPkt->dev->name, "apcli0", 6)) || 
+							(NdisEqualMemory(pOsRxPkt->dev->name, "apclii0", 7))) {
+#endif /* APCLI_GUEST_NETWORK_SUPPORT */
+						if ((opp_band_tbl != NULL) 
+							&& MAC_ADDR_EQUAL(((UCHAR *)((REPEATER_ADAPTER_DATA_TABLE *)opp_band_tbl)->Wdev_ifAddr), mh->h_source)) {
+							RELEASE_NDIS_PACKET(pAd, pRxPkt, NDIS_STATUS_FAILURE);
+							return;
+						}
+#ifdef APCLI_GUEST_NETWORK_SUPPORT
+						} else {
+							if ((opp_band_pad != NULL) 
+								&& MAC_ADDR_EQUAL(opp_band_pad->ApCfg.ApCliTab[1].wdev.if_addr, mh->h_source)) {
+								RELEASE_NDIS_PACKET(pAd, pRxPkt, NDIS_STATUS_FAILURE);
+								return;
+							}
+						}
+#endif /* APCLI_GUEST_NETWORK_SUPPORT */
+					}
+				}
+			}
+			
+			ret = wf_fwd_rx_hook(pRxPkt);
+
+			if (ret == 0) {
+				return;
+			} else if (ret == 2) {
+				RELEASE_NDIS_PACKET(pAd, pRxPkt, NDIS_STATUS_FAILURE);
+				return;
+			}
+		}
 #endif /* CONFIG_WIFI_PKT_FWD */
 
 	netif_rx(pRxPkt);
@@ -786,10 +1115,18 @@ void STA_MonPktSend(RTMP_ADAPTER *pAd, RX_BLK *pRxBlk)
 #endif /* DOT11_VHT_AC */
 
 	if (sniffer_type == RADIOTAP_TYPE) {
+#ifdef PPI_HEADER
+                send_ppi_monitor_packets(pNetDev, pRxPacket, (void *)pHeader, pData, DataSize,
+                                                                          L2PAD, PHYMODE, BW, ShortGI, MCS, LDPC, LDPC_EX_SYM,
+                                                                          AMPDU, STBC, RSSI1, pDevName, Channel, CentralChannel,
+                                                                          sideband_index, RssiForRadiotap,timestamp);
+
+#else
 		send_radiotap_monitor_packets(pNetDev, pRxPacket, (void *)pHeader, pData, DataSize,
 									  L2PAD, PHYMODE, BW, ShortGI, MCS, LDPC, LDPC_EX_SYM, 
 									  AMPDU, STBC, RSSI1, pDevName, Channel, CentralChannel,
 							 		  sideband_index, RssiForRadiotap,timestamp);
+#endif
 	}
 
 	if (sniffer_type == PRISM_TYPE) {

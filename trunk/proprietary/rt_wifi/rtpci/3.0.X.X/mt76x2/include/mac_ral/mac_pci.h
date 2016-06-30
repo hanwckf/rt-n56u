@@ -208,6 +208,7 @@ typedef	struct GNU_PACKED _RXD_STRUC{
 			RtmpPCI_FinalWriteTxResource(_pAd, _pTxBlk, _TotalMPDUSize, _FirstTxIdx)
 
 #define HAL_LastTxIdx(_pAd, _QueIdx,_LastTxIdx) \
+			if (_LastTxIdx) {};					\
 			/*RtmpPCIDataLastTxIdx(_pAd, _QueIdx,_LastTxIdx)*/
 
 #define HAL_KickOutTx(_pAd, _pTxBlk, _QueIdx)	\
@@ -318,6 +319,25 @@ typedef enum _RTMP_TX_DONE_MASK{
 		RTMP_INT_UNLOCK(&pAd->irq_lock, _irqFlags);\
 	} while(0)
 
+
+/* Disable MAC RX */
+#define RTMP_MAC_RX_DISABLE(pAd)	\
+		do{ 			\
+				UINT32 value;	\
+				RTMP_IO_READ32(pAd, MAC_SYS_CTRL, &value);	\
+				value &= ~(1<<3);	\
+				RTMP_IO_WRITE32(pAd, MAC_SYS_CTRL, value);	\
+		} while(0)
+		
+
+/* Enable MAC RX */
+#define RTMP_MAC_RX_ENABLE(pAd)	\
+		do{ 			\
+				UINT32 value;	\
+				RTMP_IO_READ32(pAd, MAC_SYS_CTRL, &value);	\
+				value |= (1<<3);	\
+				RTMP_IO_WRITE32(pAd, MAC_SYS_CTRL, value);	\
+		} while(0)
 
 
 /* ----------------- MLME Related MACRO ----------------- */

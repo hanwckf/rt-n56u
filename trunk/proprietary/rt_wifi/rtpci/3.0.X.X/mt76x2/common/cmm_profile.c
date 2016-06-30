@@ -376,10 +376,8 @@ INT RTMPGetKeyParameter(
 	PSTRING start_ptr, end_ptr;
 	PSTRING ptr;
 	PSTRING offset = NULL;
-	INT  len, keyLen;
+	INT  len;
 
-
-	keyLen = strlen(key);
 	os_alloc_mem(NULL, (PUCHAR *)&pMemBuf, MAX_PARAM_BUFFER_SIZE  * 2);
 	if (pMemBuf == NULL)
 		return (FALSE);
@@ -781,6 +779,45 @@ static void rtmp_read_ap_client_from_file(
 	}
 #endif /* APCLI_CONNECTION_TRIAL */
 
+#ifdef APCLI_AUTO_BW_SUPPORT
+        /* ApCliBw */
+        if(RTMPGetKeyParameter("ApCliBw", tmpbuf, MAX_PARAM_BUFFER_SIZE, buffer, FALSE))
+        {
+                for (i=0, macptr = rstrtok(tmpbuf,";"); (macptr && i < MAX_APCLI_NUM); macptr = rstrtok(NULL,";"), i++)
+                {
+                        pApCliEntry = &pAd->ApCfg.ApCliTab[i];
+			wdev = &pApCliEntry->wdev;
+
+                        wdev->bw = (UCHAR)simple_strtol(macptr, 0, 10);
+			if ((wdev->bw != BW_20) && (wdev->bw != BW_40) && (wdev->bw != BW_80))
+			{
+				DBGPRINT(RT_DEBUG_OFF, ("AUTOBW(%s): unknown ApCliEntry[%d].BW=%d recover to BW_20\n", __FUNCTION__, i, wdev->bw));
+				wdev->bw = BW_20;
+			}
+                        DBGPRINT(RT_DEBUG_OFF, ("AUTOBW(%s): New ApCliEntry[%d].BW=%d \n", __FUNCTION__, i, wdev->bw));
+                }
+        }
+
+        /* ApCliPhyMode */
+        if(RTMPGetKeyParameter("ApCliPhyMode", tmpbuf, MAX_PARAM_BUFFER_SIZE, buffer, FALSE))
+        {
+		UINT wmode = 0;
+                for (i=0, macptr = rstrtok(tmpbuf,";"); (macptr && i < MAX_APCLI_NUM); macptr = rstrtok(NULL,";"), i++)
+                {
+                        wmode = simple_strtol(macptr, 0, 10);
+
+			if (!ApCliSetPhyMode(pAd, i, wmode))	
+                        {
+                                DBGPRINT(RT_DEBUG_OFF, ("AUTOBW(%s): skip unknown ApCliEntry[%d].WMODE=%d\n", __FUNCTION__, i, wmode));
+                                continue;
+                        }
+
+                        DBGPRINT(RT_DEBUG_OFF, ("AUTOBW(%s): New ApCliEntry[%d].WMODE=%d \n", __FUNCTION__, i, wmode));
+                }
+        }
+#endif /* APCLI_AUTO_BW_SUPPORT */	
+
+
 	/*ApCliSsid*/
 	if(RTMPGetKeyParameter("ApCliSsid", tmpbuf, MAX_PARAM_BUFFER_SIZE, buffer, FALSE))
 	{
@@ -819,8 +856,10 @@ static void rtmp_read_ap_client_from_file(
 
 			if(strlen(macptr) != 17)  /*Mac address acceptable format 01:02:03:04:05:06 length 17*/
 				continue; 
+			/*
 			if(strcmp(macptr,"00:00:00:00:00:00") == 0)
 				continue; 
+			*/
 			for (j=0; j<MAC_ADDR_LEN; j++)
 			{
 				AtoH(macptr, &macAddress[j], 1);
@@ -838,6 +877,7 @@ static void rtmp_read_ap_client_from_file(
 		{
 			pApCliEntry = &pAd->ApCfg.ApCliTab[i];
 			wdev = &pApCliEntry->wdev;
+            wdev->bWpaAutoMode = FALSE;
 
 			if ((strncmp(macptr, "WEPAUTO", 7) == 0) || (strncmp(macptr, "wepauto", 7) == 0))
 				wdev->AuthMode = Ndis802_11AuthModeAutoSwitch;
@@ -852,7 +892,6 @@ static void rtmp_read_ap_client_from_file(
 				wdev->AuthMode = Ndis802_11AuthModeWPAPSK;
 			else if ((strncmp(macptr, "WPA2PSK", 7) == 0) || (strncmp(macptr, "wpa2psk", 7) == 0))
 				wdev->AuthMode = Ndis802_11AuthModeWPA2PSK;
-	
 			else
 				wdev->AuthMode = Ndis802_11AuthModeOpen;
 
@@ -873,6 +912,7 @@ static void rtmp_read_ap_client_from_file(
 			wdev = &pApCliEntry->wdev;
 
 			wdev->WepStatus = Ndis802_11WEPDisabled;
+            wdev->bEncryptAutoMode = FALSE;
 			if ((strncmp(macptr, "WEP", 3) == 0) || (strncmp(macptr, "wep", 3) == 0))
             {
 				if (wdev->AuthMode < Ndis802_11AuthModeWPA)
@@ -887,6 +927,14 @@ static void rtmp_read_ap_client_from_file(
 			{
 				if (wdev->AuthMode >= Ndis802_11AuthModeWPA)
 					wdev->WepStatus = Ndis802_11Encryption3Enabled;                            
+			}    
+            else if ((strncmp(macptr, "TKIPAES", 7) == 0) || (strncmp(macptr, "tkipaes", 7) == 0))
+			{
+				if (wdev->AuthMode >= Ndis802_11AuthModeWPA)
+                {            
+					wdev->WepStatus = Ndis802_11Encryption4Enabled;
+                    wdev->bEncryptAutoMode = TRUE;
+                }
 			}    
 			else
 			{
@@ -922,6 +970,12 @@ static void rtmp_read_ap_client_from_file(
 			
 			NdisMoveMemory(pApCliEntry->PSK, macptr, strlen(macptr));
 			pApCliEntry->PSKLen = strlen(macptr);
+#ifdef WSC_AP_SUPPORT
+            pApCliEntry->WscControl.WpaPskLen = pApCliEntry->PSKLen;
+            NdisZeroMemory(pApCliEntry->WscControl.WpaPsk, sizeof(pApCliEntry->WscControl.WpaPsk));
+            NdisMoveMemory(pApCliEntry->WscControl.WpaPsk, pApCliEntry->PSK, pApCliEntry->PSKLen);    
+#endif /* WSC_AP_SUPPORT */   
+
 			DBGPRINT(RT_DEBUG_TRACE, ("I/F(apcli%d) APCli_WPAPSK_KEY=%s, Len=%d\n", i, pApCliEntry->PSK, pApCliEntry->PSKLen));
 
 			if ((pApCliEntry->wdev.AuthMode != Ndis802_11AuthModeWPAPSK) &&
@@ -2144,6 +2198,13 @@ static void HTParametersHook(
 		else
 			pAd->CommonCfg.RegTransmitSetting.field.BW = BW_20;
 
+#ifdef DOT11N_DRAFT3
+		if (Value == BW_40)
+			pAd->CommonCfg.ori_bw_before_2040_coex = BW_40;
+		else
+			pAd->CommonCfg.ori_bw_before_2040_coex = BW_20;
+#endif /* DOT11N_DRAFT3 */
+
 #ifdef MCAST_RATE_SPECIFIC
 		pAd->CommonCfg.MCastPhyMode.field.BW = pAd->CommonCfg.RegTransmitSetting.field.BW;
 #endif /* MCAST_RATE_SPECIFIC */
@@ -2159,6 +2220,13 @@ static void HTParametersHook(
 			pAd->CommonCfg.RegTransmitSetting.field.EXTCHA  = EXTCHA_BELOW;
 		else
 			pAd->CommonCfg.RegTransmitSetting.field.EXTCHA = EXTCHA_ABOVE;
+
+#ifdef DOT11N_DRAFT3
+		if (Value == 0)
+			pAd->CommonCfg.ori_ext_channel_before_2040_coex = EXTCHA_BELOW;
+		else
+			pAd->CommonCfg.ori_ext_channel_before_2040_coex = EXTCHA_ABOVE;
+#endif /* DOT11N_DRAFT3 */
 
 		DBGPRINT(RT_DEBUG_TRACE, ("HT: Ext Channel = %s\n", (Value==0) ? "BELOW" : "ABOVE" ));
 	}
@@ -3462,20 +3530,20 @@ NDIS_STATUS	RTMPSetProfileParameters(
 		{
 			UINT8 count = simple_strtol(tmpbuf, 0, 10);
 			pAd->ed_threshold = count;
-			DBGPRINT(RT_DEBUG_ERROR, ("pAd->ed_threshold = %u\n", count));
+			DBGPRINT(RT_DEBUG_TRACE, ("pAd->ed_threshold = %u\n", count));
 		}
 		if (RTMPGetKeyParameter("ED_MODE", tmpbuf, 32, pBuffer, TRUE))
 		{
 			 UINT8 mode = simple_strtol(tmpbuf, 0, 10);
 			 pAd->ed_chk = mode;
-			 DBGPRINT(RT_DEBUG_OFF, ("pAd->ed_chk = %u\n", mode));
+			 DBGPRINT(RT_DEBUG_TRACE, ("pAd->ed_chk = %u\n", mode));
 		}
 
 		if (RTMPGetKeyParameter("EDCCA_FALSE_CCA_TH", tmpbuf, 32, pBuffer, TRUE))
 		{
 			INT count = simple_strtol(tmpbuf, 0, 10);
 			pAd->ed_false_cca_threshold = count;
-			DBGPRINT(RT_DEBUG_ERROR, ("pAd->ed_false_cca_threshold = %u\n", count));
+			DBGPRINT(RT_DEBUG_TRACE, ("pAd->ed_false_cca_threshold = %u\n", count));
 		}
 
 		
@@ -3537,6 +3605,13 @@ NDIS_STATUS	RTMPSetProfileParameters(
 					pAd->CommonCfg.RegTransmitSetting.field.TxBF = FALSE;
 			}
 				rtmp_asic_set_bf(pAd);
+			}
+
+			/* ITxBfCalibMode*/
+			if(RTMPGetKeyParameter("ITxBfCalibMode", tmpbuf, 32, pBuffer, TRUE))
+			{
+				pAd->CommonCfg.ITxBfCalibMode = simple_strtol(tmpbuf, 0, 10);
+				DBGPRINT(RT_DEBUG_TRACE, ("ITxBfCalibMode = %ld\n", pAd->CommonCfg.ITxBfCalibMode));
 			}
 
 			/* ETxBfeeEn*/
@@ -3645,9 +3720,6 @@ NDIS_STATUS	RTMPSetProfileParameters(
 		
 #ifdef DFS_SUPPORT
 	{
-#ifdef RTMP_RBUS_SUPPORT	
-		PRADAR_DETECT_STRUCT pRadarDetect = &pAd->CommonCfg.RadarDetect;
-#endif /* RTMP_RBUS_SUPPORT */
 		/*CSPeriod*/
 		if(RTMPGetKeyParameter("CSPeriod", tmpbuf, 10, pBuffer, TRUE))
 		{
@@ -4088,6 +4160,18 @@ NDIS_STATUS	RTMPSetProfileParameters(
 					rtmp_read_ids_from_file(pAd, tmpbuf, pBuffer);
 #endif /* IDS_SUPPORT */
 
+#ifdef SMART_MESH
+					rtmp_read_smart_mesh_from_file(pAd, tmpbuf, pBuffer);
+#ifdef MWDS
+					rtmp_read_DWDS_from_file(pAd, tmpbuf, pBuffer);
+#endif /* MWDS*/
+#endif /* SMART_MESH */
+
+#ifdef MWDS
+					rtmp_read_MWDS_from_file(pAd, tmpbuf, pBuffer);
+#endif /* MWDS */
+
+
 #ifdef MAC_REPEATER_SUPPORT
 					if (RTMPGetKeyParameter("MACRepeaterEn", tmpbuf, 10, pBuffer, FALSE))
 					{
@@ -4248,7 +4332,7 @@ NDIS_STATUS	RTMPSetProfileParameters(
 								break;
 
 							tmpMode = (INT) simple_strtol(macptr, 0, 10);
-							if (tmpMode <= WPAPSKTKIP)
+							if (tmpMode <= WPAPSKWPA2PSKTKIPAES)
 								pAd->ApCfg.MBSSID[i].WscSecurityMode = tmpMode;
 							DBGPRINT(RT_DEBUG_TRACE, ("RTMPSetProfileParameters I/F(ra%d) WscSecurityMode=%d\n", 
 								i, pAd->ApCfg.MBSSID[i].WscSecurityMode));
@@ -4765,7 +4849,7 @@ NDIS_STATUS	RTMPSetProfileParameters(
 					else
 						pAd->ApCfg.EntryLifeCheck = MAC_ENTRY_LIFE_CHECK_CNT;
 
-					DBGPRINT(RT_DEBUG_ERROR, ("EntryLifeCheck=%ld\n", pAd->ApCfg.EntryLifeCheck));
+					DBGPRINT(RT_DEBUG_TRACE, ("EntryLifeCheck=%ld\n", pAd->ApCfg.EntryLifeCheck));
 				}
 
 #ifdef DOT11K_RRM_SUPPORT
@@ -4827,6 +4911,28 @@ NDIS_STATUS	RTMPSetProfileParameters(
 				}
 #endif /* VIDEO_TURBINE_SUPPORT */
 #endif /* RTMP_RBUS_SUPPORT */
+
+#ifdef CONFIG_AP_SUPPORT
+				IF_DEV_CONFIG_OPMODE_ON_AP(pAd)
+				{
+					/* WiFi Mcast Test */
+					if (RTMPGetKeyParameter("WiFiMcastTest", tmpbuf, 128, pBuffer, TRUE))
+					{
+						if (strncmp(tmpbuf, "0", 1) == 0)
+							pAd->CommonCfg.bMcastTest = FALSE;
+						else if (strncmp(tmpbuf, "1", 1) == 0)
+							pAd->CommonCfg.bMcastTest = TRUE;
+						else
+							pAd->CommonCfg.bMcastTest = FALSE;
+						DBGPRINT(RT_DEBUG_TRACE, ("WiFi Mcast Enable=%d\n", pAd->CommonCfg.bMcastTest));
+					}
+					else
+					{
+						pAd->CommonCfg.bMcastTest = FALSE;
+						DBGPRINT(RT_DEBUG_TRACE, ("WiFi Mcast disabled=%d\n", pAd->CommonCfg.bMcastTest));
+					}
+				}
+#endif /* CONFIG_AP_SUPPORT */
 
 #ifdef SINGLE_SKU
 				if(RTMPGetKeyParameter("AntGain", tmpbuf, 10, pBuffer, TRUE))
@@ -5644,9 +5750,12 @@ UINT32 RalinkRate_VHT_1NSS[Rate_BW_MAX][Rate_GI_MAX][Rate_MCS] =
 	},
 };
 
-UINT8 newRateGetAntenna(UINT8 MCS)
+UINT8 newRateGetAntenna(UINT8 MCS, UINT8 PhyMode)
 {
-	return ((MCS>>4) + 1);
+	if(PhyMode >= MODE_VHT)    
+	    return ((MCS>>4) + 1);
+    else
+        return ((MCS>>3) + 1);
 }
 
 

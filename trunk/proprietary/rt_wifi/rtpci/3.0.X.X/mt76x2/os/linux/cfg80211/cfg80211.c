@@ -45,14 +45,13 @@
 
 #define RTMP_MODULE_OS
 
-#if (LINUX_VERSION_CODE >= KERNEL_VERSION(3,10,0))
-#include <linux/random.h>
-#endif
 #include "rtmp_comm.h"
 #include "rt_os_util.h"
 #include "rt_os_net.h"
 #include "rt_config.h"
-
+#if (LINUX_VERSION_CODE >= KERNEL_VERSION(3,10,0))
+#include <linux/random.h>
+#endif
 
 #if (LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,28))
 #ifdef RT_CFG80211_SUPPORT
@@ -201,6 +200,73 @@ static INT32 CFG80211_RegNotifier(
 			return -EINVAL;											\
 		}															\
 	}
+
+
+#if (LINUX_VERSION_CODE >= KERNEL_VERSION(3,6,0))
+static int CFG80211_OpsMonitorChannelSet(struct wiphy *pWiphy,
+					 struct cfg80211_chan_def *chandef)
+{
+	VOID *pAd;
+	CFG80211_CB *p80211CB;
+	CMD_RTPRIV_IOCTL_80211_CHAN ChanInfo;
+	UINT32 ChanId;
+
+	struct device *pDev = pWiphy->dev.parent;
+	struct net_device *pNetDev = dev_get_drvdata(pDev);
+	struct ieee80211_channel		*pChan;
+
+	CFG80211DBG(RT_DEBUG_TRACE, ("80211> %s ==>\n", __FUNCTION__));
+	//return 0;
+	MAC80211_PAD_GET(pAd, pWiphy);
+	pChan=chandef->chan;
+	
+
+	
+	    printk("control:%d MHz width:%d center: %d/%d MHz",
+	     pChan->center_freq, chandef->width,
+	     chandef->center_freq1, chandef->center_freq2);
+	
+
+	/* get channel number */
+	ChanId = ieee80211_frequency_to_channel(pChan->center_freq);
+	CFG80211DBG(RT_DEBUG_TRACE, ("80211> Channel = %d\n", ChanId));
+	CFG80211DBG(RT_DEBUG_TRACE, ("80211> ChannelType = %d\n", chandef->width));
+
+	/* init */
+	memset(&ChanInfo, 0, sizeof(ChanInfo));
+	ChanInfo.ChanId = ChanId;
+
+	p80211CB = NULL;
+	RTMP_DRIVER_80211_CB_GET(pAd, &p80211CB);
+
+	if (p80211CB == NULL)
+	{
+		CFG80211DBG(RT_DEBUG_TRACE, ("80211> p80211CB == NULL!\n"));
+		return 0;
+	} 
+
+	ChanInfo.IfType = pNetDev->ieee80211_ptr->iftype;
+
+	CFG80211DBG(RT_DEBUG_TRACE, ("80211> ChanInfo.IfType == %d!\n",ChanInfo.IfType));
+
+	if (cfg80211_get_chandef_type(chandef) == NL80211_CHAN_NO_HT)
+		ChanInfo.ChanType = RT_CMD_80211_CHANTYPE_NOHT;
+	else if (cfg80211_get_chandef_type(chandef) == NL80211_CHAN_HT20)
+		ChanInfo.ChanType = RT_CMD_80211_CHANTYPE_HT20;
+	else if (cfg80211_get_chandef_type(chandef) == NL80211_CHAN_HT40MINUS)
+		ChanInfo.ChanType = RT_CMD_80211_CHANTYPE_HT40MINUS;
+	else if (cfg80211_get_chandef_type(chandef) == NL80211_CHAN_HT40PLUS)
+		ChanInfo.ChanType = RT_CMD_80211_CHANTYPE_HT40PLUS;
+
+	ChanInfo.MonFilterFlag = p80211CB->MonFilterFlag;
+
+	/* set channel */
+	RTMP_DRIVER_80211_CHAN_SET(pAd, &ChanInfo);
+
+	return 0;
+} /* End of CFG80211_OpsChannelSet */
+#endif
+
 
 /*
 ========================================================================
@@ -633,19 +699,51 @@ static int CFG80211_OpsIbssJoin(
 	IN struct cfg80211_ibss_params	*pParams)
 {
 	VOID *pAd;
+	UCHAR *beacon_buf = NULL;
 	CMD_RTPRIV_IOCTL_80211_IBSS IbssInfo;
-
+	UINT channel = 0;
 
 	CFG80211DBG(RT_DEBUG_TRACE, ("80211> %s ==>\n", __FUNCTION__));
 	MAC80211_PAD_GET(pAd, pWiphy);
 
-	CFG80211DBG(RT_DEBUG_TRACE, ("80211> SSID = %s, BI = %d\n",
-				pParams->ssid, pParams->beacon_interval));
 	/* init */
 	memset(&IbssInfo, 0, sizeof(IbssInfo));
 	IbssInfo.BeaconInterval = pParams->beacon_interval;
-	IbssInfo.pSsid = pParams->ssid;
+	memcpy(&IbssInfo.Ssid, pParams->ssid, pParams->ssid_len);
+#if (LINUX_VERSION_CODE >= KERNEL_VERSION(3,8,0))
+	channel = pParams->chandef.chan->center_freq;
+#else
+	channel = pParams->channel->center_freq;
+#endif /* LINUX_VERSION_CODE 3.8.0 */ 	
+	CFG80211DBG(RT_DEBUG_OFF, ("80211> SSID = %s, BI = %d, CH = %d, CH_FIX = %d, Privacy = %d\n",
+                                IbssInfo.Ssid, pParams->beacon_interval, 
+				channel, pParams->channel_fixed, pParams->privacy));
 
+	if (pParams->ie && (pParams->ie_len > 0))
+	{
+		hex_dump("ADHOC_IE", pParams->ie , pParams->ie_len);
+		IbssInfo.BeaconExtraIeLen = pParams->ie_len;
+
+		os_alloc_mem(NULL, &beacon_buf, pParams->ie_len);
+		NdisCopyMemory(beacon_buf, pParams->ie, pParams->ie_len);
+		IbssInfo.BeaconExtraIe = beacon_buf;
+	}
+
+	if (pParams->privacy)
+	{
+		IbssInfo.privacy = pParams->privacy;
+	}
+
+	if (pParams->bssid)
+	{
+		CFG80211DBG(RT_DEBUG_OFF, ("Join this BSSID: %02X:%02X:%02X:%02X:%02X:%02X\n",
+                                PRINT_MAC(pParams->bssid)));
+	}
+	else
+	{
+		CFG80211DBG(RT_DEBUG_OFF, ("Can't find any AdHoc, create IBSS\n"));
+
+	}
 	/* ibss join */
 	RTMP_DRIVER_80211_IBSS_JOIN(pAd, &IbssInfo);
 
@@ -711,8 +809,12 @@ Note:
 	 @NL80211_TX_POWER_FIXED: fix TX power to the mBm parameter
 ========================================================================
 */
+#if (LINUX_VERSION_CODE < KERNEL_VERSION(3,8,0))
 static int CFG80211_OpsTxPwrSet(
 	IN struct wiphy						*pWiphy,
+#if (LINUX_VERSION_CODE >= KERNEL_VERSION(3,8,0))
+	IN struct wireless_dev *wdev,
+#endif
 #if (LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,36))	
 	IN enum nl80211_tx_power_setting	Type,
 #else
@@ -744,11 +846,16 @@ Note:
 */
 static int CFG80211_OpsTxPwrGet(
 	IN struct wiphy						*pWiphy,
+#if (LINUX_VERSION_CODE >= KERNEL_VERSION(3,8,0))
+	IN struct wireless_dev *wdev,
+#endif
 	IN int								*pdBm)
 {
 	CFG80211DBG(RT_DEBUG_TRACE, ("80211> %s ==>\n", __FUNCTION__));
 	return -EOPNOTSUPP;
 } /* End of CFG80211_OpsTxPwrGet */
+
+#endif
 
 
 /*
@@ -1824,7 +1931,7 @@ static int CFG80211_OpsRemainOnChannel(
 #endif /* LINUX_VERSION_CODE: 3.6.0 */
 
 #if (LINUX_VERSION_CODE >= KERNEL_VERSION(3,10,0))
-	rndCookie = prandom_u32() | 1;
+	rndCookie = 0x1234;
 #else
 	rndCookie = random32() | 1;	
 #endif
@@ -1923,12 +2030,14 @@ static int CFG80211_OpsMgmtTx(
 {
     VOID *pAd;
     UINT32 ChanId;
+#if (LINUX_VERSION_CODE >= KERNEL_VERSION(3,6,0))
+	struct net_device *dev = NULL;
+#endif /* LINUX_VERSION_CODE: 3.6.0 */
 
     CFG80211DBG(RT_DEBUG_INFO, ("80211> %s ==>\n", __FUNCTION__));
     MAC80211_PAD_GET(pAd, pWiphy);
 
 #if (LINUX_VERSION_CODE >= KERNEL_VERSION(3,6,0))
-	struct net_device *dev = NULL;
 	RTMP_DRIVER_NET_DEV_GET(pAd, &dev);
 #endif /* LINUX_VERSION_CODE: 3.6.0 */
 		
@@ -2452,6 +2561,16 @@ ralink_mgmt_stypes[NUM_NL80211_IFTYPES] = {
 #endif
 
 #if (LINUX_VERSION_CODE >= KERNEL_VERSION(3,0,0))
+#if (LINUX_VERSION_CODE >= KERNEL_VERSION(3,10,0))
+static const struct ieee80211_iface_limit ra_p2p_sta_go_limits[] =
+{
+	{
+		.max = 3,
+		.types = BIT(NL80211_IFTYPE_STATION) |
+		         BIT(NL80211_IFTYPE_AP),
+	},
+};
+#else
 static const struct ieee80211_iface_limit ra_p2p_sta_go_limits[] = 
 {
 	{
@@ -2468,7 +2587,7 @@ static const struct ieee80211_iface_limit ra_p2p_sta_go_limits[] =
                 .types = BIT(NL80211_IFTYPE_P2P_CLIENT),
         },
 };
-
+#endif
 static const struct ieee80211_iface_combination 
 ra_iface_combinations_p2p[] = {
 	{
@@ -2499,7 +2618,8 @@ struct cfg80211_ops CFG80211_Ops = {
 
 	/* set channel for a given wireless interface */
 #if (LINUX_VERSION_CODE >= KERNEL_VERSION(3,6,0))
-	//.set_monitor_channel = CFG80211_OpsMonitorChannelSet,
+	//CFG_TODO
+	.set_monitor_channel = CFG80211_OpsMonitorChannelSet,
 #else	
 	.set_channel	     = CFG80211_OpsChannelSet,
 #endif /* LINUX_VERSION_CODE: 3.6.0 */
@@ -2534,11 +2654,12 @@ struct cfg80211_ops CFG80211_Ops = {
 #endif /* LINUX_VERSION_CODE */
 
 #if (LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,32))
+#if (LINUX_VERSION_CODE < KERNEL_VERSION(3,8,0))
 	/* set the transmit power according to the parameters */
 	.set_tx_power				= CFG80211_OpsTxPwrSet,
 	/* store the current TX power into the dbm variable */
 	.get_tx_power				= CFG80211_OpsTxPwrGet,
-	/* configure WLAN power management */
+#endif /* LINUX_VERSION_CODE: 3.8.0 */	
 	.set_power_mgmt				= CFG80211_OpsPwrMgmt,
 	/* get station information for the station identified by @mac */
 	.get_station				= CFG80211_OpsStaGet,
@@ -2754,9 +2875,24 @@ static struct wireless_dev *CFG80211_WdevAlloc(
 #if (LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,37))
 	pWdev->wiphy->interface_modes |= (BIT(NL80211_IFTYPE_P2P_CLIENT)
 								    | BIT(NL80211_IFTYPE_P2P_GO));
+
+#if (LINUX_VERSION_CODE >= KERNEL_VERSION(3,7,0))
+	pWdev->wiphy->software_iftypes |= BIT(NL80211_IFTYPE_P2P_DEVICE);
+#endif /* LINUX_VERSION_CODE 3.7.0 */
 #endif /* LINUX_VERSION_CODE 2.6.37 */
 #endif /* RT_CFG80211_P2P_SINGLE_DEVICE */
 #endif /* CONFIG_STA_SUPPORT */
+
+#ifdef RT_CFG80211_P2P_SUPPORT
+#if (LINUX_VERSION_CODE >= KERNEL_VERSION(3,0,0))
+	pWdev->wiphy->software_iftypes |= (BIT(NL80211_IFTYPE_P2P_CLIENT) | BIT(NL80211_IFTYPE_P2P_GO));
+
+	/* NL80211_IFTYPE_P2P_DEVICE Kernel Symbol start from 3.7 */
+#if (LINUX_VERSION_CODE >= KERNEL_VERSION(3,7,0))
+	pWdev->wiphy->software_iftypes |= BIT(NL80211_IFTYPE_P2P_DEVICE);
+#endif /* LINUX_VERSION_CODE 3.7.0 */
+#endif /* LINUX_VERSION_CODE 3.0.0 */
+#endif /* RT_CFG80211_P2P_SUPPORT */
 
 	//pWdev->wiphy->reg_notifier = CFG80211_RegNotifier;
 
@@ -2803,11 +2939,10 @@ static struct wireless_dev *CFG80211_WdevAlloc(
 #endif
 
 	//Driver Report Support TDLS to supplicant
-#if (LINUX_VERSION_CODE >= KERNEL_VERSION(3,0,0))
-	/* */
-	//pWdev->wiphy->iface_combinations = ra_iface_combinations_p2p;
-	//pWdev->wiphy->n_iface_combinations = ARRAY_SIZE(ra_iface_combinations_p2p); 
-#endif
+#if (LINUX_VERSION_CODE >= KERNEL_VERSION(3,8,0))
+	pWdev->wiphy->iface_combinations = ra_iface_combinations_p2p;
+	pWdev->wiphy->n_iface_combinations = ARRAY_SIZE(ra_iface_combinations_p2p);
+#endif /* LINUX_VERSION_CODE: 3.8.0 */
 
 	if (wiphy_register(pWdev->wiphy) < 0)
 	{

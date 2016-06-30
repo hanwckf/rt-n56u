@@ -347,8 +347,6 @@
 		Solution:
 		Suspend SP handle before rx done and resume SP handle after rx done.
 */
-#define UAPSD_SP_ACCURATE		/* use more accurate method to send EOSP */
-
 #endif /* RTMP_MAC_PCI */
 
 #define UAPSD_EPT_SP_INT		(100000/(1000000/OS_HZ)) /* 100ms */

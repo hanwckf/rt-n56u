@@ -471,10 +471,7 @@ static PUCHAR MATProto_ARP_Tx(
 	PUCHAR	pSMac, pSIP;
 	BOOLEAN isUcastMac, isGoodIP;
 	NET_PRO_ARP_HDR *arpHdr;
-	PUCHAR pPktHdr;
 	PNDIS_PACKET newSkb = NULL;
-
-	pPktHdr = GET_OS_PKT_DATAPTR(pSkb);
 	
 	arpHdr = (NET_PRO_ARP_HDR *)pLayerHdr;
 
@@ -620,11 +617,10 @@ static PUCHAR MATProto_IP_Rx(
 
 				if (srcPort==67 && dstPort==68) /*It's a DHCP packet */
 				{
-					PUCHAR bootpHdr, dhcpHdr, pCliHwAddr;
+					PUCHAR bootpHdr, pCliHwAddr;
 					/*REPEATER_CLIENT_ENTRY *pReptEntry = NULL;*/
 
 					bootpHdr = pUdpHdr + 8;
-					dhcpHdr = bootpHdr + 236;
 					pCliHwAddr = (bootpHdr+28);
 					if (pReptEntry)
 						NdisMoveMemory(pCliHwAddr, pReptEntry->OriginalAddress, MAC_ADDR_LEN);
@@ -721,7 +717,9 @@ static PUCHAR MATProto_IP_Tx(
 #ifdef MAC_REPEATER_SUPPORT
 			if (pMatCfg->bMACRepeaterEn)
 			{
-				if (RTMPLookupRepeaterCliEntry(pMatCfg->pPriv, FALSE, pDevMacAdr) != NULL)
+				UCHAR isLinkValid;
+			
+				if (RTMPLookupRepeaterCliEntry(pMatCfg->pPriv, FALSE, pDevMacAdr, TRUE, &isLinkValid) != NULL)
 				{
 					NdisMoveMemory((bootpHdr+28), pDevMacAdr, MAC_ADDR_LEN);
 

@@ -259,6 +259,12 @@ BOOLEAN ApCli_Close(RTMP_ADAPTER *pAd, PNET_DEV dev_p);
 BOOLEAN ApCli_StatsGet(RTMP_ADAPTER *pAd, RT_CMD_STATS64 *pStats);
 BOOLEAN ApCliWaitProbRsp(RTMP_ADAPTER *pAd, USHORT ifIndex);
 VOID ApCliSimulateRecvBeacon(RTMP_ADAPTER *pAd);
+#ifdef APCLI_AUTO_BW_SUPPORT
+BOOLEAN ApCliAutoBwAction(PRTMP_ADAPTER pAd, USHORT ifIndex);
+BOOLEAN ApCliSetPhyMode(PRTMP_ADAPTER pAd, USHORT ifIndex, UINT wmode);
+INT Set_ApCli_Bw_Proc(PRTMP_ADAPTER pAd, PSTRING arg);
+INT Set_ApCli_PhyMode_Proc(PRTMP_ADAPTER pAd, PSTRING arg);
+#endif /* APCLI_AUTO_BW_SUPPORT */
 
 #ifdef APCLI_AUTO_CONNECT_SUPPORT
 extern INT Set_ApCli_Enable_Proc(
@@ -280,7 +286,8 @@ BOOLEAN ApcliCompareAuthEncryp(
 	IN CIPHER_SUITE						WPA);
 
 VOID ApCliSwitchCandidateAP(
-	IN PRTMP_ADAPTER pAd);
+	IN PRTMP_ADAPTER pAd,
+	IN UCHAR ifIndex);
 
 VOID RTMPApCliReconnectionCheck(
 	IN PRTMP_ADAPTER pAd);
@@ -290,6 +297,12 @@ VOID ApCliRxOpenWEPCheck(
 	IN RTMP_ADAPTER *pAd,
 	IN RX_BLK *pRxBlk,
 	IN BOOLEAN bSuccessPkt);
+
+VOID ApCliSiteSurvey(
+	IN	RTMP_ADAPTER  		*pAd,
+	IN	NDIS_802_11_SSID	*pSsid,
+	IN	UCHAR				ScanType,
+	IN	BOOLEAN				ChannelSel);
 #endif /* APCLI_SUPPORT */
 #endif /* _AP_APCLI_H_ */
 

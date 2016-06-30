@@ -193,6 +193,7 @@ BOOLEAN PeerAddBAReqActionSanity(
 
 BOOLEAN PeerAddBARspActionSanity(
     IN PRTMP_ADAPTER pAd, 
+    IN UCHAR Wcid,
     IN VOID *pMsg, 
     IN ULONG MsgLen)
 {
@@ -204,6 +205,20 @@ BOOLEAN PeerAddBARspActionSanity(
 		DBGPRINT(RT_DEBUG_ERROR,("%s(): ADDBA Resp frame length incorrect(len=%ld)\n", __FUNCTION__, MsgLen));
 		return FALSE;
 	}
+
+#ifdef SMART_MESH_MONITOR
+#ifdef CONFIG_AP_SUPPORT
+    IF_DEV_CONFIG_OPMODE_ON_AP(pAd)
+    {
+         /*
+                  To avoid control frames captured by sniffer confusing due to lack of Addr 3
+              */
+        if(!IsValidUnicastToMe(pAd, Wcid, pAddFrame->Hdr.Addr1))
+            return FALSE;
+    }
+#endif /* CONFIG_AP_SUPPORT */
+#endif /* SMART_MESH_MONITOR */
+
 	/* we support immediate BA.*/
 #ifdef UNALIGNMENT_SUPPORT
 	{
@@ -244,6 +259,19 @@ BOOLEAN PeerDelBAActionSanity(
 		return FALSE;
 	
 	pDelFrame = (PFRAME_DELBA_REQ)(pMsg);
+
+#ifdef SMART_MESH_MONITOR
+#ifdef CONFIG_AP_SUPPORT
+    IF_DEV_CONFIG_OPMODE_ON_AP(pAd)
+    {
+         /*
+                  To avoid control frames captured by sniffer confusing due to lack of Addr 3
+              */
+        if(!IsValidUnicastToMe(pAd, Wcid, pDelFrame->Hdr.Addr1))
+            return FALSE;
+    }
+#endif /* CONFIG_AP_SUPPORT */
+#endif /* SMART_MESH_MONITOR */
 
 	*(USHORT *)(&pDelFrame->DelbaParm) = cpu2le16(*(USHORT *)(&pDelFrame->DelbaParm));
 	pDelFrame->ReasonCode = cpu2le16(pDelFrame->ReasonCode);
@@ -427,7 +455,8 @@ BOOLEAN PeerBeaconAndProbeRspSanity_Old(
                 }
                 else
                 {
-                    DBGPRINT(RT_DEBUG_TRACE, ("%s() - wrong IE_SSID (len=%d)\n", __FUNCTION__, pEid->Len));
+                    DBGPRINT(RT_DEBUG_TRACE, ("%s() - wrong IE_SSID (len=%d), SubType = %u\n",
+						__FUNCTION__, pEid->Len, SubType));
                     goto SanityCheck;
                 }
                 break;
@@ -1132,7 +1161,8 @@ BOOLEAN PeerBeaconAndProbeRspSanity(
 			}
 			else
 			{
-				DBGPRINT(RT_DEBUG_TRACE, ("%s() - wrong IE_SSID (len=%d)\n",__FUNCTION__,pEid->Len));
+				DBGPRINT(RT_DEBUG_TRACE, ("%s() - wrong IE_SSID (len=%d), SubType = %u\n",
+							__FUNCTION__,pEid->Len, SubType));
 				goto SanityCheck;
 			}
 			break;
@@ -1371,6 +1401,53 @@ BOOLEAN PeerBeaconAndProbeRspSanity(
 				NdisMoveMemory(Ptr + *LengthVIE, &pEid->Eid, pEid->Len + 2);
 				*LengthVIE += (pEid->Len + 2);
 			}
+#if defined(SMART_MESH) || defined(SMART_MESH_MONITOR)
+			/* Check the OUI version, filter out non-standard usage*/
+			else if ((pEid->Len >= NTGR_OUI_LEN) && NdisEqualMemory(pEid->Octet, NETGEAR_OUI, NTGR_OUI_LEN))
+			{
+#ifdef SMART_MESH_MONITOR
+				if(pEid->Len <= NTGR_IE_TOTAL_LEN)
+				{
+					ie_list->vendor_ie_len = (pEid->Len - NTGR_OUI_LEN);
+					if(ie_list->vendor_ie_len > 0)
+						NdisCopyMemory(ie_list->vendor_ie,&pEid->Octet[NTGR_OUI_LEN], ie_list->vendor_ie_len); /* Skip OUI */
+				}
+#endif /* SMART_MESH_MONITOR */
+#ifdef SMART_MESH
+				if(pEid->Len > NTGR_OUI_LEN)
+				{
+					ie_list->VIEFlag = pEid->Octet[3];
+					if ((pEid->Octet[3] & 0x02))
+						ie_list->bSupportSmartMesh = TRUE;
+					else
+						ie_list->bSupportSmartMesh = FALSE;
+#ifdef MWDS
+					if ((pEid->Octet[3] & 0x01))
+						ie_list->bSupportMWDS = TRUE;
+					else
+						ie_list->bSupportMWDS = FALSE;
+#endif /* MWDS */
+#ifdef WSC_AP_SUPPORT
+#ifdef SMART_MESH_HIDDEN_WPS
+                    if ((pEid->Octet[3] & 0x04))
+						ie_list->bSupportHiddenWPS = TRUE;
+					else
+						ie_list->bSupportHiddenWPS = FALSE;
+
+                    if((pEid->Len - NTGR_OUI_LEN) >= NTGR_CUSTOM_IE_MAX_LEN)
+                    {
+                        ie_list->bRunningHiddenWPS = (pEid->Octet[5] & HIDDEN_WPS_STATE_RUNNING) ? TRUE : FALSE;
+                        ie_list->bHiddenWPSRegistrar = (pEid->Octet[5] & HIDDEN_WPS_ROLE_REGISTRAR) ? TRUE : FALSE;
+                    }
+#endif /* SMART_MESH_HIDDEN_WPS */
+#endif /* WSC_AP_SUPPORT */
+				}
+				Ptr = (PUCHAR) pVIE;
+				NdisMoveMemory(Ptr + *LengthVIE, &pEid->Eid, pEid->Len + 2);
+				*LengthVIE += (pEid->Len + 2);
+#endif /* SMART_MESH */
+			}
+#endif /* defined(SMART_MESH) || defined(SMART_MESH_MONITOR) */
 			else if (NdisEqualMemory(pEid->Octet, WME_PARM_ELEM, 6) && (pEid->Len == 24))
 			{
 				PUCHAR ptr;
@@ -2558,6 +2635,10 @@ BOOLEAN PeerProbeReqSanity(
 #endif /* WSC_INCLUDED */
 #endif /* CONFIG_AP_SUPPORT */
 	UINT		total_ie_len = 0;	
+#ifdef SMART_MESH_MONITOR
+	ProbeReqParam->vendor_ie_len = 0;
+	IE_LISTS *ie_lists = &ProbeReqParam->ie_list;
+#endif /* SMART_MESH_MONITOR */
 
 	NdisZeroMemory(ProbeReqParam, sizeof(*ProbeReqParam));
 	
@@ -2584,12 +2665,20 @@ BOOLEAN PeerProbeReqSanity(
 #endif /* WSC_AP_SUPPORT */
 #endif /* CONFIG_AP_SUPPORT */
 
+#ifdef SMART_MESH_MONITOR
+	COPY_MAC_ADDR(ie_lists->Addr2, Fr->Hdr.Addr2);
+#endif /* SMART_MESH_MONITOR */
+
     Ptr = Fr->Octet;
     eid = Ptr[0];
     eid_len = Ptr[1];
 	total_ie_len = eid_len + 2;
 	eid_data = Ptr+2;
-    
+
+#ifdef RSSI_FEEDBACK
+	ProbeReqParam->bRequestRssi = FALSE;
+#endif /* RSSI_FEEDBACK */
+
     /* get variable fields from payload and advance the pointer*/
 	while((eid_data + eid_len) <= ((UCHAR*)Fr + MsgLen))
     {    	
@@ -2662,6 +2751,24 @@ BOOLEAN PeerProbeReqSanity(
 #endif /* CONFIG_AP_SUPPORT */
 #endif /* WSC_INCLUDED */
                 }
+#if defined(SMART_MESH) || defined(SMART_MESH_MONITOR)
+				if ((eid_len >= NTGR_OUI_LEN) && NdisEqualMemory(eid_data, NETGEAR_OUI, NTGR_OUI_LEN))
+				{
+#ifdef SMART_MESH
+                    if(eid_len > NTGR_OUI_LEN)
+				        ProbeReqParam->VIEFlag = *(eid_data + NTGR_OUI_LEN);
+#endif /* SMART_MESH */
+					if(eid_len <= NTGR_IE_TOTAL_LEN)
+					{
+#ifdef SMART_MESH_MONITOR
+						ProbeReqParam->vendor_ie_len = (eid_len - NTGR_OUI_LEN);
+						NdisMoveMemory(ProbeReqParam->vendor_ie, (eid_data + NTGR_OUI_LEN),ProbeReqParam->vendor_ie_len);
+#endif /* SMART_MESH_MONITOR */
+					}
+					else
+						DBGPRINT(RT_DEBUG_ERROR, ("%s: Error!!! vendor infomation element too large!\n", __FUNCTION__));
+				}
+#endif /* defined(SMART_MESH) || defined(SMART_MESH_MONITOR) */
                     break;
 #ifdef CONFIG_HOTSPOT
 			case IE_INTERWORKING: 
@@ -2689,6 +2796,44 @@ BOOLEAN PeerProbeReqSanity(
 				}
 #endif
 				break;
+#ifdef SMART_MESH_MONITOR
+#ifdef DOT11_N_SUPPORT
+			case IE_HT_CAP:
+			case IE_HT_CAP2:
+				if (eid_len >= SIZE_HT_CAP_IE)
+				{
+					NdisMoveMemory(&ie_lists->HTCapability, eid_data, SIZE_HT_CAP_IE);
+					*(USHORT *)(&ie_lists->HTCapability.HtCapInfo) = cpu2le16(*(USHORT *)(&ie_lists->HTCapability.HtCapInfo));			
+					*(USHORT *)(&ie_lists->HTCapability.ExtHtCapInfo) = cpu2le16(*(USHORT *)(&ie_lists->HTCapability.ExtHtCapInfo));
+					ie_lists->ht_cap_len = SIZE_HT_CAP_IE;
+				}
+				else {
+					DBGPRINT(RT_DEBUG_WARN, ("%s():wrong IE_HT_CAP\n", __FUNCTION__));
+				}
+				break;
+#ifdef DOT11_VHT_AC
+			case IE_VHT_CAP:
+				if (eid_len == sizeof(VHT_CAP_IE)) {
+					NdisMoveMemory(&ie_lists->vht_cap, eid_data, sizeof(VHT_CAP_IE));
+					ie_lists->vht_cap_len = sizeof(VHT_CAP_IE);
+				} 
+				else {
+					DBGPRINT(RT_DEBUG_WARN, ("%s():wrong IE_VHT_CAP\n", __FUNCTION__));
+				}
+				break;
+
+			case IE_VHT_OP:
+				if (eid_len == sizeof(VHT_OP_IE)) {
+					NdisMoveMemory(&ie_lists->vht_op, eid_data, sizeof(VHT_OP_IE));
+					ie_lists->vht_op_len = sizeof(VHT_OP_IE);
+				}
+				else {
+					DBGPRINT(RT_DEBUG_WARN, ("%s():wrong IE_VHT_OP\n", __FUNCTION__));
+				}
+				break;
+#endif /* DOT11_VHT_AC */
+#endif /* DOT11_N_SUPPORT */
+#endif /* SMART_MESH_MONITOR */
             default:
                 break;
         }

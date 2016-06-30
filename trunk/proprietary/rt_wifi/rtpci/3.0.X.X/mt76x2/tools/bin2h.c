@@ -418,6 +418,18 @@ int main(int argc ,char *argv[])
 			is_bin2h_fw = 1;
 			is_bin2h_rom_patch = 1;
 			is_bin2h_e2p = 1;
+		} else if ((strncmp(chipset, "mt7662tu", 8) == 0)
+			|| (strncmp(chipset, "mt7632tu", 8) == 0)
+			|| (strncmp(chipset, "mt7612tu", 8) == 0)) {
+			strcat(infname, "/mcu/bin/mt7662t_firmware_e1.bin");
+			strcat(outfname, "/include/mcu/mt7662t_firmware.h");
+			strcat(fw_name, "MT7662T_FirmwareImage");
+			strcat(in_rom_patch, "/mcu/bin/mt7662t_patch_e1_hdr.bin");
+			strcat(out_rom_patch, "/include/mcu/mt7662t_rom_patch.h");
+			strcat(rom_patch_name, "mt7662t_rom_patch");
+			is_bin2h_fw = 1;
+			is_bin2h_rom_patch = 1;
+
 		} else {
 			printf("unknown chipset = %s\n", chipset);
 		}

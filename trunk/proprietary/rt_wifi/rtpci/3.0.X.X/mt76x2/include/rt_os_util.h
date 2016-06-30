@@ -199,6 +199,31 @@ void send_radiotap_monitor_packets(
 		UCHAR sideband_index,
 		CHAR MaxRssi,
 		UINT32 timestamp);
+
+#ifdef PPI_HEADER
+void send_ppi_monitor_packets(
+                PNET_DEV pNetDev,
+                PNDIS_PACKET pRxPacket,
+                VOID *dot11_hdr,
+                UCHAR *pData,
+                USHORT DataSize,
+                UCHAR L2PAD,
+                UCHAR PHYMODE,
+                UCHAR BW,
+                UCHAR ShortGI,
+                UCHAR MCS,
+                UCHAR LDPC,
+                UCHAR LDPC_EX_SYM,
+                UCHAR AMPDU,
+                UCHAR STBC,
+                UCHAR RSSI1,
+                UCHAR *pDevName,
+                UCHAR Channel,
+                UCHAR CentralChannel,
+                UCHAR sideband_index,
+                CHAR MaxRssi,
+                UINT32 timestamp);
+#endif //PPI_HEADER
 #endif /* CONFIG_SNIFFER_SUPPORT */
 
 UCHAR VLAN_8023_Header_Copy(
@@ -461,7 +486,6 @@ VOID RtmpOsAtomicDec(RTMP_OS_ATOMIC *pAtomic);
 VOID RtmpOsAtomicInterlockedExchange(RTMP_OS_ATOMIC *pAtomicSrc, LONG Value);
 
 /* OS Utility */
-void hex_dump(char *str, unsigned char *pSrcBufVA, unsigned int SrcBufLen);
 
 typedef VOID (*RTMP_OS_SEND_WLAN_EVENT)(
 	IN	VOID					*pAdSrc,
@@ -806,7 +830,7 @@ extern ULONG OS_NumOfMemAlloc, OS_NumOfMemFree;
 extern UINT32 RalinkRate_Legacy[];
 extern UINT32 RalinkRate_HT_1NSS[Rate_BW_MAX][Rate_GI_MAX][Rate_MCS];
 extern UINT32 RalinkRate_VHT_1NSS[Rate_BW_MAX][Rate_GI_MAX][Rate_MCS];
-extern UINT8 newRateGetAntenna(UINT8 MCS);
+extern UINT8 newRateGetAntenna(UINT8 MCS, UINT8 PhyMode);
 
 
 #ifdef PLATFORM_UBM_IPX8

@@ -19,14 +19,16 @@ void mt76x2_calibration(struct _RTMP_ADAPTER *ad, u8 channel);
 void mt76x2_external_pa_rf_dac_control(struct _RTMP_ADAPTER *ad, u8 channel);
 void mt76x2_tssi_calibration(struct _RTMP_ADAPTER *ad, u8 channel);
 void mt76x2_tssi_compensation(struct _RTMP_ADAPTER *ad, u8 channel);
-int mt76x2_set_ed_cca(struct _RTMP_ADAPTER *ad, u8 enable);
+
 int mt76x2_reinit_agc_gain(struct _RTMP_ADAPTER *ad, u8 channel);
 int mt76x2_reinit_hi_lna_gain(struct _RTMP_ADAPTER *ad, u8 channel);
 void mt76x2_get_external_lna_gain(struct _RTMP_ADAPTER *ad);
 void mt76x2_get_agc_gain(struct _RTMP_ADAPTER *ad, BOOLEAN init_phase);
-UCHAR get_chl_grp(u8 channel);
+int get_chl_grp(u8 channel);
+VOID mt76x2_ePA_per_rate_compensate_init(struct _RTMP_ADAPTER *pAd , BOOLEAN is_ePA);
 
-UCHAR get_low_mid_hi_index(u8 channel);
+
+int get_low_mid_hi_index(u8 channel);
 void mt76x2_tx_pwr_gain(struct _RTMP_ADAPTER *ad, u8 channel, u8 bw);
 
 void percentage_delta_pwr(struct _RTMP_ADAPTER *ad);
@@ -50,6 +52,7 @@ UCHAR mt76x2_update_sku_pwr(struct _RTMP_ADAPTER *ad, u8 channel);
 INT32 mt76x2_sku_calculate_TxPwrAdj(struct _RTMP_ADAPTER *ad,struct _TXWI_NMAC *txwi_n);
 
 #endif /* SINGLE_SKU_V2 */
+VOID mt76x2_ePA_per_rate_compensate_init(struct _RTMP_ADAPTER *pAd , BOOLEAN is_ePA);
 
 #ifdef ED_MONITOR
 void mt7612_set_ed_cca(struct _RTMP_ADAPTER *ad, BOOLEAN enable);

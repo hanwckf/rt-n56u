@@ -765,7 +765,7 @@ BOOLEAN RtmpPhyNetDevExit(VOID *pAd, PNET_DEV net_dev)
 	/* Unregister network device */
 	if (net_dev != NULL)
 	{
-		printk("RtmpOSNetDevDetach(): RtmpOSNetDeviceDetach(), dev->name=%s!\n", net_dev->name);
+		DBGPRINT(RT_DEBUG_ERROR, ("RtmpOSNetDevDetach(): RtmpOSNetDeviceDetach(), dev->name=%s!\n", net_dev->name));
 		RtmpOSNetDevProtect(1);
 		RtmpOSNetDevDetach(net_dev);
 		RtmpOSNetDevProtect(0);

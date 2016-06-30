@@ -135,6 +135,9 @@ UCHAR GetCountryRegionFromCountryCode(PRTMP_ADAPTER pAd);
 VOID N_ChannelCheck(RTMP_ADAPTER *pAd);
 UCHAR N_SetCenCh(RTMP_ADAPTER *pAd, UCHAR channel);
 BOOLEAN N_ChannelGroupCheck(RTMP_ADAPTER *pAd, UCHAR channel);
+#ifdef SMART_MESH_MONITOR
+UCHAR N_GetSecondaryChannel(RTMP_ADAPTER *pAd);
+#endif /* SMART_MESH_MONITOR */
 #ifdef DOT11_VHT_AC
 INT get_vht_neighbor_index(UCHAR channel);
 BOOLEAN AC_ChannelGroupCheck(RTMP_ADAPTER *pAd, UCHAR channel);

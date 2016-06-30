@@ -145,6 +145,9 @@ VOID MBSS_Init(RTMP_ADAPTER *pAd, RTMP_OS_NETDEV_OP_HOOK *pNetDevOps)
 		
 		/* register this device to OS */
 		status = RtmpOSNetDevAttach(pAd->OpMode, pDevNew, &netDevHook);
+		if (status != NDIS_STATUS_SUCCESS)
+			DBGPRINT(RT_DEBUG_ERROR, ("Error in RtmpOSNetDevAttach() !!\n"));
+		
 	}
 
 	pAd->FlgMbssInit = TRUE;
@@ -250,7 +253,15 @@ INT MBSS_Open(PNET_DEV pDev)
 	if (BssId < 0)
 		return -1;
     
+#ifdef AIRPLAY_SUPPORT
+	if (AIRPLAY_ON(pAd))
+		pAd->ApCfg.MBSSID[BssId].bBcnSntReq = TRUE;
+	else
+		pAd->ApCfg.MBSSID[BssId].bBcnSntReq = FALSE;	
+#else
 	pAd->ApCfg.MBSSID[BssId].bBcnSntReq = TRUE;
+#endif /* AIRPLAY_SUPPORT */
+
 		return 0;
 }
 

@@ -137,7 +137,7 @@ typedef struct usb_ctrlrequest devctrlrequest;
  #define SINGLE_SKU_TABLE_FILE_NAME	"/etc/Wireless/iNIC/SingleSKU.dat"
  #define CARD_INFO_PATH			"/etc/Wireless/iNIC/RT2860APCard.dat"
 #endif
-#define AP_DRIVER_VERSION		"3.0.4.0.P1"
+#define AP_DRIVER_VERSION		"3.0.5.0"
 #endif /* RTMP_MAC_PCI */
 
 #endif /* CONFIG_AP_SUPPORT */
@@ -155,7 +155,7 @@ typedef struct usb_ctrlrequest devctrlrequest;
  #define SINGLE_SKU_TABLE_FILE_NAME	"/etc/Wireless/iNIC/SingleSKU.dat"
  #define CARD_INFO_PATH			"/etc/Wireless/iNIC/RT2860STACard.dat"
 #endif
-#define STA_DRIVER_VERSION		"3.0.0.2"
+#define STA_DRIVER_VERSION		"3.0.1.0"
 #endif /* RTMP_MAC_PCI */
 
 extern const struct iw_handler_def rt28xx_iw_handler_def;
@@ -293,6 +293,14 @@ struct iw_statistics *rt28xx_get_wireless_stats(
 #endif /* DOT11_VHT_AC */
 
 
+#ifdef DATA_QUEUE_RESERVE
+/*
+	This value must small than MAX_PACKETS_IN_QUEUE
+*/
+#define FIFO_RSV_FOR_HIGH_PRIORITY 	64
+#endif /* DATA_QUEUE_RESERVE */
+
+
 /***********************************************************************************
  *	OS signaling related constant definitions
  ***********************************************************************************/
@@ -352,6 +360,7 @@ typedef spinlock_t			OS_NDIS_SPIN_LOCK;
 #define OS_IRQ_LOCK(__lock, __irqflags)			\
 {													\
 	__irqflags = 0;									\
+	typecheck(unsigned long, __irqflags);				\
 	spin_lock_irqsave((spinlock_t *)(__lock), __irqflags);			\
 }
 
@@ -363,6 +372,7 @@ typedef spinlock_t			OS_NDIS_SPIN_LOCK;
 #define OS_IRQ_LOCK(__lock, __irqflags)			\
 {												\
 	__irqflags = 0;								\
+	typecheck(unsigned long, __irqflags);				\
 	spin_lock_bh((spinlock_t *)(__lock));		\
 }
 
@@ -639,6 +649,7 @@ struct os_cookie {
 	RTMP_NET_TASK_STRUCT ac3_dma_done_task;
 	RTMP_NET_TASK_STRUCT hcca_dma_done_task;
 	RTMP_NET_TASK_STRUCT tbtt_task;
+	RTMP_NET_TASK_STRUCT pretbtt_task;
 
 #ifdef RTMP_MAC_PCI
 	RTMP_NET_TASK_STRUCT fifo_statistic_full_task;
@@ -746,7 +757,11 @@ do{                                   \
 #define ASSERT(x)
 #endif /* DBG */
 
+#ifdef DBG
 void hex_dump(char *str, unsigned char *pSrcBufVA, unsigned int SrcBufLen);
+#else
+#define hex_dump(x,y,z)
+#endif /* DBG */
 
 
 /*********************************************************************************************************
@@ -1131,17 +1146,43 @@ extern int (*ra_sw_nat_hook_tx)(VOID *skb, int gmac_no);
 #endif
 
 #if defined (CONFIG_WIFI_PKT_FWD)
+struct APCLI_BRIDGE_LEARNING_MAPPING_STRUCT {
+	struct net_device *rcvd_net_dev;
+	unsigned char	src_addr[ETH_ALEN];
+	unsigned char	entry_from;
+	struct APCLI_BRIDGE_LEARNING_MAPPING_STRUCT *pBefore;
+	struct APCLI_BRIDGE_LEARNING_MAPPING_STRUCT *pNext;
+};
+
+struct APCLI_BRIDGE_LEARNING_MAPPING_MAP {
+	struct APCLI_BRIDGE_LEARNING_MAPPING_STRUCT *pHead;
+	struct APCLI_BRIDGE_LEARNING_MAPPING_STRUCT *pTail;
+	unsigned int entry_num;
+};
+
 extern int (*wf_fwd_tx_hook) (struct sk_buff *skb);
 extern int (*wf_fwd_rx_hook) (struct sk_buff *skb);
-extern unsigned char (*wf_fwd_entry_insert_hook) (struct net_device *src, struct net_device *dest);
-extern unsigned char (*wf_fwd_entry_delete_hook) (struct net_device *src, struct net_device *dest);
+extern unsigned char (*wf_fwd_entry_insert_hook) (struct net_device *src, struct net_device *dest, void *adapter);
+extern unsigned char (*wf_fwd_entry_delete_hook) (struct net_device *src, struct net_device *dest, unsigned char link_down);
 extern void (*wf_fwd_get_rep_hook) (unsigned char idx);
 extern void (*wf_fwd_pro_active_hook) (void);
 extern void (*wf_fwd_pro_halt_hook) (void);
+extern void (*wf_fwd_access_schedule_active_hook) (void);
+extern void (*wf_fwd_access_schedule_halt_hook) (void);
+extern void (*wf_fwd_hijack_active_hook) (void);
+extern void (*wf_fwd_hijack_halt_hook) (void);
 extern void (*wf_fwd_show_entry_hook) (void);
 extern void (*wf_fwd_delete_entry_hook) (unsigned char idx);
 extern void (*packet_source_show_entry_hook) (void);
 extern void (*packet_source_delete_entry_hook) (unsigned char idx);
+extern void (*wf_fwd_feedback_map_table) (void *adapter, void *peer, void *opp_peer);
+extern void (*wf_fwd_probe_adapter) (void *adapter);
+extern void (*wf_fwd_insert_bridge_mapping_hook) (struct sk_buff *skb);
+extern void (*wf_fwd_insert_repeater_mapping_hook) (void *adapter, void *lock, void *cli_mapping, void *map_mapping, void *ifAddr_mapping);
+extern int (*wf_fwd_search_mapping_table_hook) (struct sk_buff *skb, struct APCLI_BRIDGE_LEARNING_MAPPING_STRUCT **tbl_entry);
+extern void (*wf_fwd_delete_entry_inform_hook) (unsigned char *addr);
+extern void (*wf_fwd_add_entry_inform_hook) (unsigned char *addr);
+
 #endif /* CONFIG_WIFI_PKT_FWD */
 
 void RTMP_GetCurrentSystemTime(LARGE_INTEGER *time);

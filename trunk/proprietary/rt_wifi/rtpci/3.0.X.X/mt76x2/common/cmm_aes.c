@@ -442,10 +442,8 @@ BOOLEAN RTMPSoftDecryptAES(
 	UINT			payload_len;	
 	UINT			num_blocks;
 	UINT			payload_remainder;
-	USHORT			fc;
 	UCHAR			fc0;
 	UCHAR			fc1;	
-	UINT			frame_type;
 	UINT			frame_subtype;
 	UINT			from_ds;
 	UINT			to_ds;
@@ -470,9 +468,6 @@ BOOLEAN RTMPSoftDecryptAES(
 	fc0 = *pData;
 	fc1 = *(pData + 1);
 
-	fc = *((PUSHORT)pData);	
-
-	frame_type = ((fc0 >> 2) & 0x03);
 	frame_subtype = ((fc0 >> 4) & 0x0f);	
 
 	from_ds = (fc1 & 0x2) >> 1;
@@ -1028,6 +1023,7 @@ BOOLEAN RTMPSoftDecryptCCMP(
 	return TRUE;
 }
 
+#ifdef DBG
 /*
 	========================================================================
 	
@@ -1148,7 +1144,6 @@ VOID CCMP_test_vector(
 	}	
 	
 	printk("== CCMP test vector == \n");
-
-	}
-
+}
+#endif
 

@@ -117,7 +117,7 @@ VOID MlmeADDBAAction(RTMP_ADAPTER *pAd, MLME_QUEUE_ELEM *Elem)
 	ULONG Idx;
 	FRAME_ADDBA_REQ Frame;
 	ULONG FrameLen;
-	BA_ORI_ENTRY *pBAEntry = NULL;
+	/*BA_ORI_ENTRY *pBAEntry = NULL;*/
 	MAC_TABLE_ENTRY *pEntry = NULL;
 	struct wifi_dev *wdev;
 
@@ -147,7 +147,7 @@ VOID MlmeADDBAAction(RTMP_ADAPTER *pAd, MLME_QUEUE_ELEM *Elem)
 		} 
 		else
 		{
-			pBAEntry =&pAd->BATable.BAOriEntry[Idx];
+			/*pBAEntry =&pAd->BATable.BAOriEntry[Idx];*/
 		}
 
 #ifdef APCLI_SUPPORT
@@ -223,7 +223,6 @@ VOID MlmeDELBAAction(RTMP_ADAPTER *pAd, MLME_QUEUE_ELEM *Elem)
 {
 	MLME_DELBA_REQ_STRUCT *pInfo;
 	PUCHAR pOutBuffer = NULL, pOutBuffer2 = NULL;
-	ULONG Idx;
 	FRAME_DELBA_REQ Frame;
 	ULONG FrameLen;
 	FRAME_BAR FrameBar;
@@ -263,7 +262,6 @@ VOID MlmeDELBAAction(RTMP_ADAPTER *pAd, MLME_QUEUE_ELEM *Elem)
 		}
 
 		wdev = pEntry->wdev;
-		Idx = pEntry->BAOriWcidArray[pInfo->TID];
 #ifdef APCLI_SUPPORT
 #ifdef MAC_REPEATER_SUPPORT
 		if (IS_ENTRY_APCLI(pEntry) && pEntry->bReptCli)
@@ -490,19 +488,6 @@ VOID PeerBAAction(RTMP_ADAPTER *pAd, MLME_QUEUE_ELEM *Elem)
 #ifdef DOT11N_DRAFT3
 #ifdef CONFIG_AP_SUPPORT
 extern UCHAR get_regulatory_class(IN PRTMP_ADAPTER pAd);
-
-VOID ApPublicAction(RTMP_ADAPTER *pAd, MLME_QUEUE_ELEM *Elem) 
-{
-	UCHAR	Action = Elem->Msg[LENGTH_802_11+1];
-	BSS_2040_COEXIST_IE	 BssCoexist;
-	
-	/* Format as in IEEE 7.4.7.2*/
-	if (Action == ACTION_BSS_2040_COEXIST)
-	{
-		BssCoexist.word = Elem->Msg[LENGTH_802_11+2];
-	}
-}
-
 
 VOID SendBSS2040CoexistMgmtAction(
 	IN RTMP_ADAPTER *pAd,
@@ -739,13 +724,13 @@ VOID Update2040CoexistFrameAndNotify(
 	IN    UCHAR  Wcid,
 	IN	BOOLEAN	bAddIntolerantCha) 
 {
-	BSS_2040_COEXIST_IE		OldValue;
+	/*BSS_2040_COEXIST_IE		OldValue;*/
 
 	DBGPRINT(RT_DEBUG_ERROR,("%s(): ACT -BSSCoexist2040 = %x. EventANo = %d. \n",
 				__FUNCTION__, pAd->CommonCfg.BSSCoexist2040.word,
 				pAd->CommonCfg.TriggerEventTab.EventANo));
 
-	OldValue.word = pAd->CommonCfg.BSSCoexist2040.word;
+	/*OldValue.word = pAd->CommonCfg.BSSCoexist2040.word;*/
 	/* Reset value.*/
 	pAd->CommonCfg.BSSCoexist2040.word = 0;
 
@@ -923,6 +908,21 @@ VOID ChannelSwitchAction(
 					__FUNCTION__, (rf_bw == BW_40 ? 40 : 20),
 					pAd->CommonCfg.Channel, 
 					pAd->CommonCfg.CentralChannel));
+#ifdef SMART_MESH_MONITOR
+		{
+			struct nsmpif_drvevnt_buf drvevnt;
+			drvevnt.data.channel_change.type = NSMPIF_DRVEVNT_CHANNEL_CHANGE;
+			drvevnt.data.channel_change.channel = pAd->CommonCfg.Channel;
+			NdisZeroMemory(drvevnt.data.channel_change.op_channels,sizeof(drvevnt.data.channel_change.op_channels));
+			drvevnt.data.channel_change.op_channels[0] = pAd->CommonCfg.Channel;
+#ifdef DOT11_N_SUPPORT
+			if(rf_bw == BW_40)
+				drvevnt.data.channel_change.op_channels[1] = N_GetSecondaryChannel(pAd);
+#endif /* DOT11_N_SUPPORT */
+			RtmpOSWrielessEventSend(pAd->net_dev, RT_WLAN_EVENT_CUSTOM,NSMPIF_DRVEVNT_CHANNEL_CHANGE,
+									NULL, (PUCHAR)&drvevnt.data.channel_change, sizeof(drvevnt.data.channel_change));
+		}
+#endif /* SMART_MESH_MONITOR */
 	}
 }
 #endif /* DOT11N_DRAFT3 */
@@ -1340,45 +1340,6 @@ VOID PeerVHTAction(RTMP_ADAPTER *pAd, MLME_QUEUE_ELEM *Elem)
 #endif /* DOT11_VHT_AC */
 
 
-/*
-	==========================================================================
-	Description:
-		Retry sending ADDBA Reqest.
-		
-	IRQL = DISPATCH_LEVEL
-	
-	Parametrs:
-	p8023Header: if this is already 802.3 format, p8023Header is NULL
-	
-	Return	: TRUE if put into rx reordering buffer, shouldn't indicaterxhere.
-				FALSE , then continue indicaterx at this moment.
-	==========================================================================
- */
-VOID ORIBATimerTimeout(RTMP_ADAPTER *pAd) 
-{
-	MAC_TABLE_ENTRY *pEntry;
-	INT i, total;
-	UCHAR TID;
-
-#ifdef RALINK_ATE
-	if (ATE_ON(pAd))
-		return;
-#endif /* RALINK_ATE */
-
-	total = pAd->MacTab.Size * NUM_OF_TID;
-
-	for (i = 1; ((i <MAX_LEN_OF_BA_ORI_TABLE) && (total > 0)) ; i++)
-	{
-		if  (pAd->BATable.BAOriEntry[i].ORI_BA_Status == Originator_Done)
-		{
-			pEntry = &pAd->MacTab.Content[pAd->BATable.BAOriEntry[i].Wcid];
-			TID = pAd->BATable.BAOriEntry[i].TID;
-
-			ASSERT(pAd->BATable.BAOriEntry[i].Wcid < MAX_LEN_OF_MAC_TABLE);
-		}
-		total --;
-	}
-}
 
 
 VOID SendRefreshBAR(RTMP_ADAPTER *pAd, MAC_TABLE_ENTRY *pEntry) 

@@ -246,6 +246,7 @@ typedef struct __FT_R1KH_ENTRY
 	struct __FT_R1KH_ENTRY *pNext;
 	UINT32 KeyLifeTime;
 	UINT32 RassocDeadline;
+	NDIS_802_11_AUTHENTICATION_MODE AuthMode;
 	UINT8 PmkR0Name[16];
 	UINT8 PmkR1Name[16];
 	UINT8 PmkR1Key[32];

@@ -268,6 +268,7 @@ static VOID ApCliMlmeAssocReqAction(
 #ifdef MAC_REPEATER_SUPPORT
 	UCHAR CliIdx = 0xFF;
 #endif /* MAC_REPEATER_SUPPORT */
+	UCHAR   PhyMode = pAd->CommonCfg.PhyMode;
 
 	if ((ifIndex >= MAX_APCLI_NUM)
 #ifdef MAC_REPEATER_SUPPORT
@@ -289,6 +290,9 @@ static VOID ApCliMlmeAssocReqAction(
 
 	apcli_entry = &pAd->ApCfg.ApCliTab[ifIndex];
 	wdev = &apcli_entry->wdev;
+#ifdef APCLI_AUTO_BW_SUPPORT
+        PhyMode = wdev->PhyMode;
+#endif /* APCLI_AUTO_BW_SUPPORT */
 		
 	/* Block all authentication request durning WPA block period */
 	if (apcli_entry->bBlockAssoc == TRUE)
@@ -358,7 +362,7 @@ static VOID ApCliMlmeAssocReqAction(
 #ifdef DOT11_N_SUPPORT
 		/* HT */
 		if ((apcli_entry->MlmeAux.HtCapabilityLen > 0) && 
-			WMODE_CAP_N(pAd->CommonCfg.PhyMode))
+			WMODE_CAP_N(PhyMode))
 		{
 			ULONG TmpLen;
 			HT_CAPABILITY_IE HtCapabilityTmp;
@@ -381,37 +385,11 @@ static VOID ApCliMlmeAssocReqAction(
 			FrameLen += TmpLen;
 
 #ifdef DOT11_VHT_AC
-			if (WMODE_CAP_AC(pAd->CommonCfg.PhyMode) &&
+			if (WMODE_CAP_AC(PhyMode) &&
 				(pAd->CommonCfg.Channel > 14) &&
 				(apcli_entry->MlmeAux.vht_cap_len))
 			{
-			    ULONG Idx;
-			    BOOLEAN fgBfeeCapSu;
-			    
-#ifdef VHT_TXBF_SUPPORT
-                fgBfeeCapSu = pAd->CommonCfg.vht_cap_ie.vht_cap.bfee_cap_su;
-
-                //Disable beamform capability in Associate Request with 3x3 AP to avoid throughput drop issue
-                // MT76x2 only supports up to 2x2 sounding feedback 
-                Idx = BssTableSearch(&pAd->ScanTab, apcli_entry->MlmeAux.Bssid, apcli_entry->MlmeAux.Channel);
-                if (Idx != BSS_NOT_FOUND)
-                {                         
-                    pAd->BeaconSndDimensionFlag = 0;
-                    if (pAd->ScanTab.BssEntry[Idx].vht_cap_ie.vht_cap.num_snd_dimension >=2 )
-                    {
-                        pAd->BeaconSndDimensionFlag = 1;
-                    }
-                    else
-                    {
-                        pAd->CommonCfg.vht_cap_ie.vht_cap.bfee_cap_su = TRUE;
-                    }
-                }
-
                 FrameLen += build_vht_ies(pAd, (UCHAR *)(pOutBuffer + FrameLen), SUBTYPE_ASSOC_REQ);
-                pAd->CommonCfg.vht_cap_ie.vht_cap.bfee_cap_su = fgBfeeCapSu;
-#else
-                FrameLen += build_vht_ies(pAd, (UCHAR *)(pOutBuffer + FrameLen), SUBTYPE_ASSOC_REQ);
-#endif /* VHT_TXBF_SUPPORT */		       
 			}
 #endif /* DOT11_VHT_AC */
 		}
@@ -427,7 +405,7 @@ static VOID ApCliMlmeAssocReqAction(
 
 #ifdef APCLI_CERT_SUPPORT
 			if ((pAd->CommonCfg.bBssCoexEnable == TRUE) &&
-			    (pAd->CommonCfg.PhyMode >= PHY_11ABGN_MIXED)
+			    (PhyMode >= PHY_11ABGN_MIXED)
 			    && (pAd->CommonCfg.Channel <= 14)
 			    && (pAd->bApCliCertTest == TRUE)
 			    ) 
@@ -437,7 +415,7 @@ static VOID ApCliMlmeAssocReqAction(
 			}
 #endif /* APCLI_CERT_SUPPORT */
 #ifdef DOT11_VHT_AC
-			if (WMODE_CAP_AC(pAd->CommonCfg.PhyMode) &&
+			if (WMODE_CAP_AC(PhyMode) &&
 				(pAd->CommonCfg.Channel > 14))
 				extCapInfo.operating_mode_notification = 1;
 #endif /* DOT11_VHT_AC */
@@ -632,26 +610,37 @@ static VOID ApCliMlmeAssocReqAction(
                 {
 			UCHAR *pWscBuf = NULL, WscIeLen = 0;
 			ULONG WscTmpLen = 0;
+			BOOLEAN bHasWscIe = TRUE;
 
-			os_alloc_mem(pAd, (UCHAR **) & pWscBuf, 512);
-/*			if( (pWscBuf = kmalloc(512, GFP_ATOMIC)) != NULL) */
-			if (pWscBuf != NULL) {
-				NdisZeroMemory(pWscBuf, 512);
-				WscBuildAssocReqIE(&pAd->ApCfg.ApCliTab[ifIndex].WscControl, pWscBuf, &WscIeLen);
+#ifdef SMART_MESH_HIDDEN_WPS
+            if(pAd->ApCfg.ApCliTab[ifIndex].SmartMeshCfg.bSupportHiddenWPS)
+                bHasWscIe = FALSE;    
+#endif /* SMART_MESH_HIDDEN_WPS */
+        if(bHasWscIe)
+        {
+            os_alloc_mem(pAd, (UCHAR **) & pWscBuf, 512);
+    		if (pWscBuf != NULL) {
+    			NdisZeroMemory(pWscBuf, 512);
+    			WscBuildAssocReqIE(&pAd->ApCfg.ApCliTab[ifIndex].WscControl, pWscBuf, &WscIeLen);
 
-				MakeOutgoingFrame(pOutBuffer + FrameLen,
-						  &WscTmpLen, WscIeLen, pWscBuf,
-						  END_OF_ARGS);
-
-				FrameLen += WscTmpLen;
-/*				kfree(pWscBuf); */
-				os_free_mem(NULL, pWscBuf);
-			} else
-				DBGPRINT(RT_DEBUG_WARN,
-					 ("%s:: WscBuf Allocate failed!\n",
-					  __FUNCTION__));
+    			MakeOutgoingFrame(pOutBuffer + FrameLen,
+    					           &WscTmpLen, WscIeLen, pWscBuf,END_OF_ARGS);
+    			FrameLen += WscTmpLen;
+    			os_free_mem(NULL, pWscBuf);
+    		} 
+    		else
+    			DBGPRINT(RT_DEBUG_WARN,("%s:: WscBuf Allocate failed!\n",__FUNCTION__));
+        }
 		}
 #endif /* WSC_AP_SUPPORT */
+
+#ifdef SMART_MESH
+		SMART_MESH_INSERT_IE(apcli_entry->SmartMeshCfg,
+							pOutBuffer,
+							FrameLen,
+							SM_IE_ASSOC_REQ);		
+#endif /* SMART_MESH */	
+
 		MiniportMMRequest(pAd, QID_AC_BE, pOutBuffer, FrameLen);
 		MlmeFreeMemory(pAd, pOutBuffer);
 
@@ -819,6 +808,7 @@ static VOID ApCliPeerAssocRspAction(
 	UCHAR CliIdx = 0xFF;
 #endif /* MAC_REPEATER_SUPPORT */
 	IE_LISTS *ie_list = NULL;
+	UCHAR   PhyMode = pAd->CommonCfg.PhyMode;
 
 	if ((ifIndex >= MAX_APCLI_NUM)
 #ifdef MAC_REPEATER_SUPPORT
@@ -839,6 +829,9 @@ static VOID ApCliPeerAssocRspAction(
 		pCurrState = &pAd->ApCfg.ApCliTab[ifIndex].AssocCurrState;
 
 	pApCliEntry = &pAd->ApCfg.ApCliTab[ifIndex];
+#ifdef APCLI_AUTO_BW_SUPPORT
+        PhyMode = pApCliEntry->wdev.PhyMode;
+#endif /* APCLI_AUTO_BW_SUPPORT */
 
 	os_alloc_mem(pAd, (UCHAR **)&ie_list, sizeof(IE_LISTS));
 	if (ie_list == NULL) {
@@ -887,7 +880,7 @@ static VOID ApCliPeerAssocRspAction(
 					RTMPZeroMemory(&pApCliEntry->MlmeAux.vht_op, sizeof(VHT_OP_IE));
 					pApCliEntry->MlmeAux.vht_cap_len = 0;
 					pApCliEntry->MlmeAux.vht_op_len = 0;
-					if (WMODE_CAP_AC(pAd->CommonCfg.PhyMode) && ie_list->vht_cap_len && ie_list->vht_op_len)
+					if (WMODE_CAP_AC(PhyMode) && ie_list->vht_cap_len && ie_list->vht_op_len)
 					{
 						DBGPRINT(RT_DEBUG_TRACE, ("There is vht le at Assoc Rsp ifIndex=%d vht_cap_len=%d\n", ifIndex,ie_list->vht_cap_len));
 						NdisMoveMemory(&pApCliEntry->MlmeAux.vht_cap, &(ie_list->vht_cap), ie_list->vht_cap_len);
@@ -1162,11 +1155,15 @@ static VOID ApCliAssocPostProc(
 	IN ADD_HT_INFO_IE *pAddHtInfo)
 {
 	APCLI_STRUCT *pApCliEntry = NULL;
+	UCHAR   PhyMode = pAd->CommonCfg.PhyMode;
 
 	if (IfIndex >= MAX_APCLI_NUM)
 		return;
 
 	pApCliEntry = &pAd->ApCfg.ApCliTab[IfIndex];
+#ifdef APCLI_AUTO_BW_SUPPORT
+        PhyMode = pApCliEntry->wdev.PhyMode;
+#endif /* APCLI_AUTO_BW_SUPPORT */
 
 	pApCliEntry->MlmeAux.BssType = BSS_INFRA;	
 	pApCliEntry->MlmeAux.CapabilityInfo = CapabilityInfo & SUPPORTED_CAPABILITY_INFO;
@@ -1185,7 +1182,7 @@ static VOID ApCliAssocPostProc(
 	DBGPRINT(RT_DEBUG_TRACE, (HtCapabilityLen ? "%s===> 11n HT STA\n" : "%s===> legacy STA\n", __FUNCTION__));
 
 #ifdef DOT11_N_SUPPORT
-	if (HtCapabilityLen > 0 && WMODE_CAP_N(pAd->CommonCfg.PhyMode))
+	if (HtCapabilityLen > 0 && WMODE_CAP_N(PhyMode))
 		ApCliCheckHt(pAd, IfIndex, pHtCapability, pAddHtInfo);
 #endif /* DOT11_N_SUPPORT */
 

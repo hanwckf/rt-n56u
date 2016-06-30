@@ -178,7 +178,6 @@ void linux_pci_unmap_single(void *pPciDev, ra_dma_addr_t radma_addr, size_t size
 VOID *RTMPFindHostPCIDev(VOID *pPciDevSrc)
 {
 	struct pci_dev *pci_dev = (struct pci_dev *)pPciDevSrc;
-	struct pci_dev *parent_pci_dev;
 	USHORT reg16;
 	UCHAR reg8;
 	UINT DevFn;
@@ -187,7 +186,6 @@ VOID *RTMPFindHostPCIDev(VOID *pPciDevSrc)
 
 	DBGPRINT(RT_DEBUG_TRACE, ("%s.===>\n", __FUNCTION__));
 
-	parent_pci_dev = NULL;
 	if (pci_dev->bus->parent)
 	{
 		for (DevFn = 0; DevFn < 255; DevFn++)

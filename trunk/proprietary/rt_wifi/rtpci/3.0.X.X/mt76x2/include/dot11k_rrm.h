@@ -83,6 +83,37 @@
 #define RRM_TX_STREAM_SUBID_TRIGGER_REPORT		1
 #define RRM_TX_STREAM_SUBID_VENDOR				221
 
+#ifndef DOT11R_FT_SUPPORT
+#define FT_MDID_LEN					2
+#define IE_FT_MDIE				54
+
+/*
+** MDIE: Mobile Domain IE.
+*/
+typedef union GNU_PACKED _FT_CAP_AND_POLICY
+{
+	struct GNU_PACKED
+	{
+#ifdef RT_BIG_ENDIAN
+	UINT8 :6;
+	UINT8 RsrReqCap:1;
+	UINT8 FtOverDs:1;
+#else
+	UINT8 FtOverDs:1;
+	UINT8 RsrReqCap:1;
+	UINT8 :6;
+#endif
+	} field;
+	UINT8 word;
+} FT_CAP_AND_POLICY, *PFT_CAP_AND_POLICY;
+
+typedef struct GNU_PACKED _FT_MDIE
+{
+	UINT8 MdId[FT_MDID_LEN];
+	FT_CAP_AND_POLICY FtCapPlc;
+} FT_MDIE, *PFT_MDIE;
+#endif /* !DOT11R_FT_SUPPORT */
+
 typedef struct GNU_PACKED _RRM_SUBFRAME_INFO
 {
 	UINT8 SubId;
@@ -136,7 +167,11 @@ typedef union GNU_PACKED _RRM_BSSID_INFO
 	struct GNU_PACKED
 	{
 #ifdef RT_BIG_ENDIAN
-		UINT32 :22;
+		UINT32 Reserved:18;
+		UINT32 FTM:1;		
+		UINT32 VHT:1;
+		UINT32 HT:1;
+		UINT32 MobilityDomain:1;
 		UINT32 ImmediateBA:1;
 		UINT32 DelayBlockAck:1;
 		UINT32 RRM:1;
@@ -156,7 +191,11 @@ typedef union GNU_PACKED _RRM_BSSID_INFO
 		UINT32 RRM:1;
 		UINT32 DelayBlockAck:1;
 		UINT32 ImmediateBA:1;
-		UINT32 :22;
+		UINT32 MobilityDomain:1;
+		UINT32 HT:1;
+		UINT32 VHT:1;
+		UINT32 FTM:1;
+		UINT32 Reserved:18;
 #endif
 	} field;
 	UINT32 word;

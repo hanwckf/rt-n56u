@@ -67,8 +67,6 @@ VOID PMF_MlmeSAQueryReq(
         HEADER_802_11 SAQReqHdr;
         UINT32 FrameLen = 0;
         UCHAR SACategoryType, SAActionType;
-        UINT ccmp_len = LEN_CCMP_HDR + LEN_CCMP_MIC;
-        UCHAR ccmp_buf[ccmp_len];
         PPMF_CFG pPmfCfg = NULL;
 
         if (!pEntry)
@@ -166,8 +164,6 @@ VOID PMF_PeerSAQueryReqAction(
                 HEADER_802_11 SAQRspHdr;
                 UINT32 FrameLen = 0;
                 UCHAR SACategoryType, SAActionType;
-                UINT ccmp_len = LEN_CCMP_HDR + LEN_CCMP_MIC;
-                UCHAR ccmp_buf[ccmp_len];
 
                 DBGPRINT(RT_DEBUG_ERROR, ("[PMF]%s : Receive SA Query Request\n", __FUNCTION__));
                 pHeader = (PFRAME_802_11) Elem->Msg;
@@ -285,9 +281,10 @@ VOID PMF_SAQueryTimeOut(
 
         if (pEntry)
         {
+		PRTMP_ADAPTER pAd = (PRTMP_ADAPTER)pEntry->pAd;
+
    		DBGPRINT(RT_DEBUG_ERROR, ("[PMF]%s - STA(%02x:%02x:%02x:%02x:%02x:%02x)\n",
    					__FUNCTION__, PRINT_MAC(pEntry->Addr)));
-			PRTMP_ADAPTER pAd = (PRTMP_ADAPTER)pEntry->pAd;
 #ifdef CONFIG_AP_SUPPORT
 		IF_DEV_CONFIG_OPMODE_ON_AP(pAd)
 		{		
@@ -325,10 +322,12 @@ VOID PMF_SAQueryConfirmTimeOut(
 
         if (pEntry)
         {
-   		DBGPRINT(RT_DEBUG_ERROR, ("[PMF]%s - STA(%02x:%02x:%02x:%02x:%02x:%02x)\n", __FUNCTION__, PRINT_MAC(pEntry->Addr)));
-                PRTMP_ADAPTER pAd = (PRTMP_ADAPTER)pEntry->pAd;
-                pEntry->SAQueryStatus = SAQ_RETRY;
-                PMF_MlmeSAQueryReq(pAd, pEntry);
+			PRTMP_ADAPTER pAd = (PRTMP_ADAPTER)pEntry->pAd;
+
+			DBGPRINT(RT_DEBUG_ERROR, ("[PMF]%s - STA(%02x:%02x:%02x:%02x:%02x:%02x)\n",
+					__FUNCTION__, PRINT_MAC(pEntry->Addr)));
+			pEntry->SAQueryStatus = SAQ_RETRY;
+			PMF_MlmeSAQueryReq(pAd, pEntry);
         }
 }
 
@@ -1184,7 +1183,7 @@ BOOLEAN	PMF_PerformTxFrameAction(
 	UINT SrcBufLen;
         UINT8 TXWISize = pAd->chipCap.TXWISize;
 	INT FrameType;
-	INT ret = FALSE;
+	INT ret = 0;
 	PMAC_TABLE_ENTRY pEntry = NULL;
 
 	RTMP_QueryPacketInfo(pPacket, &PacketInfo, &pSrcBufVA, &SrcBufLen);
@@ -1234,14 +1233,14 @@ BOOLEAN	PMF_PerformTxFrameAction(
                 	pHeader_802_11 = (PHEADER_802_11) (pSrcBufVA + TXINFO_SIZE + TXWISize);
 
 			ret = PMF_EncryptUniRobustFrameAction(pAd, 
-			        			(PUCHAR)pHeader_802_11, 
+			        			(PUCHAR) pHeader_802_11, 
 				        		(SrcBufLen - TXINFO_SIZE - TXWISize));
 		        break;
 		}
 		case GROUP_ROBUST_FRAME:	
 		{
 			ret = PMF_EncapBIPAction(pAd, 
-						(PUCHAR)pHeader_802_11, 
+						(PUCHAR) pHeader_802_11, 
 						(SrcBufLen - TXINFO_SIZE - TXWISize));
 		        break;
 	        }
@@ -1273,7 +1272,6 @@ BOOLEAN	PMF_PerformRxFrameAction(
 	INT FrameType;
 	PUCHAR pMgmtFrame;
 	UINT mgmt_len;
-	RXWI_STRUC *pRxWI = pRxBlk->pRxWI;
 	PHEADER_802_11 pHeader = pRxBlk->pHeader;
 	PMAC_TABLE_ENTRY pEntry = NULL;
 
@@ -1337,6 +1335,8 @@ BOOLEAN	PMF_PerformRxFrameAction(
 #ifdef CONFIG_STA_SUPPORT
 	IF_DEV_CONFIG_OPMODE_ON_STA(pAd)
 	{
+		RXWI_STRUC *pRxWI = pRxBlk->pRxWI;
+
 		switch (FrameType)
 		{
 			case ERROR_FRAME:
@@ -1369,15 +1369,7 @@ BOOLEAN	PMF_PerformRxFrameAction(
 #ifdef RLT_MAC
 			if (pAd->chipCap.hif_type == HIF_RLT)
 			{
-
-#ifdef MT76x2
-				if (IS_MT76x2(pAd))
-				{		
-					pRxWI->RXWI_N.MPDUtotalByteCnt -= (LEN_CCMP_HDR + LEN_CCMP_MIC);
-				}
-#endif
-
-
+				pRxWI->RXWI_N.MPDUtotalByteCnt -= (LEN_CCMP_HDR + LEN_CCMP_MIC);
 			}
 #endif /* RLT_MAC */
 
@@ -1399,21 +1391,13 @@ BOOLEAN	PMF_PerformRxFrameAction(
 #ifdef RLT_MAC
 			if (pAd->chipCap.hif_type == HIF_RLT)
 			{
-
-#ifdef MT76x2
-				if (IS_MT76x2(pAd))
-				{		
-					pRxWI->RXWI_N.MPDUtotalByteCnt -= (2 + LEN_PMF_MMIE);
-				}
-#endif
-
-
+				pRxWI->RXWI_N.MPDUtotalByteCnt -= (2 + LEN_PMF_MMIE);
 			}
 #endif /* RLT_MAC */
 
 #ifdef RTMP_MAC
 			if (pAd->chipCap.hif_type == HIF_RTMP) {
-					pRxWI->MPDUtotalByteCount -= (2 + LEN_PMF_MMIE);
+				pRxWI->MPDUtotalByteCount -= (2 + LEN_PMF_MMIE);
 			}
 #endif /* RTMP_MAC */
 		        break;

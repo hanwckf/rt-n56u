@@ -168,6 +168,9 @@ VOID UpdateChannelInfo(
 			RTMP_IO_READ32(pAd, RX_STA_CNT1, &RxStaCnt1.word);
 			pAd->RalinkCounters.OneSecFalseCCACnt += RxStaCnt1.field.FalseCca;
 			pAd->pChannelInfo->FalseCCA[ch_index] = RxStaCnt1.field.FalseCca;
+#ifdef SMART_MESH
+			pAd->ChannelList[pAd->ApCfg.scan_channel_index].FalseCCA = RxStaCnt1.field.FalseCca;
+#endif /* SMART_MESH */	
 #ifdef CUSTOMER_DCC_FEATURE
 			pAd->ChannelInfo.FalseCCA[ch_index] = RxStaCnt1.field.FalseCca;
 			if(pAd->ChannelInfo.GetChannelInfo == 0)
@@ -299,7 +302,7 @@ static inline UCHAR SelectClearChannelRandom(
 			/* Check VHT-group of BW80 */
 			if (pAd->CommonCfg.vht_bw == VHT_BW_80 &&
 				!(pAd->ChannelList[i].Flags & CHANNEL_80M_CAP) &&
-				!AC_ChannelGroupCheck(pAd, ch))
+				!AC_ChannelGroupCheck(pAd, pAd->ChannelList[i].Channel))
 				continue;
 #endif /* DOT11_VHT_AC */
 #endif /* DOT11_N_SUPPORT */
@@ -378,12 +381,12 @@ static inline UCHAR SelectClearChannelCCA(
 			continue;
 
 
-		if (pBss->Rssi >= RSSI_TO_DBM_OFFSET-50)
+		if (pBss->Rssi >= -50)
 		{
 			/* high signal >= -50 dbm */
 			pChannelInfo->dirtyness[channel_idx] += 50;
 		}
-		else if (pBss->Rssi <= RSSI_TO_DBM_OFFSET-80)
+		else if (pBss->Rssi <= -80)
 		{
 			/* low signal <= -80 dbm */
 			pChannelInfo->dirtyness[channel_idx] += 30;

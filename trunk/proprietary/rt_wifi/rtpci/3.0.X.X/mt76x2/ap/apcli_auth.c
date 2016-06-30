@@ -203,6 +203,13 @@ static VOID ApCliMlmeAuthReqAction(
 						  2,                    &Status, 
 						  END_OF_ARGS);
 
+#ifdef SMART_MESH
+		SMART_MESH_INSERT_IE(pAd->ApCfg.ApCliTab[ifIndex].SmartMeshCfg,
+							pOutBuffer,
+							FrameLen,
+							SM_IE_AUTH_REQ);
+#endif /* SMART_MESH */
+
 		MiniportMMRequest(pAd, QID_AC_BE, pOutBuffer, FrameLen);
 		MlmeFreeMemory(pAd, pOutBuffer);
 

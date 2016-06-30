@@ -5508,7 +5508,7 @@ INT RTMPQueryInformation(
 			HTPhyMode.word =(USHORT) pAd->LastRxRate;
 			RtmpDrvRateGet(pAd, HTPhyMode.field.MODE, HTPhyMode.field.ShortGI,
 				 HTPhyMode.field.BW,HTPhyMode.field.MCS,
-				 newRateGetAntenna(HTPhyMode.field.MCS),&RateValue);
+				 newRateGetAntenna(HTPhyMode.field.MCS, HTPhyMode.field.MODE),&RateValue);
 			RateValue /= 500000;
 			RateValue /= 2;
 			
@@ -5521,7 +5521,7 @@ INT RTMPQueryInformation(
 			HTPhyMode.word = (USHORT)pAd->LastTxRate;
 			RtmpDrvRateGet(pAd, HTPhyMode.field.MODE, HTPhyMode.field.ShortGI,
 				 HTPhyMode.field.BW,HTPhyMode.field.MCS,
-				 newRateGetAntenna(HTPhyMode.field.MCS),&RateValue);
+				 newRateGetAntenna(HTPhyMode.field.MCS, HTPhyMode.field.MODE),&RateValue);
 			RateValue /= 500000;
 			RateValue /= 2;
 			wrq->u.data.length = sizeof(RateValue);
@@ -9926,8 +9926,9 @@ RtmpIoctl_rt_ioctl_giwrate(RTMP_ADAPTER *pAd, VOID *pData, ULONG Data)
         ht_setting.word = wdev->HTPhyMode.word;
     else
         ht_setting.word = pAd->MacTab.Content[BSSID_WCID].HTPhyMode.word;
-RtmpDrvRateGet(NULL,ht_setting.field.MODE,ht_setting.field.ShortGI,ht_setting.field.BW
-	,ht_setting.field.MCS,newRateGetAntenna(ht_setting.field.MCS),(UINT32 *)pData);
+RtmpDrvRateGet(pAd,ht_setting.field.MODE,ht_setting.field.ShortGI,ht_setting.field.BW
+	            ,ht_setting.field.MCS,newRateGetAntenna(ht_setting.field.MCS, ht_setting.field.MODE),
+	            (UINT32 *)pData);
 
 	return NDIS_STATUS_SUCCESS;
 }

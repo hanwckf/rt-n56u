@@ -114,7 +114,7 @@ VOID RtmpCleanupPsQueue(RTMP_ADAPTER *pAd, QUEUE_HEADER *pQueue)
 	while (pQueue->Head)
 	{
 		DBGPRINT(RT_DEBUG_TRACE,
-					("RtmpCleanupPsQueue %d...\n",pQueue->Number));
+					("RtmpCleanupPsQueue %u...\n",pQueue->Number));
 
 		pQEntry = RemoveHeadQueue(pQueue);
 		/*pPacket = CONTAINING_RECORD(pEntry, NDIS_PACKET, MiniportReservedEx); */
@@ -362,6 +362,11 @@ BOOLEAN RtmpPsIndicate(RTMP_ADAPTER *pAd, UCHAR *pAddr, UCHAR wcid, UCHAR Psm)
 			set_drop_mask_per_client(pAd, pEntry, 2, 1);
 		}
 #endif /* DROP_MASK_SUPPORT */
+#ifdef PS_ENTRY_MAITENANCE
+        else if((old_psmode == PWR_SAVE) && (Psm == PWR_SAVE)){
+            pEntry->continuous_ps_count = 0;
+        }
+#endif /* PS_ENTRY_MAITENANCE */
 
 	return old_psmode;
 }

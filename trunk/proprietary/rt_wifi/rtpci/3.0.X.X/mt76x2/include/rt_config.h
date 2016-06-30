@@ -53,6 +53,12 @@
 #include "fpga/fpga_ctl.h"
 #endif
 
+#ifdef CONFIG_AP_SUPPORT
+#ifdef SMART_MESH
+#include "smart_mesh/smart_mesh_def.h"
+#endif /* SMART_MESH */
+#endif /* CONFIG_AP_SUPPORT */
+
 #include "mlme.h"
 #include "crypt_md5.h"
 #include "crypt_sha2.h"
@@ -112,6 +118,10 @@
 #ifdef CLIENT_WDS
 #include "client_wds.h"
 #endif /* CLIENT_WDS */
+
+#ifdef SMART_MESH
+#include "smart_mesh/smart_mesh_func.h"
+#endif /* SMART_MESH */
 #endif /* CONFIG_AP_SUPPORT */
 
 #ifdef MAT_SUPPORT

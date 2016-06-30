@@ -248,6 +248,11 @@ static int DEVINIT rt_pci_probe(struct pci_dev *pdev, const struct pci_device_id
 	int rv = 0;
 	RTMP_OS_NETDEV_OP_HOOK netDevHook;
 	unsigned long OpMode;
+#ifdef DBG
+    ULONG start, end, diff_ms;
+    /* Get the current time for calculating startup time */
+    NdisGetSystemUpTime(&start);
+#endif /* DBG */	
 
 	DBGPRINT(RT_DEBUG_TRACE, ("===> %s()\n", __FUNCTION__));
 
@@ -260,7 +265,7 @@ static int DEVINIT rt_pci_probe(struct pci_dev *pdev, const struct pci_device_id
 	}
 
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(2,5,0)
-	print_name = pci_name(pdev);
+	print_name = (char *) pci_name(pdev);
 #else
 	print_name = pdev->slot_name;
 #endif /* LINUX_VERSION_CODE */
@@ -285,6 +290,24 @@ static int DEVINIT rt_pci_probe(struct pci_dev *pdev, const struct pci_device_id
 					(ULONG)pci_resource_start(pdev, 0), (ULONG)csr_addr, pdev->irq));
 	}
 
+#ifdef RT_SECURE_DMA
+	/* Map secure memory area to our pci_dev, for future dma buffer memory allocations */
+	/* The numbers here will need to be changed to match the platform. Currently 16MBytes
+	 * are allocated at address 256Mbyte
+	 */
+
+	/* Example of code for ST platform */
+
+	DBGPRINT(RT_DEBUG_OFF, ("%s(): RT_SECURE_DMA prepare\n", __FUNCTION__));
+
+	if( ! dma_declare_coherent_memory(&(pdev->dev), 0x10000000UL, 0x10000000UL, 0x01000000UL,
+									  DMA_MEMORY_MAP | DMA_MEMORY_EXCLUSIVE ) )
+	{
+		DBGPRINT(RT_DEBUG_OFF, ("%s(): dma_declare_coherent_memory failed!\n", __FUNCTION__));
+		goto err_out_iounmap;
+	}
+
+#endif
 	/* Set DMA master */
 	pci_set_master(pdev);
 
@@ -387,6 +410,12 @@ static int DEVINIT rt_pci_probe(struct pci_dev *pdev, const struct pci_device_id
 }
 #endif /* PRE_ASSIGN_MAC_ADDR */
 
+#ifdef DBG				
+    /* Get the current time for calculating startup time */
+    NdisGetSystemUpTime(&end); diff_ms = (end-start)*1000/OS_HZ;
+    DBGPRINT(RT_DEBUG_OFF, ("WiFi PCI Startup Time: %lu.%03lus\n",diff_ms/1000,diff_ms%1000));
+#endif /* DBG */
+
 	DBGPRINT(RT_DEBUG_TRACE, ("<=== %s()\n", __FUNCTION__));
 
 	return 0; /* probe ok */
@@ -458,6 +487,9 @@ static VOID DEVEXIT rt_pci_remove(struct pci_dev *pci_dev)
 		release_mem_region(pci_resource_start(pci_dev, 0), pci_resource_len(pci_dev, 0));
 	}
 
+#ifdef RT_SECURE_DMA
+	dma_release_declared_memory(&(pci_dev->dev));
+#endif
 	/* Free the root net_device */
 	RtmpOSNetDevFree(net_dev);
 }

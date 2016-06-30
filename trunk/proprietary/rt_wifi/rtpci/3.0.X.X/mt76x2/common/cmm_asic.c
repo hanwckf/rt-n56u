@@ -360,7 +360,11 @@ VOID AsicUpdateProtect(
 	UINT16 protect_rate = 0;
 #endif /* RT65xx */
 #endif /* DOT11_VHT_AC */
-
+#ifdef APCLI_CERT_SUPPORT
+#ifdef DOT11_VHT_AC
+	BOOLEAN bStaConnect = FALSE;
+#endif /* DOT11_VHT_AC */
+#endif /* APCLI_CERT_SUPPORT */
 #ifdef RALINK_ATE
 	if (ATE_ON(pAd))
 		return;
@@ -725,10 +729,30 @@ VOID AsicUpdateProtect(
 					ProtCfg4.word = 0x03f50003; /* Don't duplicate RTS/CTS in CCK mode. 0x03f40083*/
 				}
 				
+#ifdef APCLI_CERT_SUPPORT // for TGAC 5.2.35
+#ifdef DOT11_VHT_AC
+				if (pAd->MacTab.Size > 0) {
+					MAC_TABLE_ENTRY *pEntry = NULL;
+					
+					for (i = 1; i < MAX_LEN_OF_MAC_TABLE; i++) {
+						pEntry = &pAd->MacTab.Content[i];
+						if (IS_ENTRY_CLIENT(pEntry) && (pEntry->Sst == SST_ASSOC))
+						{
+							bStaConnect = TRUE;
+						}
+					}
+				}
+#endif /* DOT11_VHT_AC */				
+#endif /* APCLI_CERT_SUPPORT */
+
 
 #ifdef DOT11_VHT_AC
 #ifdef RT65xx
-                               if (IS_RT65XX(pAd))
+                               if (IS_RT65XX(pAd)
+#ifdef APCLI_CERT_SUPPORT							   	
+					&&(bStaConnect)   	
+#endif					
+							   	)
                                {
                                        // Temporary tuen on RTS in VHT, MAC: TX_PROT_CFG6, TX_PROT_CFG7, TX_PROT_CFG8
                                        PROT_CFG_STRUC vht_port_cfg;
@@ -823,7 +847,6 @@ VOID AsicBBPAdjust(RTMP_ADAPTER *pAd)
 VOID AsicSwitchChannel(RTMP_ADAPTER *pAd, UCHAR Channel, BOOLEAN bScan)
 {
 	UCHAR bw;
-	UINT32 value32;
 #ifdef CONFIG_STA_SUPPORT
 #ifdef CONFIG_PM
 #ifdef USB_SUPPORT_SELECTIVE_SUSPEND
@@ -888,19 +911,32 @@ VOID AsicSwitchChannel(RTMP_ADAPTER *pAd, UCHAR Channel, BOOLEAN bScan)
 #ifdef MT76x2
 	if (IS_MT76x2(pAd))
 	{
+		UINT32 value32;
 		// Disable BF HW to apply profile to packets when nSS == 2.
 		// Maybe it can be initialized at chip init but removing the same CR initialization from FW will be better
 		RTMP_IO_READ32(pAd, TXO_R4, &value32);
 		value32 |= 0x2000000;
 		RTMP_IO_WRITE32(pAd, TXO_R4, value32);
-
-		// Enable SIG-B CRC check
-		RTMP_IO_READ32(pAd, RXO_R13, &value32);
-		value32 |= 0x100;
-		RTMP_IO_WRITE32(pAd, RXO_R13, value32);
 	}
 #endif /* MT76x2 */
 #endif /* TXBF_SUPPORT */	
+
+#ifdef SMART_MESH_MONITOR
+	if (!bScan)
+	{
+		struct nsmpif_drvevnt_buf drvevnt;
+		drvevnt.data.channel_change.type = NSMPIF_DRVEVNT_CHANNEL_CHANGE;
+		drvevnt.data.channel_change.channel = pAd->CommonCfg.Channel;
+		NdisZeroMemory(drvevnt.data.channel_change.op_channels,sizeof(drvevnt.data.channel_change.op_channels));
+		drvevnt.data.channel_change.op_channels[0] = pAd->CommonCfg.Channel;
+#ifdef DOT11_N_SUPPORT		
+		if(bw == BW_40)
+			drvevnt.data.channel_change.op_channels[1] = N_GetSecondaryChannel(pAd);
+#endif /* DOT11_N_SUPPORT */
+		RtmpOSWrielessEventSend(pAd->net_dev, RT_WLAN_EVENT_CUSTOM,NSMPIF_DRVEVNT_CHANNEL_CHANGE,
+								NULL, (PUCHAR)&drvevnt.data.channel_change, sizeof(drvevnt.data.channel_change));
+	}
+#endif /* SMART_MESH_MONITOR */
 }
 
 
@@ -1439,8 +1475,34 @@ VOID AsicEnableBssSync(
 	IN PRTMP_ADAPTER pAd) 
 {
 	BCN_TIME_CFG_STRUC csr;
+#ifdef APCLI_SUPPORT 
+                UCHAR apidx;
+                BOOLEAN bMaskBcn;     
+#endif /* APCLI_SUPPORT */
 
 	DBGPRINT(RT_DEBUG_TRACE, ("--->AsicEnableBssSync(INFRA mode)\n"));
+
+#ifdef APCLI_SUPPORT 
+                // for apcli DFS, if ra0 not up, don,t send bcn
+                bMaskBcn = TRUE;
+                
+                for(apidx=0; apidx<pAd->ApCfg.BssidNum; apidx++)
+                {
+                                if(BeaconTransmitRequired(pAd, apidx, &pAd->ApCfg.MBSSID[apidx]))
+                                {
+                                                bMaskBcn = FALSE;
+                                                break;
+                                }
+                }
+
+                if (bMaskBcn &&  APCLI_IF_UP_CHECK(pAd, 0)) {
+							DBGPRINT(RT_DEBUG_OFF, ("Apcli DFS need mask beacon!!!\n"));					
+                                                AsicCtrlBcnMask(pAd, 0xFF);
+                }
+                else {
+                                AsicCtrlBcnMask(pAd, 0x0);
+                }
+#endif /* APCLI_SUPPORT */
 
 	RTMP_IO_READ32(pAd, BCN_TIME_CFG, &csr.word);
 /*	RTMP_IO_WRITE32(pAd, BCN_TIME_CFG, 0x00000000);*/
@@ -3768,10 +3830,17 @@ VOID thermal_protection(
 	IN RTMP_ADAPTER 	*pAd)
 {
 	RTMP_CHIP_OP *pChipOps = &pAd->chipOps;
-	INT32 temp_diff = 0, current_temp = 0;	
+	INT32 temp_diff = 0, current_temp = 0;
+#ifdef CONFIG_STA_SUPPORT
+#endif /* RTMP_MAC_USB  */
 
 	if (pAd->chipCap.ThermalProtectSup == FALSE)
 		return;
+
+	/* If MT7662U go into suspend mode, thermal clock will also be disabled.
+	After resume, MCU will hang if driver retrieve thermal value without calibration. */
+#ifdef CONFIG_STA_SUPPORT
+#endif /* RTMP_MAC_USB  */
 
 #ifdef MT76x2
 	UINT32 mac_reg = 0;

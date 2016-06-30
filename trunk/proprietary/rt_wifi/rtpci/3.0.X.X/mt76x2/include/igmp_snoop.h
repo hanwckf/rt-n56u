@@ -57,6 +57,7 @@ VOID MulticastFilterTableInit(
 	IN PMULTICAST_FILTER_TABLE *ppMulticastFilterTable);
 
 VOID MultiCastFilterTableReset(
+	IN PRTMP_ADAPTER pAd,
 	IN PMULTICAST_FILTER_TABLE *ppMulticastFilterTable);
 
 BOOLEAN MulticastFilterTableInsertEntry(
@@ -70,9 +71,11 @@ BOOLEAN MulticastFilterTableDeleteEntry(
 	IN PRTMP_ADAPTER pAd,
 	IN PUCHAR pGrpId,
 	IN PUCHAR pMemberAddr,
-	IN PNET_DEV dev);
+	IN PNET_DEV dev,
+	IN MulticastFilterEntryType type);
 
 PMULTICAST_FILTER_TABLE_ENTRY MulticastFilterTableLookup(
+	IN PRTMP_ADAPTER pAd,
 	IN PMULTICAST_FILTER_TABLE pMulticastFilterTable,
 	IN PUCHAR pAddr,
 	IN PNET_DEV dev);
@@ -143,7 +146,6 @@ NDIS_STATUS IgmpPktInfoQuery(
 
 NDIS_STATUS IgmpPktClone(
 	IN PRTMP_ADAPTER pAd,
-	IN PUCHAR pSrcBufVA,
 	IN PNDIS_PACKET pPacket,
 	IN INT IgmpPktInGroup,
 	IN PMULTICAST_FILTER_TABLE_ENTRY pGroupEntry,

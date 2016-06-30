@@ -274,6 +274,15 @@
 
 /* [CB_OFF+21 ~ 22]  */
 
+#ifdef DATA_QUEUE_RESERVE
+// tmply use mesh part!
+#define RTMP_SET_PACKET_ICMP(_p, _flg)   (PACKET_CB(_p, 21) = _flg)
+#define RTMP_GET_PACKET_ICMP(_p)         (PACKET_CB(_p, 21))
+#else /* DATA_QUEUE_RESERVE */
+
+
+#endif /* !DATA_QUEUE_RESERVE */
+
 
 /* [CB_OFF + 23]  */
 /*
@@ -313,6 +322,9 @@
 /* [CB_OFF+25], 1B, Iverson patch for WMM A5-T07 ,WirelessStaToWirelessSta do not bulk out aggregate */
 #define RTMP_SET_PACKET_NOBULKOUT(_p, _morebit)			(PACKET_CB(_p, 24) = _morebit)
 #define RTMP_GET_PACKET_NOBULKOUT(_p)					(PACKET_CB(_p, 24))
+#else
+#define RTMP_SET_PACKET_ETHTYPE(_p, _morebit)			(PACKET_CB(_p, 24) = _morebit)
+#define RTMP_GET_PACKET_ETHTYPE(_p)						(PACKET_CB(_p, 24))
 #endif /* INF_AMAZON_SE */
 /* Max skb->cb = 48B = [CB_OFF+38] */
 
@@ -337,4 +349,43 @@
 #define RTMP_SET_PACKET_5VT(_p, _flg)   (PACKET_CB(_p, 33) = _flg)
 #define RTMP_GET_PACKET_5VT(_p)         (PACKET_CB(_p, 33))
 #endif /* CONFIG_5VT_ENHANCE */
+
+/* [CB_OFF + 34] */
+#if defined (CONFIG_WIFI_PKT_FWD)
+/* set link cover packet send by 5G or 2G */
+#define RTMP_PACKET_SPECIFIC_2G		0x1
+#define RTMP_PACKET_SPECIFIC_5G		0x2
+#define RTMP_PACKET_SPECIFIC_ETHER	0x4
+
+#define RTMP_SET_PACKET_BAND(_p, _flg)   	\
+	do{										\
+		if (_flg)								\
+			PACKET_CB(_p, 34) |= (_flg);		\
+		else									\
+			PACKET_CB(_p, 34) &= (~_flg);		\
+	}while(0)
+
+#define RTMP_GET_PACKET_BAND(_p)	(PACKET_CB(_p, 34))
+
+/* [CB_OFF + 35]: tag the packet received from which net device */
+#define RTMP_PACKET_RECV_FROM_2G_CLIENT 		0x01
+#define RTMP_PACKET_RECV_FROM_5G_CLIENT 		0x02
+#define RTMP_PACKET_RECV_FROM_2G_AP				0x04
+#define RTMP_PACKET_RECV_FROM_5G_AP     		0x08
+#define RTMP_PACKET_RECV_FROM_2G_GUEST_CLIENT 	0x10
+#define RTMP_PACKET_RECV_FROM_5G_GUEST_CLIENT	0x20
+#define RTMP_PACKET_RECV_FROM_2G_GUEST_AP		0x40
+#define RTMP_PACKET_RECV_FROM_5G_GUEST_AP  		0x80
+
+#define RTMP_SET_PACKET_RECV_FROM(_p, _flg)	\
+	do{                 	                        				\
+          	if (_flg)                               				\
+                	PACKET_CB(_p, 35) |= (_flg);    		\
+                else                                   	 			\
+                        PACKET_CB(_p, 35) &= (~_flg);   	\
+          }while(0)
+
+#define RTMP_GET_PACKET_RECV_FROM(_p)        (PACKET_CB(_p, 35))
+
+#endif /* CONFIG_WIFI_PKT_FWD */
 

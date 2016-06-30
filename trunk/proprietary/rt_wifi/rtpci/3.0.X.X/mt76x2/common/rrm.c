@@ -126,6 +126,7 @@ void RRM_ReadParametersFromFile(
 			Enable = simple_strtol(macptr, 0, 10);
 			pAd->ApCfg.MBSSID[loop].RrmCfg.bDot11kRRMEnable =
 				(Enable > 0) ? TRUE : FALSE;
+			pAd->ApCfg.MBSSID[loop].RrmCfg.bDot11kRRMEnableSet = TRUE;			
 			DBGPRINT(RT_DEBUG_TRACE, ("%s::(bDot11kRRMEnable[%d]=%d)\n",
 				__FUNCTION__, loop,
 				pAd->ApCfg.MBSSID[loop].RrmCfg.bDot11kRRMEnable));
@@ -512,7 +513,8 @@ VOID RRM_CfgInit(
 
 		pRrmCfg->QuietCB.QuietState = RRM_QUIET_IDLE;
 		pRrmCfg->QuietCB.CurAid = 1;
-		pRrmCfg->bDot11kRRMEnable = TRUE;
+		if (pRrmCfg->bDot11kRRMEnableSet == FALSE)
+			pRrmCfg->bDot11kRRMEnable = FALSE; //set to default off
 		pRrmCfg->bDot11kRRMNeighborRepTSFEnable = FALSE;
 	}
 

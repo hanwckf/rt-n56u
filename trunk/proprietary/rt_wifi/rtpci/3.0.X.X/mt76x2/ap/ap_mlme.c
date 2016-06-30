@@ -232,6 +232,10 @@ VOID APMlmePeriodicExec(
 #ifdef CLIENT_WDS
 	CliWds_ProxyTabMaintain(pAd);
 #endif /* CLIENT_WDS */
+
+#ifdef MWDS
+		MWDSProxyTabMaintain(pAd);
+#endif /* MWDS */
 	}
 	
 #ifdef AP_SCAN_SUPPORT
@@ -308,7 +312,7 @@ VOID APMlmePeriodicExec(
 							{
 									Ac1Cfg.field.Aifsn = 0x1;
 									RTMP_IO_WRITE32(pAd, EDCA_AC1_CFG, Ac1Cfg.word);
-									printk("Change EDCA_AC1_CFG to %x \n", Ac1Cfg.word);
+									DBGPRINT(RT_DEBUG_TRACE, ("Change EDCA_AC1_CFG to %x \n", Ac1Cfg.word));
 							}
 						}
 						else if ((pAd->RalinkCounters.OneSecOsTxCount[QID_AC_VO] == 0) &&
@@ -321,7 +325,7 @@ VOID APMlmePeriodicExec(
 							{
 								Ac1Cfg.field.Aifsn = 0x7;
 								RTMP_IO_WRITE32(pAd, EDCA_AC1_CFG, Ac1Cfg.word);
-								printk("Restore EDCA_AC1_CFG to %x \n", Ac1Cfg.word);
+								DBGPRINT(RT_DEBUG_TRACE, ("Restore EDCA_AC1_CFG to %x \n", Ac1Cfg.word));
 							}
 						}       
 

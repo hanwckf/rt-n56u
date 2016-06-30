@@ -2039,7 +2039,7 @@ int SWRadarCheck(
 static BOOLEAN StagerRadarCheck(IN PRTMP_ADAPTER pAd, UINT8 dfs_channel)
 {
 	UINT T1=0, T2=0, T3=0, F1, F2, F3 = 0, Fmax = 0, freq_diff_min, freq_diff_max;
-	UINT8  dfs_stg2=0, dfs_typ5=0;
+	UINT8  dfs_stg2=0;
 	UINT F_MAX, F_MID, F_MIN;
 
 	DBGPRINT(RT_DEBUG_TRACE, ("--->StagerRadarCheck()\n"));
@@ -2079,7 +2079,6 @@ static BOOLEAN StagerRadarCheck(IN PRTMP_ADAPTER pAd, UINT8 dfs_channel)
 	/*2.	Check radar type 5 or type6*/
 	if (Fmax>295 && Fmax<=405)
 	{	
-		dfs_typ5 = 1;
 		DBGPRINT(RT_DEBUG_TRACE, ("type5 confirmed\n"));
 		freq_diff_min = 20;
 		freq_diff_max = 50;

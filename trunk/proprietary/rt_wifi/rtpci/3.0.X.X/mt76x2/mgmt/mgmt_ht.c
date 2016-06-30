@@ -596,6 +596,18 @@ VOID RTMPSetIndividualHT(RTMP_ADAPTER *pAd, UCHAR apidx)
 		DBGPRINT(RT_DEBUG_WARN, ("RTMPSetIndividualHT: MCS_32 is only supported in 40-MHz, reset it as MCS_0\n"));
 		DesiredMcs = MCS_0;		
 	}
+
+#ifdef APCLI_AUTO_BW_SUPPORT
+         if (apidx >= MIN_NET_DEVICE_FOR_APCLI)
+         {
+	        UCHAR idx = apidx - MIN_NET_DEVICE_FOR_APCLI;
+                if (idx < MAX_APCLI_NUM)
+                {
+                	if (WMODE_CAP_N(pAd->ApCfg.ApCliTab[idx].wdev.PhyMode))
+                        	goto ht_enable;
+                }
+         }
+#endif /* APCLI_AUTO_BW_SUPPORT */
 	   		
 #ifdef CONFIG_STA_SUPPORT
 	if ((pAd->OpMode == OPMODE_STA) && (pAd->StaCfg.BssType == BSS_INFRA) && (apidx == MIN_NET_DEVICE_FOR_MBSSID))
@@ -624,7 +636,11 @@ VOID RTMPSetIndividualHT(RTMP_ADAPTER *pAd, UCHAR apidx)
 		DBGPRINT(RT_DEBUG_TRACE, ("%s : HT is disabled\n", __FUNCTION__));
 		return;
 	}
-			
+	
+#ifdef APCLI_AUTO_BW_SUPPORT
+ht_enable:		
+#endif /* APCLI_AUTO_BW_SUPPORT */
+
 	pDesired_ht_phy->bHtEnable = TRUE;
 					 
 	/* Decide desired Tx MCS*/
@@ -725,8 +741,13 @@ VOID RTMPDisableDesiredHtInfo(RTMP_ADAPTER *pAd)
 #endif /* WDS_SUPPORT */
 #ifdef APCLI_SUPPORT
 		for (idx = 0; idx < MAX_APCLI_NUM; idx++)
-		{				
-			RTMPZeroMemory(&pAd->ApCfg.ApCliTab[idx].wdev.DesiredHtPhyInfo, sizeof(RT_PHY_INFO));
+		{	
+#ifdef APCLI_AUTO_BW_SUPPORT
+			if (!WMODE_CAP_N(pAd->ApCfg.ApCliTab[idx].wdev.PhyMode))
+#endif /* APCLI_AUTO_BW_SUPPORT */		
+			{	
+				RTMPZeroMemory(&pAd->ApCfg.ApCliTab[idx].wdev.DesiredHtPhyInfo, sizeof(RT_PHY_INFO));
+			}
 		}
 #endif /* APCLI_SUPPORT */
 	}
@@ -750,9 +771,24 @@ INT	SetCommonHT(RTMP_ADAPTER *pAd)
 	{
 		/* Clear previous HT information */
 		RTMPDisableDesiredHtInfo(pAd);
+
+#ifdef APCLI_AUTO_BW_SUPPORT
+                UINT apidx = 0;
+                for (apidx = 0; apidx < MAX_APCLI_NUM; apidx++)
+                {
+                        /* Recover the sub-Device PhyMode when MainPhyInfo clear */
+                        if (!ApCliSetPhyMode(pAd, apidx, pAd->ApCfg.ApCliTab[apidx].wdev.PhyMode))
+                        {
+                                DBGPRINT(RT_DEBUG_OFF, ("AUTOBW(%s): skip unknown ApCliEntry[%d].WMODE=%d\n",
+                                        __FUNCTION__, apidx, pAd->ApCfg.ApCliTab[apidx].wdev.PhyMode));
+                        }
+                }
+#endif /* APCLI_AUTO_BW_SUPPORT */
 		return FALSE;
 	}
-
+	
+	N_ChannelCheck(pAd);
+	
 #ifdef DOT11_VHT_AC
 	SetCommonVHT(pAd);
 #endif /* DOT11_VHT_AC */

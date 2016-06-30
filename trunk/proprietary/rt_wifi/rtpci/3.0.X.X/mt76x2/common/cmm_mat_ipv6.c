@@ -609,7 +609,7 @@ static PUCHAR MATProto_IPv6_Tx(
 	IN PUCHAR 			pLayerHdr,
 	IN PUCHAR			pDevMacAdr)
 {
-	PUCHAR pSrcMac, pSrcIP;
+	PUCHAR pSrcMac;
 	BOOLEAN needUpdate;
 	UCHAR nextProtocol;
 	UINT32 offset;	
@@ -621,7 +621,6 @@ static PUCHAR MATProto_IPv6_Tx(
 	pEthHdr = (HEADER_802_3 *)(GET_OS_PKT_DATAPTR(pSkb));
 	
 	pSrcMac = (UCHAR *)&pEthHdr->SAAddr2;
-	pSrcIP = (UCHAR *)&pIPv6Hdr->srcAddr;
 
 	
 	

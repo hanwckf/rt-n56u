@@ -229,12 +229,24 @@ static INT scan_ch_restore(RTMP_ADAPTER *pAd, UCHAR OpMode)
 #ifdef CUSTOMER_DCC_FEATURE
 	pAd->ChannelStats.LastReadTime = 0;
 #endif
+#ifdef CONFIG_AP_SUPPORT
+#ifdef SMART_MESH
+	if(OpMode == OPMODE_AP)
+	{
+#ifdef AP_PARTIAL_SCAN_SUPPORT
+	if ((pAd->ApCfg.bPartialScanning == FALSE) && (pAd->ApCfg.LastPartialScanChannel == 0))
+#endif /* AP_PARTIAL_SCAN_SUPPORT */
+		Set_Check_RadarChannelAPExist(pAd);
+	}
+#endif /* SMART_MESH */
+#endif /* CONFIG_AP_SUPPORT */
+
 	return TRUE;
 }
 
 
 
-static INT scan_active(RTMP_ADAPTER *pAd, UCHAR OpMode, UCHAR ScanType)
+static INT scan_active(RTMP_ADAPTER *pAd, UCHAR OpMode, UCHAR ScanType, INT IfType)
 {
 	UCHAR *frm_buf = NULL;
 	HEADER_802_11 Hdr80211;
@@ -291,16 +303,20 @@ static INT scan_active(RTMP_ADAPTER *pAd, UCHAR OpMode, UCHAR ScanType)
 		{
 #ifdef APCLI_SUPPORT
 #ifdef WSC_INCLUDED
-					if (ScanType == SCAN_WSC_ACTIVE) 
+			if ((ScanType == SCAN_WSC_ACTIVE) || (IfType == INT_APCLI))
+            {
 						MgtMacHeaderInitExt(pAd, &Hdr80211, SUBTYPE_PROBE_REQ, 0, BROADCAST_ADDR, 
 										pAd->ApCfg.ApCliTab[0].wdev.if_addr,
 										BROADCAST_ADDR);	
+            }
 					else
 #endif /* WSC_INCLUDED */						
 #endif /* APCLI_SUPPORT */		
+			{
 			MgtMacHeaderInitExt(pAd, &Hdr80211, SUBTYPE_PROBE_REQ, 0, BROADCAST_ADDR,
 								pAd->ApCfg.MBSSID[0].wdev.bssid,
 								BROADCAST_ADDR);
+			}
 		}
 #endif /* CONFIG_AP_SUPPORT */
 #ifdef CONFIG_STA_SUPPORT
@@ -445,6 +461,13 @@ static INT scan_active(RTMP_ADAPTER *pAd, UCHAR OpMode, UCHAR ScanType)
 				}
 #endif /* WSC_V2_SUPPORT */
 
+#ifdef WSC_AP_SUPPORT
+#ifdef SMART_MESH_HIDDEN_WPS
+                if(pAd->ApCfg.ApCliTab[0].SmartMeshCfg.bSupportHiddenWPS)
+                    bHasWscIe = FALSE;
+#endif /* SMART_MESH_HIDDEN_WPS */
+#endif /* WSC_AP_SUPPORT */
+
 				if (bHasWscIe)
 				{
 					UCHAR		*pWscBuf = NULL, WscIeLen = 0;
@@ -476,6 +499,33 @@ static INT scan_active(RTMP_ADAPTER *pAd, UCHAR OpMode, UCHAR ScanType)
 		FrameLen += build_vht_ies(pAd, (UCHAR *)(frm_buf + FrameLen), SUBTYPE_PROBE_REQ);
 	}
 #endif /* DOT11_VHT_AC */
+
+#ifdef SMART_MESH
+	if ((OpMode == OPMODE_AP))
+	{
+		if ((IfType == INT_APCLI)
+#ifdef APCLI_SUPPORT
+#ifdef WSC_INCLUDED
+            || ((ScanType == SCAN_WSC_ACTIVE) && (OpMode == OPMODE_AP))
+#endif /* WSC_INCLUDED */			
+#endif /* APCLI_SUPPORT */
+            )
+		{
+			SMART_MESH_INSERT_IE(pAd->ApCfg.ApCliTab[0].SmartMeshCfg,
+							frm_buf,
+							FrameLen,
+							SM_IE_PROBE_REQ);
+		}
+		else
+		{
+			SMART_MESH_INSERT_IE(pAd->ApCfg.MBSSID[MAIN_MBSSID].SmartMeshCfg,
+							frm_buf,
+							FrameLen,
+							SM_IE_PROBE_REQ);
+		}
+	}
+#endif /* SMART_MESH */
+
 
 #ifdef WSC_STA_SUPPORT
 	if (OpMode == OPMODE_STA)
@@ -588,14 +638,18 @@ static INT scan_active(RTMP_ADAPTER *pAd, UCHAR OpMode, UCHAR ScanType)
 		Scan next channel
 	==========================================================================
  */
-VOID ScanNextChannel(RTMP_ADAPTER *pAd, UCHAR OpMode)
+VOID ScanNextChannel(RTMP_ADAPTER *pAd, UCHAR OpMode, INT IfType)
 {
 	UCHAR ScanType = pAd->MlmeAux.ScanType;
 	UINT ScanTimeIn5gChannel = SHORT_CHANNEL_TIME;
 	BOOLEAN ScanPending = FALSE;
 	RALINK_TIMER_STRUCT *sc_timer = NULL;
 	UINT stay_time = 0;
-
+#ifdef CONFIG_AP_SUPPORT
+#ifdef SMART_MESH
+	BOOLEAN bRadarChannelAPExist = FALSE;
+#endif /* SMART_MESH */
+#endif /* CONFIG_AP_SUPPORT */
 
 #ifdef RALINK_ATE
 	/* Nothing to do in ATE mode. */
@@ -660,22 +714,39 @@ VOID ScanNextChannel(RTMP_ADAPTER *pAd, UCHAR OpMode)
 				bScanPassive = TRUE;
 #endif /* CARRIER_DETECTION_SUPPORT */ 
 
+#ifdef CONFIG_AP_SUPPORT
+#ifdef SMART_MESH
+			if(OpMode == OPMODE_AP && IsRadarChannelAPExist(pAd,pAd->MlmeAux.Channel))
+			{
+				bRadarChannelAPExist = TRUE;
+				bScanPassive = FALSE;
+			}
+#endif /* SMART_MESH */
+#endif /* CONFIG_AP_SUPPORT */
+
 			if (bScanPassive)
 			{
 				ScanType = SCAN_PASSIVE;
 				ScanTimeIn5gChannel = MIN_CHANNEL_TIME;
 			}
 		}
-
+#ifdef CONFIG_AP_SUPPORT
+#ifdef SMART_MESH
+		if(!bRadarChannelAPExist)
+#endif /* SMART_MESH */
+#endif /* CONFIG_AP_SUPPORT */
+		{
 		/* Check if channel if passive scan under current regulatory domain */
-		if (CHAN_PropertyCheck(pAd, pAd->MlmeAux.Channel, CHANNEL_PASSIVE_SCAN) == TRUE)
+			if ((CHAN_PropertyCheck(pAd, pAd->MlmeAux.Channel, CHANNEL_PASSIVE_SCAN) == TRUE))
 			ScanType = SCAN_PASSIVE;
+		}
 
 
 		if (OpMode == OPMODE_AP)
 			sc_timer = &pAd->MlmeAux.APScanTimer;
 		else
 			sc_timer = &pAd->MlmeAux.ScanTimer;
+        pAd->MlmeAux.ScanInfType = IfType;
 			
 		/* We need to shorten active scan time in order for WZC connect issue */
 		/* Chnage the channel scan time for CISCO stuff based on its IAPP announcement */
@@ -728,11 +799,15 @@ VOID ScanNextChannel(RTMP_ADAPTER *pAd, UCHAR OpMode)
 				stay_time = MAX_CHANNEL_TIME;
 		}
 				
+#ifdef SMART_MESH
+		if (pAd->ApCfg.ScanTime != 0)
+			stay_time = pAd->ApCfg.ScanTime;
+#endif /* SMART_MESH */				
 		RTMPSetTimer(sc_timer, stay_time);
 			
 		if (SCAN_MODE_ACT(ScanType))
 		{
-			if (scan_active(pAd, OpMode, ScanType) == FALSE)
+			if (scan_active(pAd, OpMode, ScanType, IfType) == FALSE)
 				return;
 
 #ifdef CONFIG_AP_SUPPORT
@@ -758,7 +833,7 @@ VOID ScanNextChannel(RTMP_ADAPTER *pAd, UCHAR OpMode)
 					NdisCopyMemory(pAd->MlmeAux.Ssid, pAd->ApCfg.ApCliTab[0].CfgSsid, desiredSsidLen);
 
 					/* 3. scan action */
-					scan_active(pAd, OpMode, ScanType);
+					scan_active(pAd, OpMode, ScanType, IfType);
 			
 					/* 4. restore to MlmeAux */
 					pAd->MlmeAux.SsidLen = backSsidLen;

@@ -121,7 +121,7 @@ VOID APShutdown(RTMP_ADAPTER *pAd)
 		MlmeRadioOff(pAd);
 
 #ifdef IGMP_SNOOP_SUPPORT
-	MultiCastFilterTableReset(&pAd->pMulticastFilterTable);
+	MultiCastFilterTableReset(pAd, &pAd->pMulticastFilterTable);
 #endif /* IGMP_SNOOP_SUPPORT */
 
 #ifdef DOT11V_WNM_SUPPORT
@@ -197,6 +197,10 @@ VOID APStartUp(RTMP_ADAPTER *pAd)
 			pMbss->SsidLen = 6;			
 		}
 
+#ifdef SPECIFIC_TX_POWER_SUPPORT
+		pMbss->TxPwrAdj=0;
+#endif /* SPECIFIC_TX_POWER_SUPPORT */
+
 		/* re-copy the MAC to virtual interface to avoid these MAC = all zero,
 		   when re-open the ra0,
 		   i.e. ifconfig ra0 down, ifconfig ra0 up, ifconfig ra0 down, ifconfig up ... */
@@ -225,16 +229,14 @@ VOID APStartUp(RTMP_ADAPTER *pAd)
 						and should be set to 1 in extended multiple BSSIDs'
 						Bit3~ of MAC address Byte0 is extended multiple BSSID index.
 					 */
-#ifdef ENHANCE_NEW_MBSSID_MODE
 					wdev->if_addr[0] &= ((MacMask << 2) + 3);
-#endif /* ENHANCE_NEW_MBSSID_MODE */
-					wdev->if_addr[0] += ((idx - 1) << 2);
+					wdev->if_addr[0] |= ((idx - 1) << 2);
 				}
 #ifdef ENHANCE_NEW_MBSSID_MODE
 				else
 				{
 					wdev->if_addr[pAd->chipCap.MBSSIDMode - 1] &= (MacMask);
-					wdev->if_addr[pAd->chipCap.MBSSIDMode - 1] += (idx - 1);
+					wdev->if_addr[pAd->chipCap.MBSSIDMode - 1] |= (idx - 1);
 				}
 #endif /* ENHANCE_NEW_MBSSID_MODE */
 			}
@@ -253,6 +255,13 @@ VOID APStartUp(RTMP_ADAPTER *pAd)
 
 		if (pMbss->wdev.bWmmCapable)
 	        	bWmmCapable = TRUE;
+
+#ifdef AIRPLAY_SUPPORT
+        if (AIRPLAY_ON(pAd))
+                pMbss->bBcnSntReq = TRUE;
+        else
+                pMbss->bBcnSntReq = FALSE;
+#endif /* AIRPLAY_SUPPORT */
 		
 		pMbss->CapabilityInfo = CAP_GENERATE(1, 0, (wdev->WepStatus != Ndis802_11EncryptionDisabled),
 											TxPreamble, pAd->CommonCfg.bUseShortSlotTime,
@@ -439,6 +448,9 @@ VOID APStartUp(RTMP_ADAPTER *pAd)
 	AsicSetRalinkBurstMode(pAd, pAd->CommonCfg.bRalinkBurstMode);
 #endif /* DOT11_N_SUPPORT */
 
+#ifdef TMP_PROGRESS_TEST
+	RTMP_CLEAR_FLAG(pAd, fRTMP_ADAPTER_HALT_IN_PROGRESS);
+#endif /* TMP_PROGRESS_TEST */
 	AsicSetBssid(pAd, pAd->CurrentAddress); 
 	mgmt_tb_set_mcast_entry(pAd);
 
@@ -677,14 +689,26 @@ DBGPRINT(RT_DEBUG_OFF, ("%s(): AP Set CentralFreq at %d(Prim=%d, HT-CentCh=%d, V
 			All timer setting shall be set after following flag be cleared
 				fRTMP_ADAPTER_HALT_IN_PROGRESS
 	*/
+	/* 
+		Note : Owing to the flags setting too late to USB In-band commnad cannnot receive rsp
+			   For this test,change to up setting
+			   If test have no side effect , we will change this
+	*/
+#ifndef TMP_PROGRESS_TEST	
 	RTMP_CLEAR_FLAG(pAd, fRTMP_ADAPTER_HALT_IN_PROGRESS);
-
+#endif /* TMP_PROGRESS_TEST */
 
 
 #ifdef MT76x2
 	if (IS_MT76x2(pAd))
+	{
+#ifdef TXBF_SUPPORT
+        if (pAd->hw_cfg.cent_ch > 14) 
+           rtmp_ate_txbf_fix_tank_code(pAd, pAd->hw_cfg.cent_ch, 0);  // load tank code from efuse, iBF only for A band
+#endif /*TXBF_SUPPORT*/
 		mt76x2_calibration(pAd, pAd->hw_cfg.cent_ch);
-#endif
+    }
+#endif /* MT76x2 */
 
 	/* start sending BEACON out */
 	APMakeAllBssBeacon(pAd);
@@ -706,8 +730,7 @@ DBGPRINT(RT_DEBUG_OFF, ("%s(): AP Set CentralFreq at %d(Prim=%d, HT-CentCh=%d, V
 	AsicSetPreTbttInt(pAd, TRUE);
 
 #ifdef RTMP_MAC_PCI
-	//enable IRQ after init ready
-	RTMP_IRQ_ENABLE(pAd);
+	RTMP_MAC_RX_ENABLE(pAd);
 #endif /*RTMP_MAC_PCI*/
 
 #ifdef WAPI_SUPPORT
@@ -767,6 +790,8 @@ DBGPRINT(RT_DEBUG_OFF, ("%s(): AP Set CentralFreq at %d(Prim=%d, HT-CentCh=%d, V
 	pAd->CommonCfg.NewExtChanOffset.NewExtChanOffset = pAd->CommonCfg.RegTransmitSetting.field.EXTCHA;
 #endif
 
+	RTMP_CLEAR_FLAG(pAd, fRTMP_ADAPTER_BSS_SCAN_IN_PROGRESS);
+
 	DBGPRINT(RT_DEBUG_TRACE, ("<=== APStartUp\n"));
 }
 
@@ -819,8 +844,8 @@ VOID APStop(
 #endif /* APCLI_SUPPORT */
 
 #ifdef RTMP_MAC_PCI
-	//disable IRQ before init ready
-	RTMP_ASIC_INTERRUPT_DISABLE(pAd);
+
+	RTMP_MAC_RX_DISABLE(pAd);
 #endif /*RTMP_MAC_PCI*/
 	MacTableReset(pAd);
 
@@ -907,7 +932,7 @@ VOID APCleanupPsQueue(
 
 	while (pQueue->Head)
 	{
-		DBGPRINT(RT_DEBUG_TRACE, ("%s():%d...\n", __FUNCTION__, pQueue->Number));
+		DBGPRINT(RT_DEBUG_TRACE, ("%s():%u...\n", __FUNCTION__, pQueue->Number));
 
 		pEntry = RemoveHeadQueue(pQueue);
 		/*pPacket = CONTAINING_RECORD(pEntry, NDIS_PACKET, MiniportReservedEx); */
@@ -915,6 +940,66 @@ VOID APCleanupPsQueue(
 		RELEASE_NDIS_PACKET(pAd, pPacket, NDIS_STATUS_FAILURE);
 	}
 }
+
+
+#ifdef APCLI_SUPPORT
+#ifdef TRAFFIC_BASED_TXOP
+static VOID CheckApEntryInTraffic(RTMP_ADAPTER *pAd, MAC_TABLE_ENTRY *pEntry)
+{
+	UINT32 TxTotalByteCnt = 0;
+	UINT32 RxTotalByteCnt = 0;
+
+	if ((IS_ENTRY_APCLI(pEntry) || IS_ENTRY_CLIENT(pEntry))
+		&& (pEntry->PortSecured == WPA_802_1X_PORT_SECURED)) {
+		TxTotalByteCnt = pEntry->OneSecTxBytes;
+		RxTotalByteCnt = pEntry->OneSecRxBytes;
+
+		DBGPRINT(RT_DEBUG_TRACE,("WCID%d, %dM, TxBytes:%d, RxBytes:%d\n",
+				pEntry->wcid,
+				(((TxTotalByteCnt + RxTotalByteCnt) << 3) >> 20), 
+				TxTotalByteCnt, 
+				RxTotalByteCnt));
+
+		if ((TxTotalByteCnt == 0) || (RxTotalByteCnt == 0)) 
+		{
+		} 
+		else if ((((TxTotalByteCnt + RxTotalByteCnt) << 3) >> 20) > pAd->CommonCfg.ManualTxopThreshold) 
+		{
+			if (TxTotalByteCnt > RxTotalByteCnt) 
+			{
+				if ((TxTotalByteCnt/RxTotalByteCnt) >= pAd->CommonCfg.ManualTxopUpBound)
+				{
+					if (IS_ENTRY_CLIENT(pEntry))
+						pAd->StaTxopAbledCnt++;
+					else
+						pAd->ApClientTxopAbledCnt++;
+
+					DBGPRINT(RT_DEBUG_TRACE,("WCID%d, StaTxopAbledCnt:%d, ApClientTxopAbledCnt:%d\n",
+						pEntry->wcid,
+						pAd->StaTxopAbledCnt, 
+						pAd->ApClientTxopAbledCnt));
+				}
+			}
+			else
+			{
+				if ((RxTotalByteCnt/TxTotalByteCnt) <= pAd->CommonCfg.ManualTxopLowBound)
+				{
+				 	if (IS_ENTRY_CLIENT(pEntry))
+               			pAd->StaTxopAbledCnt++;
+                	else
+                    	pAd->ApClientTxopAbledCnt++;					
+				}
+			}
+		}
+	}
+
+	pEntry->OneSecTxBytes = 0;
+	pEntry->OneSecRxBytes = 0;
+
+}
+#endif /* TRAFFIC_BASED_TXOP */
+#endif /* APCLI_SUPPORT */
+
 
 /*
 	==========================================================================
@@ -943,7 +1028,6 @@ VOID MacTableMaintenance(RTMP_ADAPTER *pAd)
 #if defined(PRE_ANT_SWITCH) || defined(CFO_TRACK)
 	int lastClient=0;
 #endif /* defined(PRE_ANT_SWITCH) || defined(CFO_TRACK) */
-	CHAR avgRssi;
 	MULTISSID_STRUCT *pMbss;
 #ifdef WFA_VHT_PF
 	RSSI_SAMPLE *worst_rssi = NULL;
@@ -988,11 +1072,22 @@ VOID MacTableMaintenance(RTMP_ADAPTER *pAd)
 	startWcid = 2;
 #endif /* RT_CFG80211_P2P_CONCURRENT_DEVICE */
 
+#ifdef APCLI_SUPPORT
+#ifdef TRAFFIC_BASED_TXOP
+	pAd->StaTxopAbledCnt = 0;
+	pAd->ApClientTxopAbledCnt = 0;
+#endif /* TRAFFIC_BASED_TXOP */
+#endif /* APCLI_SUPPORT */
+
 	for (i = startWcid; i < MAX_LEN_OF_MAC_TABLE; i++) 
 	{
 		MAC_TABLE_ENTRY *pEntry = &pMacTable->Content[i];
 		BOOLEAN bDisconnectSta = FALSE;
 #ifdef APCLI_SUPPORT
+#ifdef TRAFFIC_BASED_TXOP	
+		CheckApEntryInTraffic(pAd, pEntry);
+#endif /* TRAFFIC_BASED_TXOP */
+
 		if(IS_ENTRY_APCLI(pEntry) && (pEntry->PortSecured == WPA_802_1X_PORT_SECURED))
 		{
 #ifdef MAC_REPEATER_SUPPORT
@@ -1049,6 +1144,14 @@ VOID MacTableMaintenance(RTMP_ADAPTER *pAd)
 			continue;
 		}
 #endif /* WDS_SUPPORT */
+
+#ifdef MWDS
+		if (!IS_ENTRY_NONE(pEntry))
+		{
+			if (pEntry->bEnableMWDS == TRUE)
+				pMacTable->fAllStationAsRalink = FALSE;
+		}
+#endif /* MWDS */
 
 		if (!IS_ENTRY_CLIENT(pEntry))
 			continue;
@@ -1229,6 +1332,16 @@ VOID MacTableMaintenance(RTMP_ADAPTER *pAd)
 			DBGPRINT(RT_DEBUG_WARN, ("ageout %02x:%02x:%02x:%02x:%02x:%02x after %d-sec silence\n",
 					PRINT_MAC(pEntry->Addr), pEntry->StaIdleTimeout));
 			ApLogEvent(pAd, pEntry->Addr, EVENT_AGED_OUT);
+#ifdef SMART_MESH_MONITOR
+			{
+				struct nsmpif_drvevnt_buf drvevnt;
+				drvevnt.data.leave.type = NSMPIF_DRVEVNT_STA_TIMEOUT;
+				drvevnt.data.leave.channel = pAd->CommonCfg.Channel;
+				NdisCopyMemory(drvevnt.data.leave.sta_mac, pEntry->Addr, MAC_ADDR_LEN);
+				RtmpOSWrielessEventSend(pAd->net_dev, RT_WLAN_EVENT_CUSTOM,NSMPIF_DRVEVNT_STA_TIMEOUT,
+										NULL, (PUCHAR)&drvevnt.data.leave, sizeof(drvevnt.data.leave));
+			}
+#endif /* SMART_MESH_MONITOR */
 		}
 		else if (pEntry->ContinueTxFailCnt >= pAd->ApCfg.EntryLifeCheck)
 		{
@@ -1255,10 +1368,11 @@ VOID MacTableMaintenance(RTMP_ADAPTER *pAd)
 #endif /* BAND_STEERING */
 		
 		//YF: kickout sta when 3 of 5 exceeds the threshold.
-		CHAR rssiIndex = 0, overRssiThresCount = 0; 
 		if (pMbss->RssiLowForStaKickOut != 0)
 		{
 #define CHECK_DATA_RSSI_UP_BOUND 3
+			CHAR rssiIndex = 0, overRssiThresCount = 0; 
+
 			for (rssiIndex=0; rssiIndex<MAX_LAST_DATA_RSSI_LEN; rssiIndex++)
 			{
 				if ((pEntry->LastDataRssi[rssiIndex] !=0 ) && 
@@ -1313,12 +1427,16 @@ VOID MacTableMaintenance(RTMP_ADAPTER *pAd)
 				MlmeFreeMemory(pAd, pOutBuffer);
 
 #ifdef MAC_REPEATER_SUPPORT
-				if ((pAd->ApCfg.bMACRepeaterEn == TRUE) && IS_ENTRY_CLIENT(pEntry))
+				if ((pAd->ApCfg.bMACRepeaterEn == TRUE) && IS_ENTRY_CLIENT(pEntry)
+#ifdef MWDS
+					&& (pEntry->bEnableMWDS == FALSE)
+#endif /* MWDS */
+				)
 				{
-					UCHAR apCliIdx, CliIdx;
+					UCHAR apCliIdx, CliIdx, isLinkValid;
 					REPEATER_CLIENT_ENTRY *pReptEntry = NULL;
 
-					pReptEntry = RTMPLookupRepeaterCliEntry(pAd, TRUE, pEntry->Addr);
+					pReptEntry = RTMPLookupRepeaterCliEntry(pAd, TRUE, pEntry->Addr ,TRUE, &isLinkValid);
 					if (pReptEntry && (pReptEntry->CliConnectState != 0))
 					{
 						apCliIdx = pReptEntry->MatchApCliIdx;
@@ -1489,7 +1607,14 @@ VOID MacTableMaintenance(RTMP_ADAPTER *pAd)
 
 	/* If all associated STAs are Ralink-chipset, AP shall enable RDG. */
 	if (pAd->CommonCfg.bRdg && pMacTable->fAllStationAsRalink)
+	{
+#ifdef MWDS
+		if (pAd->MacTab.Size >= 2)
+			bRdgActive = FALSE;
+		else
+#endif /* MWDS */
 		bRdgActive = TRUE;
+	}
 	else
 		bRdgActive = FALSE;
 
@@ -1735,6 +1860,12 @@ VOID APUpdateOperationMode(
 		bDisableBGProtect = TRUE;
 	}
 
+	if (pAd->CommonCfg.AddHTInfo.AddHtInfo2.OperaionMode == 0 &&
+		!ERP_IS_USE_PROTECTION(pAd->ApCfg.ErpIeContent))
+	{
+		bDisableBGProtect = TRUE;
+	}
+	
 	if (bNonGFExist == FALSE)
 		bNonGFExist = pAd->MacTab.fAnyStationNonGF;
 
@@ -1967,6 +2098,12 @@ BOOLEAN ApCheckAccessControlList(
             }
         }
     }
+
+#ifdef SMART_MESH
+	if (pAd->ApCfg.MBSSID[Apidx].SmartMeshCfg.bSupportSmartMesh &&
+		!pAd->ApCfg.MBSSID[Apidx].bSmartMeshACL)
+		 Result = TRUE;
+#endif /* SMART_MESH */
 
     if (Result == FALSE)
     {
@@ -2254,15 +2391,9 @@ VOID APOverlappingBSSScan(RTMP_ADAPTER *pAd)
 	UCHAR Channel = pAd->CommonCfg.Channel;
 	INT chStartIdx, chEndIdx, index,curPriChIdx, curSecChIdx;
 
-
-	/* We just care BSS who operating in 40MHz N Mode. */
-	if ((!WMODE_CAP_N(pAd->CommonCfg.PhyMode)) || 
-		(pAd->CommonCfg.RegTransmitSetting.field.BW  == BW_20)
-		|| (pAd->CommonCfg.Channel > 14)
-		)
-	{
-		DBGPRINT(RT_DEBUG_TRACE, ("The pAd->PhyMode=%d, BW=%d, didn't need channel adjustment!\n", 
-				pAd->CommonCfg.PhyMode, pAd->CommonCfg.RegTransmitSetting.field.BW));
+	if ((!WMODE_CAP_N(pAd->CommonCfg.PhyMode)) || (pAd->CommonCfg.Channel > 14)) {
+		DBGPRINT(RT_DEBUG_TRACE, ("The PhyMode=%d, Channel=%d didn't need channel adjustment!\n", 
+				pAd->CommonCfg.PhyMode, pAd->CommonCfg.Channel));
 		return;
 	}
 
@@ -2412,7 +2543,19 @@ VOID APOverlappingBSSScan(RTMP_ADAPTER *pAd)
 		pAd->CommonCfg.LastBSSCoexist2040.field.BSS20WidthReq = 1;
 		pAd->CommonCfg.Bss2040CoexistFlag |= BSS_2040_COEXIST_INFO_SYNC;
 		pAd->CommonCfg.Bss2040NeedFallBack = 1;
-		pAd->CommonCfg.RegTransmitSetting.field.EXTCHA = 0;
+		//pAd->CommonCfg.RegTransmitSetting.field.EXTCHA = 0;
+	}
+
+	/* Recover the bandwidth to support 20/40Mhz if the original setting does support that, and no need to fallback */
+	if ((needFallBack == FALSE)
+		&& (pAd->CommonCfg.ori_bw_before_2040_coex == BW_40)) {
+		pAd->CommonCfg.AddHTInfo.AddHtInfo.RecomWidth = pAd->CommonCfg.ori_bw_before_2040_coex;
+		pAd->CommonCfg.AddHTInfo.AddHtInfo.ExtChanOffset = pAd->CommonCfg.ori_ext_channel_before_2040_coex;
+		pAd->CommonCfg.LastBSSCoexist2040.field.BSS20WidthReq = 0;
+		pAd->CommonCfg.Bss2040CoexistFlag &= (~BSS_2040_COEXIST_INFO_SYNC);
+		pAd->CommonCfg.Bss2040NeedFallBack = 0;
+		pAd->CommonCfg.RegTransmitSetting.field.EXTCHA = pAd->CommonCfg.ori_ext_channel_before_2040_coex;
+		DBGPRINT(RT_DEBUG_ERROR, ("rollback the bandwidth setting to support 20/40Mhz\n"));
 	}
 
 	return;	

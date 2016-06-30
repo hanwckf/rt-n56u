@@ -1715,6 +1715,9 @@ static UCHAR FillChList(
 			pAd->ChannelList[j].Flags |= CHANNEL_80M_CAP;
 #endif /* DOT11_VHT_AC */	
 #endif /* DOT11_N_SUPPORT */
+#ifdef SMART_MESH
+		pAd->ChannelList[j].bDfsAPExist = FALSE;
+#endif /* SMART_MESH */
 
 #ifdef RT_CFG80211_SUPPORT
 		CFG80211OS_ChanInfoInit(
@@ -2297,6 +2300,73 @@ UCHAR N_SetCenCh(RTMP_ADAPTER *pAd, UCHAR prim_ch)
 
 	return pAd->CommonCfg.CentralChannel;
 }
+
+
+#ifdef SMART_MESH_MONITOR
+UCHAR N_GetSecondaryChannel(RTMP_ADAPTER *pAd)
+{
+	INT idx;
+	UCHAR ExtChaDir,SecondaryChannel;
+	UCHAR PrimaryChannel = pAd->CommonCfg.Channel;
+	SecondaryChannel = PrimaryChannel;
+	static const UCHAR wfa_ht_ch_ext[] = {
+			36, EXTCHA_ABOVE, 40, EXTCHA_BELOW,
+			44, EXTCHA_ABOVE, 48, EXTCHA_BELOW,
+			52, EXTCHA_ABOVE, 56, EXTCHA_BELOW,
+			60, EXTCHA_ABOVE, 64, EXTCHA_BELOW,
+			100, EXTCHA_ABOVE, 104, EXTCHA_BELOW,
+			108, EXTCHA_ABOVE, 112, EXTCHA_BELOW,
+			116, EXTCHA_ABOVE, 120, EXTCHA_BELOW,
+			124, EXTCHA_ABOVE, 128, EXTCHA_BELOW,
+			132, EXTCHA_ABOVE, 136, EXTCHA_BELOW,
+			149, EXTCHA_ABOVE, 153, EXTCHA_BELOW, 
+			157, EXTCHA_ABOVE, 161, EXTCHA_BELOW,
+			0, 0};
+
+	if (WMODE_CAP_N(pAd->CommonCfg.PhyMode) &&
+		(pAd->CommonCfg.RegTransmitSetting.field.BW >= BW_40))
+	{
+		if (PrimaryChannel > 14)
+		{
+			idx = 0;
+			while(wfa_ht_ch_ext[idx] != 0) {
+				if (wfa_ht_ch_ext[idx] == PrimaryChannel) {
+					ExtChaDir = wfa_ht_ch_ext[idx + 1];
+					break;
+				}
+				idx += 2;
+			};
+
+			if (wfa_ht_ch_ext[idx] != 0)
+			{
+				if(ExtChaDir == EXTCHA_ABOVE) 
+					SecondaryChannel = wfa_ht_ch_ext[idx+2];
+				else
+					SecondaryChannel = wfa_ht_ch_ext[idx-2];
+			}
+		}
+		else
+		{
+			do
+			{
+				ExtChaDir = pAd->CommonCfg.RegTransmitSetting.field.EXTCHA;
+				SecondaryChannel = GetExtCh(PrimaryChannel, ExtChaDir);
+				if (IsValidChannel(pAd, SecondaryChannel))
+					break;
+
+
+				ExtChaDir = (ExtChaDir == EXTCHA_ABOVE) ? EXTCHA_BELOW : EXTCHA_ABOVE;
+				SecondaryChannel = GetExtCh(PrimaryChannel, ExtChaDir);
+				if (IsValidChannel(pAd, SecondaryChannel))
+					break;
+			} while(FALSE);
+		}
+	}
+
+	return SecondaryChannel;
+}
+#endif /* SMART_MESH_MONITOR */
+
 #endif /* DOT11_N_SUPPORT */
 
 

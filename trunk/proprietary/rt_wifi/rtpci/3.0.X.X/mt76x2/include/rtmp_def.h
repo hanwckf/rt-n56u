@@ -1362,10 +1362,11 @@ enum WIFI_MODE{
 
 #define APCLI_SYNC_MACHINE_BASE           0
 #define APCLI_MT2_MLME_PROBE_REQ          0
-#define APCLI_MT2_PEER_PROBE_RSP          1
-#define APCLI_MT2_PEER_BEACON			2
-#define APCLI_MT2_PROBE_TIMEOUT           3
-#define APCLI_MAX_SYNC_MSG                4
+#define APCLI_MT2_MLME_SCAN_REQ           1
+#define APCLI_MT2_PEER_PROBE_RSP          2
+#define APCLI_MT2_PEER_BEACON		  3
+#define APCLI_MT2_PROBE_TIMEOUT           4
+#define APCLI_MAX_SYNC_MSG                5
 
 #define APCLI_SYNC_FUNC_SIZE              (APCLI_MAX_SYNC_STATE * APCLI_MAX_SYNC_MSG)
 
@@ -1547,6 +1548,8 @@ enum WIFI_MODE{
 #define BW_20		BAND_WIDTH_20
 #define BW_40		BAND_WIDTH_40
 #define BW_80		BAND_WIDTH_80
+#define BW_160		BAND_WIDTH_160
+
 #define BW_10		BAND_WIDTH_10	/* 802.11j has 10MHz. This definition is for internal usage. doesn't fill in the IE or other field. */
 
 

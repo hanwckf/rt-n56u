@@ -164,6 +164,8 @@ VOID APMlmeDynamicTxRateSwitching(RTMP_ADAPTER *pAd)
 #endif /* FIFO_EXT_SUPPORT */
 		}
 
+		ApTxFailCntUpdate(pAd, pEntry, TxSuccess, TxRetransmit);
+
 		/* Save LastTxOkCount, LastTxPER and last MCS action for APQuickResponeForRateUpExec */
 		pEntry->LastTxOkCount = TxSuccess;
 		pEntry->LastTxPER = (TxTotalCnt == 0 ? 0 : (UCHAR)TxErrorRatio);
@@ -587,6 +589,8 @@ VOID APQuickResponeForRateUpExec(
 #endif /* FIFO_EXT_SUPPORT */
 		}
 
+		ApTxFailCntUpdate(pAd, pEntry, TxSuccess, TxRetransmit);
+
 #ifdef THERMAL_PROTECT_SUPPORT
 		if (pAd->force_one_tx_stream == TRUE) {
 			if (pEntry->CurrTxRateIndex > 0x0b)
@@ -621,7 +625,9 @@ VOID APQuickResponeForRateUpExec(
 			MlmeRALog(pAd, pEntry, RAL_QUICK_DRS, TxErrorRatio, TxTotalCnt);
 #endif /* DBG_CTRL_SUPPORT */
 
-        if (TxCnt <= 15 && pEntry->HTPhyMode.field.MCS > 1)
+        if ((TxCnt <= 15) && 
+            (pEntry->HTPhyMode.field.MODE == MODE_HTMIX) &&
+            (pEntry->HTPhyMode.field.MCS > 1))
         {
 			MlmeClearAllTxQuality(pEntry);
 
@@ -675,7 +681,8 @@ VOID APQuickResponeForRateUpExec(
 			}
 			else
 			{
-				OneSecTxNoRetryOKRationCount = pEntry->OneSecTxNoRetryOkCount * ratio + (pEntry->OneSecTxNoRetryOkCount >> 1);
+				OneSecTxNoRetryOKRationCount = TxSuccess * ratio + (TxSuccess >> 1);
+				//OneSecTxNoRetryOKRationCount = pEntry->OneSecTxNoRetryOkCount * ratio + (pEntry->OneSecTxNoRetryOkCount >> 1);
 			}
 
 			/* perform DRS - consider TxRate Down first, then rate up. */
@@ -707,7 +714,11 @@ VOID APQuickResponeForRateUpExec(
 				}
 				else if ((pEntry->LastTxOkCount + 2) >= OneSecTxNoRetryOKRationCount)
 				{
-					MlmeRestoreLastRate(pEntry);
+					if(TxErrorRatio >= TrainUp)
+					{
+						MlmeRestoreLastRate(pEntry);
+					}
+							
 				}
 				else
 				{

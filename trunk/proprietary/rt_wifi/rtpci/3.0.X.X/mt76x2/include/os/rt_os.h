@@ -48,7 +48,7 @@
 #define RT_PRIV_IOCTL							(SIOCIWFIRSTPRIV + 0x01) /* Sync. with AP for wsc upnp daemon */
 #define RTPRIV_IOCTL_SET							(SIOCIWFIRSTPRIV + 0x02)
 
-#ifdef DBG
+#if defined(DBG) ||defined(RALINK_ATE)
 #define RTPRIV_IOCTL_BBP                            (SIOCIWFIRSTPRIV + 0x03)
 #define RTPRIV_IOCTL_MAC                            (SIOCIWFIRSTPRIV + 0x05)
 

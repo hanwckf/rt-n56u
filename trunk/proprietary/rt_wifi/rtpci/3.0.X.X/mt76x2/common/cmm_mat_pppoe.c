@@ -657,7 +657,7 @@ static PUCHAR MATProto_PPPoEDis_Rx(
 	IN PUCHAR			pLayerHdr,
 	IN PUCHAR			pDevMacAdr)
 {
-	PUCHAR pData, pSrvMac = NULL, pCliMac= NULL, pOutMac=NULL, pInMac = NULL, pTagContent = NULL, pPayloadLen;
+	PUCHAR pData, pSrvMac = NULL, pOutMac=NULL, pInMac = NULL, pTagContent = NULL, pPayloadLen;
 	UINT16 payloadLen, leftLen;
 	UINT16 tagID, tagLen =0;
 	UINT16 needUpdateSesTb= 0, sesID=0, isPADT = 0;
@@ -679,7 +679,6 @@ static PUCHAR MATProto_PPPoEDis_Rx(
 		case PPPOE_CODE_PADS:
 			needUpdateSesTb = 1;
 			findTag = PPPOE_TAG_ID_HOST_UNIQ;
-			pCliMac = (PUCHAR)(GET_OS_PKT_DATAPTR(pSkb));
 			pSrvMac = (PUCHAR)(GET_OS_PKT_DATAPTR(pSkb) + 6);
 			break;
 		case PPPOE_CODE_PADR:

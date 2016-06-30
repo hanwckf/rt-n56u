@@ -249,6 +249,7 @@ void MT76xx_PciMlmeRadioOn(RTMP_ADAPTER *pAd)
 #ifdef CONFIG_AP_SUPPORT
 	INT32 IdBss, MaxNumBss = pAd->ApCfg.BssidNum;
 #endif /* CONFIG_AP_SUPPORT */
+	UINT32 mac_val = 0;
 
 
 	MCU_CTRL_INIT(pAd);
@@ -303,17 +304,16 @@ void MT76xx_PciMlmeRadioOn(RTMP_ADAPTER *pAd)
 	/* Enable Tx/Rx*/
 	RTMPEnableRxTx(pAd);
 	
-       if (pAd->chipCap.ed_cca_enable == TRUE) {
-		UINT32 mac_val = 0;
-
+	if (pAd->chipCap.ed_cca_enable == TRUE) {
 		RTMP_IO_READ32(pAd, TXOP_CTRL_CFG, &mac_val);
 		mac_val |= (1 << 20);
 		RTMP_IO_WRITE32(pAd, TXOP_CTRL_CFG, mac_val);
+	}
 
-		RTMP_IO_READ32(pAd, TXOP_HLDR_ET, &mac_val);
-		mac_val |= 2;
-		RTMP_IO_WRITE32(pAd, TXOP_HLDR_ET, mac_val);
-       }
+	RTMP_IO_READ32(pAd, TXOP_HLDR_ET, &mac_val);
+	mac_val |= 2;
+	RTMP_IO_WRITE32(pAd, TXOP_HLDR_ET, mac_val);
+	
 
 	/* Restore RTS retry count */
 	RTMP_IO_WRITE32(pAd, 0x1344, pAd->rts_tx_retry_num);		
@@ -373,16 +373,13 @@ void MT76xx_PciMlmeRadioOFF(RTMP_ADAPTER *pAd)
 {
 	
 	UINT32 pwr_level = 5, mac_val = 0, bbp_val = 0, loop = 0;
-	POS_COOKIE 	pObj;
-	USHORT	Configuration = 0, reg16 = 0, offset = 0;
 #ifdef CONFIG_AP_SUPPORT
 	INT32 IdBss, MaxNumBss = pAd->ApCfg.BssidNum;
 #endif /* CONFIG_AP_SUPPORT */
 
-	pObj = (POS_COOKIE) pAd->OS_Cookie;
-
 	RTMP_OS_NETDEV_STOP_QUEUE(pAd->net_dev);
 
+	/* disable prim/second EDCCA before disable mac TX/RX */
 	RTMP_IO_READ32(pAd, TXOP_CTRL_CFG, &mac_val);
 	if ((mac_val & 0x100000) == 0x100000) {
 		DBGPRINT(RT_DEBUG_OFF,("%s:: ED CCA has been enabled\n", __FUNCTION__));

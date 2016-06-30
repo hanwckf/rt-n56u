@@ -1041,6 +1041,12 @@ void CFG80211OS_P2pClientConnectResultInform(
 
 BOOLEAN CFG80211OS_RxMgmt(IN PNET_DEV pNetDev, IN INT32 freq, IN PUCHAR frame, IN UINT32 len) 
 {
+	if (pNetDev == NULL)
+	{
+		CFG80211DBG(RT_DEBUG_ERROR, ("%s: pNetDev == NULL\n", __FUNCTION__));
+                return FALSE;
+	}
+
 #if (LINUX_VERSION_CODE >= KERNEL_VERSION(3,12,0))
 	return cfg80211_rx_mgmt(pNetDev->ieee80211_ptr,
                                 freq,
@@ -1108,7 +1114,10 @@ VOID CFG80211OS_NewSta(IN PNET_DEV pNetDev, IN const PUCHAR mac_addr, IN const P
 	NdisZeroMemory(&sinfo, sizeof(sinfo));
 
 /* If get error here, be sure patch the cfg80211_new_sta.patch into kernel. */
+	if (pNetDev->ieee80211_ptr->iftype != RT_CMD_80211_IFTYPE_ADHOC) 
+	{
 	sinfo.filled = STATION_INFO_ASSOC_REQ_IES;
+        	mgmt = (struct ieee80211_mgmt *) assoc_frame;   
 
 	if (ieee80211_is_reassoc_req(mgmt->frame_control))
 	{
@@ -1121,11 +1130,11 @@ VOID CFG80211OS_NewSta(IN PNET_DEV pNetDev, IN const PUCHAR mac_addr, IN const P
 		sinfo.assoc_req_ies_len = assoc_len - LENGTH_802_11_CRC;
 		sinfo.assoc_req_ies = mgmt->u.assoc_req.variable;
 	}
+	}
 
 #if (LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,34))	
 	return cfg80211_new_sta(pNetDev, mac_addr, &sinfo, GFP_ATOMIC);
-#endif
-
+#endif /* LINUX_VERSION_CODE: 2.6.34 */
 }
 
 VOID CFG80211OS_DelSta(IN PNET_DEV pNetDev, IN const PUCHAR mac_addr)

@@ -1156,6 +1156,8 @@ VOID ApMlmeDynamicTxRateSwitchingAGS(
 #endif /*  FIFO_EXT_SUPPORT */
 	}
 
+	ApTxFailCntUpdate(pAd, pEntry, TxSuccess, TxRetransmit);
+
 	AGSStatisticsInfo.RSSI = RTMPAvgRssi(pAd, &pEntry->RssiSample);
 	AGSStatisticsInfo.TxErrorRatio = TxErrorRatio;
 	AGSStatisticsInfo.AccuTxTotalCnt = TxTotalCnt;
@@ -1851,6 +1853,8 @@ VOID ApQuickResponeForRateUpExecAGS(
 		}
 #endif /*  FIFO_EXT_SUPPORT */
 	}
+
+	ApTxFailCntUpdate(pAd, pEntry, TxSuccess, TxRetransmit);
 
 	DBGPRINT(RT_DEBUG_INFO | DBG_FUNC_RA,
 		("%s: QuickAGS: AccuTxTotalCnt = %lu, TxSuccess = %lu, "

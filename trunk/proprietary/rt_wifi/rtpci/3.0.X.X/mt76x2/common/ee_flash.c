@@ -35,9 +35,30 @@
 
 
 
+USHORT EE_FLASH_ID_LIST[]={
+
+#ifdef RT6352
+	0x6352,
+	0x7620,
+#endif /* RT6352 */
+
+
+
+#ifdef MT76x2
+#ifdef RTMP_MAC_PCI
+	0x7612,
+	0x7662,
+#endif /* RTMP_MAC_PCI */
+#endif /* MT76x0 */
+
+};
+
 static NDIS_STATUS rtmp_ee_flash_init(PRTMP_ADAPTER pAd, PUCHAR start);
 
-
+INT rtmp_get_flash_id_num(VOID)
+{
+	return (sizeof(EE_FLASH_ID_LIST) / sizeof(USHORT));
+}
 
 /*******************************************************************************
   *
@@ -271,10 +292,12 @@ int	Set_EECMD_Proc(
 static BOOLEAN  validFlashEepromID(RTMP_ADAPTER *pAd)
 {
 	USHORT eeFlashId;
-	int listIdx;
-	
+	int listIdx, num_flash_id;
+
+	num_flash_id = rtmp_get_flash_id_num();
+
 	rtmp_ee_flash_read(pAd, 0, &eeFlashId);
-	for(listIdx =0 ; listIdx < EE_FLASH_ID_NUM; listIdx++)
+	for(listIdx =0 ; listIdx < num_flash_id; listIdx++)
 	{
 		if (eeFlashId == EE_FLASH_ID_LIST[listIdx])
 			return TRUE;
@@ -371,5 +394,26 @@ NDIS_STATUS rtmp_nv_init(RTMP_ADAPTER *pAd)
 	return rtmp_ee_flash_init(pAd, pAd->eebuf);
 }
 
+INT Set_LoadEepromBufferFromFlash_Proc(RTMP_ADAPTER *pAd, PSTRING arg)
+{
+	UINT bEnable = simple_strtol(arg, 0, 10);
+	UINT free_blk = 0;
+
+	if (bEnable < 0)
+		return FALSE;
+	else
+	{
+		DBGPRINT(RT_DEBUG_TRACE, ("Load EEPROM buffer from flash, and change to BIN buffer mode\n"));
+
+		NdisZeroMemory(pAd->EEPROMImage, MAX_EEPROM_BIN_FILE_SIZE);
+		RtmpFlashRead(pAd->EEPROMImage, pAd->flash_offset, MAX_EEPROM_BUFFER_SIZE);
+																
+
+		/* Change to BIN eeprom buffer mode */
+		pAd->E2pAccessMode = E2P_BIN_MODE;
+		RtmpChipOpsEepromHook(pAd, pAd->infType);
+		return TRUE;
+	}
+}
 #endif /* RTMP_FLASH_SUPPORT */
 

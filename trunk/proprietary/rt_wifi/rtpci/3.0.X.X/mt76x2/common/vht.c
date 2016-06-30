@@ -658,7 +658,9 @@ BOOLEAN vht80_channel_group( RTMP_ADAPTER *pAd, UCHAR channel)
 		{
 			if ( (pAd->CommonCfg.RDDurRegion == JAP ||
 				pAd->CommonCfg.RDDurRegion == JAP_W53 ||
-				pAd->CommonCfg.RDDurRegion == JAP_W56) &&
+				pAd->CommonCfg.RDDurRegion == JAP_W56 ||
+				pAd->CommonCfg.RDDurRegion == CE
+				) &&
 				vht_ch_80M[idx].cent_freq_idx == 138)
 			{
 				idx++;

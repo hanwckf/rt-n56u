@@ -22,7 +22,9 @@
 #ifndef __AUTOCHSELECT_CMM_H__
 #define __AUTOCHSELECT_CMM_H__
 
-#define RSSI_TO_DBM_OFFSET 120 /* RSSI-115 = dBm */
+/* Note: RSSI_TO_DBM_OFFSET has been changed to variable for new RF (2004-0720). */
+/* SHould not refer to this constant anymore */
+//#define RSSI_TO_DBM_OFFSET 120 /* RSSI-115 = dBm */
 
 
 typedef struct {

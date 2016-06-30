@@ -44,7 +44,7 @@ VOID CFG80211DRV_OpsScanInLinkDownAction(
 	pAd->cfg80211_ctrl.FlgCfg80211Scanning = FALSE;	
 	CFG80211OS_ScanEnd(pAd->pCfg80211_CB, TRUE);
   
-	ScanNextChannel(pAd, OPMODE_STA);
+	ScanNextChannel(pAd, OPMODE_STA, INT_MAIN);
 	DBGPRINT(RT_DEBUG_TRACE, ("<--- CFG80211_MLME Disconnect in Scan END, ORI ==> %d\n", 
 									pAd->Mlme.CntlMachine.CurrState)); 
 }
@@ -276,7 +276,11 @@ static void CFG80211_UpdateBssTableRssi(
 			/* HIT */
 			CFG80211_CalBssAvgRssi(pBssEntry);
 			bss->signal = pBssEntry->AvgRssi * 100; //UNIT: MdBm
+#if (LINUX_VERSION_CODE >= KERNEL_VERSION(3,9,0))
+			cfg80211_put_bss(pWiphy, bss);
+#else
 			cfg80211_put_bss(bss);
+#endif /* LINUX_VERSION_CODE: 3.9.0 */
 		}
 	}	
 }

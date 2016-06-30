@@ -464,6 +464,7 @@ static VOID ApCliCtrlJoinReqAction(
 		(pWpsCtrl->bWscTrigger == TRUE))
     {
     	ULONG bss_idx = 0;
+        NdisZeroMemory(JoinReq.Bssid, MAC_ADDR_LEN);
         NdisZeroMemory(JoinReq.Ssid, MAX_LEN_OF_SSID);
         JoinReq.SsidLen = pAd->ApCfg.ApCliTab[ifIndex].WscControl.WscSsid.SsidLength;
 		NdisMoveMemory(JoinReq.Ssid, pAd->ApCfg.ApCliTab[ifIndex].WscControl.WscSsid.Ssid, JoinReq.SsidLen);
@@ -512,6 +513,37 @@ static VOID ApCliCtrlJoinReqAction(
 				}				
 			}
 		}
+#ifdef SMART_MESH
+		else if((pWpsCtrl->WscMode == 2) && (pWpsCtrl->bWscPBCAddrMode == TRUE)) //PBC
+		{
+			bss_idx = Get_BssSsidTableSearchByMAC(&pAd->ScanTab, pWpsCtrl->WscPBCAddr);
+            if ((bss_idx == BSS_NOT_FOUND)
+#ifdef SMART_MESH_HIDDEN_WPS
+                || (pApCliEntry->SmartMeshCfg.bSupportHiddenWPS && 
+                    !pAd->ScanTab.BssEntry[bss_idx].bRunningHiddenWPS)
+#endif /* SMART_MESH_HIDDEN_WPS */            
+                )
+            {
+				return;
+            }
+			else
+			{
+				/* Follow found AP's ssid and ignore WscSsid setting. */
+				NdisZeroMemory(JoinReq.Ssid, MAX_LEN_OF_SSID);
+				JoinReq.SsidLen = pAd->ScanTab.BssEntry[bss_idx].SsidLen;
+				NdisMoveMemory(JoinReq.Ssid, pAd->ScanTab.BssEntry[bss_idx].Ssid, JoinReq.SsidLen);
+				NdisZeroMemory(pWpsCtrl->WscSsid.Ssid, MAX_LEN_OF_SSID);
+    			pWpsCtrl->WscSsid.SsidLength = JoinReq.SsidLen;
+				NdisMoveMemory(pWpsCtrl->WscSsid.Ssid, JoinReq.Ssid, JoinReq.SsidLen);
+                COPY_MAC_ADDR(JoinReq.Bssid, pAd->ScanTab.BssEntry[bss_idx].Bssid);
+	
+					pWpsCtrl->WscState = WSC_STATE_START;
+					pWpsCtrl->WscStatus = STATUS_WSC_START_ASSOC;
+					pWpsCtrl->WscMode = 2;
+					pWpsCtrl->bWscTrigger = TRUE;
+			}
+		}
+#endif /* SMART_MESH */
     }
     else
 #endif /* WSC_AP_SUPPORT */
@@ -608,7 +640,7 @@ static VOID ApCliCtrlJoinReqTimeoutAction(
 		pApCliEntry->ProbeReqCnt = 0;
 		
 		if (pAd->ApCfg.ApCliAutoConnectRunning == TRUE)
-			ApCliSwitchCandidateAP(pAd);
+			ApCliSwitchCandidateAP(pAd, ifIndex);
 		return;
 	}
 #endif /* APCLI_AUTO_CONNECT_SUPPORT */
@@ -629,12 +661,16 @@ static VOID ApCliCtrlJoinReqTimeoutAction(
 	}
 
 #ifdef WSC_AP_SUPPORT
-    if ((pAd->ApCfg.ApCliTab[ifIndex].WscControl.WscConfMode != WSC_DISABLE) &&
-		(pAd->ApCfg.ApCliTab[ifIndex].WscControl.bWscTrigger == TRUE))
+    if ((pApCliEntry->WscControl.WscConfMode != WSC_DISABLE) &&
+		(pApCliEntry->WscControl.bWscTrigger == TRUE))
     {
+#ifdef SMART_MESH
+        if((pApCliEntry->WscControl.WscMode == 2) && (pApCliEntry->WscControl.bWscPBCAddrMode == TRUE))
+            COPY_MAC_ADDR(JoinReq.Bssid, pApCliEntry->WscControl.WscPBCAddr);
+#endif /* SMART_MESH */
         NdisZeroMemory(JoinReq.Ssid, MAX_LEN_OF_SSID);
-        JoinReq.SsidLen = pAd->ApCfg.ApCliTab[ifIndex].WscControl.WscSsid.SsidLength;
-		NdisMoveMemory(JoinReq.Ssid, pAd->ApCfg.ApCliTab[ifIndex].WscControl.WscSsid.Ssid, JoinReq.SsidLen);
+        JoinReq.SsidLen = pApCliEntry->WscControl.WscSsid.SsidLength;
+		NdisMoveMemory(JoinReq.Ssid, pApCliEntry->WscControl.WscSsid.Ssid, JoinReq.SsidLen);
     }
     else
 #endif /* WSC_AP_SUPPORT */
@@ -707,6 +743,59 @@ static VOID ApCliCtrlProbeRspAction(
 		DBGPRINT(RT_DEBUG_TRACE, ("%s():ProbeResp success. SSID=%s, Bssid=%02x:%02x:%02x:%02x:%02x:%02x\n",
 					__FUNCTION__, pApCliEntry->Ssid, PRINT_MAC(pApCliEntry->MlmeAux.Bssid)));
 
+		if ((pAd->CommonCfg.Channel <= 14)
+#ifdef MAC_REPEATER_SUPPORT
+			&& (CliIdx == 0xFF)
+#endif /* MAC_REPEATER_SUPPORT */
+			)
+		{
+			ADD_HTINFO RootApHtInfo = pAd->ApCfg.ApCliTab[ifIndex].MlmeAux.AddHtInfo.AddHtInfo;
+
+			if (RootApHtInfo.RecomWidth) {
+				pAd->CommonCfg.RegTransmitSetting.field.BW = BW_40;
+
+				if (RootApHtInfo.ExtChanOffset == EXTCHA_ABOVE) {
+					Set_HtExtcha_Proc(pAd, "1");
+					pApCliEntry->MlmeAux.CentralChannel = pApCliEntry->MlmeAux.Channel + 2;
+				} else {
+					Set_HtExtcha_Proc(pAd, "0");
+					pApCliEntry->MlmeAux.CentralChannel = pApCliEntry->MlmeAux.Channel - 2;
+				}
+
+				pAd->CommonCfg.HtCapability.HtCapInfo.ChannelWidth = BW_40;
+#ifdef DOT11N_DRAFT3
+				pAd->CommonCfg.Bss2040NeedFallBack = 0;
+				pAd->CommonCfg.LastBSSCoexist2040.field.BSS20WidthReq = 0;
+#endif /* DOT11N_DRAFT3 */
+			} else {
+				pAd->CommonCfg.RegTransmitSetting.field.BW	= BW_20;
+				pAd->CommonCfg.RegTransmitSetting.field.EXTCHA = EXTCHA_NONE;
+				pAd->CommonCfg.HtCapability.HtCapInfo.ChannelWidth = BW_20;
+				pApCliEntry->MlmeAux.CentralChannel = pApCliEntry->MlmeAux.Channel;
+			}
+
+			pAd->CommonCfg.Channel = pApCliEntry->MlmeAux.Channel;
+			pAd->CommonCfg.CentralChannel = pApCliEntry->MlmeAux.CentralChannel;
+
+			SetCommonHT(pAd);
+			AsicBBPAdjust(pAd);
+
+			pAd->hw_cfg.cent_ch = pAd->CommonCfg.CentralChannel;
+			AsicSwitchChannel(pAd, pAd->hw_cfg.cent_ch, FALSE);
+			AsicLockChannel(pAd, pAd->hw_cfg.cent_ch);
+
+			DBGPRINT(RT_DEBUG_ERROR, ("%s(): driver ch_width(%d), extcha(%d), bbp bw(%d)\n",
+							__FUNCTION__,
+							pAd->CommonCfg.HtCapability.HtCapInfo.ChannelWidth,
+							pAd->CommonCfg.RegTransmitSetting.field.EXTCHA,
+							pAd->CommonCfg.BBPCurrentBW));
+
+			DBGPRINT(RT_DEBUG_ERROR, ("%s(): hw_cfg.cent_ch = %d\n", __FUNCTION__, pAd->hw_cfg.cent_ch));
+#ifdef DOT11N_DRAFT3
+			pAd->CommonCfg.Bss2040CoexistFlag |= BSS_2040_COEXIST_INFO_SYNC;
+#endif /* DOT11N_DRAFT3 */
+		}
+
 		*pCurrState = APCLI_CTRL_AUTH;
 
 #ifdef MAC_REPEATER_SUPPORT
@@ -750,7 +839,7 @@ static VOID ApCliCtrlProbeRspAction(
 			&& (CliIdx == 0xFF)
 #endif /* MAC_REPEATER_SUPPORT */
 			)
-			ApCliSwitchCandidateAP(pAd);
+			ApCliSwitchCandidateAP(pAd, ifIndex);
 #endif /* APCLI_AUTO_CONNECT_SUPPORT */
 	}
 
@@ -888,7 +977,7 @@ static VOID ApCliCtrlAuthRspAction(
 				&& (CliIdx == 0xFF)
 #endif /* MAC_REPEATER_SUPPORT */
 				)
-				ApCliSwitchCandidateAP(pAd);
+				ApCliSwitchCandidateAP(pAd, ifIndex);
 #endif /* APCLI_AUTO_CONNECT_SUPPORT */
 		}
 	}
@@ -971,7 +1060,7 @@ static VOID ApCliCtrlAuth2RspAction(
 			&& (CliIdx == 0xFF)
 #endif /* MAC_REPEATER_SUPPORT */
 			)
-			ApCliSwitchCandidateAP(pAd);
+			ApCliSwitchCandidateAP(pAd, ifIndex);
 #endif /* APCLI_AUTO_CONNECT_SUPPORT */
 	}
 
@@ -1047,7 +1136,7 @@ static VOID ApCliCtrlAuthReqTimeoutAction(
 			&& (CliIdx == 0xFF)
 #endif /* MAC_REPEATER_SUPPORT */
 			)
-			ApCliSwitchCandidateAP(pAd);
+			ApCliSwitchCandidateAP(pAd, ifIndex);
 #endif /* APCLI_AUTO_CONNECT_SUPPORT */
 			return;
 	}
@@ -1178,7 +1267,7 @@ static VOID ApCliCtrlAssocRspAction(
 				&& (CliIdx == 0xFF)
 #endif /* MAC_REPEATER_SUPPORT */
 				)
-				ApCliSwitchCandidateAP(pAd);
+				ApCliSwitchCandidateAP(pAd, ifIndex);
 #endif /* APCLI_AUTO_CONNECT_SUPPORT */		
 
 #ifdef RT_CFG80211_P2P_CONCURRENT_DEVICE					
@@ -1211,7 +1300,7 @@ static VOID ApCliCtrlAssocRspAction(
 			&& (CliIdx == 0xFF)
 #endif /* MAC_REPEATER_SUPPORT */
 			)
-			ApCliSwitchCandidateAP(pAd);
+			ApCliSwitchCandidateAP(pAd, ifIndex);
 #endif /* APCLI_AUTO_CONNECT_SUPPORT */	
 
 #ifdef RT_CFG80211_P2P_CONCURRENT_DEVICE
@@ -1360,7 +1449,7 @@ static VOID ApCliCtrlAssocReqTimeoutAction(
 				&& (CliIdx == 0xFF)
 #endif /* MAC_REPEATER_SUPPORT */
 				)
-				ApCliSwitchCandidateAP(pAd);
+				ApCliSwitchCandidateAP(pAd, ifIndex);
 #endif /* APCLI_AUTO_CONNECT_SUPPORT */
 			return;
 		}
@@ -1507,7 +1596,6 @@ static VOID ApCliCtrlPeerDeAssocReqAction(
 	if (CliIdx == 0xFF)
 	{
 		UCHAR index;
-		BOOLEAN Cancelled;
 
 		for(index = 0; index < MAX_EXT_MAC_ADDR_SIZE; index++)
 		{
@@ -1544,7 +1632,7 @@ static VOID ApCliCtrlPeerDeAssocReqAction(
 		PMAC_TABLE_ENTRY pMacEntry;
 		pMacEntry = &pAd->MacTab.Content[pApCliEntry->MacTabWCID];
 		if (pMacEntry->PortSecured == WPA_802_1X_PORT_NOT_SECURED)
-			ApCliSwitchCandidateAP(pAd);
+			ApCliSwitchCandidateAP(pAd, ifIndex);
 	}
 #endif /* APCLI_AUTO_CONNECT_SUPPORT */	
 
@@ -1762,7 +1850,7 @@ VOID ApCliWpaMicFailureReportFrame(
 	PEAPOL_PACKET       pPacket;
 	UCHAR               Mic[16];
 	BOOLEAN             bUnicast;
-	UCHAR			Wcid, i;
+	UCHAR			Wcid;
 	PMAC_TABLE_ENTRY pMacEntry = NULL;
 	USHORT ifIndex = (USHORT)(Elem->Priv);
 	APCLI_STRUCT *apcli_entry;

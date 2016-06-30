@@ -2675,15 +2675,6 @@ VOID LinkUp(RTMP_ADAPTER *pAd, UCHAR BssType)
 #endif /* CONFIG_MULTI_CHANNEL */
 
 
-#ifdef MT76x2
-	if (IS_MT76x2(pAd)) {
-		mt76x2_reinit_agc_gain(pAd, pAd->hw_cfg.cent_ch);
-		mt76x2_reinit_hi_lna_gain(pAd, pAd->hw_cfg.cent_ch);
-		mt76x2_get_agc_gain(pAd, TRUE);
-		mt76x2_calibration(pAd, pAd->hw_cfg.cent_ch);
-	}
-#endif /* MT76x2 */
-
 	pAd->MacTab.MsduLifeTime = 5; /* default 5 seconds */
 
 #ifdef MICROWAVE_OVEN_SUPPORT
@@ -3740,7 +3731,6 @@ VOID AdjustChannelRelatedValue(
 	UCHAR rf_channel;
 	UINT8 rf_bw = BW_20, ext_ch;
 
-
 	// TODO: shiang-6590, this function need to revise to make sure two purpose can achieved!
 	//	1. Channel-binding rule between STA and P2P-GO mode
 	//	2. Stop MAC Tx/Rx when bandwidth change
@@ -3807,5 +3797,17 @@ VOID AdjustChannelRelatedValue(
 #endif /* DOT11_VHT_AC */
 
 	DBGPRINT(RT_DEBUG_TRACE, ("AdjustChannelRelatedValue ==> not any connection !!!\n"));
+
+#ifdef DYNAMIC_VGA_SUPPORT
+#ifdef MT76x2
+	if (IS_MT76x2(pAd)) {
+		mt76x2_reinit_agc_gain(pAd, pAd->hw_cfg.cent_ch);
+		mt76x2_reinit_hi_lna_gain(pAd, pAd->hw_cfg.cent_ch);
+		mt76x2_get_agc_gain(pAd, TRUE);
+		/* MAC will be disabled by calibration, so it should finish before any packet arrival */
+		mt76x2_calibration(pAd, pAd->hw_cfg.cent_ch);
+	}
+#endif /* MT76x2 */
+#endif /* DYNAMIC_VGA_SUPPORT */
 }
 

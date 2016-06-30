@@ -192,6 +192,13 @@ typedef char 				* PNDIS_BUFFER;
 #endif /* DOT11_VHT_AC */
 
 
+#ifdef DATA_QUEUE_RESERVE
+/*
+	This value must small than MAX_PACKETS_IN_QUEUE
+*/
+#define FIFO_RSV_FOR_HIGH_PRIORITY 	64
+#endif /* DATA_QUEUE_RESERVE */
+
 /***********************************************************************************
  *	OS signaling related constant definitions
  ***********************************************************************************/
@@ -327,6 +334,7 @@ struct os_cookie {
 	RTMP_NET_TASK_STRUCT	ac3_dma_done_task;
 	RTMP_NET_TASK_STRUCT	hcca_dma_done_task;
 	RTMP_NET_TASK_STRUCT	tbtt_task;
+	RTMP_NET_TASK_STRUCT	pretbtt_task;
 
 #ifdef RTMP_MAC_PCI
 	RTMP_NET_TASK_STRUCT	fifo_statistic_full_task;
@@ -433,7 +441,11 @@ do{                                   \
 #define ASSERT(x)
 #endif /* DBG */
 
+#ifdef DBG
 void hex_dump(char *str, unsigned char *pSrcBufVA, unsigned int SrcBufLen);
+#else
+#define hex_dump(x,y,z)
+#endif /* DBG */
 
 
 /*********************************************************************************************************

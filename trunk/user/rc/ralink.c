@@ -670,6 +670,13 @@ gen_ralink_config(int is_soc_ap, int is_aband, int disable_autoscan)
 	i_val = (i_channel == 0) ? 2 : 0;
 	fprintf(fp, "AutoChannelSelect=%d\n", i_val);
 
+	//AutoChannelSkipList
+	if (!is_aband)
+		sprintf(list, "%d;%d", 12, 13);
+	else
+		sprintf(list, "%d", 165);
+	fprintf(fp, "AutoChannelSkipList=%s\n", list);
+
 	//BasicRate (not supported in 5G mode)
 	if (!is_aband) {
 		i_val = 15; // 1, 2, 5.5, 11 Mbps
@@ -1387,6 +1394,7 @@ gen_ralink_config(int is_soc_ap, int is_aband, int disable_autoscan)
 	if (i_mode_x == 3 && nvram_wlan_get_int(is_aband, "sta_auto"))
 		i_val = 0;
 	fprintf(fp, "ApCliEnable=%d\n", i_val);
+
 	fprintf(fp, "ApCliSsid=%s\n", p_str);
 	fprintf(fp, "ApCliBssid=\n");
 

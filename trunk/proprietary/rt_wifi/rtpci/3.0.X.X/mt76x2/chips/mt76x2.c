@@ -5291,7 +5291,8 @@ static void mt76x2_long_range_dync_vga(RTMP_ADAPTER * pAd)
 #endif
 		}			
 	}		
-	DBGPRINT(RT_DEBUG_TRACE,
+
+	DBGPRINT(RT_DEBUG_WARN,
 		("MT76x2 long range one second False CCA=%d, fixed agc_vga_0:0%x, fixed agc_vga_1:0%x\n"
 		, pAd->RalinkCounters.OneSecFalseCCACnt, bbp_val1, bbp_val1));
 
@@ -5459,8 +5460,10 @@ static BOOLEAN dynamic_channel_model_adjust(RTMP_ADAPTER *pAd)
 		
 			case 0x90: /* BW40::eLNA lower VGA/PD */
 				pAd->chipCap.dynamic_chE_mode = 0x90;
-				RTMP_BBP_IO_WRITE32(pAd, AGC1_R35, 0x08080808); /* BBP 0x238C */
-				RTMP_BBP_IO_WRITE32(pAd, AGC1_R37, 0x08080808); /* BBP 0x2394 */
+				if (pAd->CommonCfg.Channel > 14) {
+					RTMP_BBP_IO_WRITE32(pAd, AGC1_R35, 0x08080808); /* BBP 0x238C */
+					RTMP_BBP_IO_WRITE32(pAd, AGC1_R37, 0x08080808); /* BBP 0x2394 */
+				}
 				value = shift_left16(0x1836) | shift_left8(eLNA_lower_init_vga) | 0xF8;
 				RTMP_BBP_IO_WRITE32(pAd, AGC1_R8, value); /* BBP 0x2320 */
 				RTMP_BBP_IO_WRITE32(pAd, AGC1_R9, value); /* BBP 0x2324 */	
@@ -5468,8 +5471,10 @@ static BOOLEAN dynamic_channel_model_adjust(RTMP_ADAPTER *pAd)
 		
 			case 0x91: /* BW40::iLNA lower VGA/PD */
 				pAd->chipCap.dynamic_chE_mode = 0x91;
-				RTMP_BBP_IO_WRITE32(pAd, AGC1_R35, 0x08080808); /* BBP 0x238C */
-				RTMP_BBP_IO_WRITE32(pAd, AGC1_R37, 0x08080808); /* BBP 0x2394 */
+				if (pAd->CommonCfg.Channel > 14) {
+					RTMP_BBP_IO_WRITE32(pAd, AGC1_R35, 0x08080808); /* BBP 0x238C */
+					RTMP_BBP_IO_WRITE32(pAd, AGC1_R37, 0x08080808); /* BBP 0x2394 */
+				}
 				value = shift_left16(0x1E42) | shift_left8(iLNA_lower_init_vga) | 0xF8;
 				RTMP_BBP_IO_WRITE32(pAd, AGC1_R8, value); /* BBP 0x2320 */
 				RTMP_BBP_IO_WRITE32(pAd, AGC1_R9, value); /* BBP 0x2324 */	
@@ -5477,9 +5482,9 @@ static BOOLEAN dynamic_channel_model_adjust(RTMP_ADAPTER *pAd)
 		
 			case 0x80: /* BW20::eLNA lower VGA/PD */
 				pAd->chipCap.dynamic_chE_mode = 0x80;
-				RTMP_BBP_IO_WRITE32(pAd, AGC1_R35, 0x08080808); /* BBP 0x238C */
-				RTMP_BBP_IO_WRITE32(pAd, AGC1_R37, 0x08080808); /* BBP 0x2394 */
 				if (pAd->CommonCfg.Channel > 14){
+					RTMP_BBP_IO_WRITE32(pAd, AGC1_R35, 0x08080808); /* BBP 0x238C */
+					RTMP_BBP_IO_WRITE32(pAd, AGC1_R37, 0x08080808); /* BBP 0x2394 */
 					value = shift_left16(0x1836) | shift_left8(eLNA_lower_init_vga) | 0xF8;
 				}
 				else{
@@ -5492,8 +5497,10 @@ static BOOLEAN dynamic_channel_model_adjust(RTMP_ADAPTER *pAd)
 		
 			case 0x81: /* BW20::iLNA lower VGA/PD */
 				pAd->chipCap.dynamic_chE_mode = 0x81;
-				RTMP_BBP_IO_WRITE32(pAd, AGC1_R35, 0x08080808); /* BBP 0x238C */
-				RTMP_BBP_IO_WRITE32(pAd, AGC1_R37, 0x08080808); /* BBP 0x2394 */
+				if (pAd->CommonCfg.Channel > 14) {
+					RTMP_BBP_IO_WRITE32(pAd, AGC1_R35, 0x08080808); /* BBP 0x238C */
+					RTMP_BBP_IO_WRITE32(pAd, AGC1_R37, 0x08080808); /* BBP 0x2394 */
+				}
 				value = shift_left16(0x1836) | shift_left8(iLNA_lower_init_vga) | 0xF8;
 				RTMP_BBP_IO_WRITE32(pAd, AGC1_R8, value); /* BBP 0x2320 */
 				RTMP_BBP_IO_WRITE32(pAd, AGC1_R9, value); /* BBP 0x2324 */	
@@ -5588,8 +5595,8 @@ static BOOLEAN dynamic_channel_model_adjust(RTMP_ADAPTER *pAd)
 				break;
 		}
 
-		DBGPRINT(RT_DEBUG_INFO, ("%s:: updated dynamic_chE_mode(0x%x), dynamic_chE_trigger(%d)\n", 
-			__FUNCTION__, pAd->chipCap.dynamic_chE_mode, pAd->chipCap.dynamic_chE_trigger));
+		DBGPRINT(RT_DEBUG_WARN, ("%s:: updated dynamic_chE_mode(0x%x), dynamic_chE_trigger(%d), agc_vga: 0%x\n", 
+			__FUNCTION__, pAd->chipCap.dynamic_chE_mode, pAd->chipCap.dynamic_chE_trigger, value));
 	} else
 		pAd->chipCap.dynamic_chE_trigger = FALSE;
 
@@ -5807,7 +5814,7 @@ static const RTMP_CHIP_CAP MT76x2_ChipCap = {
 #ifdef DYNAMIC_VGA_SUPPORT
 	.dynamic_vga_support = TRUE,
 	.compensate_level = 0,
-	.dynamic_chE_mode = 0xFF,
+	.dynamic_chE_mode = 0xEE,
 	.dynamic_chE_trigger = FALSE,
 	.avg_rssi_all = -90,
 	.avg_rssi_0 = -90,

@@ -32,7 +32,11 @@
 #include "ralink_smi.h"
 
 #define SMI_ACK_RETRY_COUNT	5
+#if defined (CONFIG_RALINK_MT7621)
+#define SMI_CLK_DELAY_NS	250
+#else
 #define SMI_CLK_DELAY_NS	1500
+#endif
 
 static u32 g_gpio_sda = 1;
 static u32 g_gpio_sck = 2;

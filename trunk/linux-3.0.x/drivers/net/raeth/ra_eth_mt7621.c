@@ -194,15 +194,6 @@ void mt7621_eth_gdma_vlan_untag(int ge2, int untag_en)
 	sysRegWrite(gdm_addr, gdm_eg_ctrl);
 }
 
-void mt7621_eth_init_ge2(void)
-{
-	/* MT7621 GE2 + External GSW */
-#if defined (CONFIG_GE2_RGMII_FORCE_1000)
-	ge2_set_mode(0, 1);
-	sysRegWrite(REG_ETH_GE2_MAC_CONTROL, 0x2105e33b);
-#endif
-}
-
 void mt7621_eth_init(void)
 {
 	u32 reg_val;
@@ -263,7 +254,10 @@ void mt7621_eth_init(void)
 #endif
 
 	/* MT7621 GE2 + External GSW */
-	mt7621_eth_init_ge2();
+#if defined (CONFIG_GE2_RGMII_FORCE_1000)
+	ge2_set_mode(0, 1);
+	sysRegWrite(REG_ETH_GE2_MAC_CONTROL, 0x2105e33b);
+#endif
 
 	/* MT7621 GE1 + External PHY or CPU */
 #if defined (CONFIG_GE1_RGMII_AN)

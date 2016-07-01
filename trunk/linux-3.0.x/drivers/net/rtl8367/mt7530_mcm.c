@@ -80,7 +80,7 @@ mcm_write_vtcr(u32 vtcr_cmd, u32 vtcr_val)
 
 	for (i = 0; i < 200; i++) {
 		udelay(100);
-		reg_vtcr = esw_reg_get(REG_ESW_WT_MAC_ATC);
+		reg_vtcr = esw_reg_get(REG_ESW_VLAN_VTCR);
 		if (!(reg_vtcr & 0x80000000))
 			return 0;
 	}
@@ -632,7 +632,7 @@ void
 mcm_init(void)
 {
 #if defined (CONFIG_RALINK_MT7621)
-	mt7621_eth_init_ge2();
+	mt7621_eth_init();
 #endif
 	mcm_vlan_set_mode_matrix();
 

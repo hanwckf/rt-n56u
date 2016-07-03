@@ -2523,6 +2523,7 @@ typedef struct _APCLI_STRUCT {
 
 #ifdef APCLI_AUTO_CONNECT_SUPPORT
 	USHORT	ProbeReqCnt;
+	BOOLEAN AutoConnectFlag;
 #endif /* APCLI_AUTO_CONNECT_SUPPORT */
 	USHORT AuthReqCnt;
 	USHORT AssocReqCnt;

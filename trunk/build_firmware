@@ -384,6 +384,41 @@ if [ "$CONFIG_FIRMWARE_INCLUDE_SERIAL" != "y" ] ; then
 	func_disable_kernel_param "CONFIG_USB_SERIAL_PL2303"
 fi
 fi
+############################# XFRM ####################################
+if [ "$CONFIG_FIRMWARE_INCLUDE_XFRM" != "y" ] && [ "$CONFIG_PRODUCT" = "MT7621" ]; then
+	func_disable_kernel_param "CONFIG_XFRM"
+	func_disable_kernel_param "CONFIG_XFRM_USER"
+	func_disable_kernel_param "CONFIG_XFRM_IPCOMP"
+	func_disable_kernel_param "CONFIG_NET_KEY"
+	func_disable_kernel_param "CONFIG_INET_AH"
+	func_disable_kernel_param "CONFIG_INET_ESP"
+	func_disable_kernel_param "CONFIG_INET_IPCOMP"
+	func_disable_kernel_param "CONFIG_INET_XFRM_TUNNEL"
+	func_disable_kernel_param "CONFIG_INET_XFRM_MODE_TRANSPORT"
+	func_disable_kernel_param "CONFIG_INET_XFRM_MODE_TUNNEL"
+	func_disable_kernel_param "CONFIG_INET_XFRM_MODE_BEET"
+	func_disable_kernel_param "CONFIG_INET6_AH"
+	func_disable_kernel_param "CONFIG_INET6_ESP"
+	func_disable_kernel_param "CONFIG_INET6_IPCOMP"
+	func_disable_kernel_param "CONFIG_INET6_XFRM_TUNNEL"
+	func_disable_kernel_param "CONFIG_INET6_XFRM_MODE_TRANSPORT"
+	func_disable_kernel_param "CONFIG_INET6_XFRM_MODE_TUNNEL"
+	func_disable_kernel_param "CONFIG_INET6_XFRM_MODE_BEET"
+	func_disable_kernel_param "CONFIG_NETFILTER_XT_MATCH_ESP"
+	func_disable_kernel_param "CONFIG_NETFILTER_XT_MATCH_POLICY"
+	func_disable_kernel_param "CONFIG_IP_NF_MATCH_AH"
+	func_disable_kernel_param "CONFIG_IP6_NF_MATCH_AH"
+	func_disable_kernel_param "CONFIG_CRYPTO_AEAD"
+	func_disable_kernel_param "CONFIG_CRYPTO_AEAD2"
+	func_disable_kernel_param "CONFIG_CRYPTO_AUTHENC"
+	func_disable_kernel_param "CONFIG_CRYPTO_CBC"
+	func_disable_kernel_param "CONFIG_CRYPTO_HMAC"
+	func_disable_kernel_param "CONFIG_CRYPTO_MD5"
+	func_disable_kernel_param "CONFIG_CRYPTO_SHA256"
+	func_disable_kernel_param "CONFIG_CRYPTO_AES"
+	func_disable_kernel_param "CONFIG_CRYPTO_DES"
+	func_disable_kernel_param "CONFIG_CRYPTO_DEFLATE"
+fi
 ############################ IPSET ####################################
 if [ "$CONFIG_FIRMWARE_INCLUDE_IPSET" != "y" ] ; then
 	func_disable_kernel_param "CONFIG_NETFILTER_NETLINK"

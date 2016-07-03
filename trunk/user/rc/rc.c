@@ -177,8 +177,10 @@ load_crypto_modules(void)
 	/* start aes engine */
 	module_smart_load("mtk_aes", NULL);
 
+#if 0
 	/* start cryptodev-linux */
 	module_smart_load("cryptodev", NULL);
+#endif
 }
 #endif
 

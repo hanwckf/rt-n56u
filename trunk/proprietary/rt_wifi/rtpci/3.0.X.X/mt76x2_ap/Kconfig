@@ -73,11 +73,13 @@ config  MT76X2_AP_MAC_REPEATER
 
 config  MT76X2_AP_MWDS
 	bool "Wireless Mixed Bridge Mode (MWDS)"
+	depends on MT76X2_AP
 	select MT76X2_AP_APCLI
 	default n
 
 config  MT76X2_AP_SMART_MESH
 	bool "Smart Mesh"
+	depends on MT76X2_AP
 	select MT76X2_AP_MWDS
 	default n
 

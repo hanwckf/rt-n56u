@@ -106,8 +106,7 @@ function change_wireless_bridge(){
 	}
 
 	if (is_apc){
-		if (m == "3")
-			is_apc_auto = 1;
+		is_apc_auto = 1;
 		if (!get_ap_mode())
 			is_apc_wisp = 1;
 	}

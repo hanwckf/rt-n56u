@@ -430,6 +430,7 @@ int  get_mode_radio_wl(void);
 int  get_mode_radio_rt(void);
 int  is_apcli_wisp_wl(void);
 int  is_apcli_wisp_rt(void);
+int  get_apcli_sta_auto(int is_aband);
 char* get_apcli_wisp_ifname(void);
 #if defined (USE_RT3352_MII)
 void check_inic_mii_rebooted(void);

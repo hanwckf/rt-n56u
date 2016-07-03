@@ -153,6 +153,20 @@ is_apcli_wisp_rt(void)
 	return nvram_wlan_get_int(0, "sta_wisp");
 }
 
+int
+get_apcli_sta_auto(int is_aband)
+{
+	int i_sta_auto = 0;
+
+#if defined(USE_RT3352_MII)
+	// iNIC not support ApCliAutoConnect
+	if (is_aband)
+#endif
+		i_sta_auto = nvram_wlan_get_int(is_aband, "sta_auto");
+
+	return i_sta_auto;
+}
+
 char *
 get_apcli_wisp_ifname(void)
 {
@@ -589,7 +603,7 @@ start_wifi_apcli_wl(int radio_on)
 	{
 		wif_control(ifname_apcli, 1);
 		br_add_del_if(IFNAME_BR, ifname_apcli, !is_apcli_wisp_wl() || get_ap_mode());
-		if (i_mode_x == 3 && nvram_wlan_get_int(1, "sta_auto"))
+		if (nvram_wlan_get_int(1, "sta_auto"))
 			doSystem("iwpriv %s set %s=%d", ifname_apcli, "ApCliAutoConnect", 1);
 	}
 	else
@@ -610,7 +624,7 @@ start_wifi_apcli_rt(int radio_on)
 		wif_control(ifname_apcli, 1);
 #if !defined(USE_RT3352_MII)
 		br_add_del_if(IFNAME_BR, ifname_apcli, !is_apcli_wisp_rt() || get_ap_mode());
-		if (i_mode_x == 3 && nvram_wlan_get_int(0, "sta_auto"))
+		if (nvram_wlan_get_int(0, "sta_auto"))
 			doSystem("iwpriv %s set %s=%d", ifname_apcli, "ApCliAutoConnect", 1);
 #endif
 	}
@@ -625,7 +639,7 @@ start_wifi_apcli_rt(int radio_on)
 void
 reconnect_apcli(const char *ifname_apcli, int force)
 {
-	int is_aband, i_mode_x, i_sta_auto;
+	int is_aband, i_mode_x;
 
 	if (strcmp(ifname_apcli, IFNAME_2G_APCLI) == 0)
 		is_aband = 0;
@@ -643,13 +657,7 @@ reconnect_apcli(const char *ifname_apcli, int force)
 	if (i_mode_x != 3 && i_mode_x != 4)
 		return;
 
-	i_sta_auto = nvram_wlan_get_int(is_aband, "sta_auto");
-#if defined(USE_RT3352_MII)
-	if (!is_aband)
-		i_sta_auto = 0; // iNIC not support ApCliAutoConnect
-#endif
-
-	if (i_mode_x == 3 && i_sta_auto) {
+	if (get_apcli_sta_auto(is_aband)) {
 		doSystem("iwpriv %s set %s=%d", ifname_apcli, "ApCliAutoConnect", 1);
 	} else if (force) {
 		doSystem("iwpriv %s set %s=%d", ifname_apcli, "ApCliEnable", 0);

@@ -661,8 +661,16 @@ gen_ralink_config(int is_soc_ap, int is_aband, int disable_autoscan)
 
 	//Channel
 	i_channel = nvram_wlan_get_int(is_aband, "channel");
-	if (i_channel == 0 && disable_autoscan) {
-		i_channel = (is_aband) ? 36 : 1;
+	if (i_channel == 0) {
+		/* force disable autoscan when AP-Client in auto-connect mode */
+		if ((i_mode_x == 3 || i_mode_x == 4) && !disable_autoscan) {
+			if (get_apcli_sta_auto(is_aband))
+				disable_autoscan = 1;
+		}
+		
+		if (disable_autoscan) {
+			i_channel = (is_aband) ? 36 : 1;
+		}
 	}
 	fprintf(fp, "Channel=%d\n", i_channel);
 
@@ -1391,10 +1399,10 @@ gen_ralink_config(int is_soc_ap, int is_aband, int disable_autoscan)
 	p_str = nvram_wlan_get(is_aband, "sta_ssid");
 	if ((i_mode_x == 3 || i_mode_x == 4) && strlen(p_str) > 0)
 		i_val = 1;
-	if (i_mode_x == 3 && nvram_wlan_get_int(is_aband, "sta_auto"))
+	if (get_apcli_sta_auto(is_aband))
 		i_val = 0;
-	fprintf(fp, "ApCliEnable=%d\n", i_val);
 
+	fprintf(fp, "ApCliEnable=%d\n", i_val);
 	fprintf(fp, "ApCliSsid=%s\n", p_str);
 	fprintf(fp, "ApCliBssid=\n");
 

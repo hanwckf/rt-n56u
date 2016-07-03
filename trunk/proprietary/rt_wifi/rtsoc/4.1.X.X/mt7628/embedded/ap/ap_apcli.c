@@ -319,6 +319,12 @@ BOOLEAN ApCliCheckHt(
 		aux_ht_cap->ExtHtCapInfo.RDGSupport = pHtCapability->ExtHtCapInfo.RDGSupport;
 	}
 
+	if (pAd->CommonCfg.Channel < 14) {
+		pApCliEntry->MlmeAux.AddHtInfo.AddHtInfo.RecomWidth = pAddHtInfo->AddHtInfo.RecomWidth;
+		pApCliEntry->MlmeAux.AddHtInfo.AddHtInfo.ExtChanOffset = pAddHtInfo->AddHtInfo.ExtChanOffset;
+		pApCliEntry->MlmeAux.AddHtInfo.ControlChan = pAddHtInfo->ControlChan;
+	}
+
 	/*COPY_AP_HTSETTINGS_FROM_BEACON(pAd, pHtCapability); */
 	return TRUE;
 }
@@ -3148,16 +3154,12 @@ BOOLEAN ApCliAutoConnectExec(
 		UCHAR tempBuf[20];
 		BSS_ENTRY *pBssEntry = &pSsidBssTab->BssEntry[pSsidBssTab->BssNr -1];
 
-		if (pAd->CommonCfg.Channel != pBssEntry->Channel ||
-			pAd->CommonCfg.RegTransmitSetting.field.EXTCHA != pBssEntry->AddHtInfo.AddHtInfo.ExtChanOffset)
+		if (pAd->CommonCfg.Channel != pBssEntry->Channel)
 		{
+			Set_ApCli_Enable_Proc(pAd, "0");
+			
 			sprintf(tempBuf, "%d", pBssEntry->Channel);
 			MTWF_LOG(DBG_CAT_ALL, DBG_SUBCAT_ALL, DBG_LVL_TRACE, ("Switch to channel :%s\n", tempBuf));
-#ifdef APCLI_AUTO_BW_TMP /* should be removed after apcli auto-bw is applied */
-			pAd->CommonCfg.HtCapability.HtCapInfo.ChannelWidth = pBssEntry->AddHtInfo.AddHtInfo.RecomWidth;
-			pAd->CommonCfg.RegTransmitSetting.field.BW = pBssEntry->AddHtInfo.AddHtInfo.RecomWidth;
-#endif /* APCLI_AUTO_BW_TMP */
-			pAd->CommonCfg.RegTransmitSetting.field.EXTCHA = pBssEntry->AddHtInfo.AddHtInfo.ExtChanOffset;
 			Set_Channel_Proc(pAd, tempBuf);
 		}
 			sprintf(tempBuf, "%02X:%02X:%02X:%02X:%02X:%02X",
@@ -3201,30 +3203,25 @@ BOOLEAN ApCliAutoConnectExec(
 */
 
 VOID ApCliSwitchCandidateAP(
-	IN PRTMP_ADAPTER pAd)
+	IN PRTMP_ADAPTER pAd,
+	IN UCHAR ifIndex)
 {
-	//POS_COOKIE  	pObj = (POS_COOKIE) pAd->OS_Cookie;
 	BSS_TABLE 		*pSsidBssTab;
 	PAPCLI_STRUCT	pApCliEntry;
-	UCHAR		ifIdx;
 
 	if (pAd->ScanCtrl.PartialScan.bScanning == TRUE)
 		return;
 
 	MTWF_LOG(DBG_CAT_ALL, DBG_SUBCAT_ALL, DBG_LVL_TRACE, ("---> ApCliSwitchCandidateAP()\n"));
-	for(ifIdx=0; ifIdx<MAX_APCLI_NUM; ifIdx++)
-	{
-		if (pAd->ApCfg.ApCliTab[ifIdx].AutoConnectFlag== TRUE)
-			break;
-	}
 
-	if(ifIdx >= MAX_APCLI_NUM)
-	{
-		MTWF_LOG(DBG_CAT_ALL, DBG_SUBCAT_ALL, DBG_LVL_ERROR, ("Error  ifIdx=%d \n", ifIdx));
-		return ;
-	}
-	pApCliEntry = &pAd->ApCfg.ApCliTab[ifIdx];
+	pApCliEntry = &pAd->ApCfg.ApCliTab[ifIndex];
 	pSsidBssTab = &pApCliEntry->MlmeAux.SsidBssTab;
+
+	if (pSsidBssTab->BssNr == 0)
+	{
+		pAd->ApCfg.ApCliAutoConnectRunning = FALSE;
+		goto exit_and_enable;
+	}
 
 	/*
 		delete (zero) the previous connected-failled entry and always
@@ -3245,17 +3242,11 @@ VOID ApCliSwitchCandidateAP(
 				pBssEntry->Bssid[4],
 				pBssEntry->Bssid[5]);
 		Set_ApCli_Bssid_Proc(pAd, tempBuf);
-		if (pAd->CommonCfg.Channel != pBssEntry->Channel ||
-			pAd->CommonCfg.RegTransmitSetting.field.EXTCHA != pBssEntry->AddHtInfo.AddHtInfo.ExtChanOffset)
+		if (pAd->CommonCfg.Channel != pBssEntry->Channel)
 		{
 			Set_ApCli_Enable_Proc(pAd, "0");
 			sprintf(tempBuf, "%d", pBssEntry->Channel);
 			MTWF_LOG(DBG_CAT_ALL, DBG_SUBCAT_ALL, DBG_LVL_TRACE, ("Switch to channel :%s\n", tempBuf));
-#ifdef APCLI_AUTO_BW_TMP /* should be removed after apcli auto-bw is applied */
-			pAd->CommonCfg.HtCapability.HtCapInfo.ChannelWidth = pBssEntry->AddHtInfo.AddHtInfo.RecomWidth;
-			pAd->CommonCfg.RegTransmitSetting.field.BW = pBssEntry->AddHtInfo.AddHtInfo.RecomWidth;
-#endif /* APCLI_AUTO_BW_TMP */
-			pAd->CommonCfg.RegTransmitSetting.field.EXTCHA = pBssEntry->AddHtInfo.AddHtInfo.ExtChanOffset;
 			Set_Channel_Proc(pAd, tempBuf);
 		}
 	}
@@ -3265,10 +3256,12 @@ VOID ApCliSwitchCandidateAP(
 		pAd->ApCfg.ApCliAutoConnectRunning = FALSE;
 	}
 
+exit_and_enable:
+
 	Set_ApCli_Enable_Proc(pAd, "1");
 	MTWF_LOG(DBG_CAT_ALL, DBG_SUBCAT_ALL, DBG_LVL_TRACE, ("---> ApCliSwitchCandidateAP()\n"));
-
 }
+
 
 BOOLEAN ApcliCompareAuthEncryp(
 	IN PAPCLI_STRUCT pApCliEntry,

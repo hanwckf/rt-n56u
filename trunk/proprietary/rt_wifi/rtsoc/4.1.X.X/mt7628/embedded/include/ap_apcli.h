@@ -283,7 +283,8 @@ BOOLEAN ApcliCompareAuthEncryp(
 	IN CIPHER_SUITE						WPA);
 
 VOID ApCliSwitchCandidateAP(
-	IN PRTMP_ADAPTER pAd);
+	IN PRTMP_ADAPTER pAd,
+	IN UCHAR ifIndex);
 #endif /* APCLI_AUTO_CONNECT_SUPPORT */
 VOID ApCliRxOpenWEPCheck(
 	IN RTMP_ADAPTER *pAd,

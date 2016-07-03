@@ -266,8 +266,7 @@ BOOLEAN ApCliCheckHt(
 		aux_ht_cap->ExtHtCapInfo.RDGSupport = pHtCapability->ExtHtCapInfo.RDGSupport;
 	}
 	
-	if (pAd->CommonCfg.Channel <= 14) {
-		pApCliEntry->MlmeAux.HtCapability.HtCapInfo.ChannelWidth = pHtCapability->HtCapInfo.ChannelWidth;
+	if (pAd->CommonCfg.Channel < 14) {
 		pApCliEntry->MlmeAux.AddHtInfo.AddHtInfo.RecomWidth = pAddHtInfo->AddHtInfo.RecomWidth;
 		pApCliEntry->MlmeAux.AddHtInfo.AddHtInfo.ExtChanOffset = pAddHtInfo->AddHtInfo.ExtChanOffset;
 		pApCliEntry->MlmeAux.AddHtInfo.ControlChan = pAddHtInfo->ControlChan;

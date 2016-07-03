@@ -757,58 +757,52 @@ static VOID ApCliCtrlProbeRspAction(
 				pApCliEntry->Ssid, PRINT_MAC(pApCliEntry->MlmeAux.Bssid));
 		}
 
-		if ((pAd->CommonCfg.Channel <= 14)
+#ifdef DOT11_N_SUPPORT
+		if ((pAd->CommonCfg.Channel < 14)
 #ifdef MAC_REPEATER_SUPPORT
 			&& (CliIdx == 0xFF)
 #endif /* MAC_REPEATER_SUPPORT */
 			)
 		{
-			ADD_HTINFO RootApHtInfo = pAd->ApCfg.ApCliTab[ifIndex].MlmeAux.AddHtInfo.AddHtInfo;
+			ADD_HTINFO RootApHtInfo = pApCliEntry->MlmeAux.AddHtInfo.AddHtInfo;
 
-			if (RootApHtInfo.RecomWidth) {
-				pAd->CommonCfg.RegTransmitSetting.field.BW = BW_40;
-
+			if (pAd->CommonCfg.HtCapability.HtCapInfo.ChannelWidth == BW_40 &&
+			    RootApHtInfo.ExtChanOffset != pAd->CommonCfg.AddHTInfo.AddHtInfo.ExtChanOffset &&
+			    RootApHtInfo.RecomWidth)
+			{
 				if (RootApHtInfo.ExtChanOffset == EXTCHA_ABOVE) {
-					Set_HtExtcha_Proc(pAd, "1");
+					pAd->CommonCfg.RegTransmitSetting.field.EXTCHA = EXTCHA_ABOVE;
 					pApCliEntry->MlmeAux.CentralChannel = pApCliEntry->MlmeAux.Channel + 2;
 				} else {
-					Set_HtExtcha_Proc(pAd, "0");
+					pAd->CommonCfg.RegTransmitSetting.field.EXTCHA = EXTCHA_BELOW;
 					pApCliEntry->MlmeAux.CentralChannel = pApCliEntry->MlmeAux.Channel - 2;
 				}
 
-				pAd->CommonCfg.HtCapability.HtCapInfo.ChannelWidth = BW_40;
+				pAd->CommonCfg.Channel = pApCliEntry->MlmeAux.Channel;
+				pAd->CommonCfg.CentralChannel = pApCliEntry->MlmeAux.CentralChannel;
 #ifdef DOT11N_DRAFT3
 				pAd->CommonCfg.Bss2040NeedFallBack = 0;
 				pAd->CommonCfg.LastBSSCoexist2040.field.BSS20WidthReq = 0;
 #endif /* DOT11N_DRAFT3 */
-			} else {
-				pAd->CommonCfg.RegTransmitSetting.field.BW	= BW_20;
-				pAd->CommonCfg.RegTransmitSetting.field.EXTCHA = EXTCHA_NONE;
-				pAd->CommonCfg.HtCapability.HtCapInfo.ChannelWidth = BW_20;
-				pApCliEntry->MlmeAux.CentralChannel = pApCliEntry->MlmeAux.Channel;
-			}
+				SetCommonHT(pAd);
+				AsicBBPAdjust(pAd);
 
-			pAd->CommonCfg.Channel = pApCliEntry->MlmeAux.Channel;
-			pAd->CommonCfg.CentralChannel = pApCliEntry->MlmeAux.CentralChannel;
+				pAd->hw_cfg.cent_ch = pAd->CommonCfg.CentralChannel;
+				AsicSwitchChannel(pAd, pAd->hw_cfg.cent_ch, FALSE);
+				AsicLockChannel(pAd, pAd->hw_cfg.cent_ch);
 
-			SetCommonHT(pAd);
-			AsicBBPAdjust(pAd);
-
-			pAd->hw_cfg.cent_ch = pAd->CommonCfg.CentralChannel;
-			AsicSwitchChannel(pAd, pAd->hw_cfg.cent_ch, FALSE);
-			AsicLockChannel(pAd, pAd->hw_cfg.cent_ch);
-
-			DBGPRINT(RT_DEBUG_ERROR, ("%s(): driver ch_width(%d), extcha(%d), bbp bw(%d)\n",
+				DBGPRINT(RT_DEBUG_OFF, ("%s(): ch(%d), cent_ch(%d), extcha(%d), bbp bw(%d)\n",
 							__FUNCTION__,
-							pAd->CommonCfg.HtCapability.HtCapInfo.ChannelWidth,
+							pAd->CommonCfg.Channel,
+							pAd->CommonCfg.CentralChannel,
 							pAd->CommonCfg.RegTransmitSetting.field.EXTCHA,
 							pAd->CommonCfg.BBPCurrentBW));
-
-			DBGPRINT(RT_DEBUG_ERROR, ("%s(): hw_cfg.cent_ch = %d\n", __FUNCTION__, pAd->hw_cfg.cent_ch));
 #ifdef DOT11N_DRAFT3
-			pAd->CommonCfg.Bss2040CoexistFlag |= BSS_2040_COEXIST_INFO_SYNC;
+				pAd->CommonCfg.Bss2040CoexistFlag |= BSS_2040_COEXIST_INFO_SYNC;
 #endif /* DOT11N_DRAFT3 */
+			}
 		}
+#endif /* DOT11_N_SUPPORT */
 
 		*pCurrState = APCLI_CTRL_AUTH;
 

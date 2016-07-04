@@ -756,19 +756,13 @@ static VOID ApCliCtrlJoinReqTimeoutAction(
 		if (pAd->ApCfg.ApCliAutoConnectRunning == TRUE)
 			ApCliSwitchCandidateAP(pAd, ifIndex);
 		
-		if ((pAd->ApCfg.ApCliAutoConnectRunning == FALSE) && (pAd->ApCfg.ApCliTab[ifIndex].AutoConnectFlag == TRUE)) 
+		if (pAd->ApCfg.ApCliAutoConnectRunning == FALSE && pApCliEntry->AutoConnectFlag == TRUE)
 		{
 			NDIS_802_11_SSID Ssid;
-			NdisZeroMemory(&Ssid, sizeof(NDIS_802_11_SSID));
-			Ssid.SsidLength =0;
 			
-			if (pAd->ApCfg.ApCliTab[ifIndex].CfgSsidLen)			
-			{
-				NdisMoveMemory(Ssid.Ssid, pAd->ApCfg.ApCliTab[ifIndex].CfgSsid, pAd->ApCfg.ApCliTab[ifIndex].CfgSsidLen);
-				Ssid.SsidLength = pAd->ApCfg.ApCliTab[ifIndex].CfgSsidLen;
-			}
-			pAd->ApCfg.ApCliAutoConnectRunning = TRUE;
 			Set_ApCli_Enable_Proc(pAd, "0");
+			pAd->ApCfg.ApCliAutoConnectRunning = TRUE;
+			NdisZeroMemory(&Ssid, sizeof(NDIS_802_11_SSID));
 			ApSiteSurvey(pAd, &Ssid, SCAN_ACTIVE, FALSE);
 		}
 		return;

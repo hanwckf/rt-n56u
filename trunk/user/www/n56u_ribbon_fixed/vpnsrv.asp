@@ -266,7 +266,7 @@ function change_vpns_type(){
 	showhide_div('row_vpns_mppe', !is_ov);
 	showhide_div('row_vpns_mtu', !is_ov);
 	showhide_div('row_vpns_mru', !is_ov);
-	showhide_div('row_vpns_script', !is_ov);
+	showhide_div('row_vpns_script', 1);
 
 	showhide_div('row_vpns_ov_mode', is_ov);
 	showhide_div('row_vpns_ov_prot', is_ov);

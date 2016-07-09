@@ -629,11 +629,16 @@ on_server_client_connect(int is_tun)
 	char *common_name = safe_getenv("common_name");
 	char *peer_addr_r = safe_getenv("trusted_ip");
 	char *peer_addr_l = safe_getenv("ifconfig_pool_remote_ip");
+	char *dev_ifname = safe_getenv("dev");
+	const char *script_name = VPN_SERVER_UPDOWN_SCRIPT;
 
 #if defined (USE_IPV6)
 	if (!is_valid_ipv4(peer_addr_r))
 		peer_addr_r = safe_getenv("trusted_ip6");
 #endif
+
+	if (strlen(dev_ifname) == 0)
+		dev_ifname = (is_tun) ? IFNAME_SERVER_TUN : IFNAME_SERVER_TAP;
 
 	logmessage(SERVER_LOG_NAME, "peer %s (%s) connected - local IP: %s",
 		peer_addr_r, common_name, peer_addr_l);
@@ -643,6 +648,9 @@ on_server_client_connect(int is_tun)
 		fprintf(fp, "%s %s %s %s\n", "-", peer_addr_l, peer_addr_r, common_name);
 		fclose(fp);
 	}
+
+	if (check_if_file_exist(script_name))
+		doSystem("%s %s %s %s %s %s", script_name, "up", dev_ifname, peer_addr_l, peer_addr_r, common_name);
 }
 
 static void
@@ -655,6 +663,8 @@ on_server_client_disconnect(int is_tun)
 	char *common_name = safe_getenv("common_name");
 	char *peer_addr_r = safe_getenv("trusted_ip");
 	char *peer_addr_l = safe_getenv("ifconfig_pool_remote_ip");
+	char *dev_ifname = safe_getenv("dev");
+	const char *script_name = VPN_SERVER_UPDOWN_SCRIPT;
 	uint64_t llsent = strtoll(safe_getenv("bytes_sent"), NULL, 10);
 	uint64_t llrecv = strtoll(safe_getenv("bytes_received"), NULL, 10);
 
@@ -662,6 +672,9 @@ on_server_client_disconnect(int is_tun)
 	if (!is_valid_ipv4(peer_addr_r))
 		peer_addr_r = safe_getenv("trusted_ip6");
 #endif
+
+	if (strlen(dev_ifname) == 0)
+		dev_ifname = (is_tun) ? IFNAME_SERVER_TUN : IFNAME_SERVER_TAP;
 
 	logmessage(SERVER_LOG_NAME, "peer %s (%s) disconnected, sent: %llu KB, received: %llu KB",
 		peer_addr_r, common_name, llsent / 1024, llrecv / 1024);
@@ -684,6 +697,9 @@ on_server_client_disconnect(int is_tun)
 		rename(clients_l2, clients_l1);
 		unlink(clients_l2);
 	}
+
+	if (check_if_file_exist(script_name))
+		doSystem("%s %s %s %s %s %s", script_name, "down", dev_ifname, peer_addr_l, peer_addr_r, common_name);
 }
 
 static void

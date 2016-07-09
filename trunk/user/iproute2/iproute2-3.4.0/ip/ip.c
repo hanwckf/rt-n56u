@@ -47,6 +47,11 @@ static void usage(void)
 "where  OBJECT := { link | addr | addrlabel | route | rule | neigh | ntable |\n"
 "                   tunnel | tuntap | maddr | mroute | mrule | monitor | xfrm |\n"
 "                   netns | l2tp }\n"
+#endif
+#if defined (HAVE_XFRM)
+"where  OBJECT := { link | addr | addrlabel | route | rule | neigh | ntable |\n"
+"                   tunnel | tuntap | maddr | mroute | mrule | monitor | xfrm |\n"
+"                   netns }\n"
 #else
 "where  OBJECT := { link | addr | addrlabel | route | rule | neigh | ntable |\n"
 "                   tunnel | tuntap | maddr | mroute | mrule | monitor | netns }\n"
@@ -84,7 +89,9 @@ static const struct cmd {
 	{ "tuntap",	do_iptuntap },
 	{ "tap",	do_iptuntap },
 	{ "monitor",	do_ipmonitor },
-//	{ "xfrm",	do_xfrm },
+#if defined (HAVE_XFRM)
+	{ "xfrm",	do_xfrm },
+#endif
 	{ "mroute",	do_multiroute },
 	{ "mrule",	do_multirule },
 	{ "netns",	do_netns },

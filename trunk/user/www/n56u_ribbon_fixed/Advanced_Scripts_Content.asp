@@ -36,6 +36,7 @@ function initial(){
 function textarea_scripts_enabled(v){
 	inputCtrl(document.form['scripts.start_script.sh'], v);
 	inputCtrl(document.form['scripts.started_script.sh'], v);
+	inputCtrl(document.form['scripts.shutdown_script.sh'], v);
 	inputCtrl(document.form['scripts.post_wan_script.sh'], v);
 	inputCtrl(document.form['scripts.post_iptables_script.sh'], v);
 	inputCtrl(document.form['scripts.ez_buttons_script.sh'], v);
@@ -123,7 +124,7 @@ function done_validating(action){
                                             <td>
                                                 <a href="javascript:spoiler_toggle('script0')"><span><#RunPreStart#></span></a>
                                                 <div id="script0" style="display:none;">
-                                                    <textarea rows="24" wrap="off" spellcheck="false" maxlength="8192" class="span12" name="scripts.start_script.sh" style="font-family:'Courier New'; font-size:12px;"><% nvram_dump("scripts.start_script.sh",""); %></textarea>
+                                                    <textarea rows="24" wrap="off" spellcheck="false" maxlength="4096" class="span12" name="scripts.start_script.sh" style="font-family:'Courier New'; font-size:12px;"><% nvram_dump("scripts.start_script.sh",""); %></textarea>
                                                 </div>
                                             </td>
                                         </tr>
@@ -132,6 +133,14 @@ function done_validating(action){
                                                 <a href="javascript:spoiler_toggle('script1')"><span><#RunPostStart#></span></a>
                                                 <div id="script1" style="display:none;">
                                                     <textarea rows="24" wrap="off" spellcheck="false" maxlength="8192" class="span12" name="scripts.started_script.sh" style="font-family:'Courier New'; font-size:12px;"><% nvram_dump("scripts.started_script.sh",""); %></textarea>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                        <tr>
+                                            <td>
+                                                <a href="javascript:spoiler_toggle('script5')"><span><#RunShutdown#></span></a>
+                                                <div id="script5" style="display:none;">
+                                                    <textarea rows="24" wrap="off" spellcheck="false" maxlength="4096" class="span12" name="scripts.shutdown_script.sh" style="font-family:'Courier New'; font-size:12px;"><% nvram_dump("scripts.shutdown_script.sh",""); %></textarea>
                                                 </div>
                                             </td>
                                         </tr>

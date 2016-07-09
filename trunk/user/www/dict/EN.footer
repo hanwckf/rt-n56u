@@ -472,6 +472,7 @@ CustomConf=Custom Configuration File
 UserScripts=Custom User Scripts
 RunPreStart=Run Before Router Initialized:
 RunPostStart=Run After Router Started:
+RunShutdown=Run Before Router Shutdown:
 RunPostWAN=Run After WAN Up/Down Events:
 RunPostFWL=Run After Firewall Rules Restarted:
 RunEzBtns=Run On Press WPS/FN Ez-Buttons:

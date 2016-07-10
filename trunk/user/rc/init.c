@@ -403,14 +403,16 @@ init_nodes(void)
 }
 
 static void
-init_mdev(int update_hotplug)
+init_mdev(void)
 {
 	FILE *fp;
+	const char *mdev_conf = "/etc/mdev.conf";
 
-	fp = fopen("/etc/mdev.conf", "w");
+	unlink(mdev_conf);
+
+	fp = fopen(mdev_conf, "w");
 	if (fp) {
 		fprintf(fp, "%s\n", "# <device regex> <uid>:<gid> <octal permissions> [<@|$|*> <command>]");
-		if (update_hotplug) {
 #if defined (USE_MMC_SUPPORT)
 		fprintf(fp, "%s 0:0 0660 %s/sbin/%s $MDEV $ACTION\n", "mmcblk[0-9]",  "*", "mdev_mmc");
 		fprintf(fp, "%s 0:0 0660 %s/sbin/%s $MDEV $ACTION\n", "mmcblk[0-9]p[0-9]", "*", "mdev_mmc");
@@ -430,17 +432,15 @@ init_mdev(int update_hotplug)
 		fprintf(fp, "%s 0:0 0660 %s/sbin/%s $MDEV $ACTION\n", "ttyACM[0-9]",  "*", "mdev_tty");
 		fprintf(fp, "%s 0:0 %s\n", "video[0-9]", "0660");
 #endif
-		}
 		fprintf(fp, "%s 0:0 %s\n", "null", "0666");
 		fprintf(fp, "%s 0:0 %s\n", "zero", "0666");
 		fprintf(fp, "%s 0:0 %s\n", "full", "0666");
-		fprintf(fp, "%s 0:0 %s\n", "random", "0444");
+		fprintf(fp, "%s 0:0 %s\n", "random", "0666");
 		fprintf(fp, "%s 0:0 %s\n", "urandom", "0444");
 		fclose(fp);
 	}
 
-	if (update_hotplug)
-		fput_string("/proc/sys/kernel/hotplug", "/sbin/mdev");
+	fput_string("/proc/sys/kernel/hotplug", "/sbin/mdev");
 }
 
 static void
@@ -475,14 +475,13 @@ init_main_loop(void)
 
 	/* Basic initialization */
 	init_time();
-	init_mdev(0);
 #if BOARD_RAM_SIZE > 32
 	system("dev_init.sh");
 #else
 	system("dev_init.sh -l");
 #endif
 	init_nodes();
-	init_mdev(1);
+	init_mdev();
 	init_sysctl();
 
 	/* Setup console */

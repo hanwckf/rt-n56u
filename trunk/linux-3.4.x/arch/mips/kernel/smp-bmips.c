@@ -318,6 +318,7 @@ static int bmips_cpu_disable(void)
 	pr_info("SMP: CPU%d is offline\n", cpu);
 
 	set_cpu_online(cpu, false);
+	calculate_cpu_foreign_map();
 	cpu_clear(cpu, cpu_callin_map);
 
 	local_flush_tlb_all();

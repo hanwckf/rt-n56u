@@ -269,6 +269,7 @@ static int octeon_cpu_disable(void)
 	spin_lock(&smp_reserve_lock);
 
 	set_cpu_online(cpu, false);
+	calculate_cpu_foreign_map();
 	cpu_clear(cpu, cpu_callin_map);
 	local_irq_disable();
 	fixup_irqs();

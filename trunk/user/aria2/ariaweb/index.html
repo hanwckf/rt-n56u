@@ -544,7 +544,7 @@
       </div>
       <div class="download-progress download-item">
         <div class="progress">
-          <div ng-class="'progress-bar progress-bar-striped ' + getProgressClass(download)" style="width: {{getProgress(download)}}%;"></div>
+          <div ng-class="'progress-bar progress-bar-striped ' + getProgressClass(download)" ng-attr-style="width: {{getProgress(download)}}%;" style="width: {{getProgress(download)}}%;"></div>
         </div>
       </div>
       <div ng-switch="download.collapsed">

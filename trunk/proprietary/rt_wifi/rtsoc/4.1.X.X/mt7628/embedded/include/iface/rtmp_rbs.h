@@ -58,7 +58,9 @@
 #endif
 
 
+#ifndef RALINK_SYSCTL_BASE
 #define RALINK_SYSCTL_BASE			0xb0000000
+#endif
 
 
 #ifdef LINUX

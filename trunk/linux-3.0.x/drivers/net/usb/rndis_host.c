@@ -433,7 +433,7 @@ generic_rndis_bind(struct usbnet *dev, struct usb_interface *intf, int flags)
 	}
 
 	if (bp[0] & 0x02)
-		dev_hw_addr_random(net, net->dev_addr)
+		dev_hw_addr_random(net, net->dev_addr);
 	else
 		memcpy(net->dev_addr, bp, ETH_ALEN);
 	memcpy(net->perm_addr, net->dev_addr, ETH_ALEN);

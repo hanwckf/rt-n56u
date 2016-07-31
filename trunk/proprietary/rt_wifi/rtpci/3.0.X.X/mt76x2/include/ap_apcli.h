@@ -267,13 +267,19 @@ INT Set_ApCli_PhyMode_Proc(PRTMP_ADAPTER pAd, PSTRING arg);
 #endif /* APCLI_AUTO_BW_SUPPORT */
 
 #ifdef APCLI_AUTO_CONNECT_SUPPORT
-extern INT Set_ApCli_Enable_Proc(
-    IN  PRTMP_ADAPTER pAd,
-    IN  PSTRING arg);
+BOOLEAN ApCliSetIfState(
+	IN PRTMP_ADAPTER pAd,
+	IN UCHAR ifIndex,
+	IN BOOLEAN state);
 
-extern INT Set_ApCli_Bssid_Proc(
-    IN  PRTMP_ADAPTER pAd,
-    IN  PSTRING arg);
+BOOLEAN ApCliSetBssid(
+	IN PRTMP_ADAPTER pAd,
+	IN UCHAR ifIndex,
+	IN UCHAR *Bssid);
+
+BOOLEAN ApCliAutoConnectStart(
+	IN PRTMP_ADAPTER pAd,
+	IN UCHAR ifIndex);
 
 BOOLEAN ApCliAutoConnectExec(
 	IN  PRTMP_ADAPTER   pAd);
@@ -300,6 +306,7 @@ VOID ApCliRxOpenWEPCheck(
 
 VOID ApCliSiteSurvey(
 	IN	RTMP_ADAPTER  		*pAd,
+	IN	UCHAR			ifIndex,
 	IN	NDIS_802_11_SSID	*pSsid,
 	IN	UCHAR				ScanType,
 	IN	BOOLEAN				ChannelSel);

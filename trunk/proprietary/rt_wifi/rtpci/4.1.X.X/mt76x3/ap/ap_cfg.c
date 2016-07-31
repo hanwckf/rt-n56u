@@ -9802,7 +9802,6 @@ INT Set_ApCli_AutoConnect_Proc(
 	POS_COOKIE  		pObj= (POS_COOKIE) pAd->OS_Cookie;
 	UCHAR				ifIndex;
 	AP_ADMIN_CONFIG *pApCfg;
-	NDIS_802_11_SSID Ssid;
 	LONG scan_mode = simple_strtol(arg, 0, 10);
 
 	if (pObj->ioctl_if_type != INT_APCLI)
@@ -9820,25 +9819,10 @@ INT Set_ApCli_AutoConnect_Proc(
 
 	pApCfg->ApCliTab[ifIndex].AutoConnectFlag = TRUE;
 
-	if (pApCfg->ApCliAutoConnectRunning == FALSE)
-	{
-		Set_ApCli_Enable_Proc(pAd, "0");
-		pApCfg->ApCliAutoConnectRunning = TRUE;
-	}
-	else
-	{
-		DBGPRINT(RT_DEBUG_TRACE, ("Set_ApCli_AutoConnect_Proc() is still running\n"));
-		return TRUE;
-	}
-
 	DBGPRINT(RT_DEBUG_TRACE, ("I/F(apcli%d) Set_ApCli_AutoConnect_Proc::(Len=%d,Ssid=%s)\n",
 			ifIndex, pApCfg->ApCliTab[ifIndex].CfgSsidLen, pApCfg->ApCliTab[ifIndex].CfgSsid));
 
-	/*
-		use site survey function to trigger auto connecting (when pAd->ApCfg.ApAutoConnectRunning == TRUE)
-	*/
-	NdisZeroMemory(&Ssid, sizeof(NDIS_802_11_SSID));
-	ApSiteSurvey(pAd, &Ssid, SCAN_ACTIVE, FALSE);
+	ApCliAutoConnectStart(pAd, ifIndex);
 
 	return TRUE;
 }
@@ -10177,7 +10161,7 @@ INT	Set_AP_WscGetConf_Proc(
     UCHAR	            apidx = pObj->ioctl_if, mac_addr[MAC_ADDR_LEN];
     BOOLEAN             bFromApCli = FALSE;
 #ifdef APCLI_SUPPORT
-	BOOLEAN 			apcliEn = pAd->ApCfg.ApCliTab[apidx].Enable;
+	BOOLEAN 			apcliEn = FALSE;
 #endif /* APCLI_SUPPORT */
 #ifdef WSC_V2_SUPPORT
 	PWSC_V2_INFO		pWscV2Info = NULL;
@@ -10197,13 +10181,14 @@ INT	Set_AP_WscGetConf_Proc(
 #ifdef APCLI_SUPPORT
     if (pObj->ioctl_if_type == INT_APCLI)
     {
-    	if (apcliEn == FALSE)
+    	if (pAd->flg_apcli_init == FALSE)
     	{
     		DBGPRINT(RT_DEBUG_TRACE, ("IF(apcli%d) Set_AP_WscGetConf_Proc:: ApCli is disabled.\n", apidx));
     		return FALSE;
     	}
         bFromApCli = TRUE;
 		apidx &= (~MIN_NET_DEVICE_FOR_APCLI);
+		apcliEn = pAd->ApCfg.ApCliTab[apidx].Enable;
         pWscControl = &pAd->ApCfg.ApCliTab[apidx].WscControl;
         DBGPRINT(RT_DEBUG_TRACE, ("IF(apcli%d) Set_AP_WscGetConf_Proc:: This command is from apcli interface now.\n", apidx));
     }
@@ -10259,6 +10244,7 @@ INT	Set_AP_WscGetConf_Proc(
     	/* bring apcli interface down first */
 		pAd->ApCfg.ApCliTab[apidx].Enable = FALSE;
 		ApCliIfDown(pAd);
+		pAd->ApCfg.ApCliTab[apidx].Enable = apcliEn;
 
  		if (WscMode == DEV_PASS_ID_PIN)
     	{
@@ -10266,7 +10252,6 @@ INT	Set_AP_WscGetConf_Proc(
 	                       pAd->ApCfg.ApCliTab[apidx].wdev.if_addr,
 	                       6);
 
-	        pAd->ApCfg.ApCliTab[apidx].Enable = apcliEn;
 			NdisMoveMemory(mac_addr, pAd->ApCfg.ApCliTab[apidx].wdev.if_addr, MAC_ADDR_LEN);
     	}
 		else

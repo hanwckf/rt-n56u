@@ -1628,7 +1628,7 @@ ret:
 #ifdef APCLI_SUPPORT
 		if (pObj->ioctl_if_type == INT_APCLI)
 		{
-			ApCliSiteSurvey(pAd, &Ssid, SCAN_ACTIVE, FALSE);
+			ApCliSiteSurvey(pAd, pObj->ioctl_if, &Ssid, SCAN_ACTIVE, FALSE);
 		}
 		else
 #endif /* APCLI_SUPPORT */

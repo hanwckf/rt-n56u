@@ -274,13 +274,19 @@ BOOLEAN ApCliWaitProbRsp(
 	IN USHORT ifIndex);
 
 #ifdef APCLI_AUTO_CONNECT_SUPPORT
-extern INT Set_ApCli_Enable_Proc(
-    IN  PRTMP_ADAPTER pAd,
-    IN  PSTRING arg);
+BOOLEAN ApCliSetIfState(
+	IN PRTMP_ADAPTER pAd,
+	IN UCHAR ifIndex,
+	IN BOOLEAN state);
 
-extern INT Set_ApCli_Bssid_Proc(
-    IN  PRTMP_ADAPTER pAd,
-    IN  PSTRING arg);
+BOOLEAN ApCliSetBssid(
+	IN PRTMP_ADAPTER pAd,
+	IN UCHAR ifIndex,
+	IN UCHAR *Bssid);
+
+BOOLEAN ApCliAutoConnectStart(
+	IN PRTMP_ADAPTER pAd,
+	IN UCHAR ifIndex);
 
 BOOLEAN ApCliAutoConnectExec(
 	IN  PRTMP_ADAPTER   pAd);

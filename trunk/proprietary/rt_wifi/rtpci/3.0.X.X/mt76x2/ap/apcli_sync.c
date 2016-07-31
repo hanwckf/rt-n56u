@@ -999,13 +999,12 @@ static VOID ApCliEnqueueProbeRequest(
 
 VOID ApCliSiteSurvey(
 	IN	RTMP_ADAPTER  		*pAd,
+	IN	UCHAR			ifIndex,
 	IN	NDIS_802_11_SSID	*pSsid,
 	IN	UCHAR				ScanType,
 	IN	BOOLEAN				ChannelSel)
 {
 	MLME_SCAN_REQ_STRUCT    ScanReq;
-	POS_COOKIE pObj;
-	UCHAR ifIndex;
 
 	if (RTMP_TEST_FLAG(pAd, fRTMP_ADAPTER_BSS_SCAN_IN_PROGRESS))
 	{
@@ -1015,8 +1014,7 @@ VOID ApCliSiteSurvey(
 		DBGPRINT(RT_DEBUG_TRACE, ("ApCliSiteSurvey:: scanning now\n"));
 		return;
 	}
-	pObj = (POS_COOKIE) pAd->OS_Cookie;
-	ifIndex = pObj->ioctl_if;
+
 	if(ifIndex >= MAX_APCLI_NUM)
 		return;
 

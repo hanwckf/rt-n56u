@@ -408,8 +408,14 @@ static VOID ApCliCtrlJoinReqAction(
 		NdisMoveMemory(&(JoinReq.Ssid), pApCliEntry->CfgSsid, JoinReq.SsidLen);
 	}
 
-	printk(KERN_INFO "AP-Client probe: SSID=%s, BSSID=%02x:%02x:%02x:%02x:%02x:%02x\n",
-		JoinReq.Ssid, PRINT_MAC(JoinReq.Bssid));
+	if (JoinReq.SsidLen <= MAX_LEN_OF_SSID)
+	{
+		char SSID[MAX_LEN_OF_SSID + 1] = {0};
+
+		snprintf(SSID, JoinReq.SsidLen + 1, "%s", JoinReq.Ssid);
+		printk(KERN_INFO "AP-Client probe: SSID=%s, BSSID=%02x:%02x:%02x:%02x:%02x:%02x\n",
+			SSID, PRINT_MAC(JoinReq.Bssid));
+	}
 
 	*pCurrState = APCLI_CTRL_PROBE;
 
@@ -460,22 +466,15 @@ static VOID ApCliCtrlJoinReqTimeoutAction(
 			switch to try next candidate AP.
 		*/
 		*pCurrState = APCLI_CTRL_DISCONNECTED;
-		NdisZeroMemory(pAd->MlmeAux.Bssid, MAC_ADDR_LEN);
-		NdisZeroMemory(pAd->MlmeAux.Ssid, MAX_LEN_OF_SSID);
+		NdisZeroMemory(pApCliEntry->ApCliMlmeAux.Bssid, MAC_ADDR_LEN);
+		NdisZeroMemory(pApCliEntry->ApCliMlmeAux.Ssid, MAX_LEN_OF_SSID);
 		pApCliEntry->ProbeReqCnt = 0;
 		
 		if (pAd->ApCfg.ApCliAutoConnectRunning == TRUE)
 			ApCliSwitchCandidateAP(pAd, ifIndex);
 		
-		if ((pAd->ApCfg.ApCliAutoConnectRunning == FALSE) && (pAd->ApCfg.ApCliTab[ifIndex].AutoConnectFlag == TRUE))
-		{
-			NDIS_802_11_SSID Ssid;
-			
-			Set_ApCli_Enable_Proc(pAd, "0");
-			pAd->ApCfg.ApCliAutoConnectRunning = TRUE;
-			NdisZeroMemory(&Ssid, sizeof(NDIS_802_11_SSID));
-			ApSiteSurvey(pAd, &Ssid, SCAN_ACTIVE, FALSE);
-		}
+		if ((pAd->ApCfg.ApCliAutoConnectRunning == FALSE) && (pApCliEntry->AutoConnectFlag == TRUE))
+			ApCliAutoConnectStart(pAd, ifIndex);
 		
 		return;
 	}
@@ -510,8 +509,14 @@ static VOID ApCliCtrlJoinReqTimeoutAction(
 		NdisMoveMemory(&(JoinReq.Ssid), pApCliEntry->CfgSsid, JoinReq.SsidLen);
 	}
 
-	printk(KERN_INFO "AP-Client probe: SSID=%s, BSSID=%02x:%02x:%02x:%02x:%02x:%02x\n",
-		JoinReq.Ssid, PRINT_MAC(JoinReq.Bssid));
+	if (JoinReq.SsidLen <= MAX_LEN_OF_SSID)
+	{
+		char SSID[MAX_LEN_OF_SSID + 1] = {0};
+
+		snprintf(SSID, JoinReq.SsidLen + 1, "%s", JoinReq.Ssid);
+		printk(KERN_INFO "AP-Client probe: SSID=%s, BSSID=%02x:%02x:%02x:%02x:%02x:%02x\n",
+			SSID, PRINT_MAC(JoinReq.Bssid));
+	}
 
 	MlmeEnqueue(pAd, APCLI_SYNC_STATE_MACHINE, APCLI_MT2_MLME_PROBE_REQ,
 		sizeof(APCLI_MLME_JOIN_REQ_STRUCT), &JoinReq, ifIndex);
@@ -567,9 +572,13 @@ static VOID ApCliCtrlProbeRspAction(
 	pApCliEntry = &pAd->ApCfg.ApCliTab[ifIndex];
 	if (Status == MLME_SUCCESS)
 	{
-		if (pApCliEntry->SsidLen > 0) {
+		if (pApCliEntry->SsidLen <= MAX_LEN_OF_SSID)
+		{
+			char SSID[MAX_LEN_OF_SSID + 1] = {0};
+
+			snprintf(SSID, pApCliEntry->SsidLen + 1, "%s", pApCliEntry->Ssid);
 			printk(KERN_INFO "AP-Client probe response: SSID=%s, BSSID=%02x:%02x:%02x:%02x:%02x:%02x\n",
-				pApCliEntry->Ssid, PRINT_MAC(pApCliEntry->ApCliMlmeAux.Bssid));
+				SSID, PRINT_MAC(pApCliEntry->ApCliMlmeAux.Bssid));
 		}
 
 #ifdef DOT11_N_SUPPORT

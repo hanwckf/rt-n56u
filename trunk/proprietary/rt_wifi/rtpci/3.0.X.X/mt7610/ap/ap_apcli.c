@@ -2851,6 +2851,75 @@ BOOLEAN ApCli_StatsGet(
 }
 
 #ifdef APCLI_AUTO_CONNECT_SUPPORT
+
+BOOLEAN ApCliSetIfState(
+	IN PRTMP_ADAPTER pAd,
+	IN UCHAR ifIndex,
+	IN BOOLEAN state)
+{
+	pAd->ApCfg.ApCliTab[ifIndex].Enable = state;
+
+	ApCliIfDown(pAd);
+
+	return TRUE;
+}
+
+
+BOOLEAN ApCliSetBssid(
+	IN PRTMP_ADAPTER pAd,
+	IN UCHAR ifIndex,
+	IN UCHAR *Bssid)
+{
+	BOOLEAN apcliEn = pAd->ApCfg.ApCliTab[ifIndex].Enable;
+
+	/* bring apcli interface down first */
+	if (apcliEn == TRUE)
+	{
+		pAd->ApCfg.ApCliTab[ifIndex].Enable = FALSE;
+		ApCliIfDown(pAd);
+	}
+
+	NdisCopyMemory(pAd->ApCfg.ApCliTab[ifIndex].CfgApCliBssid, Bssid, MAC_ADDR_LEN);
+
+	pAd->ApCfg.ApCliTab[ifIndex].Enable = apcliEn;
+
+	return TRUE;
+}
+
+
+BOOLEAN ApCliAutoConnectStart(
+	IN PRTMP_ADAPTER pAd,
+	IN UCHAR ifIndex)
+{
+	AP_ADMIN_CONFIG *pApCfg = &pAd->ApCfg;
+	NDIS_802_11_SSID Ssid;
+
+#ifdef WSC_AP_SUPPORT
+	if ((pApCfg->ApCliTab[ifIndex].WscControl.WscConfMode != WSC_DISABLE) &&
+	    (pApCfg->ApCliTab[ifIndex].WscControl.bWscTrigger == TRUE))
+		return FALSE;
+#endif /* WSC_AP_SUPPORT */
+
+	if (pApCfg->ApCliAutoConnectRunning == FALSE)
+	{
+		ApCliSetIfState(pAd, ifIndex, FALSE);
+		pApCfg->ApCliAutoConnectRunning = TRUE;
+	}
+	else
+	{
+		return TRUE;
+	}
+
+	/*
+		use site survey function to trigger auto connecting (when pAd->ApCfg.ApAutoConnectRunning == TRUE)
+	*/
+	NdisZeroMemory(&Ssid, sizeof(NDIS_802_11_SSID));
+	ApSiteSurvey(pAd, &Ssid, SCAN_ACTIVE, FALSE);
+
+	return TRUE;
+}
+
+
 /* 
 	===================================================
 	
@@ -2888,6 +2957,15 @@ BOOLEAN ApCliAutoConnectExec(
 		DBGPRINT(RT_DEBUG_ERROR, ("Error  ifIdx=%d\n", ifIdx));
 		return FALSE;
 	}
+
+#ifdef WSC_AP_SUPPORT
+	if ((pAd->ApCfg.ApCliTab[ifIdx].WscControl.WscConfMode != WSC_DISABLE) &&
+	    (pAd->ApCfg.ApCliTab[ifIdx].WscControl.bWscTrigger == TRUE))
+	{
+		pAd->ApCfg.ApCliAutoConnectRunning = FALSE;
+		return FALSE;
+	}
+#endif /* WSC_AP_SUPPORT */
 
 	CfgSsidLen = pAd->ApCfg.ApCliTab[ifIdx].CfgSsidLen;
 	pCfgSsid = pAd->ApCfg.ApCliTab[ifIdx].CfgSsid;
@@ -2961,30 +3039,24 @@ BOOLEAN ApCliAutoConnectExec(
 		
 		if (pAd->CommonCfg.Channel != pBssEntry->Channel)
 		{
-			Set_ApCli_Enable_Proc(pAd, "0");
+			ApCliSetIfState(pAd, ifIdx, FALSE);
 			sprintf(tempBuf, "%d", pBssEntry->Channel);
 			DBGPRINT(RT_DEBUG_TRACE, ("Switch to channel :%s\n", tempBuf));
 			Set_Channel_Proc(pAd, tempBuf);
 		}
-			sprintf(tempBuf, "%02X:%02X:%02X:%02X:%02X:%02X", 
-					pBssEntry->Bssid[0],
-					pBssEntry->Bssid[1],
-					pBssEntry->Bssid[2],
-					pBssEntry->Bssid[3],
-					pBssEntry->Bssid[4],
-					pBssEntry->Bssid[5]);
-			Set_ApCli_Bssid_Proc(pAd, tempBuf);
+		
+		ApCliSetBssid(pAd, ifIdx, pBssEntry->Bssid);
 	}
 	else
 	{
 		DBGPRINT(RT_DEBUG_ERROR, ("Error! Out of table range: (BssNr=%d).\n", pSsidBssTab->BssNr) );
-		Set_ApCli_Enable_Proc(pAd, "1");
+		ApCliSetIfState(pAd, ifIdx, TRUE);
 		pAd->ApCfg.ApCliAutoConnectRunning = FALSE;
 		DBGPRINT(RT_DEBUG_TRACE, ("<--- ApCliAutoConnectExec()\n"));
 		return FALSE;
 	}
 
-	Set_ApCli_Enable_Proc(pAd, "1");
+	ApCliSetIfState(pAd, ifIdx, TRUE);
 	DBGPRINT(RT_DEBUG_TRACE, ("<--- ApCliAutoConnectExec()\n"));
 	return TRUE;
 }
@@ -3034,17 +3106,11 @@ VOID ApCliSwitchCandidateAP(
 		UCHAR tempBuf[20];
 		BSS_ENTRY *pBssEntry = &pSsidBssTab->BssEntry[pSsidBssTab->BssNr -1];
 		
-		sprintf(tempBuf, "%02X:%02X:%02X:%02X:%02X:%02X", 
-				pBssEntry->Bssid[0],
-				pBssEntry->Bssid[1],
-				pBssEntry->Bssid[2],
-				pBssEntry->Bssid[3],
-				pBssEntry->Bssid[4],
-				pBssEntry->Bssid[5]);
-		Set_ApCli_Bssid_Proc(pAd, tempBuf);
+		ApCliSetBssid(pAd, ifIndex, pBssEntry->Bssid);
+		
 		if (pAd->CommonCfg.Channel != pBssEntry->Channel)
 		{
-			Set_ApCli_Enable_Proc(pAd, "0");
+			ApCliSetIfState(pAd, ifIndex, FALSE);
 			sprintf(tempBuf, "%d", pBssEntry->Channel);
 			DBGPRINT(RT_DEBUG_TRACE, ("Switch to channel :%s\n", tempBuf));
 			Set_Channel_Proc(pAd, tempBuf);
@@ -3058,7 +3124,7 @@ VOID ApCliSwitchCandidateAP(
 
 exit_and_enable:
 
-	Set_ApCli_Enable_Proc(pAd, "1");
+	ApCliSetIfState(pAd, ifIndex, TRUE);
 	DBGPRINT(RT_DEBUG_TRACE, ("---> ApCliSwitchCandidateAP()\n"));
 }
 

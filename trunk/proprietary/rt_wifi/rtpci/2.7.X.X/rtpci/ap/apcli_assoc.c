@@ -381,7 +381,8 @@ static VOID ApCliMlmeAssocReqAction(
             || (pAd->ApCfg.ApCliTab[ifIndex].AuthMode >= Ndis802_11AuthModeWPA)
 #endif /* APCLI_WPA_SUPPLICANT_SUPPORT */
 #ifdef WSC_AP_SUPPORT
-			&& (pAd->ApCfg.ApCliTab[ifIndex].WscControl.WscConfMode == WSC_DISABLE)
+			&& ((pAd->ApCfg.ApCliTab[ifIndex].WscControl.WscConfMode == WSC_DISABLE) ||
+			    (pAd->ApCfg.ApCliTab[ifIndex].WscControl.bWscTrigger == FALSE))
 #endif /* WSC_AP_SUPPORT */
             )
 		{

@@ -264,13 +264,19 @@ INT AsicSetMacAddrExt(RTMP_ADAPTER *pAd, BOOLEAN enable);
 #endif /* MAC_REPEATER_SUPPORT */
 
 #ifdef APCLI_AUTO_CONNECT_SUPPORT
-extern INT Set_ApCli_Enable_Proc(
-    IN  PRTMP_ADAPTER pAd,
-    IN	RTMP_STRING *arg);
+BOOLEAN ApCliSetIfState(
+	IN PRTMP_ADAPTER pAd,
+	IN UCHAR ifIndex,
+	IN BOOLEAN state);
 
-extern INT Set_ApCli_Bssid_Proc(
-    IN  PRTMP_ADAPTER pAd,
-    IN	RTMP_STRING *arg);
+BOOLEAN ApCliSetBssid(
+	IN PRTMP_ADAPTER pAd,
+	IN UCHAR ifIndex,
+	IN UCHAR *Bssid);
+
+BOOLEAN ApCliAutoConnectStart(
+	IN PRTMP_ADAPTER pAd,
+	IN UCHAR ifIndex);
 
 BOOLEAN ApCliAutoConnectExec(
 	IN  PRTMP_ADAPTER   pAd);

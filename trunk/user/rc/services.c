@@ -138,6 +138,9 @@ restart_crond(void)
 int
 start_networkmap(int first_call)
 {
+	if (first_call && pids("networkmap"))
+		return 0;
+
 	return eval("/usr/sbin/networkmap", (first_call) ? "-w" : "");
 }
 

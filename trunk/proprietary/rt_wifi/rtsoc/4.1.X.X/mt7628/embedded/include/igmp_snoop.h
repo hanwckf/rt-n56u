@@ -35,11 +35,12 @@
 #define IGMP_LEAVE_GROUP			0x17
 #define IGMP_V3_MEMBERSHIP_REPORT	0x22
 
+#define MLD_QUERY			130
 #define MLD_V1_LISTENER_REPORT		131
 #define MLD_V1_LISTENER_DONE		132
 #define MLD_V2_LISTERNER_REPORT		143
 
-#define IGMPMAC_TB_ENTRY_AGEOUT_TIME (120 * OS_HZ)
+#define IGMPMAC_TB_ENTRY_AGEOUT_TIME (135 * OS_HZ)
 
 #define MULTICAST_ADDR_HASH_INDEX(Addr)      (MAC_ADDR_HASH(Addr) & (MAX_LEN_OF_MULTICAST_FILTER_HASH_TABLE - 1))
 
@@ -75,26 +76,12 @@ PMULTICAST_FILTER_TABLE_ENTRY MulticastFilterTableLookup(
 	IN PUCHAR pAddr,
 	IN PNET_DEV dev);
 
-BOOLEAN isIgmpPkt(
-	IN PUCHAR pDstMacAddr,
-	IN PUCHAR pIpHeader);
-
 VOID IGMPSnooping(
 	IN PRTMP_ADAPTER pAd,
 	IN PUCHAR pDstMacAddr,
 	IN PUCHAR pSrcMacAddr,
 	IN PUCHAR pIpHeader,
 	IN PNET_DEV pDev);
-
-BOOLEAN isMldPkt(
-	IN PUCHAR pDstMacAddr,
-	IN PUCHAR pIpHeader,
-	OUT UINT8 *pProtoType,
-	OUT PUCHAR *pMldHeader);
-
-BOOLEAN IPv6MulticastFilterExcluded(
-	IN PUCHAR pDstMacAddr,
-	IN PUCHAR pIpHeader);
 
 VOID MLDSnooping(
 	IN PRTMP_ADAPTER pAd,
@@ -138,8 +125,7 @@ NDIS_STATUS IgmpPktClone(
 	IN INT IgmpPktInGroup,
 	IN PMULTICAST_FILTER_TABLE_ENTRY pGroupEntry,
 	IN UCHAR QueIdx,
-	IN UINT8 UserPriority,
-	IN PNET_DEV pNetDev);
+	IN UINT8 UserPriority);
 
 #endif /* __RTMP_IGMP_SNOOP_H__ */
 

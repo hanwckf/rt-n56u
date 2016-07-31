@@ -2270,7 +2270,7 @@ VOID UAPSD_TriggerFrameHandle(RTMP_ADAPTER *pAd, MAC_TABLE_ENTRY *pEntry, UCHAR 
 				(tr_entry->ps_state != APPS_RETRIEVE_IDLE) &&
 				(tr_entry->ps_state != APPS_RETRIEVE_DONE))
 			{
-				printk("Do not send null frame here.\n"); //snowpin test
+				MTWF_LOG(DBG_CAT_ALL, DBG_SUBCAT_ALL, DBG_LVL_TRACE, ("Do not send null frame here.\n")); //snowpin test
 				tr_entry->bEospNullSnd = TRUE;
 				tr_entry->EospNullUp = UpOfFrame;
 			}

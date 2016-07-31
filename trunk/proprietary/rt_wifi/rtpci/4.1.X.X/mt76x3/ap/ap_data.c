@@ -295,41 +295,20 @@ INT APSendPacket(RTMP_ADAPTER *pAd, PNDIS_PACKET pPacket)
 		//TODO :  check global setting only!
 		if (pAd->ApCfg.IgmpSnoopEnable /*&& wdev->IgmpSnoopEnable*/)
 		{
-			if (IgmpPktInfoQuery(pAd, pSrcBufVA, pPacket, wdev,
-									&InIgmpGroup, &pGroupEntry) != NDIS_STATUS_SUCCESS)
+			if (IgmpPktInfoQuery(pAd, pSrcBufVA, pPacket, wdev, &InIgmpGroup, &pGroupEntry) != NDIS_STATUS_SUCCESS)
 				return NDIS_STATUS_FAILURE;
 		}
 
 		// TODO: shiang-usw, need to revise for Igmp snooping case!!
-		if (InIgmpGroup)
+		if (InIgmpGroup != IGMP_NONE)
 		{
 			/* if it's a mcast packet in igmp gourp. ucast clone it for all members in the gourp. */
-			if (((InIgmpGroup == IGMP_IN_GROUP)
-				&& pGroupEntry
-				&& (IgmpMemberCnt(&pGroupEntry->MemberList) > 0)
-				))
+			if (((InIgmpGroup == IGMP_IN_GROUP) && pGroupEntry && (IgmpMemberCnt(&pGroupEntry->MemberList) > 0)) ||
+			     (InIgmpGroup == IGMP_PKT))
 			{
-				NDIS_STATUS PktCloneResult = IgmpPktClone(pAd, pPacket, InIgmpGroup, 	pGroupEntry,
-													QueIdx, UserPriority, GET_OS_PKT_NETDEV(pPacket));
+				NDIS_STATUS PktCloneResult = IgmpPktClone(pAd, pPacket, InIgmpGroup, pGroupEntry, QueIdx, UserPriority);
 				RELEASE_NDIS_PACKET(pAd, pPacket, NDIS_STATUS_SUCCESS);
 				return PktCloneResult; // need to alway return to prevent skb double free.
-			} else if (InIgmpGroup == IGMP_PKT) {
-				NDIS_STATUS CloneResult =0;
-				UserPriority = 0;
-				QueIdx = QID_AC_BE;
-				RTMP_SET_PACKET_UP(pPacket, UserPriority);
-				RTMP_SET_PACKET_TXTYPE(pPacket, TX_MCAST_FRAME);
-
-				for (Repeat=0; Repeat<3; Repeat++)
-				{
-					CloneResult = IgmpProtocolPktClone(pAd, pPacket, InIgmpGroup, NULL,
-														QueIdx, UserPriority, GET_OS_PKT_NETDEV(pPacket));
-					if (CloneResult == NDIS_STATUS_FAILURE)
-						break;
-				
-				}
-					RELEASE_NDIS_PACKET(pAd, pPacket, NDIS_STATUS_SUCCESS);
-					return CloneResult;
 			}
 		}
 		else 

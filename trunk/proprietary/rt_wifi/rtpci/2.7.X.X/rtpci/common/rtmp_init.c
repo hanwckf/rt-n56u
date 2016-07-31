@@ -3973,7 +3973,7 @@ VOID	RTMPModTimer(
 			RTMP_OS_Mod_Timer(&pTimer->TimerObj, Value);
 			RTMP_SEM_UNLOCK(&TimerSemLock);
 		}
-		DBGPRINT(RT_DEBUG_TRACE,("%s: %lx\n",__FUNCTION__, (ULONG)pTimer));
+		DBGPRINT(RT_DEBUG_LOUD,("%s: %lx\n",__FUNCTION__, (ULONG)pTimer));
 	}
 	else
 	{

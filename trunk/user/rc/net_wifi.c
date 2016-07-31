@@ -227,6 +227,16 @@ check_apcli_wan(int is_5g, int radio_on)
 	}
 }
 
+static inline void
+wif_control_m2u(int is_aband, const char *wifname)
+{
+#if !defined(USE_IGMP_SNOOP)
+	int i_m2u = nvram_wlan_get_int(is_aband, "IgmpSnEnable");
+
+	brport_set_m2u(wifname, i_m2u);
+#endif
+}
+
 #if defined(USE_RT3352_MII)
 static void
 update_inic_mii(void)
@@ -417,7 +427,6 @@ start_wifi_ap_wl(int radio_on)
 {
 #if BOARD_HAS_5G_RADIO
 	int i_mode_x = get_mode_radio_wl();
-	int i_m2u = nvram_wlan_get_int(1, "IgmpSnEnable");
 
 	// check WDS only, ApCli only or Radio disabled
 	if (i_mode_x == 1 || i_mode_x == 3 || !radio_on)
@@ -433,13 +442,13 @@ start_wifi_ap_wl(int radio_on)
 	{
 		wif_control(IFNAME_5G_MAIN, 1);
 		br_add_del_if(IFNAME_BR, IFNAME_5G_MAIN, 1);
-		brport_set_m2u(IFNAME_5G_MAIN, i_m2u);
+		wif_control_m2u(1, IFNAME_5G_MAIN);
 		
 		if (is_guest_allowed_wl())
 		{
 			wif_control(IFNAME_5G_GUEST, 1);
 			br_add_del_if(IFNAME_BR, IFNAME_5G_GUEST, 1);
-			brport_set_m2u(IFNAME_5G_GUEST, i_m2u);
+			wif_control_m2u(1, IFNAME_5G_GUEST);
 		}
 	}
 #endif
@@ -449,9 +458,7 @@ void
 start_wifi_ap_rt(int radio_on)
 {
 	int i_mode_x = get_mode_radio_rt();
-#if !defined(USE_RT3352_MII)
-	int i_m2u = nvram_wlan_get_int(0, "IgmpSnEnable");
-#else
+#if defined(USE_RT3352_MII)
 	int is_ap_mode = get_ap_mode();
 #endif
 
@@ -490,13 +497,13 @@ start_wifi_ap_rt(int radio_on)
 	{
 		wif_control(IFNAME_2G_MAIN, 1);
 		br_add_del_if(IFNAME_BR, IFNAME_2G_MAIN, 1);
-		brport_set_m2u(IFNAME_2G_MAIN, i_m2u);
+		wif_control_m2u(0, IFNAME_2G_MAIN);
 		
 		if (is_guest_allowed_rt())
 		{
 			wif_control(IFNAME_2G_GUEST, 1);
 			br_add_del_if(IFNAME_BR, IFNAME_2G_GUEST, 1);
-			brport_set_m2u(IFNAME_2G_GUEST, i_m2u);
+			wif_control_m2u(0, IFNAME_2G_GUEST);
 		}
 	}
 #endif
@@ -928,7 +935,6 @@ control_guest_wl(int guest_on, int manual)
 	const char *ifname_ap = IFNAME_5G_GUEST;
 	int radio_on = get_enabled_radio_wl();
 	int i_mode_x = get_mode_radio_wl();
-	int i_m2u = nvram_wlan_get_int(1, "IgmpSnEnable");
 
 	// check WDS only, ApCli only or Radio disabled (force or by schedule)
 	if ((guest_on) && (i_mode_x == 1 || i_mode_x == 3 || !radio_on || !is_interface_up(IFNAME_5G_MAIN)))
@@ -943,7 +949,7 @@ control_guest_wl(int guest_on, int manual)
 			is_ap_changed = 1;
 		}
 		br_add_del_if(IFNAME_BR, ifname_ap, 1);
-		brport_set_m2u(ifname_ap, i_m2u);
+		wif_control_m2u(1, ifname_ap);
 	}
 	else
 	{
@@ -971,9 +977,7 @@ control_guest_rt(int guest_on, int manual)
 	const char *ifname_ap = IFNAME_2G_GUEST;
 	int radio_on = get_enabled_radio_rt();
 	int i_mode_x = get_mode_radio_rt();
-#if !defined(USE_RT3352_MII)
-	int i_m2u = nvram_wlan_get_int(0, "IgmpSnEnable");
-#else
+#if defined(USE_RT3352_MII)
 	int is_ap_mode = get_ap_mode();
 #endif
 
@@ -994,7 +998,7 @@ control_guest_rt(int guest_on, int manual)
 			br_add_del_if(IFNAME_BR, IFNAME_INIC_GUEST_VLAN, 1);
 #else
 		br_add_del_if(IFNAME_BR, ifname_ap, 1);
-		brport_set_m2u(ifname_ap, i_m2u);
+		wif_control_m2u(0, ifname_ap);
 #endif
 	}
 	else

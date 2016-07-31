@@ -1447,11 +1447,9 @@ gen_ralink_config(int is_soc_ap, int is_aband, int disable_autoscan)
 
 	// IgmpSnEnable (internal IGMP Snooping)
 	i_val = 0;
-#if defined(USE_RT3352_MII)
-	if (!is_aband) {
-		i_val = nvram_wlan_get_int(is_aband, "IgmpSnEnable");
-		if (i_val) i_val = 1;
-	}
+#if defined(USE_IGMP_SNOOP) || defined(USE_RT3352_MII)
+	i_val = nvram_wlan_get_int(is_aband, "IgmpSnEnable");
+	if (i_val) i_val = 1;
 #endif
 	fprintf(fp, "IgmpSnEnable=%d\n", i_val);
 

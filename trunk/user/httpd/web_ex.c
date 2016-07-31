@@ -982,7 +982,7 @@ validate_asp_apply(webs_t wp, int sid)
 				wl_modified |= WIFI_IWPRIV_CHANGE_BIT;
 			}
 #endif
-#if 0
+#if defined (USE_IGMP_SNOOP)
 			else if (!strcmp(v->name, "wl_IgmpSnEnable"))
 			{
 				set_wifi_param_int(IFNAME_5G_MAIN, "IgmpSnEnable", value, 0, 1);
@@ -1055,7 +1055,7 @@ validate_asp_apply(webs_t wp, int sid)
 				rt_modified |= WIFI_IWPRIV_CHANGE_BIT;
 			}
 #endif
-#if defined(USE_RT3352_MII)
+#if defined (USE_IGMP_SNOOP) || defined(USE_RT3352_MII)
 			else if (!strcmp(v->name, "rt_IgmpSnEnable"))
 			{
 				set_wifi_param_int(IFNAME_2G_MAIN, "IgmpSnEnable", value, 0, 1);

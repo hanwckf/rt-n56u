@@ -431,8 +431,12 @@ generic_rndis_bind(struct usbnet *dev, struct usb_interface *intf, int flags)
 		dev_err(&intf->dev, "rndis get ethaddr, %d\n", retval);
 		goto halt_fail_and_release;
 	}
-	memcpy(net->dev_addr, bp, ETH_ALEN);
-	memcpy(net->perm_addr, bp, ETH_ALEN);
+
+	if (bp[0] & 0x02)
+		eth_hw_addr_random(net);
+	else
+		memcpy(net->dev_addr, bp, ETH_ALEN);
+	memcpy(net->perm_addr, net->dev_addr, ETH_ALEN);
 
 	/* set a nonzero filter to enable data transfers */
 	memset(u.set, 0, sizeof *u.set);

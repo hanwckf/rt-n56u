@@ -1774,8 +1774,15 @@ VOID UserCfgInit(RTMP_ADAPTER *pAd)
 			apcli_entry->SavedPMKNum=0;
 			RTMPZeroMemory(apcli_entry->SavedPMK, (PMKID_NO * sizeof(BSSID_INFO)));
 #endif/*WPA_SUPPLICANT_SUPPORT*/
-			pAd->ApCfg.ApCliTab[j].bBlockAssoc=FALSE;
-			pAd->ApCfg.ApCliTab[j].MicErrCnt=0;
+			apcli_entry->bBlockAssoc=FALSE;
+			apcli_entry->MicErrCnt=0;
+
+			apcli_entry->Valid = FALSE;
+			apcli_entry->CfgSsidLen = 0;
+			NdisZeroMemory(&(apcli_entry->CfgSsid), MAX_LEN_OF_SSID);
+			NdisZeroMemory(apcli_entry->CfgApCliBssid, MAC_ADDR_LEN);
+			NdisZeroMemory(apcli_entry->MlmeAux.Bssid, MAC_ADDR_LEN);
+
 #ifdef APCLI_CONNECTION_TRIAL
 			apcli_entry->TrialCh = 0;//if the channel is 0, AP will connect the rootap is in the same channel with ra0.
 #endif // APCLI_CONNECTION_TRIAL 

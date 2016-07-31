@@ -3796,6 +3796,12 @@ VOID UserCfgInit(RTMP_ADAPTER *pAd)
 #endif /* APCLI_AUTO_CONNECT_SUPPORT */
 			apcli_entry->bBlockAssoc=FALSE;
 			apcli_entry->MicErrCnt=0;
+
+			apcli_entry->Valid = FALSE;
+			apcli_entry->CfgSsidLen = 0;
+			NdisZeroMemory(&(apcli_entry->CfgSsid), MAX_LEN_OF_SSID);
+			NdisZeroMemory(apcli_entry->CfgApCliBssid, MAC_ADDR_LEN);
+			NdisZeroMemory(apcli_entry->MlmeAux.Bssid, MAC_ADDR_LEN);
 		}
 #endif /* APCLI_SUPPORT */
 		pAd->ApCfg.EntryClientCount = 0;

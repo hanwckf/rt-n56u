@@ -2352,6 +2352,7 @@ VOID AsicTxCntUpdate(RTMP_ADAPTER *pAd, MAC_TABLE_ENTRY *pEntry, MT_TX_COUNTER *
 */
 
 		TxSuccess = pTxInfo->TxCount -pTxInfo->TxFailCount;
+		TxRetransmit = pTxInfo->TxFailCount;
 
 		if ( pTxInfo->TxFailCount == 0 )
 		{
@@ -2374,8 +2375,12 @@ VOID AsicTxCntUpdate(RTMP_ADAPTER *pAd, MAC_TABLE_ENTRY *pEntry, MT_TX_COUNTER *
 
 		if ((TxSuccess == 0) && (pTxInfo->TxFailCount > 0))
 		{
+			/* prevent fast drop long range clients */
+			if (TxRetransmit > MAC_ENTRY_LIFE_CHECK_CNT / 4)
+				TxRetransmit = MAC_ENTRY_LIFE_CHECK_CNT / 4;
+			
 			/* No TxPkt ok in this period as continue tx fail */
-			pEntry->ContinueTxFailCnt += pTxInfo->TxFailCount;
+			pEntry->ContinueTxFailCnt += TxRetransmit;
 		}
 		else
 		{

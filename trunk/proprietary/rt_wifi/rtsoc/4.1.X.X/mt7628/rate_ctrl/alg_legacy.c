@@ -84,8 +84,16 @@ VOID APMlmeDynamicTxRateSwitching(RTMP_ADAPTER *pAd)
 
 		/* check if this entry need to switch rate automatically */
 		if (RTMPCheckEntryEnableAutoRateSwitch(pAd, pEntry) == FALSE)
-			continue;
+		{
+#ifdef MT_MAC
+			if (pAd->chipCap.hif_type == HIF_MT) {
+				MT_TX_COUNTER TxInfo;
 
+				MtAsicTxCntUpdate(pAd, pEntry, &TxInfo);
+			}
+#endif /* MT_MAC */
+			continue;
+		}
 
 		MlmeSelectTxRateTable(pAd, pEntry, &pTable, &TableSize, &InitTxRateIdx);
 		pEntry->pTable = pTable;

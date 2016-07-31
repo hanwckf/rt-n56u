@@ -93,6 +93,11 @@ NDIS_STATUS APInitialize(RTMP_ADAPTER *pAd)
 	MulticastFilterTableInit(pAd, &pAd->pMulticastFilterTable);
 #endif /* IGMP_SNOOP_SUPPORT */
 
+#ifdef DROP_MASK_SUPPORT
+	NdisAllocateSpinLock(pAd, &pAd->drop_mask_lock);
+	asic_drop_mask_reset(pAd);
+#endif /* DROP_MASK_SUPPORT */
+
 #ifdef DOT11V_WNM_SUPPORT
 	initList(&pAd->DMSEntryList);
 #endif /* DOT11V_WNM_SUPPORT */
@@ -1352,6 +1357,11 @@ VOID MacTableMaintenance(RTMP_ADAPTER *pAd)
 			if (pEntry->PsMode != PWR_SAVE)
 			{
 				bDisconnectSta = TRUE;
+#ifdef DROP_MASK_SUPPORT
+				asic_set_drop_mask(pAd, pEntry->Aid, TRUE);
+#else
+				ClearTxRingClientAck(pAd, pEntry);
+#endif
 				DBGPRINT(RT_DEBUG_WARN, ("STA-%02x:%02x:%02x:%02x:%02x:%02x had left (%d %lu)\n",
 					PRINT_MAC(pEntry->Addr),
 					pEntry->ContinueTxFailCnt, pAd->ApCfg.EntryLifeCheck));
@@ -1425,6 +1435,9 @@ VOID MacTableMaintenance(RTMP_ADAPTER *pAd)
 								END_OF_ARGS);				
 				MiniportMMRequest(pAd, 0, pOutBuffer, FrameLen);
 				MlmeFreeMemory(pAd, pOutBuffer);
+
+				/* wait for DEAUTH processed */
+				OS_WAIT(5);
 
 #ifdef MAC_REPEATER_SUPPORT
 				if ((pAd->ApCfg.bMACRepeaterEn == TRUE) && IS_ENTRY_CLIENT(pEntry)

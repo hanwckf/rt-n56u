@@ -1723,9 +1723,8 @@ VOID NICResetFromError(RTMP_ADAPTER *pAd)
 
 	========================================================================
 */
-static VOID ClearTxRingClientAck(RTMP_ADAPTER *pAd, MAC_TABLE_ENTRY *pEntry)
+VOID ClearTxRingClientAck(RTMP_ADAPTER *pAd, MAC_TABLE_ENTRY *pEntry)
 {
-#ifdef RTMP_MAC
 	INT index;
 	USHORT TxIdx;
 	RTMP_TX_RING *pTxRing;
@@ -1736,9 +1735,6 @@ static VOID ClearTxRingClientAck(RTMP_ADAPTER *pAd, MAC_TABLE_ENTRY *pEntry)
 	TXD_STRUC	TxD;
 	TXWI_STRUC *pDestTxWI;
 	TXWI_STRUC	TxWI;
-#endif /* RT_BIG_ENDIAN */
-#endif /* RTMP_MAC */
-#ifdef RT_BIG_ENDIAN
 	UINT8 TXWISize;
 #endif /* RT_BIG_ENDIAN */
 
@@ -1749,13 +1745,6 @@ static VOID ClearTxRingClientAck(RTMP_ADAPTER *pAd, MAC_TABLE_ENTRY *pEntry)
 	TXWISize = pAd->chipCap.TXWISize;
 #endif /* RT_BIG_ENDIAN */
 
-#ifdef RLT_MAC
-	if (pAd->chipCap.hif_type == HIF_RLT) {
-		DBGPRINT(RT_DEBUG_OFF, ("%s(): TBD for this function!\n", __FUNCTION__));
-	}
-#endif /* RLT_MAC */
-#ifdef RTMP_MAC
-	if (pAd->chipCap.hif_type == HIF_RTMP) {
 		for (index = 3; index >= 0; index--)
 		{
 			pTxRing = &pAd->TxRing[index];
@@ -1781,8 +1770,14 @@ static VOID ClearTxRingClientAck(RTMP_ADAPTER *pAd, MAC_TABLE_ENTRY *pEntry)
 					 pTxWI = (TXWI_STRUC *)pTxRing->Cell[TxIdx].DmaBuf.AllocVa;
 #endif /* RT_BIG_ENDIAN */
 
-					if (pTxWI->TXWI_O.wcid == pEntry->wcid)
+#ifdef RTMP_MAC
+					if (pAd->chipCap.hif_type == HIF_RTMP && pTxWI->TXWI_O.wcid == pEntry->wcid)
 						pTxWI->TXWI_O.ACK = FALSE;
+#endif /* RTMP_MAC */
+#ifdef RLT_MAC
+					if (pAd->chipCap.hif_type == HIF_RLT && pTxWI->TXWI_N.wcid == pEntry->wcid)
+						pTxWI->TXWI_N.ACK = FALSE;
+#endif /* RTL_MAC */
 
 #ifdef RT_BIG_ENDIAN
 					RTMPWIEndianChange(pAd, (PUCHAR)pTxWI, TYPE_TXWI);
@@ -1791,8 +1786,6 @@ static VOID ClearTxRingClientAck(RTMP_ADAPTER *pAd, MAC_TABLE_ENTRY *pEntry)
 				}
 			}
 		}
-	}
-#endif /* RTMP_MAC */
 }
 #endif /* RTMP_MAC_PCI */
 
@@ -1800,25 +1793,31 @@ VOID ApTxFailCntUpdate(RTMP_ADAPTER *pAd, MAC_TABLE_ENTRY *pEntry, ULONG TxSucce
 {
 #ifdef RT65xx
 	if (IS_RT65XX(pAd)) {
-        	if (pAd->MacTab.Size <= 8) {
-			
+		if (pAd->MacTab.Size <= 8) {
 #ifdef UAPSD_SUPPORT
-				/* check the EOSP packet by RateCtrl's way */
-                UAPSD_SP_AUE_Handle(pAd, pEntry, TRUE);
+			/* check the EOSP packet by RateCtrl's way */
+			UAPSD_SP_AUE_Handle(pAd, pEntry, TRUE);
 #endif /* UAPSD_SUPPORT */
 			
-				if ((TxSuccess == 0) && (TxRetransmit > 0))
-				{
-						/* No TxPkt ok in this period as continue tx fail */
-						pEntry->ContinueTxFailCnt += TxRetransmit;
-				}
-				else
-				{
-						pEntry->ContinueTxFailCnt = 0;
-				}
+			if ((TxSuccess == 0) && (TxRetransmit > 0))
+			{
+				/* prevent fast drop long range clients */
+				if (TxRetransmit > MAC_ENTRY_LIFE_CHECK_CNT / 4)
+					TxRetransmit = MAC_ENTRY_LIFE_CHECK_CNT / 4;
+				
+				/* No TxPkt ok in this period as continue tx fail */
+				pEntry->ContinueTxFailCnt += TxRetransmit;
+			}
+			else
+			{
+				pEntry->ContinueTxFailCnt = 0;
+			}
 
-				DBGPRINT(RT_DEBUG_INFO, ("%s:(OK:%ld, FAIL:%ld, ConFail:%d) \n",__FUNCTION__,
-						TxSuccess, TxRetransmit, pEntry->ContinueTxFailCnt));
+			if (TxSuccess > 0)
+				pEntry->NoDataIdleCount = 0;
+
+			DBGPRINT(RT_DEBUG_INFO, ("%s:(OK:%ld, FAIL:%ld, ConFail:%d) \n",__FUNCTION__,
+					TxSuccess, TxRetransmit, pEntry->ContinueTxFailCnt));
 		}
 	}
 	else
@@ -2028,6 +2027,11 @@ VOID NICUpdateFifoStaCounters(RTMP_ADAPTER *pAd)
 #endif /* DOT11_N_SUPPORT */
 
 			/* Update the continuous transmission counter.*/
+#ifdef FIFO_EXT_SUPPORT
+			if (StaFifoExt.field.txRtyCnt > 0)
+				pEntry->ContinueTxFailCnt += StaFifoExt.field.txRtyCnt;
+			else
+#endif
 			pEntry->ContinueTxFailCnt++;
 
 			if(pEntry->PsMode == PWR_ACTIVE)

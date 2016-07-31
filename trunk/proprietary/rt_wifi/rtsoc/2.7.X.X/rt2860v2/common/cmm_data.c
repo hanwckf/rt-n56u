@@ -2611,17 +2611,12 @@ static VOID asic_change_tx_retry(
 {
 	UINT32  TxRtyCfg, MacReg = 0;
 
-	if (pAd->CommonCfg.txRetryCfg == 0) {
-		/* txRetryCfg is invalid, should not be 0 */
-		DBGPRINT(RT_DEBUG_TRACE, ("txRetryCfg=%x\n", pAd->CommonCfg.txRetryCfg));
-		return;
-	}
-
 	if (num < 3)
 	{
-		/* Tx date retry default 15 */
+		/* Tx data retry 31/15 (thres 2000) */
 		RTMP_IO_READ32(pAd, TX_RTY_CFG, &TxRtyCfg);
-		TxRtyCfg = ((TxRtyCfg & 0xffff0000) | (pAd->CommonCfg.txRetryCfg & 0x0000ffff));
+		TxRtyCfg &= 0xf0000000;
+		TxRtyCfg |= 0x07d01f0f;
 		RTMP_IO_WRITE32(pAd, TX_RTY_CFG, TxRtyCfg);
 
 		/* Tx RTS retry default 32 */
@@ -2632,8 +2627,10 @@ static VOID asic_change_tx_retry(
 	}
 	else
 	{
-		/* Tx date retry 8 */
-		TxRtyCfg = 0x4100080A;
+		/* Tx data retry 8/10 (thres 256)  */
+		RTMP_IO_READ32(pAd, TX_RTY_CFG, &TxRtyCfg);
+		TxRtyCfg &= 0xf0000000;
+		TxRtyCfg |= 0x0100080A;
 		RTMP_IO_WRITE32(pAd, TX_RTY_CFG, TxRtyCfg);
 
 		/* Tx RTS retry 3 */
@@ -5049,118 +5046,42 @@ VOID drop_mask_init_per_client(
 	PRTMP_ADAPTER	ad,
 	PMAC_TABLE_ENTRY entry)
 {
-	BOOLEAN cancelled = 0;
+	BOOLEAN cancelled = FALSE;
 
-	if (entry->tx_dropmask_timer.Valid)
-		RTMPCancelTimer(&entry->tx_dropmask_timer, &cancelled);
-	RTMPInitTimer(ad, &entry->tx_dropmask_timer, GET_TIMER_FUNCTION(tx_drop_mask_timer_action), entry, FALSE);
+	if (entry->dropmask_timer.Valid)
+		RTMPCancelTimer(&entry->dropmask_timer, &cancelled);
 
-	NdisAllocateSpinLock(ad, &entry->drop_mask_lock);
+	RTMPInitTimer(ad, &entry->dropmask_timer, GET_TIMER_FUNCTION(drop_mask_timer_action), entry, FALSE);
 
-	entry->tx_fail_drop_mask_enabled = 0;
-	entry->ps_drop_mask_enabled = 0;
-	asic_set_drop_mask(ad, entry->Aid, 0);
+	asic_set_drop_mask(ad, entry->Aid, FALSE);
 }
-
 
 VOID drop_mask_release_per_client(
 	PRTMP_ADAPTER	ad,
 	PMAC_TABLE_ENTRY entry)
 {
-	BOOLEAN cancelled = 0;
+	BOOLEAN cancelled = FALSE;
 
-	RTMPCancelTimer(&entry->tx_dropmask_timer, &cancelled);
-	RTMPReleaseTimer(&entry->tx_dropmask_timer, &cancelled);
-
-	entry->tx_fail_drop_mask_enabled = 0;
-	entry->ps_drop_mask_enabled = 0;
-	asic_set_drop_mask(ad, entry->Aid, 0);
-
-	if (ad->ApCfg.EntryClientCount == 2)
-	{
-		/* clear drop mask before client number fall below to threshold */
-		drop_mask_per_client_reset(ad);
-	}
-
-	NdisFreeSpinLock(&entry->drop_mask_lock);
+	RTMPCancelTimer(&entry->dropmask_timer, &cancelled);
+	RTMPReleaseTimer(&entry->dropmask_timer, &cancelled);
 }
 
-
-VOID drop_mask_per_client_reset(
-	PRTMP_ADAPTER	ad)
-{
-	INT i;
-	UINT32 max_wcid_num = MAX_LEN_OF_MAC_TABLE;
-
-	for ( i = 0; i < max_wcid_num; i++)
-	{
-		PMAC_TABLE_ENTRY entry = &ad->MacTab.Content[i];
-		if (!IS_ENTRY_NONE(entry))
-		{
-			NdisAcquireSpinLock(&entry->drop_mask_lock);
-			entry->tx_fail_drop_mask_enabled = 0;
-			entry->ps_drop_mask_enabled = 0;
-			NdisReleaseSpinLock(&entry->drop_mask_lock);
-		}
-	}
-
-	asic_drop_mask_reset(ad);
-}
-
-
-VOID set_drop_mask_per_client(
+VOID drop_mask_set_per_client(
 	PRTMP_ADAPTER		ad,
 	PMAC_TABLE_ENTRY 	entry,
-	UINT8				type,
 	BOOLEAN				enable)
 {
-	BOOLEAN cancelled = 0;
-	BOOLEAN write_to_mac = 0;
-	BOOLEAN mask_is_enabled = 0;
-	UINT32 timeout = 10;
+	BOOLEAN cancelled = FALSE;
 
-	RTMPCancelTimer(&entry->tx_dropmask_timer, &cancelled);
+	RTMPCancelTimer(&entry->dropmask_timer, &cancelled);
 
-	NdisAcquireSpinLock(&entry->drop_mask_lock);
-	switch (type)
-	{
-		case 0: /* set drop mask due to tx_fail too high or client is in power saving */
-		{
-			write_to_mac |= (enable ^ entry->tx_fail_drop_mask_enabled);
-			write_to_mac |= (enable ^ entry->ps_drop_mask_enabled);
-			entry->tx_fail_drop_mask_enabled = (enable ? 1:0);
-			entry->ps_drop_mask_enabled = (enable ? 1:0);
-			break;
-		}
-		case 1: /* set drop mask due to tx_fail too high */
-		{
-			write_to_mac = (enable ^ entry->tx_fail_drop_mask_enabled);
-			entry->tx_fail_drop_mask_enabled = (enable ? 1:0);
-			break;
-		}
-		case 2: /* set drop mask due to client is in power saving */
-		{
-			write_to_mac = (enable ^ entry->ps_drop_mask_enabled);
-			entry->ps_drop_mask_enabled = (enable ? 1:0);
-			timeout = 1000;
-			break;
-		}
-	}
-	mask_is_enabled = (entry->tx_fail_drop_mask_enabled || entry->ps_drop_mask_enabled) ? 1 : 0;
-	NdisReleaseSpinLock(&entry->drop_mask_lock);
+	asic_set_drop_mask(ad, entry->Aid, enable);
 
-	if (write_to_mac) {
-		if (!(enable ^ mask_is_enabled))
-			asic_set_drop_mask(ad, entry->Aid, enable);
-	}
-
-	if (enable) {
-		RTMPSetTimer(&entry->tx_dropmask_timer, timeout /* ms */);
-	}
+	if (enable)
+		RTMPSetTimer(&entry->dropmask_timer, 1000);
 }
 
-
-VOID  tx_drop_mask_timer_action(
+VOID drop_mask_timer_action(
 	IN PVOID SystemSpecific1, 
 	IN PVOID FunctionContext, 
 	IN PVOID SystemSpecific2, 
@@ -5170,8 +5091,8 @@ VOID  tx_drop_mask_timer_action(
 	PRTMP_ADAPTER ad = (PRTMP_ADAPTER)entry->pAd;
 
 	/* Disable drop mask */
-	if (entry->tx_fail_drop_mask_enabled || entry->ps_drop_mask_enabled)
-		set_drop_mask_per_client(ad, entry, 0, 0);
+	asic_set_drop_mask(ad, entry->Aid, FALSE);
 }
+
 #endif /* DROP_MASK_SUPPORT */
 

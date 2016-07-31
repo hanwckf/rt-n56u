@@ -1558,6 +1558,8 @@ VOID MacTableMaintenance(RTMP_ADAPTER *pAd)
 				MiniportMMRequest(pAd, 0, pOutBuffer, FrameLen);
 				MlmeFreeMemory(pAd, pOutBuffer);
 
+				/* wait for DEAUTH processed */
+				OS_WAIT(5);
 #ifdef MAC_REPEATER_SUPPORT
 				if ((pAd->ApCfg.bMACRepeaterEn == TRUE) && IS_ENTRY_CLIENT(pEntry))
 				{

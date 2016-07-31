@@ -4226,16 +4226,22 @@ VOID asic_set_drop_mask(
 	USHORT	wcid,
 	BOOLEAN enable)
 {
-	UINT32 mac_reg = 0, reg_id, group_index;
-	UINT32 drop_mask = (1 << (wcid % 32));
+	UINT32 mac_reg = 0, mac_old, reg_id, group_index;
+	UINT32 drop_mask = (1U << (wcid % 32));
 
 	/* each group has 32 entries */
 	group_index = (wcid - (wcid % 32)) >> 5 /* divided by 32 */;
-	reg_id = TX_WCID_DROP_MASK0 + 4*group_index;
+	reg_id = (TX_WCID_DROP_MASK0 + 4*group_index);
+
+	NdisAcquireSpinLock(&ad->drop_mask_lock);
 
 	RTMP_IO_READ32(ad, reg_id, &mac_reg);
+	mac_old = mac_reg;
 	mac_reg = (enable ? (mac_reg | drop_mask) : (mac_reg & ~drop_mask));
-	RTMP_IO_WRITE32(ad, reg_id, mac_reg);
+	if (mac_reg != mac_old)
+		RTMP_IO_WRITE32(ad, reg_id, mac_reg);
+
+	NdisReleaseSpinLock(&ad->drop_mask_lock);
 
 	DBGPRINT(RT_DEBUG_TRACE,
 			("%s(%u):, wcid = %u, reg_id = 0x%08x, mac_reg = 0x%08x, group_index = %u, drop_mask = 0x%08x\n",
@@ -4247,14 +4253,19 @@ VOID asic_drop_mask_reset(
 	PRTMP_ADAPTER ad)
 {
 	UINT32 i, reg_id;
-	
+
+	NdisAcquireSpinLock(&ad->drop_mask_lock);
+
 	for ( i = 0; i < 8 /* num of drop mask group */; i++)
 	{
-		reg_id = TX_WCID_DROP_MASK0 + i*4;
+		reg_id = (TX_WCID_DROP_MASK0 + i*4);
 		RTMP_IO_WRITE32(ad, reg_id, 0);
 	}
 
+	NdisReleaseSpinLock(&ad->drop_mask_lock);
+
 	DBGPRINT(RT_DEBUG_TRACE, ("%s()\n", __FUNCTION__));
 }
+
 #endif /* DROP_MASK_SUPPORT */
 

@@ -1488,15 +1488,19 @@ VOID Wtbl2RcpiGet(RTMP_ADAPTER *pAd, UCHAR ucWcid, union WTBL_2_DW13 *wtbl_2_d13
 }
 
 
-VOID MtAsicTxCntUpdate(RTMP_ADAPTER *pAd, UCHAR wcid, MT_TX_COUNTER *pTxInfo)
+VOID MtAsicTxCntUpdate(RTMP_ADAPTER *pAd, MAC_TABLE_ENTRY *pEntry, MT_TX_COUNTER *pTxInfo)
 {
 	TX_CNT_INFO tx_cnt_info;
-	UINT32 TxSuccess;
+	UINT32 TxSuccess, TxRetransmit;
 
-	Wtbl2TxRateCounterGet(pAd, (UINT8)wcid, &tx_cnt_info);
-	pTxInfo->TxCount = tx_cnt_info.wtbl_2_d7.field.current_bw_tx_cnt ;
+	if (!IS_VALID_ENTRY(pEntry))
+		return;
+
+	Wtbl2TxRateCounterGet(pAd, pEntry->wcid, &tx_cnt_info);
+
+	pTxInfo->TxCount = tx_cnt_info.wtbl_2_d7.field.current_bw_tx_cnt;
 	pTxInfo->TxCount += tx_cnt_info.wtbl_2_d8.field.other_bw_tx_cnt;
-	pTxInfo->TxFailCount = tx_cnt_info.wtbl_2_d7.field.current_bw_fail_cnt ;
+	pTxInfo->TxFailCount = tx_cnt_info.wtbl_2_d7.field.current_bw_fail_cnt;
 	pTxInfo->TxFailCount += tx_cnt_info.wtbl_2_d8.field.other_bw_fail_cnt;
 
 	pTxInfo->Rate1TxCnt = tx_cnt_info.wtbl_2_d5.field.rate_1_tx_cnt;
@@ -1508,27 +1512,44 @@ VOID MtAsicTxCntUpdate(RTMP_ADAPTER *pAd, UCHAR wcid, MT_TX_COUNTER *pTxInfo)
 
 	pTxInfo->RateIndex = tx_cnt_info.wtbl_2_d9.field.rate_idx;
 
-	TxSuccess = pTxInfo->TxCount -pTxInfo->TxFailCount;
+	TxSuccess = pTxInfo->TxCount - pTxInfo->TxFailCount;
+	TxRetransmit = pTxInfo->TxFailCount;
 
 	if ( pTxInfo->TxFailCount == 0 )
 	{
 		pAd->RalinkCounters.OneSecTxNoRetryOkCount += pTxInfo->TxCount;
-		pAd->MacTab.Content[wcid].OneSecTxNoRetryOkCount += pTxInfo->TxCount;
+		pAd->MacTab.Content[pEntry->wcid].OneSecTxNoRetryOkCount += pTxInfo->TxCount;
 	}
 	else
 	{
 		pAd->RalinkCounters.OneSecTxRetryOkCount += pTxInfo->TxCount;
-		pAd->MacTab.Content[wcid].OneSecTxRetryOkCount += pTxInfo->TxCount;
+		pAd->MacTab.Content[pEntry->wcid].OneSecTxRetryOkCount += pTxInfo->TxCount;
 	}
 	
 	pAd->RalinkCounters.OneSecTxFailCount += pTxInfo->TxFailCount;
-	pAd->MacTab.Content[wcid].OneSecTxFailCount += pTxInfo->TxFailCount;
+	pAd->MacTab.Content[pEntry->wcid].OneSecTxFailCount += pTxInfo->TxFailCount;
 
 #ifdef STATS_COUNT_SUPPORT
 	pAd->WlanCounters.TransmittedFragmentCount.u.LowPart += TxSuccess;
 	pAd->WlanCounters.FailedCount.u.LowPart += pTxInfo->TxFailCount;
 #endif /* STATS_COUNT_SUPPORT */
 
+	if ((TxSuccess == 0) && (TxRetransmit > 0))
+	{
+		/* prevent fast drop long range clients */
+		if (TxRetransmit > MAC_ENTRY_LIFE_CHECK_CNT / 4)
+			TxRetransmit = MAC_ENTRY_LIFE_CHECK_CNT / 4;
+		
+		/* No TxPkt ok in this period as continue tx fail */
+		pEntry->ContinueTxFailCnt += TxRetransmit;
+	}
+	else
+	{
+		pEntry->ContinueTxFailCnt = 0;
+	}
+
+	MTWF_LOG(DBG_CAT_ALL, DBG_SUBCAT_ALL, DBG_LVL_INFO, ("%s:(OK:%d, FAIL:%d, ConFail:%d) \n",
+		__FUNCTION__, TxSuccess, pTxInfo->TxFailCount, pEntry->ContinueTxFailCnt));
 }
 
 

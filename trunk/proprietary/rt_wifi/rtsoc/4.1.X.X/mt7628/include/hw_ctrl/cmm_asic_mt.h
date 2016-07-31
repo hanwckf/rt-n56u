@@ -157,7 +157,7 @@ VOID Wtbl2RateTableUpdate(struct _RTMP_ADAPTER *pAd, UCHAR ucWcid, UINT32 u4Wtbl
 VOID Wtbl2TxRateCounterGet(struct _RTMP_ADAPTER *pAd, UCHAR ucWcid, TX_CNT_INFO *tx_cnt_info);
 VOID Wtbl2RcpiGet(struct _RTMP_ADAPTER *pAd, UCHAR ucWcid, union WTBL_2_DW13 *wtbl_2_d13);
 
-VOID MtAsicTxCntUpdate(struct _RTMP_ADAPTER *pAd, UCHAR wcid, struct _MT_TX_COUNTER *pTxInfo);
+VOID MtAsicTxCntUpdate(struct _RTMP_ADAPTER *pAd, struct _MAC_TABLE_ENTRY *pEntry, struct _MT_TX_COUNTER *pTxInfo);
 VOID MtAsicRssiUpdate(struct _RTMP_ADAPTER *pAd);
 VOID MtAsicRcpiReset(struct _RTMP_ADAPTER *pAd, UCHAR ucWcid);
 VOID MtAsicSetSMPS(struct _RTMP_ADAPTER *pAd, UCHAR wcid, UCHAR smps);

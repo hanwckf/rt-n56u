@@ -6941,7 +6941,7 @@ VOID AsicMcsLutUpdate(RTMP_ADAPTER *pAd, MAC_TABLE_ENTRY *pEntry);
 VOID MtAsicRssiUpdate(RTMP_ADAPTER *pAd);
 VOID MtAsicRcpiReset(RTMP_ADAPTER *pAd, UCHAR ucWcid);
 
-VOID MtAsicTxCntUpdate(RTMP_ADAPTER *pAd, UCHAR wcid, MT_TX_COUNTER *pTxInfo);
+VOID MtAsicTxCntUpdate(RTMP_ADAPTER *pAd, MAC_TABLE_ENTRY *pEntry, MT_TX_COUNTER *pTxInfo);
 #endif /* MT_MAC */
 
 #ifdef CONFIG_AP_SUPPORT

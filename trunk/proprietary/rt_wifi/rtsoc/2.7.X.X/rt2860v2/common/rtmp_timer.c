@@ -71,7 +71,7 @@ BUILD_TIMER_FUNCTION(RTMPIdsPeriodicExec);
 #endif /* IDS_SUPPORT */
 
 #ifdef DROP_MASK_SUPPORT
-BUILD_TIMER_FUNCTION(tx_drop_mask_timer_action);
+BUILD_TIMER_FUNCTION(drop_mask_timer_action);
 #endif /* DROP_MASK_SUPPORT */
 
 #endif /* CONFIG_AP_SUPPORT */

@@ -531,6 +531,9 @@ RTMP_REG_PAIR	RT6352_MACRegTable[] =	{
 	{TX_SW_CFG1,		0x000C0001},   // Jason,2012-09-13, 2015-10-08
 	{TX_SW_CFG2,		0x00},   // Jason,2012-08-27
 	{MIMO_PS_CFG,		0x02},   // Jason,2012-09-13
+
+	/* enable HW to autofallback to legacy rate to prevent ping fail in long range */
+	{HT_FBK_TO_LEGACY,	0x1818},	// HT_FBK_TO_LEGACY = OFDM_6
 };
 
 UCHAR RT6352_NUM_MAC_REG_PARMS = (sizeof(RT6352_MACRegTable) / sizeof(RTMP_REG_PAIR));

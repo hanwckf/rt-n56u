@@ -3565,17 +3565,14 @@ VOID drop_mask_init_per_client(
 	PRTMP_ADAPTER	ad,
 	PMAC_TABLE_ENTRY entry)
 {
-	BOOLEAN cancelled = 0;
+	BOOLEAN cancelled = FALSE;
 
 	if (entry->dropmask_timer.Valid)
 		RTMPCancelTimer(&entry->dropmask_timer, &cancelled);
+
 	RTMPInitTimer(ad, &entry->dropmask_timer, GET_TIMER_FUNCTION(drop_mask_timer_action), entry, FALSE);
 
-	NdisAllocateSpinLock(ad, &entry->drop_mask_lock);
-
-	entry->tx_fail_drop_mask_enabled = 0;
-	entry->ps_drop_mask_enabled = 0;
-	asic_set_drop_mask(ad, entry->Aid, 0);
+	asic_set_drop_mask(ad, entry->Aid, FALSE);
 
 #ifdef NOISE_TEST_ADJUST
 	if ((ad->ApCfg.EntryClientCount >= 3) && IS_ENTRY_CLIENT(entry))
@@ -3587,59 +3584,18 @@ VOID drop_mask_release_per_client(
 	PRTMP_ADAPTER	ad,
 	PMAC_TABLE_ENTRY entry)
 {
-	BOOLEAN cancelled = 0;
+	BOOLEAN cancelled = FALSE;
 
 	RTMPCancelTimer(&entry->dropmask_timer, &cancelled);
 	RTMPReleaseTimer(&entry->dropmask_timer, &cancelled);
-
-	entry->tx_fail_drop_mask_enabled = 0;
-	entry->ps_drop_mask_enabled = 0;
-	asic_set_drop_mask(ad, entry->Aid, 0);
-
-	if (ad->ApCfg.EntryClientCount == 2)
-	{
-		/* clear drop mask before client number fall below to threshold */
-		drop_mask_per_client_reset(ad);
-	}
-
-	NdisFreeSpinLock(&entry->drop_mask_lock);
 }
 
-VOID drop_mask_per_client_reset(
-	PRTMP_ADAPTER	ad)
-{
-	INT i;
-	UINT32 max_wcid_num = MAX_LEN_OF_MAC_TABLE;
-
-	for ( i = 0; i < max_wcid_num; i++)
-	{
-		PMAC_TABLE_ENTRY entry = &ad->MacTab.Content[i];
-		if (entry && (!IS_ENTRY_NONE(entry)))
-		{
-			NdisAcquireSpinLock(&entry->drop_mask_lock);
-			entry->tx_fail_drop_mask_enabled = 0;
-			entry->ps_drop_mask_enabled = 0;
-			NdisReleaseSpinLock(&entry->drop_mask_lock);
-#ifdef NOISE_TEST_ADJUST
-			if (IS_ENTRY_CLIENT(entry))
-				entry->pMbss->WPAREKEY.ReKeyMethod &= (~MAX_REKEY);
-#endif /* NOISE_TEST_ADJUST */
-		}
-	}
-
-	asic_drop_mask_reset(ad);
-}
-
-VOID set_drop_mask_per_client(
+VOID drop_mask_set_per_client(
 	PRTMP_ADAPTER		ad,
 	PMAC_TABLE_ENTRY 	entry,
-	UINT8				type,
 	BOOLEAN				enable)
 {
-	BOOLEAN cancelled = 0;
-	BOOLEAN write_to_mac = 0;
-	BOOLEAN mask_is_enabled = 0;
-	UINT32 timeout = 10;
+	BOOLEAN cancelled = FALSE;
 
 #ifdef NOISE_TEST_ADJUST
 	if (ad->ApCfg.EntryClientCount < 3)
@@ -3648,45 +3604,13 @@ VOID set_drop_mask_per_client(
 
 	RTMPCancelTimer(&entry->dropmask_timer, &cancelled);
 
-	NdisAcquireSpinLock(&entry->drop_mask_lock);
-	switch (type)
-	{
-		case 0: /* set drop mask due to tx_fail too high or client is in power saving */
-		{
-			write_to_mac |= (enable ^ entry->tx_fail_drop_mask_enabled);
-			write_to_mac |= (enable ^ entry->ps_drop_mask_enabled);
-			entry->tx_fail_drop_mask_enabled = (enable ? 1:0);
-			entry->ps_drop_mask_enabled = (enable ? 1:0);
-			break;
-		}
-		case 1: /* set drop mask due to tx_fail too high */
-		{
-			write_to_mac = (enable ^ entry->tx_fail_drop_mask_enabled);
-			entry->tx_fail_drop_mask_enabled = (enable ? 1:0);
-			break;
-		}
-		case 2: /* set drop mask due to client is in power saving */
-		{
-			write_to_mac = (enable ^ entry->ps_drop_mask_enabled);
-			entry->ps_drop_mask_enabled = (enable ? 1:0);
-			timeout = 1000;
-			break;
-		}
-	}
-	mask_is_enabled = (entry->tx_fail_drop_mask_enabled || entry->ps_drop_mask_enabled) ? 1 : 0;
-	NdisReleaseSpinLock(&entry->drop_mask_lock);
+	asic_set_drop_mask(ad, entry->Aid, enable);
 
-	if (write_to_mac) {
-		if (!(enable ^ mask_is_enabled))
-			asic_set_drop_mask(ad, entry->Aid, enable);
-	}
-
-	if (enable) {
-		RTMPSetTimer(&entry->dropmask_timer, timeout /* ms */);
-	}
+	if (enable)
+		RTMPSetTimer(&entry->dropmask_timer, 1000);
 }
 
-VOID  drop_mask_timer_action(
+VOID drop_mask_timer_action(
 	IN PVOID SystemSpecific1, 
 	IN PVOID FunctionContext, 
 	IN PVOID SystemSpecific2, 
@@ -3696,8 +3620,8 @@ VOID  drop_mask_timer_action(
 	PRTMP_ADAPTER ad = (PRTMP_ADAPTER)entry->pAd;
 
 	/* Disable drop mask */
-	if (entry->tx_fail_drop_mask_enabled || entry->ps_drop_mask_enabled)
-		set_drop_mask_per_client(ad, entry, 0, 0);
+	asic_set_drop_mask(ad, entry->Aid, FALSE);
 }
+
 #endif /* DROP_MASK_SUPPORT */
 

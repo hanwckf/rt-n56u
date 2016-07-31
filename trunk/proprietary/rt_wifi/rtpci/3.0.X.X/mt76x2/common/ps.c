@@ -150,7 +150,7 @@ VOID RtmpHandleRxPsPoll(RTMP_ADAPTER *pAd, UCHAR *pAddr, USHORT wcid, BOOLEAN is
 	{
 #ifdef DROP_MASK_SUPPORT
 		/* Disable Drop Mask */
-		set_drop_mask_per_client(pAd, pMacEntry, 2, 0);
+		drop_mask_set_per_client(pAd, pMacEntry, FALSE);
 #endif /* DROP_MASK_SUPPORT */
 
 #ifdef PS_ENTRY_MAITENANCE
@@ -335,7 +335,7 @@ BOOLEAN RtmpPsIndicate(RTMP_ADAPTER *pAd, UCHAR *pAddr, UCHAR wcid, UCHAR Psm)
 		{
 #ifdef DROP_MASK_SUPPORT
 			/* Disable Drop Mask */
-			set_drop_mask_per_client(pAd, pEntry, 2, 0);
+			drop_mask_set_per_client(pAd, pEntry, FALSE);
 #endif /* DROP_MASK_SUPPORT */
 
 #ifdef PS_ENTRY_MAITENANCE
@@ -359,7 +359,7 @@ BOOLEAN RtmpPsIndicate(RTMP_ADAPTER *pAd, UCHAR *pAddr, UCHAR wcid, UCHAR Psm)
 #ifdef DROP_MASK_SUPPORT
 		else if ((old_psmode == PWR_ACTIVE) && (Psm == PWR_SAVE)) {
 			/* Enable Drop Mask */
-			set_drop_mask_per_client(pAd, pEntry, 2, 1);
+			drop_mask_set_per_client(pAd, pEntry, TRUE);
 		}
 #endif /* DROP_MASK_SUPPORT */
 #ifdef PS_ENTRY_MAITENANCE

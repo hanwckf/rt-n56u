@@ -1335,7 +1335,7 @@ typedef struct GNU_PACKED _EID_STRUCT{
 #define MAC_TABLE_FULL(Tab)				((Tab).size == MAX_LEN_OF_MAC_TABLE)
 
 /* AP shall drop the sta if contine Tx fail count reach it. */
-#define MAC_ENTRY_LIFE_CHECK_CNT		512			/* packet cnt. */
+#define MAC_ENTRY_LIFE_CHECK_CNT		1024			/* packet cnt. */
 
 /* Value domain of pMacEntry->Sst */
 typedef enum _Sst {

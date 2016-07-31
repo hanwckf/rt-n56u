@@ -993,16 +993,6 @@ VOID RTMPDrvOpen(
 	WSC_HDR_BTN_Init(pAd);
 #endif /* WSC_INCLUDED */
 
-#ifdef CONFIG_AP_SUPPORT
-#ifdef MULTI_CLIENT_SUPPORT
-	pAd->CommonCfg.txRetryCfg = 0;
-	{
-		UINT32  TxRtyCfg;
-		RTMP_IO_READ32(pAd, TX_RTY_CFG, &TxRtyCfg);
-		pAd->CommonCfg.txRetryCfg = TxRtyCfg;
-	}
-#endif /* MULTI_CLIENT_SUPPORT */
-#endif /* CONFIG_AP_SUPPORT */
 }
 
 

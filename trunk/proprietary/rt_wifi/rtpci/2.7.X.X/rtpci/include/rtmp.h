@@ -4282,6 +4282,12 @@ VOID NICUpdateFifoStaCounters(
 VOID NICUpdateRawCounters(
 	IN  PRTMP_ADAPTER   pAd);
 
+#ifdef CONFIG_AP_SUPPORT
+VOID ClearTxRingClientAck(
+	IN PRTMP_ADAPTER pAd,
+	IN MAC_TABLE_ENTRY *pEntry);
+#endif /* CONFIG_AP_SUPPORT */
+
 #ifdef FIFO_EXT_SUPPORT
 BOOLEAN NicGetMacFifoTxCnt(
 	IN RTMP_ADAPTER *pAd,

@@ -1713,7 +1713,7 @@ NDIS_STATUS	NICInitializeAsic(
 	
 	========================================================================
 */
-static VOID ClearTxRingClientAck(
+VOID ClearTxRingClientAck(
 	IN PRTMP_ADAPTER pAd,
 	IN MAC_TABLE_ENTRY *pEntry)
 

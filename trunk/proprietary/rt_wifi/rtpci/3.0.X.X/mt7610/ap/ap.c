@@ -79,6 +79,10 @@ NDIS_STATUS APInitialize(
 	MulticastFilterTableInit(pAd, &pAd->pMulticastFilterTable);
 #endif /* IGMP_SNOOP_SUPPORT */
 
+#ifdef DROP_MASK_SUPPORT
+	NdisAllocateSpinLock(pAd, &pAd->drop_mask_lock);
+	asic_drop_mask_reset(pAd);
+#endif /* DROP_MASK_SUPPORT */
 
 #ifdef WDS_SUPPORT
 	NdisAllocateSpinLock(pAd, &pAd->WdsTabLock);
@@ -1301,6 +1305,7 @@ VOID MacTableMaintenance(
 			if (pEntry->PsMode != PWR_SAVE)
 			{
 				bDisconnectSta = TRUE;
+				ClearTxRingClientAck(pAd, pEntry);
 				DBGPRINT(RT_DEBUG_WARN, ("STA-%02x:%02x:%02x:%02x:%02x:%02x had left (%d %lu)\n",
 					PRINT_MAC(pEntry->Addr),
 					pEntry->ContinueTxFailCnt, pAd->ApCfg.EntryLifeCheck));
@@ -1339,6 +1344,9 @@ VOID MacTableMaintenance(
 		    	                  END_OF_ARGS);				
 		    	MiniportMMRequest(pAd, 0, pOutBuffer, FrameLen);
 		    	MlmeFreeMemory(pAd, pOutBuffer);
+
+				/* wait for DEAUTH processed */
+				OS_WAIT(5);
 
 #ifdef MAC_REPEATER_SUPPORT
 				if ((pAd->ApCfg.bMACRepeaterEn == TRUE) && IS_ENTRY_CLIENT(pEntry))
@@ -1820,7 +1828,7 @@ BOOLEAN APPsIndicate(
 		{
 #ifdef DROP_MASK_SUPPORT
 			/* Disable Drop Mask */
-			set_drop_mask_per_client(pAd, pEntry, 2, 0);
+			drop_mask_set_per_client(pAd, pEntry, FALSE);
 #endif /* DROP_MASK_SUPPORT */
 #ifdef PS_ENTRY_MAITENANCE
 			pEntry->continuous_ps_count = 0;
@@ -1839,7 +1847,7 @@ BOOLEAN APPsIndicate(
 #ifdef DROP_MASK_SUPPORT
 		else if ((old_psmode == PWR_ACTIVE) && (Psm == PWR_SAVE)) {
 			/* Enable Drop Mask */
-			set_drop_mask_per_client(pAd, pEntry, 2, 1);
+			drop_mask_set_per_client(pAd, pEntry, TRUE);
 		}
 #endif /* DROP_MASK_SUPPORT */
 

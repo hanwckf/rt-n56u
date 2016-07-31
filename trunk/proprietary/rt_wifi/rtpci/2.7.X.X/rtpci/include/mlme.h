@@ -1340,7 +1340,11 @@ typedef struct GNU_PACKED {
 #define MAC_TABLE_FULL(Tab)				((Tab).size == MAX_LEN_OF_MAC_TABLE)
 
 /* AP shall drop the sta if contine Tx fail count reach it. */
+#if defined (FIFO_EXT_SUPPORT) || defined (TX_STA_FIFO_EXT_SUPPORT)
+#define MAC_ENTRY_LIFE_CHECK_CNT		1024			/* packet cnt. */
+#else
 #define MAC_ENTRY_LIFE_CHECK_CNT		512			/* packet cnt. */
+#endif
 
 /* Value domain of pMacEntry->Sst */
 typedef enum _Sst {

@@ -79,21 +79,16 @@ VOID changeTxRetry(
 	IN USHORT num)
 {		
 	UINT32	TxRtyCfg, MacReg = 0;
-	
-	if (pAd->CommonCfg.txRetryCfg == 0) {
-		/* txRetryCfg is invalid, should not be 0 */
-		DBGPRINT(RT_DEBUG_TRACE, ("txRetryCfg=%x\n", pAd->CommonCfg.txRetryCfg));
-		return ;
-	}
 
 	if (num < 3)
 	{
-		/* Tx date retry default 15 */
+		/* Tx data retry 31/15 (thres 2000) */
 		RTMP_IO_READ32(pAd, TX_RTY_CFG, &TxRtyCfg);
-		TxRtyCfg = ((TxRtyCfg & 0xffff0000) | (pAd->CommonCfg.txRetryCfg & 0x0000ffff));
+		TxRtyCfg &= 0xf0000000;
+		TxRtyCfg |= 0x07d01f0f;
 		RTMP_IO_WRITE32(pAd, TX_RTY_CFG, TxRtyCfg);
 
-		/* Tx RTS retry default 32 */
+		/* Tx RTS retry default 32, disable RTS fallback */
 		RTMP_IO_READ32(pAd, TX_RTS_CFG, &MacReg);
 		MacReg &= 0xFEFFFF00;
 		MacReg |= 0x20;
@@ -101,18 +96,17 @@ VOID changeTxRetry(
 	}
 	else
 	{
-		/* Tx date retry 7 */
-		TxRtyCfg = 0x4100070A;
-		RTMP_IO_WRITE32(pAd, TX_RTY_CFG, TxRtyCfg);	
+		/* Tx data retry 7/10 (thres 256)  */
+		RTMP_IO_READ32(pAd, TX_RTY_CFG, &TxRtyCfg);
+		TxRtyCfg &= 0xf0000000;
+		TxRtyCfg |= 0x0100070A;
+		RTMP_IO_WRITE32(pAd, TX_RTY_CFG, TxRtyCfg);
 
-		/* Tx RTS retry 3 */
+		/* Tx RTS retry 3, enable RTS fallback */
 		RTMP_IO_READ32(pAd, TX_RTS_CFG, &MacReg);
 		MacReg &= 0xFEFFFF00;
 		MacReg |= 0x01000003;
 		RTMP_IO_WRITE32(pAd, TX_RTS_CFG, MacReg);
-
-		/* En fbk lgcy */
-		RTMP_IO_WRITE32(pAd, HT_FBK_TO_LEGACY, 0x1818);
 	}
 }
 

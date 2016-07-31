@@ -1776,13 +1776,10 @@ VOID MlmePeriodicExec(
 #endif /* RACTRL_FW_OFFLOAD_SUPPORT */
             {
                 //MtAsicRssiUpdate(pAd);
-                //MtAsicTxCntUpdate(pAd, 0);
             }
 		}
 #endif /* MT_MAC */
 
-		if (RTMPAutoRateSwitchCheck(pAd) == TRUE )
-		{
 #ifdef RACTRL_FW_OFFLOAD_SUPPORT
             if (pAd->chipCap.fgRateAdaptFWOffload == TRUE )
             {
@@ -1812,40 +1809,6 @@ VOID MlmePeriodicExec(
 		}
 #endif /* CONFIG_STA_SUPPORT */
             }
-		}else {
-#ifdef MT_MAC
-			if (pAd->chipCap.hif_type == HIF_MT) {
-				MAC_TABLE_ENTRY *pEntry;
-				MT_TX_COUNTER TxInfo;
-				UINT16 i;
-				for (i = 1; i < MAX_LEN_OF_MAC_TABLE; i++) 
-				{
-					/* point to information of the individual station */
-					pEntry = &pAd->MacTab.Content[i];
-
-					if (IS_ENTRY_NONE(pEntry))
-						continue;
-
-					if (IS_ENTRY_CLIENT(pEntry) && (pEntry->Sst != SST_ASSOC))
-						continue;
-
-#ifdef APCLI_SUPPORT
-					if (IS_ENTRY_APCLI(pEntry) && (pEntry->Sst != SST_ASSOC))
-						continue;
-#endif /* APCLI_SUPPORT */
-
-#ifdef WDS_SUPPORT
-					if (IS_ENTRY_WDS(pEntry) && !WDS_IF_UP_CHECK(pAd, pEntry->func_tb_idx))
-						continue;
-#endif /* WDS_SUPPORT */
-
-
-					if (IS_VALID_ENTRY(pEntry))
-						MtAsicTxCntUpdate(pAd, pEntry->wcid, &TxInfo);
-				}
-			}
-#endif /* MT_MAC */
-		}
 	}
 
 #ifdef DFS_SUPPORT

@@ -10681,7 +10681,7 @@ INT	Set_AP_WscGetConf_Proc(
     UCHAR	            apidx = pObj->ioctl_if, mac_addr[MAC_ADDR_LEN];
     BOOLEAN             bFromApCli = FALSE;
 #ifdef APCLI_SUPPORT
-	BOOLEAN 			FALSE;
+	BOOLEAN 			apcliEn = FALSE;
 #endif /* APCLI_SUPPORT */
 #ifdef WSC_V2_SUPPORT
 	PWSC_V2_INFO		pWscV2Info = NULL;

@@ -960,19 +960,6 @@ VOID RTMPDrvOpen(VOID *pAdSrc)
 	WSC_HDR_BTN_Init(pAd);
 #endif /* WSC_INCLUDED */
 
-#ifdef CONFIG_AP_SUPPORT
-#ifdef MULTI_CLIENT_SUPPORT
-	pAd->CommonCfg.txRetryCfg = 0;
-
-	{
-		UINT32	TxRtyCfg;
-
-		RTMP_IO_READ32(pAd, TX_RTY_CFG, &TxRtyCfg);
-		pAd->CommonCfg.txRetryCfg = TxRtyCfg;
-	}
-#endif /* MULTI_CLIENT_SUPPORT */
-#endif /* CONFIG_AP_SUPPORT */
-
 #ifdef BTCOEX_CONCURRENT
 	RT28xx_EEPROM_READ16(pAd, 0x22, ee_tmp);
 	btcoex_val.eeprom23=(ee_tmp & 0xFF00)>>8;

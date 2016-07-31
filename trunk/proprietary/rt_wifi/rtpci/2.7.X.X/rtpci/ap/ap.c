@@ -1162,6 +1162,7 @@ VOID MacTableMaintenance(
 			if (pEntry->PsMode != PWR_SAVE)
 			{
 				bDisconnectSta = TRUE;
+				ClearTxRingClientAck(pAd, pEntry);
 				DBGPRINT(RT_DEBUG_WARN, ("STA-%02x:%02x:%02x:%02x:%02x:%02x had left (%d %lu)\n",
 					pEntry->Addr[0],pEntry->Addr[1],pEntry->Addr[2],pEntry->Addr[3],
 					pEntry->Addr[4],pEntry->Addr[5],
@@ -1201,6 +1202,9 @@ VOID MacTableMaintenance(
 		    	                  END_OF_ARGS);				
 		    	MiniportMMRequest(pAd, 0, pOutBuffer, FrameLen);
 		    	MlmeFreeMemory(pAd, pOutBuffer);
+
+				/* wait for DEAUTH processed */
+				OS_WAIT(5);
 			}
 
 			MacTableDeleteEntry(pAd, pEntry->Aid, pEntry->Addr);

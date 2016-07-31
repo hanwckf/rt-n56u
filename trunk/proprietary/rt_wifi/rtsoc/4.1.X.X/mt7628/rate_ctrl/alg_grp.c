@@ -962,7 +962,7 @@ VOID QuickResponeForRateUpExecAdaptMT(/* actually for both up and down */
 
 	Rssi = RTMPMaxRssi(pAd, pEntry->RssiSample.AvgRssi[0], pEntry->RssiSample.AvgRssi[1], pEntry->RssiSample.AvgRssi[2]);
 
-	MtAsicTxCntUpdate(pAd, pEntry->wcid, &TxInfo);
+	MtAsicTxCntUpdate(pAd, pEntry, &TxInfo);
 
 	TxTotalCnt = TxInfo.TxCount;
 	Rate1TxCnt = TxInfo.Rate1TxCnt;
@@ -1386,7 +1386,7 @@ VOID DynamicTxRateSwitchingAdaptMT(RTMP_ADAPTER *pAd, UINT i)
 #endif /* THERMAL_PROTECT_SUPPORT */
 
 	/* Read h/w Statistic Counters */
-	MtAsicTxCntUpdate(pAd, pEntry->wcid, &TxInfo);
+	MtAsicTxCntUpdate(pAd, pEntry, &TxInfo);
 
 	TxTotalCnt = TxInfo.TxCount;
 	/*  Save LastTxOkCount, LastTxPER and last MCS action for APQuickResponeForRateUpExec */

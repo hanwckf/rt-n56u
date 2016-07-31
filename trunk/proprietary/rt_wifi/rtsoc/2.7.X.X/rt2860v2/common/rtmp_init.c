@@ -2235,7 +2235,7 @@ VOID	NICResetFromError(
 	
 	========================================================================
 */
-static VOID ClearTxRingClientAck(
+VOID ClearTxRingClientAck(
 	IN PRTMP_ADAPTER pAd,
 	IN MAC_TABLE_ENTRY *pEntry)
 
@@ -2299,6 +2299,9 @@ VOID NICUpdateFifoStaCounters(
 	IN PRTMP_ADAPTER pAd)
 {
 	TX_STA_FIFO_STRUC	StaFifo;
+#if defined (FIFO_EXT_SUPPORT) || defined (TX_STA_FIFO_EXT_SUPPORT)
+	TX_STA_FIFO_EXT_STRUC	StaFifoExt;
+#endif
 	MAC_TABLE_ENTRY		*pEntry = NULL;
 	UINT32				i = 0;
 	UCHAR				pid = 0, wcid = 0;
@@ -2318,6 +2321,9 @@ VOID NICUpdateFifoStaCounters(
 
 	do
 	{
+#if defined (FIFO_EXT_SUPPORT) || defined (TX_STA_FIFO_EXT_SUPPORT)
+		RTMP_IO_READ32(pAd, TX_STA_FIFO_EXT, &StaFifoExt.word);
+#endif
 		RTMP_IO_READ32(pAd, TX_STA_FIFO, &StaFifo.word);
 
 		if (StaFifo.field.bValid == 0)
@@ -2440,6 +2446,11 @@ VOID NICUpdateFifoStaCounters(
 #endif /* CONFIG_STA_SUPPORT */
 
 				/* Update the continuous transmission counter.*/
+#if defined (FIFO_EXT_SUPPORT) || defined (TX_STA_FIFO_EXT_SUPPORT)
+				if (StaFifoExt.field.txRtyCnt > 0)
+					pEntry->ContinueTxFailCnt += StaFifoExt.field.txRtyCnt;
+				else
+#endif
 				pEntry->ContinueTxFailCnt++;
 
 				if(pEntry->PsMode == PWR_ACTIVE)

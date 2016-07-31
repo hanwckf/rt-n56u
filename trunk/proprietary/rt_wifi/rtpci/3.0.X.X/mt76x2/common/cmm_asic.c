@@ -3931,16 +3931,22 @@ VOID asic_set_drop_mask(
 	USHORT	wcid,
 	BOOLEAN enable)
 {
-	UINT32 mac_reg = 0, reg_id, group_index;
-	UINT32 drop_mask = (1 << (wcid % 32));
+	UINT32 mac_reg = 0, mac_old, reg_id, group_index;
+	UINT32 drop_mask = (1U << (wcid % 32));
 
 	/* each group has 32 entries */
 	group_index = (wcid - (wcid % 32)) >> 5 /* divided by 32 */;
 	reg_id = (TX_WCID_DROP_MASK0 + 4*group_index);
 
+	NdisAcquireSpinLock(&ad->drop_mask_lock);
+
 	RTMP_IO_READ32(ad, reg_id, &mac_reg);
+	mac_old = mac_reg;
 	mac_reg = (enable ? (mac_reg | drop_mask) : (mac_reg & ~drop_mask));
-	RTMP_IO_WRITE32(ad, reg_id, mac_reg);
+	if (mac_reg != mac_old)
+		RTMP_IO_WRITE32(ad, reg_id, mac_reg);
+
+	NdisReleaseSpinLock(&ad->drop_mask_lock);
 
 	DBGPRINT(RT_DEBUG_TRACE,
 			("%s(%u):, wcid = %u, reg_id = 0x%08x, mac_reg = 0x%08x, group_index = %u, drop_mask = 0x%08x\n",
@@ -3952,12 +3958,16 @@ VOID asic_drop_mask_reset(
 	PRTMP_ADAPTER ad)
 {
 	UINT32 i, reg_id;
-	
+
+	NdisAcquireSpinLock(&ad->drop_mask_lock);
+
 	for ( i = 0; i < 8 /* num of drop mask group */; i++)
 	{
 		reg_id = (TX_WCID_DROP_MASK0 + i*4);
 		RTMP_IO_WRITE32(ad, reg_id, 0);
 	}
+
+	NdisReleaseSpinLock(&ad->drop_mask_lock);
 
 	DBGPRINT(RT_DEBUG_TRACE, ("%s()\n", __FUNCTION__));
 }
@@ -3970,20 +3980,15 @@ VOID asic_change_tx_retry(
 {
 	UINT32	TxRtyCfg, MacReg = 0;
 
-	if (pAd->CommonCfg.txRetryCfg == 0) {
-		/* txRetryCfg is invalid, should not be 0 */
-		DBGPRINT(RT_DEBUG_TRACE, ("txRetryCfg=%x\n", pAd->CommonCfg.txRetryCfg));
-		return ;
-	}
-
 	if (num < 3)
 	{
-		/* Tx date retry default 15 */
+		/* Tx data retry 31/15 (thres 2000) */
 		RTMP_IO_READ32(pAd, TX_RTY_CFG, &TxRtyCfg);
-		TxRtyCfg = ((TxRtyCfg & 0xffff0000) | (pAd->CommonCfg.txRetryCfg & 0x0000ffff));
+		TxRtyCfg &= 0xf0000000;
+		TxRtyCfg |= 0x07d01f0f;
 		RTMP_IO_WRITE32(pAd, TX_RTY_CFG, TxRtyCfg);
 
-		/* Tx RTS retry default 32 */
+		/* Tx RTS retry default 32, disable RTS fallback */
 		RTMP_IO_READ32(pAd, TX_RTS_CFG, &MacReg);
 		MacReg &= 0xFEFFFF00;
 		MacReg |= 0x20;
@@ -3991,25 +3996,17 @@ VOID asic_change_tx_retry(
 	}
 	else
 	{
-		/* Tx date retry 7 */
-		TxRtyCfg = 0x4100070A;
+		/* Tx data retry 8/10 (thres 256)  */
+		RTMP_IO_READ32(pAd, TX_RTY_CFG, &TxRtyCfg);
+		TxRtyCfg &= 0xf0000000;
+		TxRtyCfg |= 0x0100080A;
 		RTMP_IO_WRITE32(pAd, TX_RTY_CFG, TxRtyCfg);
 
-		/* Tx RTS retry 3 */
+		/* Tx RTS retry 3, enable RTS fallback */
 		RTMP_IO_READ32(pAd, TX_RTS_CFG, &MacReg);
 		MacReg &= 0xFEFFFF00;
-		MacReg |= 0x00000003;
-#ifdef MT76x2
-		if (IS_MT76x2(pAd)) {
-			/* RTS fallback: ON */
-			MacReg |= 0x01000000;
-		}
-#endif
+		MacReg |= 0x01000003;
 		RTMP_IO_WRITE32(pAd, TX_RTS_CFG, MacReg);
-#if 0
-		/* enable fallback to legacy (MCS0 -> OFDM 6, default for MT76x2) */
-		RTMP_IO_WRITE32(pAd, HT_FBK_TO_LEGACY, 0x1818);
-#endif
 	}
 }
 

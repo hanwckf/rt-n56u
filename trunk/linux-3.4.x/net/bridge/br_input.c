@@ -209,6 +209,13 @@ rx_handler_result_t br_handle_frame(struct sk_buff **pskb)
 		case 0x01:	/* IEEE MAC (Pause) */
 			goto drop;
 
+		case 0x0E:	/* 802.1AB LLDP */
+			if (p->br->group_fwd_mask & (1u << dest[5]))
+				goto forward;
+			*pskb = skb;
+			br_fdb_update(p->br, p, eth_hdr(skb)->h_source);
+			return RX_HANDLER_PASS;
+
 		default:
 			/* Allow selective forwarding for most other protocols */
 			if (p->br->group_fwd_mask & (1u << dest[5]))

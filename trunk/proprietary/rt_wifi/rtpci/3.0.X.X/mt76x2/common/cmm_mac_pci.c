@@ -2587,6 +2587,9 @@ VOID RT28xxPciMlmeRadioOn(RTMP_ADAPTER *pAd)
     	RTMPRingCleanUp(pAd, QID_MGMT);
     	RTMPRingCleanUp(pAd, QID_RX);
 
+	/* Clear Radio off flag (need before call AsicSwitchChannel()) */
+	RTMP_CLEAR_FLAG(pAd, fRTMP_ADAPTER_RADIO_OFF);
+
 #ifdef RTMP_RBUS_SUPPORT
 		if (pAd->infType == RTMP_DEV_INF_RBUS)
 			NICResetFromError(pAd);

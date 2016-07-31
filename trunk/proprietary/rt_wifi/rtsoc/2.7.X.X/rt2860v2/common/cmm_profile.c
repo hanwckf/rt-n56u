@@ -741,7 +741,6 @@ static void rtmp_read_ap_client_from_file(
 	ULONG		KeyLen;
 	/*UCHAR		CipherAlg = CIPHER_WEP64;*/
 	BOOLEAN bSSIDxIsUsed = FALSE;
-	BOOLEAN bWPAPSKxIsUsed = FALSE;
 	BOOLEAN bKeyxStryIsUsed = FALSE;
 
 	NdisZeroMemory(KeyType, sizeof(KeyType));
@@ -924,42 +923,33 @@ static void rtmp_read_ap_client_from_file(
 
 	}
 
+	/*ApCliWPAPSK*/
 	for (i = 0; i < MAX_APCLI_NUM; i++)
 	{
 		pApCliEntry = &pAd->ApCfg.ApCliTab[i];
 
-		snprintf(tok_str, sizeof(tok_str), "ApCliWPAPSK%d", i + 1);
+		if (i == 0)
+			snprintf(tok_str, sizeof(tok_str), "ApCliWPAPSK");
+		else
+			snprintf(tok_str, sizeof(tok_str), "ApCliWPAPSK%d", i);
 
-		if(RTMPGetKeyParameter(tok_str, tmpbuf, 65, buffer, FALSE))
+		if (RTMPGetKeyParameter(tok_str, tmpbuf, 65, buffer, FALSE))
 		{
-			int retval = TRUE;
-
-			if((strlen(tmpbuf) < 8) || (strlen(tmpbuf) > 64))
+			macptr = tmpbuf;
+			if((strlen(macptr) < 8) || (strlen(macptr) > 64))
 			{
 				DBGPRINT(RT_DEBUG_ERROR, ("APCli_WPAPSK_KEY, key string required 8 ~ 64 characters!!!\n"));
-				continue; 
+				continue;
 			}
 
-			NdisMoveMemory(pApCliEntry->PSK, tmpbuf, strlen(tmpbuf));
-			pApCliEntry->PSKLen = strlen(tmpbuf);
+			NdisMoveMemory(pApCliEntry->PSK, macptr, strlen(macptr));
+			pApCliEntry->PSKLen = strlen(macptr);
+
 			DBGPRINT(RT_DEBUG_TRACE, ("I/F(apcli%d) APCli_WPAPSK_KEY=%s, Len=%d\n", i, pApCliEntry->PSK, pApCliEntry->PSKLen));
 
-			if ((pApCliEntry->AuthMode != Ndis802_11AuthModeWPAPSK) &&
-				(pApCliEntry->AuthMode != Ndis802_11AuthModeWPA2PSK))
-			{
-				retval = FALSE;
-			}
-
-			retval = RT_CfgSetWPAPSKKey(pAd, tmpbuf, strlen(tmpbuf), (PUCHAR)pApCliEntry->CfgSsid, (INT)pApCliEntry->CfgSsidLen, pApCliEntry->PMK);
-
-			if (retval == TRUE)
-			{
-				DBGPRINT(RT_DEBUG_TRACE, ("Start AP-client WPAPSK state machine \n"));
-			}
-
+			RT_CfgSetWPAPSKKey(pAd, macptr, strlen(macptr), (PUCHAR)pApCliEntry->CfgSsid, (INT)pApCliEntry->CfgSsidLen, pApCliEntry->PMK);
 #ifdef DBG
 			DBGPRINT(RT_DEBUG_TRACE, ("I/F(apcli%d) PMK Material => \n", i));
-
 			for (j = 0; j < 32; j++)
 			{
 				DBGPRINT(RT_DEBUG_OFF, ("%02x:", pApCliEntry->PMK[j]));
@@ -967,65 +957,9 @@ static void rtmp_read_ap_client_from_file(
 					DBGPRINT(RT_DEBUG_OFF, ("\n"));
 			}
 			DBGPRINT(RT_DEBUG_OFF,("\n"));
-#endif
-
-			if (bWPAPSKxIsUsed == FALSE)
-			{
-				bWPAPSKxIsUsed = TRUE;
-			}
+#endif /* DBG */
 		}
 	}
-
-	if (bWPAPSKxIsUsed == FALSE)
-	{
-		if (RTMPGetKeyParameter("ApCliWPAPSK", tmpbuf, 255, buffer, FALSE))
-		{
-			for (i = 0, macptr = rstrtok(tmpbuf,";"); (macptr && i < MAX_APCLI_NUM); macptr = rstrtok(NULL,";"), i++)
-			{
-				int retval = TRUE;
-
-				pApCliEntry = &pAd->ApCfg.ApCliTab[i];
-
-				if((strlen(macptr) < 8) || (strlen(macptr) > 64))
-				{
-					DBGPRINT(RT_DEBUG_ERROR, ("APCli_WPAPSK_KEY, key string required 8 ~ 64 characters!!!\n"));
-					continue; 
-				}
-		
-				NdisMoveMemory(pApCliEntry->PSK, macptr, strlen(macptr));
-				pApCliEntry->PSKLen = strlen(macptr);
-				DBGPRINT(RT_DEBUG_TRACE, ("I/F(apcli%d) APCli_WPAPSK_KEY=%s, Len=%d\n", i, pApCliEntry->PSK, pApCliEntry->PSKLen));
-
-				if ((pApCliEntry->AuthMode != Ndis802_11AuthModeWPAPSK) &&
-				(pApCliEntry->AuthMode != Ndis802_11AuthModeWPA2PSK))
-				{
-					retval = FALSE;
-				}
-				retval = RT_CfgSetWPAPSKKey(pAd, macptr, strlen(macptr), (PUCHAR)pApCliEntry->CfgSsid, (INT)pApCliEntry->CfgSsidLen, pApCliEntry->PMK);
-
-				if (retval == TRUE)
-				{
-					/* Start STA supplicant WPA state machine*/
-					DBGPRINT(RT_DEBUG_TRACE, ("Start AP-client WPAPSK state machine \n"));
-					/*pApCliEntry->WpaState = SS_START; 			*/
-				}
-
-				/*RTMPMakeRSNIE(pAd, pApCliEntry->AuthMode, pApCliEntry->WepStatus, (i + MIN_NET_DEVICE_FOR_APCLI));			*/
-#ifdef DBG
-				DBGPRINT(RT_DEBUG_TRACE, ("I/F(apcli%d) PMK Material => \n", i));
-
-				for (j = 0; j < 32; j++)
-				{
-					DBGPRINT(RT_DEBUG_OFF, ("%02x:", pApCliEntry->PMK[j]));
-					if ((j%16) == 15)
-						DBGPRINT(RT_DEBUG_OFF, ("\n"));
-				}
-				DBGPRINT(RT_DEBUG_OFF,("\n"));
-#endif
-			}
-		}
-	}
-
 
 	/*ApCliDefaultKeyID*/
 	if (RTMPGetKeyParameter("ApCliDefaultKeyID", tmpbuf, 255, buffer, TRUE))

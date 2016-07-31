@@ -926,14 +926,18 @@ static void rtmp_read_ap_client_from_file(
 	}
 
 	/*ApCliWPAPSK*/
-	if (RTMPGetKeyParameter("ApCliWPAPSK", tmpbuf, 255, buffer, FALSE))
+	for (i = 0; i < MAX_APCLI_NUM; i++)
 	{
-		for (i = 0, macptr = rstrtok(tmpbuf,";"); (macptr && i < MAX_APCLI_NUM); macptr = rstrtok(NULL,";"), i++)
+		pApCliEntry = &pAd->ApCfg.ApCliTab[i];
+
+		if (i == 0)
+			snprintf(tok_str, sizeof(tok_str), "ApCliWPAPSK");
+		else
+			snprintf(tok_str, sizeof(tok_str), "ApCliWPAPSK%d", i);
+
+		if (RTMPGetKeyParameter(tok_str, tmpbuf, 65, buffer, FALSE))
 		{
-			int retval = TRUE;
-
-			pApCliEntry = &pAd->ApCfg.ApCliTab[i];
-
+			macptr = tmpbuf;
 			if((strlen(macptr) < 8) || (strlen(macptr) > 64))
 			{
 				MTWF_LOG(DBG_CAT_ALL, DBG_SUBCAT_ALL, DBG_LVL_ERROR, ("APCli_WPAPSK_KEY, key string required 8 ~ 64 characters!!!\n"));
@@ -944,23 +948,7 @@ static void rtmp_read_ap_client_from_file(
 			pApCliEntry->PSKLen = strlen(macptr);
 			MTWF_LOG(DBG_CAT_ALL, DBG_SUBCAT_ALL, DBG_LVL_TRACE, ("I/F(apcli%d) APCli_WPAPSK_KEY=%s, Len=%d\n", i, pApCliEntry->PSK, pApCliEntry->PSKLen));
 
-			if ((pApCliEntry->wdev.AuthMode != Ndis802_11AuthModeWPAPSK) &&
-				(pApCliEntry->wdev.AuthMode != Ndis802_11AuthModeWPA2PSK))
-			{
-				retval = FALSE;
-			}
-
-			{
-				retval = RT_CfgSetWPAPSKKey(pAd, macptr, strlen(macptr), (PUCHAR)pApCliEntry->CfgSsid, (INT)pApCliEntry->CfgSsidLen, pApCliEntry->PMK);
-			}
-			if (retval == TRUE)
-			{
-				/* Start STA supplicant WPA state machine*/
-				MTWF_LOG(DBG_CAT_ALL, DBG_SUBCAT_ALL, DBG_LVL_TRACE, ("Start AP-client WPAPSK state machine \n"));
-				/*pApCliEntry->WpaState = SS_START;				*/
-			}
-
-			/*RTMPMakeRSNIE(pAd, pApCliEntry->AuthMode, pApCliEntry->WepStatus, (i + MIN_NET_DEVICE_FOR_APCLI));			*/
+			RT_CfgSetWPAPSKKey(pAd, macptr, strlen(macptr), (PUCHAR)pApCliEntry->CfgSsid, (INT)pApCliEntry->CfgSsidLen, pApCliEntry->PMK);
 #ifdef DBG
 			MTWF_LOG(DBG_CAT_ALL, DBG_SUBCAT_ALL, DBG_LVL_TRACE, ("I/F(apcli%d) PMK Material => \n", i));
 

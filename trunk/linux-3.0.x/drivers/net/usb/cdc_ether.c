@@ -526,7 +526,6 @@ static const struct driver_info	zte_cdc_info = {
 	.bind =		usbnet_cdc_zte_bind,
 	.unbind =	usbnet_cdc_unbind,
 	.status =	usbnet_cdc_status,
-	.set_rx_mode =	usbnet_cdc_update_filter,
 	.manage_power =	usbnet_manage_power,
 	.rx_fixup =	usbnet_cdc_zte_rx_fixup,
 };

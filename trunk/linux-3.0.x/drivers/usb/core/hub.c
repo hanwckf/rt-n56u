@@ -962,8 +962,6 @@ static void hub_quiesce(struct usb_hub *hub, enum hub_quiescing_type type)
 	struct usb_device *hdev = hub->hdev;
 	int i;
 
-	cancel_delayed_work_sync(&hub->init_work);
-
 	/* khubd and related activity won't re-trigger */
 	hub->quiescing = 1;
 

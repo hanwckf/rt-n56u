@@ -5085,8 +5085,10 @@ BOOLEAN rtmp_rx_done_handle(RTMP_ADAPTER *pAd)
 				b. be released if it is discarded
 		*/
 
-		
+#if 0
+		/* GetPacketFromRxRing always filled pRxBlk on returned pRxPacket != NULL */
 		NdisZeroMemory(&rxblk,sizeof(RX_BLK));
+#endif
 		pRxBlk = &rxblk;
 		pRxPacket = GetPacketFromRxRing(pAd, pRxBlk, &bReschedule, &RxPending, &bCmdRspPacket, 0);
 		if ((pRxPacket == NULL) && !bCmdRspPacket)

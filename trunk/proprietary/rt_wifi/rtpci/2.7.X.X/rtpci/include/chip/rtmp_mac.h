@@ -1170,7 +1170,7 @@ typedef union _TX_CHAIN_ADDR0_H_STRUC
 
 #define TX_CHAIN_ADDR1_L		0x104C
 
-#ifdef BIG_ENDIAN
+#ifdef RT_BIG_ENDIAN
 typedef union _TX_CHAIN_ADDR1_L_STRUC
 {
 	struct

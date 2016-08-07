@@ -2521,6 +2521,11 @@ MAC_TABLE_ENTRY *MacTableInsertEntry(
 			pEntry->NoDataIdleCount = 0;
 			pEntry->AssocDeadLine = MAC_TABLE_ASSOC_TIMEOUT;
 			pEntry->ContinueTxFailCnt = 0;
+			{
+				int tid;
+				for (tid=0; tid<NUM_OF_TID; tid++)
+					pEntry->TxBarSeq[tid] = -1;
+			}
 #ifdef WDS_SUPPORT
 			pEntry->LockEntryTx = FALSE;
 #endif /* WDS_SUPPORT */

@@ -2108,6 +2108,7 @@ typedef struct _MAC_TABLE_ENTRY {
 	struct _MAC_TABLE_ENTRY *pNext;
 	USHORT TxSeq[NUM_OF_TID];
 	USHORT NonQosDataSeq;
+	INT TxBarSeq[NUM_OF_TID];
 
 	RSSI_SAMPLE RssiSample;
 	UINT32 LastRxRate;

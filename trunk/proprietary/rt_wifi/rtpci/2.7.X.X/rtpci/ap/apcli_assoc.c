@@ -293,7 +293,7 @@ static VOID ApCliMlmeAssocReqAction(
 #ifdef RT_BIG_ENDIAN
         		*(USHORT *)(&HtCapabilityTmp.HtCapInfo) = SWAP16(*(USHORT *)(&HtCapabilityTmp.HtCapInfo));
         		*(USHORT *)(&HtCapabilityTmp.ExtHtCapInfo) = SWAP16(*(USHORT *)(&HtCapabilityTmp.ExtHtCapInfo));
-#endif /* RT_BIG_ENDINA */
+#endif /* RT_BIG_ENDIAN */
         		MakeOutgoingFrame(pOutBuffer + FrameLen,         &TmpLen,
         							1,                           &HtCapIe,
         							1,                           &pAd->ApCliMlmeAux.HtCapabilityLen,

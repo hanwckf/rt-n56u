@@ -483,6 +483,13 @@ VOID MlmeDELBAAction(
 		              END_OF_ARGS);
 		MiniportMMRequest(pAd, QID_AC_BE, pOutBuffer, FrameLen);
 		MlmeFreeMemory(pAd, pOutBuffer);
+		{
+			int tid=0;
+			MAC_TABLE_ENTRY *pEntry;
+			pEntry = &pAd->MacTab.Content[pInfo->Wcid];
+			for (tid=0; tid<NUM_OF_TID; tid++)
+				pEntry->TxBarSeq[tid] = -1;
+		}
 		DBGPRINT(RT_DEBUG_TRACE, ("BA - MlmeDELBAAction() . 3 DELBA sent. Initiator(%d)\n", pInfo->Initiator));
     	}
 }
@@ -1688,6 +1695,11 @@ VOID SendRefreshBAR(
 		{
 			TID = pBAEntry->TID;
 
+			if (pEntry->TxBarSeq[TID] == pEntry->TxSeq[TID])
+			{
+				continue;
+			}
+
 			ASSERT(pBAEntry->Wcid < MaxWcidNum);
 
 			NStatus = MlmeAllocateMemory(pAd, &pOutBuffer);  /*Get an unused nonpaged memory*/
@@ -1698,6 +1710,8 @@ VOID SendRefreshBAR(
 			}
 				
 			Sequence = pEntry->TxSeq[TID];
+
+			pEntry->TxBarSeq[TID] = pEntry->TxSeq[TID];
 
 #ifdef P2P_SUPPORT
 			BarHeaderInit(pAd, &FrameBar, pEntry->Addr, pEntry->HdrAddr2);

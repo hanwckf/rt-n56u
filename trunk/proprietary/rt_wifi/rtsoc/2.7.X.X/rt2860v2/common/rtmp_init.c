@@ -2425,7 +2425,7 @@ VOID NICUpdateFifoStaCounters(
 			{			
 				DBGPRINT(RT_DEBUG_TRACE, ("#"));
 #ifdef DOT11_N_SUPPORT
-				pEntry->NoBADataCountDown = 64;
+				//pEntry->NoBADataCountDown = 64;
 #endif /* DOT11_N_SUPPORT */
 
 #ifdef CONFIG_STA_SUPPORT
@@ -2455,14 +2455,6 @@ VOID NICUpdateFifoStaCounters(
 
 				if(pEntry->PsMode == PWR_ACTIVE)
 				{
-#ifdef DOT11_N_SUPPORT					
-					int tid;
-					for (tid=0; tid<NUM_OF_TID; tid++)
-					{
-						BAOriSessionTearDown(pAd, pEntry->Aid,  tid, FALSE, FALSE);
-					}
-#endif /* DOT11_N_SUPPORT */
-
 
 #ifdef WDS_SUPPORT
 					/* fix WDS Jam issue*/

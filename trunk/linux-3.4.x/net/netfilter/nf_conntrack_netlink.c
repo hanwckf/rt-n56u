@@ -1561,6 +1561,8 @@ ctnetlink_new_conntrack(struct sock *ctnl, struct sk_buff *skb,
 
 			if (!cda[CTA_TUPLE_ORIG] || !cda[CTA_TUPLE_REPLY])
 				return -EINVAL;
+			if (otuple.dst.protonum != rtuple.dst.protonum)
+				return -EINVAL;
 
 			ct = ctnetlink_create_conntrack(net, cda, &otuple,
 							&rtuple, u3);

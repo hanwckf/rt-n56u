@@ -73,12 +73,12 @@
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <sys/time.h>
-#include <sys/errno.h>
 #include <sys/file.h>
 #include <sys/stat.h>
 #include <sys/utsname.h>
 #include <sys/sysmacros.h>
 
+#include <errno.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <syslog.h>

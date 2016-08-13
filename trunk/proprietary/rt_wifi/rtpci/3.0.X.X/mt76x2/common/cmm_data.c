@@ -3426,6 +3426,7 @@ BOOLEAN RTMPCheckEtherType(
 	return TRUE;
 }
 
+#ifdef FORCE_ANNOUNCE_CRITICAL_AMPDU
 VOID RTMP_RxPacketClassify(
 	IN RTMP_ADAPTER *pAd,
 	IN RX_BLK		*pRxBlk,
@@ -3436,45 +3437,44 @@ VOID RTMP_RxPacketClassify(
 
 	if (protoType == ETH_P_ARP)
 	{
-		pRxBlk->Arp = 1;
+		pRxBlk->CriticalPkt = 1;	// ARP
 
-		DBGPRINT(RT_DEBUG_TRACE, ("rx path arp #(aid=%d,wcid=%d, pHeader seq=%d  ,ampdu = %d)\n",
+		DBGPRINT(RT_DEBUG_TRACE, ("rx path arp #(aid=%d,wcid=%d, pHeader seq=%d, ampdu = %d)\n",
 			pEntry->Aid, pRxBlk->wcid, pRxBlk->pHeader->Sequence, RX_BLK_TEST_FLAG(pRxBlk, fRX_AMPDU))); 
-
-	}	
+	}
 	else if (protoType == ETH_P_IP)
 	{
 	
 		UINT8 protocol = *(pData + 11);
 		//UINT8 icmp_type = *(pData + 22);
-		//RXWI_STRUC *pRxWI = pRxBlk->pRxWI;
 
 		if (protocol == 0x1)
 		{
-			pRxBlk->Ping = 1;
-			pRxBlk->icmp_seq = (*(pData + 28) << 8) | *(pData + 29);
-			
-			DBGPRINT(RT_DEBUG_TRACE, ("rx path PING #(aid=%d,wcid=%d, icmp seq=%d, pHeader seq=%d  ,ampdu = %d)\n",
-						pEntry->Aid, pRxBlk->wcid, pRxBlk->icmp_seq, pRxBlk->pHeader->Sequence, RX_BLK_TEST_FLAG(pRxBlk, fRX_AMPDU)));
+			pRxBlk->CriticalPkt = 1;	// ICMP
 
+			DBGPRINT(RT_DEBUG_TRACE, ("rx path PING #(aid=%d,wcid=%d, pHeader seq=%d, ampdu = %d)\n",
+				pEntry->Aid, pRxBlk->wcid, pRxBlk->pHeader->Sequence, RX_BLK_TEST_FLAG(pRxBlk, fRX_AMPDU)));
 		}
-		else if (protocol == 0x11)
+#if 0
+		else if (protocol == IP_PROTO_UDP)
 		{
-			PUCHAR pUdpHdr;
+			PUCHAR pUdpHdr = pData + 22;
 			UINT16 srcPort, dstPort;
-					
-			pUdpHdr = pData + 22;
+
 			srcPort = OS_NTOHS(get_unaligned((PUINT16)(pUdpHdr)));
 			dstPort = OS_NTOHS(get_unaligned((PUINT16)(pUdpHdr+2)));
 			if ((srcPort==67 && dstPort==68)||(srcPort==68 && dstPort==67)) /*It's a DHCP packet */
 			{
-				pRxBlk->Dhcp = 1;
-				DBGPRINT(RT_DEBUG_TRACE, ("rx path dhcp #(aid=%d,wcid=%d, pHeader seq=%d  ,ampdu = %d)\n",
+				pRxBlk->CriticalPkt = 1;	// DHCP
+
+				DBGPRINT(RT_DEBUG_TRACE, ("rx path dhcp #(aid=%d,wcid=%d, pHeader seq=%d, ampdu = %d)\n",
 					pEntry->Aid, pRxBlk->wcid, pRxBlk->pHeader->Sequence, RX_BLK_TEST_FLAG(pRxBlk, fRX_AMPDU)));
 			}
 		}
+#endif
 	}
 }
+#endif /* FORCE_ANNOUNCE_CRITICAL_AMPDU */
 
 VOID Update_Rssi_Sample(
 	IN RTMP_ADAPTER *pAd,
@@ -5085,10 +5085,10 @@ BOOLEAN rtmp_rx_done_handle(RTMP_ADAPTER *pAd)
 				b. be released if it is discarded
 		*/
 
-#if 0
-		/* GetPacketFromRxRing always filled pRxBlk on returned pRxPacket != NULL */
-		NdisZeroMemory(&rxblk,sizeof(RX_BLK));
-#endif
+#ifdef FORCE_ANNOUNCE_CRITICAL_AMPDU
+		rxblk.CriticalPkt = 0;
+#endif /* FORCE_ANNOUNCE_CRITICAL_AMPDU */
+
 		pRxBlk = &rxblk;
 		pRxPacket = GetPacketFromRxRing(pAd, pRxBlk, &bReschedule, &RxPending, &bCmdRspPacket, 0);
 		if ((pRxPacket == NULL) && !bCmdRspPacket)

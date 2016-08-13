@@ -21,15 +21,19 @@ Package contents
 ----------------
 
     All executables and libraries in this package require msvcrt.dll.
-    It's included in all recent Windows versions. On Windows 95 it
-    might be missing, but once you get it somewhere, XZ Utils should
-    run even on Windows 95.
+    It's included in all recent Windows versions. (On Windows 95 it
+    might be missing, but once you get it somewhere, the i686 binaries
+    should run even on Windows 95 if the processor is new enough.)
 
-    There are two different versions of the executable and library files.
-    There is one directory for each type of binaries:
+    There is a SSE2 optimization in the compression code but this
+    version of XZ Utils doesn't include run-time processor detection.
+    This is why there is a separate i686-SSE2 version.
 
-        bin_i486        32-bit x86 (i486 and up), Windows 95 and later
-        bin_x86-64      64-bit x86-64, Windows XP and later
+    There is one directory for each type of executable and library files:
+
+        bin_i686        32-bit x86 (i686 and newer), Windows 95 and later
+        bin_i686-sse2   32-bit x86 (i686 with SSE2), Windows 98 and later
+        bin_x86-64      64-bit x86-64, Windows Vista and later
 
     Each of the above directories have the following files:
 
@@ -90,15 +94,13 @@ Microsoft Visual C++
 
         lib /def:liblzma.def /out:liblzma.lib /machine:x64
 
-    Linking against static liblzma might work too, but usually you
-    should use liblzma.dll if possible. (Or, if having a decompressor
-    is enough, consider using XZ Embedded or LZMA SDK which can be
-    compiled with MSVC.)
+    If you need to link statically against liblzma, you should build
+    liblzma with MSVC 2013 update 2 or later. Alternatively, if having
+    a decompressor is enough, consider using XZ Embedded or LZMA SDK.
 
-    To try linking against static liblzma, rename liblzma.a to e.g.
-    liblzma_static.lib and tell MSVC to link against it. You also need
-    to tell lzma.h to not use __declspec(dllimport) by defining the
-    macro LZMA_API_STATIC. You can do it either in the C/C++ code
+    When you plan to link against static liblzma, you need to tell
+    lzma.h to not use __declspec(dllimport) by defining the macro
+    LZMA_API_STATIC. You can do it either in the C/C++ code
 
         #define LZMA_API_STATIC
         #include <lzma.h>

@@ -1,6 +1,6 @@
 
-XZ Utils on DOS
-===============
+Building XZ Utils for DOS
+=========================
 
 Introduction
 
@@ -76,13 +76,4 @@ Building
     You should get xz.exe (and a bunch of temporary files). Other tools
     are not built. Having e.g. xzdec.exe doesn't save much space compared
     to xz.exe, because the DJGPP runtime makes the .exe quite big anyway.
-
-
-Bugs
-
-    xz doesn't necessarily work in Dosbox. It should work in DOSEMU.
-
-    Pressing Ctrl-c or Ctrl-Break won't remove the incomplete target file
-    when running under Windows XP Command Prompt (something goes wrong
-    with SIGINT handling). It works correctly under Windows 95/98/98SE/ME.
 

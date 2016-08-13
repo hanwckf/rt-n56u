@@ -6,8 +6,8 @@ NAME
        xzdec, lzmadec - Small .xz and .lzma decompressors
 
 SYNOPSIS
-       xzdec [option]...  [file]...
-       lzmadec [option]...  [file]...
+       xzdec [option...]  [file...]
+       lzmadec [option...]  [file...]
 
 DESCRIPTION
        xzdec is a liblzma-based decompression-only tool for .xz (and only .xz)
@@ -77,4 +77,4 @@ SEE ALSO
 
 
 
-Tukaani                           2010-09-27                          XZDEC(1)
+Tukaani                           2013-06-30                          XZDEC(1)

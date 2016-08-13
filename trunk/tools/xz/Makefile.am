@@ -17,6 +17,7 @@ endif
 
 SUBDIRS += src po tests
 
+if COND_DOC
 dist_doc_DATA = \
 	AUTHORS \
 	COPYING \
@@ -36,17 +37,20 @@ dist_examples_DATA = \
 	doc/examples/01_compress_easy.c \
 	doc/examples/02_decompress.c \
 	doc/examples/03_compress_custom.c \
+	doc/examples/04_compress_easy_mt.c \
 	doc/examples/Makefile
 
 examplesolddir = $(docdir)/examples_old
 dist_examplesold_DATA = \
 	doc/examples_old/xz_pipe_comp.c \
 	doc/examples_old/xz_pipe_decomp.c
+endif
 
 EXTRA_DIST = \
 	extra \
 	dos \
 	windows \
+	macosx \
 	autogen.sh \
 	Doxyfile.in \
 	COPYING.GPLv2 \
@@ -95,6 +99,7 @@ dist-hook:
 
 # This works with GNU tar and gives cleaner package than normal 'make dist'.
 mydist:
+	sh "$(srcdir)/src/liblzma/validate_map.sh"
 	VERSION=$(VERSION); \
 	if test -d "$(srcdir)/.git" && type git > /dev/null 2>&1; then \
 		SNAPSHOT=`cd "$(srcdir)" && git describe --abbrev=4 | cut -b2-`; \

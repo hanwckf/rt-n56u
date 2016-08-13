@@ -12,7 +12,7 @@ CLEANFILES =
 doc_DATA =
 
 lib_LTLIBRARIES = liblzma.la
-liblzma_la_SOURCES = $(top_srcdir)/src/common/tuklib_physmem.c
+liblzma_la_SOURCES =
 liblzma_la_CPPFLAGS = \
 	-I$(top_srcdir)/src/liblzma/api \
 	-I$(top_srcdir)/src/liblzma/common \
@@ -24,7 +24,19 @@ liblzma_la_CPPFLAGS = \
 	-I$(top_srcdir)/src/liblzma/simple \
 	-I$(top_srcdir)/src/common \
 	-DTUKLIB_SYMBOL_PREFIX=lzma_
-liblzma_la_LDFLAGS = -no-undefined -version-info 5:4:0
+liblzma_la_LDFLAGS = -no-undefined -version-info 7:2:2
+
+EXTRA_DIST += liblzma.map validate_map.sh
+if COND_SYMVERS
+liblzma_la_LDFLAGS += \
+	-Wl,--version-script=$(top_srcdir)/src/liblzma/liblzma.map
+endif
+
+liblzma_la_SOURCES += ../common/tuklib_physmem.c
+
+if COND_THREADS
+liblzma_la_SOURCES += ../common/tuklib_cpucores.c
+endif
 
 include $(srcdir)/common/Makefile.inc
 include $(srcdir)/check/Makefile.inc
@@ -88,3 +100,23 @@ endif
 pkgconfigdir = $(libdir)/pkgconfig
 pkgconfig_DATA = liblzma.pc
 EXTRA_DIST += liblzma.pc.in
+
+pc_verbose = $(pc_verbose_@AM_V@)
+pc_verbose_ = $(pc_verbose_@AM_DEFAULT_V@)
+pc_verbose_0 = @echo "  PC      " $@;
+
+liblzma.pc: $(srcdir)/liblzma.pc.in
+	$(AM_V_at)rm -f $@
+	$(pc_verbose)sed \
+		-e 's,@prefix[@],$(prefix),g' \
+		-e 's,@exec_prefix[@],$(exec_prefix),g' \
+		-e 's,@libdir[@],$(libdir),g' \
+		-e 's,@includedir[@],$(includedir),g' \
+		-e 's,@PACKAGE_URL[@],$(PACKAGE_URL),g' \
+		-e 's,@PACKAGE_VERSION[@],$(PACKAGE_VERSION),g' \
+		-e 's,@PTHREAD_CFLAGS[@],$(PTHREAD_CFLAGS),g' \
+		-e 's,@LIBS[@],$(LIBS),g' \
+		< $(srcdir)/liblzma.pc.in > $@ || { rm -f $@; exit 1; }
+
+clean-local:
+	rm -f liblzma.pc

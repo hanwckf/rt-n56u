@@ -15,12 +15,12 @@ SYNOPSIS
 
 DESCRIPTION
        xzgrep  invokes  grep(1)  on  files which may be either uncompressed or
-       compressed with xz(1), lzma(1),  gzip(1),  or  bzip2(1).   All  options
-       specified are passed directly to grep(1).
+       compressed with xz(1), lzma(1), gzip(1),  bzip2(1),  or  lzop(1).   All
+       options specified are passed directly to grep(1).
 
        If  no file is specified, then standard input is decompressed if neces-
-       sary and fed to grep(1).  When reading from standard input, gzip(1) and
-       bzip2(1) compressed files are not supported.
+       sary and fed to grep(1).  When reading from  standard  input,  gzip(1),
+       bzip2(1), and lzop(1) compressed files are not supported.
 
        If xzgrep is invoked as xzegrep or xzfgrep then egrep(1) or fgrep(1) is
        used instead of grep(1).  The same applies to  names  lzgrep,  lzegrep,
@@ -32,8 +32,8 @@ ENVIRONMENT
               of grep(1), egrep(1), or fgrep(1).
 
 SEE ALSO
-       grep(1), xz(1), gzip(1), bzip2(1), zgrep(1)
+       grep(1), xz(1), gzip(1), bzip2(1), lzop(1), zgrep(1)
 
 
 
-Tukaani                           2010-09-27                         XZGREP(1)
+Tukaani                           2011-03-19                         XZGREP(1)

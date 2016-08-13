@@ -21,4 +21,4 @@ sed -n 's/LZMA_VERSION_STABILITY_ALPHA/alpha/
 	src/liblzma/api/lzma/version.h \
 	| tr '\n' '|' \
 	| sed 's/|/./; s/|/./; s/|//g' \
-	| tr -d '\n'
+	| tr -d '\r\n'

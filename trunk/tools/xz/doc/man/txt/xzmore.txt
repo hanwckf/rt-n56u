@@ -6,8 +6,8 @@ NAME
        xzmore, lzmore - view xz or lzma compressed (text) files
 
 SYNOPSIS
-       xzmore [filename ...]
-       lzmore [filename ...]
+       xzmore [file...]
+       lzmore [file...]
 
 DESCRIPTION
        xzmore  is  a  filter which allows examination of xz(1) or lzma(1) com-
@@ -31,4 +31,4 @@ SEE ALSO
 
 
 
-Tukaani                           2010-09-27                         XZMORE(1)
+Tukaani                           2013-06-30                         XZMORE(1)

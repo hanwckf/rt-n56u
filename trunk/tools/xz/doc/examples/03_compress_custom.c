@@ -28,8 +28,8 @@ init_encoder(lzma_stream *strm)
 	// Use the default preset (6) for LZMA2.
 	//
 	// The lzma_options_lzma structure and the lzma_lzma_preset() function
-	// are declared in lzma/lzma.h (src/liblzma/api/lzma/lzma.h in the
-	// source package or e.g. /usr/include/lzma/lzma.h depending on
+	// are declared in lzma/lzma12.h (src/liblzma/api/lzma/lzma12.h in the
+	// source package or e.g. /usr/include/lzma/lzma12.h depending on
 	// the install prefix).
 	lzma_options_lzma opt_lzma2;
 	if (lzma_lzma_preset(&opt_lzma2, LZMA_PRESET_DEFAULT)) {
@@ -48,7 +48,7 @@ init_encoder(lzma_stream *strm)
 	// Now we could customize the LZMA2 options if we wanted. For example,
 	// we could set the the dictionary size (opt_lzma2.dict_size) to
 	// something else than the default (8 MiB) of the default preset.
-	// See lzma/lzma.h for details of all LZMA2 options.
+	// See lzma/lzma12.h for details of all LZMA2 options.
 	//
 	// The x86 BCJ filter will try to modify the x86 instruction stream so
 	// that LZMA2 can compress it better. The x86 BCJ filter doesn't need

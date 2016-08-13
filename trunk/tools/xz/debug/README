@@ -3,7 +3,7 @@ Debug tools
 -----------
 
     This directory contains a few tiny programs that may be helpful when
-    debugging LZMA Utils.
+    debugging XZ Utils.
 
     These tools are not meant to be installed. Often one needs to edit
     the source code a little to make the programs do the wanted things.

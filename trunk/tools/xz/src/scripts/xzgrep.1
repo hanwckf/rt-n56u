@@ -6,7 +6,7 @@
 .\"
 .\" License: GNU GPLv2+
 .\"
-.TH XZGREP 1 "2010-09-27" "Tukaani" "XZ Utils"
+.TH XZGREP 1 "2011-03-19" "Tukaani" "XZ Utils"
 .SH NAME
 xzgrep \- search compressed files for a regular expression
 .SH SYNOPSIS
@@ -40,8 +40,9 @@ which may be either uncompressed or compressed with
 .BR xz (1),
 .BR lzma (1),
 .BR gzip (1),
+.BR bzip2 (1),
 or
-.BR bzip2 (1).
+.BR lzop (1).
 All options specified are passed directly to
 .BR grep (1).
 .PP
@@ -51,9 +52,10 @@ is specified, then standard input is decompressed if necessary
 and fed to
 .BR grep (1).
 When reading from standard input,
-.BR gzip (1)
+.BR gzip (1),
+.BR bzip2 (1),
 and
-.BR bzip2 (1)
+.BR lzop (1)
 compressed files are not supported.
 .PP
 If
@@ -92,4 +94,5 @@ or
 .BR xz (1),
 .BR gzip (1),
 .BR bzip2 (1),
+.BR lzop (1),
 .BR zgrep (1)

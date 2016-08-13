@@ -113,6 +113,7 @@ SRCS_C = \
 	../src/xz/list.c \
 	../src/xz/main.c \
 	../src/xz/message.c \
+	../src/xz/mytime.c \
 	../src/xz/options.c \
 	../src/xz/signals.c \
 	../src/xz/suffix.c \

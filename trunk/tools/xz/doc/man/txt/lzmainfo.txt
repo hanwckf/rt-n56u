@@ -6,7 +6,7 @@ NAME
        lzmainfo - show information stored in the .lzma file header
 
 SYNOPSIS
-       lzmainfo [--help] [--version] [file]...
+       lzmainfo [--help] [--version] [file...]
 
 DESCRIPTION
        lzmainfo  shows  information stored in the .lzma file header.  It reads
@@ -37,4 +37,4 @@ SEE ALSO
 
 
 
-Tukaani                           2010-09-27                       LZMAINFO(1)
+Tukaani                           2013-06-30                       LZMAINFO(1)

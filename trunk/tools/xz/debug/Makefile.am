@@ -5,6 +5,9 @@
 ## You can do whatever you want with this file.
 ##
 
+EXTRA_DIST = \
+	translation.bash
+
 noinst_PROGRAMS = \
 	repeat \
 	sync_flush \

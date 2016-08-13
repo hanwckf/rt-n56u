@@ -69,13 +69,14 @@ buildit()
 	# Clean up if it was already configured.
 	[ -f Makefile ] && make distclean
 
-	# Build the size-optimized binaries. Note that I don't want to
-	# provide size-optimized liblzma (shared nor static), because
-	# that isn't thread-safe now, and depending on bunch of things,
-	# maybe it will never be on Windows (pthreads-win32 helps but
-	# static liblzma might bit a bit tricky with it).
+	# Build the size-optimized binaries. Providing size-optimized liblzma
+	# could be considered but I don't know if it should only use -Os or
+	# should it also use --enable-small and if it should support
+	# threading. So I don't include a size-optimized liblzma for now.
 	./configure \
 		--prefix= \
+		--enable-silent-rules \
+		--disable-dependency-tracking \
 		--disable-nls \
 		--disable-scripts \
 		--disable-threads \
@@ -90,16 +91,14 @@ buildit()
 
 	make distclean
 
-	# Build the normal speed-optimized binaries. Note that while
-	# --disable-threads has been documented to make some things
-	# thread-unsafe, it's not actually true with this combination
-	# of configure flags in XZ Utils 5.0.x. Things can (and probably
-	# will) change after 5.0.x, and this script will be updated too.
+	# Build the normal speed-optimized binaries. The type of threading
+	# (win95 vs. vista) will be autodetect from the target architecture.
 	./configure \
 		--prefix= \
+		--enable-silent-rules \
+		--disable-dependency-tracking \
 		--disable-nls \
 		--disable-scripts \
-		--disable-threads \
 		--build="$BUILD" \
 		CFLAGS="$CFLAGS -O2"
 	make -C src/liblzma
@@ -131,18 +130,19 @@ txtcp()
 	done
 }
 
-# FIXME: Make sure that we don't get i686 or i586 code from the runtime.
-# Actually i586 would be fine, but i686 probably not if the idea is to
-# support even Win95.
-#
-# FIXME: Using i486 in the configure triplet may be wrong.
 if [ -d "$MINGW_W32_DIR" ]; then
 	# 32-bit x86, Win95 or later, using MinGW-w32
 	PATH=$MINGW_W32_DIR/bin:$MINGW_W32_DIR/i686-w64-mingw32/bin:$PATH \
 			buildit \
-			pkg/bin_i486 \
-			i486-w64-mingw32 \
-			'-march=i486 -mtune=generic'
+			pkg/bin_i686 \
+			i686-w64-mingw32 \
+			'-march=i686 -mtune=generic'
+	# 32-bit x86 with SSE2, Win98 or later, using MinGW-w32
+	PATH=$MINGW_W32_DIR/bin:$MINGW_W32_DIR/i686-w64-mingw32/bin:$PATH \
+			buildit \
+			pkg/bin_i686-sse2 \
+			i686-w64-mingw32 \
+			'-march=i686 -msse2 -mfpmath=sse -mtune=generic'
 elif [ -d "$MINGW_DIR" ]; then
 	# 32-bit x86, Win95 or later, using MinGW
 	PATH=$MINGW_DIR/bin:$PATH \
@@ -153,7 +153,7 @@ elif [ -d "$MINGW_DIR" ]; then
 fi
 
 if [ -d "$MINGW_W64_DIR" ]; then
-	# 64-bit x86, WinXP or later, using MinGW-w64
+	# x86-64, Windows Vista or later, using MinGW-w64
 	PATH=$MINGW_W64_DIR/bin:$MINGW_W64_DIR/x86_64-w64-mingw32/bin:$PATH \
 			buildit \
 			pkg/bin_x86-64 \

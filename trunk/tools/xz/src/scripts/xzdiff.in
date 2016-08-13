@@ -19,10 +19,10 @@
 
 # Instead of unsetting XZ_OPT, just make sure that xz will use file format
 # autodetection. This way memory usage limit and thread limit can be
-# specified via XZ_OPT. With gzip and bzip2 it's OK to just unset the
+# specified via XZ_OPT. With gzip, bzip2, and lzop it's OK to just unset the
 # environment variables.
 xz='@xz@ --format=auto'
-unset GZIP BZIP BZIP2
+unset GZIP BZIP BZIP2 LZOP
 
 case ${0##*/} in
   *cmp*) prog=xzcmp; cmp=${CMP:-cmp};;
@@ -77,17 +77,21 @@ if test $# -eq 1; then
       xz1=bzip2;;
     *[-.][zZ] | *_z | *[-.]gz | *.t[ag]z)
       xz1=gzip;;
+    *[-.]lzo | *.tzo)
+      xz1=lzop;;
     *)
       echo >&2 "$0: $1: Unknown compressed file name suffix"
       exit 2;;
   esac
   case $1 in
-    *[-.][zZ] | *_z | *[-.][gx]z | *[-.]bz2 | *[-.]lzma)
-      FILE=`expr "X$1" : 'X\(.*\)[-.][abglmxzZ2]*$'`;;
+    *[-.][zZ] | *_z | *[-.][gx]z | *[-.]bz2 | *[-.]lzma | *[-.]lzo)
+      FILE=`expr "X$1" : 'X\(.*\)[-.][abglmoxzZ2]*$'`;;
     *.t[abglx]z)
       FILE=`expr "X$1" : 'X\(.*[-.]t\)[abglx]z$'`ar;;
     *.tbz2)
       FILE=`expr "X$1" : 'X\(.*[-.]t\)bz2$'`ar;;
+    *.tzo)
+      FILE=`expr "X$1" : 'X\(.*[-.]t\)zo$'`ar;;
   esac
   xz_status=$(
     exec 4>&1
@@ -97,15 +101,17 @@ elif test $# -eq 2; then
   case $1 in
     *[-.]bz2 | *.tbz | *.tbz2) xz1=bzip2;;
     *[-.][zZ] | *_z | *[-.]gz | *.t[ag]z) xz1=gzip;;
+    *[-.]lzo | *.tzo) xz1=lzop;;
   esac
   case $2 in
     *[-.]bz2 | *.tbz | *.tbz2) xz2=bzip2;;
     *[-.][zZ] | *_z | *[-.]gz | *.t[ag]z) xz2=gzip;;
+    *[-.]lzo | *.tzo) xz2=lzop;;
   esac
   case $1 in
-    *[-.][zZ] | *_z | *[-.][gx]z | *[-.]bz2 | *[-.]lzma | *.t[abglx]z | *.tbz2 | -)
+    *[-.][zZ] | *_z | *[-.][gx]z | *[-.]bz2 | *[-.]lzma | *.t[abglx]z | *.tbz2 | *[-.]lzo | *.tzo | -)
       case "$2" in
-        *[-.][zZ] | *_z | *[-.][gx]z | *[-.]bz2 | *[-.]lzma | *.t[abglx]z | *.tbz2 | -)
+        *[-.][zZ] | *_z | *[-.][gx]z | *[-.]bz2 | *[-.]lzma | *.t[abglx]z | *.tbz2 | *[-.]lzo | *.tzo | -)
           if test "$1$2" = --; then
             xz_status=$(
               exec 4>&1
@@ -127,21 +133,41 @@ elif test $# -eq 2; then
             esac
             (exit $cmp_status)
           else
-            F=`expr "/$2" : '.*/\(.*\)[-.][ablmtxz2]*$'` || F=$prog
+            F=`expr "/$2" : '.*/\(.*\)[-.][ablmotxz2]*$'` || F=$prog
             tmp=
             trap '
-              test -n "$tmp" && rm -f "$tmp"
+              test -n "$tmp" && rm -rf "$tmp"
               (exit 2); exit 2
             ' HUP INT PIPE TERM 0
-            tmp=`mktemp -t -- "$F.XXXXXX"` || exit 2
-            $xz2 -cdfq -- "$2" > "$tmp" || exit 2
+            if type mktemp >/dev/null 2>&1; then
+              # Note that FreeBSD's mktemp isn't fully compatible with
+              # the implementations from mktemp.org and GNU coreutils.
+              # It is important that the -t argument is the last argument
+              # and that no "--" is used between -t and the template argument.
+              # This way this command works on all implementations.
+              tmp=`mktemp -d -t "$prog.XXXXXXXXXX"` || exit 2
+            else
+              # Fallback code if mktemp is missing. This isn't as
+              # robust as using mktemp since this doesn't try with
+              # different file names in case of a file name conflict.
+              #
+              # There's no need to save the original umask since
+              # we don't create any non-temp files. Note that using
+              # mkdir -m 0077 isn't secure since some mkdir implementations
+              # create the dir with the default umask and chmod the
+              # the dir afterwards.
+              umask 0077
+              mkdir -- "${TMPDIR-/tmp}/$prog.$$" || exit 2
+              tmp="${TMPDIR-/tmp}/$prog.$$"
+            fi
+            $xz2 -cdfq -- "$2" > "$tmp/$F" || exit 2
             xz_status=$(
               exec 4>&1
               ($xz1 -cdfq -- "$1" 4>&-; echo $? >&4) 3>&- |
-                eval "$cmp" - '"$tmp"' >&3
+                eval "$cmp" - '"$tmp/$F"' >&3
             )
             cmp_status=$?
-            rm -f "$tmp" || xz_status=$?
+            rm -rf "$tmp" || xz_status=$?
             trap - HUP INT PIPE TERM 0
             (exit $cmp_status)
           fi;;
@@ -154,7 +180,7 @@ elif test $# -eq 2; then
     esac;;
   *)
     case "$2" in
-      *[-.][zZ] | *_z | *[-.][gx]z | *[-.]bz2 | *[-.]lzma | *.t[abglx]z | *.tbz2 | -)
+      *[-.][zZ] | *_z | *[-.][gx]z | *[-.]bz2 | *[-.]lzma | *.t[abglx]z | *.tbz2 | *[-.]lzo | *.tzo | -)
         xz_status=$(
           exec 4>&1
           ($xz2 -cdfq -- "$2" 4>&-; echo $? >&4) 3>&- |

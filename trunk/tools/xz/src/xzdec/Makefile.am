@@ -14,8 +14,8 @@
 
 xzdec_SOURCES = \
 	xzdec.c \
-	$(top_srcdir)/src/common/tuklib_progname.c \
-	$(top_srcdir)/src/common/tuklib_exit.c
+	../common/tuklib_progname.c \
+	../common/tuklib_exit.c
 
 if COND_W32
 xzdec_SOURCES += xzdec_w32res.rc
@@ -37,8 +37,8 @@ xzdec_LDADD += $(LTLIBINTL)
 
 lzmadec_SOURCES = \
 	xzdec.c \
-	$(top_srcdir)/src/common/tuklib_progname.c \
-	$(top_srcdir)/src/common/tuklib_exit.c
+	../common/tuklib_progname.c \
+	../common/tuklib_exit.c
 
 if COND_W32
 lzmadec_SOURCES += lzmadec_w32res.rc
@@ -59,7 +59,14 @@ endif
 if COND_LZMADEC
 bin_PROGRAMS += lzmadec
 
-# FIXME: If xzdec is disabled, this will create a dangling symlink.
+# Create the symlink lzmadec.1->xzdec.1 only if xzdec.1 was installed.
+# This is better than creating a dangling symlink, especially
+# because creating the link may fail due to the directory being missing.
+#
+# FIXME: The correct solution would be to install xzdec.1 as lzmadec.1
+# but I don't know what is the sane way to do it and since this is a bit
+# unusual situation anyway, it's not that important.
+if COND_XZDEC
 install-data-hook:
 	cd $(DESTDIR)$(mandir)/man1 && \
 	target=`echo xzdec | sed '$(transform)'` && \
@@ -71,4 +78,5 @@ uninstall-hook:
 	cd $(DESTDIR)$(mandir)/man1 && \
 	link=`echo lzmadec | sed '$(transform)'` && \
 	rm -f $$link.1
+endif
 endif

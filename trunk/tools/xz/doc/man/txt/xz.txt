@@ -7,8 +7,9 @@ NAME
        .lzma files
 
 SYNOPSIS
-       xz [option]...  [file]...
+       xz [option...]  [file...]
 
+COMMAND ALIASES
        unxz is equivalent to xz --decompress.
        xzcat is equivalent to xz --decompress --stdout.
        lzma is equivalent to xz --format=lzma.
@@ -215,134 +216,161 @@ OPTIONS
               Write  the  compressed  or  decompressed data to standard output
               instead of a file.  This implies --keep.
 
+       --single-stream
+              Decompress only the first .xz stream, and silently ignore possi-
+              ble  remaining  input  data following the stream.  Normally such
+              trailing garbage makes xz display an error.
+
+              xz never decompresses more than one stream from .lzma  files  or
+              raw  streams, but this option still makes xz ignore the possible
+              trailing data after the .lzma file or raw stream.
+
+              This option has no effect if the operation mode is not  --decom-
+              press or --test.
+
        --no-sparse
-              Disable creation of sparse files.  By default, if  decompressing
-              into  a  regular  file,  xz tries to make the file sparse if the
-              decompressed data contains long sequences of binary  zeros.   It
-              also  works  when writing to standard output as long as standard
-              output is connected to a regular  file  and  certain  additional
-              conditions  are  met to make it safe.  Creating sparse files may
-              save disk space and speed up the decompression by  reducing  the
+              Disable  creation of sparse files.  By default, if decompressing
+              into a regular file, xz tries to make the  file  sparse  if  the
+              decompressed  data  contains long sequences of binary zeros.  It
+              also works when writing to standard output as long  as  standard
+              output  is  connected  to  a regular file and certain additional
+              conditions are met to make it safe.  Creating sparse  files  may
+              save  disk  space and speed up the decompression by reducing the
               amount of disk I/O.
 
        -S .suf, --suffix=.suf
-              When  compressing,  use  .suf  as the suffix for the target file
-              instead of .xz or .lzma.  If not writing to standard output  and
-              the  source  file already has the suffix .suf, a warning is dis-
+              When compressing, use .suf as the suffix  for  the  target  file
+              instead  of .xz or .lzma.  If not writing to standard output and
+              the source file already has the suffix .suf, a warning  is  dis-
               played and the file is skipped.
 
-              When decompressing, recognize files  with  the  suffix  .suf  in
+              When  decompressing,  recognize  files  with  the suffix .suf in
               addition to files with the .xz, .txz, .lzma, or .tlz suffix.  If
-              the source file has the suffix .suf, the suffix  is  removed  to
+              the  source  file  has the suffix .suf, the suffix is removed to
               get the target filename.
 
-              When  compressing  or  decompressing raw streams (--format=raw),
-              the suffix must always be specified unless writing  to  standard
+              When compressing or decompressing  raw  streams  (--format=raw),
+              the  suffix  must always be specified unless writing to standard
               output, because there is no default suffix for raw streams.
 
        --files[=file]
-              Read  the  filenames  to  process from file; if file is omitted,
-              filenames are read from standard input.  Filenames must be  ter-
-              minated  with  the  newline character.  A dash (-) is taken as a
-              regular filename; it doesn't mean standard input.  If  filenames
-              are  given  also  as  command line arguments, they are processed
+              Read the filenames to process from file;  if  file  is  omitted,
+              filenames  are read from standard input.  Filenames must be ter-
+              minated with the newline character.  A dash (-) is  taken  as  a
+              regular  filename; it doesn't mean standard input.  If filenames
+              are given also as command line  arguments,  they  are  processed
               before the filenames read from file.
 
        --files0[=file]
-              This is identical to --files[=file] except  that  each  filename
+              This  is  identical  to --files[=file] except that each filename
               must be terminated with the null character.
 
    Basic file format and compression options
        -F format, --format=format
               Specify the file format to compress or decompress:
 
-              auto   This  is  the default.  When compressing, auto is equiva-
-                     lent to xz.  When decompressing, the format of the  input
-                     file  is  automatically  detected.  Note that raw streams
+              auto   This is the default.  When compressing, auto  is  equiva-
+                     lent  to xz.  When decompressing, the format of the input
+                     file is automatically detected.  Note  that  raw  streams
                      (created with --format=raw) cannot be auto-detected.
 
               xz     Compress to the .xz file format, or accept only .xz files
                      when decompressing.
 
               lzma, alone
-                     Compress  to the legacy .lzma file format, or accept only
-                     .lzma files when  decompressing.   The  alternative  name
-                     alone  is  provided for backwards compatibility with LZMA
+                     Compress to the legacy .lzma file format, or accept  only
+                     .lzma  files  when  decompressing.   The alternative name
+                     alone is provided for backwards compatibility  with  LZMA
                      Utils.
 
-              raw    Compress or uncompress a raw stream (no  headers).   This
+              raw    Compress  or  uncompress a raw stream (no headers).  This
                      is meant for advanced users only.  To decode raw streams,
                      you need use --format=raw and explicitly specify the fil-
-                     ter  chain,  which normally would have been stored in the
+                     ter chain, which normally would have been stored  in  the
                      container headers.
 
        -C check, --check=check
-              Specify the type of the integrity check.  The  check  is  calcu-
-              lated  from  the  uncompressed  data and stored in the .xz file.
-              This option has an effect only when  compressing  into  the  .xz
-              format;  the .lzma format doesn't support integrity checks.  The
+              Specify  the  type  of the integrity check.  The check is calcu-
+              lated from the uncompressed data and stored  in  the  .xz  file.
+              This  option  has  an  effect only when compressing into the .xz
+              format; the .lzma format doesn't support integrity checks.   The
               integrity check (if any) is verified when the .xz file is decom-
               pressed.
 
               Supported check types:
 
-              none   Don't  calculate an integrity check at all.  This is usu-
-                     ally a bad idea.  This can be useful  when  integrity  of
+              none   Don't calculate an integrity check at all.  This is  usu-
+                     ally  a  bad  idea.  This can be useful when integrity of
                      the data is verified by other means anyway.
 
-              crc32  Calculate  CRC32  using  the  polynomial  from IEEE-802.3
+              crc32  Calculate CRC32  using  the  polynomial  from  IEEE-802.3
                      (Ethernet).
 
               crc64  Calculate CRC64 using the polynomial from ECMA-182.  This
                      is the default, since it is slightly better than CRC32 at
-                     detecting damaged files and the speed difference is  neg-
+                     detecting  damaged files and the speed difference is neg-
                      ligible.
 
-              sha256 Calculate  SHA-256.   This  is somewhat slower than CRC32
+              sha256 Calculate SHA-256.  This is somewhat  slower  than  CRC32
                      and CRC64.
 
-              Integrity of the .xz headers is always verified with CRC32.   It
+              Integrity  of the .xz headers is always verified with CRC32.  It
               is not possible to change or disable it.
 
+       --ignore-check
+              Don't verify the integrity check of  the  compressed  data  when
+              decompressing.   The  CRC32 values in the .xz headers will still
+              be verified normally.
+
+              Do not use this option unless you know what you are doing.  Pos-
+              sible reasons to use this option:
+
+              o  Trying to recover data from a corrupt .xz file.
+
+              o  Speeding  up decompression.  This matters mostly with SHA-256
+                 or with files that have compressed extremely well.  It's rec-
+                 ommended  to  not use this option for this purpose unless the
+                 file integrity is verified externally in some other way.
+
        -0 ... -9
-              Select  a compression preset level.  The default is -6.  If mul-
-              tiple preset levels are specified, the last  one  takes  effect.
-              If  a  custom filter chain was already specified, setting a com-
+              Select a compression preset level.  The default is -6.  If  mul-
+              tiple  preset  levels  are specified, the last one takes effect.
+              If a custom filter chain was already specified, setting  a  com-
               pression preset level clears the custom filter chain.
 
-              The differences between the presets are  more  significant  than
-              with  gzip(1)  and  bzip2(1).  The selected compression settings
-              determine the memory  requirements  of  the  decompressor,  thus
-              using  a  too  high preset level might make it painful to decom-
-              press the file on an old system with little RAM.   Specifically,
-              it's  not  a  good idea to blindly use -9 for everything like it
+              The  differences  between  the presets are more significant than
+              with gzip(1) and bzip2(1).  The  selected  compression  settings
+              determine  the  memory  requirements  of  the decompressor, thus
+              using a too high preset level might make it  painful  to  decom-
+              press  the file on an old system with little RAM.  Specifically,
+              it's not a good idea to blindly use -9 for  everything  like  it
               often is with gzip(1) and bzip2(1).
 
               -0 ... -3
-                     These are somewhat fast presets.  -0 is sometimes  faster
-                     than  gzip  -9 while compressing much better.  The higher
-                     ones often have speed comparable to bzip2(1) with  compa-
-                     rable  or  better compression ratio, although the results
+                     These  are somewhat fast presets.  -0 is sometimes faster
+                     than gzip -9 while compressing much better.   The  higher
+                     ones  often have speed comparable to bzip2(1) with compa-
+                     rable or better compression ratio, although  the  results
                      depend a lot on the type of data being compressed.
 
               -4 ... -6
-                     Good to very good compression while keeping  decompressor
-                     memory  usage reasonable even for old systems.  -6 is the
-                     default, which is usually a good  choice  e.g.  for  dis-
-                     tributing  files  that  need to be decompressible even on
-                     systems with only 16 MiB RAM.  (-5e or -6e may  be  worth
+                     Good  to very good compression while keeping decompressor
+                     memory usage reasonable even for old systems.  -6 is  the
+                     default,  which  is  usually  a good choice e.g. for dis-
+                     tributing files that need to be  decompressible  even  on
+                     systems  with  only 16 MiB RAM.  (-5e or -6e may be worth
                      considering too.  See --extreme.)
 
               -7 ... -9
-                     These  are  like -6 but with higher compressor and decom-
-                     pressor memory requirements.  These are useful only  when
-                     compressing  files bigger than 8 MiB, 16 MiB, and 32 MiB,
+                     These are like -6 but with higher compressor  and  decom-
+                     pressor  memory requirements.  These are useful only when
+                     compressing files bigger than 8 MiB, 16 MiB, and  32 MiB,
                      respectively.
 
               On the same hardware, the decompression speed is approximately a
-              constant  number  of  bytes  of  compressed data per second.  In
-              other words, the better the compression, the faster  the  decom-
-              pression  will  usually  be.  This also means that the amount of
+              constant number of bytes of  compressed  data  per  second.   In
+              other  words,  the better the compression, the faster the decom-
+              pression will usually be.  This also means that  the  amount  of
               uncompressed output produced per second can vary a lot.
 
               The following table summarises the features of the presets:
@@ -362,40 +390,40 @@ OPTIONS
               Column descriptions:
 
               o  DictSize is the LZMA2 dictionary size.  It is waste of memory
-                 to  use a dictionary bigger than the size of the uncompressed
-                 file.  This is why it is good to avoid using the  presets  -7
-                 ...  -9 when there's no real need for them.  At -6 and lower,
+                 to use a dictionary bigger than the size of the  uncompressed
+                 file.   This  is why it is good to avoid using the presets -7
+                 ... -9 when there's no real need for them.  At -6 and  lower,
                  the amount of memory wasted is usually low enough to not mat-
                  ter.
 
-              o  CompCPU  is a simplified representation of the LZMA2 settings
-                 that affect compression speed.  The dictionary  size  affects
+              o  CompCPU is a simplified representation of the LZMA2  settings
+                 that  affect  compression speed.  The dictionary size affects
                  speed too, so while CompCPU is the same for levels -6 ... -9,
-                 higher levels still tend to be a little slower.  To get  even
+                 higher  levels still tend to be a little slower.  To get even
                  slower and thus possibly better compression, see --extreme.
 
-              o  CompMem  contains  the  compressor memory requirements in the
-                 single-threaded mode.  It may vary slightly between  xz  ver-
-                 sions.   Memory  requirements  of  some  of the future multi-
-                 threaded modes may be dramatically higher than  that  of  the
+              o  CompMem contains the compressor memory  requirements  in  the
+                 single-threaded  mode.   It may vary slightly between xz ver-
+                 sions.  Memory requirements of  some  of  the  future  multi-
+                 threaded  modes  may  be dramatically higher than that of the
                  single-threaded mode.
 
-              o  DecMem  contains  the decompressor memory requirements.  That
-                 is, the compression settings determine  the  memory  require-
-                 ments  of  the  decompressor.   The exact decompressor memory
-                 usage is slighly more than the LZMA2 dictionary size, but the
-                 values  in  the  table  have been rounded up to the next full
+              o  DecMem contains the decompressor memory  requirements.   That
+                 is,  the  compression  settings determine the memory require-
+                 ments of the decompressor.   The  exact  decompressor  memory
+                 usage  is  slightly  more than the LZMA2 dictionary size, but
+                 the values in the table have been rounded up to the next full
                  MiB.
 
        -e, --extreme
-              Use a slower variant of the selected  compression  preset  level
-              (-0  ...  -9)  to  hopefully get a little bit better compression
-              ratio, but with bad luck this can also make  it  worse.   Decom-
-              pressor  memory  usage  is  not  affected, but compressor memory
+              Use  a  slower  variant of the selected compression preset level
+              (-0 ... -9) to hopefully get a  little  bit  better  compression
+              ratio,  but  with  bad luck this can also make it worse.  Decom-
+              pressor memory usage is  not  affected,  but  compressor  memory
               usage increases a little at preset levels -0 ... -3.
 
-              Since there are two presets  with  dictionary  sizes  4 MiB  and
-              8 MiB,  the  presets  -3e  and  -5e use slightly faster settings
+              Since  there  are  two  presets  with dictionary sizes 4 MiB and
+              8 MiB, the presets -3e and  -5e  use  slightly  faster  settings
               (lower CompCPU) than -4e and -6e, respectively.  That way no two
               presets are identical.
 
@@ -411,14 +439,88 @@ OPTIONS
                       -8e      32 MiB       8      370 MiB   33 MiB
                       -9e      64 MiB       8      674 MiB   65 MiB
 
-              For  example,  there  are a total of four presets that use 8 MiB
-              dictionary, whose order from the fastest to the slowest  is  -5,
+              For example, there are a total of four presets  that  use  8 MiB
+              dictionary,  whose  order from the fastest to the slowest is -5,
               -6, -5e, and -6e.
 
        --fast
-       --best These  are  somewhat  misleading  aliases for -0 and -9, respec-
-              tively.  These are provided  only  for  backwards  compatibility
+       --best These are somewhat misleading aliases for  -0  and  -9,  respec-
+              tively.   These  are  provided  only for backwards compatibility
               with LZMA Utils.  Avoid using these options.
+
+       --block-size=size
+              When compressing to the .xz format, split the  input  data  into
+              blocks  of  size bytes.  The blocks are compressed independently
+              from each other, which helps with multi-threading and makes lim-
+              ited random-access decompression possible.  This option is typi-
+              cally used to override the default block size in  multi-threaded
+              mode, but this option can be used in single-threaded mode too.
+
+              In  multi-threaded  mode  about  three  times size bytes will be
+              allocated in each thread for buffering input  and  output.   The
+              default  size is three times the LZMA2 dictionary size or 1 MiB,
+              whichever is more.  Typically a good value is 2-4 times the size
+              of the LZMA2 dictionary or at least 1 MiB.  Using size less than
+              the LZMA2 dictionary size is waste of RAM because then the LZMA2
+              dictionary  buffer  will never get fully used.  The sizes of the
+              blocks are stored in the block headers, which a  future  version
+              of xz will use for multi-threaded decompression.
+
+              In  single-threaded  mode no block splitting is done by default.
+              Setting this option doesn't affect memory usage.  No size infor-
+              mation is stored in block headers, thus files created in single-
+              threaded mode won't be identical  to  files  created  in  multi-
+              threaded  mode.   The lack of size information also means that a
+              future version of xz won't  be  able  decompress  the  files  in
+              multi-threaded mode.
+
+       --block-list=sizes
+              When  compressing to the .xz format, start a new block after the
+              given intervals of uncompressed data.
+
+              The uncompressed sizes of the blocks are specified as  a  comma-
+              separated  list.   Omitting a size (two or more consecutive com-
+              mas) is a shorthand to use the size of the previous block.
+
+              If the input file is bigger than the  sum  of  sizes,  the  last
+              value in sizes is repeated until the end of the file.  A special
+              value of 0 may be used as the last value to  indicate  that  the
+              rest of the file should be encoded as a single block.
+
+              If  one  specifies  sizes  that  exceed the encoder's block size
+              (either the default value in threaded mode or the  value  speci-
+              fied with --block-size=size), the encoder will create additional
+              blocks while keeping the boundaries  specified  in  sizes.   For
+              example,      if      one      specifies      --block-size=10MiB
+              --block-list=5MiB,10MiB,8MiB,12MiB,24MiB and the input  file  is
+              80  MiB, one will get 11 blocks: 5, 10, 8, 10, 2, 10, 10, 4, 10,
+              10, and 1 MiB.
+
+              In multi-threaded mode the sizes of the blocks are stored in the
+              block  headers.  This isn't done in single-threaded mode, so the
+              encoded output won't be identical to that of the  multi-threaded
+              mode.
+
+       --flush-timeout=timeout
+              When  compressing, if more than timeout milliseconds (a positive
+              integer) has passed since the previous flush  and  reading  more
+              input  would  block,  all the pending input data is flushed from
+              the encoder and made available in the output stream.   This  can
+              be useful if xz is used to compress data that is streamed over a
+              network.  Small timeout values make the data  available  at  the
+              receiving  end with a small delay, but large timeout values give
+              better compression ratio.
+
+              This feature is disabled by default.  If this option  is  speci-
+              fied  more  than  once,  the last one takes effect.  The special
+              timeout value of 0 can be used to explicitly disable  this  fea-
+              ture.
+
+              This feature is not available on non-POSIX systems.
+
+              This  feature is still experimental.  Currently xz is unsuitable
+              for decompressing the stream in real time due  to  how  xz  does
+              buffering.
 
        --memlimit-compress=limit
               Set  a  memory  usage  limit for compression.  If this option is
@@ -472,28 +574,32 @@ OPTIONS
               mat=raw).
 
        -T threads, --threads=threads
-              Specify the number of worker threads to use.  The actual  number
-              of  threads can be less than threads if using more threads would
-              exceed the memory usage limit.
+              Specify the number of worker threads to use.  Setting threads to
+              a  special value 0 makes xz use as many threads as there are CPU
+              cores on the system.  The actual number of threads can  be  less
+              than  threads  if the input file is not big enough for threading
+              with the given settings or if using more  threads  would  exceed
+              the memory usage limit.
 
-              Multithreaded compression and decompression are not  implemented
-              yet, so this option has no effect for now.
+              Currently  the  only threading method is to split the input into
+              blocks and compress them independently  from  each  other.   The
+              default  block  size depends on the compression level and can be
+              overriden with the --block-size=size option.
 
-              As  of  writing  (2010-09-27), it hasn't been decided if threads
-              will be used by default on multicore systems  once  support  for
-              threading has been implemented.  Comments are welcome.  The com-
-              plicating factor is that using many threads  will  increase  the
-              memory  usage dramatically.  Note that if multithreading will be
-              the default, it will probably be done  so  that  single-threaded
-              and  multithreaded modes produce the same output, so compression
-              ratio won't be  significantly  affected  if  threading  will  be
-              enabled by default.
+              Threaded decompression hasn't been  implemented  yet.   It  will
+              only work on files that contain multiple blocks with size infor-
+              mation in block headers.  All files compressed in multi-threaded
+              mode  meet  this  condition,  but  files  compressed  in single-
+              threaded mode don't even if --block-size=size is used.
 
    Custom compressor filter chains
-       A  custom  filter  chain  allows specifying the compression settings in
-       detail instead of relying on the settings associated to the preset lev-
-       els.   When  a custom filter chain is specified, the compression preset
-       level options (-0 ... -9 and --extreme) are silently ignored.
+       A custom filter chain allows specifying  the  compression  settings  in
+       detail  instead  of  relying on the settings associated to the presets.
+       When a custom filter chain is specified, preset options (-0 ... -9  and
+       --extreme)  earlier  on  the  command  line are forgotten.  If a preset
+       option is specified after one or more custom filter chain options,  the
+       new  preset  takes effect and the custom filter chain options specified
+       earlier are forgotten.
 
        A filter chain is comparable to piping on the command line.  When  com-
        pressing, the uncompressed input goes to the first filter, whose output
@@ -518,6 +624,10 @@ OPTIONS
        commas in options are ignored.  Every option has a  default  value,  so
        you need to specify only those you want to change.
 
+       To  see  the  whole  filter chain and options, use xz -vv (that is, use
+       --verbose twice).  This works also for viewing the filter chain options
+       used by presets.
+
        --lzma1[=options]
        --lzma2[=options]
               Add  LZMA1  or  LZMA2 filter to the filter chain.  These filters
@@ -538,54 +648,53 @@ OPTIONS
                      ter  preset  modifiers.   The integer can be from 0 to 9,
                      matching the command line options -0 ...  -9.   The  only
                      supported   modifier   is   currently  e,  which  matches
-                     --extreme.  The default  preset  is  6,  from  which  the
-                     default values for the rest of the LZMA1 or LZMA2 options
-                     are taken.
+                     --extreme.  If no preset is specified, the default values
+                     of LZMA1 or LZMA2 options are taken from the preset 6.
 
               dict=size
                      Dictionary (history buffer) size indicates how many bytes
-                     of  the  recently  processed uncompressed data is kept in
-                     memory.  The  algorithm  tries  to  find  repeating  byte
+                     of the recently processed uncompressed data  is  kept  in
+                     memory.   The  algorithm  tries  to  find  repeating byte
                      sequences (matches) in the uncompressed data, and replace
                      them with references to the data currently in the dictio-
-                     nary.   The  bigger  the  dictionary,  the  higher is the
+                     nary.  The bigger  the  dictionary,  the  higher  is  the
                      chance to find a match.  Thus, increasing dictionary size
                      usually improves compression ratio, but a dictionary big-
                      ger than the uncompressed file is waste of memory.
 
-                     Typical dictionary size is from 64 KiB  to  64 MiB.   The
-                     minimum  is  4 KiB.   The maximum for compression is cur-
+                     Typical  dictionary  size  is from 64 KiB to 64 MiB.  The
+                     minimum is 4 KiB.  The maximum for  compression  is  cur-
                      rently 1.5 GiB (1536 MiB).  The decompressor already sup-
-                     ports  dictionaries up to one byte less than 4 GiB, which
+                     ports dictionaries up to one byte less than 4 GiB,  which
                      is the maximum for the LZMA1 and LZMA2 stream formats.
 
-                     Dictionary size and match finder (mf) together  determine
+                     Dictionary  size and match finder (mf) together determine
                      the memory usage of the LZMA1 or LZMA2 encoder.  The same
                      (or bigger) dictionary size is required for decompressing
-                     that  was used when compressing, thus the memory usage of
-                     the decoder is determined by  the  dictionary  size  used
-                     when  compressing.   The .xz headers store the dictionary
-                     size either as 2^n or 2^n + 2^(n-1), so these  sizes  are
+                     that was used when compressing, thus the memory usage  of
+                     the  decoder  is  determined  by the dictionary size used
+                     when compressing.  The .xz headers store  the  dictionary
+                     size  either  as 2^n or 2^n + 2^(n-1), so these sizes are
                      somewhat preferred for compression.  Other sizes will get
                      rounded up when stored in the .xz headers.
 
-              lc=lc  Specify the number of literal context bits.  The  minimum
-                     is  0  and  the maximum is 4; the default is 3.  In addi-
+              lc=lc  Specify  the number of literal context bits.  The minimum
+                     is 0 and the maximum is 4; the default is  3.   In  addi-
                      tion, the sum of lc and lp must not exceed 4.
 
-                     All bytes that cannot be encoded as matches  are  encoded
-                     as  literals.   That  is, literals are simply 8-bit bytes
+                     All  bytes  that cannot be encoded as matches are encoded
+                     as literals.  That is, literals are  simply  8-bit  bytes
                      that are encoded one at a time.
 
-                     The literal coding makes an assumption that  the  highest
-                     lc  bits of the previous uncompressed byte correlate with
-                     the next byte.  E.g. in typical English text,  an  upper-
+                     The  literal  coding makes an assumption that the highest
+                     lc bits of the previous uncompressed byte correlate  with
+                     the  next  byte.  E.g. in typical English text, an upper-
                      case letter is often followed by a lower-case letter, and
                      a lower-case letter is usually followed by another lower-
-                     case  letter.  In the US-ASCII character set, the highest
-                     three bits are 010 for upper-case  letters  and  011  for
-                     lower-case  letters.   When lc is at least 3, the literal
-                     coding can take advantage of this property in the  uncom-
+                     case letter.  In the US-ASCII character set, the  highest
+                     three  bits  are  010  for upper-case letters and 011 for
+                     lower-case letters.  When lc is at least 3,  the  literal
+                     coding  can take advantage of this property in the uncom-
                      pressed data.
 
                      The default value (3) is usually good.  If you want maxi-
@@ -596,40 +705,40 @@ OPTIONS
               lp=lp  Specify the number of literal position bits.  The minimum
                      is 0 and the maximum is 4; the default is 0.
 
-                     Lp  affects  what  kind  of alignment in the uncompressed
+                     Lp affects what kind of  alignment  in  the  uncompressed
                      data is assumed when encoding literals.  See pb below for
                      more information about alignment.
 
-              pb=pb  Specify  the  number  of position bits.  The minimum is 0
+              pb=pb  Specify the number of position bits.  The  minimum  is  0
                      and the maximum is 4; the default is 2.
 
-                     Pb affects what kind of  alignment  in  the  uncompressed
-                     data  is assumed in general.  The default means four-byte
+                     Pb  affects  what  kind  of alignment in the uncompressed
+                     data is assumed in general.  The default means  four-byte
                      alignment (2^pb=2^2=4), which is often a good choice when
                      there's no better guess.
 
-                     When  the  aligment  is known, setting pb accordingly may
+                     When the aligment is known, setting  pb  accordingly  may
                      reduce the file size a little.  E.g. with text files hav-
-                     ing  one-byte  alignment  (US-ASCII,  ISO-8859-*, UTF-8),
+                     ing one-byte  alignment  (US-ASCII,  ISO-8859-*,  UTF-8),
                      setting  pb=0  can  improve  compression  slightly.   For
-                     UTF-16  text, pb=1 is a good choice.  If the alignment is
-                     an odd number like  3  bytes,  pb=0  might  be  the  best
+                     UTF-16 text, pb=1 is a good choice.  If the alignment  is
+                     an  odd  number  like  3  bytes,  pb=0  might be the best
                      choice.
 
                      Even though the assumed alignment can be adjusted with pb
-                     and lp, LZMA1 and  LZMA2  still  slightly  favor  16-byte
-                     alignment.   It  might  be worth taking into account when
-                     designing file formats that are likely to be  often  com-
+                     and  lp,  LZMA1  and  LZMA2  still slightly favor 16-byte
+                     alignment.  It might be worth taking  into  account  when
+                     designing  file  formats that are likely to be often com-
                      pressed with LZMA1 or LZMA2.
 
-              mf=mf  Match  finder has a major effect on encoder speed, memory
-                     usage, and compression ratio.  Usually Hash  Chain  match
-                     finders  are  faster than Binary Tree match finders.  The
-                     default depends on the preset: 0 uses hc3, 1-3  use  hc4,
+              mf=mf  Match finder has a major effect on encoder speed,  memory
+                     usage,  and  compression ratio.  Usually Hash Chain match
+                     finders are faster than Binary Tree match  finders.   The
+                     default  depends  on the preset: 0 uses hc3, 1-3 use hc4,
                      and the rest use bt4.
 
-                     The  following  match  finders are supported.  The memory
-                     usage formulas below are rough approximations, which  are
+                     The following match finders are  supported.   The  memory
+                     usage  formulas below are rough approximations, which are
                      closest to the reality when dict is a power of two.
 
                      hc3    Hash Chain with 2- and 3-byte hashing
@@ -662,36 +771,36 @@ OPTIONS
 
               mode=mode
                      Compression mode specifies the method to analyze the data
-                     produced by the match finder.  Supported modes  are  fast
+                     produced  by  the match finder.  Supported modes are fast
                      and normal.  The default is fast for presets 0-3 and nor-
                      mal for presets 4-9.
 
-                     Usually fast is used with Hash Chain  match  finders  and
+                     Usually  fast  is  used with Hash Chain match finders and
                      normal with Binary Tree match finders.  This is also what
                      the presets do.
 
               nice=nice
-                     Specify what is considered to be  a  nice  length  for  a
+                     Specify  what  is  considered  to  be a nice length for a
                      match.  Once a match of at least nice bytes is found, the
                      algorithm stops looking for possibly better matches.
 
                      Nice can be 2-273 bytes.  Higher values tend to give bet-
-                     ter  compression  ratio  at  the  expense  of speed.  The
+                     ter compression ratio  at  the  expense  of  speed.   The
                      default depends on the preset.
 
               depth=depth
-                     Specify the maximum search depth  in  the  match  finder.
-                     The  default  is  the special value of 0, which makes the
+                     Specify  the  maximum  search  depth in the match finder.
+                     The default is the special value of 0,  which  makes  the
                      compressor determine a reasonable depth from mf and nice.
 
                      Reasonable depth for Hash Chains is 4-100 and 16-1000 for
-                     Binary  Trees.  Using very high values for depth can make
-                     the encoder extremely slow with some files.   Avoid  set-
-                     ting  the  depth  over  1000  unless  you are prepared to
-                     interrupt the compression in case it is  taking  far  too
+                     Binary Trees.  Using very high values for depth can  make
+                     the  encoder  extremely slow with some files.  Avoid set-
+                     ting the depth over  1000  unless  you  are  prepared  to
+                     interrupt  the  compression  in case it is taking far too
                      long.
 
-              When  decoding  raw streams (--format=raw), LZMA2 needs only the
+              When decoding raw streams (--format=raw), LZMA2 needs  only  the
               dictionary size.  LZMA1 needs also lc, lp, and pb.
 
        --x86[=options]
@@ -700,50 +809,50 @@ OPTIONS
        --arm[=options]
        --armthumb[=options]
        --sparc[=options]
-              Add a branch/call/jump (BCJ) filter to the filter chain.   These
-              filters  can  be  used  only  as a non-last filter in the filter
+              Add  a branch/call/jump (BCJ) filter to the filter chain.  These
+              filters can be used only as a  non-last  filter  in  the  filter
               chain.
 
-              A BCJ filter converts relative addresses in the machine code  to
-              their  absolute  counterparts.   This doesn't change the size of
-              the data, but it increases redundancy, which can help  LZMA2  to
-              produce  0-15 %  smaller  .xz  file.  The BCJ filters are always
+              A  BCJ filter converts relative addresses in the machine code to
+              their absolute counterparts.  This doesn't change  the  size  of
+              the  data,  but it increases redundancy, which can help LZMA2 to
+              produce 0-15 % smaller .xz file.  The  BCJ  filters  are  always
               reversible, so using a BCJ filter for wrong type of data doesn't
-              cause  any data loss, although it may make the compression ratio
+              cause any data loss, although it may make the compression  ratio
               slightly worse.
 
-              It is fine to apply a BCJ filter on a whole executable;  there's
-              no  need to apply it only on the executable section.  Applying a
-              BCJ filter on an archive that contains both executable and  non-
-              executable  files may or may not give good results, so it gener-
-              ally isn't good to blindly apply a BCJ filter  when  compressing
+              It  is fine to apply a BCJ filter on a whole executable; there's
+              no need to apply it only on the executable section.  Applying  a
+              BCJ  filter on an archive that contains both executable and non-
+              executable files may or may not give good results, so it  gener-
+              ally  isn't  good to blindly apply a BCJ filter when compressing
               binary packages for distribution.
 
-              These  BCJ filters are very fast and use insignificant amount of
-              memory.  If a BCJ filter improves compression ratio of  a  file,
-              it  can  improve  decompression speed at the same time.  This is
-              because, on the same hardware, the decompression speed of  LZMA2
-              is  roughly  a fixed number of bytes of compressed data per sec-
+              These BCJ filters are very fast and use insignificant amount  of
+              memory.   If  a BCJ filter improves compression ratio of a file,
+              it can improve decompression speed at the same  time.   This  is
+              because,  on the same hardware, the decompression speed of LZMA2
+              is roughly a fixed number of bytes of compressed data  per  sec-
               ond.
 
               These BCJ filters have known problems related to the compression
               ratio:
 
-              o  Some  types  of files containing executable code (e.g. object
-                 files, static libraries, and Linux kernel modules)  have  the
-                 addresses  in  the  instructions  filled  with filler values.
+              o  Some types of files containing executable code  (e.g.  object
+                 files,  static  libraries, and Linux kernel modules) have the
+                 addresses in the  instructions  filled  with  filler  values.
                  These BCJ filters will still do the address conversion, which
                  will make the compression worse with these files.
 
               o  Applying a BCJ filter on an archive containing multiple simi-
                  lar executables can make the compression ratio worse than not
-                 using  a  BCJ filter.  This is because the BCJ filter doesn't
-                 detect the boundaries of the executable  files,  and  doesn't
+                 using a BCJ filter.  This is because the BCJ  filter  doesn't
+                 detect  the  boundaries  of the executable files, and doesn't
                  reset the address conversion counter for each executable.
 
-              Both  of the above problems will be fixed in the future in a new
-              filter.  The old BCJ filters will still be  useful  in  embedded
-              systems,  because  the  decoder of the new filter will be bigger
+              Both of the above problems will be fixed in the future in a  new
+              filter.   The  old  BCJ filters will still be useful in embedded
+              systems, because the decoder of the new filter  will  be  bigger
               and use more memory.
 
               Different instruction sets have have different alignment:
@@ -756,39 +865,39 @@ OPTIONS
                      IA-64          16       Big or little endian
                      SPARC           4       Big or little endian
 
-              Since the BCJ-filtered data is usually  compressed  with  LZMA2,
-              the  compression  ratio  may  be  improved slightly if the LZMA2
-              options are set to match the alignment of the selected BCJ  fil-
-              ter.   For example, with the IA-64 filter, it's good to set pb=4
-              with LZMA2 (2^4=16).  The x86 filter is an exception; it's  usu-
-              ally  good  to stick to LZMA2's default four-byte alignment when
+              Since  the  BCJ-filtered  data is usually compressed with LZMA2,
+              the compression ratio may be  improved  slightly  if  the  LZMA2
+              options  are set to match the alignment of the selected BCJ fil-
+              ter.  For example, with the IA-64 filter, it's good to set  pb=4
+              with  LZMA2 (2^4=16).  The x86 filter is an exception; it's usu-
+              ally good to stick to LZMA2's default four-byte  alignment  when
               compressing x86 executables.
 
               All BCJ filters support the same options:
 
               start=offset
-                     Specify the start offset that  is  used  when  converting
+                     Specify  the  start  offset  that is used when converting
                      between relative and absolute addresses.  The offset must
                      be a multiple of the alignment of the filter (see the ta-
-                     ble  above).   The  default  is  zero.   In practice, the
-                     default is good; specifying a  custom  offset  is  almost
+                     ble above).  The  default  is  zero.   In  practice,  the
+                     default  is  good;  specifying  a custom offset is almost
                      never useful.
 
        --delta[=options]
-              Add  the Delta filter to the filter chain.  The Delta filter can
+              Add the Delta filter to the filter chain.  The Delta filter  can
               be only used as a non-last filter in the filter chain.
 
-              Currently only simple byte-wise delta calculation is  supported.
-              It  can  be  useful  when  compressing  e.g. uncompressed bitmap
-              images or uncompressed  PCM  audio.   However,  special  purpose
-              algorithms  may  give  significantly better results than Delta +
-              LZMA2.  This is true especially  with  audio,  which  compresses
+              Currently  only simple byte-wise delta calculation is supported.
+              It can be  useful  when  compressing  e.g.  uncompressed  bitmap
+              images  or  uncompressed  PCM  audio.   However, special purpose
+              algorithms may give significantly better results  than  Delta  +
+              LZMA2.   This  is  true  especially with audio, which compresses
               faster and better e.g. with flac(1).
 
               Supported options:
 
               dist=distance
-                     Specify  the  distance of the delta calculation in bytes.
+                     Specify the distance of the delta calculation  in  bytes.
                      distance must be 1-256.  The default is 1.
 
                      For example, with dist=2 and eight-byte input A1 B1 A2 B3
@@ -796,69 +905,69 @@ OPTIONS
 
    Other options
        -q, --quiet
-              Suppress  warnings  and notices.  Specify this twice to suppress
+              Suppress warnings and notices.  Specify this twice  to  suppress
               errors too.  This option has no effect on the exit status.  That
-              is,  even  if a warning was suppressed, the exit status to indi-
+              is, even if a warning was suppressed, the exit status  to  indi-
               cate a warning is still used.
 
        -v, --verbose
-              Be verbose.  If standard error is connected to  a  terminal,  xz
-              will  display  a progress indicator.  Specifying --verbose twice
+              Be  verbose.   If  standard error is connected to a terminal, xz
+              will display a progress indicator.  Specifying  --verbose  twice
               will give even more verbose output.
 
               The progress indicator shows the following information:
 
-              o  Completion percentage is shown if the size of the input  file
+              o  Completion  percentage is shown if the size of the input file
                  is known.  That is, the percentage cannot be shown in pipes.
 
-              o  Amount  of compressed data produced (compressing) or consumed
+              o  Amount of compressed data produced (compressing) or  consumed
                  (decompressing).
 
-              o  Amount of uncompressed data consumed  (compressing)  or  pro-
+              o  Amount  of  uncompressed  data consumed (compressing) or pro-
                  duced (decompressing).
 
               o  Compression ratio, which is calculated by dividing the amount
-                 of compressed data processed so far by the amount  of  uncom-
+                 of  compressed  data processed so far by the amount of uncom-
                  pressed data processed so far.
 
-              o  Compression  or decompression speed.  This is measured as the
-                 amount of uncompressed data consumed  (compression)  or  pro-
-                 duced  (decompression)  per  second.  It is shown after a few
+              o  Compression or decompression speed.  This is measured as  the
+                 amount  of  uncompressed  data consumed (compression) or pro-
+                 duced (decompression) per second.  It is shown  after  a  few
                  seconds have passed since xz started processing the file.
 
               o  Elapsed time in the format M:SS or H:MM:SS.
 
-              o  Estimated remaining time is shown only when the size  of  the
-                 input  file  is  known  and  a couple of seconds have already
-                 passed since xz started processing the  file.   The  time  is
-                 shown  in  a  less precise format which never has any colons,
+              o  Estimated  remaining  time is shown only when the size of the
+                 input file is known and a  couple  of  seconds  have  already
+                 passed  since  xz  started  processing the file.  The time is
+                 shown in a less precise format which never  has  any  colons,
                  e.g. 2 min 30 s.
 
-              When standard error is not a terminal, --verbose  will  make  xz
+              When  standard  error  is not a terminal, --verbose will make xz
               print the filename, compressed size, uncompressed size, compres-
-              sion ratio, and possibly also the speed and elapsed  time  on  a
+              sion  ratio,  and  possibly also the speed and elapsed time on a
               single line to standard error after compressing or decompressing
               the file.  The speed and elapsed time are included only when the
-              operation  took at least a few seconds.  If the operation didn't
-              finish, e.g. due to user interruption, also the completion  per-
+              operation took at least a few seconds.  If the operation  didn't
+              finish,  e.g. due to user interruption, also the completion per-
               centage is printed if the size of the input file is known.
 
        -Q, --no-warn
               Don't set the exit status to 2 even if a condition worth a warn-
-              ing was detected.  This  option  doesn't  affect  the  verbosity
-              level,  thus  both  --quiet and --no-warn have to be used to not
+              ing  was  detected.   This  option  doesn't affect the verbosity
+              level, thus both --quiet and --no-warn have to be  used  to  not
               display warnings and to not alter the exit status.
 
        --robot
-              Print messages in a machine-parsable format.  This  is  intended
-              to  ease  writing  frontends  that  want  to  use  xz instead of
+              Print  messages  in a machine-parsable format.  This is intended
+              to ease writing  frontends  that  want  to  use  xz  instead  of
               liblzma, which may be the case with various scripts.  The output
-              with  this  option  enabled  is  meant  to  be  stable across xz
+              with this option  enabled  is  meant  to  be  stable  across  xz
               releases.  See the section ROBOT MODE for details.
 
        --info-memory
-              Display, in human-readable  format,  how  much  physical  memory
-              (RAM)  xz  thinks the system has and the memory usage limits for
+              Display,  in  human-readable  format,  how  much physical memory
+              (RAM) xz thinks the system has and the memory usage  limits  for
               compression and decompression, and exit successfully.
 
        -h, --help
@@ -866,20 +975,19 @@ OPTIONS
               options, and exit successfully.
 
        -H, --long-help
-              Display  a  help message describing all features of xz, and exit
+              Display a help message describing all features of xz,  and  exit
               successfully
 
        -V, --version
-              Display the version number of xz and liblzma in  human  readable
-              format.   To get machine-parsable output, specify --robot before
+              Display  the  version number of xz and liblzma in human readable
+              format.  To get machine-parsable output, specify --robot  before
               --version.
 
 ROBOT MODE
        The robot mode is activated with the --robot option.  It makes the out-
        put of xz easier to parse by other programs.  Currently --robot is sup-
-       ported only together with --version,  --info-memory,  and  --list.   It
-       will  be  supported  for  normal  compression  and decompression in the
-       future.
+       ported  only  together  with  --version, --info-memory, and --list.  It
+       will be supported for compression and decompression in the future.
 
    Version
        xz --robot --version will print the version number of xz and liblzma in
@@ -1013,6 +1121,8 @@ ROBOT MODE
                   with this xz version
               3.  yes or no indicating if all block  headers  have  both  com-
                   pressed size and uncompressed size stored in them
+              Since xz 5.1.2alpha:
+              4.  Minimum xz version required to decompress the file
 
        The columns of the totals line:
               2.  Number of streams
@@ -1032,6 +1142,8 @@ ROBOT MODE
                   the files with this xz version
               11. yes  or  no  indicating  if all block headers have both com-
                   pressed size and uncompressed size stored in them
+              Since xz 5.1.2alpha:
+              12. Minimum xz version required to decompress the file
 
        Future versions may add new line types and new columns can be added  to
        the existing line types, but the existing columns won't be changed.
@@ -1095,7 +1207,6 @@ LZMA UTILS COMPATIBILITY
                -2       2 MiB      1 MiB
                -3       4 MiB    512 KiB
                -4       4 MiB      1 MiB
-
                -5       8 MiB      2 MiB
                -6       8 MiB      4 MiB
                -7      16 MiB      8 MiB
@@ -1165,8 +1276,8 @@ LZMA UTILS COMPATIBILITY
        files.
 
        If  there  is  data left after the first .lzma stream, xz considers the
-       file to be corrupt.  This may break obscure scripts which have  assumed
-       that trailing garbage is ignored.
+       file to be corrupt unless --single-stream was  used.   This  may  break
+       obscure scripts which have assumed that trailing garbage is ignored.
 
 NOTES
    Compressed output may vary
@@ -1177,9 +1288,11 @@ NOTES
        vary  even  between  different  builds of the same XZ Utils version, if
        different build options are used.
 
-       The above means that implementing --rsyncable to create  rsyncable  .xz
-       files  is  not  going  to happen without freezing a part of the encoder
-       implementation, which can then be used with --rsyncable.
+       The above means that once --rsyncable has been implemented, the result-
+       ing  files won't necessarily be rsyncable unless both old and new files
+       have been compressed with the same xz version.   This  problem  can  be
+       fixed if a part of the encoder implementation is frozen to keep rsynca-
+       ble output stable across xz versions.
 
    Embedded .xz decompressors
        Embedded .xz decompressor implementations like XZ Embedded don't neces-
@@ -1273,6 +1386,7 @@ EXAMPLES
               Preset   CompCPU
                -0         0
                -1         1
+
                -2         2
                -3         3
                -4         4
@@ -1366,4 +1480,4 @@ SEE ALSO
 
 
 
-Tukaani                           2012-05-27                             XZ(1)
+Tukaani                           2015-05-11                             XZ(1)

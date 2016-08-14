@@ -3672,12 +3672,8 @@ BOOLEAN RTMPCheckEtherType(
 {
 	UINT16 TypeLen;
 	UCHAR Byte0, Byte1, *pSrcBuf, up = 0;
-
-#ifdef DATA_QUEUE_RESERVE
-	UCHAR *pUdpHdr, *bootpHdr, *dhcp_msg_type, *pCliHwAddr;
-#endif /* DATA_QUEUE_RESERVE */
-
 	MAC_TABLE_ENTRY *pMacEntry = &pAd->MacTab.Content[tr_entry->wcid];
+
 #ifdef DBG
 	if(pAd->bPingLog)
 	{
@@ -3739,7 +3735,7 @@ BOOLEAN RTMPCheckEtherType(
 			vlan_id = cpu2be16(vlan_id);
 			vlan_id = vlan_id & 0x0FFF; /* 12 bit */
 			if (vlan_id != wdev->VLAN_VID) {
-DBGPRINT(RT_DEBUG_OFF, ("%s():failed for VLAN_ID(vlan_id=%d, VLAN_VID=%d)\n",
+				DBGPRINT(RT_DEBUG_OFF, ("%s():failed for VLAN_ID(vlan_id=%d, VLAN_VID=%d)\n",
 					__FUNCTION__, vlan_id, wdev->VLAN_VID));
 				return FALSE;
 			}
@@ -3793,18 +3789,27 @@ DBGPRINT(RT_DEBUG_OFF, ("%s():failed for VLAN_ID(vlan_id=%d, VLAN_VID=%d)\n",
 	{
 		case ETH_TYPE_IPv4:
 			{
-#ifdef DBG
-				UINT32 pktLen = GET_OS_PKT_LEN(pPacket);
-				ASSERT((pktLen > (ETH_HDR_LEN + IP_HDR_LEN)));	/* 14 for ethernet header, 20 for IP header*/
-#endif /* DBG */
+				UINT8 ipv4_proto = *(pSrcBuf + 9);
+
+				ASSERT((GET_OS_PKT_LEN(pPacket) > (ETH_HDR_LEN + IP_HDR_LEN)));	/* 14 for ethernet header, 20 for IP header*/
 				RTMP_SET_PACKET_IPV4(pPacket, 1);
-				if (*(pSrcBuf + 9) == IP_PROTO_UDP)
-				{
-					UINT16 srcPort, dstPort;
 
 #ifdef DATA_QUEUE_RESERVE
-					pUdpHdr = (pSrcBuf + IP_HDR_LEN);
-					bootpHdr = pUdpHdr + 8;
+				if (ipv4_proto == 0x01)
+				{
+					RTMP_SET_PACKET_ICMP(pPacket, 1);
+					RTMP_SET_PACKET_TXTYPE(pPacket, TX_LEGACY_FRAME);
+				}
+				else
+#endif /* DATA_QUEUE_RESERVE */
+				if (ipv4_proto == IP_PROTO_UDP)
+				{
+					UINT16 srcPort, dstPort;
+#ifdef DATA_QUEUE_RESERVE
+#ifdef DBG
+					UCHAR *pUdpHdr = (pSrcBuf + IP_HDR_LEN);
+					UCHAR *bootpHdr = pUdpHdr + 8;
+#endif /* DBG */
 #endif /* DATA_QUEUE_RESERVE */
 
 					pSrcBuf += IP_HDR_LEN;
@@ -3812,16 +3817,18 @@ DBGPRINT(RT_DEBUG_OFF, ("%s():failed for VLAN_ID(vlan_id=%d, VLAN_VID=%d)\n",
 					dstPort = OS_NTOHS(get_unaligned((PUINT16)(pSrcBuf+2)));
 
 					if ((srcPort==0x44 && dstPort==0x43) || (srcPort==0x43 && dstPort==0x44))
-					{	/*It's a BOOTP/DHCP packet*/
+					{
+						/*It's a BOOTP/DHCP packet*/
 						RTMP_SET_PACKET_DHCP(pPacket, 1);
 						RTMP_SET_PACKET_TXTYPE(pPacket, TX_LEGACY_FRAME);
-
 #ifdef DATA_QUEUE_RESERVE
+#ifdef DBG
 						if(pAd->bDump)
 						{
-							dhcp_msg_type = (bootpHdr+ (28 + 6 + 10 + 64+ 128 + 4));
+							UCHAR *pCliHwAddr = (bootpHdr+28);
+							UCHAR *dhcp_msg_type = (bootpHdr+ (28 + 6 + 10 + 64+ 128 + 4));
+
 							dhcp_msg_type += 2;
-							pCliHwAddr = (bootpHdr+28);
 
 							if (*(dhcp_msg_type) == 2)
 		 						DBGPRINT(RT_DEBUG_ERROR, ("@@@ %s() DHCP OFFER to rept mac=%02x:%02x:%02x:%02x:%02x:%02x\n", __FUNCTION__, PRINT_MAC(pCliHwAddr)));
@@ -3835,8 +3842,8 @@ DBGPRINT(RT_DEBUG_OFF, ("%s():failed for VLAN_ID(vlan_id=%d, VLAN_VID=%d)\n",
 							if (*(dhcp_msg_type) == 8)
 		 						DBGPRINT(RT_DEBUG_ERROR, ("@@@ %s() DHCP INFORM to rept mac=%02x:%02x:%02x:%02x:%02x:%02x\n", __FUNCTION__, PRINT_MAC(pCliHwAddr)));
 						}
+#endif /* DBG */
 #endif /* DATA_QUEUE_RESERVE */
-						
 					}
 #ifdef AIRPLAY_SUPPORT
 					if ((srcPort==5353 && dstPort==5353))
@@ -3860,17 +3867,6 @@ DBGPRINT(RT_DEBUG_OFF, ("%s():failed for VLAN_ID(vlan_id=%d, VLAN_VID=%d)\n",
 #endif
 #endif
 				}
-
-
-#ifdef DATA_QUEUE_RESERVE
-				if (*(pSrcBuf + 9) == 0x01)
-				{
-		                    RTMP_SET_PACKET_ICMP(pPacket, 1);
-		                    RTMP_SET_PACKET_TXTYPE(pPacket, TX_LEGACY_FRAME);
-				}
-#endif /* DATA_QUEUE_RESERVE */
-
-				
 			}
 			break;
 		case ETH_TYPE_ARP:

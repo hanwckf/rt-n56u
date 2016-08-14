@@ -3190,20 +3190,29 @@ BOOLEAN RTMPCheckEtherType(
 	{
 		case ETH_TYPE_IPv4:
 			{
-				UINT32 pktLen = GET_OS_PKT_LEN(pPacket);
+				UINT8 ipv4_proto = *(pSrcBuf + 9);
 
-				ASSERT((pktLen > (ETH_HDR_LEN + IP_HDR_LEN)));	/* 14 for ethernet header, 20 for IP header*/
+				ASSERT((GET_OS_PKT_LEN(pPacket) > (ETH_HDR_LEN + IP_HDR_LEN)));	/* 14 for ethernet header, 20 for IP header*/
 				RTMP_SET_PACKET_IPV4(pPacket, 1);
-				if (*(pSrcBuf + 9) == IP_PROTO_UDP)
+
+#ifdef DATA_QUEUE_RESERVE
+				if (ipv4_proto == 0x01)
+				{
+					RTMP_SET_PACKET_ICMP(pPacket, 1);
+				}
+				else
+#endif /* DATA_QUEUE_RESERVE */
+				if (ipv4_proto == IP_PROTO_UDP)
 				{
 					UINT16 srcPort, dstPort;
-									
+	
 					pSrcBuf += IP_HDR_LEN;
 					srcPort = OS_NTOHS(get_unaligned((PUINT16)(pSrcBuf)));
 					dstPort = OS_NTOHS(get_unaligned((PUINT16)(pSrcBuf+2)));
 		
 					if ((srcPort==0x44 && dstPort==0x43) || (srcPort==0x43 && dstPort==0x44))
-					{	/*It's a BOOTP/DHCP packet*/
+					{
+						/*It's a BOOTP/DHCP packet*/
 						RTMP_SET_PACKET_DHCP(pPacket, 1);
 					}
 
@@ -3231,28 +3240,6 @@ BOOLEAN RTMPCheckEtherType(
 					}
 #endif /* CONFIG_AP_SUPPORT */
 				}
-				else if (*(pSrcBuf + 9) == 0x01)
-				{
-					ASSERT((pktLen > 34));  /* 14 for ethernet header, 20 for IP header*/
-					pSrcBuf += 20;  /* Skip the IP header*/
-					
-					if (*pSrcBuf == 0x08)
-					{
-						pSrcBuf++;
-						if ((*pSrcBuf == 0x00) && (pktLen < 2000))
-						{
-							DBGPRINT(RT_DEBUG_TRACE, ("PS DEBUG: %s[%d]==PING PACKET (%d)\n", 
-								__FUNCTION__, __LINE__, pktLen));
-						}
-					}	
-				}	
-
-#ifdef DATA_QUEUE_RESERVE
-				if (*(pSrcBuf + 9) == 0x01)
-				{
-		                    RTMP_SET_PACKET_ICMP(pPacket, 1);
-				}
-#endif /* DATA_QUEUE_RESERVE */
 			}
 			break;
 		case ETH_TYPE_ARP:

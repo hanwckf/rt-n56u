@@ -34,7 +34,9 @@ mark_tg(struct sk_buff *skb, const struct xt_action_param *par)
 	const struct xt_mark_tginfo2 *info = par->targinfo;
 
 #if defined(CONFIG_RA_HW_NAT) || defined(CONFIG_RA_HW_NAT_MODULE)
+#if !defined(CONFIG_RA_HW_NAT_QDMA)
 	FOE_ALG_MARK(skb);
+#endif
 #endif
 
 	skb->mark = (skb->mark & ~info->mask) ^ info->mark;

@@ -135,7 +135,6 @@ int __init rt2880_module_init(void)
 	/* Here are the net_device structure with pci-bus specific parameters. */
 	net_dev->irq = dev_irq;			/* Interrupt IRQ number */
 	net_dev->base_addr = csr_addr;		/* Save CSR virtual address and irq to device structure */
-	//((POS_COOKIE)handle)->pci_dev = net_dev;
 	((POS_COOKIE)handle)->pci_dev = NULL;
 
 #ifdef CONFIG_STA_SUPPORT

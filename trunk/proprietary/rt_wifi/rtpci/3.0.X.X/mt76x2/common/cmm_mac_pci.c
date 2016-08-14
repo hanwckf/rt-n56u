@@ -20,7 +20,7 @@
 
 static INT desc_ring_alloc(RTMP_ADAPTER *pAd, RTMP_DMABUF *pDescRing, INT size)
 {
-	VOID *pci_dev = (pAd->infType==RTMP_DEV_INF_RBUS)?NULL:((POS_COOKIE)(pAd->OS_Cookie))->pci_dev;
+	VOID *pci_dev = ((POS_COOKIE)(pAd->OS_Cookie))->pci_dev;
 
 	pDescRing->AllocSize = size;
 	RtmpAllocDescBuf(pci_dev,
@@ -45,7 +45,7 @@ static INT desc_ring_alloc(RTMP_ADAPTER *pAd, RTMP_DMABUF *pDescRing, INT size)
 
 static INT desc_ring_free(RTMP_ADAPTER *pAd, RTMP_DMABUF *pDescRing)
 {
-	VOID *pci_dev = (pAd->infType==RTMP_DEV_INF_RBUS)?NULL:((POS_COOKIE)(pAd->OS_Cookie))->pci_dev;
+	VOID *pci_dev = ((POS_COOKIE)(pAd->OS_Cookie))->pci_dev;
 	
 	if (pDescRing->AllocVa)
 	{
@@ -166,7 +166,7 @@ VOID RTMPResetTxRxRingMemory(RTMP_ADAPTER *pAd)
 VOID RTMPFreeTxRxRingMemory(RTMP_ADAPTER *pAd)
 {
 	INT num;
-	VOID *pci_dev = (pAd->infType==RTMP_DEV_INF_RBUS)?NULL:((POS_COOKIE)(pAd->OS_Cookie))->pci_dev;
+	VOID *pci_dev = ((POS_COOKIE)(pAd->OS_Cookie))->pci_dev;
 
 	DBGPRINT(RT_DEBUG_TRACE, ("--> RTMPFreeTxRxRingMemory\n"));
 
@@ -456,7 +456,7 @@ NDIS_STATUS RTMPInitTxRxRingMemory(RTMP_ADAPTER *pAd)
 			pDmaBuf->AllocSize = RX_BUFFER_AGGRESIZE;
 			pPacket = RTMP_AllocateRxPacketBuffer(
 				pAd,
-				(pAd->infType==RTMP_DEV_INF_RBUS)?NULL:((POS_COOKIE)(pAd->OS_Cookie))->pci_dev,
+				((POS_COOKIE)(pAd->OS_Cookie))->pci_dev,
 				pDmaBuf->AllocSize,
 				FALSE,
 				&pDmaBuf->AllocVa,
@@ -562,7 +562,7 @@ NDIS_STATUS	RTMPAllocTxRxRingMemory(RTMP_ADAPTER *pAd)
 	NDIS_STATUS Status = NDIS_STATUS_SUCCESS;
 	INT num;
 	ULONG ErrorValue = 0;
-	VOID *pci_dev = (pAd->infType==RTMP_DEV_INF_RBUS)?NULL:((POS_COOKIE)(pAd->OS_Cookie))->pci_dev;
+	VOID *pci_dev = ((POS_COOKIE)(pAd->OS_Cookie))->pci_dev;
 	
 	DBGPRINT(RT_DEBUG_TRACE, ("-->RTMPAllocTxRxRingMemory\n"));
 	do
@@ -809,7 +809,7 @@ NDIS_STATUS	RTMPAllocTxRxRingMemory(RTMP_ADAPTER *pAd)
 			*/
 			pAd->TxBufSpace[num].AllocSize = TX_RING_SIZE * TX_DMA_1ST_BUFFER_SIZE;
 			RTMP_AllocateFirstTxBuffer(
-				(pAd->infType==RTMP_DEV_INF_RBUS)?NULL:((POS_COOKIE)(pAd->OS_Cookie))->pci_dev,
+				((POS_COOKIE)(pAd->OS_Cookie))->pci_dev,
 				num,
 				pAd->TxBufSpace[num].AllocSize,
 				FALSE,
@@ -1022,7 +1022,7 @@ NDIS_STATUS	RTMPAllocTxRxRingMemory(RTMP_ADAPTER *pAd)
 				pDmaBuf->AllocSize = RX_BUFFER_AGGRESIZE;
 				pPacket = RTMP_AllocateRxPacketBuffer(
 					pAd,
-					(pAd->infType==RTMP_DEV_INF_RBUS)?NULL:((POS_COOKIE)(pAd->OS_Cookie))->pci_dev,
+					((POS_COOKIE)(pAd->OS_Cookie))->pci_dev,
 					pDmaBuf->AllocSize,
 					FALSE,
 					&pDmaBuf->AllocVa,
@@ -1291,7 +1291,7 @@ VOID RTMPFreeTxRxRingMemory(RTMP_ADAPTER *pAd)
 		NdisZeroMemory(pAd->RxRing[j].Cell, RX_RING_SIZE * sizeof(RTMP_DMACB));
 		
 		if (pAd->RxDescRing[j].AllocVa)
-			RtmpFreeDescBuf((pAd->infType==RTMP_DEV_INF_RBUS)?NULL:((POS_COOKIE)(pAd->OS_Cookie))->pci_dev,
+			RtmpFreeDescBuf(((POS_COOKIE)(pAd->OS_Cookie))->pci_dev,
 								pAd->RxDescRing[j].AllocSize,
 								pAd->RxDescRing[j].AllocVa,
 								pAd->RxDescRing[j].AllocPa);
@@ -1301,14 +1301,14 @@ VOID RTMPFreeTxRxRingMemory(RTMP_ADAPTER *pAd)
 
 	if (pAd->MgmtDescRing.AllocVa)
 	{
-		RtmpFreeDescBuf((pAd->infType==RTMP_DEV_INF_RBUS)?NULL:((POS_COOKIE)(pAd->OS_Cookie))->pci_dev, pAd->MgmtDescRing.AllocSize, pAd->MgmtDescRing.AllocVa, pAd->MgmtDescRing.AllocPa);
+		RtmpFreeDescBuf(((POS_COOKIE)(pAd->OS_Cookie))->pci_dev, pAd->MgmtDescRing.AllocSize, pAd->MgmtDescRing.AllocVa, pAd->MgmtDescRing.AllocPa);
 	}
 	NdisZeroMemory(&pAd->MgmtDescRing, sizeof(RTMP_DMABUF));
 
 #ifdef CONFIG_ANDES_SUPPORT
 	if (pAd->CtrlDescRing.AllocVa)
 	{
-		RtmpFreeDescBuf((pAd->infType==RTMP_DEV_INF_RBUS)?NULL:((POS_COOKIE)(pAd->OS_Cookie))->pci_dev, pAd->CtrlDescRing.AllocSize, pAd->CtrlDescRing.AllocVa, pAd->CtrlDescRing.AllocPa);
+		RtmpFreeDescBuf(((POS_COOKIE)(pAd->OS_Cookie))->pci_dev, pAd->CtrlDescRing.AllocSize, pAd->CtrlDescRing.AllocVa, pAd->CtrlDescRing.AllocPa);
 	}
 	NdisZeroMemory(&pAd->CtrlDescRing, sizeof(RTMP_DMABUF));
 #endif /* CONFIG_ANDES_SUPPORT */
@@ -1317,13 +1317,13 @@ VOID RTMPFreeTxRxRingMemory(RTMP_ADAPTER *pAd)
 	{
     	if (pAd->TxBufSpace[num].AllocVa)
 		{
-			RTMP_FreeFirstTxBuffer((pAd->infType==RTMP_DEV_INF_RBUS)?NULL:((POS_COOKIE)(pAd->OS_Cookie))->pci_dev, pAd->TxBufSpace[num].AllocSize, FALSE, pAd->TxBufSpace[num].AllocVa, pAd->TxBufSpace[num].AllocPa);
+			RTMP_FreeFirstTxBuffer(((POS_COOKIE)(pAd->OS_Cookie))->pci_dev, pAd->TxBufSpace[num].AllocSize, FALSE, pAd->TxBufSpace[num].AllocVa, pAd->TxBufSpace[num].AllocPa);
 	    }
 	    NdisZeroMemory(&pAd->TxBufSpace[num], sizeof(RTMP_DMABUF));
 	    
     	if (pAd->TxDescRing[num].AllocVa)
 		{
-			RtmpFreeDescBuf((pAd->infType==RTMP_DEV_INF_RBUS)?NULL:((POS_COOKIE)(pAd->OS_Cookie))->pci_dev, pAd->TxDescRing[num].AllocSize, pAd->TxDescRing[num].AllocVa, pAd->TxDescRing[num].AllocPa);
+			RtmpFreeDescBuf(((POS_COOKIE)(pAd->OS_Cookie))->pci_dev, pAd->TxDescRing[num].AllocSize, pAd->TxDescRing[num].AllocVa, pAd->TxDescRing[num].AllocPa);
 	    }
 	    NdisZeroMemory(&pAd->TxDescRing[num], sizeof(RTMP_DMABUF));
 	}
@@ -2842,11 +2842,11 @@ ra_dma_addr_t RtmpDrvPciMapSingle(
 	if (sd_idx == 1)
 	{
 		TX_BLK *pTxBlk = (TX_BLK *)(ptr);
-		return (pTxBlk->SrcBufLen) ? linux_pci_map_single((pAd->infType==RTMP_DEV_INF_RBUS)?NULL:((POS_COOKIE)(pAd->OS_Cookie))->pci_dev,
+		return (pTxBlk->SrcBufLen) ? linux_pci_map_single(((POS_COOKIE)(pAd->OS_Cookie))->pci_dev,
 					pTxBlk->pSrcBufData, pTxBlk->SrcBufLen, 0, direction):(ra_dma_addr_t)NULL;
 	}
 	else
-		return linux_pci_map_single((pAd->infType==RTMP_DEV_INF_RBUS)?NULL:((POS_COOKIE)(pAd->OS_Cookie))->pci_dev,
+		return linux_pci_map_single(((POS_COOKIE)(pAd->OS_Cookie))->pci_dev,
 					ptr, size, 0, direction);
 }
 

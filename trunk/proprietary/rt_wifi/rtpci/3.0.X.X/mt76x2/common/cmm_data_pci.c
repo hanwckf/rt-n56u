@@ -1462,16 +1462,16 @@ PNDIS_PACKET GetPacketFromRxRing(
 		struct sk_buff *skb = __skb_dequeue_tail(&pAd->rx0_recycle);
 
 		if (unlikely(skb==NULL))
-			pNewPacket = RTMP_AllocateRxPacketBuffer(pAd, (pAd->infType==RTMP_DEV_INF_RBUS)?NULL:((POS_COOKIE)(pAd->OS_Cookie))->pci_dev, RX_BUFFER_AGGRESIZE, FALSE, &AllocVa, &AllocPa);
+			pNewPacket = RTMP_AllocateRxPacketBuffer(pAd, ((POS_COOKIE)(pAd->OS_Cookie))->pci_dev, RX_BUFFER_AGGRESIZE, FALSE, &AllocVa, &AllocPa);
 		else
 		{
 			pNewPacket = OSPKT_TO_RTPKT(skb);
 			AllocVa = GET_OS_PKT_DATAPTR(pNewPacket);
-			AllocPa = PCI_MAP_SINGLE_DEV((pAd->infType==RTMP_DEV_INF_RBUS)?NULL:((POS_COOKIE)(pAd->OS_Cookie))->pci_dev, AllocVa, RX_BUFFER_AGGRESIZE,  -1, RTMP_PCI_DMA_FROMDEVICE);
+			AllocPa = PCI_MAP_SINGLE_DEV(((POS_COOKIE)(pAd->OS_Cookie))->pci_dev, AllocVa, RX_BUFFER_AGGRESIZE,  -1, RTMP_PCI_DMA_FROMDEVICE);
 		}
 	}
 #else
-	pNewPacket = RTMP_AllocateRxPacketBuffer(pAd, (pAd->infType==RTMP_DEV_INF_RBUS)?NULL:((POS_COOKIE)(pAd->OS_Cookie))->pci_dev, RX_BUFFER_AGGRESIZE, FALSE, &AllocVa, &AllocPa);
+	pNewPacket = RTMP_AllocateRxPacketBuffer(pAd, ((POS_COOKIE)(pAd->OS_Cookie))->pci_dev, RX_BUFFER_AGGRESIZE, FALSE, &AllocVa, &AllocPa);
 #endif /* WLAN_SKB_RECYCLE */
 
 	if (pNewPacket)

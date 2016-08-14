@@ -623,6 +623,7 @@ int kernel_sendmsg(struct socket *sock, struct msghdr *msg,
 }
 EXPORT_SYMBOL(kernel_sendmsg);
 
+#ifdef HAVE_HW_TIME_STAMP
 static int ktime2ts(ktime_t kt, struct timespec *ts)
 {
 	if (kt.tv64) {
@@ -632,6 +633,7 @@ static int ktime2ts(ktime_t kt, struct timespec *ts)
 		return 0;
 	}
 }
+#endif
 
 /*
  * called from sock_recv_timestamp() if sock_flag(sk, SOCK_RCVTSTAMP)
@@ -642,8 +644,10 @@ void __sock_recv_timestamp(struct msghdr *msg, struct sock *sk,
 	int need_software_tstamp = sock_flag(sk, SOCK_RCVTSTAMP);
 	struct timespec ts[3];
 	int empty = 1;
+#ifdef HAVE_HW_TIME_STAMP
 	struct skb_shared_hwtstamps *shhwtstamps =
 		skb_hwtstamps(skb);
+#endif
 
 	/* Race occurred between timestamp enabling and packet
 	   receiving.  Fill in the current time for now. */
@@ -670,6 +674,7 @@ void __sock_recv_timestamp(struct msghdr *msg, struct sock *sk,
 		skb_get_timestampns(skb, ts + 0);
 		empty = 0;
 	}
+#ifdef HAVE_HW_TIME_STAMP
 	if (shhwtstamps) {
 		if (sock_flag(sk, SOCK_TIMESTAMPING_SYS_HARDWARE) &&
 		    ktime2ts(shhwtstamps->syststamp, ts + 1))
@@ -678,6 +683,7 @@ void __sock_recv_timestamp(struct msghdr *msg, struct sock *sk,
 		    ktime2ts(shhwtstamps->hwtstamp, ts + 2))
 			empty = 0;
 	}
+#endif
 	if (!empty)
 		put_cmsg(msg, SOL_SOCKET,
 			 SCM_TIMESTAMPING, sizeof(ts), &ts);

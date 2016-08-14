@@ -3233,10 +3233,13 @@ void skb_tstamp_tx(struct sk_buff *orig_skb,
 	if (!skb)
 		return;
 
+#ifdef HAVE_HW_TIME_STAMP
 	if (hwtstamps) {
 		*skb_hwtstamps(skb) =
 			*hwtstamps;
-	} else {
+	} else
+#endif
+	{
 		/*
 		 * no hardware time stamps available,
 		 * so keep the shared tx_flags and only

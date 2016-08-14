@@ -3158,7 +3158,7 @@ start_kick:
 	========================================================================
 */
 
-inline VOID _RTMPDeQueuePacket(
+static inline VOID _RTMPDeQueuePacket(
 	IN RTMP_ADAPTER *pAd,
 	IN BOOLEAN in_hwIRQ,
 	IN UCHAR QIdx,
@@ -3199,10 +3199,9 @@ inline VOID _RTMPDeQueuePacket(
 		DEQUEUE_LOCK(&pAd->irq_lock, in_hwIRQ, IrqFlags);
 
 		rtmp_deq_req(pAd, max_cnt, &deq_info);
-		
-		DEQUEUE_UNLOCK(&pAd->irq_lock, in_hwIRQ, IrqFlags);
 
 		if (deq_info.status == NDIS_STATUS_FAILURE) {
+			DEQUEUE_UNLOCK(&pAd->irq_lock, in_hwIRQ, IrqFlags);
 			break;
 		}
 
@@ -3215,12 +3214,7 @@ inline VOID _RTMPDeQueuePacket(
 
 		RTMP_START_DEQUEUE(pAd, QueIdx, IrqFlags,deq_info);
 
-		DEQUEUE_LOCK(&pAd->irq_lock, in_hwIRQ, IrqFlags);
-
 		deq_packet_gatter(pAd, &deq_info, pTxBlk, in_hwIRQ);
-		
-		DEQUEUE_UNLOCK(&pAd->irq_lock, in_hwIRQ, IrqFlags);
-
 
 #ifdef CONFIG_DVT_MODE
 		if (pAd->rDvtCtrl.ucQueIdx == 9)
@@ -3238,10 +3232,6 @@ inline VOID _RTMPDeQueuePacket(
 #endif /* DATA_QUEUE_RESERVE */			
 			ASSERT(pTxBlk->wdev);
 			ASSERT(pTxBlk->wdev->wdev_hard_tx);
-
-
-			if (IS_PCI_INF(pAd) || IS_RBUS_INF(pAd))
-				DEQUEUE_LOCK(&pAd->irq_lock, in_hwIRQ, IrqFlags);
 
 			if (pTxBlk->wdev && pTxBlk->wdev->wdev_hard_tx) {
 				pTxBlk->wdev->wdev_hard_tx(pAd, pTxBlk);
@@ -3262,16 +3252,10 @@ inline VOID _RTMPDeQueuePacket(
 #endif /* CONFIG_STA_SUPPORT */
 			}
 
-
-			if (IS_PCI_INF(pAd) || IS_RBUS_INF(pAd))
-				DEQUEUE_UNLOCK(&pAd->irq_lock, in_hwIRQ, IrqFlags);
-
 			Count += pTxBlk->TotalFrameNum;
 		}
 
 		RTMP_STOP_DEQUEUE(pAd, QueIdx, IrqFlags);
-
-		DEQUEUE_LOCK(&pAd->irq_lock, in_hwIRQ, IrqFlags);
 
 		rtmp_deq_report(pAd, &deq_info);
 
@@ -3290,12 +3274,10 @@ inline VOID _RTMPDeQueuePacket(
 		}
 #endif /* RTMP_MAC_PCI */
 
-#ifdef DBG
 		if (round >= 1024) {
 			MTWF_LOG(DBG_CAT_ALL, DBG_SUBCAT_ALL, DBG_LVL_OFF, ("%s():ForceToBreak!!Buggy here?\n", __FUNCTION__));
 			break;
 		}
-#endif /* DBG */
 
 	}while(1);
 

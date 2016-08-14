@@ -747,7 +747,7 @@ static VOID CmdPsClearRsp(struct cmd_msg *msg, char *Data, UINT16 Len)
 		}
 		else if (pEntry->UAPSDTxNum != 0)
 		{
-			RTMPDeQueuePacket(ad, TRUE, NUM_OF_TX_RING, pEntry->wcid, pEntry->UAPSDTxNum);
+			RTMPDeQueuePacket(ad, FALSE, NUM_OF_TX_RING, pEntry->wcid, pEntry->UAPSDTxNum);
 		}
 	}
 #endif /* UAPSD_SUPPORT */
@@ -2885,7 +2885,7 @@ static VOID AndesMTRxProcessEvent(RTMP_ADAPTER *pAd, struct cmd_msg *rx_msg)
 		DlListForEachSafe(msg, msg_tmp, &ctl->ackq, struct cmd_msg, list) {
 			if (msg->seq == event_rxd->fw_rxd_1.field.seq_num)
 			{
-			#if defined(RTMP_USB_SUPPORT) || defined(RTMP_SDIO_SUPPORT)
+#if defined(RTMP_USB_SUPPORT) || defined(RTMP_SDIO_SUPPORT)
 				RTMP_SPIN_UNLOCK_IRQ(&ctl->ackq_lock);
 #endif
 

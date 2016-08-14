@@ -5662,10 +5662,11 @@ typedef struct _RX_BLK
 #ifdef RTMP_PCI_SUPPORT
 	UINT32 PDMALen;
 #endif
-	UCHAR Ping;
-	UCHAR Arp;
-	UCHAR Dhcp;
-	USHORT icmp_seq;
+
+#ifdef FORCE_ANNOUNCE_CRITICAL_AMPDU
+	UCHAR CriticalPkt;
+#endif /* FORCE_ANNOUNCE_CRITICAL_AMPDU */
+
 } RX_BLK;
 
 
@@ -6729,11 +6730,12 @@ BOOLEAN RTMPCheckEtherType(
 	OUT PUCHAR pUserPriority,
 	OUT PUCHAR pQueIdx);
 
+#ifdef FORCE_ANNOUNCE_CRITICAL_AMPDU
 VOID RTMP_RxPacketClassify(
 	IN RTMP_ADAPTER *pAd,
 	IN RX_BLK *pRxBlk,
 	IN MAC_TABLE_ENTRY *pEntry);
-
+#endif
 
 VOID RTMPCckBbpTuning(
 	IN	RTMP_ADAPTER *pAd,

@@ -3934,6 +3934,7 @@ MTWF_LOG(DBG_CAT_ALL, DBG_SUBCAT_ALL, DBG_LVL_OFF, ("%s():failed for VLAN_ID(vla
 	return TRUE;
 }
 
+#ifdef FORCE_ANNOUNCE_CRITICAL_AMPDU
 VOID RTMP_RxPacketClassify(
 	IN RTMP_ADAPTER *pAd,
 	IN RX_BLK		*pRxBlk,
@@ -3942,30 +3943,45 @@ VOID RTMP_RxPacketClassify(
 	PUCHAR pData = NdisEqualMemory(SNAP_802_1H, pRxBlk->pData, 6) ? (pRxBlk->pData + 6) : pRxBlk->pData;
 	UINT16 protoType = OS_NTOHS(*((UINT16 *)(pData)));
 
-	RTMP_SET_PACKET_ETHTYPE(pRxBlk->pRxPacket, 0);
-
 	if (protoType == ETH_P_ARP)
 	{
-		UINT16 ArpOp;
+		pRxBlk->CriticalPkt = 1;	// ARP
 
-		pData = pData + 8;
-		ArpOp = OS_NTOHS(*((UINT16 *)(pData)));
-
-		MTWF_LOG(DBG_CAT_ALL, DBG_SUBCAT_ALL, DBG_LVL_TRACE, ("rx path ARP #(aid=%d,wcid=%d,arp op = %d, ampdu = %d)\n",
-						pEntry->Aid, pRxBlk->wcid, ArpOp, RX_BLK_TEST_FLAG(pRxBlk, fRX_AMPDU)));
-
-		RTMP_SET_PACKET_ETHTYPE(pRxBlk->pRxPacket, 0x1);
+		MTWF_LOG(DBG_CAT_ALL, DBG_SUBCAT_ALL, DBG_LVL_TRACE, ("rx path ARP #(aid=%d,wcid=%d, pHeader seq=%d, ampdu = %d)\n",
+			pEntry->Aid, pRxBlk->wcid, pRxBlk->pHeader->Sequence, RX_BLK_TEST_FLAG(pRxBlk, fRX_AMPDU))); 
 	}
 	else if (protoType == ETH_P_IP)
 	{
 		UINT8 protocol = *(pData + 11);
+		//UINT8 icmp_type = *(pData + 22);
 
 		if (protocol == 0x1)
 		{
-			RTMP_SET_PACKET_ETHTYPE(pRxBlk->pRxPacket, 0x2);
+			pRxBlk->CriticalPkt = 1;	// ICMP
+
+			MTWF_LOG(DBG_CAT_ALL, DBG_SUBCAT_ALL, DBG_LVL_TRACE, ("rx path ICMP #(aid=%d,wcid=%d, pHeader seq=%d, ampdu = %d)\n",
+				pEntry->Aid, pRxBlk->wcid, pRxBlk->pHeader->Sequence, RX_BLK_TEST_FLAG(pRxBlk, fRX_AMPDU)));
 		}
+#if 0
+		else if (protocol == IP_PROTO_UDP)
+		{
+			PUCHAR pUdpHdr = pData + 22;
+			UINT16 srcPort, dstPort;
+
+			srcPort = OS_NTOHS(get_unaligned((PUINT16)(pUdpHdr)));
+			dstPort = OS_NTOHS(get_unaligned((PUINT16)(pUdpHdr+2)));
+			if ((srcPort==67 && dstPort==68)||(srcPort==68 && dstPort==67)) /*It's a DHCP packet */
+			{
+				pRxBlk->CriticalPkt = 1;	// DHCP
+
+				MTWF_LOG(DBG_CAT_ALL, DBG_SUBCAT_ALL, DBG_LVL_TRACE, ("rx path DHCP #(aid=%d,wcid=%d, pHeader seq=%d, ampdu = %d)\n",
+					pEntry->Aid, pRxBlk->wcid, pRxBlk->pHeader->Sequence, RX_BLK_TEST_FLAG(pRxBlk, fRX_AMPDU)));
+			}
+		}
+#endif
 	}
 }
+#endif /* FORCE_ANNOUNCE_CRITICAL_AMPDU */
 
 #ifdef SOFT_ENCRYPT
 BOOLEAN RTMPExpandPacketForSwEncrypt(

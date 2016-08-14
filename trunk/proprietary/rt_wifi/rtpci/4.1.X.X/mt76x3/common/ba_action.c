@@ -1913,19 +1913,11 @@ VOID Indicate_AMPDU_Packet(RTMP_ADAPTER *pAd, RX_BLK *pRxBlk, UCHAR wdev_idx)
 #endif /* MAC_REPEATER_SUPPORT */
 
 #ifdef FORCE_ANNOUNCE_CRITICAL_AMPDU
-		if (pRxBlk->Ping)
+		if (pRxBlk->CriticalPkt)
 		{
 #ifdef DBG
 			dump_ping(pRxBlk->pData);
 #endif /* DBG */
-			DBGPRINT(RT_DEBUG_TRACE, ("%s %d Ping  wcid=%d Sequence=%d  pBAEntry->LastIndSeq=%d, TID=%d\n",__FUNCTION__,__LINE__,pRxBlk->wcid,Sequence,pBAEntry->LastIndSeq, pBAEntry->TID));
-			INDICATE_LEGACY_OR_AMSDU(pAd, pRxBlk, wdev_idx);
-		} else if (pRxBlk->Arp)
-		{
-			DBGPRINT(RT_DEBUG_TRACE, ("%s %d Arp  wcid=%d Sequence=%d  pBAEntry->LastIndSeq=%d, TID=%d\n",__FUNCTION__,__LINE__,pRxBlk->wcid,Sequence,pBAEntry->LastIndSeq, pBAEntry->TID));
-			INDICATE_LEGACY_OR_AMSDU(pAd, pRxBlk, wdev_idx);
-		} else	if (pRxBlk->Dhcp){
-			DBGPRINT(RT_DEBUG_TRACE, ("%s %d DHCP  wcid=%d Sequence=%d  pBAEntry->LastIndSeq=%d, TID=%d\n",__FUNCTION__,__LINE__,pRxBlk->wcid,Sequence,pBAEntry->LastIndSeq, pBAEntry->TID));
 			INDICATE_LEGACY_OR_AMSDU(pAd, pRxBlk, wdev_idx);
 		}else
 #endif /* FORCE_ANNOUNCE_CRITICAL_AMPDU */
@@ -1942,19 +1934,11 @@ VOID Indicate_AMPDU_Packet(RTMP_ADAPTER *pAd, RX_BLK *pRxBlk, UCHAR wdev_idx)
 #endif /* MAC_REPEATER_SUPPORT */
 
 #ifdef FORCE_ANNOUNCE_CRITICAL_AMPDU
-		if (pRxBlk->Ping)
+		if (pRxBlk->CriticalPkt)
 		{
 #ifdef DBG
 			dump_ping(pRxBlk->pData);
 #endif /* DBG */
-			DBGPRINT(RT_DEBUG_TRACE, ("%s %d Ping  wcid=%d Sequence=%d  pBAEntry->LastIndSeq=%d, TID=%d\n",__FUNCTION__,__LINE__,pRxBlk->wcid,Sequence,pBAEntry->LastIndSeq, pBAEntry->TID));
-			INDICATE_LEGACY_OR_AMSDU(pAd, pRxBlk, wdev_idx);
-		} else if (pRxBlk->Arp)
-		{
-			DBGPRINT(RT_DEBUG_TRACE, ("%s %d Arp  wcid=%d Sequence=%d  pBAEntry->LastIndSeq=%d, TID=%d\n",__FUNCTION__,__LINE__,pRxBlk->wcid,Sequence,pBAEntry->LastIndSeq, pBAEntry->TID));
-			INDICATE_LEGACY_OR_AMSDU(pAd, pRxBlk, wdev_idx);
-		} else	if (pRxBlk->Dhcp){
-			DBGPRINT(RT_DEBUG_TRACE, ("%s %d DHCP  wcid=%d Sequence=%d  pBAEntry->LastIndSeq=%d, TID=%d\n",__FUNCTION__,__LINE__,pRxBlk->wcid,Sequence,pBAEntry->LastIndSeq, pBAEntry->TID));
 			INDICATE_LEGACY_OR_AMSDU(pAd, pRxBlk, wdev_idx);
 		}else
 #endif /* FORCE_ANNOUNCE_CRITICAL_AMPDU */

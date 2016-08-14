@@ -1701,6 +1701,11 @@ VOID rx_data_frm_announce(
 		}
 #endif /* CONFIG_HOTSPOT */
 
+#ifdef FORCE_ANNOUNCE_CRITICAL_AMPDU
+		if (IS_ENTRY_CLIENT(pEntry) || IS_ENTRY_APCLI(pEntry))
+			RTMP_RxPacketClassify(pAd, pRxBlk, pEntry);
+#endif /* FORCE_ANNOUNCE_CRITICAL_AMPDU */
+
 #ifdef CONFIG_AP_SUPPORT
 #ifdef STATS_COUNT_SUPPORT
 		if ((IS_ENTRY_CLIENT(pEntry)) && (pEntry->pMbss))
@@ -2094,80 +2099,6 @@ VOID dev_rx_data_frm(RTMP_ADAPTER *pAd, RX_BLK *pRxBlk)
 
 
 	pRxBlk->pData = pData;
-
-#ifdef FORCE_ANNOUNCE_CRITICAL_AMPDU
-{
-	PUCHAR pPktHdr, pLayerHdr;
-
-	pPktHdr = pData+8;// get ip header start addr
-	pLayerHdr = (pPktHdr );
-	
-	
-	if ((*(pPktHdr + 9) == 0x1) &&pData[6] == 0x08 &&pData[7]==0x00)//mark packet for ping
-	{
-
-		UCHAR icmpType;
-		unsigned char * srcip,*dstip;
-		unsigned short *seq;
-		unsigned char a,b,c,d;
-
-		srcip=pLayerHdr+12;
-		dstip=pLayerHdr+16;
-		pLayerHdr += 20;
-		seq=(unsigned short *)(pLayerHdr+6);
-		icmpType = *pLayerHdr;
-		if((icmpType == 0x00 || icmpType == 0x08) )			
-		{ 
-#ifdef DBG
-			if (RTDebugLevel >= RT_DEBUG_INFO)
-			{
-				char tmpchar[50];
-				if (icmpType == 0x00)
-				{
-					NdisMoveMemory(tmpchar,"Replay",6);
-					tmpchar[6]=0;
-				}
-				else
-				{
-					NdisMoveMemory(tmpchar,"Request",7);
-					tmpchar[7]=0;
-				}			
-				a=srcip[0];
-				b=srcip[1];
-				c=srcip[2];
-				d=srcip[3];	
-				DBGPRINT(RT_DEBUG_INFO,("%s recieve the icmp pkg icmpType=%s\n",__FUNCTION__,tmpchar));
-				DBGPRINT(RT_DEBUG_INFO,("SRC IP: %u.%u.%u.%u   \n",a,b,c,d));
-				a=dstip[0];
-				b=dstip[1];
-				c=dstip[2];
-				d=dstip[3];	
-				DBGPRINT(RT_DEBUG_INFO,("dst IP: %u.%u.%u.%u   \n",a,b,c,d));
-				DBGPRINT(RT_DEBUG_INFO,("ID:%u\n",ntohs(*seq)));	
-		    }	
-#endif
-		pRxBlk->Ping = 1;
-		}
-
-	} else if (pData[6] == 0x08 &&pData[7]==0x06)//mark packet is ARP
-	{
-		pRxBlk->Arp = 1;
-	} else if ((*(pPktHdr + 9) == 0x11) &&pData[6] == 0x08 &&pData[7]==0x00)//mark packet as DHCP
-	{
-		PUCHAR pUdpHdr;
-		UINT16 srcPort, dstPort;
-				
-		pUdpHdr = pPktHdr + 20;
-		srcPort = OS_NTOHS(get_unaligned((PUINT16)(pUdpHdr)));
-		dstPort = OS_NTOHS(get_unaligned((PUINT16)(pUdpHdr+2)));
-		if ((srcPort==67 && dstPort==68)||(srcPort==68 && dstPort==67)) /*It's a DHCP packet */
-			{
-				pRxBlk->Dhcp=1;
-			}
-	}
-
-}
-#endif /* FORCE_ANNOUNCE_CRITICAL_AMPDU */
 
 #if defined(SOFT_ENCRYPT) || defined(ADHOC_WPA2PSK_SUPPORT)
 	/* Use software to decrypt the encrypted frame if necessary.

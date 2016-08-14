@@ -2146,6 +2146,11 @@ VOID rx_data_frm_announce(
 		}
 #endif /* CONFIG_HOTSPOT */
 
+#ifdef FORCE_ANNOUNCE_CRITICAL_AMPDU
+		if (IS_ENTRY_CLIENT(pEntry) || IS_ENTRY_APCLI(pEntry))
+			RTMP_RxPacketClassify(pAd, pRxBlk, pEntry);
+#endif /* FORCE_ANNOUNCE_CRITICAL_AMPDU */
+
 #ifdef CONFIG_AP_SUPPORT
 #ifdef STATS_COUNT_SUPPORT
 		if ((IS_ENTRY_CLIENT(pEntry)) && (pEntry->pMbss))
@@ -2562,65 +2567,6 @@ VOID dev_rx_data_frm(RTMP_ADAPTER *pAd, RX_BLK *pRxBlk)
 
 
 	pRxBlk->pData = pData;
-
-//add debug for DUT can't ping RootAP by ziqiang.yu(2015/12/04)
-{
-	PUCHAR pPktHdr, pLayerHdr;
-
-	pPktHdr = pData+8;// get ip header start addr
-	pLayerHdr = (pPktHdr );
-	
-	
-	if ((*(pPktHdr + 9) == 0x1) &&pData[6] == 0x08 &&pData[7]==0x00)//mark packet for ping
-	{
-
-		UCHAR icmpType;
-		//unsigned char * srcip,*dstip;
-		//unsigned short *seq;
-
-		//srcip=pLayerHdr+12;
-		//dstip=pLayerHdr+16;
-		pLayerHdr += 20;
-		//seq=pLayerHdr+6;
-		icmpType = *pLayerHdr;
-		if((icmpType == 0x00 || icmpType == 0x08) )			
-		{ 
-			pRxBlk->Ping = 1;
-			pRxBlk->icmp_seq = (*(pLayerHdr + 6) << 8) | *(pLayerHdr + 7);
-
-
-			MTWF_LOG(DBG_CAT_ALL, DBG_SUBCAT_ALL, DBG_LVL_TRACE, ("[7628]rx path PING #(aid=%d,wcid=%d, icmp seq=%d, pHeader seq=%d  ,ampdu = %d)\n",
-									pEntry->Aid, pRxBlk->wcid, pRxBlk->icmp_seq, pRxBlk->pHeader->Sequence, RX_BLK_TEST_FLAG(pRxBlk, fRX_AMPDU)));
-
-			
-		}
-
-	} else if (pData[6] == 0x08 &&pData[7]==0x06)//mark packet is ARP
-	{
-		pRxBlk->Arp = 1;
-
-		MTWF_LOG(DBG_CAT_ALL, DBG_SUBCAT_ALL, DBG_LVL_TRACE, ("[7628]rx path arp #(aid=%d,wcid=%d, pHeader seq=%d  ,ampdu = %d)\n",
-						pEntry->Aid, pRxBlk->wcid, pRxBlk->pHeader->Sequence, RX_BLK_TEST_FLAG(pRxBlk, fRX_AMPDU)));
-	} else if ((*(pPktHdr + 9) == 0x11) &&pData[6] == 0x08 &&pData[7]==0x00)//mark packet as DHCP
-	{
-		PUCHAR pUdpHdr;
-		UINT16 srcPort, dstPort;
-		//BOOLEAN bHdrChanged = FALSE;
-				
-		pUdpHdr = pPktHdr + 20;
-		srcPort = OS_NTOHS(get_unaligned((PUINT16)(pUdpHdr)));
-		dstPort = OS_NTOHS(get_unaligned((PUINT16)(pUdpHdr+2)));
-		if ((srcPort==67 && dstPort==68)||(srcPort==68 && dstPort==67)) /*It's a DHCP packet */
-		{
-			pRxBlk->Dhcp=1;
-			MTWF_LOG(DBG_CAT_ALL, DBG_SUBCAT_ALL, DBG_LVL_TRACE, ("[7628]rx path dhcp #(aid=%d,wcid=%d, pHeader seq=%d  ,ampdu = %d)\n",
-								pEntry->Aid, pRxBlk->wcid, pRxBlk->pHeader->Sequence, RX_BLK_TEST_FLAG(pRxBlk, fRX_AMPDU)));
-		}
-	}
-
-
-}
-
 
 #if defined(SOFT_ENCRYPT) || defined(ADHOC_WPA2PSK_SUPPORT)
 	/* Use software to decrypt the encrypted frame if necessary.
@@ -3262,7 +3208,6 @@ BOOLEAN rtmp_rx_done_handle(RTMP_ADAPTER *pAd)
 #else	
 	IF_DEV_CONFIG_OPMODE_ON_AP(pAd)
 #endif /* RT_CFG80211_P2P_SUPPORT */ 
-	IF_DEV_CONFIG_OPMODE_ON_AP(pAd)
 	{
 		/* dont remove the function or UAPSD will fail */
 		UAPSD_MR_SP_RESUME(pAd);

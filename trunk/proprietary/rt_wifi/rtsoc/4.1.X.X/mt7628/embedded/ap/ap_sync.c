@@ -541,6 +541,7 @@ MTWF_LOG(DBG_CAT_ALL, DBG_SUBCAT_ALL, DBG_LVL_OFF, ("%s():shiang! PeerProbeReqSa
 			NdisZeroMemory(TmpFrame, sizeof(TmpFrame));
 
 			/* prepare channel information */
+			MaxTxPower = GetCuntryMaxTxPwr(pAd, pAd->CommonCfg.Channel);
 			MakeOutgoingFrame(TmpFrame+TmpLen2,     &TmpLen,
 					1,                 	&pAd->ChannelList[0].Channel,
 					1,                 	&pAd->ChannelListNum,

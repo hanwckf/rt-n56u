@@ -759,11 +759,10 @@ static int usb_stor_acquire_resources(struct us_data *us)
 {
 	int p;
 	struct task_struct *th;
+
 	us->current_urb = usb_alloc_urb(0, GFP_KERNEL);
-	if (!us->current_urb) {
-		US_DEBUGP("URB allocation failed\n");
+	if (!us->current_urb)
 		return -ENOMEM;
-	}
 
 	/* Just before we start our control thread, initialize
 	 * the device if it needs initialization */

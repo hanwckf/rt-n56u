@@ -1340,7 +1340,7 @@ static int process_sip_response(struct sk_buff *skb, unsigned int dataoff,
 			      &matchoff, &matchlen) <= 0)
 		return NF_DROP;
 	cseq = simple_strtoul(*dptr + matchoff, NULL, 10);
-	if (!cseq)
+	if (!cseq && *(*dptr + matchoff) != '0')
 		return NF_DROP;
 	matchend = matchoff + matchlen + 1;
 
@@ -1398,7 +1398,7 @@ static int process_sip_request(struct sk_buff *skb, unsigned int dataoff,
 				      &matchoff, &matchlen) <= 0)
 			return NF_DROP;
 		cseq = simple_strtoul(*dptr + matchoff, NULL, 10);
-		if (!cseq)
+		if (!cseq && *(*dptr + matchoff) != '0')
 			return NF_DROP;
 
 		return handler->request(skb, dataoff, dptr, datalen, cseq);

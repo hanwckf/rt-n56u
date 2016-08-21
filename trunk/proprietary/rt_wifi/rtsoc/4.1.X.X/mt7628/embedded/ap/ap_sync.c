@@ -424,48 +424,6 @@ MTWF_LOG(DBG_CAT_ALL, DBG_SUBCAT_ALL, DBG_LVL_OFF, ("%s():shiang! PeerProbeReqSa
 			FrameLen += TmpLen;
 		}
 
-	    /* add country IE, power constraint IE */
-		if (pAd->CommonCfg.bCountryFlag)
-		{
-			ULONG TmpLen, TmpLen2=0;
-			UCHAR *TmpFrame = NULL;
-
-			os_alloc_mem(NULL, (UCHAR **)&TmpFrame, 256);
-			if (TmpFrame != NULL)
-			{
-				NdisZeroMemory(TmpFrame, 256);
-
-				/* prepare channel information */
-#ifdef EXT_BUILD_CHANNEL_LIST
-				BuildBeaconChList(pAd, TmpFrame, &TmpLen2);
-#else
-				{
-					UCHAR MaxTxPower = GetCuntryMaxTxPwr(pAd, pAd->CommonCfg.Channel);
-					MakeOutgoingFrame(TmpFrame+TmpLen2,     &TmpLen,
-										1,                 	&pAd->ChannelList[0].Channel,
-										1,                 	&pAd->ChannelListNum,
-										1,                 	&MaxTxPower,
-										END_OF_ARGS);
-					TmpLen2 += TmpLen;
-				}
-#endif /* EXT_BUILD_CHANNEL_LIST */
-
-#ifdef DOT11K_RRM_SUPPORT
-				if (IS_RRM_ENABLE(pAd, apidx)
-					&& (pAd->CommonCfg.RegulatoryClass[0] != 0))
-				{
-					TmpLen2 = 0;
-					NdisZeroMemory(TmpFrame, sizeof(TmpFrame));
-					RguClass_BuildBcnChList(pAd, TmpFrame, &TmpLen2);
-				}		
-#endif /* DOT11K_RRM_SUPPORT */
-
-				os_free_mem(NULL, TmpFrame);
-			}
-			else
-				MTWF_LOG(DBG_CAT_ALL, DBG_SUBCAT_ALL, DBG_LVL_ERROR, ("%s: Allocate memory fail!!!\n", __FUNCTION__));
-		}
-			
 #ifdef DOT11K_RRM_SUPPORT
 		if (IS_RRM_ENABLE(pAd, apidx))
 		{
@@ -589,6 +547,16 @@ MTWF_LOG(DBG_CAT_ALL, DBG_SUBCAT_ALL, DBG_LVL_OFF, ("%s():shiang! PeerProbeReqSa
 					1,                 	&MaxTxPower,
 					END_OF_ARGS);
 			TmpLen2 += TmpLen;
+
+#ifdef DOT11K_RRM_SUPPORT
+			if (IS_RRM_ENABLE(pAd, apidx)
+				&& (pAd->CommonCfg.RegulatoryClass[0] != 0))
+			{
+				TmpLen2 = 0;
+				NdisZeroMemory(TmpFrame, sizeof(TmpFrame));
+				RguClass_BuildBcnChList(pAd, TmpFrame, &TmpLen2);
+			}
+#endif /* DOT11K_RRM_SUPPORT */
 
 			/* need to do the padding bit check, and concatenate it */
 			if ((TmpLen2%2) == 0)

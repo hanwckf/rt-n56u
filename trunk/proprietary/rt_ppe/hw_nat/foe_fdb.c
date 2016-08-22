@@ -567,7 +567,7 @@ int FoeUnBindEntry(struct hwnat_args *opt)
 	entry = get_foe_entry(opt->entry_num);
 
 	spin_lock_bh(&ppe_foe_lock);
-	entry->udib1.state = UNBIND;
+	entry->udib1.state = INVALID;
 	entry->udib1.time_stamp = RegRead(FOE_TS) & 0xFF;
 
 #if defined (CONFIG_HNAT_V2)

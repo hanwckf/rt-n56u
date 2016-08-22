@@ -140,6 +140,8 @@
 #include <linux/ppp_defs.h>
 #include <linux/net_tstamp.h>
 #include <linux/static_key.h>
+#include <net/gre.h>
+#include <net/pptp.h>
 #include <net/flow_keys.h>
 
 #include "net-sysfs.h"
@@ -2772,40 +2774,82 @@ ipv6:
 
 	switch (ip_proto) {
 	case IPPROTO_GRE: {
-		struct gre_hdr {
-			__be16 flags;
-			__be16 proto;
-		} *hdr, _hdr;
+		struct gre_base_hdr *hdr, _hdr;
+		u16 gre_ver;
+		int offset = 0;
 
 		hdr = skb_header_pointer(skb, nhoff, sizeof(_hdr), &_hdr);
 		if (!hdr)
 			return false;
-		/*
-		 * Only look inside GRE if version zero and no
-		 * routing
-		 */
-		if (hdr->flags & (GRE_VERSION | GRE_ROUTING))
+
+		/* Only look inside GRE without routing */
+		if (hdr->flags & GRE_ROUTING)
 			break;
 
-		proto = hdr->proto;
-		nhoff += 4;
-		if (hdr->flags & GRE_CSUM)
-			nhoff += 4;
-		if (hdr->flags & GRE_KEY)
-			nhoff += 4;
-		if (hdr->flags & GRE_SEQ)
-			nhoff += 4;
-		if (proto == htons(ETH_P_TEB)) {
-			const struct ethhdr *eth;
-			struct ethhdr _eth;
+		/* Only look inside GRE for version 0 and 1 */
+		gre_ver = ntohs(hdr->flags & GRE_VERSION);
+		if (gre_ver > 1)
+			break;
 
-			eth = skb_header_pointer(skb, nhoff,
-						 sizeof(_eth), &_eth);
-			if (!eth)
-				return false;
-			proto = eth->h_proto;
-			nhoff += sizeof(*eth);
+		proto = hdr->protocol;
+		if (gre_ver) {
+			/* Version1 must be PPTP, and check the flags */
+			if (!(proto == GRE_PROTO_PPP && (hdr->flags & GRE_KEY)))
+				break;
 		}
+
+		offset += sizeof(struct gre_base_hdr);
+
+		if (hdr->flags & GRE_CSUM)
+			offset += sizeof(((struct gre_full_hdr *)0)->csum) +
+				  sizeof(((struct gre_full_hdr *)0)->reserved1);
+
+		if (hdr->flags & GRE_KEY)
+			offset += sizeof(((struct gre_full_hdr *)0)->key);
+
+		if (hdr->flags & GRE_SEQ)
+			offset += sizeof(((struct pptp_gre_header *)0)->seq);
+
+		if (gre_ver == 0) {
+			if (proto == htons(ETH_P_TEB)) {
+				const struct ethhdr *eth;
+				struct ethhdr _eth;
+
+				eth = skb_header_pointer(skb, nhoff + offset,
+							 sizeof(_eth), &_eth);
+				if (!eth)
+					return false;
+				proto = eth->h_proto;
+				offset += sizeof(*eth);
+			}
+		} else { /* version 1, must be PPTP */
+			u8 _ppp_hdr[PPP_HDRLEN];
+			u8 *ppp_hdr;
+
+			if (hdr->flags & GRE_ACK)
+				offset += sizeof(((struct pptp_gre_header *)0)->ack);
+
+			ppp_hdr = skb_header_pointer(skb, nhoff + offset,
+						     sizeof(_ppp_hdr), _ppp_hdr);
+			if (!ppp_hdr)
+				return false;
+
+			switch (PPP_PROTOCOL(ppp_hdr)) {
+			case PPP_IP:
+				proto = __constant_htons(ETH_P_IP);
+				break;
+			case PPP_IPV6:
+				proto = __constant_htons(ETH_P_IPV6);
+				break;
+			default:
+				/* Could probably catch some more like MPLS */
+				break;
+			}
+
+			offset += PPP_HDRLEN;
+		}
+
+		nhoff += offset;
 		goto again;
 	}
 	case IPPROTO_IPIP:

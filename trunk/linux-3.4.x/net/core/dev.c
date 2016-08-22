@@ -2784,18 +2784,29 @@ ipv6:
 		 * Only look inside GRE if version zero and no
 		 * routing
 		 */
-		if (!(hdr->flags & (GRE_VERSION|GRE_ROUTING))) {
-			proto = hdr->proto;
+		if (hdr->flags & (GRE_VERSION | GRE_ROUTING))
+			break;
+
+		proto = hdr->proto;
+		nhoff += 4;
+		if (hdr->flags & GRE_CSUM)
 			nhoff += 4;
-			if (hdr->flags & GRE_CSUM)
-				nhoff += 4;
-			if (hdr->flags & GRE_KEY)
-				nhoff += 4;
-			if (hdr->flags & GRE_SEQ)
-				nhoff += 4;
-			goto again;
+		if (hdr->flags & GRE_KEY)
+			nhoff += 4;
+		if (hdr->flags & GRE_SEQ)
+			nhoff += 4;
+		if (proto == htons(ETH_P_TEB)) {
+			const struct ethhdr *eth;
+			struct ethhdr _eth;
+
+			eth = skb_header_pointer(skb, nhoff,
+						 sizeof(_eth), &_eth);
+			if (!eth)
+				return false;
+			proto = eth->h_proto;
+			nhoff += sizeof(*eth);
 		}
-		break;
+		goto again;
 	}
 	case IPPROTO_IPIP:
 		proto = __constant_htons(ETH_P_IP);

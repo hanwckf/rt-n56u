@@ -209,11 +209,7 @@ int __cpuinit r4k_clockevent_init(void)
 	cd->broadcast		= ra_systick_event_broadcast;
 #endif
 
-	/* Calculate the min / max delta */
 	cd->name		= "MIPS";
-	clockevent_set_clock(cd, mips_hpt_frequency);
-	cd->max_delta_ns	= clockevent_delta2ns(0x7fffffff, cd);
-	cd->min_delta_ns	= clockevent_delta2ns(0x300, cd);
 
 	cd->rating		= 300;
 	cd->irq			= irq;
@@ -225,7 +221,7 @@ int __cpuinit r4k_clockevent_init(void)
 #ifdef CONFIG_CEVT_GIC
 	if (!gic_present)
 #endif
-	clockevents_register_device(cd);
+	clockevents_config_and_register(cd, mips_hpt_frequency, 0x300, 0x7fffffff);
 
 	if (cp0_timer_irq_installed)
 		return 0;

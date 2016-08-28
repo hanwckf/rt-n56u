@@ -196,9 +196,6 @@ static int ra_systick_clockevent_init(void)
 
 	cd->features		= CLOCK_EVT_FEAT_ONESHOT;
 	cd->name		= "Ralink System Tick Counter";
-	clockevent_set_clock(cd, 50000);
-	cd->max_delta_ns	= clockevent_delta2ns(0x7fff, cd);
-	cd->min_delta_ns	= clockevent_delta2ns(0x3, cd);
 #if defined (CONFIG_RALINK_MT7621) && defined (CONFIG_MIPS_GIC_IPI)
 	/* must be lower than MIPS original cd rating(300) to activate "broadcast mode" */
 	cd->rating		= 250;
@@ -218,7 +215,7 @@ static int ra_systick_clockevent_init(void)
 		setup_irq(irq, &ra_systick_irqaction);
 	}
 
-	clockevents_register_device(cd);
+	clockevents_config_and_register(cd, 50000, 0x3, 0x7fff);
 
 	/* Enable ralink system count register */
 	(*((volatile u32 *)(RALINK_MCNT_CFG))) = 0x3;

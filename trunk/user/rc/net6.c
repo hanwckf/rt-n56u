@@ -187,8 +187,11 @@ int ipv6_from_string(const char *str, struct in6_addr *addr6)
 	char *last, *tmp = addr6s;
 	int ret = 128;
 
-	if (str && *str)
-		strncpy(addr6s, str, sizeof(addr6s));
+	if (str && *str) {
+		memset(addr6s, 0, sizeof(addr6s));
+		strncpy(addr6s, str, sizeof(addr6s) - 1);
+	}
+
 	strsep(&tmp, "/");
 
 	if (inet_pton(AF_INET6, addr6s, addr6) != 1)

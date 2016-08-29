@@ -1,6 +1,6 @@
 * BUILD INSTRUCTION *
 
-1) You need Linux environment to build the firmware. Ubintu 16.04.1 LTS and
+1) You need Linux environment to build the firmware. Ubuntu 16.04.1 LTS and
    Debian 8.5. distros has been tested and recommended.
 2) Build cross-toolchain for MIPS32_R2 CPU (binutils-2.24, gcc-447, uclibc-0.9.33.2)
    from external package toolchain-mipsel.
@@ -13,7 +13,7 @@
 
 * NOTE *
 
-You need following packages to build the firmware under Debian 'wheezy'/'jessie':
+You need following packages to build the firmware under Debian 8.x 'Jessie':
 - autoconf
 - automake
 - bison

@@ -37,7 +37,6 @@ configure:
 		--enable-fragment \
 		--enable-http-proxy \
 		--enable-def-auth \
-		--enable-password-save \
 		--enable-ssl \
 		--enable-crypto \
 		--enable-lzo \

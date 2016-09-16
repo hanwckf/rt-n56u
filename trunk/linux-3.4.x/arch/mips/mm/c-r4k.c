@@ -63,7 +63,7 @@
  */
 static inline bool r4k_op_needs_ipi(unsigned int type)
 {
-#if defined(CONFIG_MIPS_MT_SMP) || defined(CONFIG_MIPS_MT_SMTC)
+#if defined(CONFIG_MIPS_CMP) && defined(CONFIG_IRQ_GIC)
 	/* The MIPS Coherence Manager (CM) globalizes address-based cache ops */
 	if (type == R4K_HIT)
 		return false;

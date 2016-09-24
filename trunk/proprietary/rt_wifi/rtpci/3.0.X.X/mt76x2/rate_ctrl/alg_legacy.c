@@ -47,7 +47,6 @@ VOID APMlmeDynamicTxRateSwitching(RTMP_ADAPTER *pAd)
 	RTMP_RA_LEGACY_TB *pCurrTxRate, *pTmpTxRate = NULL;
 	CHAR Rssi, TmpIdx = 0;
 	ULONG TxTotalCnt, TxErrorRatio = 0, TxSuccess, TxRetransmit, TxFailCount;
-	BOOLEAN HasTxInfo = FALSE;
 
 #ifdef RALINK_ATE
    	if (ATE_ON(pAd))
@@ -125,8 +124,6 @@ VOID APMlmeDynamicTxRateSwitching(RTMP_ADAPTER *pAd)
 #endif
 			if (TxTotalCnt)
 				TxErrorRatio = ((TxRetransmit + TxFailCount) * 100) / TxTotalCnt;
-
-			HasTxInfo = TRUE;
 		}
 		else
 		{
@@ -137,15 +134,15 @@ VOID APMlmeDynamicTxRateSwitching(RTMP_ADAPTER *pAd)
 
 			if (TxTotalCnt)
 				TxErrorRatio = ((TxRetransmit + TxFailCount) * 100) / TxTotalCnt;
+		}
 
 #ifdef FIFO_EXT_SUPPORT
 			if (pAd->chipCap.FlgHwFifoExtCap)
 			{
-				if (pEntry->bUseHwFifoExt)
+				if (NicGetMacFifoTxCnt(pAd, pEntry))
 				{
 					ULONG 	HwTxCnt, HwErrRatio;
 
-					NicGetMacFifoTxCnt(pAd, pEntry);
 					HwTxCnt = pEntry->fifoTxSucCnt + pEntry->fifoTxRtyCnt;
 					if (HwTxCnt)
 						HwErrRatio = (pEntry->fifoTxRtyCnt * 100) / HwTxCnt;
@@ -163,14 +160,10 @@ VOID APMlmeDynamicTxRateSwitching(RTMP_ADAPTER *pAd)
 					TxTotalCnt = HwTxCnt;
 					TxErrorRatio = HwErrRatio;
 
-					HasTxInfo = TRUE;
+					ApTxFailCntUpdate(pAd, pEntry, TxSuccess, TxRetransmit);
 				}
 			}
 #endif /* FIFO_EXT_SUPPORT */
-		}
-
-	    if (HasTxInfo)
-		ApTxFailCntUpdate(pAd, pEntry, TxSuccess, TxRetransmit);
 
 		/* Save LastTxOkCount, LastTxPER and last MCS action for APQuickResponeForRateUpExec */
 		pEntry->LastTxOkCount = TxSuccess;
@@ -476,7 +469,6 @@ VOID APQuickResponeForRateUpExec(
 #ifdef TXBF_SUPPORT
 	BOOLEAN					CurrPhyETxBf, CurrPhyITxBf;
 #endif /* TXBF_SUPPORT */
-	BOOLEAN					HasTxInfo = FALSE;
 
 	pAd->ApCfg.ApQuickResponeForRateUpTimerRunning = FALSE;
 
@@ -527,10 +519,10 @@ VOID APQuickResponeForRateUpExec(
 
 		if (pAd->MacTab.Size == 1)
 		{
-            TX_STA_CNT1_STRUC		StaTx1;
+			TX_STA_CNT1_STRUC		StaTx1;
 			TX_STA_CNT0_STRUC		TxStaCnt0;
 
-       		/* Update statistic counter */
+			/* Update statistic counter */
 			NicGetTxRawCounters(pAd, &TxStaCnt0, &StaTx1);
 
 			TxRetransmit = StaTx1.field.TxRetransmit;
@@ -555,8 +547,6 @@ VOID APQuickResponeForRateUpExec(
 				Rssi = pEntry->RssiSample.AvgRssi0;
 
 			TxCnt = AccuTxTotalCnt;
-
-			HasTxInfo = TRUE;
 		}
 		else
 		{
@@ -569,15 +559,15 @@ VOID APQuickResponeForRateUpExec(
 
 			if (TxTotalCnt)
 				TxErrorRatio = ((TxRetransmit + TxFailCount) * 100) / TxTotalCnt;
+		}
 
 #ifdef FIFO_EXT_SUPPORT
 			if (pAd->chipCap.FlgHwFifoExtCap)
 			{
-				if (pEntry->bUseHwFifoExt)
+				if (NicGetMacFifoTxCnt(pAd, pEntry))
 				{
 					ULONG	HwTxCnt, HwErrRatio;
 
-					NicGetMacFifoTxCnt(pAd, pEntry);
 					HwTxCnt = pEntry->fifoTxSucCnt + pEntry->fifoTxRtyCnt;
 					if (HwTxCnt)
 						HwErrRatio = (pEntry->fifoTxRtyCnt * 100) / HwTxCnt;
@@ -594,14 +584,10 @@ VOID APQuickResponeForRateUpExec(
 					TxTotalCnt = HwTxCnt;
 					TxCnt = HwTxCnt;
 
-					HasTxInfo = TRUE;
+					ApTxFailCntUpdate(pAd, pEntry, TxSuccess, TxRetransmit);
 				}
 			}
 #endif /* FIFO_EXT_SUPPORT */
-		}
-
-	    if (HasTxInfo)
-		ApTxFailCntUpdate(pAd, pEntry, TxSuccess, TxRetransmit);
 
 #ifdef THERMAL_PROTECT_SUPPORT
 		if (pAd->force_one_tx_stream == TRUE) {
@@ -906,11 +892,10 @@ VOID MlmeDynamicTxRateSwitching(
 #ifdef FIFO_EXT_SUPPORT
 			if (pAd->chipCap.FlgHwFifoExtCap)
 			{
-				if (pEntry->bUseHwFifoExt)
+				if (NicGetMacFifoTxCnt(pAd, pEntry))
 				{
 					ULONG 	HwTxCnt, HwErrRatio;
 
-					NicGetMacFifoTxCnt(pAd, pEntry);
 					HwTxCnt = pEntry->fifoTxSucCnt + pEntry->fifoTxRtyCnt;
 					if (HwTxCnt)
 						HwErrRatio = (pEntry->fifoTxRtyCnt * 100) / HwTxCnt;

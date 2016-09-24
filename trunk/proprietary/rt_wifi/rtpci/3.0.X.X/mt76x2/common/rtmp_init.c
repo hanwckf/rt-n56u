@@ -2316,9 +2316,11 @@ BOOLEAN NicGetMacFifoTxCnt(RTMP_ADAPTER *pAd, MAC_TABLE_ENTRY *pEntry)
 
 		pEntry->fifoTxSucCnt += wcidTxCnt.field.succCnt;
 		pEntry->fifoTxRtyCnt += wcidTxCnt.field.reTryCnt;
+
+		return TRUE;
 	}
 
-	return TRUE;
+	return FALSE;
 }
 
 

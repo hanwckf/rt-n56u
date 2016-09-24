@@ -1504,7 +1504,6 @@ VOID APQuickResponeForRateUpExecAdapt(/* actually for both up and down */
 	ULONG					TxSuccess, TxRetransmit, TxFailCount;
 	ULONG					OneSecTxNoRetryOKRationCount;
 	BOOLEAN					rateChanged;
-	BOOLEAN					HasTxInfo = FALSE;
 #ifdef TXBF_SUPPORT
 	BOOLEAN					CurrPhyETxBf, CurrPhyITxBf;
 #endif /*  TXBF_SUPPORT */
@@ -1551,8 +1550,6 @@ VOID APQuickResponeForRateUpExecAdapt(/* actually for both up and down */
 			Rssi = pEntry->RssiSample.AvgRssi0;
 
 		TxCnt = AccuTxTotalCnt;
-
-		HasTxInfo = TRUE;
 	}
 	else
 	{
@@ -1560,18 +1557,17 @@ VOID APQuickResponeForRateUpExecAdapt(/* actually for both up and down */
 		TxSuccess = pEntry->OneSecTxNoRetryOkCount;
 		TxFailCount = pEntry->OneSecTxFailCount;
 		TxTotalCnt = TxRetransmit + TxSuccess + TxFailCount;
-
 		TxCnt = TxTotalCnt;
 
 		if (TxTotalCnt)
 			TxErrorRatio = ((TxRetransmit + TxFailCount) * 100) / TxTotalCnt;
+	}
 
 #ifdef FIFO_EXT_SUPPORT
-		if (pEntry->bUseHwFifoExt)
+		if (NicGetMacFifoTxCnt(pAd, pEntry))
 		{
 			ULONG 	HwTxCnt, HwErrRatio;
 
-			NicGetMacFifoTxCnt(pAd, pEntry);
 			HwTxCnt = pEntry->fifoTxSucCnt + pEntry->fifoTxRtyCnt;
 			if (HwTxCnt)
 				HwErrRatio = (pEntry->fifoTxRtyCnt * 100) / HwTxCnt;
@@ -1588,13 +1584,9 @@ VOID APQuickResponeForRateUpExecAdapt(/* actually for both up and down */
 			TxTotalCnt = HwTxCnt;
 			TxCnt = HwTxCnt;
 
-			HasTxInfo = TRUE;
+			ApTxFailCntUpdate(pAd, pEntry, TxSuccess, TxRetransmit);
 		}
 #endif /*  FIFO_EXT_SUPPORT */
-	}
-
-    if (HasTxInfo)
-	ApTxFailCntUpdate(pAd, pEntry, TxSuccess, TxRetransmit);
 
 #ifdef NEW_RATE_ADAPT_QUICK_DOWN
 /* QuickInitMCSRate now has bad algorithm and periodic drop PhyMode to CCK/0 */
@@ -1853,7 +1845,6 @@ VOID APMlmeDynamicTxRateSwitchingAdapt(RTMP_ADAPTER *pAd, UINT i)
 	MAC_TABLE_ENTRY *pEntry;
 	RTMP_RA_GRP_TB *pCurrTxRate;
 	CHAR Rssi;
-	BOOLEAN HasTxInfo = FALSE;
 
 	pEntry = &pAd->MacTab.Content[i]; /* point to information of the individual station */
 	pTable = pEntry->pTable;
@@ -1878,8 +1869,6 @@ VOID APMlmeDynamicTxRateSwitchingAdapt(RTMP_ADAPTER *pAd, UINT i)
 #endif
 		if (TxTotalCnt)
 			TxErrorRatio = ((TxRetransmit + TxFailCount) * 100) / TxTotalCnt;
-
-		HasTxInfo = TRUE;
 	}
 	else
 	{
@@ -1890,18 +1879,19 @@ VOID APMlmeDynamicTxRateSwitchingAdapt(RTMP_ADAPTER *pAd, UINT i)
 
 		if (TxTotalCnt)
 			TxErrorRatio = ((TxRetransmit + TxFailCount) * 100) / TxTotalCnt;
+	}
 
 #ifdef FIFO_EXT_SUPPORT
-		if (pEntry->bUseHwFifoExt)
+		if (NicGetMacFifoTxCnt(pAd, pEntry))
 		{
 			ULONG HwTxCnt, HwErrRatio;
 
-			NicGetMacFifoTxCnt(pAd, pEntry);
 			HwTxCnt = pEntry->fifoTxSucCnt + pEntry->fifoTxRtyCnt;
 			if (HwTxCnt)
 				HwErrRatio = (pEntry->fifoTxRtyCnt * 100) / HwTxCnt;
 			else
 				HwErrRatio = 0;
+
 			DBGPRINT(RT_DEBUG_INFO | DBG_FUNC_RA,("%s()=>Wcid:%d, MCS:%d, TxErrRatio(Hw:0x%lx-0x%lx, Sw:0x%lx-%lx)\n",
 					__FUNCTION__, pEntry->wcid, pEntry->HTPhyMode.field.MCS,
 					HwTxCnt, HwErrRatio, TxTotalCnt, TxErrorRatio));
@@ -1911,13 +1901,9 @@ VOID APMlmeDynamicTxRateSwitchingAdapt(RTMP_ADAPTER *pAd, UINT i)
 			TxTotalCnt = HwTxCnt;
 			TxErrorRatio = HwErrRatio;
 
-			HasTxInfo = TRUE;
+			ApTxFailCntUpdate(pAd, pEntry, TxSuccess, TxRetransmit);
 		}
 #endif /*  FIFO_EXT_SUPPORT */
-	}
-
-    if (HasTxInfo)
-	ApTxFailCntUpdate(pAd, pEntry, TxSuccess, TxRetransmit);
 
 	/*  Save LastTxOkCount, LastTxPER and last MCS action for APQuickResponeForRateUpExec */
 	pEntry->LastTxOkCount = TxSuccess;

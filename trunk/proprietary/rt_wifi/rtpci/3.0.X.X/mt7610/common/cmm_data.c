@@ -1635,7 +1635,7 @@ VOID RTMPDeQueuePacket(
 	}
 
 #if defined (LED_SOFT_SUPPORT)
-	if (HardTxTotal > 0)
+	if (HardTxTotal > 0 && pAd->MacTab.Size > 0)
 		ralink_gpio_led_blink(LED_SOFT_BLINK_GPIO);
 #endif
 }

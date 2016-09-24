@@ -2351,7 +2351,7 @@ VOID RTMPDeQueuePacket(
 	}
 
 #if defined (LED_SOFT_SUPPORT)
-	if (HardTxTotal > 0) {
+	if (HardTxTotal > 0 && pAd->MacTab.Size > 0) {
 #if defined (DRIVER_HAS_MULTI_DEV) && (LED_SOFT_BLINK_GPIO_DEV1 >= 0) && (LED_SOFT_BLINK_GPIO_DEV1 != LED_SOFT_BLINK_GPIO)
 		if (pAd->dev_idx == 1)
 			ralink_gpio_led_blink(LED_SOFT_BLINK_GPIO_DEV1);

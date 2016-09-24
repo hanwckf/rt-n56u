@@ -114,7 +114,7 @@ void __init plat_mem_setup(void)
 	iomem_resource.start = 0;
 	iomem_resource.end = ~0;
 	ioport_resource.start = 0;
-	ioport_resource.end = ~0;
+	ioport_resource.end = 0x1fffffff;
 
 	argptr = prom_getcmdline();
 

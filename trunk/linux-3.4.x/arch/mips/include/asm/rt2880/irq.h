@@ -8,6 +8,8 @@
 #ifndef __ASM_MACH_MIPS_RT2880_IRQ_H
 #define __ASM_MACH_MIPS_RT2880_IRQ_H
 
+#define MIPS_CPU_IRQ_BASE 0
+
 #include <asm/rt2880/surfboardint.h>
 
 #define NR_IRQS		(SURFBOARDINT_END + 1)

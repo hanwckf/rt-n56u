@@ -28,54 +28,21 @@
 #define __ASM_MACH_MIPS_RT2880_EUREKA_EP430_H
 
 #include <asm/addrspace.h>		/* for KSEG1ADDR() */
-#include <asm/byteorder.h>		/* for cpu_to_le32() */
 #include <asm/rt2880/rt_mmap.h>
-
-/*
- * Because of an error/peculiarity in the Galileo chip, we need to swap the
- * bytes when running bigendian.
- */
-
-#define MV_WRITE(ofs, data)  \
-        *(volatile u32 *)(RALINK_PCI_BASE+(ofs)) = cpu_to_le32(data)
-#define MV_READ(ofs, data)   \
-        *(data) = le32_to_cpu(*(volatile u32 *)(RALINK_PCI_BASE+(ofs)))
-#define MV_READ_DATA(ofs)    \
-        le32_to_cpu(*(volatile u32 *)(RALINK_PCI_BASE+(ofs)))
-
-#define MV_WRITE_16(ofs, data)  \
-        *(volatile u16 *)(RALINK_PCI_BASE+(ofs)) = cpu_to_le16(data)
-#define MV_READ_16(ofs, data)   \
-        *(data) = le16_to_cpu(*(volatile u16 *)(RALINK_PCI_BASE+(ofs)))
-
-#define MV_WRITE_8(ofs, data)  \
-        *(volatile u8 *)(RALINK_PCI_BASE+(ofs)) = data
-#define MV_READ_8(ofs, data)   \
-        *(data) = *(volatile u8 *)(RALINK_PCI_BASE+(ofs))
-
-#define MV_SET_REG_BITS(ofs,bits) \
-	(*((volatile u32 *)(RALINK_PCI_BASE+(ofs)))) |= ((u32)cpu_to_le32(bits))
-#define MV_RESET_REG_BITS(ofs,bits) \
-	(*((volatile u32 *)(RALINK_PCI_BASE+(ofs)))) &= ~((u32)cpu_to_le32(bits))
-
-#define RALINK_PCI_CONFIG_ADDR 		    	0x20
-#define RALINK_PCI_CONFIG_DATA_VIRTUAL_REG   	0x24
-
-#if defined (CONFIG_RALINK_RT3883)
 
 #define RALINK_PCI_PCICFG_ADDR 		*(volatile u32 *)(RALINK_PCI_BASE + 0x0000)
 #define RALINK_PCI_PCIRAW_ADDR 		*(volatile u32 *)(RALINK_PCI_BASE + 0x0004)
 #define RALINK_PCI_PCIINT_ADDR 		*(volatile u32 *)(RALINK_PCI_BASE + 0x0008)
 #define RALINK_PCI_PCIMSK_ADDR 		*(volatile u32 *)(RALINK_PCI_BASE + 0x000C)
 #define RALINK_PCI_IMBASEBAR1_ADDR 	*(volatile u32 *)(RALINK_PCI_BASE + 0x001C)
+#define RALINK_PCI_PCR_ADDR		*(volatile u32 *)(RALINK_PCI_BASE + 0x0020)
+#define RALINK_PCI_PCR_DATA		*(volatile u32 *)(RALINK_PCI_BASE + 0x0024)
 #define RALINK_PCI_MEMBASE 		*(volatile u32 *)(RALINK_PCI_BASE + 0x0028)
 #define RALINK_PCI_IOBASE 		*(volatile u32 *)(RALINK_PCI_BASE + 0x002C)
 #define RALINK_PCI_ARBCTL 		*(volatile u32 *)(RALINK_PCI_BASE + 0x0080)
 
-/*
-PCI0 --> PCI
-PCI1 --> PCIe
-*/
+#if defined (CONFIG_RALINK_RT3883)
+
 #define RT3883_PCI_OFFSET	0x1000
 #define RT3883_PCIE_OFFSET	0x2000
 
@@ -94,15 +61,6 @@ PCI1 --> PCIe
 
 #elif defined (CONFIG_RALINK_MT7620) || defined (CONFIG_RALINK_MT7628)
 
-#define RALINK_PCI_PCICFG_ADDR 		*(volatile u32 *)(RALINK_PCI_BASE + 0x0000)
-#define RALINK_PCI_PCIRAW_ADDR 		*(volatile u32 *)(RALINK_PCI_BASE + 0x0004)
-#define RALINK_PCI_PCIINT_ADDR 		*(volatile u32 *)(RALINK_PCI_BASE + 0x0008)
-#define RALINK_PCI_PCIMSK_ADDR 		*(volatile u32 *)(RALINK_PCI_BASE + 0x000C)
-#define RALINK_PCI_IMBASEBAR1_ADDR 	*(volatile u32 *)(RALINK_PCI_BASE + 0x001C)
-#define RALINK_PCI_MEMBASE 		*(volatile u32 *)(RALINK_PCI_BASE + 0x0028)
-#define RALINK_PCI_IOBASE 		*(volatile u32 *)(RALINK_PCI_BASE + 0x002C)
-#define RALINK_PCI_ARBCTL 		*(volatile u32 *)(RALINK_PCI_BASE + 0x0080)
-
 #define RT6855_PCIE0_OFFSET	0x2000
 
 #define RALINK_PCI0_BAR0SETUP_ADDR 	*(volatile u32 *)(RALINK_PCI_BASE + RT6855_PCIE0_OFFSET + 0x0010)
@@ -119,20 +77,6 @@ PCI1 --> PCIe
 
 #elif defined (CONFIG_RALINK_MT7621)
 
-#define RALINK_PCI_PCICFG_ADDR 		*(volatile u32 *)(RALINK_PCI_BASE + 0x0000)
-#define RALINK_PCI_PCIRAW_ADDR 		*(volatile u32 *)(RALINK_PCI_BASE + 0x0004)
-#define RALINK_PCI_PCIINT_ADDR 		*(volatile u32 *)(RALINK_PCI_BASE + 0x0008)
-#define RALINK_PCI_PCIMSK_ADDR 		*(volatile u32 *)(RALINK_PCI_BASE + 0x000C)
-#define RALINK_PCI_IMBASEBAR1_ADDR 	*(volatile u32 *)(RALINK_PCI_BASE + 0x001C)
-#define RALINK_PCI_MEMBASE 		*(volatile u32 *)(RALINK_PCI_BASE + 0x0028)
-#define RALINK_PCI_IOBASE 		*(volatile u32 *)(RALINK_PCI_BASE + 0x002C)
-#define RALINK_PCI_ARBCTL 		*(volatile u32 *)(RALINK_PCI_BASE + 0x0080)
-
-/*
-PCI0 --> PCIe 0
-PCI1 --> PCIe 1
-PCI2 --> PCIe 2
-*/
 #define RT6855_PCIE0_OFFSET	0x2000
 #define RT6855_PCIE1_OFFSET	0x3000
 #define RT6855_PCIE2_OFFSET	0x4000

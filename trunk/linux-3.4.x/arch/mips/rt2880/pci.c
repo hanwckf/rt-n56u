@@ -87,7 +87,7 @@
 #define RALINK_PCI_IO_MAP_BASE		0x10160000
 #endif
 
-#define MEMORY_BASE			0x0
+#define BAR0_MEMORY_BASE			0x0
 
 #if defined (CONFIG_RALINK_MT7621)
 extern u32 ralink_asic_rev_id;
@@ -161,44 +161,62 @@ static int pcie_link_status = 0;
 #define PCI_ACCESS_WRITE_2		4
 #define PCI_ACCESS_WRITE_4		5
 
+static DEFINE_SPINLOCK(asic_pcr_lock);
+
 static int config_access(int access_type, u32 busn, u32 slot, u32 func, u32 where, u32 *data)
 {
-	u32 address_reg, data_reg, address;
-
-	address_reg = RALINK_PCI_CONFIG_ADDR;
-	data_reg = RALINK_PCI_CONFIG_DATA_VIRTUAL_REG;
+	unsigned int address, shift, tmp;
+	unsigned long flags;
 
 #if defined(CONFIG_RALINK_RT3883)
 	if (busn == 0)
 		where &= 0xff; // high bits used only for RT3883 PCIe bus (busn 1)
 #endif
 
-	/* Setup address */
-	address = 0x80000000 | (((where & 0xf00)>>8)<<24) | (busn << 16) | (slot << 11) | (func << 8) | (where & 0xfc);
+	/* setup PCR address */
+	address = (1u << 31) | (((where & 0xf00) >> 8) << 24) | (busn << 16) | (slot << 11) | (func << 8) | (where & 0xfc);
+
+	shift = (where & 0x3) << 3;
+
+	spin_lock_irqsave(&asic_pcr_lock, flags);
 
 	/* start the configuration cycle */
-	MV_WRITE(address_reg, address);
+	RALINK_PCI_PCR_ADDR = address;
 
 	switch (access_type) {
 	case PCI_ACCESS_WRITE_1:
-		MV_WRITE_8(data_reg + (where & 0x3), *data);
+		tmp = RALINK_PCI_PCR_DATA;
+		tmp &= ~(0xff << shift);
+		tmp |= ((*data & 0xff) << shift);
+		RALINK_PCI_PCR_DATA = tmp;
 		break;
 	case PCI_ACCESS_WRITE_2:
-		MV_WRITE_16(data_reg + (where & 0x3), *data);
+		tmp = RALINK_PCI_PCR_DATA;
+		if (shift > 16)
+			shift = 16;
+		tmp &= ~(0xffff << shift);
+		tmp |= ((*data & 0xffff) << shift);
+		RALINK_PCI_PCR_DATA = tmp;
 		break;
 	case PCI_ACCESS_WRITE_4:
-		MV_WRITE(data_reg, *data);
+		RALINK_PCI_PCR_DATA = *data;
 		break;
 	case PCI_ACCESS_READ_1:
-		MV_READ_8(data_reg + (where & 0x3), data);
+		tmp = RALINK_PCI_PCR_DATA;
+		*data = (tmp >> shift) & 0xff;
 		break;
 	case PCI_ACCESS_READ_2:
-		MV_READ_16(data_reg + (where & 0x3), data);
+		tmp = RALINK_PCI_PCR_DATA;
+		if (shift > 16)
+			shift = 16;
+		*data = (tmp >> shift) & 0xffff;
 		break;
 	case PCI_ACCESS_READ_4:
-		MV_READ(data_reg, data);
+		*data = RALINK_PCI_PCR_DATA;
 		break;
 	}
+
+	spin_unlock_irqrestore(&asic_pcr_lock, flags);
 
 	return PCIBIOS_SUCCESSFUL;
 }
@@ -208,15 +226,18 @@ static int ralink_pci_config_read(struct pci_bus *bus, unsigned int devfn, int w
 	u32 busn = bus->number;
 	u32 slot = PCI_SLOT(devfn);
 	u32 func = PCI_FUNC(devfn);
+	int access_type = PCI_ACCESS_READ_4;
 
 	switch (size) {
 	case 1:
-		return config_access(PCI_ACCESS_READ_1, busn, slot, func, (u32)where, val);
+		access_type = PCI_ACCESS_READ_1;
+		break;
 	case 2:
-		return config_access(PCI_ACCESS_READ_2, busn, slot, func, (u32)where, val);
-	default:
-		return config_access(PCI_ACCESS_READ_4, busn, slot, func, (u32)where, val);
+		access_type = PCI_ACCESS_READ_2;
+		break;
 	}
+
+	return config_access(access_type, busn, slot, func, (u32)where, val);
 }
 
 static int ralink_pci_config_write(struct pci_bus *bus, unsigned int devfn, int where, int size, u32 val)
@@ -224,15 +245,18 @@ static int ralink_pci_config_write(struct pci_bus *bus, unsigned int devfn, int 
 	u32 busn = bus->number;
 	u32 slot = PCI_SLOT(devfn);
 	u32 func = PCI_FUNC(devfn);
+	int access_type = PCI_ACCESS_WRITE_4;
 
 	switch (size) {
 	case 1:
-		return config_access(PCI_ACCESS_WRITE_1, busn, slot, func, (u32)where, &val);
+		access_type = PCI_ACCESS_WRITE_1;
+		break;
 	case 2:
-		return config_access(PCI_ACCESS_WRITE_2, busn, slot, func, (u32)where, &val);
-	default:
-		return config_access(PCI_ACCESS_WRITE_4, busn, slot, func, (u32)where, &val);
+		access_type = PCI_ACCESS_WRITE_2;
+		break;
 	}
+
+	return config_access(access_type, busn, slot, func, (u32)where, &val);
 }
 
 /*
@@ -849,13 +873,13 @@ int __init init_ralink_pci(void)
 	RALINK_PCI_MEMBASE = 0xffffffff;			// valid for PCI host mode only
 	RALINK_PCI_IOBASE = RALINK_PCI_IO_MAP_BASE;		// valid for PCI host mode only
 
-#if defined(CONFIG_RALINK_MT7621)
+#if defined (CONFIG_RALINK_MT7621)
 #if defined (CONFIG_PCIE_PORT0)
 	// PCIe0
 	if ((pcie_link_status & 0x1) != 0) {
 		RALINK_PCI0_BAR0SETUP_ADDR	= BAR0_MASK;	// disable BAR0
 		RALINK_PCI0_BAR1SETUP_ADDR	= 0x00000000;	// disable BAR1 (used in EP mode)
-		RALINK_PCI0_IMBASEBAR0_ADDR	= MEMORY_BASE;
+		RALINK_PCI0_IMBASEBAR0_ADDR	= BAR0_MEMORY_BASE;
 		RALINK_PCI0_CLASS		= 0x06040001;
 		RALINK_PCI0_BAR0SETUP_ADDR	= BAR0_MASK|1;	// open BAR0
 		RALINK_PCI_PCIMSK_ADDR		|= (1<<20);	// enable PCIe0 interrupt
@@ -866,7 +890,7 @@ int __init init_ralink_pci(void)
 	if ((pcie_link_status & 0x2) != 0) {
 		RALINK_PCI1_BAR0SETUP_ADDR	= BAR0_MASK;	// disable BAR0
 		RALINK_PCI1_BAR1SETUP_ADDR	= 0x00000000;	// disable BAR1 (used in EP mode)
-		RALINK_PCI1_IMBASEBAR0_ADDR	= MEMORY_BASE;
+		RALINK_PCI1_IMBASEBAR0_ADDR	= BAR0_MEMORY_BASE;
 		RALINK_PCI1_CLASS		= 0x06040001;
 		RALINK_PCI1_BAR0SETUP_ADDR	= BAR0_MASK|1;	// open BAR0
 		RALINK_PCI_PCIMSK_ADDR		|= (1<<21);	// enable PCIe1 interrupt
@@ -877,7 +901,7 @@ int __init init_ralink_pci(void)
 	if ((pcie_link_status & 0x4) != 0) {
 		RALINK_PCI2_BAR0SETUP_ADDR	= BAR0_MASK;	// disable BAR0
 		RALINK_PCI2_BAR1SETUP_ADDR	= 0x00000000;	// disable BAR1 (used in EP mode)
-		RALINK_PCI2_IMBASEBAR0_ADDR	= MEMORY_BASE;
+		RALINK_PCI2_IMBASEBAR0_ADDR	= BAR0_MEMORY_BASE;
 		RALINK_PCI2_CLASS		= 0x06040001;
 		RALINK_PCI2_BAR0SETUP_ADDR	= BAR0_MASK|1;	// open BAR0
 		RALINK_PCI_PCIMSK_ADDR		|= (1<<22);	// enable PCIe2 interrupt
@@ -887,7 +911,7 @@ int __init init_ralink_pci(void)
 	//PCIe0
 	RALINK_PCI0_BAR0SETUP_ADDR		= BAR0_MASK;	// disable BAR0
 	RALINK_PCI0_BAR1SETUP_ADDR		= 0x00000000;	// disable BAR1 (used in EP mode)
-	RALINK_PCI0_IMBASEBAR0_ADDR		= MEMORY_BASE;
+	RALINK_PCI0_IMBASEBAR0_ADDR		= BAR0_MEMORY_BASE;
 	RALINK_PCI0_CLASS			= 0x06040001;
 	RALINK_PCI0_BAR0SETUP_ADDR		= BAR0_MASK|1;	// open BAR0
 	RALINK_PCI_PCIMSK_ADDR			= (1<<20);	// enable PCIe0 interrupt
@@ -895,7 +919,7 @@ int __init init_ralink_pci(void)
 #if defined (CONFIG_PCI_ONLY) || defined (CONFIG_PCIE_PCI_CONCURRENT)
 	//PCI
 	RALINK_PCI0_BAR0SETUP_ADDR		= BAR0_MASK;	// disable BAR0
-	RALINK_PCI0_IMBASEBAR0_ADDR		= MEMORY_BASE;
+	RALINK_PCI0_IMBASEBAR0_ADDR		= BAR0_MEMORY_BASE;
 	RALINK_PCI0_CLASS			= 0x00800001;
 	RALINK_PCI0_BAR0SETUP_ADDR		= BAR0_MASK|1;	// open BAR0
 	RALINK_PCI_PCIMSK_ADDR			= 0x000c0000;	// enable PCI interrupts
@@ -904,7 +928,7 @@ int __init init_ralink_pci(void)
 	//PCIe
 	if (!pcie_disable) {
 		RALINK_PCI1_BAR0SETUP_ADDR	= BAR0_MASK;	// disable BAR0
-		RALINK_PCI1_IMBASEBAR0_ADDR	= MEMORY_BASE;
+		RALINK_PCI1_IMBASEBAR0_ADDR	= BAR0_MEMORY_BASE;
 		RALINK_PCI1_CLASS		= 0x06040001;
 		RALINK_PCI1_BAR0SETUP_ADDR	= BAR0_MASK|1;	// open BAR0
 		RALINK_PCI_PCIMSK_ADDR		|= (1<<20);	// enable PCIe interrupt

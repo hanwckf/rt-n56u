@@ -2478,7 +2478,7 @@ static void init_loopback(struct net_device *dev)
 				 * lo device down, release this obsolete dst and
 				 * reallocate a new router for ifa.
 				 */
-				if (sp_ifa->rt->dst.obsolete > 0) {
+				if (!atomic_read(&sp_ifa->rt->rt6i_ref)) {
 					dst_release(&sp_ifa->rt->dst);
 					sp_ifa->rt = NULL;
 				} else {

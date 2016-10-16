@@ -3,6 +3,7 @@
 # Linux kernel .config related params
 ##################################################################
 
+CFLAGS += $(if $(CONFIG_SMP),-DUSE_SMP,)
 CFLAGS += $(if $(CONFIG_IPV6),-DUSE_IPV6,)
 CFLAGS += $(if $(CONFIG_XFRM),-DUSE_XFRM,)
 CFLAGS += $(if $(CONFIG_RAETH_BOTH_GMAC),,-DUSE_SINGLE_MAC)

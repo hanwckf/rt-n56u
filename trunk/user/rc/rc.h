@@ -183,8 +183,6 @@ int module_smart_unload(const char *module_name, int recurse_unload);
 int module_param_get(const char *module_name, const char *module_param, char *param_value, size_t param_value_size);
 int module_param_set_int(const char *module_name, const char *module_param, int param_value);
 void oom_score_adjust(pid_t pid, int oom_score_adj);
-void set_cpu_affinity(int is_ap_mode);
-void set_vpn_balancing(const char *vpn_ifname);
 void mount_rwfs_partition(void);
 void umount_rwfs_partition(void);
 void start_rwfs_optware(void);
@@ -666,6 +664,15 @@ void notify_watchdog_wifi(int is_5ghz);
 int inicd_main(int argc, char *argv[]);
 int start_inicd(void);
 int stop_inicd(void);
+#endif
+
+#if defined (USE_SMP)
+/* smp.c */
+void set_cpu_affinity(int is_ap_mode);
+void set_vpn_balancing(const char *vpn_ifname);
+#else
+inline void set_cpu_affinity(int is_ap_mode) {}
+inline void set_vpn_balancing(const char *vpn_ifname) {}
 #endif
 
 /* rstats.c */

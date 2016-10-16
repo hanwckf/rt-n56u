@@ -537,10 +537,10 @@ void
 reset_lan_temp(void)
 {
 	if (nvram_match("lan_ipaddr", "")) {
-		nvram_set("lan_ipaddr", "192.168.1.1");
-		nvram_set("lan_netmask", "255.255.255.0");
+		nvram_set("lan_ipaddr", DEF_LAN_ADDR);
+		nvram_set("lan_netmask", DEF_LAN_MASK);
 	} else if (nvram_match("lan_netmask", "")) {
-		nvram_set("lan_netmask", "255.255.255.0");
+		nvram_set("lan_netmask", DEF_LAN_MASK);
 	}
 
 	nvram_set_temp("lan_ipaddr_t", nvram_safe_get("lan_ipaddr"));

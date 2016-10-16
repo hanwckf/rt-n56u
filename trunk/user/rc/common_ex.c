@@ -23,7 +23,6 @@
 #include <string.h>
 #include <sys/time.h>
 #include <sys/sysinfo.h>
-#include <sys/mount.h>
 #include <sys/stat.h>
 #include <sys/mount.h>
 #include <syslog.h>

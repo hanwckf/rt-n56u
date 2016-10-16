@@ -20,16 +20,15 @@
 #include <string.h>
 #include <signal.h>
 #include <unistd.h>
-#include <sys/fcntl.h>
-#include <dirent.h>
-#include <sys/mount.h>
-#include <syslog.h>
-#include <sys/vfs.h>
-#include <sys/types.h>
-#include <sys/stat.h>
-#include <sys/time.h>
 #include <errno.h>
 #include <time.h>
+#include <dirent.h>
+#include <syslog.h>
+#include <sys/fcntl.h>
+#include <sys/vfs.h>
+#include <sys/types.h>
+#include <sys/time.h>
+#include <sys/stat.h>
 #include <sys/mount.h>
 #include <net/ethernet.h>
 

@@ -1827,7 +1827,7 @@ static void change_green_ethernet_mode(u32 green_ethernet_enabled)
 
 	if (g_green_ethernet_enabled != green_ethernet_enabled) {
 		g_green_ethernet_enabled = green_ethernet_enabled;
-		rtk_switch_greenEthernet_set(green_ethernet_enabled);
+		rtk_switch_greenEthernet_set(green_ethernet_enabled, DISABLED);
 		
 		printk("%s - green ethernet: %s\n", RTL8367_DEVNAME, (green_ethernet_enabled) ? "on" : "off");
 	}
@@ -2076,7 +2076,7 @@ static void reset_and_init_switch(int first_call)
 
 #if !RTL8367_DEFAULT_GREEN_ETHERNET
 	/* disable Green Ethernet by default */
-	rtk_switch_greenEthernet_set(DISABLED);
+	rtk_switch_greenEthernet_set(DISABLED, DISABLED);
 #endif
 
 	/* configure ExtIf */

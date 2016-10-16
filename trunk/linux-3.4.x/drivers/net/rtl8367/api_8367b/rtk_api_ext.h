@@ -147,7 +147,7 @@ extern rtk_api_ret_t rtk_switch_portMaxPktLen_get(rtk_port_t port, rtk_uint32 *p
  *      - DISABLE
  *      - ENABLE
  */
-extern rtk_api_ret_t rtk_switch_greenEthernet_set(rtk_enable_t enable);
+extern rtk_api_ret_t rtk_switch_greenEthernet_set(rtk_enable_t enable, rtk_enable_t set_phy_psm);
 
 /* Function Name:
  *      rtk_switch_greenEthernet_get

@@ -27,7 +27,7 @@
 extern rtk_api_ret_t rtk_switch_init(void);
 extern rtk_api_ret_t rtk_switch_maxPktLen_set(rtk_switch_maxPktLen_t len); 
 extern rtk_api_ret_t rtk_switch_maxPktLen_get(rtk_switch_maxPktLen_t *pLen);
-extern rtk_api_ret_t rtk_switch_greenEthernet_set(rtk_enable_t enable);
+extern rtk_api_ret_t rtk_switch_greenEthernet_set(rtk_enable_t enable, rtk_enable_t set_phy_psm);
 extern rtk_api_ret_t rtk_switch_greenEthernet_get(rtk_data_t *pEnable);
 
 /* Rate */

@@ -11385,7 +11385,7 @@ rtk_api_ret_t rtk_switch_maxPktLen_get(rtk_data_t *pLen)
  *      DISABLE   
  *      ENABLE
  */
-rtk_api_ret_t rtk_switch_greenEthernet_set(rtk_enable_t enable)
+rtk_api_ret_t rtk_switch_greenEthernet_set(rtk_enable_t enable, rtk_enable_t set_phy_psm)
 {
     rtk_api_ret_t retVal;
     uint32 phy, regData;
@@ -11616,11 +11616,9 @@ rtk_api_ret_t rtk_switch_greenEthernet_set(rtk_enable_t enable)
         return RT_ERR_FAILED;
     
 #endif /*End of #ifdef MDC_MDIO_OPERATION*/
-  
-    
 
-    if ((retVal = rtl8370_setAsicGreenEthernet(enable))!=RT_ERR_OK)
-        return retVal;
+    if (set_phy_psm == DISABLED)
+        return RT_ERR_OK;
 
     for (phy=0;phy<=RTK_PHY_ID_MAX;phy++)
     {
@@ -11654,23 +11652,24 @@ rtk_api_ret_t rtk_switch_greenEthernet_set(rtk_enable_t enable)
 rtk_api_ret_t rtk_switch_greenEthernet_get(rtk_data_t *pEnable)
 {
     rtk_api_ret_t retVal;
-    rtk_data_t value;
+    rtk_data_t value1, value2;
     uint32 phy;   
-
-    if ((retVal = rtl8370_getAsicGreenEthernet(&value))!=RT_ERR_OK)
-        return retVal;
-
-    if (value!=1)
-    {
-        *pEnable = DISABLED;
-        return RT_ERR_OK;
-    }
 
     for (phy=0;phy<=RTK_PHY_ID_MAX;phy++)
     {
-        if ((retVal = rtl8370_getAsicPowerSaving(phy,&value))!=RT_ERR_OK)
-            return retVal;
-        if (value!=1)
+
+        if ((retVal = rtl8370_setAsicPHYReg(phy,PHY_PAGE_ADDRESS,5))!=RT_ERR_OK)
+            return retVal; 
+        if ((retVal = rtl8370_setAsicPHYReg(phy,5,0x85E4))!=RT_ERR_OK)
+            return retVal; 
+        if ((retVal = rtl8370_getAsicPHYReg(phy,6,&value1))!=RT_ERR_OK)
+            return retVal; 
+        if ((retVal = rtl8370_setAsicPHYReg(phy,5,0x85E7))!=RT_ERR_OK)
+            return retVal; 
+        if ((retVal = rtl8370_getAsicPHYReg(phy,6,&value2))!=RT_ERR_OK)
+            return retVal; 
+        
+        if (((value1&0x1)!=1) && ((value2&0x1)!=1)) 
         {
             *pEnable = DISABLED;
             return RT_ERR_OK;

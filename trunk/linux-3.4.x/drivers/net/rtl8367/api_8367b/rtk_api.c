@@ -8911,6 +8911,10 @@ rtk_api_ret_t rtk_l2_init(void)
     if ((retVal = rtl8367b_setAsicLutIpMulticastLookup(DISABLE)) != RT_ERR_OK)
         return retVal;
 
+    /* disable quick MAC age-out on port link down */
+    if ((retVal = rtl8367b_setAsicLutLinkDownForceAging(DISABLE)) != RT_ERR_OK)
+        return retVal;
+
     /*Enable CAM Usage*/
     if ((retVal = rtl8367b_setAsicLutCamTbUsage(ENABLE)) != RT_ERR_OK)
         return retVal;

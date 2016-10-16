@@ -173,10 +173,6 @@ int login_utmp_only(struct logininfo *li);
 int login_write (struct logininfo *li);
 int login_log_entry(struct logininfo *li);
 
-/* set the network address based on network address type */
-void login_set_addr(struct logininfo *li, const struct sockaddr *sa,
-		    const unsigned int sa_size);
-
 /* produce various forms of the line filename */
 char *line_fullname(char *dst, const char *src, size_t dstsize);
 char *line_stripname(char *dst, const char *src, size_t dstsize);

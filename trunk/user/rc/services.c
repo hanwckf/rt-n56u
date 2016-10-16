@@ -101,9 +101,46 @@ restart_infosvr(void)
 	start_infosvr();
 }
 
+void
+stop_crond(void)
+{
+	char* svcs[] = { "crond", NULL };
+	kill_services(svcs, 3, 1);
+}
+
+int
+start_crond(void)
+{
+	char *crond_argv[] = {
+		"/usr/sbin/crond",
+		NULL,			/* -d8 */
+		NULL
+	};
+
+	if (nvram_invmatch("crond_enable", "1"))
+		return 1;
+
+	if (nvram_match("crond_log", "0"))
+		crond_argv[1] = "-d8";
+
+	setenv_tz();
+
+	return _eval(crond_argv, NULL, 0, NULL);
+}
+
+void
+restart_crond(void)
+{
+	stop_crond();
+	start_crond();
+}
+
 int
 start_networkmap(int first_call)
 {
+	if (first_call && pids("networkmap"))
+		return 0;
+
 	return eval("/usr/sbin/networkmap", (first_call) ? "-w" : "");
 }
 
@@ -384,8 +421,8 @@ start_services_once(int is_ap_mode)
 			start_upnp();
 		
 		if (!nvram_match("lan_stp", "0")) {
-			doSystem("brctl stp %s %d", IFNAME_BR, 1);
-			doSystem("brctl setfd %s %d", IFNAME_BR, 15);
+			br_set_stp(IFNAME_BR, 1);
+			br_set_fd(IFNAME_BR, 15);
 		}
 	} else {
 		start_udpxy(IFNAME_BR);
@@ -396,6 +433,7 @@ start_services_once(int is_ap_mode)
 
 	start_lltd();
 	start_watchdog_cpu();
+	start_crond();
 	start_networkmap(1);
 	start_rstats();
 
@@ -407,18 +445,18 @@ stop_services(int stopall)
 {
 	if (stopall) {
 		stop_telnetd();
-#if defined(APP_SSHD)
+#if defined (APP_SSHD)
 		stop_sshd();
 #endif
 		stop_httpd();
 		stop_vpn_server();
 	}
-#if (BOARD_NUM_USB_PORTS > 0)
+#if defined (USE_USB_SUPPORT)
 	stop_p910nd();
-#if defined(SRV_LPRD)
+#if defined (SRV_LPRD)
 	stop_lpd();
 #endif
-#if defined(SRV_U2EC)
+#if defined (SRV_U2EC)
 	stop_u2ec();
 #endif
 #endif
@@ -427,6 +465,7 @@ stop_services(int stopall)
 	stop_detect_internet();
 	stop_rstats();
 	stop_infosvr();
+	stop_crond();
 	stop_igmpproxy(NULL);
 }
 
@@ -436,7 +475,7 @@ stop_services_lan_wan(void)
 	stop_dns_dhcpd();
 	stop_upnp();
 	stop_detect_link();
-#if defined(APP_SMBD) || defined(APP_NMBD)
+#if defined (APP_SMBD) || defined (APP_NMBD)
 	stop_nmbd();
 #endif
 }

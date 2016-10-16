@@ -111,7 +111,7 @@ GC_SECTIONS="-Wl,--gc-sections"
 if (. ./.config && test x"$CONFIG_STATIC" = x"y") then
     if check_libc_is_glibc; then
 	echo "Static linking against glibc, can't use --gc-sections"
-#	GC_SECTIONS=""
+	GC_SECTIONS=""
     fi
 fi
 # The --gc-sections option is not supported by older versions of ld

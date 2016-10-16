@@ -1132,13 +1132,13 @@ VOID ApMlmeDynamicTxRateSwitchingAGS(
 
 		if (TxTotalCnt)
 			TxErrorRatio = ((TxRetransmit + TxFailCount) * 100) / TxTotalCnt;
+	}
 
 #ifdef FIFO_EXT_SUPPORT
-		if (pEntry->bUseHwFifoExt)
+		if (NicGetMacFifoTxCnt(pAd, pEntry))
 		{
 			ULONG 	HwTxCnt, HwErrRatio;
 
-			NicGetMacFifoTxCnt(pAd, pEntry);
 			HwTxCnt = pEntry->fifoTxSucCnt + pEntry->fifoTxRtyCnt;
 			if (HwTxCnt)
 				HwErrRatio = (pEntry->fifoTxRtyCnt * 100) / HwTxCnt;
@@ -1152,9 +1152,10 @@ VOID ApMlmeDynamicTxRateSwitchingAGS(
 			TxRetransmit = pEntry->fifoTxRtyCnt;
 			TxTotalCnt = HwTxCnt;
 			TxErrorRatio = HwErrRatio;
+
+			ApTxFailCntUpdate(pAd, pEntry, TxSuccess, TxRetransmit);
 		}
 #endif /*  FIFO_EXT_SUPPORT */
-	}
 
 	AGSStatisticsInfo.RSSI = RTMPAvgRssi(pAd, &pEntry->RssiSample);
 	AGSStatisticsInfo.TxErrorRatio = TxErrorRatio;
@@ -1828,18 +1829,19 @@ VOID ApQuickResponeForRateUpExecAGS(
 
 		if (TxTotalCnt)
 			TxErrorRatio = ((TxRetransmit + TxFailCount) * 100) / TxTotalCnt;
+	}
 
 #ifdef FIFO_EXT_SUPPORT
-		if (pEntry->bUseHwFifoExt)
+		if (NicGetMacFifoTxCnt(pAd, pEntry))
 		{
 			ULONG 	HwTxCnt, HwErrRatio;
 
-			NicGetMacFifoTxCnt(pAd, pEntry);
 			HwTxCnt = pEntry->fifoTxSucCnt + pEntry->fifoTxRtyCnt;
 			if (HwTxCnt)
 				HwErrRatio = (pEntry->fifoTxRtyCnt * 100) / HwTxCnt;
 			else
 				HwErrRatio = 0;
+
 			DBGPRINT(RT_DEBUG_INFO | DBG_FUNC_RA,("%s()=>Wcid:%d, MCS:%d, TxErrRatio(Hw:0x%lx-0x%lx, Sw:0x%lx-%lx)\n", 
 					__FUNCTION__, pEntry->wcid, pEntry->HTPhyMode.field.MCS, 
 					HwTxCnt, HwErrRatio, TxTotalCnt, TxErrorRatio));
@@ -1848,9 +1850,10 @@ VOID ApQuickResponeForRateUpExecAGS(
 			TxRetransmit = pEntry->fifoTxRtyCnt;
 			TxTotalCnt = HwTxCnt;
 			TxErrorRatio = HwErrRatio;
+
+			ApTxFailCntUpdate(pAd, pEntry, TxSuccess, TxRetransmit);
 		}
 #endif /*  FIFO_EXT_SUPPORT */
-	}
 
 	DBGPRINT(RT_DEBUG_INFO | DBG_FUNC_RA,
 		("%s: QuickAGS: AccuTxTotalCnt = %lu, TxSuccess = %lu, "

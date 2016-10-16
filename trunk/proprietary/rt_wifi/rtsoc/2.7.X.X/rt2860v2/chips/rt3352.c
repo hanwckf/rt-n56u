@@ -499,8 +499,12 @@ VOID NICInitRT3352RFRegisters(
 	// Set RF offset  RF_R17=RF_R23 (RT30xx)
 	RFValue = pAd->RfFreqOffset & 0x7F;
 	RT30xxReadRFRegister(pAd, RF_R17, (PUCHAR)&RfValue1);
-	if (RFValue != RfValue1)
-		RT30xxWriteRFRegister(pAd, RF_R17, (UCHAR)RFValue);
+
+	if (RFValue != (RfValue1 & 0x7f))
+	{
+		RFValue |= (RfValue1 & 0x80);
+		RT30xxWriteRFRegister(pAd, RF_R17, RFValue);
+	}
 
 	// Initialize RF register to default value
 	for (i = 0; i < RT3352_NUM_RF_REG_PARMS; i++)

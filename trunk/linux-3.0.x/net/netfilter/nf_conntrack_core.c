@@ -1438,6 +1438,9 @@ void nf_ct_iterate_cleanup(struct net *net,
 	struct nf_conn *ct;
 	unsigned int bucket = 0;
 
+	if (atomic_read(&net->ct.count) == 0)
+		return;
+
 	while ((ct = get_next_corpse(net, iter, data, &bucket)) != NULL) {
 		/* Time to push up daises... */
 		if (del_timer(&ct->timeout))
@@ -1689,8 +1692,11 @@ static int nf_conntrack_init_init_net(void)
 #elif (CONFIG_RALINK_RAM_SIZE > 32)
 		nf_conntrack_htable_size = 16384;	// vmalloc: 65536 bytes (CT) + 65536 bytes (NAT)
 		max_factor = 2;
-#else
+#elif (CONFIG_RALINK_RAM_SIZE > 16)
 		nf_conntrack_htable_size = 8192;	// vmalloc: 32768 bytes (CT) + 32768 bytes (NAT)
+		max_factor = 2;
+#else
+		nf_conntrack_htable_size = 2048;	// vmalloc: 8192 bytes (CT) + 8192 bytes (NAT)
 		max_factor = 2;
 #endif
 	}

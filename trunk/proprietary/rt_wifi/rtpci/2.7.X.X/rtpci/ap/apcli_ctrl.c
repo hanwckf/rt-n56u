@@ -244,9 +244,14 @@ static VOID ApCliCtrlJoinReqAction(
 		NdisMoveMemory(&(JoinReq.Ssid), pApCliEntry->CfgSsid, JoinReq.SsidLen);
 	}
 
-	DBGPRINT(RT_DEBUG_TRACE, ("(%s) Probe Ssid=%s, Bssid=%02x:%02x:%02x:%02x:%02x:%02x\n",
-		__FUNCTION__, JoinReq.Ssid, JoinReq.Bssid[0], JoinReq.Bssid[1], JoinReq.Bssid[2],
-		JoinReq.Bssid[3], JoinReq.Bssid[4], JoinReq.Bssid[5]));
+	if (JoinReq.SsidLen <= MAX_LEN_OF_SSID)
+	{
+		char SSID[MAX_LEN_OF_SSID + 1] = {0};
+
+		snprintf(SSID, JoinReq.SsidLen + 1, "%s", JoinReq.Ssid);
+		printk(KERN_INFO "AP-Client probe: SSID=%s, BSSID=%02x:%02x:%02x:%02x:%02x:%02x\n",
+			SSID, PRINT_MAC(JoinReq.Bssid));
+	}
 
 	*pCurrState = APCLI_CTRL_PROBE;
 
@@ -290,19 +295,23 @@ static VOID ApCliCtrlJoinReqTimeoutAction(
 	DBGPRINT(RT_DEBUG_TRACE, ("(%s) Probe Req Timeout. ProbeReqCnt=%d\n",
 				__FUNCTION__, pApCliEntry->ProbeReqCnt));
 
-	if (pApCliEntry->ProbeReqCnt > 7)
+	if (pApCliEntry->ProbeReqCnt > APCLI_MAX_PROBE_RETRY_NUM)
 	{
 		/*
-			if exceed the APCLI_MAX_PROBE_RETRY_NUM (7),
+			if exceed the APCLI_MAX_PROBE_RETRY_NUM,
 			switch to try next candidate AP.
 		*/
 		*pCurrState = APCLI_CTRL_DISCONNECTED;
-		NdisZeroMemory(pAd->MlmeAux.Bssid, MAC_ADDR_LEN);
-		NdisZeroMemory(pAd->MlmeAux.Ssid, MAX_LEN_OF_SSID);
+		NdisZeroMemory(pAd->ApCliMlmeAux.Bssid, MAC_ADDR_LEN);
+		NdisZeroMemory(pAd->ApCliMlmeAux.Ssid, MAX_LEN_OF_SSID);
 		pApCliEntry->ProbeReqCnt = 0;
 		
 		if (pAd->ApCfg.ApCliAutoConnectRunning == TRUE)
-			ApCliSwitchCandidateAP(pAd);
+			ApCliSwitchCandidateAP(pAd, ifIndex);
+		
+		if ((pAd->ApCfg.ApCliAutoConnectRunning == FALSE) && (pApCliEntry->AutoConnectFlag == TRUE))
+			ApCliAutoConnectStart(pAd, ifIndex);
+		
 		return;
 	}
 #endif /* APCLI_AUTO_CONNECT_SUPPORT */
@@ -336,9 +345,15 @@ static VOID ApCliCtrlJoinReqTimeoutAction(
 		NdisMoveMemory(&(JoinReq.Ssid), pApCliEntry->CfgSsid, JoinReq.SsidLen);
 	}
 
-	DBGPRINT(RT_DEBUG_TRACE, ("(%s) Probe Ssid=%s, Bssid=%02x:%02x:%02x:%02x:%02x:%02x\n",
-		__FUNCTION__, JoinReq.Ssid, JoinReq.Bssid[0], JoinReq.Bssid[1], JoinReq.Bssid[2],
-		JoinReq.Bssid[3], JoinReq.Bssid[4], JoinReq.Bssid[5]));
+	if (JoinReq.SsidLen <= MAX_LEN_OF_SSID)
+	{
+		char SSID[MAX_LEN_OF_SSID + 1] = {0};
+
+		snprintf(SSID, JoinReq.SsidLen + 1, "%s", JoinReq.Ssid);
+		printk(KERN_INFO "AP-Client probe: SSID=%s, BSSID=%02x:%02x:%02x:%02x:%02x:%02x\n",
+			SSID, PRINT_MAC(JoinReq.Bssid));
+	}
+
 	MlmeEnqueue(pAd, APCLI_SYNC_STATE_MACHINE, APCLI_MT2_MLME_PROBE_REQ,
 		sizeof(APCLI_MLME_JOIN_REQ_STRUCT), &JoinReq, ifIndex);
 
@@ -369,15 +384,55 @@ static VOID ApCliCtrlProbeRspAction(
 	pApCliEntry = &pAd->ApCfg.ApCliTab[ifIndex];
 	if (Status == MLME_SUCCESS)
 	{
-		DBGPRINT(RT_DEBUG_TRACE, ("(%s) Probe respond success.\n", __FUNCTION__));
-		DBGPRINT(RT_DEBUG_TRACE, ("(%s) Apcli-Interface Ssid=%s.\n", __FUNCTION__, pApCliEntry->Ssid));
-		DBGPRINT(RT_DEBUG_TRACE, ("(%s) Apcli-Interface Bssid=%02x:%02x:%02x:%02x:%02x:%02x.\n", __FUNCTION__,
-			pAd->ApCliMlmeAux.Bssid[0],
-			pAd->ApCliMlmeAux.Bssid[1],
-			pAd->ApCliMlmeAux.Bssid[2],
-			pAd->ApCliMlmeAux.Bssid[3],
-			pAd->ApCliMlmeAux.Bssid[4],
-			pAd->ApCliMlmeAux.Bssid[5]));
+		if (pApCliEntry->SsidLen <= MAX_LEN_OF_SSID)
+		{
+			char SSID[MAX_LEN_OF_SSID + 1] = {0};
+
+			snprintf(SSID, pApCliEntry->SsidLen + 1, "%s", pApCliEntry->Ssid);
+			printk(KERN_INFO "AP-Client probe response: SSID=%s, BSSID=%02x:%02x:%02x:%02x:%02x:%02x\n",
+				SSID, PRINT_MAC(pAd->ApCliMlmeAux.Bssid));
+		}
+
+#ifdef DOT11_N_SUPPORT
+		if (pAd->CommonCfg.Channel < 14)
+		{
+			ADD_HTINFO RootApHtInfo = pAd->ApCliMlmeAux.AddHtInfo.AddHtInfo;
+
+			if (pAd->CommonCfg.HtCapability.HtCapInfo.ChannelWidth == BW_40 &&
+			    RootApHtInfo.ExtChanOffset != pAd->CommonCfg.AddHTInfo.AddHtInfo.ExtChanOffset &&
+			    RootApHtInfo.RecomWidth)
+			{
+				if (RootApHtInfo.ExtChanOffset == EXTCHA_ABOVE) {
+					pAd->CommonCfg.RegTransmitSetting.field.EXTCHA = EXTCHA_ABOVE;
+					pAd->ApCliMlmeAux.CentralChannel = pAd->ApCliMlmeAux.Channel + 2;
+				} else {
+					pAd->CommonCfg.RegTransmitSetting.field.EXTCHA = EXTCHA_BELOW;
+					pAd->ApCliMlmeAux.CentralChannel = pAd->ApCliMlmeAux.Channel - 2;
+				}
+
+				pAd->CommonCfg.Channel = pAd->ApCliMlmeAux.Channel;
+				pAd->CommonCfg.CentralChannel = pAd->ApCliMlmeAux.CentralChannel;
+#ifdef DOT11N_DRAFT3
+				pAd->CommonCfg.Bss2040NeedFallBack = 0;
+				pAd->CommonCfg.LastBSSCoexist2040.field.BSS20WidthReq = 0;
+#endif /* DOT11N_DRAFT3 */
+				SetCommonHT(pAd);
+				AsicBBPAdjust(pAd);
+				AsicSwitchChannel(pAd, pAd->CommonCfg.CentralChannel, FALSE);
+				AsicLockChannel(pAd, pAd->CommonCfg.CentralChannel);
+
+				DBGPRINT(RT_DEBUG_OFF, ("%s(): ch(%d), cent_ch(%d), extcha(%d), bbp bw(%d)\n",
+							__FUNCTION__,
+							pAd->CommonCfg.Channel,
+							pAd->CommonCfg.CentralChannel,
+							pAd->CommonCfg.RegTransmitSetting.field.EXTCHA,
+							pAd->CommonCfg.BBPCurrentBW));
+#ifdef DOT11N_DRAFT3
+				pAd->CommonCfg.Bss2040CoexistFlag |= BSS_2040_COEXIST_INFO_SYNC;
+#endif /* DOT11N_DRAFT3 */
+			}
+		}
+#endif /* DOT11_N_SUPPORT */
 
 		*pCurrState = APCLI_CTRL_AUTH;
 
@@ -407,7 +462,7 @@ static VOID ApCliCtrlProbeRspAction(
 #ifdef APCLI_AUTO_CONNECT_SUPPORT
 		if ((pAd->ApCfg.ApCliAutoConnectRunning == TRUE)
 			)
-			ApCliSwitchCandidateAP(pAd);
+			ApCliSwitchCandidateAP(pAd, ifIndex);
 #endif /* APCLI_AUTO_CONNECT_SUPPORT */
 
 	}
@@ -474,7 +529,7 @@ static VOID ApCliCtrlAuthRspAction(
 #ifdef APCLI_AUTO_CONNECT_SUPPORT
 			if ((pAd->ApCfg.ApCliAutoConnectRunning == TRUE)
 				)
-				ApCliSwitchCandidateAP(pAd);
+				ApCliSwitchCandidateAP(pAd, ifIndex);
 #endif /* APCLI_AUTO_CONNECT_SUPPORT */
 		}
 	}
@@ -517,13 +572,13 @@ static VOID ApCliCtrlAuth2RspAction(
 			sizeof(MLME_ASSOC_REQ_STRUCT), &AssocReq, ifIndex);
 	} else
 	{
-		DBGPRINT(RT_DEBUG_TRACE, ("(%s) Sta Auth Rsp Failure.\n", __FUNCTION__));
+		printk(KERN_WARNING "AP-Client: authentication failed!\n");
 
 		*pCurrState = APCLI_CTRL_DISCONNECTED;
 #ifdef APCLI_AUTO_CONNECT_SUPPORT
 		if ((pAd->ApCfg.ApCliAutoConnectRunning == TRUE)
 			)
-			ApCliSwitchCandidateAP(pAd);
+			ApCliSwitchCandidateAP(pAd, ifIndex);
 #endif /* APCLI_AUTO_CONNECT_SUPPORT */
 	}
 
@@ -564,7 +619,7 @@ static VOID ApCliCtrlAuthReqTimeoutAction(
 #ifdef APCLI_AUTO_CONNECT_SUPPORT
 		if ((pAd->ApCfg.ApCliAutoConnectRunning == TRUE)
 			)
-			ApCliSwitchCandidateAP(pAd);
+			ApCliSwitchCandidateAP(pAd, ifIndex);
 #endif /* APCLI_AUTO_CONNECT_SUPPORT */
 		return;
 	}
@@ -646,7 +701,7 @@ static VOID ApCliCtrlAssocRspAction(
 #ifdef APCLI_AUTO_CONNECT_SUPPORT
 			if ((pAd->ApCfg.ApCliAutoConnectRunning == TRUE)
 				)
-				ApCliSwitchCandidateAP(pAd);
+				ApCliSwitchCandidateAP(pAd, ifIndex);
 #endif /* APCLI_AUTO_CONNECT_SUPPORT */
 		}
 	}
@@ -661,7 +716,7 @@ static VOID ApCliCtrlAssocRspAction(
 #ifdef APCLI_AUTO_CONNECT_SUPPORT
 		if ((pAd->ApCfg.ApCliAutoConnectRunning == TRUE)
 			)
-			ApCliSwitchCandidateAP(pAd);
+			ApCliSwitchCandidateAP(pAd, ifIndex);
 #endif /* APCLI_AUTO_CONNECT_SUPPORT */
 	}
 
@@ -739,7 +794,7 @@ static VOID ApCliCtrlAssocReqTimeoutAction(
 #ifdef APCLI_AUTO_CONNECT_SUPPORT
 		if ((pAd->ApCfg.ApCliAutoConnectRunning == TRUE)
 			)
-			ApCliSwitchCandidateAP(pAd);
+			ApCliSwitchCandidateAP(pAd, ifIndex);
 #endif /* APCLI_AUTO_CONNECT_SUPPORT */
 		return;
 	}
@@ -810,7 +865,7 @@ static VOID ApCliCtrlPeerDeAssocReqAction(
 	PULONG pCurrState = &pAd->ApCfg.ApCliTab[ifIndex].CtrlCurrState;
 
 
-	DBGPRINT(RT_DEBUG_TRACE, ("(%s) Peer DeAssoc Req.\n", __FUNCTION__));
+	printk(KERN_INFO "AP-Client: disconnected by peer\n");
 
 	if (ifIndex >= MAX_APCLI_NUM)
 		return;
@@ -826,7 +881,7 @@ static VOID ApCliCtrlPeerDeAssocReqAction(
 		PMAC_TABLE_ENTRY pMacEntry;
 		pMacEntry = &pAd->MacTab.Content[pApCliEntry->MacTabWCID];
 		if (pMacEntry->PortSecured == WPA_802_1X_PORT_NOT_SECURED)
-			ApCliSwitchCandidateAP(pAd);
+			ApCliSwitchCandidateAP(pAd, ifIndex);
 	}
 #endif /* APCLI_AUTO_CONNECT_SUPPORT */	
 

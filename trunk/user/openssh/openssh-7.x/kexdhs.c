@@ -1,4 +1,4 @@
-/* $OpenBSD: kexdhs.c,v 1.22 2015/01/26 06:10:03 djm Exp $ */
+/* $OpenBSD: kexdhs.c,v 1.24 2016/05/02 10:26:04 djm Exp $ */
 /*
  * Copyright (c) 2001 Markus Friedl.  All rights reserved.
  *
@@ -63,7 +63,14 @@ kexdh_server(struct ssh *ssh)
 		kex->dh = dh_new_group1();
 		break;
 	case KEX_DH_GRP14_SHA1:
+	case KEX_DH_GRP14_SHA256:
 		kex->dh = dh_new_group14();
+		break;
+	case KEX_DH_GRP16_SHA512:
+		kex->dh = dh_new_group16();
+		break;
+	case KEX_DH_GRP18_SHA512:
+		kex->dh = dh_new_group18();
 		break;
 	default:
 		r = SSH_ERR_INVALID_ARGUMENT;
@@ -158,6 +165,7 @@ input_kex_dh_init(int type, u_int32_t seq, void *ctxt)
 	/* calc H */
 	hashlen = sizeof(hash);
 	if ((r = kex_dh_hash(
+	    kex->hash_alg,
 	    kex->client_version_string,
 	    kex->server_version_string,
 	    sshbuf_ptr(kex->peer), sshbuf_len(kex->peer),
@@ -181,8 +189,8 @@ input_kex_dh_init(int type, u_int32_t seq, void *ctxt)
 	}
 
 	/* sign H */
-	if ((r = kex->sign(server_host_private, server_host_public,
-	    &signature, &slen, hash, hashlen, ssh->compat)) < 0)
+	if ((r = kex->sign(server_host_private, server_host_public, &signature,
+	     &slen, hash, hashlen, kex->hostkey_alg, ssh->compat)) < 0)
 		goto out;
 
 	/* destroy_sensitive_data(); */

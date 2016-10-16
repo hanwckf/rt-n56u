@@ -206,7 +206,7 @@ static struct chip_info chips_data [] = {
 	{ "S25FL032P",		0x01, 0x02154D00, 64 * 1024, 64,  0 },
 	{ "S25FL064P",		0x01, 0x02164D00, 64 * 1024, 128, 0 },
 	{ "S25FL128P",		0x01, 0x20180301, 64 * 1024, 256, 0 },
-	{ "S25FL129P",		0x01, 0x20184D01, 64 * 1024, 256, 0 },
+	{ "S25FL128S",		0x01, 0x20184D01, 64 * 1024, 256, 0 },
 	{ "S25FL256S",		0x01, 0x02194D01, 64 * 1024, 512, 1 },
 
 	{ "S25FL116K",		0x01, 0x40150140, 64 * 1024, 32,  0 },
@@ -218,6 +218,7 @@ static struct chip_info chips_data [] = {
 	{ "EN25Q32B",		0x1c, 0x30161c30, 64 * 1024, 64,  0 },
 	{ "EN25F64",		0x1c, 0x20171c20, 64 * 1024, 128, 0 }, // EN25P64
 	{ "EN25Q64",		0x1c, 0x30171c30, 64 * 1024, 128, 0 },
+	{ "EN25Q128",		0x1c, 0x30181c30, 64 * 1024, 256, 0 },
 
 	{ "AT26DF161",		0x1f, 0x46000000, 64 * 1024, 32,  0 },
 	{ "AT25DF321",		0x1f, 0x47000000, 64 * 1024, 64,  0 },
@@ -240,7 +241,9 @@ static struct chip_info chips_data [] = {
 
 	{ "GD25Q32B",		0xc8, 0x40160000, 64 * 1024, 64,  0 },
 	{ "GD25Q64B",		0xc8, 0x40170000, 64 * 1024, 128, 0 },
+	{ "GD25Q64CSIG",	0xc8, 0x4017c840, 64 * 1024, 128, 0 },
 	{ "GD25Q128C",		0xc8, 0x40180000, 64 * 1024, 256, 0 },
+	{ "GD25Q128CSIG",	0xc8, 0x4018c840, 64 * 1024, 256, 0 },
 
 	{ "W25X32VS",		0xef, 0x30160000, 64 * 1024, 64,  0 },
 	{ "W25Q32BV",		0xef, 0x40160000, 64 * 1024, 64,  0 },
@@ -752,35 +755,31 @@ static int raspi_erase_sector(u32 offset)
  */
 struct chip_info *chip_prob(void)
 {
-	struct chip_info *info, *match;
+	struct chip_info *info;
 	u8 buf[4] = {0};
-	u32 jedec, weight;
-	int i;
+	u32 jedec;
+	int i, table_size;
 
 	raspi_read_devid(buf, 4);
 	jedec = (u32)((u32)(buf[1] << 24) | ((u32)buf[2] << 16) | ((u32)buf[3] << 8));
 
 	ra_dbg("deice id : %x %x %x %x\n", buf[0], buf[1], buf[2], buf[3]);
 
-	// FIXME, assign default as AT25D
-	weight = 0xffffffff;
-	match = &chips_data[0];
-	for (i = 0; i < ARRAY_SIZE(chips_data); i++) {
+	table_size = ARRAY_SIZE(chips_data);
+
+	for (i = 0; i < table_size; i++) {
 		info = &chips_data[i];
 		if (info->id == buf[0]) {
 			if ((info->jedec_id & 0xffffff00) == jedec)
 				return info;
-
-			if (weight > (info->jedec_id ^ jedec)) {
-				weight = info->jedec_id ^ jedec;
-				match = info;
-			}
 		}
 	}
 
-	printk("Warning: un-recognized SPI chip ID: %x (%x), please update SPI driver!\n", buf[0], jedec);
+	printk(KERN_WARNING "unrecognized SPI chip ID: %x (%x), please update the SPI driver!\n",
+		buf[0], jedec);
 
-	return match;
+	/* use last stub item */
+	return &chips_data[table_size - 1];
 }
 
 /*

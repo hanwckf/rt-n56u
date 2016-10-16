@@ -117,7 +117,7 @@ static const uint8_t len_of_option_as_string[] = {
 	[OPTION_IP_PAIR         ] = sizeof("255.255.255.255 ") * 2,
 	[OPTION_STATIC_ROUTES   ] = sizeof("255.255.255.255/32 255.255.255.255 "),
 #if ENABLE_FEATURE_UDHCP_RFC5969
-	[OPTION_6RD             ] = sizeof("32 128 ffff:ffff:ffff:ffff:ffff:ffff:ffff:ffff 255.255.255.255 "),
+	[OPTION_6RD             ] = sizeof("132 128 ffff:ffff:ffff:ffff:ffff:ffff:ffff:ffff 255.255.255.255 "),
 #endif
 	[OPTION_STRING          ] = 1,
 	[OPTION_STRING_HOST     ] = 1,
@@ -206,6 +206,8 @@ static int good_hostname(const char *name)
 			//Do we want this?
 			//return ((name - start) < 1025); /* NS_MAXDNAME */
 		name++;
+		if (*name == '\0')
+			return 1; // We allow trailing dot too
 	}
 }
 #else
@@ -225,7 +227,7 @@ static NOINLINE char *xmalloc_optname_optval(uint8_t *option, const struct dhcp_
 	type = optflag->flags & OPTION_TYPE_MASK;
 	optlen = dhcp_option_lengths[type];
 	upper_length = len_of_option_as_string[type]
-		* ((unsigned)(len + optlen - 1) / (unsigned)optlen);
+		* ((unsigned)(len + optlen) / (unsigned)optlen);
 
 	dest = ret = xmalloc(upper_length + strlen(opt_name) + 2);
 	dest += sprintf(ret, "%s=", opt_name);

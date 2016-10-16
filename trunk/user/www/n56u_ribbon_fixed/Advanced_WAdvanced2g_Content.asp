@@ -45,11 +45,13 @@ function initial(){
 		$("col_goto5").width = "33%";
 	}
 
-	if (support_usb3() && !support_2g_inic_mii() && usb3_disable != '1')
-		showhide_div("row_vga_clamp", 1);
-
-	if (support_2g_ldpc())
-		showhide_div("row_ldpc", 1);
+	if (typeof(support_2g_wid) === 'function'){
+		wid = support_2g_wid();
+		if (wid==7602||wid==7612){
+			showhide_div("row_vga_clamp", 1);
+			showhide_div("row_ldpc", 1);
+		}
+	}
 
 	if (support_2g_stream_tx()<2) {
 		document.form.rt_stream_tx.remove(1);

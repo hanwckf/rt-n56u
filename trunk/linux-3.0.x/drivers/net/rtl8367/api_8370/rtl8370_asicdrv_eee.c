@@ -38,7 +38,7 @@ ret_t rtl8370_setAsicEeeTxEnable(uint32 port, uint32 enable)
     if (enable > 1)
         return RT_ERR_INPUT;
     
-    return rtl8370_setAsicRegBit(RTL8370_PORT_EEE_CFG_REG(port), RTL8370_PORT_EEE_TX_ENABLE_OFFSET, enable);
+    return rtl8370_setAsicRegBit(RTL8370_PORT_EEE_CFG_REG(port), RTL8370_PORT_EEE_TX_OFFSET, enable);
 }
 
 /*
@@ -56,7 +56,7 @@ ret_t rtl8370_getAsicEeeTxEnable(uint32 port, uint32 *enable)
     if(port >= RTL8370_PORTNO)
         return RT_ERR_PORT_ID;
 	
-    return rtl8370_getAsicRegBit(RTL8370_PORT_EEE_CFG_REG(port), RTL8370_PORT_EEE_TX_ENABLE_OFFSET, enable);
+    return rtl8370_getAsicRegBit(RTL8370_PORT_EEE_CFG_REG(port), RTL8370_PORT_EEE_TX_OFFSET, enable);
 }
 
 /*
@@ -78,7 +78,7 @@ ret_t rtl8370_setAsicEeeRxEnable(uint32 port, uint32 enable)
     if (enable > 1)
         return RT_ERR_INPUT;
     
-    return rtl8370_setAsicRegBit(RTL8370_PORT_EEE_CFG_REG(port), RTL8370_PORT_EEE_RX_ENABLE_OFFSET, enable);
+    return rtl8370_setAsicRegBit(RTL8370_PORT_EEE_CFG_REG(port), RTL8370_PORT_EEE_RX_OFFSET, enable);
 }
 
 /*
@@ -96,7 +96,7 @@ ret_t rtl8370_getAsicEeeRxEnable(uint32 port, uint32 *enable)
     if(port >= RTL8370_PORTNO)
         return RT_ERR_PORT_ID;
 	
-    return rtl8370_getAsicRegBit(RTL8370_PORT_EEE_CFG_REG(port), RTL8370_PORT_EEE_RX_ENABLE_OFFSET, enable);
+    return rtl8370_getAsicRegBit(RTL8370_PORT_EEE_CFG_REG(port), RTL8370_PORT_EEE_RX_OFFSET, enable);
 }
 
 /*

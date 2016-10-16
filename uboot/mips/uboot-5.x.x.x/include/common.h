@@ -556,6 +556,7 @@ void	wait_ticks    (unsigned long);
 
 /* lib_$(ARCH)/time.c */
 __attribute__((nomips16)) void	udelay	      (unsigned long);
+__attribute__((nomips16)) void	mdelay	      (unsigned long);
 ulong	usec2ticks    (unsigned long usec);
 ulong	ticks2usec    (unsigned long ticks);
 int	init_timebase (void);

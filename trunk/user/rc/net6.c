@@ -50,96 +50,63 @@ void control_if_ipv6_all(int enable)
 {
 	int i;
 	char tmp[64];
+	char* if6_on[] = { "default", "lo", IFNAME_BR, NULL };
 	char* if6_off[] = { "default", "all", NULL };
 	char* rad_off[] = { "default", "lo", "sit0", IFNAME_MAC, NULL };
-#if defined (USE_SINGLE_MAC)
-	char* if6_on[] = { "default", "lo", IFNAME_BR, NULL };
-#else
-	char* if6_on[] = { "default", "lo", IFNAME_BR, IFNAME_MAC2, NULL };
-#endif
 
-	if (!enable)
-	{
+	if (!enable) {
 		for (i=0; if6_off[i] != NULL; i++)
-		{
-			sprintf(tmp, "/proc/sys/net/ipv6/conf/%s/%s", if6_off[i], "disable_ipv6");
-			fput_int(tmp, 1);
-		}
-		for (i=0; rad_off[i] != NULL; i++)
-		{
-			sprintf(tmp, "/proc/sys/net/ipv6/conf/%s/%s", rad_off[i], "accept_ra");
-			fput_int(tmp, 0);
-			sprintf(tmp, "/proc/sys/net/ipv6/conf/%s/%s", rad_off[i], "accept_ra_pinfo");
-			fput_int(tmp, 0);
+			set_interface_conf_int("ipv6", if6_off[i], "disable_ipv6", 1);
+		
+		for (i=0; rad_off[i] != NULL; i++) {
+			set_interface_conf_int("ipv6", rad_off[i], "accept_ra", 0);
+			set_interface_conf_int("ipv6", rad_off[i], "accept_ra_pinfo", 0);
 		}
 		
-		sprintf(tmp, "/proc/sys/net/ipv6/conf/%s/%s", "all", "forwarding");
-		fput_int(tmp, 0);
-	}
-	else
-	{
-		sprintf(tmp, "/proc/sys/net/ipv6/conf/%s/%s", "all", "forwarding");
-		fput_int(tmp, 1);
+		set_interface_conf_int("ipv6", "all", "forwarding", 0);
+	} else {
+		set_interface_conf_int("ipv6", "all", "forwarding", 1);
 		
 		for (i=0; if6_on[i] != NULL; i++)
-		{
-			sprintf(tmp, "/proc/sys/net/ipv6/conf/%s/%s", if6_on[i], "disable_ipv6");
-			fput_int(tmp, 0);
-		}
+			set_interface_conf_int("ipv6", if6_on[i], "disable_ipv6", 0);
 		
 		sprintf(tmp, "/proc/sys/net/ipv6/neigh/%s/%s", IFNAME_BR, "gc_stale_time");
 		fput_int(tmp, 900); // ARP cache 15m
 	}
 }
 
-void control_if_ipv6(char *ifname, int enable)
+void control_if_ipv6(const char *ifname, int enable)
 {
-	char tmp[64];
-	sprintf(tmp, "/proc/sys/net/ipv6/conf/%s/%s", ifname, "disable_ipv6");
-	fput_int(tmp, (enable) ? 0 : 1);
+	set_interface_conf_int("ipv6", ifname, "disable_ipv6", (enable) ? 0 : 1);
 }
 
-void control_if_ipv6_autoconf(char *ifname, int enable)
+void control_if_ipv6_autoconf(const char *ifname, int enable)
 {
-	char tmp[64];
-
-	sprintf(tmp, "/proc/sys/net/ipv6/conf/%s/%s", ifname, "accept_ra_pinfo");
-	fput_int(tmp, (enable) ? 1 : 0);
+	set_interface_conf_int("ipv6", ifname, "accept_ra_pinfo", (enable) ? 1 : 0);
 }
 
-void control_if_ipv6_radv(char *ifname, int enable)
+void control_if_ipv6_radv(const char *ifname, int enable)
 {
-	char tmp[64];
-
-	sprintf(tmp, "/proc/sys/net/ipv6/conf/%s/%s", ifname, "accept_ra");
-	fput_int(tmp, (enable) ? 2 : 0);
+	set_interface_conf_int("ipv6", ifname, "accept_ra", (enable) ? 2 : 0);
 #if 0
 	/* this do not needed for kernel >= 3.2 (and patched kernel 3.0) */
 	if (enable) {
-		sprintf(tmp, "/proc/sys/net/ipv6/conf/%s/%s", ifname, "forwarding");
-		fput_int(tmp, 2); // Hybrid mode (Router Solicitations are being sent when necessary)
+		// Hybrid mode (Router Solicitations are being sent when necessary)
+		set_interface_conf_int("ipv6", ifname, "forwarding", 2);
 	}
 #endif
 }
 
-void control_if_ipv6_dad(char *ifname, int enable)
+void control_if_ipv6_dad(const char *ifname, int enable)
 {
-	char tmp[64];
-
-	sprintf(tmp, "/proc/sys/net/ipv6/conf/%s/%s", ifname, "accept_dad");
-	fput_int(tmp, (enable) ? 1 : 0);
-	if (enable) {
-		sprintf(tmp, "/proc/sys/net/ipv6/conf/%s/%s", ifname, "dad_transmits");
-		fput_int(tmp, (strcmp(ifname, IFNAME_BR) == 0) ? 2 : 1);
-	}
+	set_interface_conf_int("ipv6", ifname, "accept_dad", (enable) ? 1 : 0);
+	if (enable)
+		set_interface_conf_int("ipv6", ifname, "dad_transmits", (strcmp(ifname, IFNAME_BR) == 0) ? 2 : 1);
 }
 
-void control_if_ipv6_privacy(char *ifname, int enable)
+void control_if_ipv6_privacy(const char *ifname, int enable)
 {
-	char tmp[64];
-
-	sprintf(tmp, "/proc/sys/net/ipv6/conf/%s/%s", ifname, "use_tempaddr");
-	fput_int(tmp, (enable) ? 2 : 0);
+	set_interface_conf_int("ipv6", ifname, "use_tempaddr", (enable) ? 2 : 0);
 }
 
 void clear_if_addr6(char *ifname)
@@ -181,7 +148,6 @@ void full_restart_ipv6(int ipv6_type_old)
 	}
 
 	stop_upnp();
-	stop_radvd();
 	stop_dhcp6c();
 	stop_dns_dhcpd();
 
@@ -221,8 +187,11 @@ int ipv6_from_string(const char *str, struct in6_addr *addr6)
 	char *last, *tmp = addr6s;
 	int ret = 128;
 
-	if (str && *str)
-		strncpy(addr6s, str, sizeof(addr6s));
+	if (str && *str) {
+		memset(addr6s, 0, sizeof(addr6s));
+		strncpy(addr6s, str, sizeof(addr6s) - 1);
+	}
+
 	strsep(&tmp, "/");
 
 	if (inet_pton(AF_INET6, addr6s, addr6) != 1)

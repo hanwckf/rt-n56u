@@ -101,22 +101,23 @@ VOID CFG80211RemainOnChannelTimeout(
 	else
 #endif /*RT_CFG80211_P2P_CONCURRENT_DEVICE */		
 	{
-		DBGPRINT(RT_DEBUG_TRACE, ("CFG80211_ROC: RemainOnChannelTimeout -- FINISH\n"));
-#if (LINUX_VERSION_CODE >= KERNEL_VERSION(3,8,0))
-		cfg80211_remain_on_channel_expired( CFG80211_GetEventDevice(pAd),	
-        		pCfg80211_ctrl->Cfg80211ChanInfo.cookie, pCfg80211_ctrl->Cfg80211ChanInfo.chan
-        		,GFP_KERNEL);
+/* CFG TODO: move to cfg802_util */
+#if (LINUX_VERSION_CODE >= KERNEL_VERSION(3,6,0))
+		PWIRELESS_DEV pwdev = NULL;
+		pwdev = pCfg80211_ctrl->Cfg80211ChanInfo.pWdev;
+		cfg80211_remain_on_channel_expired(pwdev, pCfg80211_ctrl->Cfg80211ChanInfo.cookie,
+            		pCfg80211_ctrl->Cfg80211ChanInfo.chan, GFP_ATOMIC);
 #else
 #if (LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,34))
 		cfg80211_remain_on_channel_expired( CFG80211_GetEventDevice(pAd),	
 			pCfg80211_ctrl->Cfg80211ChanInfo.cookie, pCfg80211_ctrl->Cfg80211ChanInfo.chan, 
-			pCfg80211_ctrl->Cfg80211ChanInfo.ChanType, GFP_KERNEL);
+        		pCfg80211_ctrl->Cfg80211ChanInfo.ChanType, GFP_ATOMIC);
 #endif /* LINUX_VERSION_CODE 2.6.34 */
 #endif /* LINUX_VERSION_CODE 3.8.0 */
 
 		pCfg80211_ctrl->Cfg80211RocTimerRunning = FALSE;
-	}
-		
+		DBGPRINT(RT_DEBUG_TRACE, ("CFG80211_ROC: RemainOnChannelTimeout -- FINISH\n"));
+	}		
 }
 
 /* Set a given time on specific channel to listen action Frame */
@@ -170,11 +171,15 @@ BOOLEAN CFG80211DRV_OpsRemainOnChannel(VOID *pAdOrg, VOID *pData, UINT32 duratio
 	 */
 	//lock_channel = CFG80211_getCenCh(pAd, pChanInfo->ChanId);
 	lock_channel = pChanInfo->ChanId;
-	if (pAd->LatchRfRegs.Channel != lock_channel) 
+	if (pAd->LatchRfRegs.Channel != lock_channel
+#ifdef CONFIG_STA_SUPPORT
+	|| (INFRA_ON(pAd) && (pAd->CommonCfg.BBPCurrentBW == BW_40))
+#endif /* CONFIG_STA_SUPPORT */
+	) 
 	{
 		DBGPRINT(RT_DEBUG_TRACE, ("CFG80211_PKT: ROC CHANNEL_LOCK %d\n", pChanInfo->ChanId));
 		//AsicSetChannel(pAd, lock_channel, BW_20, EXTCHA_NONE, FALSE);
-
+		bbp_set_bw(pAd, BW_20);
 		AsicSwitchChannel(pAd, lock_channel, FALSE);
 		AsicLockChannel(pAd, lock_channel);	
 	}

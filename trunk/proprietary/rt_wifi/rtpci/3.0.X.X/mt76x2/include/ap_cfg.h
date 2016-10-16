@@ -63,7 +63,7 @@ VOID RTMPAPIoctlE2PROM(
     IN  PRTMP_ADAPTER   pAdapter,
     IN  RTMP_IOCTL_INPUT_STRUCT    *wrq);
 
-#if defined(DBG) ||(defined(BB_SOC)&&defined(RALINK_ATE))
+#if defined(DBG) || defined(RALINK_ATE)
 VOID RTMPAPIoctlBBP(
     IN  PRTMP_ADAPTER   pAdapter,
     IN  RTMP_IOCTL_INPUT_STRUCT    *wrq);

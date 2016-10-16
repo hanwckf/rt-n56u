@@ -56,7 +56,6 @@ BOOLEAN PeerAssocReqCmmSanity(
 	INT MsgLen,
 	IE_LISTS *ie_lists)
 {
-    CHAR *Ptr;
     PFRAME_802_11	Fr = (PFRAME_802_11)Msg;
     PEID_STRUCT eid_ptr;
     UCHAR Sanity = 0;
@@ -83,8 +82,6 @@ BOOLEAN PeerAssocReqCmmSanity(
 
 	COPY_MAC_ADDR(&ie_lists->Addr2[0], &Fr->Hdr.Addr2[0]);
 	
-	Ptr = (PCHAR)Fr->Octet;
-
 	NdisMoveMemory(&ie_lists->CapabilityInfo, &Fr->Octet[0], 2);
 	NdisMoveMemory(&ie_lists->ListenInterval, &Fr->Octet[2], 2);
 
@@ -252,6 +249,65 @@ BOOLEAN PeerAssocReqCmmSanity(
 #endif /* WSC_AP_SUPPORT */
 					break;
 				}
+#ifdef SMART_MESH					
+				if ((eid_ptr->Len >= NTGR_OUI_LEN) && NdisEqualMemory(eid_ptr->Octet, NETGEAR_OUI, NTGR_OUI_LEN))
+				{
+					if(pEntry)
+					{
+						if(eid_ptr->Len > NTGR_OUI_LEN)
+						{
+							PSMART_MESH_CFG pSmartMeshCfg = NULL;
+							pSmartMeshCfg = &pAd->ApCfg.MBSSID[pEntry->apidx].SmartMeshCfg;
+							if ((eid_ptr->Octet[3] & 0x02))
+							{
+								pEntry->bSupportSmartMesh = TRUE;
+								if(pSmartMeshCfg->bSupportSmartMesh)
+									pEntry->bEnableSmartMesh = TRUE;
+								DBGPRINT(RT_DEBUG_ERROR, ("Peer supports SMART MESH\n"));
+							}
+							else
+								pEntry->bEnableSmartMesh = FALSE;
+							
+							if (((pSmartMeshCfg->HiFiFlagMask != 0) && (pSmartMeshCfg->HiFiFlagValue != 0)) &&
+								((eid_ptr->Octet[3] & pSmartMeshCfg->HiFiFlagMask) == pSmartMeshCfg->HiFiFlagValue))
+							{
+								pEntry->bHyperFiPeer = TRUE;
+								DBGPRINT(RT_DEBUG_ERROR, ("Peer is Hyper-Fi device\n"));
+							}
+							else
+								pEntry->bHyperFiPeer = FALSE;
+#ifdef MWDS
+							if ((eid_ptr->Octet[3] & 0x01))
+							{
+								pEntry->bSupportMWDS = TRUE;
+								if(pAd->ApCfg.MBSSID[pEntry->apidx].bSupportMWDS)
+									pEntry->bEnableMWDS = TRUE;
+								DBGPRINT(RT_DEBUG_ERROR, ("Peer supports MWDS\n"));
+							}
+							else
+								pEntry->bEnableMWDS = FALSE;
+#endif /* MWDS */
+#ifdef WSC_AP_SUPPORT
+#ifdef SMART_MESH_HIDDEN_WPS
+                            if ((eid_ptr->Octet[3] & 0x04))
+							{
+								pEntry->bSupportHiddenWPS = TRUE;
+								DBGPRINT(RT_DEBUG_ERROR, ("Peer supports HiddenWPS\n"));
+							}
+							else
+								pEntry->bSupportHiddenWPS = FALSE;
+
+                            if((eid_ptr->Len - NTGR_OUI_LEN) >= NTGR_CUSTOM_IE_MAX_LEN)
+                                pEntry->bRunningHiddenWPS = (eid_ptr->Octet[5] & HIDDEN_WPS_STATE_RUNNING) ? TRUE : FALSE;
+#endif /* SMART_MESH_HIDDEN_WPS */
+#endif /* WSC_AP_SUPPORT */
+						}
+					}
+					else
+						DBGPRINT(RT_DEBUG_ERROR, ("%s():pEntry is NULL\n",__func__));
+					break;
+				}				
+#endif /* SMART_MESH */
 
 				/* Handle Atheros and Broadcom draft 11n STAs */
 				if (NdisEqualMemory(eid_ptr->Octet, BROADCOM_OUI, 3))
@@ -486,12 +542,14 @@ BOOLEAN PeerDisassocReqSanity(
     IN PRTMP_ADAPTER pAd, 
     IN VOID *Msg, 
     IN ULONG MsgLen, 
+    OUT PUCHAR pAddr1, 
     OUT PUCHAR pAddr2, 
     OUT	UINT16	*SeqNum,
     OUT USHORT *Reason) 
 {
     PFRAME_802_11 Fr = (PFRAME_802_11)Msg;
 
+    COPY_MAC_ADDR(pAddr1, &Fr->Hdr.Addr1);
     COPY_MAC_ADDR(pAddr2, &Fr->Hdr.Addr2);
 	*SeqNum = Fr->Hdr.Sequence;
     NdisMoveMemory(Reason, &Fr->Octet[0], 2);

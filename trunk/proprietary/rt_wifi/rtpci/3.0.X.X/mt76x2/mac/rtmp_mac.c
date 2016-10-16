@@ -75,9 +75,12 @@ VOID RTMPWriteTxWI(
 	TXWI_STRUC TxWI, *pTxWI;
 	UINT8 TXWISize = pAd->chipCap.TXWISize;
 	UINT TxEAPId_Cal = 0;
-	UCHAR eTxBf, iTxBf, sounding, ndp_rate, stbc, bw, mcs, sgi, phy_mode, mpdu_density = 0, mimops = 0, ldpc = 0;
+	UCHAR stbc, bw, mcs, sgi, phy_mode, mpdu_density = 0, mimops = 0, ldpc = 0;
 	UCHAR tx_stream_mode = 0;
-	
+#ifdef TXBF_SUPPORT
+	UCHAR eTxBf, iTxBf, sounding, ndp_rate;
+#endif /* TXBF_SUPPORT */
+
 	if (WCID < MAX_LEN_OF_MAC_TABLE)
 		pMac = &pAd->MacTab.Content[WCID];
 
@@ -275,7 +278,17 @@ VOID RTMPWriteTxWI(
 #endif /* TXBF_SUPPORT */
 
 		/* Calculate TxPwrAdj */
-		txwi_n->TxPwrAdj = 0; 
+		txwi_n->TxPwrAdj = 0;
+		
+#ifdef SPECIFIC_TX_POWER_SUPPORT
+		if (pMac)
+		{
+			txwi_n->TxPwrAdj += pAd->ApCfg.MBSSID[pMac->apidx].TxPwrAdj;
+			DBGPRINT(RT_DEBUG_TRACE, ("%s :%d pMac->apidx = %d, txwi_n->TxPwrAdj = %d\n"
+				, __FUNCTION__,__LINE__,pMac->apidx, txwi_n->TxPwrAdj));
+		}
+#endif /* SPECIFIC_TX_POWER_SUPPORT */
+
 #ifdef SINGLE_SKU_V2	
 		RTMP_CHIP_ASIC_SKU_TX_POWER_ADJUST(pAd,txwi_n);	
 #endif /* SINGLE_SKU_V2 */
@@ -686,7 +699,17 @@ VOID RTMPWriteTxWI_Data(RTMP_ADAPTER *pAd, TXWI_STRUC *pTxWI, TX_BLK *pTxBlk)
 
 
 		/* Calculate TxPwrAdj */
-		txwi_n->TxPwrAdj = 0; 
+		txwi_n->TxPwrAdj = 0;
+
+#ifdef SPECIFIC_TX_POWER_SUPPORT
+		if (pMacEntry)
+		{
+			txwi_n->TxPwrAdj += pAd->ApCfg.MBSSID[pMacEntry->apidx].TxPwrAdj;
+			DBGPRINT(RT_DEBUG_TRACE, ("%s :%d pMacEntry->apidx = %d, txwi_n->TxPwrAdj = %d\n"
+				, __FUNCTION__,__LINE__,pMacEntry->apidx, txwi_n->TxPwrAdj));
+		}
+#endif /* SPECIFIC_TX_POWER_SUPPORT */
+
 #ifdef SINGLE_SKU_V2	
 		RTMP_CHIP_ASIC_SKU_TX_POWER_ADJUST(pAd,txwi_n);	
 #endif /* SINGLE_SKU_V2 */
@@ -757,7 +780,6 @@ VOID RTMPWriteTxWI_Data(RTMP_ADAPTER *pAd, TXWI_STRUC *pTxWI, TX_BLK *pTxBlk)
 VOID RTMPWriteTxWI_Cache(RTMP_ADAPTER *pAd, TXWI_STRUC *pTxWI, TX_BLK *pTxBlk)
 {
 	HTTRANSMIT_SETTING *pTransmit = pTxBlk->pTransmit;
-	HTTRANSMIT_SETTING tmpTransmit;
 	MAC_TABLE_ENTRY *pMacEntry = pTxBlk->pMacEntry;
 	UCHAR pkt_id;
 	UCHAR bw, mcs, stbc, phy_mode, sgi, ldpc;
@@ -933,6 +955,8 @@ VOID RTMPWriteTxWI_Cache(RTMP_ADAPTER *pAd, TXWI_STRUC *pTxWI, TX_BLK *pTxBlk)
 #ifdef CONFIG_FPGA_MODE
 	if (pAd->fpga_ctl.fpga_on & 0x6)
 	{
+		HTTRANSMIT_SETTING tmpTransmit;
+
 		phy_mode = pAd->fpga_ctl.tx_data_phy;
 		mcs = pAd->fpga_ctl.tx_data_mcs;
 		ldpc = pAd->fpga_ctl.tx_data_ldpc;
@@ -1023,7 +1047,17 @@ VOID RTMPWriteTxWI_Cache(RTMP_ADAPTER *pAd, TXWI_STRUC *pTxWI, TX_BLK *pTxBlk)
 #endif /* TXBF_SUPPORT */
 
 		/* Calculate TxPwrAdj */
-		txwi_n->TxPwrAdj = 0; 
+		txwi_n->TxPwrAdj = 0;
+
+#ifdef SPECIFIC_TX_POWER_SUPPORT
+		if (pMacEntry)
+		{
+			txwi_n->TxPwrAdj = pAd->ApCfg.MBSSID[pMacEntry->apidx].TxPwrAdj;
+			DBGPRINT(RT_DEBUG_INFO, ("%s :%d pMacEntry->apidx = %d, txwi_n->TxPwrAdj = %d\n"
+			, __FUNCTION__,__LINE__,pMacEntry->apidx, txwi_n->TxPwrAdj));
+		}
+#endif /* SPECIFIC_TX_POWER_SUPPORT */
+
 #ifdef SINGLE_SKU_V2	
 		RTMP_CHIP_ASIC_SKU_TX_POWER_ADJUST(pAd,txwi_n);	
 #endif /* SINGLE_SKU_V2 */

@@ -11,8 +11,7 @@
 #define RT_SWITCH_HELP		1
 #define RT_TABLE_MANIPULATE	1
 
-#define REG_ESW_VLAN_ID_BASE		0x50
-#define REG_ESW_VLAN_MEMB_BASE		0x70
+#define REG_ESW_PFC1			0x14
 #define REG_ESW_TABLE_SEARCH		0x24
 #define REG_ESW_TABLE_STATUS0		0x28
 #define REG_ESW_TABLE_STATUS1		0x2C
@@ -20,6 +19,11 @@
 #define REG_ESW_WT_MAC_AD0		0x34
 #define REG_ESW_WT_MAC_AD1		0x38
 #define REG_ESW_WT_MAC_AD2		0x3C
+#define REG_ESW_PVIDC_BASE		0x40
+#define REG_ESW_VLAN_ID_BASE		0x50
+#define REG_ESW_VLAN_MEMB_BASE		0x70
+#define REG_ESW_POC2			0x98
+#define REG_ESW_VLAN_UNTAG_BASE		0x100
 
 static int esw_fd = -1;
 
@@ -48,16 +52,16 @@ void usage(char *cmd)
 	printf(" %s add [mac] [portmap] [vlan idx]       - add an entry to switch table\n", cmd);
 	printf(" %s add [mac] [portmap] [vlan idx] [age] - add an entry to switch table\n", cmd);
 #ifdef CONFIG_RALINK_RT3352
-	printf(" %s ingress-rate on [port] [Mbps]        - set ingress rate limit on port 0~5 \n", cmd);
-	printf(" %s ingress-rate off [port]              - del ingress rate limit on port 0~5 \n", cmd);
+	printf(" %s ingress-rate on [port] [Mbps]        - set ingress rate limit on port 0~5\n", cmd);
+	printf(" %s ingress-rate off [port]              - del ingress rate limit on port 0~5\n", cmd);
 	printf(" %s filt [mac]                           - add an SA filtering entry (with portmap 1111111) to switch table\n", cmd);
 	printf(" %s filt [mac] [portmap]                 - add an SA filtering entry to switch table\n", cmd);
 	printf(" %s filt [mac] [portmap] [vlan idx]      - add an SA filtering entry to switch table\n", cmd);
 	printf(" %s filt [mac] [portmap] [vlan idx] [age]- add an SA filtering entry to switch table\n", cmd);
 #elif defined (CONFIG_RALINK_RT5350) || defined (CONFIG_RALINK_MT7628)
-	printf(" %s ingress-rate on [port] [Mbps]        - set ingress rate limit on port 0~4 \n", cmd);
-	printf(" %s egress-rate on [port] [Mbps]         - set egress rate limit on port 0~4 \n", cmd);
-	printf(" %s ingress-rate off [port]              - del ingress rate limit on port 0~4 \n", cmd);
+	printf(" %s ingress-rate on [port] [Mbps]        - set ingress rate limit on port 0~4\n", cmd);
+	printf(" %s egress-rate on [port] [Mbps]         - set egress rate limit on port 0~4\n", cmd);
+	printf(" %s ingress-rate off [port]              - del ingress rate limit on port 0~4\n", cmd);
 	printf(" %s egress-rate off [port]               - del egress rate limit on port 0~4\n", cmd);
 	printf(" %s filt [mac]                           - add an SA filtering entry (with portmap 1111111) to switch table\n", cmd);
 	printf(" %s filt [mac] [portmap]                 - add an SA filtering entry to switch table\n", cmd);
@@ -67,11 +71,15 @@ void usage(char *cmd)
 	printf(" %s del [mac]                            - delete an entry from switch table\n", cmd);
 	printf(" %s del [mac] [vlan idx]                 - delete an entry from switch table\n", cmd);
 	printf(" %s vlan dump                            - dump switch table\n", cmd);
-	printf(" %s vlan set [vlan idx] [vid] [portmap]  - set vlan id and associated member\n", cmd);
+#if defined (CONFIG_RALINK_RT3052)
+	printf(" %s vlan set [idx] [vid] [portmap]       - set vlan id and associated member\n", cmd);
+#else
+	printf(" %s vlan set [idx] [vid] [portmap] <untag> - set vlan id and associated member\n", cmd);
+#endif
 	printf(" %s reg r [offset]                       - register read from offset\n", cmd);
 	printf(" %s reg w [offset] [value]               - register write value to offset\n", cmd);
-	printf(" %s phy [phy_addr]			 - dump phy register of specific port\n", cmd);
-	printf(" %s phy					 - dump all phy registers\n", cmd);
+	printf(" %s phy [phy_addr]                       - dump phy register of specific port\n", cmd);
+	printf(" %s phy                                  - dump all phy registers\n", cmd);
 #endif
 	switch_fini();
 	exit(0);
@@ -386,116 +394,181 @@ void table_clear(void)
 
 void vlan_dump(void)
 {
-	int i, vid, value;
+	int i, j, k, vid, shift, shift2, per_vlan, value, value2, mask, mask2;
 
-	printf("idx   vid  portmap\n");
+	reg_read(REG_ESW_POC2, &per_vlan);
+	per_vlan &= (1u << 15);
+
+	value2 = 0;
+
+	printf("idx  vid  portmap  untag\n");
+//                0    1  -------  -------
+
 	for (i = 0; i < 8; i++) {
 		reg_read(REG_ESW_VLAN_ID_BASE + 4*i, &vid);
 		reg_read(REG_ESW_VLAN_MEMB_BASE + 4*(i/2), &value);
-		printf(" %2d  %4d  ", 2*i, vid & 0xfff);
-		if (i%2 == 0) {
-			printf("%c", (value & 0x00000001)? '1':'-');
-			printf("%c", (value & 0x00000002)? '1':'-');
-			printf("%c", (value & 0x00000004)? '1':'-');
-			printf("%c", (value & 0x00000008)? '1':'-');
-			printf("%c", (value & 0x00000010)? '1':'-');
-			printf("%c", (value & 0x00000020)? '1':'-');
-			printf("%c\n", (value & 0x00000040)? '1':'-');
+		if (per_vlan)
+			reg_read(REG_ESW_VLAN_UNTAG_BASE + 4*(i/2), &value2);
+		
+		for (k = 0; k < 2; k++) {
+			if (k == 1)
+				vid >>= 12;
+			printf(" %2d %4d  ", 2*i+k, vid & 0xfff);
+			
+			shift = 8*k;
+			shift2 = 7*k;
+			if (i % 2) {
+				shift += 16;
+				shift2 += 14;
+			}
+			
+			for (j = 0; j < 7; j++) {
+				mask = (1u << j) << shift;
+				printf("%c", (value & mask)? '1':'-');
+			}
+			
+			if (per_vlan) {
+				printf("%s", "  ");
+				for (j = 0; j < 7; j++) {
+					mask = (1u << j) << shift;
+					mask2 = (1u << j) << shift2;
+					if (!(value & mask))
+						printf("%c", '-');
+					else
+						printf("%c", (value2 & mask2)? '1':'0');
+				}
+				printf("%s", "\n");
+			} else {
+				printf("%s", "  -------\n");
+			}
 		}
-		else {
-			printf("%c", (value & 0x00010000)? '1':'-');
-			printf("%c", (value & 0x00020000)? '1':'-');
-			printf("%c", (value & 0x00040000)? '1':'-');
-			printf("%c", (value & 0x00080000)? '1':'-');
-			printf("%c", (value & 0x00100000)? '1':'-');
-			printf("%c", (value & 0x00200000)? '1':'-');
-			printf("%c\n", (value & 0x00400000)? '1':'-');
-		}
-		printf(" %2d  %4d  ", 2*i+1, ((vid & 0xfff000) >> 12));
-		if (i%2 == 0) {
-			printf("%c", (value & 0x00000100)? '1':'-');
-			printf("%c", (value & 0x00000200)? '1':'-');
-			printf("%c", (value & 0x00000400)? '1':'-');
-			printf("%c", (value & 0x00000800)? '1':'-');
-			printf("%c", (value & 0x00001000)? '1':'-');
-			printf("%c", (value & 0x00002000)? '1':'-');
-			printf("%c\n", (value & 0x00004000)? '1':'-');
-		}
-		else {
-			printf("%c", (value & 0x01000000)? '1':'-');
-			printf("%c", (value & 0x02000000)? '1':'-');
-			printf("%c", (value & 0x04000000)? '1':'-');
-			printf("%c", (value & 0x08000000)? '1':'-');
-			printf("%c", (value & 0x10000000)? '1':'-');
-			printf("%c", (value & 0x20000000)? '1':'-');
-			printf("%c\n", (value & 0x40000000)? '1':'-');
-		}
+	}
+
+	printf("\nPVID:\n");
+	printf("port  pvid  prio\n");
+//                 0     1     7
+
+	reg_read(REG_ESW_PFC1, &value);
+	reg_read(REG_ESW_PVIDC_BASE + 0xC, &value2);
+
+	for (i = 0; i < 7; i++) {
+		reg_read(REG_ESW_PVIDC_BASE + 4*(i/2), &vid);
+		if ((i % 2) != 0)
+			vid >>= 12;
+		
+		vid &= 0xfff;
+		mask = (value >> (i*2)) & 0x3;
+		mask2 = ((value2 >> 16) >> (mask * 4)) & 0x7;
+		
+		printf("%4d  %4d  %4d\n", i, vid, mask2);
 	}
 }
 
 void vlan_set(int argc, char *argv[])
 {
-	int i, j, value;
-	int idx, vid;
+	int i, mask_member, vid, value, mask_untag;
+	int idx;
 
-	if (argc != 6) {
+	if (argc < 6) {
 		printf("insufficient arguments!\n");
 		return;
 	}
+
 	idx = strtoul(argv[3], NULL, 0);
 	if (idx < 0 || 15 < idx) {
 		printf("wrong member index range, should be within 0~15\n");
 		return;
 	}
+
 	vid = strtoul(argv[4], NULL, 0);
-	if (vid < 0 || 0xfff < vid) {
+	if (vid > 0xfff) {
 		printf("wrong vlan id range, should be within 0~4095\n");
 		return;
 	}
+
 	if (strlen(argv[5]) != 7) {
-		printf("portmap format error, should be of length 7\n");
+		printf("portmap format error, should be of length 7 (e.g. 1111001)\n");
 		return;
 	}
-	j = 0;
+
+	mask_member = 0;
 	for (i = 0; i < 7; i++) {
 		if (argv[5][i] != '0' && argv[5][i] != '1') {
 			printf("portmap format error, should be of combination of 0 or 1\n");
 			return;
 		}
-		j += (argv[5][i] - '0') * (1 << i);
+		mask_member += (argv[5][i] - '0') * (1u << i);
 	}
 
-	//set vlan identifier
+#if !defined (CONFIG_RALINK_RT3052)
+	mask_untag = 0;
+	if (argc > 6) {
+		if (strlen(argv[6]) != 7) {
+			printf("untag per port format error, should be of length 7 (e.g. 11111-0)\n");
+			return;
+		}
+		
+		for (i = 0; i < 7; i++) {
+			if (argv[6][i] == '1')
+				mask_untag |= (1u << i);
+			else if (argv[6][i] == '0' || argv[6][i] == '-')
+				;
+			else {
+				printf("untag format error, should be of '1' (untag) or '0' (tag)\n");
+				return;
+			}
+		}
+	}
+#endif
+
+	// set vlan identifier
 	reg_read(REG_ESW_VLAN_ID_BASE + 4*(idx/2), &value);
-	if (idx % 2 == 0) {
+	if ((idx % 2) == 0) {
 		value &= 0xfff000;
 		value |= vid;
-	}
-	else {
+	} else {
 		value &= 0xfff;
 		value |= (vid << 12);
 	}
 	reg_write(REG_ESW_VLAN_ID_BASE + 4*(idx/2), value);
 
-	//set vlan member
+	// set vlan member
 	reg_read(REG_ESW_VLAN_MEMB_BASE + 4*(idx/4), &value);
-	if (idx % 4 == 0) {
+	if ((idx % 4) == 0) {
 		value &= 0xffffff00;
-		value |= j;
-	}
-	else if (idx % 4 == 1) {
+		value |= mask_member;
+	} else if ((idx % 4) == 1) {
 		value &= 0xffff00ff;
-		value |= (j << 8);
-	}
-	else if (idx % 4 == 2) {
+		value |= (mask_member << 8);
+	} else if ((idx % 4) == 2) {
 		value &= 0xff00ffff;
-		value |= (j << 16);
-	}
-	else {
+		value |= (mask_member << 16);
+	} else {
 		value &= 0x00ffffff;
-		value |= (j << 24);
+		value |= (mask_member << 24);
 	}
 	reg_write(REG_ESW_VLAN_MEMB_BASE + 4*(idx/4), value);
+
+	// set vlan untag ports
+#if !defined (CONFIG_RALINK_RT3052)
+	if (argc > 6) {
+		reg_read(REG_ESW_VLAN_UNTAG_BASE + 4*(idx/4), &value);
+		if ((idx % 4) == 0) {
+			value &= ~(0x7f);
+			value |= mask_untag;
+		} else if ((idx % 4) == 1) {
+			value &= ~(0x7f << 7);
+			value |= (mask_untag << 7);
+		} else if ((idx % 4) == 2) {
+			value &= ~(0x7f << 14);
+			value |= (mask_untag << 14);
+		} else {
+			value &= ~(0x7f << 21);
+			value |= (mask_untag << 21);
+		}
+		reg_write(REG_ESW_VLAN_UNTAG_BASE + 4*(idx/4), value);
+	}
+#endif
 }
 #endif
 

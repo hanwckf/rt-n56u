@@ -180,6 +180,9 @@ static RTMP_REG_PAIR	MT76x0_MACRegTable[] = {
 	{LDO_CTRL1, 0x6B006464}, /* Default LDO_DIG supply 1.26V, change to 1.2V */
 	{HT_BASIC_RATE, 0x00004003}, /*MT7650_E6_MAC_CR_setting_20140821.xlsx , fix RDG issue with 7628 */
 	{HT_CTRL_CFG, 0x000001FF},	/*MT7650_E6_MAC_CR_setting_20140821.xlsx , fix RDG issue with 7628 */
+
+	/* enable HW to autofallback to legacy rate to prevent ping fail in long range */
+	{HT_FBK_TO_LEGACY, 0x00001818},
 };
 
 static UCHAR MT76x0_NUM_MAC_REG_PARMS = (sizeof(MT76x0_MACRegTable) / sizeof(RTMP_REG_PAIR));

@@ -41,6 +41,7 @@ vpn_ipvnet_x = '<% nvram_get_x("", "vpns_vnet"); %>';
 vpn_ipvuse_x = '<% nvram_get_x("", "vpns_vuse"); %>';
 fw_enable_x = '<% nvram_get_x("", "fw_enable_x"); %>';
 dhcp_enable_x = '<% nvram_get_x("", "dhcp_enable_x"); %>';
+ip6_service = '<% nvram_get_x("", "ip6_service"); %>';
 
 var ACLList = [<% get_nvram_list("LANHostConfig", "VPNSACLList", "vpns_pass_x"); %>];
 
@@ -57,6 +58,12 @@ function initial(){
 
 	if (!found_app_ovpn())
 		document.form.vpns_type.remove(2);
+	else
+	if (!support_ipv6() || ip6_service == ''){
+		var o = document.form.vpns_ov_prot;
+		o.remove(2);
+		o.remove(2);
+	}
 
 	if (openssl_util_found() && login_safe())
 		showhide_div('tbl_vpns_gen', 1);
@@ -259,7 +266,7 @@ function change_vpns_type(){
 	showhide_div('row_vpns_mppe', !is_ov);
 	showhide_div('row_vpns_mtu', !is_ov);
 	showhide_div('row_vpns_mru', !is_ov);
-	showhide_div('row_vpns_script', !is_ov);
+	showhide_div('row_vpns_script', 1);
 
 	showhide_div('row_vpns_ov_mode', is_ov);
 	showhide_div('row_vpns_ov_prot', is_ov);
@@ -825,6 +832,8 @@ function getHash(){
                                         <select name="vpns_ov_prot" class="input">
                                             <option value="0" <% nvram_match_x("", "vpns_ov_prot", "0","selected"); %>>UDP (*)</option>
                                             <option value="1" <% nvram_match_x("", "vpns_ov_prot", "1","selected"); %>>TCP</option>
+                                            <option value="2" <% nvram_match_x("", "vpns_ov_prot", "2","selected"); %>>UDP over IPv6</option>
+                                            <option value="3" <% nvram_match_x("", "vpns_ov_prot", "3","selected"); %>>TCP over IPv6</option>
                                         </select>
                                     </td>
                                 </tr>
@@ -1124,10 +1133,10 @@ function getHash(){
                         <div id="wnd_vpns_cli" style="display:none">
                             <table class="table" style="width: 100%">
                                 <tr>
-                                    <th width="25%" style="border-top: 0 none;"><#IPLocal#></th>
-                                    <th width="25%" style="border-top: 0 none;"><#IPRemote#></th>
+                                    <th width="20%" style="border-top: 0 none;"><#IPLocal#></th>
+                                    <th width="35%" style="border-top: 0 none;"><#IPRemote#></th>
                                     <th width="25%" style="border-top: 0 none;"><#VPNS_CName#></th>
-                                    <th width="25%" style="border-top: 0 none;"><#RouterConfig_GWStaticIF_itemname#></th>
+                                    <th width="20%" style="border-top: 0 none;"><#RouterConfig_GWStaticIF_itemname#></th>
                                 </tr>
                             </table>
                         </div>

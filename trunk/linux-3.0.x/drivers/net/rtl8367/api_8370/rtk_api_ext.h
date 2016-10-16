@@ -57,8 +57,8 @@ extern rtk_api_ret_t rtk_storm_bypass_get(rtk_storm_bypass_t type, rtk_enable_t 
 extern rtk_api_ret_t rtk_qos_init(rtk_queue_num_t queueNum);
 extern rtk_api_ret_t rtk_qos_priSel_set(rtk_priority_select_t *pPriDec);
 extern rtk_api_ret_t rtk_qos_priSel_get(rtk_priority_select_t *pPriDec);
-extern rtk_api_ret_t rtk_qos_1pPriRemap_set(rtk_pri_t int_pri, rtk_pri_t dot1p_pri);
-extern rtk_api_ret_t rtk_qos_1pPriRemap_get(rtk_pri_t int_pri, rtk_pri_t *pDot1p_pri);
+extern rtk_api_ret_t rtk_qos_1pPriRemap_set(rtk_pri_t dot1p_pri, rtk_pri_t int_pri);
+extern rtk_api_ret_t rtk_qos_1pPriRemap_get(rtk_pri_t dot1p_pri, rtk_pri_t *pInt_pri);
 extern rtk_api_ret_t rtk_qos_dscpPriRemap_set(rtk_dscp_t dscp, rtk_pri_t int_pri);
 extern rtk_api_ret_t rtk_qos_dscpPriRemap_get(rtk_dscp_t dscp, rtk_pri_t *pInt_pri);
 extern rtk_api_ret_t rtk_qos_portPri_set(rtk_port_t port, rtk_pri_t int_pri) ;
@@ -91,8 +91,6 @@ extern rtk_api_ret_t rtk_trap_rmaAction_set(rtk_mac_t *pRma_frame, rtk_trap_rma_
 extern rtk_api_ret_t rtk_trap_rmaAction_get(rtk_mac_t *pRma_frame, rtk_trap_rma_action_t *pRma_action);
 extern rtk_api_ret_t rtk_trap_ethernetAv_set(rtk_enable_t enable);
 extern rtk_api_ret_t rtk_trap_ethernetAv_get(rtk_data_t *pEnable);
-extern rtk_api_ret_t rtk_trap_reasonTrapToCPUPriority_get(rtk_trap_reason_type_t type, rtk_pri_t *pPriority); 
-extern rtk_api_ret_t rtk_trap_reasonTrapToCPUPriority_set(rtk_trap_reason_type_t type, rtk_pri_t priority);   
 
 /* Leaky */
 extern rtk_api_ret_t rtk_leaky_vlan_set(rtk_leaky_type_t type, rtk_enable_t enable);
@@ -105,7 +103,7 @@ extern rtk_api_ret_t rtk_port_phyAutoNegoAbility_set(rtk_port_t port, rtk_port_p
 extern rtk_api_ret_t rtk_port_phyAutoNegoAbility_get(rtk_port_t port, rtk_port_phy_ability_t *pAbility); 
 extern rtk_api_ret_t rtk_port_phyForceModeAbility_set(rtk_port_t port, rtk_port_phy_ability_t *pAbility);
 extern rtk_api_ret_t rtk_port_phyLink_get(rtk_port_t port, rtk_port_linkStatus_t *pLinkStatus);
-extern rtk_api_ret_t rtk_port_phyStatus_get(rtk_port_t port, rtk_port_linkStatus_t *pLinkStatus, rtk_port_speed_t *pSpeed, rtk_port_duplex_t *pDuplex);
+extern rtk_api_ret_t rtk_port_phyStatus_get(rtk_port_t port, rtk_port_linkStatus_t *pLinkStatus, rtk_data_t *pSpeed, rtk_data_t *pDuplex);
 extern rtk_api_ret_t rtk_port_phyTestMode_set(rtk_port_t port, rtk_port_phy_test_mode_t mode);
 extern rtk_api_ret_t rtk_port_phyTestMode_get(rtk_port_t port, rtk_port_phy_test_mode_t *pMode);
 extern rtk_api_ret_t rtk_port_phy1000BaseTMasterSlave_set(rtk_port_t port, rtk_enable_t enabled, rtk_enable_t masterslave);
@@ -207,9 +205,9 @@ extern rtk_api_ret_t rtk_svlan_memberPortEntry_set(uint32 svid_idx, rtk_svlan_me
 extern rtk_api_ret_t rtk_svlan_memberPortEntry_get(uint32 svid_idx, rtk_svlan_memberCfg_t *pSvlan_cfg);
 extern rtk_api_ret_t rtk_svlan_defaultSvlan_set(rtk_vlan_t svid);
 extern rtk_api_ret_t rtk_svlan_defaultSvlan_get(rtk_vlan_t *pSvid);
-extern rtk_api_ret_t rtk_svlan_c2s_add(rtk_vlan_t vid, rtk_vlan_t svid, rtk_portmask_t c2s_portmask);
-extern rtk_api_ret_t rtk_svlan_c2s_del(rtk_vlan_t vid, rtk_vlan_t svid);
-extern rtk_api_ret_t rtk_svlan_c2s_get(rtk_vlan_t vid, rtk_vlan_t svid, rtk_portmask_t *pC2s_portmask);
+extern rtk_api_ret_t rtk_svlan_c2s_add(rtk_vlan_t vid, rtk_port_t port, rtk_vlan_t svid);
+extern rtk_api_ret_t rtk_svlan_c2s_del(rtk_vlan_t vid, rtk_port_t port);
+extern rtk_api_ret_t rtk_svlan_c2s_get(rtk_vlan_t vid, rtk_port_t port, rtk_vlan_t *pSvid);
 extern rtk_api_ret_t rtk_svlan_ipmc2s_add(ipaddr_t ipmc, rtk_vlan_t svid);
 extern rtk_api_ret_t rtk_svlan_ipmc2s_del(ipaddr_t ipmc);
 extern rtk_api_ret_t rtk_svlan_ipmc2s_get(ipaddr_t ipmc, rtk_vlan_t *pSvid);
@@ -312,23 +310,33 @@ extern rtk_api_ret_t rtk_filter_igrAcl_field_add(rtk_filter_cfg_t *pFilter_cfg, 
 extern rtk_api_ret_t rtk_filter_igrAcl_cfg_add(rtk_filter_id_t filter_id, rtk_filter_cfg_t *pFilter_cfg, rtk_filter_action_t *pAction, rtk_filter_number_t *ruleNum);
 extern rtk_api_ret_t rtk_filter_igrAcl_cfg_del(rtk_filter_id_t filter_id);
 extern rtk_api_ret_t rtk_filter_igrAcl_cfg_delAll(void);
+extern rtk_api_ret_t rtk_filter_igrAcl_cfg_set(rtk_filter_id_t filter_id, rtk_filter_template_index_t template_index, rtk_filter_cfg_raw_t *pFilter_cfg, rtk_filter_action_t *pFilter_action);
 extern rtk_api_ret_t rtk_filter_igrAcl_cfg_get(rtk_filter_id_t filter_id, rtk_filter_cfg_raw_t *pFilter_cfg, rtk_filter_action_t *pAction);
 extern rtk_api_ret_t rtk_filter_igrAcl_unmatchAction_set(rtk_port_t port, rtk_filter_unmatch_action_t action);
 extern rtk_api_ret_t rtk_filter_igrAcl_unmatchAction_get(rtk_port_t port, rtk_filter_unmatch_action_t* action);
 extern rtk_api_ret_t rtk_filter_igrAcl_state_set(rtk_port_t port, rtk_filter_state_t state);
 extern rtk_api_ret_t rtk_filter_igrAcl_state_get(rtk_port_t port, rtk_filter_state_t* state);
+extern rtk_api_ret_t rtk_filter_igrAcl_template_set(rtk_filter_template_t *aclTemplate);
+extern rtk_api_ret_t rtk_filter_igrAcl_template_get(rtk_filter_template_t *aclTemplate);
 
 /*RLDP APIs*/
-extern rtk_api_ret_t rtk_rldp_init(rtk_portmask_t txPortmask);
+extern rtk_api_ret_t rtk_rldp_init(rtk_portmask_t txPortmask, rtk_mac_t Mac);
 extern rtk_api_ret_t rtk_rldp_getLoopPortmask(rtk_portmask_t* loopedPortmask);
 extern rtk_api_ret_t rtk_rldp_getLoopedPortPair(uint32 port, uint32 *portPair);
 
-#if 0
+
 /*EEE APIs*/
 extern rtk_api_ret_t rtk_eee_init(void);
 extern rtk_api_ret_t rtk_eee_portEnable_set(rtk_port_t port, rtk_enable_t enable);
 extern rtk_api_ret_t rtk_eee_portEnable_get(rtk_port_t port, rtk_data_t *pEnable);
-#endif
+
+extern rtk_api_ret_t rtk_aldp_init(void);
+extern rtk_api_ret_t rtk_aldp_enable_set(rtk_enable_t enable);
+extern rtk_api_ret_t rtk_aldp_enable_get(rtk_data_t *pEnable);
+
+extern rtk_api_ret_t rtk_port_rtct_init(void);
+extern rtk_api_ret_t rtk_port_rtctEnable_set(rtk_portmask_t portmask);
+extern rtk_api_ret_t rtk_port_rtctResult_get(rtk_port_t port, rtk_rtctResult_t *pRtctResult);
 
 #endif /* __RTK_API_EXT_H__ */
 

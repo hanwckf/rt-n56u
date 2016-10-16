@@ -133,6 +133,7 @@ enum {
 #define OFFSET_MSDC_DMA_CFG     (0x9c)
 #define OFFSET_MSDC_DBG_SEL     (0xa0)
 #define OFFSET_MSDC_DBG_OUT     (0xa4)
+#define OFFSET_MSDC_DMA_LENGTH  (0xa8)
 #define OFFSET_MSDC_PATCH_BIT   (0xb0)
 #define OFFSET_MSDC_PATCH_BIT1  (0xb4)
 #define OFFSET_MSDC_PAD_CTL0    (0xe0)
@@ -190,6 +191,7 @@ enum {
 #define MSDC_DMA_CA             REG_ADDR(MSDC_DMA_CA)
 #define MSDC_DMA_CTRL           REG_ADDR(MSDC_DMA_CTRL)
 #define MSDC_DMA_CFG            REG_ADDR(MSDC_DMA_CFG)
+#define MSDC_DMA_LENGTH         REG_ADDR(MSDC_DMA_LENGTH)
 
 /* pad ctrl register */
 #define MSDC_PAD_CTL0           REG_ADDR(MSDC_PAD_CTL0)
@@ -235,6 +237,7 @@ enum {
 #define MSDC_IOCON_DDLSEL       (0x1  << 3)     /* RW */
 #define MSDC_IOCON_DDR50CKD     (0x1  << 4)     /* RW */
 #define MSDC_IOCON_DSPLSEL      (0x1  << 5)     /* RW */
+#define MSDC_IOCON_WDSPL        (0x1  << 8)     /* RW */
 #define MSDC_IOCON_D0SPL        (0x1  << 16)    /* RW */
 #define MSDC_IOCON_D1SPL        (0x1  << 17)    /* RW */
 #define MSDC_IOCON_D2SPL        (0x1  << 18)    /* RW */
@@ -894,9 +897,8 @@ struct msdc_host
     int                         cmd_rsp_done;
     int                         cmd_r1b_done;
 
-    int                         error; 
+    int                         error;
     spinlock_t                  lock;           /* mutex */
-    struct semaphore            sem; 
 
     u32                         blksz;          /* host block size */
     u32                         base;           /* host base address */    

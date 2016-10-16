@@ -36,11 +36,11 @@
 #include "channel.h"
 #include "netio.h"
 
-static int read_packet_init();
+static int read_packet_init(void);
 static void make_mac(unsigned int seqno, const struct key_context_directional * key_state,
 		buffer * clear_buf, unsigned int clear_len, 
 		unsigned char *output_mac);
-static int checkmac();
+static int checkmac(void);
 
 /* For exact details see http://www.zlib.net/zlib_tech.html
  * 5 bytes per 16kB block, plus 6 bytes for the stream.
@@ -576,8 +576,8 @@ void encrypt_packet() {
 	}
 	buf_incrpos(writebuf, len);
 
-    /* stick the MAC on it */
-    buf_putbytes(writebuf, mac_bytes, mac_size);
+	/* stick the MAC on it */
+	buf_putbytes(writebuf, mac_bytes, mac_size);
 
 	/* Update counts */
 	ses.kexstate.datatrans += writebuf->len;
@@ -645,7 +645,7 @@ static void make_mac(unsigned int seqno, const struct key_context_directional * 
 			dropbear_exit("HMAC error");
 		}
 	
-        bufsize = MAX_MAC_LEN;
+		bufsize = MAX_MAC_LEN;
 		if (hmac_done(&hmac, output_mac, &bufsize) != CRYPT_OK) {
 			dropbear_exit("HMAC error");
 		}

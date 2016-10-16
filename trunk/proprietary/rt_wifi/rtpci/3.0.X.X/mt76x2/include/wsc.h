@@ -380,6 +380,10 @@ static inline BOOLEAN WscCheckWSCHeader(UCHAR *pData)
 #define WSC_EAPOL_START_TIME_OUT    2000 
 #define WSC_EAP_ID_TIME_OUT         5000
 #define WSC_EAP_MSG_TIME_OUT        5000
+#ifdef SMART_MESH_HIDDEN_WPS
+#undef 	WSC_EAP_MSG_TIME_OUT
+#define WSC_EAP_MSG_TIME_OUT        2000
+#endif /* SMART_MESH_HIDDEN_WPS */
 #define WSC_EAP_MSG_ACK_TIME_OUT    1000
 #define WSC_EAP_EAP_FAIL_TIME_OUT   1000
 #define WSC_TWO_MINS_TIME_OUT       120000
@@ -722,10 +726,8 @@ typedef	struct	_WSC_CTRL
 	BOOLEAN         Wsc2MinsTimerRunning;
 	RALINK_TIMER_STRUCT   Wsc2MinsTimer;
 	WSC_PROFILE			WscProfile;		/* Saved WSC profile after M8 */
-#ifdef CONFIG_STA_SUPPORT
 	WSC_PROFILE		        WscM7Profile;	/* Saved WSC profile from AP Settings in M7 */
 	BOOLEAN			        bConfiguredAP;	/* True: AP is in the configured state. FALSE: others */
-#endif /* CONFIG_STA_SUPPORT */
 	WSC_UPNP_NODE_INFO	WscUPnPNodeInfo;	/*Use to save UPnP node related info. */
 
     BOOLEAN             EapolTimerRunning; 
@@ -828,6 +830,14 @@ typedef	struct	_WSC_CTRL
 #ifdef CONFIG_AP_SUPPORT
 	BOOLEAN				bWscAutoTriggerDisable; /* Default setting is FALSE */
 #endif /* CONFIG_AP_SUPPORT */
+#ifdef SMART_MESH
+	BOOLEAN				bWscPBCAddrMode;
+	UCHAR				WscPBCAddr[MAC_ADDR_LEN];
+#ifdef SMART_MESH_HIDDEN_WPS
+    BOOLEAN				bRunningHiddenWPS; /* Determine If HiddenWPS is running now */
+#endif /* SMART_MESH_HIDDEN_WPS */
+#endif /* SMART_MESH */
+    BOOLEAN             bFromApCli;
 }	WSC_CTRL, *PWSC_CTRL;
 
 typedef struct GNU_PACKED _WSC_CONFIGURED_VALUE {
@@ -962,6 +972,7 @@ typedef enum _WscSecurityMode{
 	WPA2PSKTKIP,
 	WPAPSKAES,
 	WPAPSKTKIP,
+	WPAPSKWPA2PSKTKIPAES,
 }WSC_SECURITY_MODE;
 
 typedef struct _WSC_PEER_ENTRY {

@@ -858,7 +858,8 @@ static ssize_t tun_do_read(struct tun_struct *tun,
 	if (unlikely(!noblock))
 		add_wait_queue(&tun->wq.wait, &wait);
 	while (len) {
-		current->state = TASK_INTERRUPTIBLE;
+		if (unlikely(!noblock))
+			current->state = TASK_INTERRUPTIBLE;
 
 		/* Read frames from the queue */
 		if (!(skb=skb_dequeue(&tun->socket.sk->sk_receive_queue))) {
@@ -886,9 +887,10 @@ static ssize_t tun_do_read(struct tun_struct *tun,
 		break;
 	}
 
-	current->state = TASK_RUNNING;
-	if (unlikely(!noblock))
+	if (unlikely(!noblock)) {
+		current->state = TASK_RUNNING;
 		remove_wait_queue(&tun->wq.wait, &wait);
+	}
 
 	return ret;
 }

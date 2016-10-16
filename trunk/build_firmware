@@ -203,12 +203,12 @@ if [ -n "$CONFIG_MT76X2_AP" ] ; then
 	cp -rfL "$dir_wifi_src/rtpci/$dir_wifi_ver/mt76x2_ap" "$dir_wifi_dst/"
 fi
 if [ -n "$CONFIG_MT76X3_AP" ] ; then
-	dir_wifi_ver="4.0.X.X"
+	dir_wifi_ver="4.1.X.X"
 	cp -rfL "$dir_wifi_src/rtpci/$dir_wifi_ver/mt76x3" "$dir_wifi_dst/"
 	cp -rfL "$dir_wifi_src/rtpci/$dir_wifi_ver/mt76x3_ap" "$dir_wifi_dst/"
 fi
 if [ -n "$CONFIG_MT7628_AP" ] ; then
-	dir_wifi_ver="4.0.X.X"
+	dir_wifi_ver="4.1.X.X"
 	cp -rfL "$dir_wifi_src/rtsoc/$dir_wifi_ver/mt7628" "$dir_wifi_dst/"
 	cp -rfL "$dir_wifi_src/rtsoc/$dir_wifi_ver/mt7628_ap" "$dir_wifi_dst/"
 fi
@@ -218,9 +218,14 @@ dir_ppe_dst="$ROOTDIR/$CONFIG_LINUXDIR/net/nat"
 rm -rf "$dir_ppe_dst/hw_nat"
 cp -rf "$dir_ppe_src/hw_nat" "$dir_ppe_dst/"
 ############################# CPU #####################################
-if [ "$CONFIG_FIRMWARE_CPU_SLEEP" = "y" ] ; then
+if [ "$CONFIG_FIRMWARE_CPU_SLEEP" = "y" -o "$CONFIG_RALINK_SYSTICK_COUNTER" = "y" ] ; then
 	func_enable_kernel_param "CONFIG_RALINK_SYSTICK_COUNTER"
 	func_enable_kernel_param "CONFIG_RALINK_CPUSLEEP"
+	func_enable_kernel_param "CONFIG_HZ_1000"
+	func_disable_kernel_param "CONFIG_HZ_250"
+	func_disable_kernel_param "CONFIG_HZ_100"
+	func_disable_kernel_param "CONFIG_CLKSRC_MIPS_GIC"
+	func_disable_kernel_param "CONFIG_HIGH_RES_TIMERS"
 fi
 if [ "$CONFIG_RALINK_MT7620" = "y" ] ; then
 	if [ "$CONFIG_FIRMWARE_CPU_600MHZ" = "y" ] ; then
@@ -230,9 +235,6 @@ fi
 if [ "$CONFIG_RALINK_MT7621" = "y" ] ; then
 	if [ "$CONFIG_FIRMWARE_CPU_900MHZ" = "y" ] ; then
 		func_enable_kernel_param "CONFIG_RALINK_MT7621_PLL900"
-	fi
-	if [ "$CONFIG_FIRMWARE_CPU_SLEEP" = "y" ] ; then
-		func_disable_kernel_param "CONFIG_HIGH_RES_TIMERS"
 	fi
 	if [ "$CONFIG_FIRMWARE_RAM_MOD_256" = "y" ] ; then
 		func_disable_kernel_param "CONFIG_RT2880_DRAM_64M"
@@ -298,7 +300,6 @@ if [ "$CONFIG_FIRMWARE_ENABLE_USB" != "y" ] || [ -z "$CONFIG_USB_SUPPORT" ] ; th
 	func_disable_busybox_param "CONFIG_FDISK"
 	func_disable_busybox_param "CONFIG_FEATURE_FDISK_WRITABLE"
 	func_disable_busybox_param "CONFIG_FEATURE_FDISK_ADVANCED"
-	func_disable_busybox_param "CONFIG_LSUSB"
 	func_disable_busybox_param "CONFIG_MICROCOM"
 	func_disable_busybox_param "CONFIG_EJECT"
 	func_disable_busybox_param "CONFIG_FEATURE_EJECT_SCSI"
@@ -383,6 +384,42 @@ if [ "$CONFIG_FIRMWARE_INCLUDE_SERIAL" != "y" ] ; then
 	func_disable_kernel_param "CONFIG_USB_SERIAL_PL2303"
 fi
 fi
+############################# XFRM ####################################
+if [ "$CONFIG_FIRMWARE_INCLUDE_XFRM" != "y" ] && [ "$CONFIG_PRODUCT" = "MT7621" ]; then
+	func_disable_kernel_param "CONFIG_XFRM"
+	func_disable_kernel_param "CONFIG_XFRM_USER"
+	func_disable_kernel_param "CONFIG_XFRM_IPCOMP"
+	func_disable_kernel_param "CONFIG_NET_KEY"
+	func_disable_kernel_param "CONFIG_INET_AH"
+	func_disable_kernel_param "CONFIG_INET_ESP"
+	func_disable_kernel_param "CONFIG_INET_IPCOMP"
+	func_disable_kernel_param "CONFIG_INET_XFRM_TUNNEL"
+	func_disable_kernel_param "CONFIG_INET_XFRM_MODE_TRANSPORT"
+	func_disable_kernel_param "CONFIG_INET_XFRM_MODE_TUNNEL"
+	func_disable_kernel_param "CONFIG_INET_XFRM_MODE_BEET"
+	func_disable_kernel_param "CONFIG_INET6_AH"
+	func_disable_kernel_param "CONFIG_INET6_ESP"
+	func_disable_kernel_param "CONFIG_INET6_IPCOMP"
+	func_disable_kernel_param "CONFIG_INET6_XFRM_TUNNEL"
+	func_disable_kernel_param "CONFIG_INET6_XFRM_MODE_TRANSPORT"
+	func_disable_kernel_param "CONFIG_INET6_XFRM_MODE_TUNNEL"
+	func_disable_kernel_param "CONFIG_INET6_XFRM_MODE_BEET"
+	func_disable_kernel_param "CONFIG_IPV6_MULTIPLE_TABLES"
+	func_disable_kernel_param "CONFIG_NETFILTER_XT_MATCH_ESP"
+	func_disable_kernel_param "CONFIG_NETFILTER_XT_MATCH_POLICY"
+	func_disable_kernel_param "CONFIG_IP_NF_MATCH_AH"
+	func_disable_kernel_param "CONFIG_IP6_NF_MATCH_AH"
+	func_disable_kernel_param "CONFIG_CRYPTO_AEAD"
+	func_disable_kernel_param "CONFIG_CRYPTO_AEAD2"
+	func_disable_kernel_param "CONFIG_CRYPTO_AUTHENC"
+	func_disable_kernel_param "CONFIG_CRYPTO_CBC"
+	func_disable_kernel_param "CONFIG_CRYPTO_HMAC"
+	func_disable_kernel_param "CONFIG_CRYPTO_MD5"
+	func_disable_kernel_param "CONFIG_CRYPTO_SHA256"
+	func_disable_kernel_param "CONFIG_CRYPTO_AES"
+	func_disable_kernel_param "CONFIG_CRYPTO_DES"
+	func_disable_kernel_param "CONFIG_CRYPTO_DEFLATE"
+fi
 ############################ IPSET ####################################
 if [ "$CONFIG_FIRMWARE_INCLUDE_IPSET" != "y" ] ; then
 	func_disable_kernel_param "CONFIG_NETFILTER_NETLINK"
@@ -425,6 +462,11 @@ if [ "$CONFIG_FIRMWARE_INCLUDE_NFSD" != "y" -a "$CONFIG_FIRMWARE_INCLUDE_NFSC" !
 		func_disable_kernel_param "CONFIG_NLS"
 		func_disable_kernel_param "CONFIG_LBDAF"
 	fi
+fi
+############################# USB AUDIO ###############################
+if [ "$CONFIG_FIRMWARE_INCLUDE_AUDIO" != "y" ] || [ "$CONFIG_FIRMWARE_ENABLE_USB" != "y" ] || [ -z "$CONFIG_USB_SUPPORT" ] ; then
+	func_disable_kernel_param "CONFIG_FW_LOADER"
+	func_disable_kernel_param "CONFIG_SOUND"
 fi
 #######################################################################
 echo --------------------------MAKE-DEP--------------------------------

@@ -22,6 +22,7 @@
 
 extern int smp_num_siblings;
 extern cpumask_t cpu_sibling_map[];
+extern cpumask_t cpu_foreign_map[];
 
 #define raw_smp_processor_id() (current_thread_info()->cpu)
 
@@ -44,6 +45,8 @@ extern int __cpu_logical_map[NR_CPUS];
 extern volatile cpumask_t cpu_callin_map;
 
 extern void asmlinkage smp_bootstrap(void);
+
+extern void calculate_cpu_foreign_map(void);
 
 /*
  * this function sends a 'reschedule' IPI to another CPU.
@@ -75,13 +78,11 @@ static inline void __cpu_die(unsigned int cpu)
 extern void play_dead(void);
 #endif
 
-extern asmlinkage void smp_call_function_interrupt(void);
-
 static inline void arch_send_call_function_single_ipi(int cpu)
 {
 	extern struct plat_smp_ops *mp_ops;     /* private */
 
-	mp_ops->send_ipi_mask(&cpumask_of_cpu(cpu), SMP_CALL_FUNCTION);
+	mp_ops->send_ipi_mask(cpumask_of(cpu), SMP_CALL_FUNCTION);
 }
 
 static inline void arch_send_call_function_ipi_mask(const struct cpumask *mask)

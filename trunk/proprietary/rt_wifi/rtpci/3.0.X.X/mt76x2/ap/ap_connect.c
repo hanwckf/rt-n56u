@@ -542,6 +542,19 @@ VOID APUpdateBeaconFrame(RTMP_ADAPTER *pAd, INT apidx)
 		bHasWpsIE = TRUE;
 #endif /* WSC_AP_SUPPORT */
 
+#ifdef WSC_AP_SUPPORT
+#ifdef SMART_MESH_HIDDEN_WPS
+    if(pMbss->SmartMeshCfg.bSupportHiddenWPS)
+    {
+        bHasWpsIE = FALSE;
+        if(pMbss->WscControl.bRunningHiddenWPS)
+            Set_HiddenWps_State(&pMbss->SmartMeshCfg, HIDDEN_WPS_STATE_RUNNING);
+        else
+            Set_HiddenWps_State(&pMbss->SmartMeshCfg, HIDDEN_WPS_STATE_STOP);
+    }  
+#endif /* SMART_MESH_HIDDEN_WPS */
+#endif /* WSC_AP_SUPPORT */
+
 	if (bHasWpsIE)
 	{
 		ULONG WscTmpLen = 0;
@@ -553,11 +566,15 @@ VOID APUpdateBeaconFrame(RTMP_ADAPTER *pAd, INT apidx)
 	}
 
 #ifdef WSC_AP_SUPPORT
-    if ((pMbss->WscControl.WscConfMode != WSC_DISABLE) &&
+    if ((pMbss->WscControl.WscConfMode != WSC_DISABLE)
 #ifdef DOT1X_SUPPORT
-        (pMbss->wdev.IEEE8021X == FALSE) && 
+        && (pMbss->wdev.IEEE8021X == FALSE) 
 #endif /* DOT1X_SUPPORT */		
-        (pMbss->wdev.WepStatus == Ndis802_11WEPEnabled))
+        && (pMbss->wdev.WepStatus == Ndis802_11WEPEnabled)
+#ifdef SMART_MESH_HIDDEN_WPS
+        && !pMbss->SmartMeshCfg.bSupportHiddenWPS
+#endif /* SMART_MESH_HIDDEN_WPS */
+        )
     {
         /*
             Non-WPS Windows XP and Vista PCs are unable to determine if a WEP enalbed network is static key based 
@@ -733,6 +750,13 @@ VOID APUpdateBeaconFrame(RTMP_ADAPTER *pAd, INT apidx)
 #endif
 		FrameLen += TmpLen;
 
+#ifdef SMART_MESH
+		SMART_MESH_INSERT_IE(pAd->ApCfg.MBSSID[apidx].SmartMeshCfg,
+							pBeaconFrame,
+							FrameLen,
+							SM_IE_BEACON);
+#endif /* SMART_MESH */
+
 #ifdef DOT11N_DRAFT3
 	 	/*
 			P802.11n_D3.03, 7.3.2.60 Overlapping BSS Scan Parameters IE
@@ -888,6 +912,10 @@ VOID APUpdateBeaconFrame(RTMP_ADAPTER *pAd, INT apidx)
 
 		if (bNeedAppendExtIE == TRUE)
 		{
+#ifdef RT_BIG_ENDIAN
+			*((UINT32*)(pInfo)) = SWAP32(*((UINT32*)(pInfo)));
+			*((UINT32*)(pInfo+4)) = SWAP32(*((UINT32*)(pInfo+4)))
+#endif		
 			MakeOutgoingFrame(pBeaconFrame+FrameLen, &TmpLen,
 							1, &ExtCapIe,
 							1, &extInfoLen,
@@ -1130,6 +1158,25 @@ VOID APUpdateBeaconFrame(RTMP_ADAPTER *pAd, INT apidx)
 	FrameLen += TmpLen;
 
 }
+
+#ifdef AIRPLAY_SUPPORT
+	if (AIRPLAY_ON(pAd))
+	{ 
+		ULONG	AirplayTmpLen = 0;
+	
+		/*User user setting IE*/
+		if (pAd->pAirplayIe && (pAd->AirplayIeLen != 0))
+		{	
+	        //hex_dump("[BCN]IE:", pAd->pAirplayIe , pAd->AirplayIeLen);
+
+			MakeOutgoingFrame(pBeaconFrame+FrameLen, &AirplayTmpLen,
+								 pAd->AirplayIeLen, pAd->pAirplayIe,	 
+									END_OF_ARGS);
+			FrameLen += AirplayTmpLen;
+		}
+
+	}
+#endif /* AIRPLAY_SUPPORT*/
 	
 	/* add Mediatek-specific IE here */
 	{

@@ -22,6 +22,8 @@ xz_SOURCES = \
 	main.h \
 	message.c \
 	message.h \
+	mytime.c \
+	mytime.h \
 	options.c \
 	options.h \
 	private.h \
@@ -31,12 +33,11 @@ xz_SOURCES = \
 	suffix.h \
 	util.c \
 	util.h \
-	$(top_srcdir)/src/common/tuklib_open_stdxxx.c \
-	$(top_srcdir)/src/common/tuklib_progname.c \
-	$(top_srcdir)/src/common/tuklib_exit.c \
-	$(top_srcdir)/src/common/tuklib_cpucores.c \
-	$(top_srcdir)/src/common/tuklib_mbstr_width.c \
-	$(top_srcdir)/src/common/tuklib_mbstr_fw.c
+	../common/tuklib_open_stdxxx.c \
+	../common/tuklib_progname.c \
+	../common/tuklib_exit.c \
+	../common/tuklib_mbstr_width.c \
+	../common/tuklib_mbstr_fw.c
 
 if COND_W32
 xz_SOURCES += xz_w32res.rc

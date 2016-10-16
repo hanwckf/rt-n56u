@@ -172,6 +172,23 @@ static VOID APPeerDeauthReqAction(
     {
 		pEntry = &pAd->MacTab.Content[Elem->Wcid];
 
+		{
+			MULTISSID_STRUCT *pMbss = &pAd->ApCfg.MBSSID[pEntry->apidx];
+			PFRAME_802_11 Fr = (PFRAME_802_11)Elem->Msg;
+
+			if (memcmp(&Fr->Hdr.Addr1, pMbss->Bssid, 6) != 0)
+			{
+#ifdef DBG
+				unsigned char *tmp = (unsigned char *)pMbss->Bssid;
+				unsigned char *tmp2 = (unsigned char *)&Fr->Hdr.Addr1;
+
+				DBGPRINT(RT_DEBUG_WARN, ("da not match bssid,bssid:0x%02x%02x%02x%02x%02x%02x, addr1:0x%02x%02x%02x%02x%02x%02x\n",
+					PRINT_MAC(tmp), PRINT_MAC(tmp2)));
+#endif /* DBG */
+				return;
+			}
+		}
+
 #ifdef DOT1X_SUPPORT    
 		/* Notify 802.1x daemon to clear this sta info */
 		if (pEntry->AuthMode == Ndis802_11AuthModeWPA || 

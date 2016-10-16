@@ -63,11 +63,10 @@ char* FAST_FUNC dname_dec(const uint8_t *cstr, int clen, const char *pre)
 				if (crtpos + *c + 1 > clen) /* label too long? abort */
 					return NULL;
 				if (dst)
-					memcpy(dst + len, c + 1, *c);
+					/* \3com ---> "com." */
+					((char*)mempcpy(dst + len, c + 1, *c))[0] = '.';
 				len += *c + 1;
 				crtpos += *c + 1;
-				if (dst)
-					dst[len - 1] = '.';
 			} else {
 				/* NUL: end of current domain name */
 				if (retpos == 0) {
@@ -78,7 +77,10 @@ char* FAST_FUNC dname_dec(const uint8_t *cstr, int clen, const char *pre)
 					crtpos = retpos;
 					retpos = depth = 0;
 				}
-				if (dst)
+				if (dst && len != 0)
+					/* \4host\3com\0\4host and we are at \0:
+					 * \3com was converted to "com.", change dot to space.
+					 */
 					dst[len - 1] = ' ';
 			}
 
@@ -227,6 +229,9 @@ int main(int argc, char **argv)
 {
 	int len;
 	uint8_t *encoded;
+
+	uint8_t str[6] = { 0x00, 0x00, 0x02, 0x65, 0x65, 0x00 };
+	printf("NUL:'%s'\n",   dname_dec(str, 6, ""));
 
 #define DNAME_DEC(encoded,pre) dname_dec((uint8_t*)(encoded), sizeof(encoded), (pre))
 	printf("'%s'\n",       DNAME_DEC("\4host\3com\0", "test1:"));

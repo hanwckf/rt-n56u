@@ -204,27 +204,6 @@ VOID APPeerProbeReqAction(
 			FrameLen += TmpLen;
 		}
 
-#ifdef A_BAND_SUPPORT
-		/* add Channel switch announcement IE */
-		if ((pAd->CommonCfg.Channel > 14)
-			&& (pAd->CommonCfg.bIEEE80211H == 1)
-			&& (pAd->Dot11_H.RDMode == RD_SWITCHING_MODE))
-		{
-			UCHAR CSAIe=IE_CHANNEL_SWITCH_ANNOUNCEMENT;
-			UCHAR CSALen=3;
-			UCHAR CSAMode=1;
-
-			MakeOutgoingFrame(pOutBuffer+FrameLen,      &TmpLen,
-							  1,                        &CSAIe,
-							  1,                        &CSALen,
-							  1,                        &CSAMode,
-							  1,                        &pAd->CommonCfg.Channel,
-							  1,                        &pAd->Dot11_H.CSCount,
-							  END_OF_ARGS);
-			FrameLen += TmpLen;
-		}
-#endif /* A_BAND_SUPPORT */
-
 #ifdef DOT11_N_SUPPORT
 		if ((PhyMode >= PHY_11ABGN_MIXED) &&
 			(pAd->ApCfg.MBSSID[apidx].DesiredHtPhyInfo.bHtEnable))
@@ -235,19 +214,6 @@ VOID APPeerProbeReqAction(
 			HT_CAPABILITY_IE HtCapabilityTmp;
 			ADD_HT_INFO_IE	addHTInfoTmp;
 #endif
-
-#ifdef A_BAND_SUPPORT
-   			if (pAd->CommonCfg.bExtChannelSwitchAnnouncement && (pAd->CommonCfg.Channel > 14))
-			{
-				HT_EXT_CHANNEL_SWITCH_ANNOUNCEMENT_IE	HtExtChannelSwitchIe;
-
-				build_ext_channel_switch_ie(pAd, &HtExtChannelSwitchIe);
-				MakeOutgoingFrame(pOutBuffer + FrameLen,             &TmpLen,
-								  sizeof(HT_EXT_CHANNEL_SWITCH_ANNOUNCEMENT_IE),	&HtExtChannelSwitchIe,
-								  END_OF_ARGS);
-				FrameLen += TmpLen;
-			}
-#endif /* A_BAND_SUPPORT */
 
 			HtLen = sizeof(pAd->CommonCfg.HtCapability);
 			AddHtLen = sizeof(pAd->CommonCfg.AddHTInfo);
@@ -487,9 +453,9 @@ VOID APPeerProbeReqAction(
 				MakeOutgoingFrame(pOutBuffer + FrameLen,             &TmpLen,
 								  sizeof(HT_EXT_CHANNEL_SWITCH_ANNOUNCEMENT_IE),	&HtExtChannelSwitchIe,
 								  END_OF_ARGS);
+				FrameLen += TmpLen;
 			}
 #endif /* DOT11_N_SUPPORT */
-			FrameLen += TmpLen;
 		}
 #endif /* A_BAND_SUPPORT */
 
@@ -519,6 +485,7 @@ VOID APPeerProbeReqAction(
 		    NdisZeroMemory(TmpFrame, sizeof(TmpFrame));
 
 			/* prepare channel information */
+			MaxTxPower = GetCuntryMaxTxPwr(pAd, pAd->CommonCfg.Channel);
 		    MakeOutgoingFrame(TmpFrame+TmpLen2,     &TmpLen,
 		                          1,                 	&pAd->ChannelList[0].Channel,
 		                          1,                 	&pAd->ChannelListNum,

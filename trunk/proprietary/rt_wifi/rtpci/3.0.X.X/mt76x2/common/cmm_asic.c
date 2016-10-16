@@ -360,7 +360,11 @@ VOID AsicUpdateProtect(
 	UINT16 protect_rate = 0;
 #endif /* RT65xx */
 #endif /* DOT11_VHT_AC */
-
+#ifdef APCLI_CERT_SUPPORT
+#ifdef DOT11_VHT_AC
+	BOOLEAN bStaConnect = FALSE;
+#endif /* DOT11_VHT_AC */
+#endif /* APCLI_CERT_SUPPORT */
 #ifdef RALINK_ATE
 	if (ATE_ON(pAd))
 		return;
@@ -725,10 +729,30 @@ VOID AsicUpdateProtect(
 					ProtCfg4.word = 0x03f50003; /* Don't duplicate RTS/CTS in CCK mode. 0x03f40083*/
 				}
 				
+#ifdef APCLI_CERT_SUPPORT // for TGAC 5.2.35
+#ifdef DOT11_VHT_AC
+				if (pAd->MacTab.Size > 0) {
+					MAC_TABLE_ENTRY *pEntry = NULL;
+					
+					for (i = 1; i < MAX_LEN_OF_MAC_TABLE; i++) {
+						pEntry = &pAd->MacTab.Content[i];
+						if (IS_ENTRY_CLIENT(pEntry) && (pEntry->Sst == SST_ASSOC))
+						{
+							bStaConnect = TRUE;
+						}
+					}
+				}
+#endif /* DOT11_VHT_AC */				
+#endif /* APCLI_CERT_SUPPORT */
+
 
 #ifdef DOT11_VHT_AC
 #ifdef RT65xx
-                               if (IS_RT65XX(pAd))
+                               if (IS_RT65XX(pAd)
+#ifdef APCLI_CERT_SUPPORT							   	
+					&&(bStaConnect)   	
+#endif					
+							   	)
                                {
                                        // Temporary tuen on RTS in VHT, MAC: TX_PROT_CFG6, TX_PROT_CFG7, TX_PROT_CFG8
                                        PROT_CFG_STRUC vht_port_cfg;
@@ -823,7 +847,6 @@ VOID AsicBBPAdjust(RTMP_ADAPTER *pAd)
 VOID AsicSwitchChannel(RTMP_ADAPTER *pAd, UCHAR Channel, BOOLEAN bScan)
 {
 	UCHAR bw;
-	UINT32 value32;
 #ifdef CONFIG_STA_SUPPORT
 #ifdef CONFIG_PM
 #ifdef USB_SUPPORT_SELECTIVE_SUSPEND
@@ -888,19 +911,32 @@ VOID AsicSwitchChannel(RTMP_ADAPTER *pAd, UCHAR Channel, BOOLEAN bScan)
 #ifdef MT76x2
 	if (IS_MT76x2(pAd))
 	{
+		UINT32 value32;
 		// Disable BF HW to apply profile to packets when nSS == 2.
 		// Maybe it can be initialized at chip init but removing the same CR initialization from FW will be better
 		RTMP_IO_READ32(pAd, TXO_R4, &value32);
 		value32 |= 0x2000000;
 		RTMP_IO_WRITE32(pAd, TXO_R4, value32);
-
-		// Enable SIG-B CRC check
-		RTMP_IO_READ32(pAd, RXO_R13, &value32);
-		value32 |= 0x100;
-		RTMP_IO_WRITE32(pAd, RXO_R13, value32);
 	}
 #endif /* MT76x2 */
 #endif /* TXBF_SUPPORT */	
+
+#ifdef SMART_MESH_MONITOR
+	if (!bScan)
+	{
+		struct nsmpif_drvevnt_buf drvevnt;
+		drvevnt.data.channel_change.type = NSMPIF_DRVEVNT_CHANNEL_CHANGE;
+		drvevnt.data.channel_change.channel = pAd->CommonCfg.Channel;
+		NdisZeroMemory(drvevnt.data.channel_change.op_channels,sizeof(drvevnt.data.channel_change.op_channels));
+		drvevnt.data.channel_change.op_channels[0] = pAd->CommonCfg.Channel;
+#ifdef DOT11_N_SUPPORT		
+		if(bw == BW_40)
+			drvevnt.data.channel_change.op_channels[1] = N_GetSecondaryChannel(pAd);
+#endif /* DOT11_N_SUPPORT */
+		RtmpOSWrielessEventSend(pAd->net_dev, RT_WLAN_EVENT_CUSTOM,NSMPIF_DRVEVNT_CHANNEL_CHANGE,
+								NULL, (PUCHAR)&drvevnt.data.channel_change, sizeof(drvevnt.data.channel_change));
+	}
+#endif /* SMART_MESH_MONITOR */
 }
 
 
@@ -1439,8 +1475,34 @@ VOID AsicEnableBssSync(
 	IN PRTMP_ADAPTER pAd) 
 {
 	BCN_TIME_CFG_STRUC csr;
+#ifdef APCLI_SUPPORT 
+                UCHAR apidx;
+                BOOLEAN bMaskBcn;     
+#endif /* APCLI_SUPPORT */
 
 	DBGPRINT(RT_DEBUG_TRACE, ("--->AsicEnableBssSync(INFRA mode)\n"));
+
+#ifdef APCLI_SUPPORT 
+                // for apcli DFS, if ra0 not up, don,t send bcn
+                bMaskBcn = TRUE;
+                
+                for(apidx=0; apidx<pAd->ApCfg.BssidNum; apidx++)
+                {
+                                if(BeaconTransmitRequired(pAd, apidx, &pAd->ApCfg.MBSSID[apidx]))
+                                {
+                                                bMaskBcn = FALSE;
+                                                break;
+                                }
+                }
+
+                if (bMaskBcn &&  APCLI_IF_UP_CHECK(pAd, 0)) {
+							DBGPRINT(RT_DEBUG_OFF, ("Apcli DFS need mask beacon!!!\n"));					
+                                                AsicCtrlBcnMask(pAd, 0xFF);
+                }
+                else {
+                                AsicCtrlBcnMask(pAd, 0x0);
+                }
+#endif /* APCLI_SUPPORT */
 
 	RTMP_IO_READ32(pAd, BCN_TIME_CFG, &csr.word);
 /*	RTMP_IO_WRITE32(pAd, BCN_TIME_CFG, 0x00000000);*/
@@ -3768,10 +3830,17 @@ VOID thermal_protection(
 	IN RTMP_ADAPTER 	*pAd)
 {
 	RTMP_CHIP_OP *pChipOps = &pAd->chipOps;
-	INT32 temp_diff = 0, current_temp = 0;	
+	INT32 temp_diff = 0, current_temp = 0;
+#ifdef CONFIG_STA_SUPPORT
+#endif /* RTMP_MAC_USB  */
 
 	if (pAd->chipCap.ThermalProtectSup == FALSE)
 		return;
+
+	/* If MT7662U go into suspend mode, thermal clock will also be disabled.
+	After resume, MCU will hang if driver retrieve thermal value without calibration. */
+#ifdef CONFIG_STA_SUPPORT
+#endif /* RTMP_MAC_USB  */
 
 #ifdef MT76x2
 	UINT32 mac_reg = 0;
@@ -3862,16 +3931,22 @@ VOID asic_set_drop_mask(
 	USHORT	wcid,
 	BOOLEAN enable)
 {
-	UINT32 mac_reg = 0, reg_id, group_index;
-	UINT32 drop_mask = (1 << (wcid % 32));
+	UINT32 mac_reg = 0, mac_old, reg_id, group_index;
+	UINT32 drop_mask = (1U << (wcid % 32));
 
 	/* each group has 32 entries */
 	group_index = (wcid - (wcid % 32)) >> 5 /* divided by 32 */;
 	reg_id = (TX_WCID_DROP_MASK0 + 4*group_index);
 
+	NdisAcquireSpinLock(&ad->drop_mask_lock);
+
 	RTMP_IO_READ32(ad, reg_id, &mac_reg);
+	mac_old = mac_reg;
 	mac_reg = (enable ? (mac_reg | drop_mask) : (mac_reg & ~drop_mask));
-	RTMP_IO_WRITE32(ad, reg_id, mac_reg);
+	if (mac_reg != mac_old)
+		RTMP_IO_WRITE32(ad, reg_id, mac_reg);
+
+	NdisReleaseSpinLock(&ad->drop_mask_lock);
 
 	DBGPRINT(RT_DEBUG_TRACE,
 			("%s(%u):, wcid = %u, reg_id = 0x%08x, mac_reg = 0x%08x, group_index = %u, drop_mask = 0x%08x\n",
@@ -3883,12 +3958,16 @@ VOID asic_drop_mask_reset(
 	PRTMP_ADAPTER ad)
 {
 	UINT32 i, reg_id;
-	
+
+	NdisAcquireSpinLock(&ad->drop_mask_lock);
+
 	for ( i = 0; i < 8 /* num of drop mask group */; i++)
 	{
 		reg_id = (TX_WCID_DROP_MASK0 + i*4);
 		RTMP_IO_WRITE32(ad, reg_id, 0);
 	}
+
+	NdisReleaseSpinLock(&ad->drop_mask_lock);
 
 	DBGPRINT(RT_DEBUG_TRACE, ("%s()\n", __FUNCTION__));
 }
@@ -3901,20 +3980,15 @@ VOID asic_change_tx_retry(
 {
 	UINT32	TxRtyCfg, MacReg = 0;
 
-	if (pAd->CommonCfg.txRetryCfg == 0) {
-		/* txRetryCfg is invalid, should not be 0 */
-		DBGPRINT(RT_DEBUG_TRACE, ("txRetryCfg=%x\n", pAd->CommonCfg.txRetryCfg));
-		return ;
-	}
-
 	if (num < 3)
 	{
-		/* Tx date retry default 15 */
+		/* Tx data retry 31/15 (thres 2000) */
 		RTMP_IO_READ32(pAd, TX_RTY_CFG, &TxRtyCfg);
-		TxRtyCfg = ((TxRtyCfg & 0xffff0000) | (pAd->CommonCfg.txRetryCfg & 0x0000ffff));
+		TxRtyCfg &= 0xf0000000;
+		TxRtyCfg |= 0x07d01f0f;
 		RTMP_IO_WRITE32(pAd, TX_RTY_CFG, TxRtyCfg);
 
-		/* Tx RTS retry default 32 */
+		/* Tx RTS retry default 32, disable RTS fallback */
 		RTMP_IO_READ32(pAd, TX_RTS_CFG, &MacReg);
 		MacReg &= 0xFEFFFF00;
 		MacReg |= 0x20;
@@ -3922,25 +3996,17 @@ VOID asic_change_tx_retry(
 	}
 	else
 	{
-		/* Tx date retry 7 */
-		TxRtyCfg = 0x4100070A;
+		/* Tx data retry 8/10 (thres 256)  */
+		RTMP_IO_READ32(pAd, TX_RTY_CFG, &TxRtyCfg);
+		TxRtyCfg &= 0xf0000000;
+		TxRtyCfg |= 0x0100080A;
 		RTMP_IO_WRITE32(pAd, TX_RTY_CFG, TxRtyCfg);
 
-		/* Tx RTS retry 3 */
+		/* Tx RTS retry 3, enable RTS fallback */
 		RTMP_IO_READ32(pAd, TX_RTS_CFG, &MacReg);
 		MacReg &= 0xFEFFFF00;
-		MacReg |= 0x00000003;
-#ifdef MT76x2
-		if (IS_MT76x2(pAd)) {
-			/* RTS fallback: ON */
-			MacReg |= 0x01000000;
-		}
-#endif
+		MacReg |= 0x01000003;
 		RTMP_IO_WRITE32(pAd, TX_RTS_CFG, MacReg);
-#if 0
-		/* enable fallback to legacy (MCS0 -> OFDM 6, default for MT76x2) */
-		RTMP_IO_WRITE32(pAd, HT_FBK_TO_LEGACY, 0x1818);
-#endif
 	}
 }
 

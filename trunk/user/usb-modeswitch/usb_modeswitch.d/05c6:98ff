@@ -1,0 +1,4 @@
+# U901 (LTE modem)
+TargetVendor=0x05c6
+TargetProduct=0x6001
+SierraMode=1

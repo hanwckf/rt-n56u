@@ -391,7 +391,7 @@ Note:
 	for (apidx = 0; apidx < MAX_MBSSID_NUM(pAd); apidx++)
 	{
 		pFtCfg = &pAd->ApCfg.MBSSID[apidx].FtCfg;
-		pFtCfg->FtCapFlag.Dot11rFtEnable = TRUE;
+		pFtCfg->FtCapFlag.Dot11rFtEnable = FALSE; /* Intel TGn STA cannot connect to AP if Beacon/Probe has 11R IE in security mode. */
 		pFtCfg->FtCapFlag.FtOverDs = TRUE;
 		pFtCfg->FtCapFlag.RsrReqCap = TRUE;
 
@@ -1052,12 +1052,12 @@ VOID FT_FtAction(
 					pEntry = MacTableInsertEntry(pAd, pHdr->Addr2,
 									&pAd->ApCfg.MBSSID[apidx].wdev, apidx, OPMODE_AP, TRUE);
 
+				NdisZeroMemory(pFtInfoBuf, sizeof(FT_INFO));
 				/* Parse FT-Request action frame. */
 				FT_ReqActionParse(pAd, (FtActLen - sizeof(PFT_ACTION)),
 					pFtAction->Oct, pFtInfo);
 
 				/* FT-Request frame Handler. */
-				NdisZeroMemory(pFtInfoBuf, sizeof(FT_INFO));
 				result = FT_AuthReqHandler(pAd, pEntry, pFtInfo, pFtInfoBuf);
 
 				if (result == MLME_SUCCESS)
@@ -1337,11 +1337,15 @@ VOID FT_R1KHInfoMaintenance(
 
 		while (pEntry != NULL)
 		{
-			if((pEntry->KeyLifeTime--) == 0)
+			if((pEntry->AuthMode == Ndis802_11AuthModeWPA2)
+				&& ((pEntry->KeyLifeTime--) == 0))
 			{
 				PFT_R1HK_ENTRY pEntryTmp;
 				MLME_DISASSOC_REQ_STRUCT DisassocReq;
 
+				DBGPRINT(RT_DEBUG_OFF, ("%s: PMKCache timeout. Kick out the station and delete FT_R1khEntry!\n",
+					__FUNCTION__));
+				
 				/*
 					Kick out the station.
 					and Info KDP daemon to delete the key.

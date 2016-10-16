@@ -334,8 +334,6 @@ INT rlt_wlan_chip_onoff(RTMP_ADAPTER *pAd, BOOLEAN bOn, BOOLEAN bResetWLAN)
 {
 	UINT32 reg = 0;
 
-#ifdef RTMP_FLASH_SUPPORT
-#endif /* RTMP_FLASH_SUPPORT */
 
 #ifdef RTMP_PCI_SUPPORT
 	if (IS_PCI_INF(pAd))

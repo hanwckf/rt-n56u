@@ -192,6 +192,13 @@ typedef char 				* PNDIS_BUFFER;
 #endif /* DOT11_VHT_AC */
 
 
+#ifdef DATA_QUEUE_RESERVE
+/*
+	This value must small than MAX_PACKETS_IN_QUEUE
+*/
+#define FIFO_RSV_FOR_HIGH_PRIORITY 	64
+#endif /* DATA_QUEUE_RESERVE */
+
 /***********************************************************************************
  *	OS signaling related constant definitions
  ***********************************************************************************/
@@ -327,6 +334,7 @@ struct os_cookie {
 	RTMP_NET_TASK_STRUCT	ac3_dma_done_task;
 	RTMP_NET_TASK_STRUCT	hcca_dma_done_task;
 	RTMP_NET_TASK_STRUCT	tbtt_task;
+	RTMP_NET_TASK_STRUCT	pretbtt_task;
 
 #ifdef RTMP_MAC_PCI
 	RTMP_NET_TASK_STRUCT	fifo_statistic_full_task;
@@ -433,7 +441,11 @@ do{                                   \
 #define ASSERT(x)
 #endif /* DBG */
 
+#ifdef DBG
 void hex_dump(char *str, unsigned char *pSrcBufVA, unsigned int SrcBufLen);
+#else
+#define hex_dump(x,y,z)
+#endif /* DBG */
 
 
 /*********************************************************************************************************
@@ -457,9 +469,7 @@ void linux_pci_unmap_single(void *handle, ra_dma_addr_t dma_addr, size_t size, i
 	linux_pci_map_single(_handle, _ptr, _size, _sd_idx, _dir)
 	
 #define PCI_UNMAP_SINGLE(_pAd, _ptr, _size, _dir)						\
-	if ((_pAd->infType) == RTMP_DEV_INF_RBUS){linux_pci_unmap_single(NULL , _ptr, _size, _dir);}	\
-	else {linux_pci_unmap_single(((POS_COOKIE)(_pAd->OS_Cookie))->pci_dev, _ptr, _size, _dir);}
-	/*linux_pci_unmap_single(((POS_COOKIE)(_pAd->OS_Cookie))->pci_dev, _ptr, _size, _dir)*/
+	linux_pci_unmap_single(((POS_COOKIE)(_pAd->OS_Cookie))->pci_dev, _ptr, _size, _dir)
 
 #define PCI_ALLOC_CONSISTENT(_pci_dev, _size, _ptr)							\
 	pci_alloc_consistent(_pci_dev, _size, _ptr)

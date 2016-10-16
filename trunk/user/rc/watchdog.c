@@ -185,6 +185,7 @@ httpd_check_v2()
 }
 #endif
 
+#if defined (BOARD_GPIO_LED_POWER)
 static int
 get_state_led_pwr(void)
 {
@@ -200,6 +201,7 @@ get_state_led_pwr(void)
 
 	return i_led;
 }
+#endif
 
 #if defined (BOARD_GPIO_BTN_RESET)
 static int
@@ -660,7 +662,7 @@ ez_action_change_guest_wifi5(void)
 static void
 ez_action_usb_saferemoval(int port)
 {
-#if (BOARD_NUM_USB_PORTS > 0)
+#if defined (USE_USB_SUPPORT)
 	char ez_name[24];
 
 	strcpy(ez_name, "safe-removal USB");
@@ -674,7 +676,7 @@ ez_action_usb_saferemoval(int port)
 #endif
 	logmessage("watchdog", "Perform ez-button %s...", ez_name);
 
-	safe_remove_usb_device(port, NULL, 1);
+	safe_remove_usb_device(port, NULL);
 #endif
 }
 
@@ -744,12 +746,9 @@ ez_action_user_script(int script_param)
 static void
 ez_action_led_toggle(void)
 {
-	int front_led_x = (nvram_get_int("front_led_all")) ? 0 : 1;
+	int is_show = (nvram_get_int("led_front_t")) ? 0 : 1;
 
-	nvram_set_int("front_led_all", front_led_x);
-	nvram_set_int("front_led_pwr", front_led_x);
-
-	notify_leds_detect_link();
+	show_hide_front_leds(is_show);
 }
 
 void
@@ -1011,6 +1010,8 @@ ntpc_updated_main(int argc, char *argv[])
 static void
 watchdog_on_sighup(void)
 {
+	setenv_tz();
+
 	if (!is_ntpc_updated()) {
 		ntpc_tries = 0;
 		ntpc_timer = -1; // want call now

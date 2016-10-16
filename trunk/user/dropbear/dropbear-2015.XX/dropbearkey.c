@@ -105,25 +105,25 @@ static void printhelp(char * progname) {
 /* fails fatally */
 static void check_signkey_bits(enum signkey_type type, int bits)
 {
-        switch (type) {
+	switch (type) {
 #ifdef DROPBEAR_RSA
-            case DROPBEAR_SIGNKEY_RSA:
-                if (bits < 512 || bits > 4096 || (bits % 8 != 0)) {
-                	dropbear_exit("Bits must satisfy 512 <= bits <= 4096, and be a"
-                            " multiple of 8\n");
-                }
-                break;
+		case DROPBEAR_SIGNKEY_RSA:
+			if (bits < 512 || bits > 4096 || (bits % 8 != 0)) {
+				dropbear_exit("Bits must satisfy 512 <= bits <= 4096, and be a"
+				              " multiple of 8\n");
+			}
+			break;
 #endif
 #ifdef DROPEAR_DSS
-            case DROPBEAR_SIGNKEY_DSS:
-                if (bits != 1024) {
-                    dropbear_exit("DSS keys have a fixed size of 1024 bits\n");
-                    exit(EXIT_FAILURE);
-                }
+		case DROPBEAR_SIGNKEY_DSS:
+			if (bits != 1024) {
+				dropbear_exit("DSS keys have a fixed size of 1024 bits\n");
+				exit(EXIT_FAILURE);
+			}
 #endif
-			default:
-				(void)0; /* quiet, compiler. ecdsa handles checks itself */
-        }
+		default:
+			(void)0; /* quiet, compiler. ecdsa handles checks itself */
+	}
 }
 
 #if defined(DBMULTI_dropbearkey) || !defined(DROPBEAR_MULTI)
@@ -238,13 +238,13 @@ int main(int argc, char ** argv) {
 		}
 		
 		check_signkey_bits(keytype, bits);;
-    }
+	}
 
 	fprintf(stderr, "Generating key, this may take a while...\n");
-    if (signkey_generate(keytype, bits, filename) == DROPBEAR_FAILURE)
-    {
-    	dropbear_exit("Failed to generate key.\n");
-    }
+	if (signkey_generate(keytype, bits, filename) == DROPBEAR_FAILURE)
+	{
+		dropbear_exit("Failed to generate key.\n");
+	}
 
 	printpubfile(filename);
 

@@ -1,0 +1,5 @@
+# ZTE MF710 (Vietnam) a.o.
+TargetVendor= 0x19d2
+TargetProductList="1592,1596,1600"
+StandardEject=1
+MessageContent="55534243123456702000000080000c85010101180101010101000000000000"

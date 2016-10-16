@@ -113,8 +113,8 @@ DIST_COMMON = $(srcdir)/Makefile.in $(srcdir)/Makefile.am \
 	$(srcdir)/config.h.in $(srcdir)/version.sh.in \
 	$(am__dist_doc_DATA_DIST) $(am__dist_noinst_DATA_DIST) \
 	$(dist_noinst_HEADERS) AUTHORS COPYING ChangeLog INSTALL NEWS \
-	README compile config.guess config.sub depcomp install-sh \
-	missing ltmain.sh
+	README compile config.guess config.sub install-sh missing \
+	ltmain.sh
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
 am__aclocal_m4_deps = $(top_srcdir)/m4/ax_emptyarray.m4 \
 	$(top_srcdir)/m4/ax_socklen_t.m4 \
@@ -278,6 +278,7 @@ AWK = @AWK@
 CC = @CC@
 CCDEPMODE = @CCDEPMODE@
 CFLAGS = @CFLAGS@
+CMAKE = @CMAKE@
 CPP = @CPP@
 CPPFLAGS = @CPPFLAGS@
 CYGPATH_W = @CYGPATH_W@
@@ -371,6 +372,11 @@ TAP_CFLAGS = @TAP_CFLAGS@
 TAP_WIN_COMPONENT_ID = @TAP_WIN_COMPONENT_ID@
 TAP_WIN_MIN_MAJOR = @TAP_WIN_MIN_MAJOR@
 TAP_WIN_MIN_MINOR = @TAP_WIN_MIN_MINOR@
+TEST_CFLAGS = @TEST_CFLAGS@
+TEST_LDFLAGS = @TEST_LDFLAGS@
+VENDOR_BUILD_ROOT = @VENDOR_BUILD_ROOT@
+VENDOR_DIST_ROOT = @VENDOR_DIST_ROOT@
+VENDOR_SRC_ROOT = @VENDOR_SRC_ROOT@
 VERSION = @VERSION@
 abs_builddir = @abs_builddir@
 abs_srcdir = @abs_srcdir@
@@ -454,7 +460,7 @@ EXTRA_DIST = \
 @GIT_CHECKOUT_TRUE@BUILT_SOURCES = \
 @GIT_CHECKOUT_TRUE@	config-version.h
 
-SUBDIRS = build distro include src sample doc tests
+SUBDIRS = build distro include src sample doc vendor tests
 dist_doc_DATA = README README.IPv6 README.polarssl COPYRIGHT.GPL \
 	COPYING $(am__append_1)
 dist_noinst_DATA = .gitignore .gitattributes config-version.h.in PORTS \
@@ -472,7 +478,7 @@ all: $(BUILT_SOURCES) config.h
 .SUFFIXES:
 am--refresh: Makefile
 	@:
-$(srcdir)/Makefile.in:  $(srcdir)/Makefile.am
+$(srcdir)/Makefile.in:  $(srcdir)/Makefile.am  $(am__configure_deps)
 	@for dep in $?; do \
 	  case '$(am__configure_deps)' in \
 	    *$$dep*) \
@@ -501,6 +507,8 @@ $(top_builddir)/config.status: $(top_srcdir)/configure $(CONFIG_STATUS_DEPENDENC
 
 $(top_srcdir)/configure:  $(am__configure_deps)
 	$(am__cd) $(srcdir) && $(AUTOCONF)
+$(ACLOCAL_M4):  $(am__aclocal_m4_deps)
+	$(am__cd) $(srcdir) && $(ACLOCAL) $(ACLOCAL_AMFLAGS)
 $(am__aclocal_m4_deps):
 
 config.h: stamp-h1
@@ -510,6 +518,10 @@ config.h: stamp-h1
 stamp-h1: $(srcdir)/config.h.in $(top_builddir)/config.status
 	@rm -f stamp-h1
 	cd $(top_builddir) && $(SHELL) ./config.status config.h
+$(srcdir)/config.h.in:  $(am__configure_deps) 
+	($(am__cd) $(top_srcdir) && $(AUTOHEADER))
+	rm -f stamp-h1
+	touch $@
 
 distclean-hdr:
 	-rm -f config.h stamp-h1

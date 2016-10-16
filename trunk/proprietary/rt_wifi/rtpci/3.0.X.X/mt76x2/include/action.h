@@ -92,12 +92,6 @@ VOID StaPublicAction(
 	IN BSS_2040_COEXIST_IE *pBss2040CoexIE);
 #endif /* CONFIG_STA_SUPPORT */
 
-#ifdef CONFIG_AP_SUPPORT
-VOID ApPublicAction(
-	IN PRTMP_ADAPTER pAd, 
-	IN MLME_QUEUE_ELEM *Elem);
-#endif /* CONFIG_AP_SUPPORT */
-
 #ifdef QOS_DLS_SUPPORT
 VOID PeerDLSAction(
     IN PRTMP_ADAPTER pAd, 

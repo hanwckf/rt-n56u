@@ -24,6 +24,8 @@ extern ret_t rtl8370_getAsicRldpLoopedPortmask(uint32 *pmsk);
 
 extern ret_t rtl8370_getAsicRldpRandomNumber(ether_addr_t *randNumber);
 extern ret_t rtl8370_getAsicRldpLoopedPortPair(uint32 port, uint32 *loopedPair);
+extern ret_t rtl8370_setAsicRldp_mode(uint32 mode);
+
 
 #endif /*_RTL8370_ASICDRV_RLDP_H_*/
 

@@ -25,6 +25,6 @@
 #ifndef DROPBEAR_SERVICE_H_
 #define DROPBEAR_SERVICE_H_
 
-void recv_msg_service_request(); /* Server */
+void recv_msg_service_request(void); /* Server */
 
 #endif /* DROPBEAR_SERVICE_H_ */

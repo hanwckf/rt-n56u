@@ -35,6 +35,7 @@
 
 #define DHCPD_STATIC_MAX	64
 #define DHCPD_MULTIMAC_MAX	8
+#define DHCPD_RANGE_DEF_TAG	"lan"
 #define DHCPD_HOSTS_DIR		"/etc/dnsmasq/dhcp"
 #define DHCPD_LEASE_FILE	"/tmp/dnsmasq.leases"
 #define UPNPD_LEASE_FILE	"/tmp/miniupnpd.leases"
@@ -183,7 +184,7 @@ fill_static_ethers(const char *lan_ip, const char *lan_mask)
 						smac[0], smac[1], smac[2], smac[3], smac[4], smac[5],
 						smac[6], smac[7], smac[8], smac[9], smac[10], smac[11]);
 				}
-				fprintf(fp[0], "%s\n", sip4);
+				fprintf(fp[0], "set:%s,%s\n", DHCPD_RANGE_DEF_TAG, sip4);
 			}
 			
 			/* use only unique IP for /etc/ethers (ARP binds) */
@@ -240,7 +241,7 @@ fill_dnsmasq_servers(void)
 	if (nvram_get_int("vpnc_pdns") > 0) {
 		wan_dom = nvram_safe_get("vpnc_dom_t");
 		wan_dns = nvram_safe_get("vpnc_dns_t");
-		if (strlen(wan_dom) > 1 && strlen(wan_dns) > 6) {
+		if (strlen(wan_dom) > 0 && strlen(wan_dns) > 6) {
 			foreach(word, wan_dns, next) {
 				if (is_valid_ipv4(word))
 					fprintf(fp, "server=/%s/%s\n", wan_dom, word);
@@ -251,7 +252,7 @@ fill_dnsmasq_servers(void)
 	/* add DNS servers (via specific domain) for MAN subnet */
 	wan_dom = nvram_safe_get("wanx_domain");
 	wan_dns = nvram_safe_get("wanx_dns");
-	if (strlen(wan_dom) > 1 && strlen(wan_dns) > 6) {
+	if (strlen(wan_dom) > 0 && strlen(wan_dns) > 6) {
 		foreach(word, wan_dns, next) {
 			if (is_valid_ipv4(word))
 				fprintf(fp, "server=/%s/%s\n", wan_dom, word);
@@ -350,7 +351,7 @@ start_dns_dhcpd(int is_ap_mode)
 		fprintf(fp, "port=%d\n", 0);
 	}
 
-	if (strlen(domain) > 1) {
+	if (strlen(domain) > 0) {
 		fprintf(fp, "domain=%s\n"
 			    "expand-hosts\n", domain);
 	}
@@ -365,14 +366,15 @@ start_dns_dhcpd(int is_ap_mode)
 			nvram_set("dhcp_end", dhcp_end);
 		}
 		
-		fprintf(fp, "dhcp-range=%s,%s,%s,%d\n", dhcp_start, dhcp_end, netmask, nvram_get_int("dhcp_lease"));
+		fprintf(fp, "dhcp-range=set:%s,%s,%s,%s,%d\n",
+			DHCPD_RANGE_DEF_TAG, dhcp_start, dhcp_end, netmask, nvram_get_int("dhcp_lease"));
 		
 		/* GATEWAY */
 		gw = nvram_safe_get("dhcp_gateway_x");
 		if (!is_valid_ipv4(gw))
 			gw = (!is_ap_mode) ? ipaddr : NULL;
 		if (gw)
-			fprintf(fp, "dhcp-option=%d,%s\n", 3, gw);
+			fprintf(fp, "dhcp-option=tag:%s,%d,%s\n", DHCPD_RANGE_DEF_TAG, 3, gw);
 		
 		/* DNS server */
 		memset(dns_all, 0, sizeof(dns_all));
@@ -395,36 +397,54 @@ start_dns_dhcpd(int is_ap_mode)
 		if (strlen(dns_all) == 0 && !is_ap_mode)
 			strcat(dns_all, ipaddr);
 		if (strlen(dns_all) > 0)
-			fprintf(fp, "dhcp-option=%d,%s\n", 6, dns_all);
+			fprintf(fp, "dhcp-option=tag:%s,%d,%s\n", DHCPD_RANGE_DEF_TAG, 6, dns_all);
 		
 		/* DOMAIN search */
-		if (strlen(domain) > 1)
-			fprintf(fp, "dhcp-option=%d,%s\n", 15, domain);
+		if (strlen(domain) > 0)
+			fprintf(fp, "dhcp-option=tag:%s,%d,%s\n", DHCPD_RANGE_DEF_TAG, 15, domain);
 		
 		/* WINS */
 		wins = nvram_safe_get("dhcp_wins_x");
 		if (is_valid_ipv4(wins))
-			fprintf(fp, "dhcp-option=%d,%s\n", 44, wins);
+			fprintf(fp, "dhcp-option=tag:%s,%d,%s\n", DHCPD_RANGE_DEF_TAG, 44, wins);
 #if defined(APP_SMBD) || defined(APP_NMBD)
 		else if (nvram_get_int("wins_enable"))
-			fprintf(fp, "dhcp-option=%d,%s\n", 44, ipaddr);
+			fprintf(fp, "dhcp-option=tag:%s,%d,%s\n", DHCPD_RANGE_DEF_TAG, 44, ipaddr);
 #endif
 		if (i_verbose == 0 || i_verbose == 2)
 			fprintf(fp, "quiet-dhcp\n");
 		
-		is_dhcp_used = 1;
+		is_dhcp_used |= 0x1;
 	}
 
 #if defined (USE_IPV6)
 	if (!is_ap_mode && is_lan_radv_on() == 1) {
 		int i_dhcp6s_mode = get_lan_dhcp6s_mode();
-		if (i_dhcp6s_mode > 0) {
+		
+		fprintf(fp, "enable-ra\n");
+		if (i_verbose == 0 || i_verbose == 1)
+			fprintf(fp, "quiet-ra\n");
+		fprintf(fp, "ra-param=%s,%d,%d\n", IFNAME_BR, 30, 1800);
+		
+		is_dhcp_used |= 0x2;
+		
+		if (i_dhcp6s_mode == 0) {
+			int i_pref_lifetime = 600;
+			
+			if (is_lan_addr6_static() == 1)
+				i_pref_lifetime = 1800;
+			
+			/* Router Advertisement only, disable Stateful, disable SLAAC */
+			fprintf(fp, "dhcp-range=set:%s,::,constructor:%s%s,%d,%d\n",
+				DHCPD_RANGE_DEF_TAG, IFNAME_BR, ",ra-only,ra-names", 64, i_pref_lifetime);
+		} else {
 			int i_dhcp6s_irt = get_lan_dhcp6s_irt();
 			
 			if (i_dhcp6s_mode == 1) {
-				/* Disable Stateful and SLAAC */
-				fprintf(fp, "dhcp-range=::,static,%d\n", 600);
+				fprintf(fp, "dhcp-range=set:%s,::,constructor:%s%s,%d,%d\n",
+					DHCPD_RANGE_DEF_TAG, IFNAME_BR, ",ra-stateless,ra-names", 64, i_dhcp6s_irt);
 			} else {
+				const char *range_mode = "";
 				int i_sflt = nvram_safe_get_int("ip6_lan_sflt", 1800, 120, 604800);
 				int i_sfps = nvram_safe_get_int("ip6_lan_sfps", 4096, 2, 65534);
 				int i_sfpe = nvram_safe_get_int("ip6_lan_sfpe", 4352, 2, 65534);
@@ -432,30 +452,33 @@ start_dns_dhcpd(int is_ap_mode)
 				if (i_sfpe < i_sfps)
 					i_sfpe = i_sfps;
 				
-				/* Enable Stateful, Disable SLAAC */
-				fprintf(fp, "dhcp-range=::%x,::%x,constructor:%s,%d\n", i_sfps, i_sfpe, IFNAME_BR, i_sflt);
+				if (i_dhcp6s_mode > 2)
+					range_mode = ",slaac,ra-names";
+				
+				/* Enable Stateful, Enable/Disable SLAAC */
+				fprintf(fp, "dhcp-range=set:%s,::%x,::%x,constructor:%s%s,%d,%d\n",
+					DHCPD_RANGE_DEF_TAG, i_sfps, i_sfpe, IFNAME_BR, range_mode, 64, i_sflt);
 			}
 			
 			/* DNS server */
-			fprintf(fp, "dhcp-option=option6:%d,[::]\n", 23);
+			fprintf(fp, "dhcp-option=tag:%s,option6:%d,[::]\n", DHCPD_RANGE_DEF_TAG, 23);
 			
 			/* DOMAIN search */
-			if (strlen(domain) > 1)
-				fprintf(fp, "dhcp-option=option6:%d,%s\n", 24, domain);
+			if (strlen(domain) > 0)
+				fprintf(fp, "dhcp-option=tag:%s,option6:%d,%s\n", DHCPD_RANGE_DEF_TAG, 24, domain);
 			
 			/* Information Refresh Time */
-			fprintf(fp, "dhcp-option=option6:%d,%d\n", 32, i_dhcp6s_irt);
+			fprintf(fp, "dhcp-option=tag:%s,option6:%d,%d\n", DHCPD_RANGE_DEF_TAG, 32, i_dhcp6s_irt);
 			
-			if (i_verbose == 0 || i_verbose == 1) {
-				fprintf(fp, "quiet-ra\n");
+			if (i_verbose == 0 || i_verbose == 1)
 				fprintf(fp, "quiet-dhcp6\n");
-			}
 			
-			is_dhcp_used = 1;
+			is_dhcp_used |= 0x1;
 		}
 	}
 #endif
-	if (is_dhcp_used) {
+
+	if (is_dhcp_used & 0x1) {
 		fprintf(fp, "dhcp-hostsfile=%s\n", DHCPD_HOSTS_DIR);
 		fprintf(fp, "dhcp-leasefile=%s\n", DHCPD_LEASE_FILE);
 		fprintf(fp, "dhcp-authoritative\n");
@@ -703,6 +726,7 @@ start_upnp(void)
 		"enable_natpmp=%s\n"
 		"upnp_forward_chain=%s\n"
 		"upnp_nat_chain=%s\n"
+		"upnp_nat_postrouting_chain=%s\n"
 		"secure_mode=%s\n"
 		"lease_file=%s\n"
 		"presentation_url=http://%s/\n"
@@ -730,6 +754,7 @@ start_upnp(void)
 		proto_npmp,
 		MINIUPNPD_CHAIN_IP4_FORWARD,
 		MINIUPNPD_CHAIN_IP4_NAT,
+		MINIUPNPD_CHAIN_IP4_NAT_POST,
 		secured,
 		UPNPD_LEASE_FILE,
 		lan_url,
@@ -843,11 +868,18 @@ static const struct inadyn_system_t {
 	{ "WWW.DTDNS.COM",        "default@dtdns.com"          },
 	{ "WWW.OVH.COM",          "default@ovh.com"            },
 	{ "WWW.LOOPIA.COM",       "default@loopia.com"         },
+	{ "WWW.DUIADNS.NET",      "default@duiadns.net"        },
 	{ "WWW.TUNNELBROKER.NET", "default@tunnelbroker.net"   },
 	{ "DNS.HE.NET",           "dyndns@he.net"              },
+	{ "DDNSS.DE",             "default@ddnss.de"           },
+	{ "HOMESERVER.GIRA.DE",   "default@gira.de"            },
+	{ "DOMAINS.GOOGLE.COM",   "default@domains.google.com" },
+	{ "IPV4.DYNV6.COM",       "default@ipv4.dynv6.com"     },
+	{ "DYNV6.COM",            "default@dynv6.com"          },
 	{ "TB.NETASSIST.UA",      "ipv6tb@netassist.ua"        },
 	{ "IPV4.NSUPDATE.INFO",   "ipv4@nsupdate.info"         },
 	{ "FREEDNS.AFRAID.ORG",   "default@freedns.afraid.org" },
+	{ "CUSTOM",               "custom@http_srv_basic_auth" },
 	{ NULL, NULL }
 };
 
@@ -890,7 +922,7 @@ write_inadyn_conf(const char *conf_file, int use_delay)
 {
 	FILE *fp;
 	int i_max, i_ddns_source, i_ddns_checkip, i_ddns_period, i_ddns_forced, i_ddns1_ssl;
-	char *ddns1_hname[3], *ddns1_user, *ddns1_pass;
+	char *ddns1_hname[3], *ddns1_user, *ddns1_pass, *ddns1_svr, *ddns1_url;
 	char *ddns2_hname,    *ddns2_user, *ddns2_pass;
 	const char *ddns1_svc, *ddns2_svc;
 	char wan_ifname[16];
@@ -926,6 +958,9 @@ write_inadyn_conf(const char *conf_file, int use_delay)
 	ddns1_user     = nvram_safe_get("ddns_username_x");
 	ddns1_pass     = nvram_safe_get("ddns_passwd_x");
 
+	ddns1_svr = NULL;
+	ddns1_url = NULL;
+
 	if (strcmp(ddns1_svc, "update@asus.com") == 0) {
 		char *mac_nvram, mac_str[16] = {0};
 		unsigned char mac_bin[ETHER_ADDR_LEN] = {0};
@@ -944,6 +979,9 @@ write_inadyn_conf(const char *conf_file, int use_delay)
 		ddns1_hname[2] = "";
 		ddns1_user = ether_etoa3(mac_bin, mac_str);
 		ddns1_pass = nvram_safe_get("secret_code");
+	} else if (strcmp(ddns1_svc, "custom@http_srv_basic_auth") == 0) {
+		ddns1_svr = nvram_safe_get("ddns_cst_svr");
+		ddns1_url = nvram_safe_get("ddns_cst_url");
 	}
 
 	ddns2_svc = get_inadyn_system(nvram_safe_get("ddns2_server"));
@@ -978,6 +1016,10 @@ write_inadyn_conf(const char *conf_file, int use_delay)
 			fprintf(fp, "  username %s\n", ddns1_user);
 		if (strlen(ddns1_pass) > 0)
 			fprintf(fp, "  password %s\n", ddns1_pass);
+		if (ddns1_svr && *ddns1_svr && ddns1_url && *ddns1_url) {
+			fprintf(fp, "  server-name %s\n", ddns1_svr);
+			fprintf(fp, "  server-url /%s\n", ddns1_url);
+		}
 		fprintf(fp, "  alias %s\n", ddns1_hname[0]);
 		if (strlen(ddns1_hname[1]) > 2)
 			fprintf(fp, "  alias %s\n", ddns1_hname[1]);

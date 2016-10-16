@@ -25,3 +25,7 @@ List of examples
                                         a custom filter chain
                                         (x86 BCJ + LZMA2)
 
+    04_compress_easy_mt.c               Multi-threaded multi-call
+                                        compression using a compression
+                                        preset
+

@@ -580,14 +580,6 @@ static void do_signal(struct pt_regs *regs)
 	siginfo_t info;
 	int signr;
 
-	/*
-	 * We want the common case to go fast, which is why we may in certain
-	 * cases get here from kernel mode. Just return without doing anything
-	 * if so.
-	 */
-	if (!user_mode(regs))
-		return;
-
 	if (test_thread_flag(TIF_RESTORE_SIGMASK))
 		oldset = &current->saved_sigmask;
 	else
@@ -611,17 +603,20 @@ static void do_signal(struct pt_regs *regs)
 	}
 
 	if (regs->regs[0]) {
-		if (regs->regs[2] == ERESTARTNOHAND ||
-		    regs->regs[2] == ERESTARTSYS ||
-		    regs->regs[2] == ERESTARTNOINTR) {
+		switch (regs->regs[2]) {
+		case ERESTARTNOHAND:
+		case ERESTARTSYS:
+		case ERESTARTNOINTR:
 			regs->regs[2] = regs->regs[0];
 			regs->regs[7] = regs->regs[26];
 			regs->cp0_epc -= 4;
-		}
-		if (regs->regs[2] == ERESTART_RESTARTBLOCK) {
+			break;
+
+		case ERESTART_RESTARTBLOCK:
 			regs->regs[2] = current->thread.abi->restart;
 			regs->regs[7] = regs->regs[26];
 			regs->cp0_epc -= 4;
+			break;
 		}
 		regs->regs[0] = 0;	/* Don't deal with this again.  */
 	}

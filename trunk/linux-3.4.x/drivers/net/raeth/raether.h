@@ -14,7 +14,7 @@
 
 ///////////////////////////////////////////////////////////////
 
-#define RAETH_VERSION		"v3.2.2"
+#define RAETH_VERSION		"v3.2.4"
 #define RAETH_DEV_NAME		"raeth"
 
 #define DEV_NAME		"eth2"
@@ -47,13 +47,14 @@ typedef struct _END_DEVICE
 #if defined (CONFIG_RAETH_QDMA)
 	struct QDMA_txdesc		*txd_pool;
 	dma_addr_t			 txd_pool_phy;
-	dma_addr_t			 txd_last_ctx;
+	unsigned int			 txd_last_idx;
 	unsigned int			 txd_pool_free_num;
 	unsigned int			 txd_pool_free_head;
 	unsigned int			 txd_pool_free_tail;
 	unsigned int			 txd_pool_info[NUM_TX_DESC];
 #else
 	struct PDMA_txdesc		*txd_ring;
+	unsigned int			 txd_last_idx;
 	unsigned int			 txd_free_idx;
 #endif
 	struct sk_buff			*txd_buff[NUM_TX_DESC];
@@ -73,6 +74,7 @@ typedef struct _END_DEVICE
 #if !defined (CONFIG_RAETH_QDMATX_QDMARX)
 	struct PDMA_rxdesc		*qrx_ring;
 	dma_addr_t			 qrx_ring_phy;
+	struct sk_buff			*qrx_buff;
 #endif
 #else
 	dma_addr_t			txd_ring_phy;
@@ -106,9 +108,11 @@ typedef struct _PSEUDO_ADAPTER
 
 int  raeth_ioctl(struct ifreq *ifr, int cmd);
 #if defined (CONFIG_RAETH_ESW_CONTROL)
+int  esw_ioctl_init_post(void);
 int  esw_ioctl_init(void);
-int  esw_control_post_init(void);
 void esw_ioctl_uninit(void);
+#elif defined (CONFIG_RAETH_DHCP_TOUCH)
+void esw_dhcpc_init(void);
 #endif
 
 ///////////////////////////////////////////////////////////////

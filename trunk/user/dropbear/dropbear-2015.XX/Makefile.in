@@ -24,7 +24,7 @@ CFLAGS+=-I$(srcdir)/libtomcrypt/src/headers/
 LIBTOM_LIBS=$(STATIC_LTC) $(STATIC_LTM) 
 endif
 
-COMMONOBJS=dbutil.o buffer.o \
+COMMONOBJS=dbutil.o buffer.o dbhelpers.o \
 		dss.o bignum.o \
 		signkey.o rsa.o dbrandom.o \
 		queue.o \
@@ -44,7 +44,7 @@ CLIOBJS=cli-main.o cli-auth.o cli-authpasswd.o cli-kex.o \
 
 CLISVROBJS=common-session.o packet.o common-algo.o common-kex.o \
 			common-channel.o common-chansession.o termcodes.o loginrec.o \
-			tcp-accept.o listener.o process-packet.o \
+			tcp-accept.o listener.o process-packet.o dh_groups.o \
 			common-runopts.o circbuffer.o curve25519-donna.o list.o netio.o
 
 KEYOBJS=dropbearkey.o

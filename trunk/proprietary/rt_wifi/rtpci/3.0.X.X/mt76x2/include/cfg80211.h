@@ -26,6 +26,19 @@
 
 #include <linux/ieee80211.h>
 
+#if (LINUX_VERSION_CODE >= KERNEL_VERSION(3,8,0))
+#define random32() prandom_u32()
+#endif
+
+#ifdef CFG80211_BUILD_CHANNEL_LIST
+#define RT_REG_RULE(regr, start, end, bw, gain, eirp, reg_flags) \
+        regr.freq_range.start_freq_khz = MHZ_TO_KHZ(start);     \
+        regr.freq_range.end_freq_khz = MHZ_TO_KHZ(end); \
+        regr.freq_range.max_bandwidth_khz = MHZ_TO_KHZ(bw);     \
+        regr.power_rule.max_antenna_gain = DBI_TO_MBI(gain);\
+        regr.power_rule.max_eirp = DBM_TO_MBM(eirp);    \
+        regr.flags = reg_flags;
+#endif /* CFG80211_BUILD_CHANNEL_LIST */
 
 typedef enum _NDIS_HOSTAPD_STATUS {
 	Hostapd_Diable = 0,

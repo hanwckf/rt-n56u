@@ -293,7 +293,7 @@ static VOID ApCliMlmeAssocReqAction(
 #ifdef RT_BIG_ENDIAN
         		*(USHORT *)(&HtCapabilityTmp.HtCapInfo) = SWAP16(*(USHORT *)(&HtCapabilityTmp.HtCapInfo));
         		*(USHORT *)(&HtCapabilityTmp.ExtHtCapInfo) = SWAP16(*(USHORT *)(&HtCapabilityTmp.ExtHtCapInfo));
-#endif /* RT_BIG_ENDINA */
+#endif /* RT_BIG_ENDIAN */
         		MakeOutgoingFrame(pOutBuffer + FrameLen,         &TmpLen,
         							1,                           &HtCapIe,
         							1,                           &pAd->ApCliMlmeAux.HtCapabilityLen,
@@ -381,7 +381,8 @@ static VOID ApCliMlmeAssocReqAction(
             || (pAd->ApCfg.ApCliTab[ifIndex].AuthMode >= Ndis802_11AuthModeWPA)
 #endif /* APCLI_WPA_SUPPLICANT_SUPPORT */
 #ifdef WSC_AP_SUPPORT
-			&& (pAd->ApCfg.ApCliTab[ifIndex].WscControl.WscConfMode == WSC_DISABLE)
+			&& ((pAd->ApCfg.ApCliTab[ifIndex].WscControl.WscConfMode == WSC_DISABLE) ||
+			    (pAd->ApCfg.ApCliTab[ifIndex].WscControl.bWscTrigger == FALSE))
 #endif /* WSC_AP_SUPPORT */
             )
 		{

@@ -19,7 +19,7 @@ CFLAGS += -I$(ROOTDIR)/$(LINUXDIR)/include/ralink
 LDFLAGS += -L. -lm
 LDFLAGS += -L$(USERDIR)/wireless_tools -liw
 LDFLAGS += -L$(SHDIR) -lshared
-ifdef CONFIG_USB_SUPPORT
+ifeq ($(STORAGE_ENABLED),y)
 CFLAGS += -I$(USERDIR)/libdisk
 LDFLAGS += -L$(USERDIR)/libdisk -ldisk
 endif
@@ -33,8 +33,12 @@ OBJS += vpn_server.o vpn_client.o
 ifeq ($(CONFIG_FIRMWARE_INCLUDE_OPENVPN),y)
 OBJS += vpn_openvpn.o
 endif
+ifeq ($(STORAGE_ENABLED),y)
+OBJS += hotplug_stor.o
+OBJS += services_stor.o
+endif
 ifdef CONFIG_USB_SUPPORT
-OBJS += usb_devices.o usb_modem.o services_usb.o
+OBJS += hotplug_usb.o usb_modem.o services_usb.o
 endif
 ifdef CONFIG_RTL8367
 OBJS += switch_rtl8367.o
@@ -76,6 +80,7 @@ romfs:
 	cd $(INSTALLDIR)/sbin && ln -sf rc shutdown
 	cd $(INSTALLDIR)/sbin && ln -sf rc halt
 	cd $(INSTALLDIR)/sbin && ln -sf rc reboot
+	cd $(INSTALLDIR)/sbin && ln -sf rc mtk_gpio
 	cd $(INSTALLDIR)/sbin && ln -sf rc ddns_updated
 	cd $(INSTALLDIR)/sbin && ln -sf rc ntpc_updated
 	cd $(INSTALLDIR)/sbin && ln -sf rc start_ddns
@@ -96,6 +101,8 @@ romfs:
 	cd $(INSTALLDIR)/sbin && ln -sf rc reset_to_defaults
 	cd $(INSTALLDIR)/sbin && ln -sf rc lan_eeprom_mac
 	cd $(INSTALLDIR)/sbin && ln -sf rc wan_eeprom_mac
+	cd $(INSTALLDIR)/sbin && ln -sf rc leds_front
+	cd $(INSTALLDIR)/sbin && ln -sf rc leds_ether
 	cd $(INSTALLDIR)/sbin && ln -sf rc radio2_restart
 	cd $(INSTALLDIR)/sbin && ln -sf rc radio2_toggle
 	cd $(INSTALLDIR)/sbin && ln -sf rc radio2_toggle_off
@@ -131,36 +138,8 @@ endif
 ifeq ($(CONFIG_FIRMWARE_INCLUDE_OPENVPN),y)
 	cd $(INSTALLDIR)/sbin && ln -sf rc ovpn_export_client
 endif
-ifdef CONFIG_USB_SUPPORT
-	cd $(INSTALLDIR)/sbin && ln -sf rc mdev_sg
-	cd $(INSTALLDIR)/sbin && ln -sf rc mdev_sd
-	cd $(INSTALLDIR)/sbin && ln -sf rc mdev_sr
-	cd $(INSTALLDIR)/sbin && ln -sf rc mdev_lp
-	cd $(INSTALLDIR)/sbin && ln -sf rc mdev_net
-	cd $(INSTALLDIR)/sbin && ln -sf rc mdev_tty
-	cd $(INSTALLDIR)/sbin && ln -sf rc mdev_wdm
-	cd $(INSTALLDIR)/sbin && ln -sf rc zerocd
-	cd $(INSTALLDIR)/sbin && ln -sf rc ejusb
-	cd $(INSTALLDIR)/sbin && ln -sf rc ejusb1
-ifeq ($(BOARD_NUM_USB_PORTS),2)
-	cd $(INSTALLDIR)/sbin && ln -sf rc ejusb2
-endif
-ifeq ($(CONFIG_FIRMWARE_INCLUDE_MINIDLNA),y)
-	cd $(INSTALLDIR)/sbin && ln -sf rc run_minidlna
-	cd $(INSTALLDIR)/sbin && ln -sf rc stop_minidlna
-endif
-ifeq ($(CONFIG_FIRMWARE_INCLUDE_FIREFLY),y)
-	cd $(INSTALLDIR)/sbin && ln -sf rc run_firefly
-	cd $(INSTALLDIR)/sbin && ln -sf rc stop_firefly
-endif
-ifeq ($(CONFIG_FIRMWARE_INCLUDE_TRANSMISSION),y)
-	cd $(INSTALLDIR)/sbin && ln -sf rc run_transmission
-	cd $(INSTALLDIR)/sbin && ln -sf rc stop_transmission
-endif
-ifeq ($(CONFIG_FIRMWARE_INCLUDE_ARIA),y)
-	cd $(INSTALLDIR)/sbin && ln -sf rc run_aria
-	cd $(INSTALLDIR)/sbin && ln -sf rc stop_aria
-endif
+
+ifeq ($(STORAGE_ENABLED),y)
 ifeq ($(CONFIG_FIRMWARE_INCLUDE_SMBD),y)
 	cd $(INSTALLDIR)/sbin && ln -sf rc run_samba
 	cd $(INSTALLDIR)/sbin && ln -sf rc stop_samba
@@ -178,5 +157,49 @@ endif
 ifeq ($(CONFIG_FIRMWARE_INCLUDE_NFSD),y)
 	cd $(INSTALLDIR)/sbin && ln -sf rc run_nfsd
 	cd $(INSTALLDIR)/sbin && ln -sf rc stop_nfsd
+endif
+ifeq ($(CONFIG_FIRMWARE_INCLUDE_MINIDLNA),y)
+	cd $(INSTALLDIR)/sbin && ln -sf rc run_minidlna
+	cd $(INSTALLDIR)/sbin && ln -sf rc stop_minidlna
+endif
+ifeq ($(CONFIG_FIRMWARE_INCLUDE_FIREFLY),y)
+	cd $(INSTALLDIR)/sbin && ln -sf rc run_firefly
+	cd $(INSTALLDIR)/sbin && ln -sf rc stop_firefly
+endif
+ifeq ($(CONFIG_FIRMWARE_INCLUDE_TRANSMISSION),y)
+	cd $(INSTALLDIR)/sbin && ln -sf rc run_transmission
+	cd $(INSTALLDIR)/sbin && ln -sf rc stop_transmission
+endif
+ifeq ($(CONFIG_FIRMWARE_INCLUDE_ARIA),y)
+	cd $(INSTALLDIR)/sbin && ln -sf rc run_aria
+	cd $(INSTALLDIR)/sbin && ln -sf rc stop_aria
+endif
+endif
+ifeq ($(STORAGE_ENABLED),y)
+	cd $(INSTALLDIR)/sbin && ln -sf rc ejall
+endif
+ifdef CONFIG_ATA
+	cd $(INSTALLDIR)/sbin && ln -sf rc ejata
+endif
+ifdef CONFIG_MMC_BLOCK
+	cd $(INSTALLDIR)/sbin && ln -sf rc ejmmc
+	cd $(INSTALLDIR)/sbin && ln -sf rc mdev_mmc
+endif
+ifdef CONFIG_BLK_DEV_SD
+	cd $(INSTALLDIR)/sbin && ln -sf rc mdev_sd
+endif
+ifdef CONFIG_USB_SUPPORT
+	cd $(INSTALLDIR)/sbin && ln -sf rc mdev_sr
+	cd $(INSTALLDIR)/sbin && ln -sf rc mdev_sg
+	cd $(INSTALLDIR)/sbin && ln -sf rc mdev_lp
+	cd $(INSTALLDIR)/sbin && ln -sf rc mdev_net
+	cd $(INSTALLDIR)/sbin && ln -sf rc mdev_tty
+	cd $(INSTALLDIR)/sbin && ln -sf rc mdev_wdm
+	cd $(INSTALLDIR)/sbin && ln -sf rc zerocd
+	cd $(INSTALLDIR)/sbin && ln -sf rc usb5v
+	cd $(INSTALLDIR)/sbin && ln -sf rc ejusb
+	cd $(INSTALLDIR)/sbin && ln -sf rc ejusb1
+ifneq ($(BOARD_NUM_USB_PORTS),1)
+	cd $(INSTALLDIR)/sbin && ln -sf rc ejusb2
 endif
 endif

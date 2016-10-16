@@ -27,7 +27,7 @@ int rtl8367_main(int argc, char **argv);
 #endif
 
 #if defined(USE_MTK_ESW) || defined(USE_MTK_GSW)
-#include <ra_esw_ioctl.h>
+#include <mtk_esw/ioctl.h>
 int mtk_esw_node(void);
 int mtk_esw_main(int argc, char **argv);
 #endif
@@ -36,32 +36,20 @@ int mtk_esw_main(int argc, char **argv);
 // SWITCH STATUS
 ////////////////////////////////////////////////////////////////////////////////
 
-int phy_status_port_link_wan(unsigned int *p_link_on);
-int phy_status_port_link_lan1(unsigned int *p_link_on);
-int phy_status_port_link_lan2(unsigned int *p_link_on);
-int phy_status_port_link_lan3(unsigned int *p_link_on);
-int phy_status_port_link_lan4(unsigned int *p_link_on);
+int phy_status_port_link(int port_id_uapi, unsigned int *p_link_on);
 int phy_status_port_link_wan_all(unsigned int *p_link_on);
 int phy_status_port_link_lan_all(unsigned int *p_link_on);
 int phy_status_port_link_changed(unsigned int *p_link_changed);
 
-int phy_status_port_speed_wan(unsigned int *p_speed_mode);
-int phy_status_port_speed_lan1(unsigned int *p_speed_mode);
-int phy_status_port_speed_lan2(unsigned int *p_speed_mode);
-int phy_status_port_speed_lan3(unsigned int *p_speed_mode);
-int phy_status_port_speed_lan4(unsigned int *p_speed_mode);
+int phy_status_port_speed(int port_id_uapi, unsigned int *p_speed_mode);
 
-int phy_status_port_bytes(int port_id, uint64_t *rx, uint64_t *tx);
+int phy_status_port_bytes(int port_id_uapi, uint64_t *rx, uint64_t *tx);
 
 ////////////////////////////////////////////////////////////////////////////////
 // SWITCH CONTROL
 ////////////////////////////////////////////////////////////////////////////////
 
-int phy_link_port_wan (unsigned int link_mode, unsigned int flow_mode);
-int phy_link_port_lan1(unsigned int link_mode, unsigned int flow_mode);
-int phy_link_port_lan2(unsigned int link_mode, unsigned int flow_mode);
-int phy_link_port_lan3(unsigned int link_mode, unsigned int flow_mode);
-int phy_link_port_lan4(unsigned int link_mode, unsigned int flow_mode);
+int phy_set_link_port(int port_id_uapi, unsigned int link_mode, unsigned int flow_mode);
 
 int phy_storm_unicast_unknown(unsigned int storm_rate_mbps);
 int phy_storm_multicast_unknown(unsigned int storm_rate_mbps);
@@ -72,8 +60,9 @@ int phy_led_mode_green(unsigned int led_green);
 int phy_led_mode_yellow(unsigned int led_yellow);
 
 int phy_green_ethernet(unsigned int green_ethernet_on);
+int phy_eee_lpi(unsigned int eee_lpi_on);
 int phy_jumbo_frames(unsigned int jumbo_frames_on);
-int phy_igmp_static_port(unsigned int static_port);
+int phy_igmp_static_port(int static_port);
 int phy_igmp_snooping(unsigned int igmp_snooping_on);
 
 int phy_ports_power(int power_on);

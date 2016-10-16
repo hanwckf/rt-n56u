@@ -253,8 +253,11 @@ reset_signals(void)
 	memset(&sa, 0, sizeof(sa));
 	sa.sa_handler = SIG_DFL;
 	sigemptyset(&sa.sa_mask);
-	for (i = 0; i < (_NSIG-1); i++)
+	for (i = 0; i < (_NSIG-1); i++) {
+		if (i == SIGCHLD)
+			continue;
 		sigaction(i, &sa, NULL);
+	}
 
 	/* Unblock all signals */
 	sigfillset(&set);
@@ -387,7 +390,10 @@ init_nodes(void)
 	mknod("/dev/mtr0",   S_IFCHR | 0666, makedev(250, 0));
 #endif
 #endif
-#if defined(APP_OPENVPN)
+#if defined (USE_MTK_AES)
+	mknod("/dev/crypto", S_IFCHR | 0666, makedev(10, 60));
+#endif
+#if defined (APP_OPENVPN)
 	/* if kernel CONFIG_HOTPLUG is not set, mdev create /dev/tun instead of /dev/net/tun */
 	if (!check_if_dev_exist("/dev/net/tun")) {
 		mkdir("/dev/net", 0755);
@@ -400,14 +406,23 @@ static void
 init_mdev(void)
 {
 	FILE *fp;
+	const char *mdev_conf = "/etc/mdev.conf";
 
-	fp = fopen("/etc/mdev.conf", "w");
+	unlink(mdev_conf);
+
+	fp = fopen(mdev_conf, "w");
 	if (fp) {
 		fprintf(fp, "%s\n", "# <device regex> <uid>:<gid> <octal permissions> [<@|$|*> <command>]");
-#if (BOARD_NUM_USB_PORTS > 0)
-		fprintf(fp, "%s 0:0 0660 %s/sbin/%s $MDEV $ACTION\n", "usb/lp[0-9]",  "*", "mdev_lp");
+#if defined (USE_MMC_SUPPORT)
+		fprintf(fp, "%s 0:0 0660 %s/sbin/%s $MDEV $ACTION\n", "mmcblk[0-9]",  "*", "mdev_mmc");
+		fprintf(fp, "%s 0:0 0660 %s/sbin/%s $MDEV $ACTION\n", "mmcblk[0-9]p[0-9]", "*", "mdev_mmc");
+#endif
+#if defined (USE_BLK_DEV_SD)
 		fprintf(fp, "%s 0:0 0660 %s/sbin/%s $MDEV $ACTION\n", "sd[a-z]",      "*", "mdev_sd");
 		fprintf(fp, "%s 0:0 0660 %s/sbin/%s $MDEV $ACTION\n", "sd[a-z][0-9]", "*", "mdev_sd");
+#endif
+#if defined (USE_USB_SUPPORT)
+		fprintf(fp, "%s 0:0 0660 %s/sbin/%s $MDEV $ACTION\n", "usb/lp[0-9]",  "*", "mdev_lp");
 		fprintf(fp, "%s 0:0 0660 %s/sbin/%s $MDEV $ACTION\n", "sg[0-9]",      "@", "mdev_sg");
 		fprintf(fp, "%s 0:0 0660 %s/sbin/%s $MDEV $ACTION\n", "sr[0-9]",      "@", "mdev_sr");
 		fprintf(fp, "%s 0:0 0660 %s/sbin/%s $MDEV $ACTION\n", "weth[0-9]",    "*", "mdev_net");
@@ -415,8 +430,13 @@ init_mdev(void)
 		fprintf(fp, "%s 0:0 0660 %s/sbin/%s $MDEV $ACTION\n", "cdc-wdm[0-9]", "*", "mdev_wdm");
 		fprintf(fp, "%s 0:0 0660 %s/sbin/%s $MDEV $ACTION\n", "ttyUSB[0-9]",  "*", "mdev_tty");
 		fprintf(fp, "%s 0:0 0660 %s/sbin/%s $MDEV $ACTION\n", "ttyACM[0-9]",  "*", "mdev_tty");
-		fprintf(fp, "%s 0:0 0660\n", "video[0-9]");
+		fprintf(fp, "%s 0:0 %s\n", "video[0-9]", "0660");
 #endif
+		fprintf(fp, "%s 0:0 %s\n", "null", "0666");
+		fprintf(fp, "%s 0:0 %s\n", "zero", "0666");
+		fprintf(fp, "%s 0:0 %s\n", "full", "0666");
+		fprintf(fp, "%s 0:0 %s\n", "random", "0666");
+		fprintf(fp, "%s 0:0 %s\n", "urandom", "0444");
 		fclose(fp);
 	}
 
@@ -431,7 +451,7 @@ init_sysctl(void)
 	fput_int("/proc/sys/net/core/rmem_max", KERNEL_NET_CORE_RMEM);
 	fput_int("/proc/sys/net/core/wmem_max", KERNEL_NET_CORE_WMEM);
 
-	fput_int("/proc/sys/net/ipv4/conf/all/rp_filter", 0); // new logic for new kernels
+	set_interface_conf_int("ipv4", "all", "rp_filter", 0); // new logic for new kernels
 
 	fput_int("/proc/sys/vm/min_free_kbytes", KERNEL_MIN_FREE_KBYTES);
 	fput_int("/proc/sys/vm/overcommit_memory", 0);
@@ -517,8 +537,8 @@ init_main_loop(void)
 		/* Handle SIGALRM signal */
 		if (sig_alrm_received) {
 			sig_alrm_received = 0;
-#if (BOARD_NUM_USB_PORTS > 0)
-			on_deferred_hotplug_usb();
+#if defined (USE_USB_SUPPORT) || defined (USE_STORAGE)
+			on_deferred_hotplug_dev();
 #endif
 		}
 	}

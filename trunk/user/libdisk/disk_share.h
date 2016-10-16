@@ -17,16 +17,16 @@
 #ifndef _DISK_SHARE_
 #define _DISK_SHARE_
 
-#define MAX_ACCOUNT_NUM 50
-#define DEFAULT_SAMBA_RIGHT 3
-#define DEFAULT_FTP_RIGHT 3
-#define DEFAULT_DMS_RIGHT 1
+#define MAX_ACCOUNT_NUM		50
+#define DEFAULT_SAMBA_RIGHT	3
+#define DEFAULT_FTP_RIGHT	3
+#define DEFAULT_DMS_RIGHT	1
 
-#define BASE_LAYER 1
-#define MOUNT_LAYER BASE_LAYER+1
-#define SHARE_LAYER MOUNT_LAYER+1
+#define BASE_LAYER		1
+#define MOUNT_LAYER		(BASE_LAYER+1)
+#define SHARE_LAYER		(MOUNT_LAYER+1)
 
-#define FTP_ANONYMOUS_USER  "anonymous"
+#define FTP_ANONYMOUS_USER	"anonymous"
 
 extern int get_account_list(int *, char ***);
 extern int get_folder_list_in_mount_path(const char *const, int *, char ***);
@@ -35,7 +35,6 @@ extern void free_2_dimension_list(int *, char ***);
 extern int initial_folder_list_in_mount_path(const char *const);
 extern int initial_one_var_file_in_mount_path(const char *const, const char *const);
 extern int initial_all_var_file_in_mount_path(const char *const);
-extern int test_of_var_files(const char *const);
 
 extern int create_if_no_var_files(const char *const);
 extern int modify_if_exist_new_folder(const char *const, const char *const);

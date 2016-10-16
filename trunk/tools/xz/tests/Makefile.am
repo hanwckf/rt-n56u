@@ -13,7 +13,8 @@ EXTRA_DIST = \
 	test_scripts.sh \
 	bcj_test.c \
 	compress_prepared_bcj_sparc \
-	compress_prepared_bcj_x86
+	compress_prepared_bcj_x86 \
+	xzgrep_expected_output
 
 AM_CPPFLAGS = \
 	-I$(top_srcdir)/src/common \
@@ -52,4 +53,5 @@ TESTS += test_scripts.sh
 endif
 
 clean-local:
-	-rm -f compress_generated_*
+	-rm -f compress_generated_* \
+		xzgrep_test_output xzgrep_test_1.xz xzgrep_test_2.xz

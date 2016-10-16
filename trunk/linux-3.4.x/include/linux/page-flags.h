@@ -133,35 +133,35 @@ enum pageflags {
  * Macros to create function definitions for page flags
  */
 #define TESTPAGEFLAG(uname, lname)					\
-static inline int Page##uname(const struct page *page)			\
+static __always_inline int Page##uname(const struct page *page)			\
 			{ return test_bit(PG_##lname, &page->flags); }
 
 #define SETPAGEFLAG(uname, lname)					\
-static inline void SetPage##uname(struct page *page)			\
+static __always_inline void SetPage##uname(struct page *page)			\
 			{ set_bit(PG_##lname, &page->flags); }
 
 #define CLEARPAGEFLAG(uname, lname)					\
-static inline void ClearPage##uname(struct page *page)			\
+static __always_inline void ClearPage##uname(struct page *page)			\
 			{ clear_bit(PG_##lname, &page->flags); }
 
 #define __SETPAGEFLAG(uname, lname)					\
-static inline void __SetPage##uname(struct page *page)			\
+static __always_inline void __SetPage##uname(struct page *page)			\
 			{ __set_bit(PG_##lname, &page->flags); }
 
 #define __CLEARPAGEFLAG(uname, lname)					\
-static inline void __ClearPage##uname(struct page *page)		\
+static __always_inline void __ClearPage##uname(struct page *page)		\
 			{ __clear_bit(PG_##lname, &page->flags); }
 
 #define TESTSETFLAG(uname, lname)					\
-static inline int TestSetPage##uname(struct page *page)			\
+static __always_inline int TestSetPage##uname(struct page *page)			\
 		{ return test_and_set_bit(PG_##lname, &page->flags); }
 
 #define TESTCLEARFLAG(uname, lname)					\
-static inline int TestClearPage##uname(struct page *page)		\
+static __always_inline int TestClearPage##uname(struct page *page)		\
 		{ return test_and_clear_bit(PG_##lname, &page->flags); }
 
 #define __TESTCLEARFLAG(uname, lname)					\
-static inline int __TestClearPage##uname(struct page *page)		\
+static __always_inline int __TestClearPage##uname(struct page *page)		\
 		{ return __test_and_clear_bit(PG_##lname, &page->flags); }
 
 #define PAGEFLAG(uname, lname) TESTPAGEFLAG(uname, lname)		\
@@ -171,26 +171,26 @@ static inline int __TestClearPage##uname(struct page *page)		\
 	__SETPAGEFLAG(uname, lname)  __CLEARPAGEFLAG(uname, lname)
 
 #define PAGEFLAG_FALSE(uname) 						\
-static inline int Page##uname(const struct page *page)			\
+static __always_inline int Page##uname(const struct page *page)			\
 			{ return 0; }
 
 #define TESTSCFLAG(uname, lname)					\
 	TESTSETFLAG(uname, lname) TESTCLEARFLAG(uname, lname)
 
 #define SETPAGEFLAG_NOOP(uname)						\
-static inline void SetPage##uname(struct page *page) {  }
+static __always_inline void SetPage##uname(struct page *page) {  }
 
 #define CLEARPAGEFLAG_NOOP(uname)					\
-static inline void ClearPage##uname(struct page *page) {  }
+static __always_inline void ClearPage##uname(struct page *page) {  }
 
 #define __CLEARPAGEFLAG_NOOP(uname)					\
-static inline void __ClearPage##uname(struct page *page) {  }
+static __always_inline void __ClearPage##uname(struct page *page) {  }
 
 #define TESTCLEARFLAG_FALSE(uname)					\
-static inline int TestClearPage##uname(struct page *page) { return 0; }
+static __always_inline int TestClearPage##uname(struct page *page) { return 0; }
 
 #define __TESTCLEARFLAG_FALSE(uname)					\
-static inline int __TestClearPage##uname(struct page *page) { return 0; }
+static __always_inline int __TestClearPage##uname(struct page *page) { return 0; }
 
 struct page;	/* forward declaration */
 
@@ -294,13 +294,13 @@ static inline int PageUptodate(struct page *page)
 	return ret;
 }
 
-static inline void __SetPageUptodate(struct page *page)
+static __always_inline void __SetPageUptodate(struct page *page)
 {
 	smp_wmb();
 	__set_bit(PG_uptodate, &(page)->flags);
 }
 
-static inline void SetPageUptodate(struct page *page)
+static __always_inline void SetPageUptodate(struct page *page)
 {
 #ifdef CONFIG_S390
 	if (!test_and_set_bit(PG_uptodate, &page->flags))
@@ -381,7 +381,7 @@ static inline int PageHead(struct page *page)
 	return ((page->flags & PG_head_tail_mask) == PG_head_mask);
 }
 
-static inline int PageTail(struct page *page)
+static __always_inline int PageTail(struct page *page)
 {
 	return ((page->flags & PG_head_tail_mask) == PG_head_tail_mask);
 }
@@ -397,7 +397,7 @@ static inline void __ClearPageTail(struct page *page)
 }
 
 #ifdef CONFIG_TRANSPARENT_HUGEPAGE
-static inline void ClearPageCompound(struct page *page)
+static __always_inline void ClearPageCompound(struct page *page)
 {
 	BUG_ON((page->flags & PG_head_tail_mask) != (1 << PG_compound));
 	clear_bit(PG_compound, &page->flags);

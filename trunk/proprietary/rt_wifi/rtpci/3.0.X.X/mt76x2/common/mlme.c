@@ -316,7 +316,11 @@ VOID MlmeHandler(RTMP_ADAPTER *pAd)
 	}
 	NdisReleaseSpinLock(&pAd->Mlme.TaskLock);
 
-	while (!MlmeQueueEmpty(&pAd->Mlme.Queue)) 
+	while (!MlmeQueueEmpty(&pAd->Mlme.Queue) 
+#ifdef EAPOL_QUEUE_SUPPORT
+		|| !(EAPMlmeQueueEmpty(&pAd->Mlme.EAP_Queue))
+#endif /* EAPOL_QUEUE_SUPPORT */
+		) 
 	{
 		if (RTMP_TEST_FLAG(pAd, fRTMP_ADAPTER_MLME_RESET_IN_PROGRESS) ||
 			RTMP_TEST_FLAG(pAd, fRTMP_ADAPTER_HALT_IN_PROGRESS) ||
@@ -337,8 +341,62 @@ VOID MlmeHandler(RTMP_ADAPTER *pAd)
 #endif /* RALINK_ATE */
 
 		/*From message type, determine which state machine I should drive*/
-		if (MlmeDequeue(&pAd->Mlme.Queue, &Elem)) 
+
+		Elem = NULL;
+#ifdef EAPOL_QUEUE_SUPPORT
+		if (!EAPMlmeQueueEmpty(&pAd->Mlme.EAP_Queue))
+			EAPMlmeDequeue(&pAd->Mlme.EAP_Queue, &Elem);
+		else if (!MlmeQueueEmpty(&pAd->Mlme.Queue))
+#endif /* EAPOL_QUEUE_SUPPORT */
+			MlmeDequeue(&pAd->Mlme.Queue, &Elem);
+
+		if (Elem) 
 		{
+
+			if (Elem->Machine == WPA_STATE_MACHINE && Elem->MsgType == MT2_EAPOLKey)
+			{
+				if (((!OPSTATUS_TEST_FLAG(pAd, fOP_AP_STATUS_MEDIA_STATE_CONNECTED)) &&
+				( !OPSTATUS_TEST_FLAG(pAd, fOP_STATUS_MEDIA_STATE_CONNECTED)))
+#ifdef RT_CFG80211_P2P_CONCURRENT_DEVICE
+					&& !(RTMP_CFG80211_VIF_P2P_GO_ON(pAd) || RTMP_CFG80211_VIF_P2P_CLI_ON(pAd))
+#endif /* RT_CFG80211_P2P_CONCURRENT_DEVICE */
+
+				)
+				{
+#ifdef EAPOL_QUEUE_SUPPORT				
+					EAP_MLME_QUEUE	*Queue = (EAP_MLME_QUEUE *)&pAd->Mlme.EAP_Queue;
+#else /* EAPOL_QUEUE_SUPPORT */
+					MLME_QUEUE	*Queue = (MLME_QUEUE *)&pAd->Mlme.Queue;
+#endif /* !EAPOL_QUEUE_SUPPORT */
+					ULONG Tail;
+					NdisAcquireSpinLock(&(Queue->Lock));
+					Tail = Queue->Tail;
+					Queue->Tail++;
+					Queue->Num++;
+					if (Queue->Tail == MAX_LEN_OF_MLME_QUEUE) 
+						Queue->Tail = 0;
+					
+					Queue->Entry[Tail].Wcid = RESERVED_WCID;
+					Queue->Entry[Tail].Occupied = TRUE;
+					Queue->Entry[Tail].Machine = Elem->Machine;
+					Queue->Entry[Tail].MsgType = Elem->MsgType;
+					Queue->Entry[Tail].MsgLen = Elem->MsgLen;	
+					Queue->Entry[Tail].Priv = Elem->Priv;
+					NdisZeroMemory(Queue->Entry[Tail].Msg, MGMT_DMA_BUFFER_SIZE);
+					if (Elem->Msg != NULL)
+					{
+						NdisMoveMemory(Queue->Entry[Tail].Msg, Elem->Msg, Elem->MsgLen);
+					}
+						
+					NdisReleaseSpinLock(&(Queue->Lock));
+
+					Elem->Occupied = FALSE;
+					Elem->MsgLen = 0;
+					continue;
+					
+				}
+			}
+
 
 			/* if dequeue success*/
 			switch (Elem->Machine) 
@@ -703,7 +761,13 @@ NDIS_STATUS MlmeInit(RTMP_ADAPTER *pAd)
 
 	do 
 	{
+
+#ifdef EAPOL_QUEUE_SUPPORT
+		Status = MlmeQueueInit(pAd, &pAd->Mlme.EAP_Queue, &pAd->Mlme.Queue);
+#else /* EAPOL_QUEUE_SUPPORT */	
 		Status = MlmeQueueInit(pAd, &pAd->Mlme.Queue);
+#endif /* !EAPOL_QUEUE_SUPPORT */
+
 		if(Status != NDIS_STATUS_SUCCESS) 
 			break;
 
@@ -1028,7 +1092,11 @@ VOID MlmeHalt(RTMP_ADAPTER *pAd)
 
 	RtmpusecDelay(5000);    /*  5 msec to gurantee Ant Diversity timer canceled*/
 
+#ifdef EAPOL_QUEUE_SUPPORT
+	MlmeQueueDestroy(&pAd->Mlme.EAP_Queue, &pAd->Mlme.Queue);
+#else /* EAPOL_QUEUE_SUPPORT */
 	MlmeQueueDestroy(&pAd->Mlme.Queue);
+#endif /* !EAPOL_QUEUE_SUPPORT */
 	NdisFreeSpinLock(&pAd->Mlme.TaskLock);
 
 	DBGPRINT(RT_DEBUG_TRACE, ("<== MlmeHalt\n"));
@@ -1402,20 +1470,16 @@ VOID MlmePeriodicExec(
 		RTMP_SECOND_CCA_DETECTION(pAd);
 
 
-#ifdef DOT11_N_SUPPORT
-   		/* Need statistics after read counter. So put after NICUpdateRawCounters*/
-		ORIBATimerTimeout(pAd);
-#endif /* DOT11_N_SUPPORT */
 
 #ifdef DYNAMIC_VGA_SUPPORT
 #ifdef CONFIG_AP_SUPPORT
-		if (IS_RT6352(pAd) || (IS_MT76x2(pAd) && pAd->OpMode == OPMODE_AP)) 
+		if (IS_RT6352(pAd) || (IS_MT76x2(pAd) && pAd->OpMode == OPMODE_AP) || (IS_MT76x0E(pAd) && pAd->OpMode == OPMODE_AP)) 
 		{
 			if (pAd->Mlme.OneSecPeriodicRound % 1 == 0) {
 				RTMP_ASIC_DYNAMIC_VGA_GAIN_CONTROL(pAd);
 			}
 		}
-#endif /* CONFIG_AP_SUPPORT */
+#endif /*CONFIG_AP_SUPPORT*/
 
 #ifdef CONFIG_STA_SUPPORT
 #ifdef MT76x2
@@ -2158,6 +2222,7 @@ VOID STAMlmePeriodicExec(RTMP_ADAPTER *pAd)
 			pAd->StaCfg.bSkipAutoScanConn = FALSE;
         
 		if ((pAd->StaCfg.bAutoReconnect == TRUE)
+			&& !RTMP_TEST_FLAG(pAd, fRTMP_ADAPTER_RADIO_OFF)
 			&& RTMP_TEST_FLAG(pAd, fRTMP_ADAPTER_START_UP)
 			&& (MlmeValidateSSID(pAd->MlmeAux.AutoReconnectSsid, pAd->MlmeAux.AutoReconnectSsidLen) == TRUE))
 		{
@@ -2602,7 +2667,7 @@ VOID MlmeCalculateChannelQuality(
 	IN PMAC_TABLE_ENTRY pMacEntry,
 	IN ULONG Now32)
 {
-	ULONG TxOkCnt, TxCnt, TxPER, TxPRR;
+	ULONG TxOkCnt, TxCnt/*, TxPER*/,TxPRR;
 	ULONG RxCnt, RxPER;
 	UCHAR NorRssi;
 	CHAR  MaxRssi;
@@ -2670,12 +2735,12 @@ VOID MlmeCalculateChannelQuality(
 	TxCnt = TxOkCnt + OneSecTxFailCount;
 	if (TxCnt < 5) 
 	{
-		TxPER = 0;
+		/*TxPER = 0;*/
 		TxPRR = 0;
 	}
 	else 
 	{
-		TxPER = (OneSecTxFailCount * 100) / TxCnt; 
+		/*TxPER = (OneSecTxFailCount * 100) / TxCnt;*/ 
 		TxPRR = ((TxCnt - OneSecTxNoRetryOkCount) * 100) / TxCnt;
 	}
 
@@ -3252,10 +3317,10 @@ VOID MlmeUpdateTxRates(RTMP_ADAPTER *pAd, BOOLEAN bLinkUp, UCHAR apidx)
  */
 VOID MlmeUpdateHtTxRates(RTMP_ADAPTER *pAd, UCHAR apidx)
 {
-	UCHAR StbcMcs;
+	/*UCHAR StbcMcs;*/
 	RT_HT_CAPABILITY *pRtHtCap = NULL;
 	RT_PHY_INFO *pActiveHtPhy = NULL;	
-	ULONG BasicMCS;
+	/*ULONG BasicMCS;*/
 	RT_PHY_INFO *pDesireHtPhy = NULL;
 	PHTTRANSMIT_SETTING pHtPhy = NULL;
 	PHTTRANSMIT_SETTING pMaxHtPhy = NULL;
@@ -3348,8 +3413,8 @@ VOID MlmeUpdateHtTxRates(RTMP_ADAPTER *pAd, UCHAR apidx)
 
 		pRtHtCap = &pAd->StaActive.SupportedHtPhy;
 		pActiveHtPhy = &pAd->StaActive.SupportedPhyInfo;
-		StbcMcs = (UCHAR)pAd->MlmeAux.AddHtInfo.AddHtInfo3.StbcMcs;
-		BasicMCS =pAd->MlmeAux.AddHtInfo.MCSSet[0]+(pAd->MlmeAux.AddHtInfo.MCSSet[1]<<8)+(StbcMcs<<16);
+		/*StbcMcs = (UCHAR)pAd->MlmeAux.AddHtInfo.AddHtInfo3.StbcMcs;*/
+		/*BasicMCS =pAd->MlmeAux.AddHtInfo.MCSSet[0]+(pAd->MlmeAux.AddHtInfo.MCSSet[1]<<8)+(StbcMcs<<16);*/
 		if ((pAd->CommonCfg.DesiredHtPhy.TxSTBC) && (pRtHtCap->RxSTBC) && (pAd->Antenna.field.TxPath == 2))
 			pMaxHtPhy->field.STBC = STBC_USE;
 		else
@@ -3362,8 +3427,8 @@ VOID MlmeUpdateHtTxRates(RTMP_ADAPTER *pAd, UCHAR apidx)
 			return;
 
 		pRtHtCap = &pAd->CommonCfg.DesiredHtPhy;
-		StbcMcs = (UCHAR)pAd->CommonCfg.AddHTInfo.AddHtInfo3.StbcMcs;
-		BasicMCS = pAd->CommonCfg.AddHTInfo.MCSSet[0]+(pAd->CommonCfg.AddHTInfo.MCSSet[1]<<8)+(StbcMcs<<16);
+		/*StbcMcs = (UCHAR)pAd->CommonCfg.AddHTInfo.AddHtInfo3.StbcMcs;*/
+		/*BasicMCS = pAd->CommonCfg.AddHTInfo.MCSSet[0]+(pAd->CommonCfg.AddHTInfo.MCSSet[1]<<8)+(StbcMcs<<16);*/
 		if ((pAd->CommonCfg.DesiredHtPhy.TxSTBC) && (pAd->Antenna.field.TxPath >= 2))
 			pMaxHtPhy->field.STBC = STBC_USE;
 		else
@@ -3773,6 +3838,7 @@ VOID BssEntrySet(
 	NdisMoveMemory(pBss->ExtRate, ie_list->ExtRate, ie_list->ExtRateLen);
 	pBss->NewExtChanOffset = ie_list->NewExtChannelOffset;
 	pBss->ExtRateLen = ie_list->ExtRateLen;
+	pBss->Erp = ie_list->Erp;
 	pBss->Channel = ie_list->Channel;
 	pBss->CentralChannel = ie_list->Channel;
 	pBss->Rssi = Rssi;
@@ -3803,6 +3869,23 @@ VOID BssEntrySet(
 
 	pBss->AddHtInfoLen = 0;
 	pBss->HtCapabilityLen = 0;
+#ifdef SMART_MESH
+	if ((ie_list->AddHtInfo.AddHtInfo.ExtChanOffset == EXTCHA_NONE) &&
+		(ie_list->AddHtInfo.AddHtInfo.RecomWidth == 0))
+		pBss->BW = BW_20;
+
+	if ((ie_list->AddHtInfo.AddHtInfo.ExtChanOffset != EXTCHA_NONE) &&
+					(ie_list->HtCapabilityLen > 0) &&
+					(ie_list->HtCapability.HtCapInfo.ChannelWidth == 1))
+		pBss->BW = BW_40;
+#ifdef	DOT11_VHT_AC
+	if(ie_list->vht_op_len > 0 && ie_list->vht_op_ie.vht_op_info.ch_width == 1)
+		pBss->BW = BW_80;
+	
+	if(ie_list->vht_op_len > 0 && ie_list->vht_cap_ie.vht_cap.ch_width> 0)
+		pBss->BW =  BW_160;/* BW_160 */
+#endif /* DOT11_VHT_AC */
+#endif/* SMART_MESH */	
 #ifdef DOT11_N_SUPPORT
 	if (ie_list->HtCapabilityLen> 0)
 	{
@@ -3837,7 +3920,7 @@ VOID BssEntrySet(
 				UCHAR cent_ch;
 				
 				cent_ch = vht_cent_ch_freq(pAd, ie_list->AddHtInfo.ControlChan);
-				DBGPRINT(RT_DEBUG_TRACE, ("%s():VHT cent_ch=%d, vht_op_info->center_freq_1=%d, Bss->CentCh=%d, change from CentralChannel to cent_ch!\n",
+				DBGPRINT(RT_DEBUG_INFO, ("%s():VHT cent_ch=%d, vht_op_info->center_freq_1=%d, Bss->CentCh=%d, change from CentralChannel to cent_ch!\n",
 											__FUNCTION__, cent_ch, vht_op->vht_op_info.center_freq_1, pBss->CentralChannel));
 				pBss->CentralChannel = vht_op->vht_op_info.center_freq_1;
 			}
@@ -3886,11 +3969,12 @@ VOID BssEntrySet(
 		NdisZeroMemory(&pBss->CountryString[0], 3);
 		pBss->bHasCountryIE = FALSE;
 #endif /* EXT_BUILD_CHANNEL_LIST */
-#ifdef DOT11R_FT_SUPPORT
+#endif /* CONFIG_STA_SUPPORT */
+#if defined(DOT11R_FT_SUPPORT) || defined(DOT11K_RRM_SUPPORT)
 		pBss->bHasMDIE = FALSE;
 		NdisZeroMemory(&pBss->FT_MDIE, sizeof(FT_MDIE));
-#endif /* DOT11R_FT_SUPPORT */
-#endif /* CONFIG_STA_SUPPORT */
+#endif /* defined(DOT11R_FT_SUPPORT) || defined(DOT11K_RRM_SUPPORT) */
+
 		pEid = (PEID_STRUCT) pVIE;
 		while ((Length + 2 + (USHORT)pEid->Len) <= LengthVIE)    
 		{
@@ -3921,6 +4005,30 @@ VOID BssEntrySet(
 #endif /* CONFIG_STA_SUPPORT */
 						break;
 					}
+#ifdef SMART_MESH
+					if ((pEid->Len >= NTGR_OUI_LEN) && NdisEqualMemory(pEid->Octet, NETGEAR_OUI, NTGR_OUI_LEN))
+					{
+						Set_Check_RadarChannelAP(pAd,ie_list->Channel, pBss);
+						if(pEid->Len > NTGR_OUI_LEN)
+						{
+#ifdef MWDS
+							pBss->bSupportMWDS = (pEid->Octet[3] & 0x01) ? TRUE : FALSE;
+#endif /* MWDS */
+							pBss->bSupportSmartMesh = (pEid->Octet[3] & 0x02) ? TRUE : FALSE;
+#ifdef WSC_AP_SUPPORT
+#ifdef SMART_MESH_HIDDEN_WPS
+							pBss->bSupportHiddenWPS = (pEid->Octet[3] & 0x04) ? TRUE : FALSE;
+							if((pEid->Len - NTGR_OUI_LEN) >= NTGR_CUSTOM_IE_MAX_LEN)
+							{
+							    pBss->bRunningHiddenWPS = (pEid->Octet[5] & HIDDEN_WPS_STATE_RUNNING) ? TRUE : FALSE;
+							    pBss->bHiddenWPSRegistrar = (pEid->Octet[5] & HIDDEN_WPS_ROLE_REGISTRAR) ? TRUE : FALSE;
+							}
+#endif /* SMART_MESH_HIDDEN_WPS */
+#endif /* WSC_AP_SUPPORT */
+						}
+						break;
+					}			
+#endif /* defined(SMART_MESH) */
 #ifdef CONFIG_STA_SUPPORT
 					if (NdisEqualMemory(pEid->Octet, WPA_OUI, 4))
 					{
@@ -3968,7 +4076,8 @@ VOID BssEntrySet(
 					pBss->bHasCountryIE = TRUE;
 					break;
 #endif /* EXT_BUILD_CHANNEL_LIST */
-#ifdef DOT11R_FT_SUPPORT
+#endif /* CONFIG_STA_SUPPORT */
+#if defined(DOT11R_FT_SUPPORT) || defined(DOT11K_RRM_SUPPORT)
 				case IE_FT_MDIE:
 					if (pEid->Len == sizeof(FT_MDIE))
 					{
@@ -3976,8 +4085,7 @@ VOID BssEntrySet(
 						NdisMoveMemory(&pBss->FT_MDIE, pEid->Octet, pEid->Len);
 					}
 					break;
-#endif /* DOT11R_FT_SUPPORT */
-#endif /* CONFIG_STA_SUPPORT */
+#endif /* defined(DOT11R_FT_SUPPORT) || defined(DOT11K_RRM_SUPPORT) */
 			}
 			Length = Length + 2 + (USHORT)pEid->Len;  /* Eid[1] + Len[1]+ content[Len]*/
 			pEid = (PEID_STRUCT)((UCHAR*)pEid + 2 + pEid->Len);        
@@ -5175,7 +5283,12 @@ ULONG MakeOutgoingFrame(UCHAR *Buffer, ULONG *FrameLen, ...)
  IRQL = PASSIVE_LEVEL
  
  */
-NDIS_STATUS MlmeQueueInit(RTMP_ADAPTER *pAd, MLME_QUEUE *Queue) 
+NDIS_STATUS MlmeQueueInit(
+    IN RTMP_ADAPTER *pAd,
+#ifdef EAPOL_QUEUE_SUPPORT
+	IN EAP_MLME_QUEUE *EAP_Queue,
+#endif /* EAPOL_QUEUE_SUPPORT */
+	IN MLME_QUEUE *Queue)
 {
 	INT i;
 
@@ -5184,6 +5297,9 @@ NDIS_STATUS MlmeQueueInit(RTMP_ADAPTER *pAd, MLME_QUEUE *Queue)
 	Queue->Num	= 0;
 	Queue->Head = 0;
 	Queue->Tail = 0;
+#ifdef SMART_MESH
+    Queue->QueueFullCnt = 0;
+#endif /* SMART_MESH */
 
 	for (i = 0; i < MAX_LEN_OF_MLME_QUEUE; i++) 
 	{
@@ -5191,6 +5307,24 @@ NDIS_STATUS MlmeQueueInit(RTMP_ADAPTER *pAd, MLME_QUEUE *Queue)
 		Queue->Entry[i].MsgLen = 0;
 		NdisZeroMemory(Queue->Entry[i].Msg, MGMT_DMA_BUFFER_SIZE);
 	}
+
+#ifdef EAPOL_QUEUE_SUPPORT
+	NdisAllocateSpinLock(pAd, &EAP_Queue->Lock);
+
+	EAP_Queue->Num = 0;
+	EAP_Queue->Head = 0;
+	EAP_Queue->Tail = 0;
+#ifdef SMART_MESH
+    EAP_Queue->QueueFullCnt = 0;
+#endif /* SMART_MESH */
+
+	for (i = 0; i < MAX_LEN_OF_EAP_QUEUE; i++) 
+	{
+		EAP_Queue->Entry[i].Occupied = FALSE;
+		EAP_Queue->Entry[i].MsgLen = 0;
+		NdisZeroMemory(EAP_Queue->Entry[i].Msg, MGMT_DMA_BUFFER_SIZE);
+	}
+#endif /* EAPOL_QUEUE_SUPPORT */
 
 	return NDIS_STATUS_SUCCESS;
 }
@@ -5265,6 +5399,65 @@ BOOLEAN MlmeEnqueue(
 	NdisReleaseSpinLock(&(Queue->Lock));
 	return TRUE;
 }
+#ifdef EAPOL_QUEUE_SUPPORT
+BOOLEAN EAPMlmeEnqueue(
+	IN RTMP_ADAPTER *pAd,
+	IN ULONG Machine,
+	IN ULONG MsgType,
+	IN ULONG MsgLen,
+	IN VOID *Msg,
+	IN ULONG Priv)
+{
+	INT Tail;
+	EAP_MLME_QUEUE	*Queue = (EAP_MLME_QUEUE *)&pAd->Mlme.EAP_Queue;
+
+	/* Do nothing if the driver is starting halt state.*/
+	/* This might happen when timer already been fired before cancel timer with mlmehalt*/
+	if (RTMP_TEST_FLAG(pAd, fRTMP_ADAPTER_HALT_IN_PROGRESS | fRTMP_ADAPTER_NIC_NOT_EXIST))
+		return FALSE;
+
+	/* First check the size, it MUST not exceed the mlme queue size*/
+	if (MsgLen > MGMT_DMA_BUFFER_SIZE)
+	{
+		DBGPRINT_ERR(("%s: msg too large, size = %ld \n", __FUNCTION__, MsgLen));
+		return FALSE;
+	}
+	
+	if (EAPMlmeQueueFull(Queue)) 
+	{
+		return FALSE;
+	}
+
+	NdisAcquireSpinLock(&(Queue->Lock));
+	Tail = Queue->Tail;
+	/*
+		Double check for safety in multi-thread system.
+	*/
+	if (Queue->Entry[Tail].Occupied)
+	{
+		NdisReleaseSpinLock(&(Queue->Lock));
+		return FALSE;
+	}
+	Queue->Tail++;
+	Queue->Num++;
+	if (Queue->Tail == MAX_LEN_OF_EAP_QUEUE) 
+		Queue->Tail = 0;
+	
+	Queue->Entry[Tail].Wcid = RESERVED_WCID;
+	Queue->Entry[Tail].Occupied = TRUE;
+	Queue->Entry[Tail].Machine = Machine;
+	Queue->Entry[Tail].MsgType = MsgType;
+	Queue->Entry[Tail].MsgLen = MsgLen;	
+	Queue->Entry[Tail].Priv = Priv;
+	
+	if (Msg != NULL)
+		NdisMoveMemory(Queue->Entry[Tail].Msg, Msg, MsgLen);
+		
+	NdisReleaseSpinLock(&(Queue->Lock));
+
+	return TRUE;
+}
+#endif /* EAPOL_QUEUE_SUPPORT */
 
 
 /*! \brief	 This function is used when Recv gets a MLME message
@@ -5298,6 +5491,12 @@ BOOLEAN MlmeEnqueueForRecv(
 	INT 		 Tail, Machine = 0xff;
 	PFRAME_802_11 pFrame = (PFRAME_802_11)Msg;
 	INT		 MsgType = 0x0;
+
+#ifdef EAPOL_QUEUE_SUPPORT
+    BOOLEAN bEAPQueueFull;
+	EAP_MLME_QUEUE	*EAP_Queue = (EAP_MLME_QUEUE *)&pAd->Mlme.EAP_Queue;
+#endif /* EAPOL_QUEUE_SUPPORT */
+    BOOLEAN bMlmeQueueFull;
 	MLME_QUEUE	*Queue = (MLME_QUEUE *)&pAd->Mlme.Queue;
 #ifdef APCLI_SUPPORT
 	UCHAR ApCliIdx = 0;
@@ -5330,8 +5529,27 @@ BOOLEAN MlmeEnqueueForRecv(
 		return FALSE;
 	}
 
-	if (MlmeQueueFull(Queue, 0)) 
+#ifdef EAPOL_QUEUE_SUPPORT
+    bEAPQueueFull = (EAPMlmeQueueFull(EAP_Queue))? TRUE : FALSE;
+#endif /* EAPOL_QUEUE_SUPPORT */
+    bMlmeQueueFull = (MlmeQueueFull(Queue, 0))? TRUE : FALSE;
+
+#ifdef SMART_MESH
+#ifdef EAPOL_QUEUE_SUPPORT
+    if(bEAPQueueFull)
+        EAP_Queue->QueueFullCnt++;
+#endif /* EAPOL_QUEUE_SUPPORT */    
+    if(bMlmeQueueFull)
+        Queue->QueueFullCnt++;
+#endif /* SMART_MESH */
+
+#ifdef EAPOL_QUEUE_SUPPORT
+    if (bMlmeQueueFull && bEAPQueueFull) 
+#else
+	if (bMlmeQueueFull)
+#endif /* EAPOL_QUEUE_SUPPORT */
 	{
+		RTMP_MLME_HANDLER(pAd);
 		return FALSE;
 	}
 
@@ -5367,6 +5585,10 @@ BOOLEAN MlmeEnqueueForRecv(
 				if (MAC_ADDR_EQUAL(pAd->ApCfg.ApCliTab[i].MlmeAux.Bssid, pFrame->Hdr.Addr2))
 				{
 					bToApCli = TRUE;
+
+					if (pFrame->Hdr.FC.SubType == SUBTYPE_BEACON)
+						pAd->ApCfg.ApCliTab[i].ApCliRcvBeaconTime = pAd->Mlme.Now32;
+
 					break;
 				}
 			}
@@ -5417,7 +5639,83 @@ BOOLEAN MlmeEnqueueForRecv(
 	}
 #endif /* CONFIG_STA_SUPPORT */
 
-	/* OK, we got all the informations, it is time to put things into queue*/
+#ifdef EAPOL_QUEUE_SUPPORT
+	if ((Machine == WPA_STATE_MACHINE) || (Machine == WSC_STATE_MACHINE))
+	{
+		if (bEAPQueueFull) 
+		{
+			RTMP_MLME_HANDLER(pAd);
+			return FALSE;
+		}
+		
+        /* OK, we got all the informations, it is time to put things into queue*/
+		NdisAcquireSpinLock(&(EAP_Queue->Lock));
+		Tail = EAP_Queue->Tail;
+		/*
+			Double check for safety in multi-thread system.
+		*/
+		if (EAP_Queue->Entry[Tail].Occupied)
+		{
+			NdisReleaseSpinLock(&(EAP_Queue->Lock));
+			return FALSE;
+		}
+		EAP_Queue->Tail++;
+		EAP_Queue->Num++;
+		if (EAP_Queue->Tail == MAX_LEN_OF_EAP_QUEUE) 
+			EAP_Queue->Tail = 0;
+
+		EAP_Queue->Entry[Tail].Occupied = TRUE;
+		EAP_Queue->Entry[Tail].Machine = Machine;
+		EAP_Queue->Entry[Tail].MsgType = MsgType;
+		EAP_Queue->Entry[Tail].MsgLen  = MsgLen;
+		EAP_Queue->Entry[Tail].TimeStamp.u.LowPart = TimeStampLow;
+		EAP_Queue->Entry[Tail].TimeStamp.u.HighPart = TimeStampHigh;
+		EAP_Queue->Entry[Tail].Rssi0 = Rssi0;
+		EAP_Queue->Entry[Tail].Rssi1 = Rssi1;
+		EAP_Queue->Entry[Tail].Rssi2 = Rssi2;
+#ifdef CUSTOMER_DCC_FEATURE
+		EAP_Queue->Entry[Tail].Snr0= Snr0;
+		EAP_Queue->Entry[Tail].Snr1= Snr1;
+#endif
+		EAP_Queue->Entry[Tail].Signal = Signal;
+		EAP_Queue->Entry[Tail].Wcid = (UCHAR)Wcid;
+		EAP_Queue->Entry[Tail].OpMode = (ULONG)OpMode;
+		EAP_Queue->Entry[Tail].Channel = pAd->LatchRfRegs.Channel;
+		EAP_Queue->Entry[Tail].Priv = 0;
+#ifdef APCLI_SUPPORT
+		EAP_Queue->Entry[Tail].Priv = ApCliIdx;
+#endif /* APCLI_SUPPORT */
+#ifdef MAC_REPEATER_SUPPORT
+		if (pAd->ApCfg.bMACRepeaterEn)
+		{
+			for (CliIdx = 0; CliIdx < MAX_EXT_MAC_ADDR_SIZE; CliIdx++)
+			{
+				if (MAC_ADDR_EQUAL(pAd->ApCfg.ApCliTab[ApCliIdx].RepeaterCli[CliIdx].CurrentAddress, pFrame->Hdr.Addr1))
+				{
+					EAP_Queue->Entry[Tail].Priv = (64 + (MAX_EXT_MAC_ADDR_SIZE * ApCliIdx) + CliIdx);
+					break;
+				}
+			}
+		}
+#endif /* MAC_REPEATER_SUPPORT */
+
+		if (Msg != NULL)
+		{
+			NdisMoveMemory(EAP_Queue->Entry[Tail].Msg, Msg, MsgLen);
+		}
+
+		NdisReleaseSpinLock(&(EAP_Queue->Lock));
+	}
+	else
+#endif /* EAPOL_QUEUE_SUPPORT */
+	{
+		if (bMlmeQueueFull) 
+		{
+ 			RTMP_MLME_HANDLER(pAd);
+			return FALSE;
+		}
+		
+    	/* OK, we got all the informations, it is time to put things into queue*/
 	NdisAcquireSpinLock(&(Queue->Lock));
 	Tail = Queue->Tail;
 	/*
@@ -5467,13 +5765,13 @@ BOOLEAN MlmeEnqueueForRecv(
 		}
 	}
 #endif /* MAC_REPEATER_SUPPORT */
+		if (Msg != NULL)
+		{
+			NdisMoveMemory(Queue->Entry[Tail].Msg, Msg, MsgLen);
+		}
 
-	if (Msg != NULL)
-	{
-		NdisMoveMemory(Queue->Entry[Tail].Msg, Msg, MsgLen);
+		NdisReleaseSpinLock(&(Queue->Lock));
 	}
-
-	NdisReleaseSpinLock(&(Queue->Lock));	
 	RTMP_MLME_HANDLER(pAd);
 
 	return TRUE;
@@ -5581,6 +5879,23 @@ BOOLEAN MlmeDequeue(MLME_QUEUE *Queue, MLME_QUEUE_ELEM **Elem)
 	return TRUE;
 }
 
+#ifdef EAPOL_QUEUE_SUPPORT
+BOOLEAN EAPMlmeDequeue(
+	IN EAP_MLME_QUEUE *Queue, 
+	OUT MLME_QUEUE_ELEM **Elem) 
+{
+	NdisAcquireSpinLock(&(Queue->Lock));
+	*Elem = &(Queue->Entry[Queue->Head]);    
+	Queue->Num--;
+	Queue->Head++;
+	if (Queue->Head == MAX_LEN_OF_EAP_QUEUE) 
+	{
+		Queue->Head = 0;
+	}
+	NdisReleaseSpinLock(&(Queue->Lock));
+	return TRUE;
+}
+#endif /* EAPOL_QUEUE_SUPPORT */
 
 VOID MlmeRestartStateMachine(RTMP_ADAPTER *pAd)
 {
@@ -5605,6 +5920,23 @@ VOID MlmeRestartStateMachine(RTMP_ADAPTER *pAd)
 		pAd->Mlme.bRunning = TRUE;
 	}
 	NdisReleaseSpinLock(&pAd->Mlme.TaskLock);
+
+#ifdef EAPOL_QUEUE_SUPPORT
+	while (!EAPMlmeQueueEmpty(&pAd->Mlme.EAP_Queue)) 
+	{
+		/*From message type, determine which state machine I should drive*/
+		if (EAPMlmeDequeue(&pAd->Mlme.EAP_Queue, &Elem)) 
+		{
+			/* free MLME element*/
+			Elem->Occupied = FALSE;
+			Elem->MsgLen = 0;
+
+		}
+		else {
+			DBGPRINT_ERR(("MlmeRestartStateMachine: EAP MlmeQueue empty\n"));
+		}
+	}
+#endif /* EAPOL_QUEUE_SUPPORT */
 
 	/* Remove all Mlme queues elements*/
 	while (!MlmeQueueEmpty(&pAd->Mlme.Queue)) 
@@ -5705,6 +6037,20 @@ BOOLEAN MlmeQueueEmpty(MLME_QUEUE *Queue)
 	return Ans;
 }
 
+#ifdef EAPOL_QUEUE_SUPPORT
+BOOLEAN EAPMlmeQueueEmpty(
+	IN EAP_MLME_QUEUE *Queue) 
+{
+	BOOLEAN Ans;
+
+	NdisAcquireSpinLock(&(Queue->Lock));
+	Ans = (Queue->Num == 0);
+	NdisReleaseSpinLock(&(Queue->Lock));
+
+	return Ans;
+}
+#endif /* EAPOL_QUEUE_SUPPORT */
+
 /*! \brief	 test if the MLME Queue is full
  *	\param	 *Queue 	 The MLME Queue
  *	\return  TRUE if the Queue is empty, FALSE otherwise
@@ -5729,6 +6075,19 @@ BOOLEAN MlmeQueueFull(MLME_QUEUE *Queue, UCHAR SendId)
 	return Ans;
 }
 
+#ifdef EAPOL_QUEUE_SUPPORT
+BOOLEAN EAPMlmeQueueFull(
+	IN EAP_MLME_QUEUE *Queue) 
+{
+	BOOLEAN Ans;
+
+	NdisAcquireSpinLock(&(Queue->Lock));
+	Ans = (Queue->Num == MAX_LEN_OF_EAP_QUEUE);
+	NdisReleaseSpinLock(&(Queue->Lock));
+
+	return Ans;
+}
+#endif /* EAPOL_QUEUE_SUPPORT */
 
 /*! \brief	 The destructor of MLME Queue
  *	\param 
@@ -5740,14 +6099,35 @@ BOOLEAN MlmeQueueFull(MLME_QUEUE *Queue, UCHAR SendId)
  IRQL = PASSIVE_LEVEL
  
  */
-VOID MlmeQueueDestroy(MLME_QUEUE *pQueue) 
+VOID MlmeQueueDestroy(
+#ifdef EAPOL_QUEUE_SUPPORT
+	IN EAP_MLME_QUEUE *pEAP_Queue,
+#endif /* EAPOL_QUEUE_SUPPORT */
+	IN MLME_QUEUE *pQueue) 
 {
 	NdisAcquireSpinLock(&(pQueue->Lock));
 	pQueue->Num  = 0;
 	pQueue->Head = 0;
 	pQueue->Tail = 0;
+#ifdef SMART_MESH
+    pQueue->QueueFullCnt = 0;
+#endif /* SMART_MESH */
+
 	NdisReleaseSpinLock(&(pQueue->Lock));
 	NdisFreeSpinLock(&(pQueue->Lock));
+
+#ifdef EAPOL_QUEUE_SUPPORT
+	NdisAcquireSpinLock(&(pEAP_Queue->Lock));
+	pEAP_Queue->Num  = 0;
+	pEAP_Queue->Head = 0;
+	pEAP_Queue->Tail = 0;
+#ifdef SMART_MESH
+    pEAP_Queue->QueueFullCnt = 0;
+#endif /* SMART_MESH */
+
+	NdisReleaseSpinLock(&(pEAP_Queue->Lock));
+	NdisFreeSpinLock(&(pEAP_Queue->Lock));	
+#endif /* EAPOL_QUEUE_SUPPORT */
 }
 
 

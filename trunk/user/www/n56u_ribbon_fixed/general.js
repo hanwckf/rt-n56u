@@ -1293,14 +1293,12 @@ function blur_body() {
 }
 
 function showhide(e, sh) {
-    var status;
-    if (sh == 0)
-        status = "none"
-    else
-        status = "block";
-
-    if (document.getElementById)
-        document.getElementById(e).style.display = status;
+    var status = (sh == 0) ? "none" : "block";
+    if (document.getElementById){
+        var o = document.getElementById(e);
+        if (o !== null)
+            o.style.display = status;
+    }
     else if (document.all)
         document.all[e].style.display = status;
     else if (document.layers)
@@ -1308,14 +1306,12 @@ function showhide(e, sh) {
 }
 
 function showhide_div(e, sh) {
-    var status;
-    if (sh == 0)
-        status = "none"
-    else
-        status = "";
-
-    if (document.getElementById)
-        document.getElementById(e).style.display = status;
+    var status = (sh == 0) ? "none" : "";
+    if (document.getElementById){
+        var o = document.getElementById(e);
+        if (o !== null)
+            o.style.display = status;
+    }
     else if (document.all)
         document.all[e].style.display = status;
     else if (document.layers)

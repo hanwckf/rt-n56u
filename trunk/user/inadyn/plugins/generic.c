@@ -94,7 +94,7 @@ static int response(http_trans_t *trans, ddns_info_t *UNUSED(info), ddns_alias_t
 
 	DO(http_status_valid(trans->status));
 
-	if (strstr(resp, "OK") || strstr(resp, "good") || strstr(resp, "true"))
+	if (strstr(resp, "OK") || strstr(resp, "good") || strstr(resp, "true") || strcasestr(resp, "updated"))
 		return RC_OK;
 
 	return RC_DYNDNS_RSP_NOTOK;

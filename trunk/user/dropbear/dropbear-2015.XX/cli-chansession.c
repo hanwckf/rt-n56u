@@ -43,7 +43,7 @@ static void send_chansess_shell_req(struct Channel *channel);
 static void cli_escape_handler(struct Channel *channel, unsigned char* buf, int *len);
 static int cli_init_netcat(struct Channel *channel);
 
-static void cli_tty_setup();
+static void cli_tty_setup(void);
 
 const struct ChanType clichansess = {
 	0, /* sepfds */
@@ -438,7 +438,6 @@ do_escape(unsigned char c) {
 		case '.':
 			dropbear_exit("Terminated");
 			return 1;
-			break;
 		case 0x1a:
 			/* ctrl-z */
 			cli_tty_cleanup();
@@ -447,9 +446,9 @@ do_escape(unsigned char c) {
 			cli_tty_setup();
 			cli_ses.winchange = 1;
 			return 1;
-			break;
+		default:
+			return 0;
 	}
-	return 0;
 }
 
 static

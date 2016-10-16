@@ -203,6 +203,7 @@ OPENSSL_GLOBAL SSL_CIPHER ssl3_ciphers[] = {
      },
 
 /* Cipher 03 */
+#ifndef OPENSSL_NO_WEAK_SSL_CIPHERS
     {
      1,
      SSL3_TXT_RSA_RC4_40_MD5,
@@ -212,11 +213,12 @@ OPENSSL_GLOBAL SSL_CIPHER ssl3_ciphers[] = {
      SSL_RC4,
      SSL_MD5,
      SSL_SSLV3,
-     SSL_EXPORT | SSL_EXP40,
+     SSL_NOT_DEFAULT | SSL_EXPORT | SSL_EXP40,
      SSL_HANDSHAKE_MAC_DEFAULT | TLS1_PRF,
      40,
      128,
      },
+#endif
 
 /* Cipher 04 */
     {
@@ -251,6 +253,7 @@ OPENSSL_GLOBAL SSL_CIPHER ssl3_ciphers[] = {
      },
 
 /* Cipher 06 */
+#ifndef OPENSSL_NO_WEAK_SSL_CIPHERS
     {
      1,
      SSL3_TXT_RSA_RC2_40_MD5,
@@ -260,11 +263,12 @@ OPENSSL_GLOBAL SSL_CIPHER ssl3_ciphers[] = {
      SSL_RC2,
      SSL_MD5,
      SSL_SSLV3,
-     SSL_EXPORT | SSL_EXP40,
+     SSL_NOT_DEFAULT | SSL_EXPORT | SSL_EXP40,
      SSL_HANDSHAKE_MAC_DEFAULT | TLS1_PRF,
      40,
      128,
      },
+#endif
 
 /* Cipher 07 */
 #ifndef OPENSSL_NO_IDEA
@@ -285,6 +289,7 @@ OPENSSL_GLOBAL SSL_CIPHER ssl3_ciphers[] = {
 #endif
 
 /* Cipher 08 */
+#ifndef OPENSSL_NO_WEAK_SSL_CIPHERS
     {
      1,
      SSL3_TXT_RSA_DES_40_CBC_SHA,
@@ -294,13 +299,15 @@ OPENSSL_GLOBAL SSL_CIPHER ssl3_ciphers[] = {
      SSL_DES,
      SSL_SHA1,
      SSL_SSLV3,
-     SSL_EXPORT | SSL_EXP40,
+     SSL_NOT_DEFAULT | SSL_EXPORT | SSL_EXP40,
      SSL_HANDSHAKE_MAC_DEFAULT | TLS1_PRF,
      40,
      56,
      },
+#endif
 
 /* Cipher 09 */
+#ifndef OPENSSL_NO_WEAK_SSL_CIPHERS
     {
      1,
      SSL3_TXT_RSA_DES_64_CBC_SHA,
@@ -310,11 +317,12 @@ OPENSSL_GLOBAL SSL_CIPHER ssl3_ciphers[] = {
      SSL_DES,
      SSL_SHA1,
      SSL_SSLV3,
-     SSL_NOT_EXP | SSL_LOW,
+     SSL_NOT_DEFAULT | SSL_NOT_EXP | SSL_LOW,
      SSL_HANDSHAKE_MAC_DEFAULT | TLS1_PRF,
      56,
      56,
      },
+#endif
 
 /* Cipher 0A */
     {
@@ -326,7 +334,7 @@ OPENSSL_GLOBAL SSL_CIPHER ssl3_ciphers[] = {
      SSL_3DES,
      SSL_SHA1,
      SSL_SSLV3,
-     SSL_NOT_EXP | SSL_HIGH | SSL_FIPS,
+     SSL_NOT_EXP | SSL_MEDIUM | SSL_FIPS,
      SSL_HANDSHAKE_MAC_DEFAULT | TLS1_PRF,
      112,
      168,
@@ -334,6 +342,7 @@ OPENSSL_GLOBAL SSL_CIPHER ssl3_ciphers[] = {
 
 /* The DH ciphers */
 /* Cipher 0B */
+#ifndef OPENSSL_NO_WEAK_SSL_CIPHERS
     {
      0,
      SSL3_TXT_DH_DSS_DES_40_CBC_SHA,
@@ -343,13 +352,15 @@ OPENSSL_GLOBAL SSL_CIPHER ssl3_ciphers[] = {
      SSL_DES,
      SSL_SHA1,
      SSL_SSLV3,
-     SSL_EXPORT | SSL_EXP40,
+     SSL_NOT_DEFAULT | SSL_EXPORT | SSL_EXP40,
      SSL_HANDSHAKE_MAC_DEFAULT | TLS1_PRF,
      40,
      56,
      },
+#endif
 
 /* Cipher 0C */
+#ifndef OPENSSL_NO_WEAK_SSL_CIPHERS
     {
      0,                         /* not implemented (non-ephemeral DH) */
      SSL3_TXT_DH_DSS_DES_64_CBC_SHA,
@@ -359,11 +370,12 @@ OPENSSL_GLOBAL SSL_CIPHER ssl3_ciphers[] = {
      SSL_DES,
      SSL_SHA1,
      SSL_SSLV3,
-     SSL_NOT_EXP | SSL_LOW,
+     SSL_NOT_DEFAULT | SSL_NOT_EXP | SSL_LOW,
      SSL_HANDSHAKE_MAC_DEFAULT | TLS1_PRF,
      56,
      56,
      },
+#endif
 
 /* Cipher 0D */
     {
@@ -375,13 +387,14 @@ OPENSSL_GLOBAL SSL_CIPHER ssl3_ciphers[] = {
      SSL_3DES,
      SSL_SHA1,
      SSL_SSLV3,
-     SSL_NOT_EXP | SSL_HIGH | SSL_FIPS,
+     SSL_NOT_EXP | SSL_MEDIUM | SSL_FIPS,
      SSL_HANDSHAKE_MAC_DEFAULT | TLS1_PRF,
      112,
      168,
      },
 
 /* Cipher 0E */
+#ifndef OPENSSL_NO_WEAK_SSL_CIPHERS
     {
      0,                         /* not implemented (non-ephemeral DH) */
      SSL3_TXT_DH_RSA_DES_40_CBC_SHA,
@@ -391,13 +404,15 @@ OPENSSL_GLOBAL SSL_CIPHER ssl3_ciphers[] = {
      SSL_DES,
      SSL_SHA1,
      SSL_SSLV3,
-     SSL_EXPORT | SSL_EXP40,
+     SSL_NOT_DEFAULT | SSL_EXPORT | SSL_EXP40,
      SSL_HANDSHAKE_MAC_DEFAULT | TLS1_PRF,
      40,
      56,
      },
+#endif
 
 /* Cipher 0F */
+#ifndef OPENSSL_NO_WEAK_SSL_CIPHERS
     {
      0,                         /* not implemented (non-ephemeral DH) */
      SSL3_TXT_DH_RSA_DES_64_CBC_SHA,
@@ -407,11 +422,12 @@ OPENSSL_GLOBAL SSL_CIPHER ssl3_ciphers[] = {
      SSL_DES,
      SSL_SHA1,
      SSL_SSLV3,
-     SSL_NOT_EXP | SSL_LOW,
+     SSL_NOT_DEFAULT | SSL_NOT_EXP | SSL_LOW,
      SSL_HANDSHAKE_MAC_DEFAULT | TLS1_PRF,
      56,
      56,
      },
+#endif
 
 /* Cipher 10 */
     {
@@ -423,7 +439,7 @@ OPENSSL_GLOBAL SSL_CIPHER ssl3_ciphers[] = {
      SSL_3DES,
      SSL_SHA1,
      SSL_SSLV3,
-     SSL_NOT_EXP | SSL_HIGH | SSL_FIPS,
+     SSL_NOT_EXP | SSL_MEDIUM | SSL_FIPS,
      SSL_HANDSHAKE_MAC_DEFAULT | TLS1_PRF,
      112,
      168,
@@ -431,6 +447,7 @@ OPENSSL_GLOBAL SSL_CIPHER ssl3_ciphers[] = {
 
 /* The Ephemeral DH ciphers */
 /* Cipher 11 */
+#ifndef OPENSSL_NO_WEAK_SSL_CIPHERS
     {
      1,
      SSL3_TXT_EDH_DSS_DES_40_CBC_SHA,
@@ -440,13 +457,15 @@ OPENSSL_GLOBAL SSL_CIPHER ssl3_ciphers[] = {
      SSL_DES,
      SSL_SHA1,
      SSL_SSLV3,
-     SSL_EXPORT | SSL_EXP40,
+     SSL_NOT_DEFAULT | SSL_EXPORT | SSL_EXP40,
      SSL_HANDSHAKE_MAC_DEFAULT | TLS1_PRF,
      40,
      56,
      },
+#endif
 
 /* Cipher 12 */
+#ifndef OPENSSL_NO_WEAK_SSL_CIPHERS
     {
      1,
      SSL3_TXT_EDH_DSS_DES_64_CBC_SHA,
@@ -456,11 +475,12 @@ OPENSSL_GLOBAL SSL_CIPHER ssl3_ciphers[] = {
      SSL_DES,
      SSL_SHA1,
      SSL_SSLV3,
-     SSL_NOT_EXP | SSL_LOW,
+     SSL_NOT_DEFAULT | SSL_NOT_EXP | SSL_LOW,
      SSL_HANDSHAKE_MAC_DEFAULT | TLS1_PRF,
      56,
      56,
      },
+#endif
 
 /* Cipher 13 */
     {
@@ -472,13 +492,14 @@ OPENSSL_GLOBAL SSL_CIPHER ssl3_ciphers[] = {
      SSL_3DES,
      SSL_SHA1,
      SSL_SSLV3,
-     SSL_NOT_EXP | SSL_HIGH | SSL_FIPS,
+     SSL_NOT_EXP | SSL_MEDIUM | SSL_FIPS,
      SSL_HANDSHAKE_MAC_DEFAULT | TLS1_PRF,
      112,
      168,
      },
 
 /* Cipher 14 */
+#ifndef OPENSSL_NO_WEAK_SSL_CIPHERS
     {
      1,
      SSL3_TXT_EDH_RSA_DES_40_CBC_SHA,
@@ -488,13 +509,15 @@ OPENSSL_GLOBAL SSL_CIPHER ssl3_ciphers[] = {
      SSL_DES,
      SSL_SHA1,
      SSL_SSLV3,
-     SSL_EXPORT | SSL_EXP40,
+     SSL_NOT_DEFAULT | SSL_EXPORT | SSL_EXP40,
      SSL_HANDSHAKE_MAC_DEFAULT | TLS1_PRF,
      40,
      56,
      },
+#endif
 
 /* Cipher 15 */
+#ifndef OPENSSL_NO_WEAK_SSL_CIPHERS
     {
      1,
      SSL3_TXT_EDH_RSA_DES_64_CBC_SHA,
@@ -504,11 +527,12 @@ OPENSSL_GLOBAL SSL_CIPHER ssl3_ciphers[] = {
      SSL_DES,
      SSL_SHA1,
      SSL_SSLV3,
-     SSL_NOT_EXP | SSL_LOW,
+     SSL_NOT_DEFAULT | SSL_NOT_EXP | SSL_LOW,
      SSL_HANDSHAKE_MAC_DEFAULT | TLS1_PRF,
      56,
      56,
      },
+#endif
 
 /* Cipher 16 */
     {
@@ -520,13 +544,14 @@ OPENSSL_GLOBAL SSL_CIPHER ssl3_ciphers[] = {
      SSL_3DES,
      SSL_SHA1,
      SSL_SSLV3,
-     SSL_NOT_EXP | SSL_HIGH | SSL_FIPS,
+     SSL_NOT_EXP | SSL_MEDIUM | SSL_FIPS,
      SSL_HANDSHAKE_MAC_DEFAULT | TLS1_PRF,
      112,
      168,
      },
 
 /* Cipher 17 */
+#ifndef OPENSSL_NO_WEAK_SSL_CIPHERS
     {
      1,
      SSL3_TXT_ADH_RC4_40_MD5,
@@ -536,11 +561,12 @@ OPENSSL_GLOBAL SSL_CIPHER ssl3_ciphers[] = {
      SSL_RC4,
      SSL_MD5,
      SSL_SSLV3,
-     SSL_EXPORT | SSL_EXP40,
+     SSL_NOT_DEFAULT | SSL_EXPORT | SSL_EXP40,
      SSL_HANDSHAKE_MAC_DEFAULT | TLS1_PRF,
      40,
      128,
      },
+#endif
 
 /* Cipher 18 */
     {
@@ -552,13 +578,14 @@ OPENSSL_GLOBAL SSL_CIPHER ssl3_ciphers[] = {
      SSL_RC4,
      SSL_MD5,
      SSL_SSLV3,
-     SSL_NOT_EXP | SSL_MEDIUM,
+     SSL_NOT_DEFAULT | SSL_NOT_EXP | SSL_MEDIUM,
      SSL_HANDSHAKE_MAC_DEFAULT | TLS1_PRF,
      128,
      128,
      },
 
 /* Cipher 19 */
+#ifndef OPENSSL_NO_WEAK_SSL_CIPHERS
     {
      1,
      SSL3_TXT_ADH_DES_40_CBC_SHA,
@@ -568,13 +595,15 @@ OPENSSL_GLOBAL SSL_CIPHER ssl3_ciphers[] = {
      SSL_DES,
      SSL_SHA1,
      SSL_SSLV3,
-     SSL_EXPORT | SSL_EXP40,
+     SSL_NOT_DEFAULT | SSL_EXPORT | SSL_EXP40,
      SSL_HANDSHAKE_MAC_DEFAULT | TLS1_PRF,
      40,
      128,
      },
+#endif
 
 /* Cipher 1A */
+#ifndef OPENSSL_NO_WEAK_SSL_CIPHERS
     {
      1,
      SSL3_TXT_ADH_DES_64_CBC_SHA,
@@ -584,11 +613,12 @@ OPENSSL_GLOBAL SSL_CIPHER ssl3_ciphers[] = {
      SSL_DES,
      SSL_SHA1,
      SSL_SSLV3,
-     SSL_NOT_EXP | SSL_LOW,
+     SSL_NOT_DEFAULT | SSL_NOT_EXP | SSL_LOW,
      SSL_HANDSHAKE_MAC_DEFAULT | TLS1_PRF,
      56,
      56,
      },
+#endif
 
 /* Cipher 1B */
     {
@@ -600,7 +630,7 @@ OPENSSL_GLOBAL SSL_CIPHER ssl3_ciphers[] = {
      SSL_3DES,
      SSL_SHA1,
      SSL_SSLV3,
-     SSL_NOT_EXP | SSL_HIGH | SSL_FIPS,
+     SSL_NOT_DEFAULT | SSL_NOT_EXP | SSL_MEDIUM | SSL_FIPS,
      SSL_HANDSHAKE_MAC_DEFAULT | TLS1_PRF,
      112,
      168,
@@ -660,6 +690,7 @@ OPENSSL_GLOBAL SSL_CIPHER ssl3_ciphers[] = {
 #ifndef OPENSSL_NO_KRB5
 /* The Kerberos ciphers*/
 /* Cipher 1E */
+# ifndef OPENSSL_NO_WEAK_SSL_CIPHERS
     {
      1,
      SSL3_TXT_KRB5_DES_64_CBC_SHA,
@@ -669,11 +700,12 @@ OPENSSL_GLOBAL SSL_CIPHER ssl3_ciphers[] = {
      SSL_DES,
      SSL_SHA1,
      SSL_SSLV3,
-     SSL_NOT_EXP | SSL_LOW,
+     SSL_NOT_DEFAULT | SSL_NOT_EXP | SSL_LOW,
      SSL_HANDSHAKE_MAC_DEFAULT | TLS1_PRF,
      56,
      56,
      },
+# endif
 
 /* Cipher 1F */
     {
@@ -685,7 +717,7 @@ OPENSSL_GLOBAL SSL_CIPHER ssl3_ciphers[] = {
      SSL_3DES,
      SSL_SHA1,
      SSL_SSLV3,
-     SSL_NOT_EXP | SSL_HIGH | SSL_FIPS,
+     SSL_NOT_EXP | SSL_MEDIUM | SSL_FIPS,
      SSL_HANDSHAKE_MAC_DEFAULT | TLS1_PRF,
      112,
      168,
@@ -724,6 +756,7 @@ OPENSSL_GLOBAL SSL_CIPHER ssl3_ciphers[] = {
      },
 
 /* Cipher 22 */
+# ifndef OPENSSL_NO_WEAK_SSL_CIPHERS
     {
      1,
      SSL3_TXT_KRB5_DES_64_CBC_MD5,
@@ -733,11 +766,12 @@ OPENSSL_GLOBAL SSL_CIPHER ssl3_ciphers[] = {
      SSL_DES,
      SSL_MD5,
      SSL_SSLV3,
-     SSL_NOT_EXP | SSL_LOW,
+     SSL_NOT_DEFAULT | SSL_NOT_EXP | SSL_LOW,
      SSL_HANDSHAKE_MAC_DEFAULT | TLS1_PRF,
      56,
      56,
      },
+# endif
 
 /* Cipher 23 */
     {
@@ -749,7 +783,7 @@ OPENSSL_GLOBAL SSL_CIPHER ssl3_ciphers[] = {
      SSL_3DES,
      SSL_MD5,
      SSL_SSLV3,
-     SSL_NOT_EXP | SSL_HIGH,
+     SSL_NOT_EXP | SSL_MEDIUM,
      SSL_HANDSHAKE_MAC_DEFAULT | TLS1_PRF,
      112,
      168,
@@ -788,6 +822,7 @@ OPENSSL_GLOBAL SSL_CIPHER ssl3_ciphers[] = {
      },
 
 /* Cipher 26 */
+# ifndef OPENSSL_NO_WEAK_SSL_CIPHERS
     {
      1,
      SSL3_TXT_KRB5_DES_40_CBC_SHA,
@@ -797,13 +832,15 @@ OPENSSL_GLOBAL SSL_CIPHER ssl3_ciphers[] = {
      SSL_DES,
      SSL_SHA1,
      SSL_SSLV3,
-     SSL_EXPORT | SSL_EXP40,
+     SSL_NOT_DEFAULT | SSL_EXPORT | SSL_EXP40,
      SSL_HANDSHAKE_MAC_DEFAULT | TLS1_PRF,
      40,
      56,
      },
+# endif
 
 /* Cipher 27 */
+# ifndef OPENSSL_NO_WEAK_SSL_CIPHERS
     {
      1,
      SSL3_TXT_KRB5_RC2_40_CBC_SHA,
@@ -813,13 +850,15 @@ OPENSSL_GLOBAL SSL_CIPHER ssl3_ciphers[] = {
      SSL_RC2,
      SSL_SHA1,
      SSL_SSLV3,
-     SSL_EXPORT | SSL_EXP40,
+     SSL_NOT_DEFAULT | SSL_EXPORT | SSL_EXP40,
      SSL_HANDSHAKE_MAC_DEFAULT | TLS1_PRF,
      40,
      128,
      },
+# endif
 
 /* Cipher 28 */
+# ifndef OPENSSL_NO_WEAK_SSL_CIPHERS
     {
      1,
      SSL3_TXT_KRB5_RC4_40_SHA,
@@ -829,13 +868,15 @@ OPENSSL_GLOBAL SSL_CIPHER ssl3_ciphers[] = {
      SSL_RC4,
      SSL_SHA1,
      SSL_SSLV3,
-     SSL_EXPORT | SSL_EXP40,
+     SSL_NOT_DEFAULT | SSL_EXPORT | SSL_EXP40,
      SSL_HANDSHAKE_MAC_DEFAULT | TLS1_PRF,
      40,
      128,
      },
+# endif
 
 /* Cipher 29 */
+# ifndef OPENSSL_NO_WEAK_SSL_CIPHERS
     {
      1,
      SSL3_TXT_KRB5_DES_40_CBC_MD5,
@@ -845,13 +886,15 @@ OPENSSL_GLOBAL SSL_CIPHER ssl3_ciphers[] = {
      SSL_DES,
      SSL_MD5,
      SSL_SSLV3,
-     SSL_EXPORT | SSL_EXP40,
+     SSL_NOT_DEFAULT | SSL_EXPORT | SSL_EXP40,
      SSL_HANDSHAKE_MAC_DEFAULT | TLS1_PRF,
      40,
      56,
      },
+# endif
 
 /* Cipher 2A */
+# ifndef OPENSSL_NO_WEAK_SSL_CIPHERS
     {
      1,
      SSL3_TXT_KRB5_RC2_40_CBC_MD5,
@@ -861,13 +904,15 @@ OPENSSL_GLOBAL SSL_CIPHER ssl3_ciphers[] = {
      SSL_RC2,
      SSL_MD5,
      SSL_SSLV3,
-     SSL_EXPORT | SSL_EXP40,
+     SSL_NOT_DEFAULT | SSL_EXPORT | SSL_EXP40,
      SSL_HANDSHAKE_MAC_DEFAULT | TLS1_PRF,
      40,
      128,
      },
+# endif
 
 /* Cipher 2B */
+# ifndef OPENSSL_NO_WEAK_SSL_CIPHERS
     {
      1,
      SSL3_TXT_KRB5_RC4_40_MD5,
@@ -877,11 +922,12 @@ OPENSSL_GLOBAL SSL_CIPHER ssl3_ciphers[] = {
      SSL_RC4,
      SSL_MD5,
      SSL_SSLV3,
-     SSL_EXPORT | SSL_EXP40,
+     SSL_NOT_DEFAULT | SSL_EXPORT | SSL_EXP40,
      SSL_HANDSHAKE_MAC_DEFAULT | TLS1_PRF,
      40,
      128,
      },
+# endif
 #endif                          /* OPENSSL_NO_KRB5 */
 
 /* New AES ciphersuites */
@@ -970,7 +1016,7 @@ OPENSSL_GLOBAL SSL_CIPHER ssl3_ciphers[] = {
      SSL_AES128,
      SSL_SHA1,
      SSL_TLSV1,
-     SSL_NOT_EXP | SSL_HIGH | SSL_FIPS,
+     SSL_NOT_DEFAULT | SSL_NOT_EXP | SSL_HIGH | SSL_FIPS,
      SSL_HANDSHAKE_MAC_DEFAULT | TLS1_PRF,
      128,
      128,
@@ -1065,7 +1111,7 @@ OPENSSL_GLOBAL SSL_CIPHER ssl3_ciphers[] = {
      SSL_AES256,
      SSL_SHA1,
      SSL_TLSV1,
-     SSL_NOT_EXP | SSL_HIGH | SSL_FIPS,
+     SSL_NOT_DEFAULT | SSL_NOT_EXP | SSL_HIGH | SSL_FIPS,
      SSL_HANDSHAKE_MAC_DEFAULT | TLS1_PRF,
      256,
      256,
@@ -1261,7 +1307,7 @@ OPENSSL_GLOBAL SSL_CIPHER ssl3_ciphers[] = {
      SSL_CAMELLIA128,
      SSL_SHA1,
      SSL_TLSV1,
-     SSL_NOT_EXP | SSL_HIGH,
+     SSL_NOT_DEFAULT | SSL_NOT_EXP | SSL_HIGH,
      SSL_HANDSHAKE_MAC_DEFAULT | TLS1_PRF,
      128,
      128,
@@ -1281,7 +1327,7 @@ OPENSSL_GLOBAL SSL_CIPHER ssl3_ciphers[] = {
      SSL_RC4,
      SSL_MD5,
      SSL_TLSV1,
-     SSL_EXPORT | SSL_EXP56,
+     SSL_NOT_DEFAULT | SSL_EXPORT | SSL_EXP56,
      SSL_HANDSHAKE_MAC_DEFAULT | TLS1_PRF,
      56,
      128,
@@ -1297,7 +1343,7 @@ OPENSSL_GLOBAL SSL_CIPHER ssl3_ciphers[] = {
      SSL_RC2,
      SSL_MD5,
      SSL_TLSV1,
-     SSL_EXPORT | SSL_EXP56,
+     SSL_NOT_DEFAULT | SSL_EXPORT | SSL_EXP56,
      SSL_HANDSHAKE_MAC_DEFAULT | TLS1_PRF,
      56,
      128,
@@ -1305,6 +1351,7 @@ OPENSSL_GLOBAL SSL_CIPHER ssl3_ciphers[] = {
 # endif
 
     /* Cipher 62 */
+# ifndef OPENSSL_NO_WEAK_SSL_CIPHERS
     {
      1,
      TLS1_TXT_RSA_EXPORT1024_WITH_DES_CBC_SHA,
@@ -1314,13 +1361,15 @@ OPENSSL_GLOBAL SSL_CIPHER ssl3_ciphers[] = {
      SSL_DES,
      SSL_SHA1,
      SSL_TLSV1,
-     SSL_EXPORT | SSL_EXP56,
+     SSL_NOT_DEFAULT | SSL_EXPORT | SSL_EXP56,
      SSL_HANDSHAKE_MAC_DEFAULT | TLS1_PRF,
      56,
      56,
      },
+# endif
 
     /* Cipher 63 */
+# ifndef OPENSSL_NO_WEAK_SSL_CIPHERS
     {
      1,
      TLS1_TXT_DHE_DSS_EXPORT1024_WITH_DES_CBC_SHA,
@@ -1330,13 +1379,15 @@ OPENSSL_GLOBAL SSL_CIPHER ssl3_ciphers[] = {
      SSL_DES,
      SSL_SHA1,
      SSL_TLSV1,
-     SSL_EXPORT | SSL_EXP56,
+     SSL_NOT_DEFAULT | SSL_EXPORT | SSL_EXP56,
      SSL_HANDSHAKE_MAC_DEFAULT | TLS1_PRF,
      56,
      56,
      },
+# endif
 
     /* Cipher 64 */
+# ifndef OPENSSL_NO_WEAK_SSL_CIPHERS
     {
      1,
      TLS1_TXT_RSA_EXPORT1024_WITH_RC4_56_SHA,
@@ -1346,13 +1397,15 @@ OPENSSL_GLOBAL SSL_CIPHER ssl3_ciphers[] = {
      SSL_RC4,
      SSL_SHA1,
      SSL_TLSV1,
-     SSL_EXPORT | SSL_EXP56,
+     SSL_NOT_DEFAULT | SSL_EXPORT | SSL_EXP56,
      SSL_HANDSHAKE_MAC_DEFAULT | TLS1_PRF,
      56,
      128,
      },
+# endif
 
     /* Cipher 65 */
+# ifndef OPENSSL_NO_WEAK_SSL_CIPHERS
     {
      1,
      TLS1_TXT_DHE_DSS_EXPORT1024_WITH_RC4_56_SHA,
@@ -1362,11 +1415,12 @@ OPENSSL_GLOBAL SSL_CIPHER ssl3_ciphers[] = {
      SSL_RC4,
      SSL_SHA1,
      SSL_TLSV1,
-     SSL_EXPORT | SSL_EXP56,
+     SSL_NOT_DEFAULT | SSL_EXPORT | SSL_EXP56,
      SSL_HANDSHAKE_MAC_DEFAULT | TLS1_PRF,
      56,
      128,
      },
+# endif
 
     /* Cipher 66 */
     {
@@ -1476,7 +1530,7 @@ OPENSSL_GLOBAL SSL_CIPHER ssl3_ciphers[] = {
      SSL_AES128,
      SSL_SHA256,
      SSL_TLSV1_2,
-     SSL_NOT_EXP | SSL_HIGH | SSL_FIPS,
+     SSL_NOT_DEFAULT | SSL_NOT_EXP | SSL_HIGH | SSL_FIPS,
      SSL_HANDSHAKE_MAC_DEFAULT | TLS1_PRF,
      128,
      128,
@@ -1492,7 +1546,7 @@ OPENSSL_GLOBAL SSL_CIPHER ssl3_ciphers[] = {
      SSL_AES256,
      SSL_SHA256,
      SSL_TLSV1_2,
-     SSL_NOT_EXP | SSL_HIGH | SSL_FIPS,
+     SSL_NOT_DEFAULT | SSL_NOT_EXP | SSL_HIGH | SSL_FIPS,
      SSL_HANDSHAKE_MAC_DEFAULT | TLS1_PRF,
      256,
      256,
@@ -1645,7 +1699,7 @@ OPENSSL_GLOBAL SSL_CIPHER ssl3_ciphers[] = {
      SSL_CAMELLIA256,
      SSL_SHA1,
      SSL_TLSV1,
-     SSL_NOT_EXP | SSL_HIGH,
+     SSL_NOT_DEFAULT | SSL_NOT_EXP | SSL_HIGH,
      SSL_HANDSHAKE_MAC_DEFAULT | TLS1_PRF,
      256,
      256,
@@ -1679,7 +1733,7 @@ OPENSSL_GLOBAL SSL_CIPHER ssl3_ciphers[] = {
      SSL_3DES,
      SSL_SHA1,
      SSL_TLSV1,
-     SSL_NOT_EXP | SSL_HIGH | SSL_FIPS,
+     SSL_NOT_EXP | SSL_MEDIUM | SSL_FIPS,
      SSL_HANDSHAKE_MAC_DEFAULT | TLS1_PRF,
      112,
      168,
@@ -1811,7 +1865,7 @@ OPENSSL_GLOBAL SSL_CIPHER ssl3_ciphers[] = {
      SSL_SEED,
      SSL_SHA1,
      SSL_TLSV1,
-     SSL_NOT_EXP | SSL_MEDIUM,
+     SSL_NOT_DEFAULT | SSL_NOT_EXP | SSL_MEDIUM,
      SSL_HANDSHAKE_MAC_DEFAULT | TLS1_PRF,
      128,
      128,
@@ -1991,7 +2045,7 @@ OPENSSL_GLOBAL SSL_CIPHER ssl3_ciphers[] = {
      SSL_AES128GCM,
      SSL_AEAD,
      SSL_TLSV1_2,
-     SSL_NOT_EXP | SSL_HIGH | SSL_FIPS,
+     SSL_NOT_DEFAULT | SSL_NOT_EXP | SSL_HIGH | SSL_FIPS,
      SSL_HANDSHAKE_MAC_SHA256 | TLS1_PRF_SHA256,
      128,
      128,
@@ -2007,7 +2061,7 @@ OPENSSL_GLOBAL SSL_CIPHER ssl3_ciphers[] = {
      SSL_AES256GCM,
      SSL_AEAD,
      SSL_TLSV1_2,
-     SSL_NOT_EXP | SSL_HIGH | SSL_FIPS,
+     SSL_NOT_DEFAULT | SSL_NOT_EXP | SSL_HIGH | SSL_FIPS,
      SSL_HANDSHAKE_MAC_SHA384 | TLS1_PRF_SHA384,
      256,
      256,
@@ -2056,7 +2110,7 @@ OPENSSL_GLOBAL SSL_CIPHER ssl3_ciphers[] = {
      SSL_3DES,
      SSL_SHA1,
      SSL_TLSV1,
-     SSL_NOT_EXP | SSL_HIGH | SSL_FIPS,
+     SSL_NOT_EXP | SSL_MEDIUM | SSL_FIPS,
      SSL_HANDSHAKE_MAC_DEFAULT | TLS1_PRF,
      112,
      168,
@@ -2136,7 +2190,7 @@ OPENSSL_GLOBAL SSL_CIPHER ssl3_ciphers[] = {
      SSL_3DES,
      SSL_SHA1,
      SSL_TLSV1,
-     SSL_NOT_EXP | SSL_HIGH | SSL_FIPS,
+     SSL_NOT_EXP | SSL_MEDIUM | SSL_FIPS,
      SSL_HANDSHAKE_MAC_DEFAULT | TLS1_PRF,
      112,
      168,
@@ -2216,7 +2270,7 @@ OPENSSL_GLOBAL SSL_CIPHER ssl3_ciphers[] = {
      SSL_3DES,
      SSL_SHA1,
      SSL_TLSV1,
-     SSL_NOT_EXP | SSL_HIGH | SSL_FIPS,
+     SSL_NOT_EXP | SSL_MEDIUM | SSL_FIPS,
      SSL_HANDSHAKE_MAC_DEFAULT | TLS1_PRF,
      112,
      168,
@@ -2296,7 +2350,7 @@ OPENSSL_GLOBAL SSL_CIPHER ssl3_ciphers[] = {
      SSL_3DES,
      SSL_SHA1,
      SSL_TLSV1,
-     SSL_NOT_EXP | SSL_HIGH | SSL_FIPS,
+     SSL_NOT_EXP | SSL_MEDIUM | SSL_FIPS,
      SSL_HANDSHAKE_MAC_DEFAULT | TLS1_PRF,
      112,
      168,
@@ -2360,7 +2414,7 @@ OPENSSL_GLOBAL SSL_CIPHER ssl3_ciphers[] = {
      SSL_RC4,
      SSL_SHA1,
      SSL_TLSV1,
-     SSL_NOT_EXP | SSL_MEDIUM,
+     SSL_NOT_DEFAULT | SSL_NOT_EXP | SSL_MEDIUM,
      SSL_HANDSHAKE_MAC_DEFAULT | TLS1_PRF,
      128,
      128,
@@ -2376,7 +2430,7 @@ OPENSSL_GLOBAL SSL_CIPHER ssl3_ciphers[] = {
      SSL_3DES,
      SSL_SHA1,
      SSL_TLSV1,
-     SSL_NOT_EXP | SSL_HIGH | SSL_FIPS,
+     SSL_NOT_DEFAULT | SSL_NOT_EXP | SSL_MEDIUM | SSL_FIPS,
      SSL_HANDSHAKE_MAC_DEFAULT | TLS1_PRF,
      112,
      168,
@@ -2392,7 +2446,7 @@ OPENSSL_GLOBAL SSL_CIPHER ssl3_ciphers[] = {
      SSL_AES128,
      SSL_SHA1,
      SSL_TLSV1,
-     SSL_NOT_EXP | SSL_HIGH | SSL_FIPS,
+     SSL_NOT_DEFAULT | SSL_NOT_EXP | SSL_HIGH | SSL_FIPS,
      SSL_HANDSHAKE_MAC_DEFAULT | TLS1_PRF,
      128,
      128,
@@ -2408,7 +2462,7 @@ OPENSSL_GLOBAL SSL_CIPHER ssl3_ciphers[] = {
      SSL_AES256,
      SSL_SHA1,
      SSL_TLSV1,
-     SSL_NOT_EXP | SSL_HIGH | SSL_FIPS,
+     SSL_NOT_DEFAULT | SSL_NOT_EXP | SSL_HIGH | SSL_FIPS,
      SSL_HANDSHAKE_MAC_DEFAULT | TLS1_PRF,
      256,
      256,
@@ -2426,7 +2480,7 @@ OPENSSL_GLOBAL SSL_CIPHER ssl3_ciphers[] = {
      SSL_3DES,
      SSL_SHA1,
      SSL_TLSV1,
-     SSL_NOT_EXP | SSL_HIGH,
+     SSL_NOT_EXP | SSL_MEDIUM,
      SSL_HANDSHAKE_MAC_DEFAULT | TLS1_PRF,
      112,
      168,
@@ -2442,7 +2496,7 @@ OPENSSL_GLOBAL SSL_CIPHER ssl3_ciphers[] = {
      SSL_3DES,
      SSL_SHA1,
      SSL_TLSV1,
-     SSL_NOT_EXP | SSL_HIGH,
+     SSL_NOT_EXP | SSL_MEDIUM,
      SSL_HANDSHAKE_MAC_DEFAULT | TLS1_PRF,
      112,
      168,
@@ -2458,7 +2512,7 @@ OPENSSL_GLOBAL SSL_CIPHER ssl3_ciphers[] = {
      SSL_3DES,
      SSL_SHA1,
      SSL_TLSV1,
-     SSL_NOT_EXP | SSL_HIGH,
+     SSL_NOT_EXP | SSL_MEDIUM,
      SSL_HANDSHAKE_MAC_DEFAULT | TLS1_PRF,
      112,
      168,
@@ -3164,13 +3218,6 @@ long ssl3_ctrl(SSL *s, int cmd, long larg, void *parg)
                 SSLerr(SSL_F_SSL3_CTRL, ERR_R_DH_LIB);
                 return (ret);
             }
-            if (!(s->options & SSL_OP_SINGLE_DH_USE)) {
-                if (!DH_generate_key(dh)) {
-                    DH_free(dh);
-                    SSLerr(SSL_F_SSL3_CTRL, ERR_R_DH_LIB);
-                    return (ret);
-                }
-            }
             if (s->cert->dh_tmp != NULL)
                 DH_free(s->cert->dh_tmp);
             s->cert->dh_tmp = dh;
@@ -3221,6 +3268,8 @@ long ssl3_ctrl(SSL *s, int cmd, long larg, void *parg)
 #ifndef OPENSSL_NO_TLSEXT
     case SSL_CTRL_SET_TLSEXT_HOSTNAME:
         if (larg == TLSEXT_NAMETYPE_host_name) {
+            size_t len;
+
             if (s->tlsext_hostname != NULL)
                 OPENSSL_free(s->tlsext_hostname);
             s->tlsext_hostname = NULL;
@@ -3228,7 +3277,8 @@ long ssl3_ctrl(SSL *s, int cmd, long larg, void *parg)
             ret = 1;
             if (parg == NULL)
                 break;
-            if (strlen((char *)parg) > TLSEXT_MAXLEN_host_name) {
+            len = strlen((char *)parg);
+            if (len == 0 || len > TLSEXT_MAXLEN_host_name) {
                 SSLerr(SSL_F_SSL3_CTRL, SSL_R_SSL3_EXT_INVALID_SERVERNAME);
                 return 0;
             }
@@ -3478,13 +3528,6 @@ long ssl3_ctx_ctrl(SSL_CTX *ctx, int cmd, long larg, void *parg)
             if ((new = DHparams_dup(dh)) == NULL) {
                 SSLerr(SSL_F_SSL3_CTX_CTRL, ERR_R_DH_LIB);
                 return 0;
-            }
-            if (!(ctx->options & SSL_OP_SINGLE_DH_USE)) {
-                if (!DH_generate_key(new)) {
-                    SSLerr(SSL_F_SSL3_CTX_CTRL, ERR_R_DH_LIB);
-                    DH_free(new);
-                    return 0;
-                }
             }
             if (cert->dh_tmp != NULL)
                 DH_free(cert->dh_tmp);

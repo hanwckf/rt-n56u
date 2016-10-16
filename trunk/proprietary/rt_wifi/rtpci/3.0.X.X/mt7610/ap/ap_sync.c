@@ -351,41 +351,6 @@ VOID APPeerProbeReqAction(
 		}
 #endif /* AP_QLOAD_SUPPORT */
 
-		    /* add country IE, power constraint IE */
-			if (pAd->CommonCfg.bCountryFlag)
-			{
-				ULONG TmpLen2=0;
-				UCHAR *TmpFrame = NULL;
-
-				os_alloc_mem(NULL, (UCHAR **)&TmpFrame, 256);
-				if (TmpFrame != NULL)
-				{
-					NdisZeroMemory(TmpFrame, 256);
-
-					/* prepare channel information */
-#ifdef EXT_BUILD_CHANNEL_LIST
-					BuildBeaconChList(pAd, TmpFrame, &TmpLen2);
-#else
-					{
-						ULONG TmpLen = 0;
-						UCHAR MaxTxPower = GetCuntryMaxTxPwr(pAd, pAd->CommonCfg.Channel);
-						MakeOutgoingFrame(TmpFrame+TmpLen2,     &TmpLen,
-											1,                 	&pAd->ChannelList[0].Channel,
-											1,                 	&pAd->ChannelListNum,
-											1,                 	&MaxTxPower,
-											END_OF_ARGS);
-						TmpLen2 += TmpLen;
-					}
-#endif /* EXT_BUILD_CHANNEL_LIST */
-
-
-					os_free_mem(NULL, TmpFrame);
-				}
-				else
-					DBGPRINT(RT_DEBUG_ERROR, ("%s: Allocate memory fail!!!\n", __FUNCTION__));
-			}
-
-
 #ifdef DOT11_N_SUPPORT
 #ifdef DOT11N_DRAFT3
 	 	/* P802.11n_D3.03, 7.3.2.60 Overlapping BSS Scan Parameters IE */
@@ -565,6 +530,7 @@ VOID APPeerProbeReqAction(
 		    NdisZeroMemory(TmpFrame, sizeof(TmpFrame));
 
 			/* prepare channel information */
+			MaxTxPower = GetCuntryMaxTxPwr(pAd, pAd->CommonCfg.Channel);
 		    MakeOutgoingFrame(TmpFrame+TmpLen2,     &TmpLen,
 		                          1,                 	&pAd->ChannelList[0].Channel,
 		                          1,                 	&pAd->ChannelListNum,

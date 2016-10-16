@@ -27,10 +27,12 @@
 
 #include <disk_initial.h>
 #include <disk_share.h>
+#include <dev_info.h>
 #include <usb_info.h>
 
 #include "httpd.h"
 
+#if defined (USE_USB_SUPPORT)
 int
 ej_get_usb_ports_info(int eid, webs_t wp, int argc, char **argv)
 {
@@ -42,9 +44,9 @@ ej_get_usb_ports_info(int eid, webs_t wp, int argc, char **argv)
 	for (follow_usb = usb_info; follow_usb != NULL; follow_usb = follow_usb->next) {
 		idx = follow_usb->port_root;
 		if (idx == 1 || idx == 2) {
-			if (follow_usb->dev_type == DEVICE_TYPE_HUB)
+			if (follow_usb->dev_type == DEVICE_TYPE_USB_HUB)
 				usb_dev_type[idx-1] |= 0x01;
-			else if (follow_usb->dev_type == DEVICE_TYPE_DISK)
+			else if (follow_usb->dev_type == DEVICE_TYPE_SCSI_DISK)
 				usb_dev_type[idx-1] |= 0x02;
 			else if (follow_usb->dev_type == DEVICE_TYPE_PRINTER)
 				usb_dev_type[idx-1] |= 0x04;
@@ -208,6 +210,7 @@ ej_get_usb_ports_info(int eid, webs_t wp, int argc, char **argv)
 
 	return 0;
 }
+#endif
 
 int
 ej_disk_pool_mapping_info(int eid, webs_t wp, int argc, char **argv)
@@ -218,7 +221,7 @@ ej_disk_pool_mapping_info(int eid, webs_t wp, int argc, char **argv)
 	char *Ptr;
 
 	disks_info = read_disk_data();
-	if (disks_info == NULL) {
+	if (!disks_info) {
 		websWrite(wp, "%s", initial_disk_pool_mapping_info());
 		return -1;
 	}
@@ -227,7 +230,7 @@ ej_disk_pool_mapping_info(int eid, webs_t wp, int argc, char **argv)
 	websWrite(wp, "    return [");
 
 	first = 1;
-	for (follow_disk = disks_info; follow_disk != NULL; follow_disk = follow_disk->next)
+	for (follow_disk = disks_info; follow_disk != NULL; follow_disk = follow_disk->next) {
 		for (follow_partition = follow_disk->partitions; follow_partition != NULL; follow_partition = follow_partition->next) {
 			if (first == 1)
 				first = 0;
@@ -252,56 +255,59 @@ ej_disk_pool_mapping_info(int eid, webs_t wp, int argc, char **argv)
 			++Ptr;
 			websWrite(wp, "\"%s\"", Ptr);
 		}
+	}
 	websWrite(wp, "];\n");
 	websWrite(wp, "}\n\n");
 
 	websWrite(wp, "function pool_types() {\n");
 	websWrite(wp, "    return [");
 	first = 1;
-	for (follow_disk = disks_info; follow_disk != NULL; follow_disk = follow_disk->next)
+	for (follow_disk = disks_info; follow_disk != NULL; follow_disk = follow_disk->next) {
 		for (follow_partition = follow_disk->partitions; follow_partition != NULL; follow_partition = follow_partition->next) {
 			if (first == 1)
 				first = 0;
 			else
 				websWrite(wp, ", ");
 
-			if (follow_partition->mount_point == NULL) {
+			if (!follow_partition->file_system) {
 				websWrite(wp, "\"unknown\"");
 				continue;
 			}
 
 			websWrite(wp, "\"%s\"", follow_partition->file_system);
 		}
+	}
 	websWrite(wp, "];\n");
 	websWrite(wp, "}\n\n");
 
 	websWrite(wp, "function pool_status() {\n");
 	websWrite(wp, "    return [");
 	first = 1;
-	for (follow_disk = disks_info; follow_disk != NULL; follow_disk = follow_disk->next)
+	for (follow_disk = disks_info; follow_disk != NULL; follow_disk = follow_disk->next) {
 		for (follow_partition = follow_disk->partitions; follow_partition != NULL; follow_partition = follow_partition->next) {
 			if (first == 1)
 				first = 0;
 			else
 				websWrite(wp, ", ");
 
-			if (follow_partition->mount_point == NULL) {
+			if (!follow_partition->mount_point) {
 				websWrite(wp, "\"unmounted\"");
 				continue;
 			}
 
-			//if (strcmp(follow_partition->file_system, "ntfs") == 0)
-			//	websWrite(wp, "\"ro\"");
-			//else
-			websWrite(wp, "\"rw\"");
+			if (follow_partition->read_only)
+				websWrite(wp, "\"ro\"");
+			else
+				websWrite(wp, "\"rw\"");
 		}
+	}
 	websWrite(wp, "];\n");
 	websWrite(wp, "}\n\n");
 
 	websWrite(wp, "function pool_kilobytes_in_use() {\n");
 	websWrite(wp, "    return [");
 	first = 1;
-	for (follow_disk = disks_info; follow_disk != NULL; follow_disk = follow_disk->next)
+	for (follow_disk = disks_info; follow_disk != NULL; follow_disk = follow_disk->next) {
 		for (follow_partition = follow_disk->partitions; follow_partition != NULL; follow_partition = follow_partition->next) {
 			if (first == 1)
 				first = 0;
@@ -310,7 +316,7 @@ ej_disk_pool_mapping_info(int eid, webs_t wp, int argc, char **argv)
 
 			websWrite(wp, "%llu", follow_partition->used_kilobytes);
 		}
-
+	}
 	websWrite(wp, "];\n");
 	websWrite(wp, "}\n\n");
 
@@ -349,7 +355,7 @@ ej_available_disk_names_and_sizes(int eid, webs_t wp, int argc, char **argv)
 	websWrite(wp, "%s", initial_blank_disk_names_and_sizes());
 
 	disks_info = read_disk_data();
-	if (disks_info == NULL) {
+	if (!disks_info) {
 		websWrite(wp, "%s", initial_available_disk_names_and_sizes());
 		return -1;
 	}
@@ -403,10 +409,10 @@ ej_available_disk_names_and_sizes(int eid, webs_t wp, int argc, char **argv)
 		else
 			websWrite(wp, ", ");
 		websWrite(wp, "\"");
-		if (follow_disk->vendor != NULL)
+		if (follow_disk->vendor && strlen(follow_disk->vendor) > 0)
 			websWrite(wp, "%s", follow_disk->vendor);
-		if (follow_disk->model != NULL) {
-			if (follow_disk->vendor != NULL)
+		if (follow_disk->model) {
+			if (follow_disk->vendor && strlen(follow_disk->vendor) > 0)
 				websWrite(wp, " ");
 			websWrite(wp, "%s", follow_disk->model);
 		}
@@ -436,7 +442,7 @@ ej_available_disk_names_and_sizes(int eid, webs_t wp, int argc, char **argv)
 			first = 0;
 		else
 			websWrite(wp, ", ");
-		websWrite(wp, "\"%u\"", follow_disk->mounted_number);
+		websWrite(wp, "\"%u\"", (follow_disk->mounted_number + follow_disk->swapon_number));
 	}
 	websWrite(wp, "];\n}\n\n");
 
@@ -446,7 +452,7 @@ ej_available_disk_names_and_sizes(int eid, webs_t wp, int argc, char **argv)
 }
 
 int
-ej_get_usb_share_list(int eid, webs_t wp, int argc, char **argv)
+ej_get_storage_share_list(int eid, webs_t wp, int argc, char **argv)
 {
 	disk_info_t *disks_info, *follow_disk;
 	partition_info_t *follow_partition;
@@ -458,7 +464,7 @@ ej_get_usb_share_list(int eid, webs_t wp, int argc, char **argv)
 
 	ret = 0;
 	first_pool = 1;
-	for (follow_disk = disks_info; follow_disk != NULL; follow_disk = follow_disk->next)
+	for (follow_disk = disks_info; follow_disk != NULL; follow_disk = follow_disk->next) {
 		for (follow_partition = follow_disk->partitions; follow_partition != NULL; follow_partition = follow_partition->next) {
 			if (follow_partition->mount_point != NULL && strlen(follow_partition->mount_point) > 1) {
 				if (first_pool == 1)
@@ -470,6 +476,7 @@ ej_get_usb_share_list(int eid, webs_t wp, int argc, char **argv)
 					follow_partition->device, follow_partition->mount_point, follow_partition->file_system);
 			}
 		}
+	}
 
 	free_disk_data(disks_info);
 
@@ -504,10 +511,11 @@ ej_get_AiDisk_status(int eid, webs_t wp, int argc, char **argv)
 	websWrite(wp, "}\n\n");
 
 	disks_info = read_disk_data();
-	if (disks_info == NULL) {
+	if (!disks_info) {
 		websWrite(wp, "function get_sharedfolder_in_pool(poolName) {}\n");
 		return -1;
 	}
+
 	first_pool = 1;
 	websWrite(wp, "function get_sharedfolder_in_pool(poolName) {\n");
 	for (follow_disk = disks_info; follow_disk != NULL; follow_disk = follow_disk->next)
@@ -673,17 +681,26 @@ ej_get_all_accounts(int eid, webs_t wp, int argc, char **argv)
 int
 ej_safely_remove_disk(int eid, webs_t wp, int argc, char **argv)
 {
-	int result;
-	int port_num = 0;
+	int result, port_num;
 	char *disk_port = websGetVar(wp, "port", "");
 	char *disk_devn = websGetVar(wp, "devn", "");
 
-	if (atoi(disk_port) == 1)
-		port_num = 1;
-	else if (atoi(disk_port) == 2)
-		port_num = 2;
+	port_num = atoi(disk_port);
+	if (port_num < 0)
+		port_num = 0;
 
-	result = doSystem("/sbin/ejusb %d %s", port_num, disk_devn);
+#if defined (USE_ATA_SUPPORT)
+	if (port_num == ATA_VIRT_PORT_ID)
+		result = doSystem("/sbin/ejata %s", disk_devn);
+	else
+#endif
+#if defined (USE_MMC_SUPPORT)
+	if (port_num == MMC_VIRT_PORT_ID)
+		result = system("/sbin/ejmmc");
+	else
+#endif
+		result = doSystem("/sbin/ejusb %d %s", port_num, disk_devn);
+
 	if (result != 0) {
 		websWrite(wp, "<script>safely_remove_disk_error(\'%s\');</script>\n", get_alert_msg_from_dict("Action9"));
 	} else {
@@ -708,7 +725,7 @@ ej_get_permissions_of_account(int eid, webs_t wp, int argc, char **argv)
 	ejArgs(argc, argv, "%s", &acc_mode);
 
 	disks_info = read_disk_data();
-	if (disks_info == NULL) {
+	if (!disks_info) {
 		websWrite(wp, "function get_account_permissions_in_pool(account, pool) {return [];}\n");
 		return -1;
 	}
@@ -1065,7 +1082,7 @@ ej_get_share_tree(int eid, webs_t wp, int argc, char **argv)
 	}
 
 	disks_info = read_disk_data();
-	if (disks_info == NULL)
+	if (!disks_info)
 		return -1;
 
 	first = 1;
@@ -1129,15 +1146,17 @@ not_ej_initial_folder_var_file(void)
 	partition_info_t *follow_partition;
 
 	disks_info = read_disk_data();
-	if (disks_info == NULL)
+	if (!disks_info)
 		return;
 
-	for (follow_disk = disks_info; follow_disk != NULL; follow_disk = follow_disk->next)
-		for (follow_partition = follow_disk->partitions; follow_partition != NULL; follow_partition = follow_partition->next)
+	for (follow_disk = disks_info; follow_disk != NULL; follow_disk = follow_disk->next) {
+		for (follow_partition = follow_disk->partitions; follow_partition != NULL; follow_partition = follow_partition->next) {
 			if (follow_partition->mount_point != NULL && strlen(follow_partition->mount_point) > 0) {
 				initial_folder_list_in_mount_path(follow_partition->mount_point);
 //				initial_all_var_file_in_mount_path(follow_partition->mount_point);
 			}
+		}
+	}
 
 	free_disk_data(disks_info);
 }
@@ -1191,13 +1210,11 @@ ej_set_share_mode(int eid, webs_t wp, int argc, char **argv)
 		if (!strcmp(protocol, "cifs")) {
 			if (samba_mode == 2 || samba_mode == 4)
 				goto SET_SHARE_MODE_SUCCESS;
-
 			nvram_set_int("st_samba_mode", 4);
 		}
 		else if (!strcmp(protocol, "ftp")) {
 			if (ftp_mode == 2)
 				goto SET_SHARE_MODE_SUCCESS;
-
 			nvram_set_int("st_ftp_mode", 2);
 		}
 		else {
@@ -1482,7 +1499,7 @@ ej_initial_account(int eid, webs_t wp, int argc, char **argv)
 	nvram_commit_safe();
 
 	disks_info = read_disk_data();
-	if (disks_info == NULL) {
+	if (!disks_info) {
 		websWrite(wp, "<script>\n");
 		websWrite(wp, "initial_account_error(\'%s\');\n", get_alert_msg_from_dict("System2"));
 		websWrite(wp, "</script>\n");

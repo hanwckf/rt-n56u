@@ -274,7 +274,7 @@ initFilter(int fd, UINT16_t type, unsigned char *hwaddr)
 * traffic on this network.
 ***********************************************************************/
 int
-openInterface(char const *ifname, UINT16_t type, unsigned char *hwaddr)
+openInterface(char const *ifname, UINT16_t type, unsigned char *hwaddr, UINT16_t *mtu)
 {
     static int fd = -1;
     char bpfName[32];
@@ -352,6 +352,7 @@ openInterface(char const *ifname, UINT16_t type, unsigned char *hwaddr)
 		ifname, ifr.ifr_mtu, ETH_DATA_LEN);
 	printErr(buffer);
     }
+    if (mtu) *mtu = ifr.ifr_mtu;
 #endif
 
     /* done with the socket */

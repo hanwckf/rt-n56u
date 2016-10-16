@@ -301,10 +301,10 @@ function openLink(s) {
                                                     <option value="UCT-5.30_2" <% nvram_match_x("","time_zone", "UCT-5.30_2","selected"); %>		>(GMT+05:30) <#TZ55#></option>
                                                     <option value="UCT-5.30_1" <% nvram_match_x("","time_zone", "UCT-5.30_1","selected"); %>		>(GMT+05:30) <#TZ56#></option>
                                                     <option value="UCT-5.45" <% nvram_match_x("","time_zone", "UCT-5.45","selected"); %>		>(GMT+05:45) <#TZ57#></option>
-                                                    <option value="UTC-6" <% nvram_match_x("","time_zone", "UTC-6","selected"); %>			>(GMT+06:00) <#TZ60#></option>
                                                     <option value="UTC-6_1" <% nvram_match_x("","time_zone", "UTC-6_1","selected"); %>			>(GMT+06:00) <#TZ60_2#></option>
                                                     <option value="UCT-6" <% nvram_match_x("","time_zone", "UCT-6","selected"); %>			>(GMT+06:00) <#TZ58#></option>
                                                     <option value="UCT-6.30" <% nvram_match_x("","time_zone", "UCT-6.30","selected"); %>		>(GMT+06:30) <#TZ61#></option>
+                                                    <option value="UTC-7_1" <% nvram_match_x("","time_zone", "UTC-7_1","selected"); %>			>(GMT+07:00) <#TZ60#></option>
                                                     <option value="UTC-7" <% nvram_match_x("","time_zone", "UTC-7","selected"); %>			>(GMT+07:00) <#TZ63#></option>
                                                     <option value="UCT-7" <% nvram_match_x("","time_zone", "UCT-7","selected"); %>			>(GMT+07:00) <#TZ62#></option>
                                                     <option value="UTC-8" <% nvram_match_x("","time_zone", "UTC-8","selected"); %>			>(GMT+08:00) <#TZ69#></option>

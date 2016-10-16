@@ -9,8 +9,8 @@ bin_PROGRAMS = lzmainfo
 
 lzmainfo_SOURCES = \
 	lzmainfo.c \
-	$(top_srcdir)/src/common/tuklib_progname.c \
-	$(top_srcdir)/src/common/tuklib_exit.c
+	../common/tuklib_progname.c \
+	../common/tuklib_exit.c
 
 if COND_W32
 lzmainfo_SOURCES += lzmainfo_w32res.rc

@@ -1,8 +1,8 @@
 * ИНСТРУКЦИЯ ПО СБОРКЕ ПРОШИВКИ *
 
 1) Для сборки прошивки требуется Linux окружение 32 или 64 бита. Сборка прошивки
-   протестирована и рекомендуется на Linux дистрибутивах Debian 'wheezy' 7.8.0 и
-   Debian 'jessie' 8.0.0.
+   протестирована и рекомендуется на Linux дистрибутивах Ubuntu 16.04.1 LTS и
+   Debian 8.5.
 2) Первым делом необходимо собрать кросс-toolchain (набор для кросс-компиляции)
    под MIPS32_R2 CPU, состоящий из пакетов binutils-2.24, gcc-447, uclibc-0.9.33.2.
    Перейти в директорию toolchain-mipsel и выполнить скрипт сборки. Сборка
@@ -19,28 +19,29 @@
 
 * ПРИМЕЧАНИЕ *
 
-Для сборки прошивки из под Linux дистрибутива Debian 'wheezy'/'jessie' требуются
+Для сборки прошивки из под Linux дистрибутива Debian 8.x 'Jessie' требуются
 пакеты (на других дистрибутивах состав и наименования пакетов могут отличаться):
-- sudo
-- build-essential
-- gawk
-- pkg-config
-- gettext
 - autoconf
 - automake
-- libtool
 - bison
+- build-essential
 - flex
+- gawk
+- gettext
+- gperf
+- libtool
+- pkg-config
+- sudo
 - zlib1g-dev
 
 Для сборки кросс-toolchain требуются дополнительные пакеты:
-- texinfo
 - libgmp3-dev
-- libmpfr-dev
 - libmpc-dev
+- libmpfr-dev
+- texinfo
 
 
 
 -
-10.05.2015
+26.08.2016
 Padavan

@@ -391,6 +391,9 @@ VOID	RTMPInitMICEngine(
 	/* SA*/
 	RTMPTkipAppend(&pAd->PrivateInfo.Tx, pSA, MAC_ADDR_LEN);
 	/* Priority + 3 bytes of 0*/
+#ifdef RT_BIG_ENDIAN
+	Priority = SWAP32(Priority);
+#endif
 	RTMPTkipAppend(&pAd->PrivateInfo.Tx, (PUCHAR)&Priority, 4);
 }
 
@@ -437,6 +440,9 @@ BOOLEAN	RTMPTkipCompareMICValue(
 	/* SA*/
 	RTMPTkipAppend(&pAd->PrivateInfo.Rx, pSA, MAC_ADDR_LEN);
 	/* Priority + 3 bytes of 0*/
+#ifdef RT_BIG_ENDIAN
+	Priority = SWAP32(Priority);
+#endif
 	RTMPTkipAppend(&pAd->PrivateInfo.Rx, (PUCHAR)&Priority, 4);
 	
 	/* Calculate MIC value from plain text data*/

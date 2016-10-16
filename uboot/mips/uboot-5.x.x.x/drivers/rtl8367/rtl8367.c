@@ -10,84 +10,93 @@
 #include "api_8370/rtk_api.h"
 #include "api_8370/rtk_api_ext.h"
 #include "api_8370/rtl8370_asicdrv_port.h"
+#if !defined(SWITCH_ASIC_RTL8370M)
+ #undef  RTK_PHY_ID_MAX
+ #define RTK_PHY_ID_MAX		4	/* API 8370 used 0..7 ports, redefine to 0..4 */
+#endif
 #endif
 
 #include "ralink_smi.h"
 
 #if defined(SWITCH_CPU_PORT_EXT2)
- #if defined(SWITCH_ASIC_RTL8367RB)
-  #define CPU_PORT_LAN		(RTK_EXT_2_MAC)		/* ExtIf2 -> RG2 (7) */
-  #define CPU_PORT_WAN		(RTK_EXT_1_MAC)		/* ExtIf1 -> RG1 (6) */
-  #define EXT_ID_LAN		(EXT_PORT_2)
-  #define EXT_ID_WAN		(EXT_PORT_1)
- #endif
+#if defined(SWITCH_ASIC_RTL8367RB) || defined(SWITCH_ASIC_RTL8368MB)
+ #define CPU_PORT_LAN		(RTK_EXT_2_MAC)		/* ExtIf2 -> RG2 (7) */
+ #define CPU_PORT_WAN		(RTK_EXT_1_MAC)		/* ExtIf1 -> RG1 (6) */
+ #define EXT_ID_LAN		(EXT_PORT_2)
+ #define EXT_ID_WAN		(EXT_PORT_1)
+#endif
 #elif defined(SWITCH_CPU_PORT_EXT0)
- #if defined(SWITCH_ASIC_RTL8367M)
-  #define CPU_PORT_LAN		(RTK_EXT_0_MAC9)	/* ExtIf0 -> GMAC2 (9) */
-  #define CPU_PORT_WAN		(RTK_EXT_1_MAC8)	/* ExtIf1 -> GMAC1 (8) */
- #endif
- #if defined(SWITCH_ASIC_RTL8367R)
-  #define CPU_PORT_LAN		(RTK_EXT_0_MAC9)	/* ExtIf0 -> GMAC2 (9) */
-  #undef  CPU_PORT_WAN
- #endif
+#if defined(SWITCH_ASIC_RTL8367MB) || defined(SWITCH_ASIC_RTL8367MVB) || defined(SWITCH_ASIC_RTL8368MB)
+ #define CPU_PORT_LAN		(RTK_EXT_0_MAC)		/* ExtIf0 -> RG0 (5) */
+ #define CPU_PORT_WAN		(RTK_EXT_1_MAC)		/* ExtIf1 -> RG1 (6) */
+ #define EXT_ID_LAN		(EXT_PORT_0)
+ #define EXT_ID_WAN		(EXT_PORT_1)
+#elif defined(SWITCH_ASIC_RTL8367M) || defined(SWITCH_ASIC_RTL8370M)
+ #define CPU_PORT_LAN		(RTK_EXT_0_MAC9)	/* ExtIf0 -> GMAC2 (9) */
+ #define CPU_PORT_WAN		(RTK_EXT_1_MAC8)	/* ExtIf1 -> GMAC1 (8) */
+#endif
 #else
- #if defined(SWITCH_ASIC_RTL8367M)
-  #define CPU_PORT_LAN		(RTK_EXT_1_MAC8)	/* ExtIf1 -> GMAC1 (8) */
-  #define CPU_PORT_WAN		(RTK_EXT_0_MAC9)	/* ExtIf0 -> GMAC2 (9) */
- #endif
- #if defined(SWITCH_ASIC_RTL8367RB)
-  #define CPU_PORT_LAN		(RTK_EXT_1_MAC)		/* ExtIf1 -> RG1 (6) */
-  #define CPU_PORT_WAN		(RTK_EXT_2_MAC)		/* ExtIf2 -> RG2 (7) */
-  #define EXT_ID_LAN		(EXT_PORT_1)
-  #define EXT_ID_WAN		(EXT_PORT_2)
- #endif
- #if defined(SWITCH_ASIC_RTL8367RVB)
-  #define CPU_PORT_LAN		(RTK_EXT_0_MAC)		/* ExtIf1 -> GMAC0 (5) */
-  #define EXT_ID_LAN		(EXT_PORT_1)
- #endif
+#if defined(SWITCH_ASIC_RTL8367RB)
+ #define CPU_PORT_LAN		(RTK_EXT_1_MAC)		/* ExtIf1 -> RG1 (6) */
+ #define CPU_PORT_WAN		(RTK_EXT_2_MAC)		/* ExtIf2 -> RG2 (7) */
+ #define EXT_ID_LAN		(EXT_PORT_1)
+ #define EXT_ID_WAN		(EXT_PORT_2)
+#elif defined(SWITCH_ASIC_RTL8367MB) || defined(SWITCH_ASIC_RTL8367MVB) || defined(SWITCH_ASIC_RTL8368MB)
+ #define CPU_PORT_LAN		(RTK_EXT_1_MAC)		/* ExtIf1 -> RG1 (6) */
+ #define CPU_PORT_WAN		(RTK_EXT_0_MAC)		/* ExtIf0 -> RG0 (5) */
+ #define EXT_ID_LAN		(EXT_PORT_1)
+ #define EXT_ID_WAN		(EXT_PORT_0)
+#elif defined(SWITCH_ASIC_RTL8367M) || defined(SWITCH_ASIC_RTL8370M)
+ #define CPU_PORT_LAN		(RTK_EXT_1_MAC8)	/* ExtIf1 -> GMAC1 (8) */
+ #define CPU_PORT_WAN		(RTK_EXT_0_MAC9)	/* ExtIf0 -> GMAC2 (9) */
+#endif
 #endif
 
-#if defined(RALINK_DEMO_BOARD_PVLAN)
- // WLLLL, WAN at P0
- #define PHY_PORT_ID_WAN	0
- #define PHY_PORT_ID_LAN	4
-#else
- // LLLLW, WAN at P4
- #define PHY_PORT_ID_WAN	4
- #define PHY_PORT_ID_LAN	0
+#if defined(SWITCH_ASIC_RTL8365MB)
+ #define CPU_PORT_LAN		(RTK_EXT_1_MAC)		/* ExtIf1 -> RG1 (6) */
+ #define EXT_ID_LAN		(EXT_PORT_1)
+#elif defined(SWITCH_ASIC_RTL8367RVB)
+ #define CPU_PORT_LAN		(RTK_EXT_0_MAC)		/* ExtIf1 -> RG0 (5) */
+ #define EXT_ID_LAN		(EXT_PORT_1)
+#elif defined(SWITCH_ASIC_RTL8367R)
+ #define CPU_PORT_LAN		(RTK_EXT_0_MAC9)	/* ExtIf0 -> GMAC2 (9) */
 #endif
 
-#define RTL8367_RGMII_DELAY_TX	1
-#define RTL8367_RGMII_DELAY_RX	0
+#if defined(SWITCH_ASIC_RTL8367RB)
+ #define ASIC_NAME "RTL8367RB"
+#elif defined(SWITCH_ASIC_RTL8367RVB)
+ #define ASIC_NAME "RTL8367R-VB"
+#elif defined(SWITCH_ASIC_RTL8367MB)
+ #define ASIC_NAME "RTL8367MB"
+#elif defined(SWITCH_ASIC_RTL8367MVB)
+ #define ASIC_NAME "RTL8367M-VB"
+#elif defined(SWITCH_ASIC_RTL8365MB)
+ #define ASIC_NAME "RTL8365MB"
+#elif defined(SWITCH_ASIC_RTL8368MB)
+ #define ASIC_NAME "RTL8368MB"
+#elif defined(SWITCH_ASIC_RTL8367R)
+ #define ASIC_NAME "RTL8367R"
+#elif defined(SWITCH_ASIC_RTL8367M)
+ #define ASIC_NAME "RTL8367M"
+#elif defined(SWITCH_ASIC_RTL8370M)
+ #define ASIC_NAME "RTL8370M"
+#else
+ #define ASIC_NAME "RTL8367"
+#endif
 
-#define mdelay(n)		({unsigned long msec=(n); while (msec--) udelay(1000);})
+#define RTL8367_RGMII_DELAY_TX	SWITCH_RGMII_DELAY_TX
+#define RTL8367_RGMII_DELAY_RX	SWITCH_RGMII_DELAY_RX
 
-static int
-test_asic_ready_and_wait(void)
+static void
+rtl8367_reset(void)
 {
-	int i, good = 0;
-	u32 data;
-
-	for (i = 0; i < 50; i++) {
-		data = 0;
 #if defined(API_RTL8367B)
-		rtl8367b_getAsicReg(RTL8367B_REG_VS_TPID, &data);
+	rtl8367b_setAsicReg(RTL8367B_REG_CHIP_RESET, 1);
 #else
-		rtl8370_getAsicReg(RTL8370_REG_VS_TPID, &data);
+	rtl8370_setAsicReg(RTL8370_REG_CHIP_RESET, 1);
 #endif
-//		printf("REG_VS_TPID: 0x%04X\n", data);
-		if (data == 0x88a8)
-			good++;
-		else
-			good = 0;
-		
-		if (good > 2)
-			return 0;
-		
-		mdelay(20);
-	}
-
-	return -1;
+	/* wait 1s for switch ready */
+	mdelay(1000);
 }
 
 static void
@@ -112,101 +121,18 @@ rtl8367_port_power(u32 port, int powerOn)
 }
 
 static void
-partition_bridge_recovery(void)
+rtl8367_ports_power(int powerOn)
 {
-	rtk_portmask_t fwd_mask;
+	u32 i;
 
-	/* LAN & WAN ports */
-	fwd_mask.bits[0] = (1U << CPU_PORT_LAN);
-	rtk_port_isolation_set(1, fwd_mask);
-	rtk_port_isolation_set(2, fwd_mask);
-	rtk_port_isolation_set(3, fwd_mask);
-	rtk_port_isolation_set(PHY_PORT_ID_LAN, fwd_mask);
-	rtk_port_isolation_set(PHY_PORT_ID_WAN, fwd_mask);
-
-	/* CPU LAN port */
-	fwd_mask.bits[0] = 0x1F;
-	rtk_port_isolation_set(CPU_PORT_LAN, fwd_mask);
+	for (i = 0; i <= RTK_PHY_ID_MAX; i++)
+		rtl8367_port_power(i, powerOn);
 }
 
-int rtl8367_gsw_init_pre(void)
+static void
+rtl8367_rgmii_config(void)
 {
-	rtk_api_ret_t retVal;
 	rtk_port_mac_ability_t mac_cfg;
-
-	smi_init();
-
-	printf("\n Init RTL8367 GSW...");
-
-	/* wait after power-on-reset */
-	mdelay(200);
-	test_asic_ready_and_wait();
-
-	/* main switch init */
-	retVal = rtk_switch_init();
-	if (retVal != RT_ERR_OK) {
-		printf("FAILED! (code: %d)\n", retVal);
-		return retVal;
-	}
-
-	/* power down all PHY ports (prevent spoofing) */
-	rtl8367_port_power(PHY_PORT_ID_WAN, 0);
-	rtl8367_port_power(PHY_PORT_ID_LAN, 0);
-	rtl8367_port_power(1, 0);
-	rtl8367_port_power(2, 0);
-	rtl8367_port_power(3, 0);
-
-	/* Disable CPU RGMII ports link */
-	mac_cfg.forcemode	= MAC_FORCE;
-	mac_cfg.speed		= SPD_1000M;
-	mac_cfg.duplex		= FULL_DUPLEX;
-	mac_cfg.link		= PORT_LINKDOWN;
-	mac_cfg.nway		= DISABLED;
-	mac_cfg.rxpause		= ENABLED;
-	mac_cfg.txpause		= ENABLED;
-
-#if defined(API_RTL8367B)
-	rtk_port_macForceLinkExt_set(EXT_ID_LAN, MODE_EXT_RGMII, &mac_cfg);
-#if defined(EXT_ID_WAN)
-	rtk_port_macForceLinkExt_set(EXT_ID_WAN, MODE_EXT_RGMII, &mac_cfg);
-#endif
-#else
-	rtk_port_macForceLinkExt0_set(MODE_EXT_RGMII, &mac_cfg);
-	rtk_port_macForceLinkExt1_set(MODE_EXT_RGMII, &mac_cfg);
-#endif
-
-	printf("SUCCESS!\n");
-
-	return RT_ERR_OK;
-}
-
-int rtl8367_gsw_init_post(void)
-{
-	rtk_api_ret_t retVal;
-	rtk_portmask_t portmask;
-	rtk_port_mac_ability_t mac_cfg;
-
-	printf(" Reset and init RTL8367 GSW...");
-
-	/* soft reset switch */
-#if defined(API_RTL8367B)
-	rtl8367b_setAsicReg(RTL8367B_REG_CHIP_RESET, 1);
-#else
-	rtl8370_setAsicReg(RTL8370_REG_CHIP_RESET, 1);
-#endif
-
-	/* wait 1s for switch ready */
-	mdelay(1000);
-
-	/* main switch init */
-	retVal = rtk_switch_init();
-	if (retVal != RT_ERR_OK) {
-		printf("FAILED! (code: %d)\n", retVal);
-		return retVal;
-	}
-
-	/* create ports isolation for recovery mode */
-	partition_bridge_recovery();
 
 	/* configure ExtIf to RGMII, fixed 1000FD mode w/o autoneg */
 	mac_cfg.forcemode	= MAC_FORCE;
@@ -243,20 +169,142 @@ int rtl8367_gsw_init_post(void)
 #endif
 #endif
 #endif
+}
 
-	/* configure PHY leds */
+static void
+rtl8367_partition_bridge_for_recovery(void)
+{
+	u32 i;
+	rtk_portmask_t fwd_mask;
+
+	/* LAN & WAN ports */
+	fwd_mask.bits[0] = (1U << CPU_PORT_LAN);
+	for (i = 0; i <= RTK_PHY_ID_MAX; i++) {
+		rtk_port_isolation_set(i, fwd_mask);
+		rtk_port_efid_set(i, 0);
+	}
+
+	/* CPU LAN port */
+#if defined(SWITCH_ASIC_RTL8370M)
+	fwd_mask.bits[0] = 0xFF;
+#else
+	fwd_mask.bits[0] = 0x1F;
+#endif
+	rtk_port_isolation_set(CPU_PORT_LAN, fwd_mask);
+	rtk_port_efid_set(CPU_PORT_LAN, 0);
+}
+
+static void
+rtl8367_init_led(void)
+{
+	rtk_portmask_t portmask;
+
+#if defined(SWITCH_ASIC_RTL8370M)
+	portmask.bits[0] = 0xFF;
+#else
 	portmask.bits[0] = 0x1F;
+#endif
+
+#if defined(SWITCH_LED_GROUP0)
 	rtk_led_enable_set(LED_GROUP_0, portmask);
+#endif
+#if defined(SWITCH_LED_GROUP1)
 	rtk_led_enable_set(LED_GROUP_1, portmask);
+#endif
+#if defined(SWITCH_LED_GROUP2)
+	rtk_led_enable_set(LED_GROUP_2, portmask);
+#endif
 	rtk_led_operation_set(LED_OP_PARALLEL);
-	rtk_led_groupConfig_set(LED_GROUP_0, LED_CONFIG_SPD10010ACT);	// group 0 - green LED (N56U, N65U yet)
-	rtk_led_groupConfig_set(LED_GROUP_1, LED_CONFIG_SPD1000ACT);	// group 1 - yellow LED (N56U, N65U yet)
+#if defined(SWITCH_LED_GROUP0) && defined(SWITCH_LED_GROUP1) && defined(SWITCH_LED_GROUP2)
+	rtk_led_groupConfig_set(LED_GROUP_0, LED_CONFIG_SPD10010ACT);	// group 0 - green LED
+	rtk_led_groupConfig_set(LED_GROUP_1, LED_CONFIG_SPD1000ACT);	// group 1 - yellow LED
+	rtk_led_groupConfig_set(LED_GROUP_2, LED_CONFIG_LOOPDETECT);	// group 2 - red LED
+#elif defined(SWITCH_LED_GROUP0) && defined(SWITCH_LED_GROUP1)
+	rtk_led_groupConfig_set(LED_GROUP_0, LED_CONFIG_SPD10010ACT);	// group 0 - green LED
+	rtk_led_groupConfig_set(LED_GROUP_1, LED_CONFIG_SPD1000ACT);	// group 1 - yellow LED
+#elif defined(SWITCH_LED_GROUP0) && defined(SWITCH_LED_GROUP2)
+	rtk_led_groupConfig_set(LED_GROUP_0, LED_CONFIG_SPD10010ACT);	// group 0 - green LED
+	rtk_led_groupConfig_set(LED_GROUP_2, LED_CONFIG_SPD1000ACT);	// group 2 - yellow LED
+#elif defined(SWITCH_LED_GROUP1) && defined(SWITCH_LED_GROUP2)
+	rtk_led_groupConfig_set(LED_GROUP_1, LED_CONFIG_SPD10010ACT);	// group 1 - green LED
+	rtk_led_groupConfig_set(LED_GROUP_2, LED_CONFIG_SPD1000ACT);	// group 2 - yellow LED
+#elif defined(SWITCH_LED_GROUP0)
+	rtk_led_groupConfig_set(LED_GROUP_0, LED_CONFIG_LINK_ACT);
+#elif defined(SWITCH_LED_GROUP1)
+	rtk_led_groupConfig_set(LED_GROUP_1, LED_CONFIG_LINK_ACT);
+#elif defined(SWITCH_LED_GROUP2)
+	rtk_led_groupConfig_set(LED_GROUP_2, LED_CONFIG_LINK_ACT);
+#endif
+}
+
+int rtl8367_gsw_init_pre(int sw_reset)
+{
+	smi_init(ASIC_NAME);
+
+	printf(" Init %s GSW...", ASIC_NAME);
+
+#if !defined(MT7621_MP)
+	/* wait after power-on-reset */
+	/* MT7621 has stage1 code after power-on (duration ~2s), not need wait */
+	if (!sw_reset)
+		mdelay(400);
+#endif
+
+	/* check asic inited */
+	if (sw_reset) {
+		u32 reg_magic = 0;
+#if defined(API_RTL8367B)
+		rtl8367b_getAsicReg(RTL8367B_REG_MAGIC_ID, &reg_magic);
+#else
+		rtl8370_getAsicReg(RTL8370_REG_MAGIC_ID, &reg_magic);
+#endif
+		if (reg_magic != 0x0249)
+			sw_reset = 0;
+	}
+
+	if (!sw_reset) {
+		/* main switch init */
+		if (rtk_switch_init() != RT_ERR_OK) {
+			printf("FAILED!\n");
+			return -1;
+		}
+	}
+
+	/* power down all PHY ports (prevent spoofing) */
+	rtl8367_ports_power(0);
+
+	printf("SUCCESS!\n");
+
+	return 0;
+}
+
+int rtl8367_gsw_init_post(void)
+{
+	printf(" Reset & Init %s GSW...", ASIC_NAME);
+
+	/* soft reset switch */
+	rtl8367_reset();
+
+	/* main switch init */
+	if (rtk_switch_init() != RT_ERR_OK) {
+		printf("FAILED!\n");
+		return -1;
+	}
+
+	/* set ports isolation for recovery mode */
+	rtl8367_partition_bridge_for_recovery();
+
+	/* configure ExtIf to RGMII, fixed 1000FD mode */
+	rtl8367_rgmii_config();
+
+	/* init PHY leds */
+	rtl8367_init_led();
 
 	/* enable all PHY (if disabled by bootstrap) */
 	rtk_port_phyEnableAll_set(ENABLED);
 
 	printf("SUCCESS!\n");
 
-	return RT_ERR_OK;
+	return 0;
 }
 

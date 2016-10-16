@@ -40,6 +40,7 @@ typedef struct esw_mib_counters_s
 	uint32_t TxMcastFrames;
 	uint32_t TxBcastFrames;
 	uint32_t TxDropFrames;
+	uint32_t TxPauseFrames;
 	uint32_t TxCollisions;
 	uint32_t TxCRCError;
 	uint64_t RxGoodOctets;
@@ -47,11 +48,12 @@ typedef struct esw_mib_counters_s
 	uint32_t RxMcastFrames;
 	uint32_t RxBcastFrames;
 	uint32_t RxDropFrames;
+	uint32_t RxPauseFrames;
 	uint32_t RxFilterFrames;
 	uint32_t RxCRCError;
 	uint32_t RxAligmentError;
 } esw_mib_counters_t;
-#else
+#elif defined (CONFIG_RALINK_MT7620)
 typedef struct esw_mib_counters_s
 {
 	uint64_t TxGoodOctets;
@@ -65,6 +67,15 @@ typedef struct esw_mib_counters_s
 	uint32_t RxBadFrames;
 	uint32_t RxDropFramesFilter;
 	uint32_t RxDropFramesErr;
+} esw_mib_counters_t;
+#else
+#define ESW_RT3X5X
+typedef struct esw_mib_counters_s
+{
+	uint32_t TxGoodFrames;
+	uint32_t TxBadFrames;
+	uint32_t RxGoodFrames;
+	uint32_t RxBadFrames;
 } esw_mib_counters_t;
 #endif
 
@@ -101,29 +112,9 @@ mtk_esw_ioctl(unsigned int cmd, unsigned int par, unsigned int *value)
 // ESW STATUS
 ////////////////////////////////////////////////////////////////////////////////
 
-int phy_status_port_link_wan(unsigned int *p_link_on)
+int phy_status_port_link(int port_id_uapi, unsigned int *p_link_on)
 {
-	return mtk_esw_ioctl(MTK_ESW_IOCTL_STATUS_LINK_PORT_WAN, 0, p_link_on);
-}
-
-int phy_status_port_link_lan1(unsigned int *p_link_on)
-{
-	return mtk_esw_ioctl(MTK_ESW_IOCTL_STATUS_LINK_PORT_LAN1, 0, p_link_on);
-}
-
-int phy_status_port_link_lan2(unsigned int *p_link_on)
-{
-	return mtk_esw_ioctl(MTK_ESW_IOCTL_STATUS_LINK_PORT_LAN2, 0, p_link_on);
-}
-
-int phy_status_port_link_lan3(unsigned int *p_link_on)
-{
-	return mtk_esw_ioctl(MTK_ESW_IOCTL_STATUS_LINK_PORT_LAN3, 0, p_link_on);
-}
-
-int phy_status_port_link_lan4(unsigned int *p_link_on)
-{
-	return mtk_esw_ioctl(MTK_ESW_IOCTL_STATUS_LINK_PORT_LAN4, 0, p_link_on);
+	return mtk_esw_ioctl(MTK_ESW_IOCTL_STATUS_LINK_PORT, port_id_uapi, p_link_on);
 }
 
 int phy_status_port_link_wan_all(unsigned int *p_link_on)
@@ -143,88 +134,27 @@ int phy_status_port_link_changed(unsigned int *p_link_changed)
 
 ////////////////////////////////////////////////////////////////////////////////
 
-int phy_status_port_speed_wan(unsigned int *p_speed_mode)
+int phy_status_port_speed(int port_id_uapi, unsigned int *p_speed_mode)
 {
-	return mtk_esw_ioctl(MTK_ESW_IOCTL_STATUS_SPEED_PORT_WAN, 0, p_speed_mode);
-}
-
-int phy_status_port_speed_lan1(unsigned int *p_speed_mode)
-{
-	return mtk_esw_ioctl(MTK_ESW_IOCTL_STATUS_SPEED_PORT_LAN1, 0, p_speed_mode);
-}
-
-int phy_status_port_speed_lan2(unsigned int *p_speed_mode)
-{
-	return mtk_esw_ioctl(MTK_ESW_IOCTL_STATUS_SPEED_PORT_LAN2, 0, p_speed_mode);
-}
-
-int phy_status_port_speed_lan3(unsigned int *p_speed_mode)
-{
-	return mtk_esw_ioctl(MTK_ESW_IOCTL_STATUS_SPEED_PORT_LAN3, 0, p_speed_mode);
-}
-
-int phy_status_port_speed_lan4(unsigned int *p_speed_mode)
-{
-	return mtk_esw_ioctl(MTK_ESW_IOCTL_STATUS_SPEED_PORT_LAN4, 0, p_speed_mode);
+	return mtk_esw_ioctl(MTK_ESW_IOCTL_STATUS_SPEED_PORT, port_id_uapi, p_speed_mode);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-int phy_link_port_wan(unsigned int link_mode, unsigned int flow_mode)
+int phy_set_link_port(int port_id_uapi, unsigned int link_mode, unsigned int flow_mode)
 {
 	unsigned int port_control = (flow_mode << 8) | link_mode;
-	return mtk_esw_ioctl(MTK_ESW_IOCTL_SPEED_PORT_WAN, 0, &port_control);
-}
-
-int phy_link_port_lan1(unsigned int link_mode, unsigned int flow_mode)
-{
-	unsigned int port_control = (flow_mode << 8) | link_mode;
-	return mtk_esw_ioctl(MTK_ESW_IOCTL_SPEED_PORT_LAN1, 0, &port_control);
-}
-
-int phy_link_port_lan2(unsigned int link_mode, unsigned int flow_mode)
-{
-	unsigned int port_control = (flow_mode << 8) | link_mode;
-	return mtk_esw_ioctl(MTK_ESW_IOCTL_SPEED_PORT_LAN2, 0, &port_control);
-}
-
-int phy_link_port_lan3(unsigned int link_mode, unsigned int flow_mode)
-{
-	unsigned int port_control = (flow_mode << 8) | link_mode;
-	return mtk_esw_ioctl(MTK_ESW_IOCTL_SPEED_PORT_LAN3, 0, &port_control);
-}
-
-int phy_link_port_lan4(unsigned int link_mode, unsigned int flow_mode)
-{
-	unsigned int port_control = ((flow_mode << 8) | link_mode);
-	return mtk_esw_ioctl(MTK_ESW_IOCTL_SPEED_PORT_LAN4, 0, &port_control);
+	return mtk_esw_ioctl(MTK_ESW_IOCTL_SPEED_PORT, port_id_uapi, &port_control);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-int phy_status_port_bytes(int port_id, uint64_t *rx, uint64_t *tx)
+int phy_status_port_bytes(int port_id_uapi, uint64_t *rx, uint64_t *tx)
 {
 	port_bytes_t pb;
 	int ioctl_result;
-	unsigned int port_mask = SWAPI_PORTMASK_WAN;
 
-	switch (port_id)
-	{
-	case 1:
-		port_mask = SWAPI_PORTMASK_LAN1;
-		break;
-	case 2:
-		port_mask = SWAPI_PORTMASK_LAN2;
-		break;
-	case 3:
-		port_mask = SWAPI_PORTMASK_LAN3;
-		break;
-	case 4:
-		port_mask = SWAPI_PORTMASK_LAN4;
-		break;
-	}
-
-	ioctl_result = mtk_esw_ioctl(MTK_ESW_IOCTL_STATUS_PORT_BYTES, port_mask, (unsigned int *)&pb);
+	ioctl_result = mtk_esw_ioctl(MTK_ESW_IOCTL_STATUS_BYTES_PORT, port_id_uapi, (unsigned int *)&pb);
 	if (ioctl_result < 0)
 		return ioctl_result;
 
@@ -242,9 +172,10 @@ inline int phy_storm_unicast_unknown(unsigned int storm_rate_mbps)
 	return 0;
 }
 
-int phy_storm_multicast_unknown(unsigned int storm_rate_mbps)
+inline int phy_storm_multicast_unknown(unsigned int storm_rate_mbps)
 {
-	return mtk_esw_ioctl(MTK_ESW_IOCTL_STORM_MULTICAST_UNK, 0, &storm_rate_mbps);
+	// N.A.
+	return 0;
 }
 
 inline int phy_storm_multicast(unsigned int storm_rate_mbps)
@@ -253,10 +184,9 @@ inline int phy_storm_multicast(unsigned int storm_rate_mbps)
 	return 0;
 }
 
-inline int phy_storm_broadcast(unsigned int storm_rate_mbps)
+int phy_storm_broadcast(unsigned int storm_rate_mbps)
 {
-	// N.A. (brodcast storm also set by unknown multicast)
-	return 0;
+	return mtk_esw_ioctl(MTK_ESW_IOCTL_STORM_BROADCAST, 0, &storm_rate_mbps);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -276,7 +206,13 @@ inline int phy_led_mode_yellow(unsigned int led_yellow)
 
 inline int phy_green_ethernet(unsigned int green_ethernet_on)
 {
-	return mtk_esw_ioctl(MTK_ESW_IOCTL_GREEN_ETHERNET, 0, &green_ethernet_on);
+	// N.A.
+	return 0;
+}
+
+int phy_eee_lpi(unsigned int eee_lpi_on)
+{
+	return mtk_esw_ioctl(MTK_ESW_IOCTL_EEE_LPI, 0, &eee_lpi_on);
 }
 
 int phy_jumbo_frames(unsigned int jumbo_frames_on)
@@ -284,28 +220,12 @@ int phy_jumbo_frames(unsigned int jumbo_frames_on)
 	return mtk_esw_ioctl(MTK_ESW_IOCTL_JUMBO_FRAMES, 0, &jumbo_frames_on);
 }
 
-int phy_igmp_static_port(unsigned int static_port)
+int phy_igmp_static_port(int static_port)
 {
 	unsigned int ports_mask = 0;
 
-	switch (static_port)
-	{
-	case 1:
-		ports_mask |= SWAPI_PORTMASK_LAN1;
-		break;
-	case 2:
-		ports_mask |= SWAPI_PORTMASK_LAN2;
-		break;
-	case 3:
-		ports_mask |= SWAPI_PORTMASK_LAN3;
-		break;
-	case 4:
-		ports_mask |= SWAPI_PORTMASK_LAN4;
-		break;
-	case 5:
-		ports_mask |= SWAPI_PORTMASK_WAN;
-		break;
-	}
+	if (static_port >= 0 && static_port <= 5)
+		ports_mask |= (1u << static_port);
 
 	return mtk_esw_ioctl(MTK_ESW_IOCTL_IGMP_STATIC_PORTS, 0, &ports_mask);
 }
@@ -323,6 +243,7 @@ int phy_ports_power(int power_on)
 				   SWAPI_PORTMASK_LAN2 |
 				   SWAPI_PORTMASK_LAN3 |
 				   SWAPI_PORTMASK_LAN4 |
+				   SWAPI_PORTMASK_LAN5 |
 				   SWAPI_PORTMASK_WAN);
 	return mtk_esw_ioctl(MTK_ESW_IOCTL_PORTS_POWER, power_on, &ports_mask);
 }
@@ -385,7 +306,7 @@ int phy_vlan_accept_port_mode(int accept_mode, unsigned int port_pask)
 int phy_vlan_create_port_vid(int pvid, int priority, unsigned int member, unsigned int untag, int fid)
 {
 	unsigned int vlan4k_info = (((fid & 0xFF) << 16) | ((priority & 0x07) << 12) | (pvid & 0x0FFF));
-	unsigned int vlan4k_mask = (((untag & 0xFF) << 16) | (member & 0xFF));
+	unsigned int vlan4k_mask = (((untag & 0xFFFF) << 16) | (member & 0xFFFF));
 
 	return mtk_esw_ioctl(MTK_ESW_IOCTL_VLAN_CREATE_PORT_VID, vlan4k_info, &vlan4k_mask);
 }
@@ -393,7 +314,7 @@ int phy_vlan_create_port_vid(int pvid, int priority, unsigned int member, unsign
 int phy_vlan_create_entry(int vid, unsigned int member, unsigned int untag, int fid)
 {
 	unsigned int vlan4k_info = (((fid & 0xFF) << 16) | (vid & 0x0FFF));
-	unsigned int vlan4k_mask = (((untag & 0xFF) << 16) | (member & 0xFF));
+	unsigned int vlan4k_mask = (((untag & 0xFFFF) << 16) | (member & 0xFFFF));
 
 	return mtk_esw_ioctl(MTK_ESW_IOCTL_VLAN_CREATE_ENTRY, vlan4k_info, &vlan4k_mask);
 }
@@ -406,30 +327,6 @@ int phy_vlan_rule_set(unsigned int rule_id, int vid, int priority, int tagged)
 }
 
 ////////////////////////////////////////////////////////////////////////////////
-// RALINK CPU GPIO CONTROL
-////////////////////////////////////////////////////////////////////////////////
-
-int cpu_gpio_mode_set_bit(int idx, unsigned int value)
-{
-	return mtk_esw_ioctl(MTK_ESW_IOCTL_GPIO_MODE_SET_BIT, idx, &value);
-}
-
-int cpu_gpio_set_pin_direction(int pin, unsigned int use_output_direction)
-{
-	return mtk_esw_ioctl(MTK_ESW_IOCTL_GPIO_PIN_SET_DIRECTION, pin, &use_output_direction);
-}
-
-int cpu_gpio_set_pin(int pin, unsigned int value)
-{
-	return mtk_esw_ioctl(MTK_ESW_IOCTL_GPIO_PIN_SET_VAL, pin, &value);
-}
-
-int cpu_gpio_get_pin(int pin, unsigned int *p_value)
-{
-	return mtk_esw_ioctl(MTK_ESW_IOCTL_GPIO_PIN_GET_VAL, pin, p_value);
-}
-
-////////////////////////////////////////////////////////////////////////////////
 // STATUS
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -437,39 +334,14 @@ static int show_usage(char *cmd)
 {
 	printf("Usage: %s COMMAND [ARG1] [ARG2]\n"
 	" COMMAND:\n"
-	"    0 [MODE]        Set GPIO mode RAW DWORD\n"
-	"    1 [0|1] [BIT]   Set GPIO mode bit\n"
-	"    2               Show GPIO mode RAW\n"
-	"    3 [0|1] [PIN]   Set GPIO pin direction (0=Input, 1=Output)\n"
-	"    4 [0|1] [PIN]   Set GPIO pin value\n"
-	"    5 [PIN]         Show GPIO pin value\n"
-	"\n"
-	"   10               Show WAN port link status\n"
+	"   10 [PORT]        Show port link status\n"
 	"   11               Show WAN ports link status\n"
 	"   12               Show LAN ports link status\n"
-	"   13               Show LAN1 port link status\n"
-	"   14               Show LAN2 port link status\n"
-	"   15               Show LAN3 port link status\n"
-	"   16               Show LAN4 port link status\n"
 	"\n"
-	"   20               Show WAN port speed status\n"
-	"   21               Show LAN1 port speed status\n"
-	"   22               Show LAN2 port speed status\n"
-	"   23               Show LAN3 port speed status\n"
-	"   24               Show LAN4 port speed status\n"
+	"   20 [PORT]        Show port speed status\n"
 	"\n"
-	"   30               Show WAN port MIB counters\n"
-	"   31               Show LAN1 port MIB counters\n"
-	"   32               Show LAN2 port MIB counters\n"
-	"   33               Show LAN3 port MIB counters\n"
-	"   34               Show LAN4 port MIB counters\n"
-#if defined (USE_MTK_GSW)
-	"   35               Show CPU WAN port MIB counters\n"
-	"   36               Show CPU LAN port MIB counters\n"
+	"   30 [PORT]        Show port MIB counters\n"
 	"   38               Reset all ports MIB counters\n"
-#else
-	"   36               Show CPU WAN/LAN port MIB counters\n"
-#endif
 	"\n"
 	"   40 [0x25252525]  Full reset and reinit switch\n"
 	"   41 [MASK] [0|1]  Set power off/on for ports mask\n"
@@ -478,7 +350,7 @@ static int show_usage(char *cmd)
 	"\n"
 	"   50 [0..8] [0..3] Config WAN bridge mode and isolation\n"
 #if defined (USE_MTK_GSW)
-	"   55 [MASK] [PORT] Override port forward mask\n"
+	"   55 [MASK] [PORT] Override port matrix mask\n"
 #endif
 	"\n"
 	"   60               Reset VLAN table and init VLAN1\n"
@@ -487,73 +359,62 @@ static int show_usage(char *cmd)
 	"   63 [MASK] [DATA] Create port-based VLAN entry\n"
 	"   64 [MASK] [DATA] Create VLAN entry\n"
 	"\n"
-	"   71 [0..1000]     Set Unknown Multicast and Broadcast storm rate for all PHY ports\n"
+	"   73 [0..1000]     Set Broadcast storm rate limit for all PHY ports\n"
+#if !defined (ESW_RT3X5X)
 	"   75 [1|0]         Set Jumbo Frames accept on/off\n"
-	"   76 [1|0]         Set 802.3az EEE on/off\n"
-	"   77 [MASK]        Set IGMP/MLD static ports mask\n"
+#endif
+	"   77 [1|0]         Set 802.3az EEE on/off\n"
+	"\n"
 	"   78 [1|0]         Set IGMP/MLD snooping on/off\n"
+	"   79 [MASK]        Set IGMP/MLD static ports mask\n"
+	"\n"
 	"   80 [7,11]        Set EPHY LED action\n"
 	"\n"
-	"   90 [MODE]        Set WAN port link mode (flow|link)\n"
-	"   91 [MODE]        Set LAN1 port link mode (flow|link)\n"
-	"   92 [MODE]        Set LAN2 port link mode (flow|link)\n"
-	"   93 [MODE]        Set LAN3 port link mode (flow|link)\n"
-	"   94 [MODE]        Set LAN4 port link mode (flow|link)\n"
+	"   90 [MODE] [PORT] Set port link mode (fc|link)\n"
 	, cmd);
 
 	return 1;
 }
 
-static int show_status_gpio_mode(void)
+static const char *get_port_name(unsigned int port_id)
 {
-	int retVal;
-	unsigned int arg = 0;
+	switch (port_id)
+	{
+	case SWAPI_PORT_WAN:
+		return "WAN";
+	case SWAPI_PORT_LAN1:
+		return "LAN1";
+	case SWAPI_PORT_LAN2:
+		return "LAN2";
+	case SWAPI_PORT_LAN3:
+		return "LAN3";
+	case SWAPI_PORT_LAN4:
+		return "LAN4";
+	case SWAPI_PORT_LAN5:
+		return "LAN5";
+	case SWAPI_PORT_CPU_LAN:
+		return "CPU LAN";
+	case SWAPI_PORT_CPU_WAN:
+		return "CPU WAN";
+	}
 
-	retVal = mtk_esw_ioctl(MTK_ESW_IOCTL_GPIO_MODE_GET, 0, &arg);
-	if (retVal == 0)
-		printf("GPIO Mode = 0x%08X\n", arg);
-
-	return retVal;
+	return NULL;
 }
 
-static int show_status_gpio_pin(unsigned int par)
-{
-	int retVal;
-	unsigned int arg = 0;
-
-	retVal = mtk_esw_ioctl(MTK_ESW_IOCTL_GPIO_PIN_GET_VAL, par, &arg);
-	if (retVal == 0)
-		printf("GPIO Pin %d = %d\n", par, arg);
-
-	return retVal;
-}
-
-static int show_status_link(unsigned int cmd)
+static int show_status_link(unsigned int cmd, unsigned int port_id)
 {
 	int retVal;
 	unsigned int link_value = 0;
-	const char *portname = "";
+	const char *portname = NULL;
 
-	retVal = mtk_esw_ioctl(cmd, 0, &link_value);
+	retVal = mtk_esw_ioctl(cmd, port_id, &link_value);
 	if (retVal != 0)
 		return retVal;
 
 	switch (cmd)
 	{
-	case MTK_ESW_IOCTL_STATUS_LINK_PORT_WAN:
-		portname = "WAN port";
-		break;
-	case MTK_ESW_IOCTL_STATUS_LINK_PORT_LAN1:
-		portname = "LAN1 port";
-		break;
-	case MTK_ESW_IOCTL_STATUS_LINK_PORT_LAN2:
-		portname = "LAN2 port";
-		break;
-	case MTK_ESW_IOCTL_STATUS_LINK_PORT_LAN3:
-		portname = "LAN3 port";
-		break;
-	case MTK_ESW_IOCTL_STATUS_LINK_PORT_LAN4:
-		portname = "LAN4 port";
+	case MTK_ESW_IOCTL_STATUS_LINK_PORT:
+		portname = get_port_name(port_id);
 		break;
 	case MTK_ESW_IOCTL_STATUS_LINK_PORTS_WAN:
 		portname = "WAN ports";
@@ -563,40 +424,28 @@ static int show_status_link(unsigned int cmd)
 		break;
 	}
 
+	if (!portname)
+		return -1;
+
 	printf("%s link state: %d\n", portname, link_value);
 
 	return retVal;
 }
 
-static int show_status_speed(unsigned int cmd)
+static int show_status_speed(unsigned int port_id)
 {
 	int retVal;
 	unsigned int link_value = 0;
-	const char *portname = "";
-	char linkstate[20];
+	const char *portname;
+	char linkstate[32];
 
-	retVal = mtk_esw_ioctl(cmd, 0, &link_value);
+	retVal = mtk_esw_ioctl(MTK_ESW_IOCTL_STATUS_SPEED_PORT, port_id, &link_value);
 	if (retVal != 0)
 		return retVal;
 
-	switch (cmd)
-	{
-	case MTK_ESW_IOCTL_STATUS_SPEED_PORT_WAN:
-		portname = "WAN port";
-		break;
-	case MTK_ESW_IOCTL_STATUS_SPEED_PORT_LAN1:
-		portname = "LAN1 port";
-		break;
-	case MTK_ESW_IOCTL_STATUS_SPEED_PORT_LAN2:
-		portname = "LAN2 port";
-		break;
-	case MTK_ESW_IOCTL_STATUS_SPEED_PORT_LAN3:
-		portname = "LAN3 port";
-		break;
-	case MTK_ESW_IOCTL_STATUS_SPEED_PORT_LAN4:
-		portname = "LAN4 port";
-		break;
-	}
+	portname = get_port_name(port_id);
+	if (!portname)
+		return -1;
 
 	if ((link_value >> 16) & 0x01) {
 		int lspeed;
@@ -638,41 +487,21 @@ static int show_status_speed(unsigned int cmd)
 	return retVal;
 }
 
-static int show_mib_counters(unsigned int cmd)
+static int show_mib_counters(unsigned int port_id)
 {
 	int retVal;
 	esw_mib_counters_t mibc;
-	const char *portname = "";
+	const char *portname;
 
 	memset(&mibc, 0, sizeof(esw_mib_counters_t));
-	retVal = mtk_esw_ioctl(cmd, 0, (unsigned int *)&mibc);
-	if (retVal == 0)
-	{
-		switch (cmd)
-		{
-		case MTK_ESW_IOCTL_STATUS_CNT_PORT_WAN:
-			portname = "WAN port";
-			break;
-		case MTK_ESW_IOCTL_STATUS_CNT_PORT_LAN1:
-			portname = "LAN1 port";
-			break;
-		case MTK_ESW_IOCTL_STATUS_CNT_PORT_LAN2:
-			portname = "LAN2 port";
-			break;
-		case MTK_ESW_IOCTL_STATUS_CNT_PORT_LAN3:
-			portname = "LAN3 port";
-			break;
-		case MTK_ESW_IOCTL_STATUS_CNT_PORT_LAN4:
-			portname = "LAN4 port";
-			break;
-		case MTK_ESW_IOCTL_STATUS_CNT_PORT_CPU_WAN:
-			portname = "CPU WAN port";
-			break;
-		case MTK_ESW_IOCTL_STATUS_CNT_PORT_CPU_LAN:
-			portname = "CPU LAN port";
-			break;
-		}
-		
+	retVal = mtk_esw_ioctl(MTK_ESW_IOCTL_STATUS_MIB_PORT, port_id, (unsigned int *)&mibc);
+	if (retVal != 0)
+		return retVal;
+
+	portname = get_port_name(port_id);
+	if (!portname)
+		return -1;
+
 #if defined (USE_MTK_GSW)
 		printf("%s MIB counters:\n"
 			"  TxGoodOctets: %llu\n"
@@ -680,6 +509,7 @@ static int show_mib_counters(unsigned int cmd)
 			"  TxMcastFrames: %u\n"
 			"  TxBcastFrames: %u\n"
 			"  TxDropFrames: %u\n"
+			"  TxPauseFrames: %u\n"
 			"  TxCollisions: %u\n"
 			"  TxCRCError: %u\n"
 			"  RxGoodOctets: %llu\n"
@@ -687,6 +517,7 @@ static int show_mib_counters(unsigned int cmd)
 			"  RxMcastFrames: %u\n"
 			"  RxBcastFrames: %u\n"
 			"  RxDropFrames: %u\n"
+			"  RxPauseFrames: %u\n"
 			"  RxFilterFrames: %u\n"
 			"  RxCRCError: %u\n"
 			"  RxAligmentError: %u\n"
@@ -697,6 +528,7 @@ static int show_mib_counters(unsigned int cmd)
 			mibc.TxMcastFrames,
 			mibc.TxBcastFrames,
 			mibc.TxDropFrames,
+			mibc.TxPauseFrames,
 			mibc.TxCollisions,
 			mibc.TxCRCError,
 			mibc.RxGoodOctets,
@@ -704,11 +536,12 @@ static int show_mib_counters(unsigned int cmd)
 			mibc.RxMcastFrames,
 			mibc.RxBcastFrames,
 			mibc.RxDropFrames,
+			mibc.RxPauseFrames,
 			mibc.RxFilterFrames,
 			mibc.RxCRCError,
 			mibc.RxAligmentError
 			);
-#else
+#elif !defined (ESW_RT3X5X)
 		printf("%s MIB counters:\n"
 			"  TxGoodOctets: %llu\n"
 			"  TxGoodFrames: %u\n"
@@ -735,18 +568,30 @@ static int show_mib_counters(unsigned int cmd)
 			mibc.RxDropFramesFilter,
 			mibc.RxDropFramesErr
 			);
+#else
+		printf("%s MIB counters:\n"
+			"  TxGoodFrames: %u\n"
+			"  TxBadFrames: %u\n"
+			"  RxGoodFrames: %u\n"
+			"  RxBadFrames: %u\n"
+			,
+			portname,
+			mibc.TxGoodFrames,
+			mibc.TxBadFrames,
+			mibc.RxGoodFrames,
+			mibc.RxBadFrames
+			);
 #endif
-	}
 
 	return retVal;
 }
 
-static int show_vlan_pvid_wan(unsigned int cmd)
+static int show_vlan_pvid_wan(void)
 {
 	int retVal;
 	unsigned int arg = 2;
 
-	retVal = mtk_esw_ioctl(cmd, 0, &arg);
+	retVal = mtk_esw_ioctl(MTK_ESW_IOCTL_VLAN_PVID_WAN_GET, 0, &arg);
 	if (retVal != 0)
 		arg = 2;
 
@@ -781,47 +626,24 @@ int mtk_esw_main(int argc, char **argv)
 	if (argc > 3)
 		par = get_param_int_hex(argv[3]);
 
-	if (cmd == 0 && arg == 0)
-		return show_usage(argv[0]);
-
 	switch (cmd)
 	{
-	case MTK_ESW_IOCTL_GPIO_MODE_GET:
-		return show_status_gpio_mode();
-	
-	case MTK_ESW_IOCTL_GPIO_PIN_GET_VAL:
-		return show_status_gpio_pin(arg);
-	
-	case MTK_ESW_IOCTL_STATUS_PORT_BYTES:
+	case MTK_ESW_IOCTL_STATUS_BYTES_PORT:
 		return 1;
 	
-	case MTK_ESW_IOCTL_STATUS_LINK_PORT_WAN:
-	case MTK_ESW_IOCTL_STATUS_LINK_PORT_LAN1:
-	case MTK_ESW_IOCTL_STATUS_LINK_PORT_LAN2:
-	case MTK_ESW_IOCTL_STATUS_LINK_PORT_LAN3:
-	case MTK_ESW_IOCTL_STATUS_LINK_PORT_LAN4:
+	case MTK_ESW_IOCTL_STATUS_LINK_PORT:
 	case MTK_ESW_IOCTL_STATUS_LINK_PORTS_WAN:
 	case MTK_ESW_IOCTL_STATUS_LINK_PORTS_LAN:
-		return show_status_link(cmd);
+		return show_status_link(cmd, arg);
 	
-	case MTK_ESW_IOCTL_STATUS_SPEED_PORT_WAN:
-	case MTK_ESW_IOCTL_STATUS_SPEED_PORT_LAN1:
-	case MTK_ESW_IOCTL_STATUS_SPEED_PORT_LAN2:
-	case MTK_ESW_IOCTL_STATUS_SPEED_PORT_LAN3:
-	case MTK_ESW_IOCTL_STATUS_SPEED_PORT_LAN4:
-		return show_status_speed(cmd);
+	case MTK_ESW_IOCTL_STATUS_SPEED_PORT:
+		return show_status_speed(arg);
 	
-	case MTK_ESW_IOCTL_STATUS_CNT_PORT_WAN:
-	case MTK_ESW_IOCTL_STATUS_CNT_PORT_LAN1:
-	case MTK_ESW_IOCTL_STATUS_CNT_PORT_LAN2:
-	case MTK_ESW_IOCTL_STATUS_CNT_PORT_LAN3:
-	case MTK_ESW_IOCTL_STATUS_CNT_PORT_LAN4:
-	case MTK_ESW_IOCTL_STATUS_CNT_PORT_CPU_WAN:
-	case MTK_ESW_IOCTL_STATUS_CNT_PORT_CPU_LAN:
-		return show_mib_counters(cmd);
+	case MTK_ESW_IOCTL_STATUS_MIB_PORT:
+		return show_mib_counters(arg);
 	
 	case MTK_ESW_IOCTL_VLAN_PVID_WAN_GET:
-		return show_vlan_pvid_wan(cmd);
+		return show_vlan_pvid_wan();
 	}
 
 	return mtk_esw_ioctl(cmd, par, &arg);

@@ -166,26 +166,41 @@ extern char*     get_man_ifname(int unit);
 extern int       get_usb_modem_wan(int unit);
 extern int       get_usb_modem_dev_wan(int unit, int devnum);
 extern void      set_usb_modem_dev_wan(int unit, int devnum);
-extern void      brport_set_param_int(const char *ifname, const char *param, int value);
-extern void      brport_set_m2u(const char *ifname, int m2u_on);
 extern int       get_wan_ether_link_cached(void);
 extern int       get_internet_state_cached(void);
-extern int       ifconfig(char *ifname, int flags, char *addr, char *mask);
+extern int       ifconfig(const char *ifname, int flags, const char *addr, const char *mask);
 extern int       is_interface_exist(const char *ifname);
 extern int       is_interface_up(const char *ifname);
 extern int       get_interface_flags(const char *ifname);
 extern int       get_interface_index(const char *ifname);
 extern int       get_interface_mtu(const char *ifname);
+extern int       set_interface_mtu(const char *ifname, int mtu);
 extern int       get_interface_hwaddr(const char *ifname, unsigned char mac[6]);
+extern int       set_interface_hwaddr(const char *ifname, const char *mac_str);
 extern in_addr_t get_interface_addr4(const char *ifname);
+extern void      set_interface_conf_int(const char *ver, const char *ifname, const char *param, int value);
 extern int       get_ipv6_type(void);
+
+extern int       vconfig_add_if(const char *ifname, unsigned int vid);
+extern int       vconfig_del_if(const char *vifname);
+extern int       vconfig_egress_map(const char *vifname, int skb_prio, int qos_prio);
+
+extern int       br_add_del_bridge(const char *brname, int is_add);
+extern int       br_add_del_if(const char *brname, const char *ifname, int is_add);
+extern int       br_del_all_ifs(const char *brname, int do_if_down, int do_if_rem);
+extern void      br_set_param_int(const char *brname, const char *param, int value);
+extern void      br_set_fd(const char *brname, int delay_sec);
+extern void      br_set_stp(const char *brname, int stp_state);
+extern void      brport_set_param_int(const char *ifname, const char *param, int value);
+extern void      brport_set_m2u(const char *ifname, int m2u_on);
 
 extern const char* get_ifname_descriptor(const char* ifname, int ap_mode, int *ifindex, int *wan_no);
 extern uint64_t    get_ifstats_bytes_rx(const char* ifname);
 extern uint64_t    get_ifstats_bytes_tx(const char* ifname);
 
 #if defined (USE_IPV6)
-extern char *get_ifaddr6(char *ifname, int linklocal, char *p_addr6s);
+extern int  is_valid_ipv6(const char *cp);
+extern char *get_ifaddr6(const char *ifname, int linklocal, char *p_addr6s);
 #endif
 
 #endif

@@ -133,7 +133,7 @@ am__installdirs = "$(DESTDIR)$(plugindir)" "$(DESTDIR)$(docdir)"
 LTLIBRARIES = $(plugin_LTLIBRARIES)
 am__DEPENDENCIES_1 =
 openvpn_plugin_auth_pam_la_DEPENDENCIES = $(am__DEPENDENCIES_1)
-am_openvpn_plugin_auth_pam_la_OBJECTS = auth-pam.lo pamdl.lo
+am_openvpn_plugin_auth_pam_la_OBJECTS = utils.lo auth-pam.lo pamdl.lo
 openvpn_plugin_auth_pam_la_OBJECTS =  \
 	$(am_openvpn_plugin_auth_pam_la_OBJECTS)
 AM_V_lt = $(am__v_lt_@AM_V@)
@@ -221,6 +221,7 @@ AWK = @AWK@
 CC = @CC@
 CCDEPMODE = @CCDEPMODE@
 CFLAGS = @CFLAGS@
+CMAKE = @CMAKE@
 CPP = @CPP@
 CPPFLAGS = @CPPFLAGS@
 CYGPATH_W = @CYGPATH_W@
@@ -314,6 +315,11 @@ TAP_CFLAGS = @TAP_CFLAGS@
 TAP_WIN_COMPONENT_ID = @TAP_WIN_COMPONENT_ID@
 TAP_WIN_MIN_MAJOR = @TAP_WIN_MIN_MAJOR@
 TAP_WIN_MIN_MINOR = @TAP_WIN_MIN_MINOR@
+TEST_CFLAGS = @TEST_CFLAGS@
+TEST_LDFLAGS = @TEST_LDFLAGS@
+VENDOR_BUILD_ROOT = @VENDOR_BUILD_ROOT@
+VENDOR_DIST_ROOT = @VENDOR_DIST_ROOT@
+VENDOR_SRC_ROOT = @VENDOR_SRC_ROOT@
 VERSION = @VERSION@
 abs_builddir = @abs_builddir@
 abs_srcdir = @abs_srcdir@
@@ -382,6 +388,7 @@ AM_CFLAGS = \
 @ENABLE_PLUGIN_AUTH_PAM_TRUE@plugin_LTLIBRARIES = openvpn-plugin-auth-pam.la
 @ENABLE_PLUGIN_AUTH_PAM_TRUE@dist_doc_DATA = README.auth-pam
 openvpn_plugin_auth_pam_la_SOURCES = \
+	utils.c \
 	auth-pam.c \
 	pamdl.c  pamdl.h \
 	auth-pam.exports
@@ -474,6 +481,7 @@ distclean-compile:
 
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/auth-pam.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/pamdl.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/utils.Plo@am__quote@
 
 .c.o:
 @am__fastdepCC_TRUE@	$(AM_V_CC)$(COMPILE) -MT $@ -MD -MP -MF $(DEPDIR)/$*.Tpo -c -o $@ $<

@@ -5,76 +5,48 @@
 #include <unistd.h>
 #include <sys/types.h>
 #include <dirent.h>
-
-#include "usb_info.h"
-#include "disk_io_tools.h"
-
-#include <nvram_linux.h>
-#include <shutils.h>
-#include <netutils.h>
-
 #include <fcntl.h>
 #include <errno.h>
 
-int get_usb_root_port_number(const char *usb_root_port_id){
-	if(!strcmp(usb_root_port_id, USB_EHCI_PORT_1) || !strcmp(usb_root_port_id, USB_OHCI_PORT_1))
+#include <shutils.h>
+#include <netutils.h>
+
+#include "dev_info.h"
+#include "usb_info.h"
+#include "disk_io_tools.h"
+
+int get_usb_root_port_by_sd_device(const char *device_name)
+{
+	char usb_path[PATH_MAX];
+
+	if (!get_blk_sd_path_by_device(device_name, usb_path, sizeof(usb_path)))
+		return -1;
+
+	// ../../devices/platform/xhci-hcd/usb2/2-1/2-1:1.0/host0/target0:0:0/0:0:0:0
+
+	if (strstr(usb_path, USB_EHCI_PORT_1) || strstr(usb_path, USB_OHCI_PORT_1))
 		return 1;
-	if(!strcmp(usb_root_port_id, USB_EHCI_PORT_2) || !strcmp(usb_root_port_id, USB_OHCI_PORT_2))
+
+	if (strstr(usb_path, USB_EHCI_PORT_2) || strstr(usb_path, USB_OHCI_PORT_2))
 		return 2;
-	return 0;
+
+	return -1;
 }
 
-int get_device_type_by_device(const char *device_name){
-	if(device_name == NULL || strlen(device_name) < 2){
-		usb_dbg("(%s): The device name is not correct.\n", device_name);
-		return DEVICE_TYPE_UNKNOWN;
-	}
-
-	if(!strncmp(device_name, "sd", 2)
-#ifdef SUPPORT_IDE_SATA_DISK
-			|| !strncmp(device_name, "hd", 2)
-#endif
-			){
-		return DEVICE_TYPE_DISK;
-	}
-	if(!strncmp(device_name, "lp", 2)){
-		return DEVICE_TYPE_PRINTER;
-	}
-	if(!strncmp(device_name, "sg", 2)){
-		return DEVICE_TYPE_SG;
-	}
-	if(!strncmp(device_name, "sr", 2)){
-		return DEVICE_TYPE_CD;
-	}
-	if(isSerialNode(device_name) || isACMNode(device_name)){
-		return DEVICE_TYPE_MODEM_TTY;
-	}
-	if(is_usbnet_interface(device_name)){
-		return DEVICE_TYPE_MODEM_ETH;
-	}
-
-	return DEVICE_TYPE_UNKNOWN;
-}
-
-char *get_usb_path_by_device(const char *device_name, char *buf, const int buf_size){
+char *get_usb_path_by_device(const char *device_name, char *buf, const int buf_size)
+{
 	int device_type;
 	char device_path[128];
 
 	device_type = get_device_type_by_device(device_name);
-	if(device_type == DEVICE_TYPE_UNKNOWN)
+	if(device_type == DEVICE_TYPE_UNKNOWN ||
+	   device_type == DEVICE_TYPE_MMC)
 		return NULL;
 
 	memset(buf, 0, sizeof(buf_size));
 
-	if(device_type == DEVICE_TYPE_DISK){
-		char disk_name[4];
-		memset(disk_name, 0, sizeof(disk_name));
-		strncpy(disk_name, device_name, 3);
-		snprintf(device_path, sizeof(device_path), "%s/%s/device", SYS_BLOCK, disk_name);
-		if(realpath(device_path, buf) == NULL){
-			usb_dbg("(%s): Fail to get link: %s.\n", device_name, device_path);
-			return NULL;
-		}
+	if(device_type == DEVICE_TYPE_SCSI_DISK){
+		return get_blk_sd_path_by_device(device_name, buf, buf_size);
 	}
 	else
 	if(device_type == DEVICE_TYPE_PRINTER){
@@ -128,49 +100,22 @@ char *get_usb_path_by_device(const char *device_name, char *buf, const int buf_s
 	return buf;
 }
 
-char *get_usb_root_port_by_string(const char *target_string, char *buf, const int buf_size){
-
-	if(strstr(target_string, USB_EHCI_PORT_1))
-		strcpy(buf, USB_EHCI_PORT_1);
-	else if(strstr(target_string, USB_EHCI_PORT_2))
-		strcpy(buf, USB_EHCI_PORT_2);
-	else if(strstr(target_string, USB_OHCI_PORT_1))
-		strcpy(buf, USB_OHCI_PORT_1);
-	else if(strstr(target_string, USB_OHCI_PORT_2))
-		strcpy(buf, USB_OHCI_PORT_2);
-	else
-		return NULL;
-
-	return buf;
-}
-
-char *get_usb_root_port_by_device(const char *device_name, char *buf, const int buf_size){
-	char usb_path[PATH_MAX];
-
-	if (!get_usb_path_by_device(device_name, usb_path, sizeof(usb_path)))
-		return NULL;
-
-	if (!get_usb_root_port_by_string(usb_path, buf, buf_size)) {
-		usb_dbg("(%s): Fail to get usb root port: %s.\n", device_name, usb_path);
-		return NULL;
-	}
-
-	return buf;
-}
-
-char *get_usb_port_by_interface_string(const char *target_string, char *buf, const int buf_size){
+char *get_usb_port_by_interface_string(const char *target_string, char *buf, const int buf_size)
+{
 	char *ptr;
+
 	snprintf(buf, buf_size, "%s", target_string);
 	ptr = strchr(buf, ':');
 	if (ptr) {
 		*ptr = '\0';
 		return buf;
 	}
-	
+
 	return NULL;
 }
 
-char *get_usb_port_by_string(const char *target_string, char *buf, const int buf_size){
+char *get_usb_port_by_string(const char *target_string, char *buf, const int buf_size)
+{
 	// example 1: device in root port
 	// ../usb1/1-1/1-1:1.0/net/usb0
 
@@ -180,7 +125,7 @@ char *get_usb_port_by_string(const char *target_string, char *buf, const int buf
 	// example 3: device in second external hub port
 	// ../usb1/1-2/1-2.3/1-2.3.1/1-2.3.1:1.2/net/usb0
 
-	if (get_interface_by_string(target_string, buf, buf_size)) {
+	if (get_usb_interface_by_string(target_string, buf, buf_size)) {
 		char *ptr = strchr(buf, ':');
 		if (ptr) {
 			*ptr = '\0';
@@ -191,7 +136,8 @@ char *get_usb_port_by_string(const char *target_string, char *buf, const int buf
 	return NULL;
 }
 
-char *get_usb_port_by_device(const char *device_name, char *buf, const int buf_size){
+char *get_usb_port_by_device(const char *device_name, char *buf, const int buf_size)
+{
 	char usb_path[PATH_MAX];
 
 	if (!get_usb_path_by_device(device_name, usb_path, sizeof(usb_path)))
@@ -205,7 +151,8 @@ char *get_usb_port_by_device(const char *device_name, char *buf, const int buf_s
 	return buf;
 }
 
-char *get_interface_by_string(const char *target_string, char *buf, const int buf_size){
+char *get_usb_interface_by_string(const char *target_string, char *buf, const int buf_size)
+{
 	char *ptr, *ptr2, *ptr_start, *ptr_end;
 	int len;
 
@@ -231,7 +178,7 @@ char *get_interface_by_string(const char *target_string, char *buf, const int bu
 
 	ptr++;
 	ptr2 = ptr;
-	
+
 	while (*ptr && *ptr != ':')
 		ptr++;
 
@@ -259,13 +206,14 @@ char *get_interface_by_string(const char *target_string, char *buf, const int bu
 	return buf;
 }
 
-char *get_interface_by_device(const char *device_name, char *buf, const int buf_size){
+char *get_usb_interface_by_device(const char *device_name, char *buf, const int buf_size)
+{
 	char usb_path[PATH_MAX];
 
 	if (!get_usb_path_by_device(device_name, usb_path, sizeof(usb_path)))
 		return NULL;
 
-	if (!get_interface_by_string(usb_path, buf, buf_size)) {
+	if (!get_usb_interface_by_string(usb_path, buf, buf_size)) {
 		usb_dbg("(%s): Fail to get interface: %s.\n", device_name, usb_path);
 		return NULL;
 	}
@@ -273,7 +221,8 @@ char *get_interface_by_device(const char *device_name, char *buf, const int buf_
 	return buf;
 }
 
-char *get_usb_param(const char *usb_string, const char *param, char *buf, const int buf_size){
+char *get_usb_param(const char *usb_string, const char *param, char *buf, const int buf_size)
+{
 	FILE *fp;
 	char target_file[128], *ptr;
 	int len;
@@ -297,27 +246,33 @@ char *get_usb_param(const char *usb_string, const char *param, char *buf, const 
 	return buf;
 }
 
-char *get_usb_vid(const char *usb_port_id, char *buf, const int buf_size){
+char *get_usb_vid(const char *usb_port_id, char *buf, const int buf_size)
+{
 	return get_usb_param(usb_port_id, "idVendor", buf, buf_size);
 }
 
-char *get_usb_pid(const char *usb_port_id, char *buf, const int buf_size){
+char *get_usb_pid(const char *usb_port_id, char *buf, const int buf_size)
+{
 	return get_usb_param(usb_port_id, "idProduct", buf, buf_size);
 }
 
-char *get_usb_manufact(const char *usb_port_id, char *buf, const int buf_size){
+char *get_usb_manufact(const char *usb_port_id, char *buf, const int buf_size)
+{
 	return get_usb_param(usb_port_id, "manufacturer", buf, buf_size);
 }
 
-char *get_usb_product(const char *usb_port_id, char *buf, const int buf_size){
+char *get_usb_product(const char *usb_port_id, char *buf, const int buf_size)
+{
 	return get_usb_param(usb_port_id, "product", buf, buf_size);
 }
 
-char *get_usb_serial(const char *usb_port_id, char *buf, const int buf_size){
+char *get_usb_serial(const char *usb_port_id, char *buf, const int buf_size)
+{
 	return get_usb_param(usb_port_id, "serial", buf, buf_size);
 }
 
-int get_usb_devnum(const char *usb_port_id){
+int get_usb_devnum(const char *usb_port_id)
+{
 	char buf[32];
 	if (!get_usb_param(usb_port_id, "devnum", buf, sizeof(buf)))
 		return 0;
@@ -325,7 +280,8 @@ int get_usb_devnum(const char *usb_port_id){
 	return atoi(buf);
 }
 
-int get_usb_interface_number(const char *usb_port_id){
+int get_usb_interface_number(const char *usb_port_id)
+{
 	char buf[16];
 	if (!get_usb_param(usb_port_id, "bNumInterfaces", buf, sizeof(buf)))
 		return 0;
@@ -333,7 +289,8 @@ int get_usb_interface_number(const char *usb_port_id){
 	return atoi(buf);
 }
 
-int get_interface_numendpoints(const char *usb_interface_id){
+int get_usb_interface_numendpoints(const char *usb_interface_id)
+{
 	char buf[16];
 	if (!get_usb_param(usb_interface_id, "bNumEndpoints", buf, sizeof(buf)))
 		return 0;
@@ -341,15 +298,18 @@ int get_interface_numendpoints(const char *usb_interface_id){
 	return atoi(buf);
 }
 
-char *get_usb_interface_class(const char *usb_interface_id, char *buf, const int buf_size){
+char *get_usb_interface_class(const char *usb_interface_id, char *buf, const int buf_size)
+{
 	return get_usb_param(usb_interface_id, "bInterfaceClass", buf, buf_size);
 }
 
-char *get_usb_interface_subclass(const char *usb_interface_id, char *buf, const int buf_size){
+char *get_usb_interface_subclass(const char *usb_interface_id, char *buf, const int buf_size)
+{
 	return get_usb_param(usb_interface_id, "bInterfaceSubClass", buf, buf_size);
 }
 
-int get_interface_Int_endpoint(const char *usb_interface_id){
+int get_usb_interface_Int_endpoint(const char *usb_interface_id)
+{
 	FILE *fp;
 	char interface_path[128], bmAttributes_file[128], buf[8], *ptr;
 	DIR *interface_dir = NULL;
@@ -357,7 +317,7 @@ int get_interface_Int_endpoint(const char *usb_interface_id){
 	int bNumEndpoints, end_count, got_Int = 0;
 
 	// Get bNumEndpoints.
-	bNumEndpoints = get_interface_numendpoints(usb_interface_id);
+	bNumEndpoints = get_usb_interface_numendpoints(usb_interface_id);
 	if (bNumEndpoints <= 0){
 		usb_dbg("(%s): No endpoints: %d.\n", usb_interface_id, bNumEndpoints);
 		return 0;
@@ -401,42 +361,48 @@ int get_interface_Int_endpoint(const char *usb_interface_id){
 	return got_Int;
 }
 
-int isSerialNode(const char *device_name){
+int isSerialNode(const char *device_name)
+{
 	if(strncmp(device_name, "ttyUSB", 6))
 		return 0;
 
 	return 1;
 }
 
-int isACMNode(const char *device_name){
+int isACMNode(const char *device_name)
+{
 	if(strncmp(device_name, "ttyACM", 6))
 		return 0;
 
 	return 1;
 }
 
-int isWDMNode(const char *device_name){
+int isWDMNode(const char *device_name)
+{
 	if(strncmp(device_name, "cdc-wdm", 7))
 		return 0;
 
 	return 1;
 }
 
-int isSerialInterface(const char *interface_class){
+int isSerialInterface(const char *interface_class)
+{
 	if(strcmp(interface_class, "ff") == 0)
 		return 1;
 
 	return 0;
 }
 
-int isACMInterface(const char *interface_class, const char *interface_subclass){
+int isACMInterface(const char *interface_class, const char *interface_subclass)
+{
 	if(strcmp(interface_class, "02") == 0 && strcmp(interface_subclass, "02") == 0)
 		return 1;
 
 	return 0;
 }
 
-int isStorageInterface(const char *interface_class){
+int isStorageInterface(const char *interface_class)
+{
 	if(strcmp(interface_class, "08") == 0)
 		return 1;
 
@@ -446,7 +412,7 @@ int isStorageInterface(const char *interface_class){
 int has_usb_devices(void)
 {
 	FILE *fp;
-	int id_parent, id_port, dev_found;
+	int id_parent, dev_found;
 	char line[128];
 
 	fp = fopen(USB_BUS_PATH, "r");
@@ -454,15 +420,14 @@ int has_usb_devices(void)
 		return 0;
 
 	dev_found = 0;
-	while (fgets(line, sizeof(line), fp))
-	{
+	while (fgets(line, sizeof(line), fp)) {
 		if (line[0] != 'T')
 			continue;
 		
 		id_parent = get_param_int(line, "Prnt=", 10, -1);
 #if defined (BOARD_GPIO_LED_USB2)
 		if (id_parent == 1) {
-			id_port = get_param_int(line, "Port=", 10, 0);
+			int id_port = get_param_int(line, "Port=", 10, 0);
 #if BOARD_USB_PORT_SWAP
 			id_port = (id_port) ? 0 : 1;
 #endif
@@ -502,8 +467,7 @@ usb_info_t *get_usb_info(void)
 	if (!fp)
 		return NULL;
 
-	if (!fgets(line, sizeof(line), fp))
-	{
+	if (!fgets(line, sizeof(line), fp)) {
 		fclose(fp);
 		return NULL;
 	}
@@ -512,8 +476,7 @@ usb_info_t *get_usb_info(void)
 	old_dev = NULL;
 	new_dev = NULL;
 	usb_info_list = NULL;
-	while (fgets(line, sizeof(line), fp))
-	{
+	while (fgets(line, sizeof(line), fp)) {
 		char *ptr;
 		int id_parent;
 		
@@ -546,6 +509,7 @@ usb_info_t *get_usb_info(void)
 			new_dev->id_parent = id_parent;
 			new_dev->id_port = get_param_int(line, "Port=", 10, 0);
 			new_dev->id_devnum = get_param_int(line, "Dev#=", 10, 0);
+			new_dev->port_speed = get_param_int(line, "Spd=", 10, 0);
 			if (id_parent == 1) {
 #if BOARD_USB_PORT_SWAP
 				new_dev->id_port = (new_dev->id_port) ? 0 : 1;
@@ -565,7 +529,7 @@ usb_info_t *get_usb_info(void)
 			new_dev->dev_sub = get_param_int(line, "Sub=", 16, 0);
 			new_dev->dev_prt = get_param_int(line, "Prot=", 16, 0);
 			if (new_dev->dev_cls == 0x09 && new_dev->dev_sub == 0)
-				new_dev->dev_type = DEVICE_TYPE_HUB;
+				new_dev->dev_type = DEVICE_TYPE_USB_HUB;
 			else if (new_dev->dev_cls == 0x07)
 				new_dev->dev_type = DEVICE_TYPE_PRINTER;
 			break;
@@ -594,13 +558,13 @@ usb_info_t *get_usb_info(void)
 		case 'I':
 			if (new_dev->dev_type != DEVICE_TYPE_UNKNOWN &&
 			    new_dev->dev_type != DEVICE_TYPE_MODEM_TTY &&
-			    new_dev->dev_type != DEVICE_TYPE_DISK)
+			    new_dev->dev_type != DEVICE_TYPE_SCSI_DISK)
 				continue;
 			ptr = get_param_str(line, "Driver=", 0);
 			if (strcmp(ptr, "usb-storage") == 0) {
 				/* for combined devices (modem+storage) use modem as primary */
 				if (new_dev->dev_type != DEVICE_TYPE_MODEM_TTY)
-					new_dev->dev_type = DEVICE_TYPE_DISK;
+					new_dev->dev_type = DEVICE_TYPE_SCSI_DISK;
 			}
 			else if (strcmp(ptr, "usblp") == 0)
 				new_dev->dev_type = DEVICE_TYPE_PRINTER;
@@ -648,8 +612,7 @@ void free_usb_info(usb_info_t *usb_info_list)
 		return;
 
 	follow_dev = usb_info_list;
-	while (follow_dev)
-	{
+	while (follow_dev) {
 		if(follow_dev->manuf)
 			free(follow_dev->manuf);
 		if(follow_dev->product)

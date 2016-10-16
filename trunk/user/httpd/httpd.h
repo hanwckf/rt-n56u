@@ -32,6 +32,7 @@
 #define STORAGE_OVPNCLI_DIR	"/etc/storage/openvpn/client"
 #define STORAGE_DNSMASQ_DIR	"/etc/storage/dnsmasq"
 #define STORAGE_SCRIPTS_DIR	"/etc/storage"
+#define STORAGE_CRONTAB_DIR	"/etc/storage/cron/crontabs"
 
 #define PROFILE_FIFO_UPLOAD	"/tmp/settings_u.prf"
 #define PROFILE_FIFO_DOWNLOAD	"/tmp/settings_d.prf"
@@ -111,11 +112,13 @@ struct ej_handler {
 extern struct ej_handler ej_handlers[];
 
 // aidisk.c
-#if (BOARD_NUM_USB_PORTS > 0)
+#if defined (USE_USB_SUPPORT)
 extern int ej_get_usb_ports_info(int eid, webs_t wp, int argc, char **argv);
+#endif
+#if defined (USE_STORAGE)
 extern int ej_disk_pool_mapping_info(int eid, webs_t wp, int argc, char **argv);
 extern int ej_available_disk_names_and_sizes(int eid, webs_t wp, int argc, char **argv);
-extern int ej_get_usb_share_list(int eid, webs_t wp, int argc, char **argv);
+extern int ej_get_storage_share_list(int eid, webs_t wp, int argc, char **argv);
 extern int ej_get_AiDisk_status(int eid, webs_t wp, int argc, char **argv);
 extern int ej_set_AiDisk_status(int eid, webs_t wp, int argc, char **argv);
 extern int ej_get_all_accounts(int eid, webs_t wp, int argc, char **argv);
@@ -191,13 +194,9 @@ extern int ej_wl_scan_2g(int eid, webs_t wp, int argc, char **argv);
 extern int ej_wl_bssid_2g(int eid, webs_t wp, int argc, char **argv);
 
 // rtl8367.c or mtk_esw.c
-extern int get_eth_port_bytes(int port_id, uint64_t *rx, uint64_t *tx);
-extern int fill_eth_port_status(int port_id, char linkstate[40]);
-extern int ej_eth_status_wan(int eid, webs_t wp, int argc, char **argv);
-extern int ej_eth_status_lan1(int eid, webs_t wp, int argc, char **argv);
-extern int ej_eth_status_lan2(int eid, webs_t wp, int argc, char **argv);
-extern int ej_eth_status_lan3(int eid, webs_t wp, int argc, char **argv);
-extern int ej_eth_status_lan4(int eid, webs_t wp, int argc, char **argv);
+extern int get_eth_port_bytes(int port_id_uapi, uint64_t *rx, uint64_t *tx);
+extern int fill_eth_port_status(int port_id_uapi, char linkstate[40]);
+extern int fill_eth_status(int port_id_uapi, webs_t wp);
 
 // upload.c
 extern void do_upgrade_fw_post(const char *url, FILE *stream, int clen, char *boundary);

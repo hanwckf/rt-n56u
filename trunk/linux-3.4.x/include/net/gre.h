@@ -3,6 +3,19 @@
 
 #include <linux/skbuff.h>
 
+struct gre_base_hdr {
+	__be16 flags;
+	__be16 protocol;
+} __packed;
+
+struct gre_full_hdr {
+	struct gre_base_hdr fixed_header;
+	__be16 csum;
+	__be16 reserved1;
+	__be32 key;
+	__be32 seq;
+} __packed;
+
 #define GREPROTO_CISCO		0
 #define GREPROTO_PPTP		1
 #define GREPROTO_MAX		2

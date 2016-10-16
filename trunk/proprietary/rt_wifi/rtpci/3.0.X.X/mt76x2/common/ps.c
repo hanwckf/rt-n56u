@@ -114,7 +114,7 @@ VOID RtmpCleanupPsQueue(RTMP_ADAPTER *pAd, QUEUE_HEADER *pQueue)
 	while (pQueue->Head)
 	{
 		DBGPRINT(RT_DEBUG_TRACE,
-					("RtmpCleanupPsQueue %d...\n",pQueue->Number));
+					("RtmpCleanupPsQueue %u...\n",pQueue->Number));
 
 		pQEntry = RemoveHeadQueue(pQueue);
 		/*pPacket = CONTAINING_RECORD(pEntry, NDIS_PACKET, MiniportReservedEx); */
@@ -150,7 +150,7 @@ VOID RtmpHandleRxPsPoll(RTMP_ADAPTER *pAd, UCHAR *pAddr, USHORT wcid, BOOLEAN is
 	{
 #ifdef DROP_MASK_SUPPORT
 		/* Disable Drop Mask */
-		set_drop_mask_per_client(pAd, pMacEntry, 2, 0);
+		drop_mask_set_per_client(pAd, pMacEntry, FALSE);
 #endif /* DROP_MASK_SUPPORT */
 
 #ifdef PS_ENTRY_MAITENANCE
@@ -335,7 +335,7 @@ BOOLEAN RtmpPsIndicate(RTMP_ADAPTER *pAd, UCHAR *pAddr, UCHAR wcid, UCHAR Psm)
 		{
 #ifdef DROP_MASK_SUPPORT
 			/* Disable Drop Mask */
-			set_drop_mask_per_client(pAd, pEntry, 2, 0);
+			drop_mask_set_per_client(pAd, pEntry, FALSE);
 #endif /* DROP_MASK_SUPPORT */
 
 #ifdef PS_ENTRY_MAITENANCE
@@ -359,9 +359,14 @@ BOOLEAN RtmpPsIndicate(RTMP_ADAPTER *pAd, UCHAR *pAddr, UCHAR wcid, UCHAR Psm)
 #ifdef DROP_MASK_SUPPORT
 		else if ((old_psmode == PWR_ACTIVE) && (Psm == PWR_SAVE)) {
 			/* Enable Drop Mask */
-			set_drop_mask_per_client(pAd, pEntry, 2, 1);
+			drop_mask_set_per_client(pAd, pEntry, TRUE);
 		}
 #endif /* DROP_MASK_SUPPORT */
+#ifdef PS_ENTRY_MAITENANCE
+        else if((old_psmode == PWR_SAVE) && (Psm == PWR_SAVE)){
+            pEntry->continuous_ps_count = 0;
+        }
+#endif /* PS_ENTRY_MAITENANCE */
 
 	return old_psmode;
 }

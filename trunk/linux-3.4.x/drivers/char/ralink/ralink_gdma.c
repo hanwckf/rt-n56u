@@ -813,7 +813,7 @@ void __exit RalinkGdmaExit(void)
 	printk("Disable Ralink GDMA Controller Module\n");
 
 	//Disable GDMA interrupt
-	GDMA_WRITE_REG(RALINK_REG_INTDIS, RALINK_INTCTL_DMA);
+	GDMA_WRITE_REG(RALINK_INTDIS, RALINK_INTCTL_DMA);
 
 	free_irq(SURFBOARDINT_DMA, NULL);
 }

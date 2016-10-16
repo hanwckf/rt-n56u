@@ -18,7 +18,7 @@ else
 endif
 
 clean:
-	$(MAKE) -C $(SRC_NAME) distclean CONFIG_IPV6=y
+	$(MAKE) -C $(SRC_NAME) distclean CONFIG_IPV6=y CONFIG_XFRM=y
 
 romfs:
 ifeq ($(CONFIG_FIRMWARE_INCLUDE_QOS),y)

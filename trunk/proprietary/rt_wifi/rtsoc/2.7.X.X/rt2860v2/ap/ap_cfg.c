@@ -8891,7 +8891,7 @@ VOID RTMPAPIoctlRF(
 				if (IS_RT6352(pAdapter))
 				{
 					RT635xReadRFRegister(pAdapter, pAdapter->RfBank, rfId, &regRF);
-					sprintf(msg+strlen(msg), "Bank_%02d_R%02d[0x%02X]:%02X    ", pAdapter->RfBank, rfId, rfId*2, regRF);
+					sprintf(msg+strlen(msg), "Bank_%02d_R%02d[0x%02X]:%02X    ", pAdapter->RfBank, rfId, rfId, regRF);
 					if (rfId%4 == 3)
 						sprintf(msg+strlen(msg), "\n");
 				}
@@ -8899,7 +8899,7 @@ VOID RTMPAPIoctlRF(
 #endif /* RT6352 */
 				{
 					RT30xxReadRFRegister(pAdapter, rfId, &regRF);
-					sprintf(msg+strlen(msg), "R%02d[0x%02X]:%02X    ", rfId, rfId*2, regRF);
+					sprintf(msg+strlen(msg), "R%02d[0x%02X]:%02X    ", rfId, rfId, regRF);
 					if (rfId%5 == 4)
 						sprintf(msg+strlen(msg), "\n");
 				}
@@ -9589,6 +9589,9 @@ INT Set_ApCli_Ssid_Proc(
 		pAd->ApCfg.ApCliTab[ifIndex].CfgSsidLen = (UCHAR)strlen(arg);
 		success = TRUE;
 
+		/* reset BSSID */
+		NdisZeroMemory(pAd->ApCfg.ApCliTab[ifIndex].CfgApCliBssid, MAC_ADDR_LEN);
+
 		/* Upadte PMK and restart WPAPSK state machine for ApCli link */
 		if (((pAd->ApCfg.ApCliTab[ifIndex].AuthMode == Ndis802_11AuthModeWPAPSK) ||
 				(pAd->ApCfg.ApCliTab[ifIndex].AuthMode == Ndis802_11AuthModeWPA2PSK)) && 
@@ -10164,30 +10167,27 @@ INT Set_ApCli_AutoConnect_Proc(
 	POS_COOKIE  		pObj= (POS_COOKIE) pAd->OS_Cookie;
 	UCHAR				ifIndex;
 	PAP_ADMIN_CONFIG	pApCfg;
+	long scan_mode = simple_strtol(arg, 0, 10);
 
 	if (pObj->ioctl_if_type != INT_APCLI)
 		return FALSE;
+
 	pApCfg = &pAd->ApCfg;
 	ifIndex = pObj->ioctl_if;
 
-	if (pApCfg->ApCliAutoConnectRunning == FALSE)
+	if (scan_mode == 0)
 	{
-		Set_ApCli_Enable_Proc(pAd, "0");
-		pApCfg->ApCliAutoConnectRunning = TRUE;
-	}	
-	else
-	{
-		DBGPRINT(RT_DEBUG_TRACE, ("Set_ApCli_AutoConnect_Proc() is still running\n"));
+		pApCfg->ApCliTab[ifIndex].AutoConnectFlag = FALSE;
+		pApCfg->ApCliAutoConnectRunning = FALSE;
 		return TRUE;
 	}
+
+	pApCfg->ApCliTab[ifIndex].AutoConnectFlag = TRUE;
+
 	DBGPRINT(RT_DEBUG_TRACE, ("I/F(apcli%d) Set_ApCli_AutoConnect_Proc::(Len=%d,Ssid=%s)\n",
 			ifIndex, pApCfg->ApCliTab[ifIndex].CfgSsidLen, pApCfg->ApCliTab[ifIndex].CfgSsid));
-	
-	
-	/*
-		use site survey function to trigger auto connecting (when pAd->ApCfg.ApAutoConnectRunning == TRUE)
-	*/
-	Set_SiteSurvey_Proc(pAd, "");//pApCfg->ApCliTab[ifIndex].CfgSsid);
+
+	ApCliAutoConnectStart(pAd, ifIndex);
 
 	return TRUE;
 }
@@ -10681,7 +10681,7 @@ INT	Set_AP_WscGetConf_Proc(
     UCHAR	            apidx = pObj->ioctl_if, mac_addr[MAC_ADDR_LEN];
     BOOLEAN             bFromApCli = FALSE;
 #ifdef APCLI_SUPPORT
-	BOOLEAN 			apcliEn = pAd->ApCfg.ApCliTab[apidx].Enable;
+	BOOLEAN 			apcliEn = FALSE;
 #endif /* APCLI_SUPPORT */
 #ifdef WSC_V2_SUPPORT
 	PWSC_V2_INFO		pWscV2Info = NULL;
@@ -10708,6 +10708,7 @@ INT	Set_AP_WscGetConf_Proc(
     	}
         bFromApCli = TRUE;
 		apidx &= (~MIN_NET_DEVICE_FOR_APCLI);
+		apcliEn = pAd->ApCfg.ApCliTab[apidx].Enable;
         pWscControl = &pAd->ApCfg.ApCliTab[apidx].WscControl;
         DBGPRINT(RT_DEBUG_TRACE, ("IF(apcli%d) Set_AP_WscGetConf_Proc:: This command is from apcli interface now.\n", apidx));
     }
@@ -10783,6 +10784,7 @@ INT	Set_AP_WscGetConf_Proc(
     	/* bring apcli interface down first */
 		pAd->ApCfg.ApCliTab[apidx].Enable = FALSE;
 		ApCliIfDown(pAd);
+		pAd->ApCfg.ApCliTab[apidx].Enable = apcliEn;
 			
  		if (WscMode == DEV_PASS_ID_PIN)
     	{
@@ -10790,7 +10792,6 @@ INT	Set_AP_WscGetConf_Proc(
 	                       pAd->ApCfg.ApCliTab[apidx].CurrentAddress, 
 	                       6);
 	        
-	        pAd->ApCfg.ApCliTab[apidx].Enable = apcliEn;
 			NdisMoveMemory(mac_addr, pAd->ApCfg.ApCliTab[apidx].CurrentAddress, MAC_ADDR_LEN);
     	}
 		else

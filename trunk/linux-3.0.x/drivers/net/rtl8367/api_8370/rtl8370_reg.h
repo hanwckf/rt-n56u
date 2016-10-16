@@ -17890,6 +17890,7 @@ auto-generated register address and field data
 #define    RTL8370_REG_EEELLDP_RX_VALUE_P15_00    0x18d2
 
 #define    RTL8370_REG_RRCP_CTRL0    0x18d3
+#define    RTL8370_RRCP_RLDP_MODE_OFFSET    12
 #define    RTL8370_RRCP_TRAP_8051_OFFSET    8
 #define    RTL8370_RRCP_TRAP_8051_MASK    0x100
 #define    RTL8370_RRCP_V2_EN_OFFSET    4

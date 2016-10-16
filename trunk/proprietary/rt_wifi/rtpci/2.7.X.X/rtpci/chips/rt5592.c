@@ -402,7 +402,7 @@ UCHAR NUM_BBP5592REG_GLRT_BW_2G_5G = (sizeof(BBP5592Reg_GLRT_BW_2G_5G) / sizeof(
 /* MAC for A/G band */
 static const RTMP_REG_PAIR	MAC5592Reg[] =	{
 	{TX_SW_CFG0,		0x0404},
-	{MAX_LEN_CFG,		0x2FFF},
+	{MAX_LEN_CFG,		MAX_AGGREGATION_SIZE | 0x00001000},
 	{HT_FBK_CFG1,		0xedcba980},	/* Fallback MCS8->MCS0 */
 };
 

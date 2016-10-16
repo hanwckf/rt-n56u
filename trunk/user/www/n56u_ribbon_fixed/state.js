@@ -381,7 +381,7 @@ tabtitle[4] = new Array("", "<#menu5_5_1#>", "<#menu5_5_5#>", "<#menu5_5_2#>", "
 tabtitle[5] = new Array("", "<#menu5_4_3#>", "<#menu5_4_1#>", "<#menu5_4_2#>", "<#menu5_4_4#>", "<#menu5_4_5#>");
 tabtitle[6] = new Array("", "<#menu5_6_2#>", "<#menu5_6_5#>", "<#menu5_6_1#>", "<#menu5_6_3#>", "<#menu5_6_4#>", "<#menu5_6_6#>");
 tabtitle[7] = new Array("", "<#menu5_10_1#>", "<#menu5_10_2#>", "<#menu5_10_3#>");
-tabtitle[8] = new Array("", "<#menu5_11#>", "<#menu5_12#>", "WAN", "LAN1", "LAN2", "LAN3", "LAN4");
+tabtitle[8] = new Array("", "<#menu5_11#>", "<#menu5_12#>", "WAN", "", "", "", "", "", "", "");
 tabtitle[9] = new Array("", "<#menu5_7_2#>", "<#menu5_7_3#>", "<#menu5_7_5#>", "<#menu5_7_6#>", "<#menu5_7_8#>");
 
 //Level 3 Tab title
@@ -394,7 +394,7 @@ tablink[4] = new Array("", "Advanced_BasicFirewall_Content.asp", "Advanced_Netfi
 tablink[5] = new Array("", "Advanced_AiDisk_others.asp", "Advanced_AiDisk_samba.asp", "Advanced_AiDisk_ftp.asp", "Advanced_Modem_others.asp", "Advanced_Printer_others.asp");
 tablink[6] = new Array("", "Advanced_System_Content.asp", "Advanced_Services_Content.asp", "Advanced_OperationMode_Content.asp", "Advanced_FirmwareUpgrade_Content.asp", "Advanced_SettingBackup_Content.asp", "Advanced_Console_Content.asp");
 tablink[7] = new Array("", "Advanced_Tweaks_Content.asp", "Advanced_Scripts_Content.asp", "Advanced_InetDetect_Content.asp");
-tablink[8] = new Array("", "Main_WStatus2g_Content.asp", "Main_WStatus_Content.asp", "Main_EStatusW_Content.asp", "Main_EStatusL1_Content.asp", "Main_EStatusL2_Content.asp", "Main_EStatusL3_Content.asp", "Main_EStatusL4_Content.asp");
+tablink[8] = new Array("", "Main_WStatus2g_Content.asp", "Main_WStatus_Content.asp", "", "", "", "", "", "", "", "");
 tablink[9] = new Array("", "Main_LogStatus_Content.asp", "Main_DHCPStatus_Content.asp", "Main_IPTStatus_Content.asp", "Main_RouteStatus_Content.asp", "Main_CTStatus_Content.asp");
 
 //Level 2 Menu
@@ -407,7 +407,12 @@ menuL1_link = new Array("", "index.asp", "aidisk.asp", "vpnsrv.asp", "vpncli.asp
 menuL1_icon = new Array("", "icon-home", "icon-hdd", "icon-retweet", "icon-globe", "icon-tasks", "icon-random", "icon-wrench");
 
 function show_menu(L1, L2, L3){
+	var i;
 	var num_ephy = support_num_ephy();
+	if (num_ephy < 2)
+		num_ephy = 2;
+	if (num_ephy > 8)
+		num_ephy = 8;
 	if(sw_mode == '3'){
 		tabtitle[2].splice(3,1);//LAN
 		tablink[2].splice(3,1);
@@ -447,15 +452,15 @@ function show_menu(L1, L2, L3){
 		}
 	}
 
-	if(num_ephy<3){
-		tabtitle[8].splice(5,3);
-		tablink[8].splice(5,3);
-	}else if(num_ephy<4){
-		tabtitle[8].splice(6,2);
-		tablink[8].splice(6,2);
-	}else if(num_ephy<5){
-		tabtitle[8].splice(7,1);
-		tablink[8].splice(7,1);
+	for (i=0;i<num_ephy;i++){
+		tablink[8][i+3] = "Main_EStatus_Content.asp#"+i.toString();
+		if (i>0)
+			tabtitle[8][i+3] = "LAN"+i.toString();
+	}
+
+	if(num_ephy<8){
+		tabtitle[8].splice(3+num_ephy,8-num_ephy);
+		tablink[8].splice(3+num_ephy,8-num_ephy);
 	}
 
 	if(!support_5g_radio()){
@@ -467,7 +472,7 @@ function show_menu(L1, L2, L3){
 		tablink[8].splice(2,1);
 	}
 
-	if(!support_usb()){
+	if(!support_storage()){
 		tabtitle[5].splice(1,5);
 		tablink[5].splice(1,5);
 		menuL1_link[2] = "";  //remove AiDisk
@@ -475,6 +480,10 @@ function show_menu(L1, L2, L3){
 		menuL2_link[6] = "";  //remove USB
 		menuL2_title[6] = "";
 	}else{
+		if(!support_usb()){
+			tabtitle[5].splice(4,2);
+			tablink[5].splice(4,2);
+		}
 		if(!found_app_smbd() && !found_app_ftpd()){
 			tabtitle[5].splice(2,2);
 			tablink[5].splice(2,2);
@@ -519,10 +528,13 @@ function show_menu(L1, L2, L3){
 		for(var i = 1; i < tabtitle[L2-1].length; ++i){
 			if(tabtitle[L2-1][i] == "")
 				continue;
-			else if(L3 == i)
-				tab_code += '<li class="active"><a href="javascript: void(0)">'+ tabtitle[L2-1][i] +'</a></li>\n';
-			else
-				tab_code += '<li><a href="' +tablink[L2-1][i]+ '">'+ tabtitle[L2-1][i] +'</a></li>\n';
+			if(L3 == i){
+				tab_ref = "javascript: void(0)";
+				if (L2==9 && i>0 && tablink[L2-1][i].indexOf("#")>0)
+					tab_ref = tablink[L2-1][i];
+				tab_code += '<li class="active"><a href="' +tab_ref+ '">'+tabtitle[L2-1][i]+'</a></li>\n';
+			}else
+				tab_code += '<li><a href="' +tablink[L2-1][i]+ '">'+tabtitle[L2-1][i]+'</a></li>\n';
 		}
 		tab_code += '</ul>\n';
 		$("tabMenu").innerHTML = tab_code;

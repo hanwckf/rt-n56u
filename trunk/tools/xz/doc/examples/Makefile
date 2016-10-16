@@ -12,7 +12,8 @@ LDFLAGS = -llzma
 PROGS = \
 	01_compress_easy \
 	02_decompress \
-	03_compress_custom
+	03_compress_custom \
+	04_compress_easy_mt
 
 all: $(PROGS)
 

@@ -46,7 +46,7 @@ if test "${LESSMETACHARS+set}" != set; then
 	LESSMETACHARS="$space$tab$nl'"';*?"()<>[|&^`#\$%=~'
 fi
 
-if test "$(less -V | { read ver && echo ${ver#less }; })" -ge 429; then
+if test "$(less -V | { read less ver re && echo ${ver}; })" -ge 429; then
 	# less 429 or later: LESSOPEN pipe will be used on
 	# standard input if $LESSOPEN begins with |-.
 	LESSOPEN="|-$xz -cdfq -- %s"

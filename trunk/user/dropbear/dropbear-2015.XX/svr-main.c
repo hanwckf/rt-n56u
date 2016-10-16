@@ -36,12 +36,12 @@ static void sigchld_handler(int dummy);
 static void sigsegv_handler(int);
 static void sigintterm_handler(int fish);
 #ifdef INETD_MODE
-static void main_inetd();
+static void main_inetd(void);
 #endif
 #ifdef NON_INETD_MODE
-static void main_noinetd();
+static void main_noinetd(void);
 #endif
-static void commonsetup();
+static void commonsetup(void);
 
 #if defined(DBMULTI_dropbear) || !defined(DROPBEAR_MULTI)
 #if defined(DBMULTI_dropbear) && defined(DROPBEAR_MULTI)
@@ -104,7 +104,7 @@ static void main_inetd() {
 #endif /* INETD_MODE */
 
 #ifdef NON_INETD_MODE
-void main_noinetd() {
+static void main_noinetd() {
 	fd_set fds;
 	unsigned int i, j;
 	int val;
@@ -146,7 +146,7 @@ void main_noinetd() {
 	if (svr_opts.forkbg) {
 		int closefds = 0;
 #ifndef DEBUG_TRACE
-		if (!svr_opts.usingsyslog) {
+		if (!opts.usingsyslog) {
 			closefds = 1;
 		}
 #endif
@@ -307,8 +307,8 @@ void main_noinetd() {
 #endif
 
 				/* make sure we close sockets */
-				for (i = 0; i < listensockcount; i++) {
-					m_close(listensocks[i]);
+				for (j = 0; j < listensockcount; j++) {
+					m_close(listensocks[j]);
 				}
 
 				m_close(childpipe[0]);
@@ -339,7 +339,7 @@ static void sigchld_handler(int UNUSED(unused)) {
 
 	const int saved_errno = errno;
 
-	while(waitpid(-1, NULL, WNOHANG) > 0); 
+	while(waitpid(-1, NULL, WNOHANG) > 0) {}
 
 	sa_chld.sa_handler = sigchld_handler;
 	sa_chld.sa_flags = SA_NOCLDSTOP;
@@ -368,8 +368,8 @@ static void commonsetup() {
 
 	struct sigaction sa_chld;
 #ifndef DISABLE_SYSLOG
-	if (svr_opts.usingsyslog) {
-		startsyslog();
+	if (opts.usingsyslog) {
+		startsyslog(PROGNAME);
 	}
 #endif
 
@@ -399,7 +399,7 @@ static void commonsetup() {
 	 * otherwise we might end up blatting error messages to the socket */
 	load_all_hostkeys();
 
-    seedrandom();
+	seedrandom();
 }
 
 /* Set up listening sockets for all the requested ports */

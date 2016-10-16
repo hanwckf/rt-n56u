@@ -7,7 +7,7 @@ ROMFS_DIR = $(ROOTDIR)/romfs
 include $(ROOTDIR)/user/shared/boards.mk
 
 PROJECT_HOME_URL="https:\/\/bitbucket.org\/padavan\/rt-n56u\/"
-LABEL_COPYRIGHT_TEXT="© 2011-2015 Padavan \& N56U project community"
+LABEL_COPYRIGHT_TEXT="© 2011-2016 Padavan \& N56U project community"
 
 BOARD_PATTERN=s/ZVMODELVZ/$(CONFIG_FIRMWARE_PRODUCT_ID)/g
 COPYR_PATTERN=s/ZVCOPYRVZ/$(LABEL_COPYRIGHT_TEXT)/g
@@ -134,19 +134,24 @@ endif
 ifndef CONFIG_IPV6
 	rm -f $(INSTALLDIR)/www/Advanced_IPv6_Content.asp
 endif
+ifndef CONFIG_ATA
+	rm -f $(INSTALLDIR)/www/device-map/sata.asp
+endif
 ifndef CONFIG_USB_SUPPORT
+	rm -f $(INSTALLDIR)/www/Advanced_Modem_others.asp
+	rm -f $(INSTALLDIR)/www/Advanced_Printer_others.asp
+	rm -f $(INSTALLDIR)/www/modem_isp.js
+	rm -f $(INSTALLDIR)/www/device-map/modem.asp
+	rm -f $(INSTALLDIR)/www/device-map/printer.asp
+	rm -f $(INSTALLDIR)/www/device-map/hub.asp
+endif
+ifneq ($(STORAGE_ENABLED),y)
 	rm -f $(INSTALLDIR)/www/Advanced_AiDisk_ftp.asp
 	rm -f $(INSTALLDIR)/www/Advanced_AiDisk_others.asp
 	rm -f $(INSTALLDIR)/www/Advanced_AiDisk_samba.asp
-	rm -f $(INSTALLDIR)/www/Advanced_Modem_others.asp
-	rm -f $(INSTALLDIR)/www/Advanced_Printer_others.asp
-	rm -f $(INSTALLDIR)/www/disk_folder_tree.js
 	rm -f $(INSTALLDIR)/www/aidisk.asp
-	rm -f $(INSTALLDIR)/www/modem_isp.js
-	rm -f $(INSTALLDIR)/www/device-map/hub.asp
+	rm -f $(INSTALLDIR)/www/disk_folder_tree.js
 	rm -f $(INSTALLDIR)/www/device-map/disk.asp
-	rm -f $(INSTALLDIR)/www/device-map/modem.asp
-	rm -f $(INSTALLDIR)/www/device-map/printer.asp
 	rm -f $(INSTALLDIR)/www/device-map/safely_remove_disk.asp
 	rm -rf $(INSTALLDIR)/www/aidisk
 	rm -rf $(INSTALLDIR)/www/images/AiDisk

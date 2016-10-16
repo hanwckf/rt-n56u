@@ -1,0 +1,5 @@
+# Dymo LabelManager Wireless PnP
+TargetVendor= 0x0922
+TargetProduct= 0x1008
+MessageContent="1b5a01"
+NoDriverLoading=1

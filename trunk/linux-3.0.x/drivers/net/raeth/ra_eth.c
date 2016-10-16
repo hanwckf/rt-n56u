@@ -474,7 +474,7 @@ static void rt3883_eth_init(void)
 	sysRegWrite(MDIO_CFG, INIT_VALUE_OF_FORCE_1000_FD);
 #elif defined (CONFIG_GE1_RGMII_AN)
 	ge1_set_mode(0, 1);
-	init_ext_giga_phy(1);
+	ext_gphy_init(CONFIG_MAC_TO_GIGAPHY_MODE_ADDR);
 #elif defined (CONFIG_GE1_MII_AN)
 	ge1_set_mode(1, 1);
 #elif defined (CONFIG_GE1_MII_FORCE_100)
@@ -483,6 +483,8 @@ static void rt3883_eth_init(void)
 #elif defined (CONFIG_GE1_RVMII_FORCE_100)
 	ge1_set_mode(2, 0);
 	sysRegWrite(MDIO_CFG, INIT_VALUE_OF_FORCE_100_FD);
+#elif defined (CONFIG_GE1_RGMII_NONE)
+	sysRegWrite(MDIO_CFG, 0x1d201);
 #endif
 
 	/* RT3883 GE2 */
@@ -491,7 +493,7 @@ static void rt3883_eth_init(void)
 	sysRegWrite(MDIO_CFG2, INIT_VALUE_OF_FORCE_1000_FD);
 #elif defined (CONFIG_GE2_RGMII_AN)
 	ge2_set_mode(0, 1);
-	init_ext_giga_phy(2);
+	ext_gphy_init(CONFIG_MAC_TO_GIGAPHY_MODE_ADDR2);
 #elif defined (CONFIG_GE2_MII_AN)
 	ge2_set_mode(1, 1);
 #elif defined (CONFIG_GE2_MII_FORCE_100)

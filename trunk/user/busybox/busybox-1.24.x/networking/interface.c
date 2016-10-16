@@ -881,6 +881,7 @@ static void ife_print6(struct interface *ptr)
 			sprintf(addr6, "%s:%s:%s:%s:%s:%s:%s:%s",
 					addr6p[0], addr6p[1], addr6p[2], addr6p[3],
 					addr6p[4], addr6p[5], addr6p[6], addr6p[7]);
+			memset(&sap, 0, sizeof(sap));
 			inet_pton(AF_INET6, addr6,
 					  (struct sockaddr *) &sap.sin6_addr);
 			sap.sin6_family = AF_INET6;

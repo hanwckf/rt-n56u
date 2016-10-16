@@ -40,23 +40,16 @@
 #include <linux/sched.h>
 #include <linux/slab.h>
 #include <linux/interrupt.h>
-#include <linux/kernel_stat.h>
-#include <linux/hardirq.h>
-#include <linux/preempt.h>
 
+#include <asm/setup.h>
 #include <asm/irq_cpu.h>
 #include <asm/mipsregs.h>
-#include <asm/gic.h>
 #include <asm/gcmpregs.h>
+#include <asm/gic.h>
 
-#include <asm/irq.h>
-
-#include <asm/rt2880/surfboard.h>
-#include <asm/rt2880/surfboardint.h>
 #include <asm/rt2880/rt_mmap.h>
-#include <asm/rt2880/eureka_ep430.h>
 
-int gcmp_present;
+static int gcmp_present;
 unsigned long _gcmp_base;
 
 /*
@@ -91,7 +84,7 @@ static struct gic_intr_map gic_intr_map[GIC_NUM_INTRS] = {
 	{ 0, GIC_CPU_INT0, GIC_POL_POS, GIC_TRIG_LEVEL, GIC_FLAG_IPI },		// 18: SPDIF
 	{ 0, GIC_CPU_INT0, GIC_POL_POS, GIC_TRIG_LEVEL, GIC_FLAG_IPI },		// 19: CryptoEngine
 	{ 0, GIC_CPU_INT0, GIC_POL_POS, GIC_TRIG_LEVEL, GIC_FLAG_IPI },		// 20: SDXC
-	{ 0, GIC_CPU_INT0, GIC_POL_POS, GIC_TRIG_LEVEL, GIC_FLAG_IPI },		// 21: PerfCounter
+	{ 0, GIC_CPU_INT0, GIC_POL_POS, GIC_TRIG_LEVEL, GIC_FLAG_IPI },		// 21: Rbus to Pbus
 	{ 0, GIC_CPU_INT0, GIC_POL_POS, GIC_TRIG_LEVEL, GIC_FLAG_IPI },		// 22: USB XHCI
 	{ 0, GIC_CPU_INT0, GIC_POL_POS, GIC_TRIG_EDGE,  GIC_FLAG_IPI },		// 23: ESW MT7530 (use edge interrupt)
 	{ 0, GIC_CPU_INT4, GIC_POL_POS, GIC_TRIG_LEVEL, GIC_FLAG_IPI },		// 24: PCIe1
@@ -229,9 +222,18 @@ unsigned int plat_ipi_resched_int_xlate(unsigned int cpu)
 }
 #endif /* CONFIG_MIPS_GIC_IPI */
 
+static int mips_cpu_timer_irq = CP0_LEGACY_COMPARE_IRQ;
+
+static void mips_timer_dispatch(void)
+{
+	do_IRQ(mips_cpu_timer_irq);
+}
+
 unsigned int __cpuinit get_c0_compare_int(void)
 {
-	return SURFBOARDINT_MIPS_TIMER;
+	mips_cpu_timer_irq = MIPS_CPU_IRQ_BASE + cp0_compare_irq;
+
+	return mips_cpu_timer_irq;
 }
 
 void __init gic_platform_init(int irqs, struct irq_chip *irq_controller)
@@ -265,6 +267,9 @@ void __init arch_init_irq(void)
 
 	mips_cpu_irq_init();
 
+	if (cpu_has_vint)
+		set_vi_handler(cp0_compare_irq, mips_timer_dispatch);
+
 	if (gcmp_present) {
 		GCMPGCB(GICBA) = GIC_BASE_ADDR | GCMP_GCB_GICBA_EN_MSK;
 		gic_present = 1;
@@ -272,8 +277,8 @@ void __init arch_init_irq(void)
 
 	if (gic_present) {
 #if defined (CONFIG_MIPS_GIC_IPI)
-		gic_call_int_base = GIC_NUM_INTRS - nr_cpu_ids;
-		gic_resched_int_base = gic_call_int_base - nr_cpu_ids;
+		gic_call_int_base = GIC_IPI_CALL_VPE0;
+		gic_resched_int_base = GIC_IPI_RESCHED_VPE0;
 		fill_ipi_map();
 #endif
 		gic_init(GIC_BASE_ADDR, GIC_ADDRSPACE_SZ, gic_intr_map,
@@ -282,8 +287,20 @@ void __init arch_init_irq(void)
 		GICREAD(GIC_REG(SHARED, GIC_SH_REVISIONID), gic_rev);
 		printk("MIPS GIC RevID: %d.%d\n", (gic_rev >> 8) & 0xff, gic_rev & 0xff);
 
+		if (cpu_has_vint) {
+			pr_info("Setting up vectored interrupts\n");
+			set_vi_handler(2 + GIC_CPU_INT0, gic_irq_dispatch);	// CPU
 #if defined (CONFIG_MIPS_GIC_IPI)
-		set_c0_status(STATUSF_IP7 | STATUSF_IP6 | STATUSF_IP5 | STATUSF_IP4 | STATUSF_IP3 | STATUSF_IP2);
+			set_vi_handler(2 + GIC_CPU_INT1, gic_irq_dispatch);	// IPI resched
+			set_vi_handler(2 + GIC_CPU_INT2, gic_irq_dispatch);	// IPI call
+#endif
+			set_vi_handler(2 + GIC_CPU_INT3, gic_irq_dispatch);	// FE
+			set_vi_handler(2 + GIC_CPU_INT4, gic_irq_dispatch);	// PCIe
+		}
+
+#if defined (CONFIG_MIPS_GIC_IPI)
+		set_c0_status(STATUSF_IP7 | STATUSF_IP6 | STATUSF_IP5 | STATUSF_IP2 |
+			      STATUSF_IP4 | STATUSF_IP3);
 		
 		/* setup ipi interrupts */
 		for (i = 0; i < nr_cpu_ids; i++) {
@@ -293,13 +310,15 @@ void __init arch_init_irq(void)
 #else
 		set_c0_status(STATUSF_IP7 | STATUSF_IP6 | STATUSF_IP5 | STATUSF_IP2);
 #endif
-	}
-
-	/* set hardware irq */
-	for (i = 3; i <= 31; i++) {
-		if (i != SURFBOARDINT_AUX_TIMER &&
-		    i != SURFBOARDINT_MIPS_TIMER)
-			irq_set_handler(i, handle_level_irq);
+		/* set hardware irq, mapped to GIC shared (skip 0, 1, 2, 5, 7) */
+		for (i = 3; i <= 31; i++) {
+			if (i != 5 && i != 7)
+				irq_set_handler(MIPS_GIC_IRQ_BASE + i, handle_level_irq);
+		}
+		
+	} else {
+		/* Hardware without GCMP/GIC, not applicable for MT7621 */
+		BUG();
 	}
 }
 
@@ -313,9 +332,8 @@ asmlinkage void plat_irq_dispatch(void)
 		return;
 	}
 
-	if (pending & CAUSEF_IP7) {
-		do_IRQ(cp0_compare_irq);	// MIPS Timer
-	}
+	if (pending & CAUSEF_IP7)
+		mips_timer_dispatch();
 
 	if (pending & (CAUSEF_IP6 | CAUSEF_IP5 | CAUSEF_IP4 | CAUSEF_IP3 | CAUSEF_IP2))
 		gic_irq_dispatch();

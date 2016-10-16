@@ -332,12 +332,12 @@ char* getpass_or_cancel(char* prompt)
 	char* password = NULL;
 	
 #ifdef DROPBEAR_PASSWORD_ENV
-    /* Password provided in an environment var */
-    password = getenv(DROPBEAR_PASSWORD_ENV);
-    if (password)
-    {
-        return password;
-    }
+	/* Password provided in an environment var */
+	password = getenv(DROPBEAR_PASSWORD_ENV);
+	if (password)
+	{
+		return password;
+	}
 #endif
 
 	password = getpass(prompt);

@@ -458,7 +458,7 @@ static uint32_t PpeExtIfPingPongHandler(struct sk_buff * skb)
 		struct ethhdr *eth = eth_hdr(skb);
 		if (ether_addr_equal(eth->h_dest, dev->dev_addr))
 			skb->pkt_type = PACKET_HOST;
-#if defined (CONFIG_RAETH_GMAC2)
+#if defined (CONFIG_RAETH_BOTH_GMAC)
 		else if (DstPort[DP_GMAC2] && ether_addr_equal(eth->h_dest, DstPort[DP_GMAC2]->dev_addr))
 			skb->pkt_type = PACKET_HOST;
 #endif
@@ -1118,7 +1118,7 @@ int32_t FoeBindToPpe(struct sk_buff *skb, struct FoeEntry* foe_entry, int gmac_n
 			}
 		}
 	}
-#if defined (CONFIG_RAETH_GMAC2)
+#if defined (CONFIG_RAETH_BOTH_GMAC)
 	/* PPPoE + IP (MT7621 with 2xGMAC) */
 	else if (eth_type == ETH_P_PPP_SES) {
 		struct pppoe_hdr *peh = (struct pppoe_hdr *)(skb->data + ETH_HLEN);
@@ -1421,7 +1421,7 @@ int32_t FoeBindToPpe(struct sk_buff *skb, struct FoeEntry* foe_entry, int gmac_n
 		uint32_t fpidx = 8;	/* 8: no force port (use DA) */
 #endif
 #endif
-#if !defined (CONFIG_RAETH_GMAC2)
+#if !defined (CONFIG_RAETH_BOTH_GMAC)
 		if ((vlan1_id & VLAN_VID_MASK) != lan_vid)
 			port_ag = 2;	/* account group #2 (WAN) */
 #endif
@@ -1555,7 +1555,7 @@ int32_t FoeBindToPpe(struct sk_buff *skb, struct FoeEntry* foe_entry, int gmac_n
 			}
 		}
 	}
-#if defined (CONFIG_RAETH_GMAC2)
+#if defined (CONFIG_RAETH_BOTH_GMAC)
 	/* PPPoE + IP (RT3883 with 2xGMAC) */
 	else if (eth_type == ETH_P_PPP_SES) {
 		struct pppoe_hdr *peh = (struct pppoe_hdr *)(skb->data + ETH_HLEN);
@@ -2436,7 +2436,7 @@ void PpeSetDstPort(uint32_t Ebl)
 #endif
 
 		DstPort[DP_GMAC1] = ra_dev_get_by_name("eth2");
-#if defined (CONFIG_RAETH_GMAC2)
+#if defined (CONFIG_RAETH_BOTH_GMAC)
 		DstPort[DP_GMAC2] = ra_dev_get_by_name("eth3");
 #endif
 #if defined (CONFIG_RA_HW_NAT_PCI)
@@ -2479,6 +2479,7 @@ uint32_t SetGdmaFwd(uint32_t Ebl)
 	}
 	RegWrite(GDM2_FWD_CFG, data);
 #else
+#if !defined (CONFIG_GE1_RGMII_NONE)
 	data = RegRead(FE_GDMA1_FWD_CFG);
 	data &= ~0x7777;
 	if (Ebl) {
@@ -2506,6 +2507,7 @@ uint32_t SetGdmaFwd(uint32_t Ebl)
 		data |= GDM1_OFRC_P_CPU;
 	}
 	RegWrite(FE_GDMA1_FWD_CFG, data);
+#endif
 
 #if defined (CONFIG_RAETH_GMAC2)
 	data = RegRead(FE_GDMA2_FWD_CFG);

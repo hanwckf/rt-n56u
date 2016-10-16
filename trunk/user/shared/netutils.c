@@ -30,9 +30,14 @@
 #include <sys/ioctl.h>
 
 #include <net/if.h>
+#include <net/if_arp.h>
 #include <net/ethernet.h>
 #include <netinet/ip.h>
 #include <netinet/tcp.h>
+
+#include <linux/sockios.h>
+#include <linux/if_vlan.h>
+#include <linux/if_bridge.h>
 
 #include "nvram_linux.h"
 #include "netutils.h"
@@ -291,24 +296,6 @@ set_usb_modem_dev_wan(int unit, int devnum)
 	nvram_set_int_temp(strcat_r(prefix, "modem_dev", tmp), devnum);
 }
 
-void
-brport_set_param_int(const char *ifname, const char *param, int value)
-{
-	char brport_path[64];
-
-	snprintf(brport_path, sizeof(brport_path), "/sys/class/net/%s/brport/%s", ifname, param);
-	fput_int(brport_path, value);
-}
-
-void
-brport_set_m2u(const char *ifname, int m2u_on)
-{
-	int i_value = (m2u_on) ? 1 : 0;
-
-	brport_set_param_int(ifname, "multicast_fast_leave", i_value);
-	brport_set_param_int(ifname, "multicast_to_unicast", i_value);
-}
-
 int
 get_wan_ether_link_cached(void)
 {
@@ -322,7 +309,7 @@ get_internet_state_cached(void)
 }
 
 int
-ifconfig(char *ifname, int flags, char *addr, char *mask)
+ifconfig(const char *ifname, int flags, const char *addr, const char *mask)
 {
 	int sockfd, ret = 0;
 	struct ifreq ifr;
@@ -479,6 +466,26 @@ get_interface_mtu(const char *ifname)
 }
 
 int
+set_interface_mtu(const char *ifname, int mtu)
+{
+	struct ifreq ifr;
+	int sockfd, ret;
+
+	if ((sockfd = socket(AF_INET, SOCK_RAW, IPPROTO_RAW)) < 0)
+		return -1;
+
+	memset(&ifr, 0, sizeof(ifr));
+	strncpy(ifr.ifr_name, ifname, IFNAMSIZ);
+	ifr.ifr_mtu = mtu;
+
+	ret = ioctl(sockfd, SIOCSIFMTU, &ifr);
+
+	close(sockfd);
+
+	return ret;
+}
+
+int
 get_interface_hwaddr(const char *ifname, unsigned char mac[6])
 {
 	struct ifreq ifr;
@@ -497,6 +504,27 @@ get_interface_hwaddr(const char *ifname, unsigned char mac[6])
 	close(sockfd);
 
 	return result;
+}
+
+int
+set_interface_hwaddr(const char *ifname, const char *mac_str)
+{
+	struct ifreq ifr;
+	int sockfd, ret;
+
+	if ((sockfd = socket(AF_INET, SOCK_RAW, IPPROTO_RAW)) < 0)
+		return -1;
+
+	memset(&ifr, 0, sizeof(ifr));
+	strncpy(ifr.ifr_name, ifname, IFNAMSIZ);
+	ifr.ifr_hwaddr.sa_family = ARPHRD_ETHER;
+	ether_atoe(mac_str, ifr.ifr_hwaddr.sa_data);
+
+	ret = ioctl(sockfd, SIOCSIFHWADDR, &ifr);
+
+	close(sockfd);
+
+	return ret;
 }
 
 in_addr_t
@@ -525,6 +553,213 @@ get_interface_addr4(const char *ifname)
 	return ipv4_addr;
 }
 
+void
+set_interface_conf_int(const char *ver, const char *ifname, const char *param, int value)
+{
+	char conf_path[80];
+
+	snprintf(conf_path, sizeof(conf_path), "/proc/sys/net/%s/conf/%s/%s", ver, ifname, param);
+	fput_int(conf_path, value);
+}
+
+int
+vconfig_add_if(const char *ifname, unsigned int vid)
+{
+	int sockfd, ret;
+	struct vlan_ioctl_args ifr;
+
+	if (vid > 4095)
+		return -1;
+
+	if ((sockfd = socket(AF_INET, SOCK_STREAM, 0)) < 0)
+		return -1;
+
+	memset(&ifr, 0, sizeof(ifr));
+	strncpy(ifr.device1, ifname, IFNAMSIZ);
+	ifr.cmd = ADD_VLAN_CMD;
+	ifr.u.VID = vid;
+
+	ret = ioctl(sockfd, SIOCSIFVLAN, &ifr);
+
+	close(sockfd);
+
+	return ret;
+}
+
+int
+vconfig_egress_map(const char *vifname, int skb_prio, int qos_prio)
+{
+	int sockfd, ret;
+	struct vlan_ioctl_args ifr;
+
+	if ((sockfd = socket(AF_INET, SOCK_STREAM, 0)) < 0)
+		return -1;
+
+	memset(&ifr, 0, sizeof(ifr));
+	strncpy(ifr.device1, vifname, sizeof(ifr.device1));
+	ifr.cmd = SET_VLAN_EGRESS_PRIORITY_CMD;
+	ifr.u.skb_priority = skb_prio;
+	ifr.vlan_qos = qos_prio;
+
+	ret = ioctl(sockfd, SIOCSIFVLAN, &ifr);
+
+	close(sockfd);
+
+	return ret;
+}
+
+int
+vconfig_del_if(const char *vifname)
+{
+	int sockfd, ret;
+	struct vlan_ioctl_args ifr;
+
+	if ((sockfd = socket(AF_INET, SOCK_STREAM, 0)) < 0)
+		return -1;
+
+	memset(&ifr, 0, sizeof(ifr));
+	strncpy(ifr.device1, vifname, sizeof(ifr.device1));
+	ifr.cmd = DEL_VLAN_CMD;
+
+	ret = ioctl(sockfd, SIOCSIFVLAN, &ifr);
+
+	close(sockfd);
+
+	return ret;
+}
+
+int
+br_add_del_bridge(const char *brname, int is_add)
+{
+	int sockfd, ret;
+
+	if ((sockfd = socket(AF_INET, SOCK_STREAM, 0)) < 0)
+		return -1;
+
+	ret = ioctl(sockfd, (is_add) ? SIOCBRADDBR : SIOCBRDELBR, brname);
+
+	close(sockfd);
+
+	return ret;
+}
+
+int
+br_add_del_if(const char *brname, const char *ifname, int is_add)
+{
+	int sockfd, ret;
+	struct ifreq ifr;
+
+	if ((sockfd = socket(AF_INET, SOCK_STREAM, 0)) < 0)
+		return -1;
+
+	memset(&ifr, 0, sizeof(ifr));
+	strncpy(ifr.ifr_name, ifname, IFNAMSIZ);
+	if (ioctl(sockfd, SIOCGIFINDEX, &ifr) < 0) {
+		close(sockfd);
+		return -ENODEV;
+	}
+
+	strncpy(ifr.ifr_name, brname, IFNAMSIZ);
+	ret = ioctl(sockfd, (is_add) ? SIOCBRADDIF : SIOCBRDELIF, &ifr);
+
+	close(sockfd);
+
+	return ret;
+}
+
+int
+br_del_all_ifs(const char *brname, int do_if_down, int do_if_rem)
+{
+#define BR_MAX_IF	32
+	struct ifreq ifr;
+	int i, sockfd;
+	int ifindices[BR_MAX_IF] = {0};
+	unsigned long args[4] = { BRCTL_GET_PORT_LIST, (unsigned long)ifindices, BR_MAX_IF, 0 };
+
+	if ((sockfd = socket(AF_INET, SOCK_STREAM, 0)) < 0)
+		return -1;
+
+	memset(&ifr, 0, sizeof(ifr));
+	strncpy(ifr.ifr_name, brname, IFNAMSIZ);
+	ifr.ifr_data = (char *)&args;
+	if (ioctl(sockfd, SIOCDEVPRIVATE, &ifr) < 0) {
+		close(sockfd);
+		return -1;
+	}
+
+	ifr.ifr_data = NULL;
+
+	for (i = 0; i < BR_MAX_IF; i++) {
+		if (!ifindices[i])
+			continue;
+		ifr.ifr_ifindex = ifindices[i];
+		ioctl(sockfd, SIOCBRDELIF, &ifr);
+	}
+
+	if (do_if_down || do_if_rem) {
+		for (i = 0; i < BR_MAX_IF; i++) {
+			if (!ifindices[i])
+				continue;
+			memset(&ifr, 0, sizeof(ifr));
+			ifr.ifr_ifindex = ifindices[i];
+			if (ioctl(sockfd, SIOCGIFNAME, &ifr) < 0)
+				continue;
+			if (ioctl(sockfd, SIOCGIFFLAGS, &ifr) < 0)
+				continue;
+			if (ifr.ifr_flags & IFF_UP) {
+				ifr.ifr_flags &= ~(IFF_UP);
+				if (ioctl(sockfd, SIOCSIFFLAGS, &ifr) < 0)
+					continue;
+			}
+			if (do_if_rem && strcmp(ifr.ifr_name, IFNAME_LAN))
+				vconfig_del_if(ifr.ifr_name);
+		}
+	}
+
+	close(sockfd);
+
+	return 0;
+}
+
+void
+br_set_param_int(const char *brname, const char *param, int value)
+{
+	char bridge_path[80];
+
+	snprintf(bridge_path, sizeof(bridge_path), "/sys/class/net/%s/bridge/%s", brname, param);
+	fput_int(bridge_path, value);
+}
+
+void
+br_set_stp(const char *brname, int stp_state)
+{
+	br_set_param_int(brname, "stp_state", stp_state);
+}
+
+void
+br_set_fd(const char *brname, int delay_sec)
+{
+	br_set_param_int(brname, "forward_delay", delay_sec * 100);
+}
+
+void
+brport_set_param_int(const char *ifname, const char *param, int value)
+{
+	char brport_path[80];
+
+	snprintf(brport_path, sizeof(brport_path), "/sys/class/net/%s/brport/%s", ifname, param);
+	fput_int(brport_path, value);
+}
+
+void
+brport_set_m2u(const char *ifname, int m2u_on)
+{
+	int i_value = (m2u_on) ? 1 : 0;
+
+	brport_set_param_int(ifname, "multicast_fast_leave", i_value);
+	brport_set_param_int(ifname, "multicast_to_unicast", i_value);
+}
+
 int get_ipv6_type(void)
 {
 #if defined (USE_IPV6)
@@ -551,6 +786,19 @@ int get_ipv6_type(void)
 }
 
 #if defined (USE_IPV6)
+int is_valid_ipv6(const char *cp)
+{
+	struct in6_addr a6;
+
+	if (!cp)
+		return 0;
+
+	if (inet_pton(AF_INET6, cp, &a6) != 1)
+		return 0;
+
+	return 1;
+}
+
 static int get_prefix6_len(struct sockaddr_in6 *mask6)
 {
 	int i, j, prefix = 0;
@@ -568,7 +816,7 @@ static int get_prefix6_len(struct sockaddr_in6 *mask6)
 	return prefix;
 }
 
-char *get_ifaddr6(char *ifname, int linklocal, char *p_addr6s)
+char *get_ifaddr6(const char *ifname, int linklocal, char *p_addr6s)
 #if defined (HAVE_GETIFADDRS)
 {
 	char *ret = NULL;

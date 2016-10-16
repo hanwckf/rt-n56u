@@ -481,7 +481,7 @@ static __inline__ int __sk_del_node_init(struct sock *sk)
    modifications.
  */
 
-static inline void sock_hold(struct sock *sk)
+static __always_inline void sock_hold(struct sock *sk)
 {
 	atomic_inc(&sk->sk_refcnt);
 }
@@ -489,7 +489,7 @@ static inline void sock_hold(struct sock *sk)
 /* Ungrab socket in the context, which assumes that socket refcnt
    cannot hit zero, f.e. it is true in context of any socketcall.
  */
-static inline void __sock_put(struct sock *sk)
+static __always_inline void __sock_put(struct sock *sk)
 {
 	atomic_dec(&sk->sk_refcnt);
 }
@@ -2025,7 +2025,9 @@ static __inline__ void
 sock_recv_timestamp(struct msghdr *msg, struct sock *sk, struct sk_buff *skb)
 {
 	ktime_t kt = skb->tstamp;
+#ifdef HAVE_HW_TIME_STAMP
 	struct skb_shared_hwtstamps *hwtstamps = skb_hwtstamps(skb);
+#endif
 
 	/*
 	 * generate control messages if
@@ -2039,11 +2041,14 @@ sock_recv_timestamp(struct msghdr *msg, struct sock *sk, struct sk_buff *skb)
 	 */
 	if (sock_flag(sk, SOCK_RCVTSTAMP) ||
 	    sock_flag(sk, SOCK_TIMESTAMPING_RX_SOFTWARE) ||
-	    (kt.tv64 && sock_flag(sk, SOCK_TIMESTAMPING_SOFTWARE)) ||
-	    (hwtstamps->hwtstamp.tv64 &&
+	    (kt.tv64 && sock_flag(sk, SOCK_TIMESTAMPING_SOFTWARE))
+#ifdef HAVE_HW_TIME_STAMP
+	 || (hwtstamps->hwtstamp.tv64 &&
 	     sock_flag(sk, SOCK_TIMESTAMPING_RAW_HARDWARE)) ||
 	    (hwtstamps->syststamp.tv64 &&
-	     sock_flag(sk, SOCK_TIMESTAMPING_SYS_HARDWARE)))
+	     sock_flag(sk, SOCK_TIMESTAMPING_SYS_HARDWARE))
+#endif
+	    )
 		__sock_recv_timestamp(msg, sk, skb);
 	else
 		sk->sk_stamp = kt;

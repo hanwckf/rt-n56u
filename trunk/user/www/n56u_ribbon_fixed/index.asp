@@ -23,6 +23,7 @@ var $j = jQuery.noConflict();
 <% disk_pool_mapping_info(); %>
 <% available_disk_names_and_sizes(); %>
 <% get_usb_ports_info(); %>
+<% get_ext_ports_info(); %>
 
 var all_disks = foreign_disks().concat(blank_disks());
 var all_disk_interface = foreign_disk_interface_names().concat(blank_disk_interface_names());
@@ -36,7 +37,9 @@ function initial(){
 	show_banner(0);
 	show_menu(1, -1, 0);
 	show_footer();
-	show_device();
+	show_usb_ports();
+	show_ata_pool();
+	show_mmc_card();
 	show_middle_status();
 	show_client_status(ccount);
 	set_default_choice();
@@ -50,7 +53,7 @@ function initial(){
 function detect_update_info(){
 	var str = $("internetStatus").innerHTML;
 	if(str == "<#QKSet_detect_freshbtn#>...")
-			refreshpage();
+		refreshpage();
 }
 
 function show_default_icon(){
@@ -105,7 +108,7 @@ function show_middle_status(){
 	var wpa_mode = document.form.rt_wpa_mode.value;
 	var wl_wep_x = parseInt(document.form.rt_wep_x.value);
 	var security_mode;
-	
+
 	if(auth_mode == "open")
 		security_mode = "Open System";
 	else if(auth_mode == "shared")
@@ -159,13 +162,10 @@ function show_client_status(clients_count){
 	$j("#clientNumber").html(clients_count);
 }
 
-function show_device(){
+function show_usb_ports(){
 	var i;
 	var dev_type_usb;
 	var usb_ports_num = get_usb_ports_num();
-
-	if (usb_ports_num < 2)
-		$("row_usb_port2").style.display = "none";
 
 	if (usb_ports_num < 1) {
 		$("row_usb_port1").style.display = "none";
@@ -200,11 +200,13 @@ function show_device(){
 				}
 			break;
 		default:
-			no_device_html(0);
+			no_usb_device_html(0);
 	}
 
 	if (usb_ports_num < 2)
 		return;
+
+	$("row_usb_port2").style.display = "";
 
 	dev_type_usb = get_device_type_usb(2);
 	switch(dev_type_usb){
@@ -234,27 +236,65 @@ function show_device(){
 				}
 			break;
 		default:
-			no_device_html(1);
+			no_usb_device_html(1);
 	}
 }
 
-function disk_html(device_order, all_disk_order){
-	var device_icon = $("deviceIcon_"+device_order);
-	var device_dec = $j("#deviceDec_"+device_order);
-	var icon_html_code = '';
+function show_ata_pool(){
+	var i;
+	var dev_found = 0;
+
+	if (typeof(get_ata_support) !== 'function')
+		return;
+
+	if (!get_ata_support())
+		return;
+
+	$("row_ata_pool").style.display = "";
+
+	for(i = 0; i < all_disks.length; ++i){
+		if(foreign_disk_interface_names()[i] == "1000"){
+			dev_found = 1;
+			ata_html(i);
+			break;
+		}
+	}
+
+	if (!dev_found)
+		no_device_html("sataIcon");
+}
+
+function show_mmc_card(){
+	var i;
+	var dev_found = 0;
+
+	if (typeof(get_mmc_support) !== 'function')
+		return;
+
+	if (!get_mmc_support())
+		return;
+
+	$("row_mmc_slot").style.display = "";
+
+	for(i = 0; i < all_disks.length; ++i){
+		if(foreign_disk_interface_names()[i] == "2000"){
+			dev_found = 1;
+			mmc_html(i);
+			break;
+		}
+	}
+
+	if (!dev_found)
+		no_device_html("cardIcon");
+}
+
+function dec_html(all_disk_order){
 	var dec_html_code = '';
-	var disk_model_name = "";
 	var TotalSize;
-	var mount_num = getDiskMountedNum(all_disk_order);
 	var all_accessable_size;
 	var percentbar = 0;
 	var alertPercentbar = 'progress-info';
-	var progressBarDiv = '';
-
-	if(all_disk_order < foreign_disks().length)
-		disk_model_name = foreign_disk_model_info()[all_disk_order];
-	else
-		disk_model_name = blank_disks()[all_disk_order-foreign_disks().length];
+	var mount_num = getDiskMountedNum(all_disk_order);
 
 	if(mount_num > 0){
 		if(all_disk_order < foreign_disks().length)
@@ -266,31 +306,48 @@ function disk_html(device_order, all_disk_order){
 		
 		percentbar = simpleNum2((all_accessable_size)/TotalSize*100);
 		percentbar = Math.round(100-percentbar);
-		if(percentbar >= 66 && percentbar < 85){
+		if(percentbar >= 66 && percentbar < 85)
 			alertPercentbar = 'progress-warning';
-		}
-		else if(percentbar >= 85) {
+		else if(percentbar >= 85)
 			alertPercentbar = 'progress-danger';
-		}
 		dec_html_code += '<div id="diskquota">\n';
-		dec_html_code += progressBarDiv = '<div style="margin-bottom: 10px;" class="progress ' + alertPercentbar + '"><div class="bar" style="width:'+percentbar+'%">'+(percentbar > 10 ? (percentbar + '%') : '')+'</div></div>';
+		dec_html_code += '<div style="margin-bottom: 10px;" class="progress ' + alertPercentbar + '"><div class="bar" style="width:'+percentbar+'%">'+(percentbar > 10 ? (percentbar + '%') : '')+'</div></div>';
 		dec_html_code += '</div>\n';
 		dec_html_code += '<strong><#Totaldisk#></strong>: '+TotalSize+' GB<br>\n';
 		dec_html_code += '<span class="style1"><strong><#Availdisk#></strong>: '+(all_accessable_size)+' GB</span>\n';
-	}
-	else{
+	}else
 		dec_html_code += '<span class="style1"><strong><#DISK_UNMOUNTED#></strong></span>\n';
-	}
+
+	return dec_html_code;
+}
+
+function dec_share_icon(device_dec){
+	device_dec.addClass("badge badge-success");
+	device_dec.css({paddingLeft: '3px'});
+	device_dec.html('<i class="icon-share icon-white"></i>');
+}
+
+function disk_html(device_order,all_disk_order){
+	var device_icon = $("deviceIcon_"+device_order);
+	var device_dec = $j("#deviceDec_"+device_order);
+	var icon_html_code = '';
+	var dec_html_code = '';
+	var disk_model_name = "";
+
+	if(all_disk_order < foreign_disks().length)
+		disk_model_name = foreign_disk_model_info()[all_disk_order];
+	else
+		disk_model_name = blank_disks()[all_disk_order-foreign_disks().length];
+
+	dec_html_code = dec_html(all_disk_order);
 
 	icon_html_code += '<a href="device-map/disk.asp" target="statusframe" style="outline:0;">\n';
-	icon_html_code += '    <div rel="rollover_disk" data-original-title="'+disk_model_name+'" data-content="'+(dec_html_code.replace(new RegExp('"', 'g'), "'"))+'" id="iconUSBdisk'+all_disk_order+'" class="big-icons big-icons-usbhdd" onclick="setSelectedDiskOrder(this.id);clickEvent(this);"></div>\n';
+	icon_html_code += '    <div id="iconUSBdisk'+all_disk_order+'" class="big-icons big-icons-usbhdd" rel="rollover_disk" data-original-title="'+disk_model_name+'" data-content="'+(dec_html_code.replace(new RegExp('"', 'g'), "'"))+'" onclick="setSelectedDiskOrder(this.id);clickEvent(this);"></div>\n';
 	icon_html_code += '</a>\n';
 
 	device_icon.innerHTML = icon_html_code;
 
-	device_dec.addClass("badge badge-success");
-	device_dec.css({paddingLeft: '3px'});
-	device_dec.html('<i class="icon-share icon-white"></i>');
+	dec_share_icon(device_dec);
 }
 
 function printer_html(device_seat, printer_order){
@@ -304,9 +361,7 @@ function printer_html(device_seat, printer_order){
 
 	device_icon.innerHTML = icon_html_code;
 
-	device_dec.addClass("badge badge-success");
-	device_dec.css({paddingLeft: '3px'});
-	device_dec.html('<i class="icon-share icon-white"></i>');
+	dec_share_icon(device_dec);
 }
 
 function modem_html(device_seat, modem_order){
@@ -320,9 +375,7 @@ function modem_html(device_seat, modem_order){
 
 	device_icon.innerHTML = icon_html_code;
 
-	device_dec.addClass("badge badge-success");
-	device_dec.css({paddingLeft: '3px'});
-	device_dec.html('<i class="icon-share icon-white"></i>');
+	dec_share_icon(device_dec);
 }
 
 function hub_html(device_seat){
@@ -336,23 +389,55 @@ function hub_html(device_seat){
 
 	device_icon.innerHTML = icon_html_code;
 
-	device_dec.addClass("badge badge-success");
-	device_dec.css({paddingLeft: '3px'});
-	device_dec.html('<i class="icon-share icon-white"></i>');
+	dec_share_icon(device_dec);
 }
 
-function no_device_html(device_seat){
-	var device_icon = $("deviceIcon_"+device_seat);
-	var device_dec = $j("#deviceDec_"+device_seat);
+function ata_html(){
+	var device_icon = $("sataIcon");
+	var device_dec = $j("#sataDec");
 	var icon_html_code = '';
-	var dec_html_code = '';
 
-	icon_html_code += '    <div class="iconNo"></div>';
-	dec_html_code += '<span class="account style4"><#NoDevice#></span>\n';
+	icon_html_code += '<a href="device-map/sata.asp" target="statusframe" style="outline:0;">\n';
+	icon_html_code += '    <div id="iconSATA" class="big-icons big-icons-ata" onclick="clickEvent(this);"></div>\n';
+	icon_html_code += '</a>\n';
 
 	device_icon.innerHTML = icon_html_code;
-	//device_dec.html(dec_html_code);
+
+	dec_share_icon(device_dec);
 }
+
+function mmc_html(all_disk_order){
+	var device_icon = $("cardIcon");
+	var device_dec = $j("#cardDec");
+	var icon_html_code = '';
+	var dec_html_code = '';
+	var disk_model_name = "";
+
+	if(all_disk_order < foreign_disks().length)
+		disk_model_name = foreign_disk_model_info()[all_disk_order];
+	else
+		disk_model_name = blank_disks()[all_disk_order-foreign_disks().length];
+
+	dec_html_code = dec_html(all_disk_order);
+
+	icon_html_code += '<a href="device-map/disk.asp" target="statusframe" style="outline:0;">\n';
+	icon_html_code += '    <div id="iconCard'+all_disk_order+'" class="big-icons big-icons-mmc" rel="rollover_disk" data-original-title="'+disk_model_name+'" data-content="'+(dec_html_code.replace(new RegExp('"', 'g'), "'"))+'" onclick="setSelectedDiskOrder(this.id);clickEvent(this);"></div>\n';
+	icon_html_code += '</a>\n';
+
+	device_icon.innerHTML = icon_html_code;
+
+	dec_share_icon(device_dec);
+}
+
+function no_device_html(device_name){
+	var device_icon = $(device_name);
+	device_icon.innerHTML = '<div class="iconNo"></div>'
+}
+
+function no_usb_device_html(device_seat){
+	no_device_html("deviceIcon_"+device_seat);
+}
+
 
 var avoidkey;
 var lastClicked;
@@ -434,24 +519,36 @@ function clickEvent(obj){
 		stitle = "<#statusTitle_Hub#>";
 		$("statusframe").src = "/device-map/hub.asp";
 	}
+	else if(obj.id.indexOf("SATA") > 0){
+		icon = "big-icons-ata-active";
+		ContainerWidth = "892px";
+		Containerpadding = "0px";
+		stitle = "<#statusTitle_SATA#>";
+		$("statusframe").src = "/device-map/sata.asp";
+	}
+	else if(obj.id.indexOf("Card") > 0){
+		icon = "big-icons-mmc-active";
+		ContainerWidth = "892px";
+		Containerpadding = "0px";
+		stitle = "<#statusTitle_Card#>";
+		$("statusframe").src = "/device-map/disk.asp";
+	}
 	else if(obj.id.indexOf("No") > 0){
 		icon = "iconNo";
 	}
-	else
-		alert("mouse over on wrong place!");
-	
+
 	$('statusContainer').style.width = ContainerWidth;
 	$('statusContainer').style.paddingRight = Containerpadding;
 
-	$j(".big-icons").removeClass("big-icons-globe-active big-icons-router-active big-icons-laptop-active big-icons-usb-active big-icons-usbhdd-active big-icons-printer-active big-icons-modem-active big-icons-hub-active");
+	$j(".big-icons").removeClass("big-icons-globe-active big-icons-router-active big-icons-laptop-active big-icons-usb-active big-icons-usbhdd-active big-icons-printer-active big-icons-modem-active big-icons-hub-active big-icons-mmc-active big-icons-ata-active");
 	$j(obj).addClass(icon);
 
 	// show arrow right icon
 	$j(".arrow-right").hide();
 	$j(obj).parents('tr').find(".arrow-right").show();
-	
+
 	$('helpname').innerHTML = stitle;
-	
+
 	avoidkey = icon;
 	lastClicked = obj;
 	lastName = icon;
@@ -459,7 +556,7 @@ function clickEvent(obj){
 
 function mouseEvent(obj, key){
 	var icon;
-	
+
 	if(obj.id.indexOf("Internet") > 0)
 		icon = "iconInternet";
 	else if(obj.id.indexOf("Router") > 0)
@@ -474,7 +571,7 @@ function mouseEvent(obj, key){
 		icon = "iconNo";
 	else
 		alert("mouse over on wrong place!");
-	
+
 	if(avoidkey != icon){
 		if(key)
 			obj.style.background = 'url("/images/map-'+icon+'_r.gif") no-repeat';
@@ -642,11 +739,25 @@ $j(document).ready(function(){
                                             <div class="arrow-right" id="arrow-usb1"><img src="/bootstrap/img/arrow-right.png"></div>
                                         </td>
                                     </tr>
-                                    <tr id="row_usb_port2">
+                                    <tr id="row_usb_port2" style="display:none">
                                         <td width="30%">
                                             <div id="deviceIcon_1" class="big-icons big-icons-usb"></div>
                                             <div style="position: absolute; margin-top: -47px; margin-left: 50px;"><div id="deviceDec_1"></div></div>
                                             <div class="arrow-right" id="arrow-usb2"><img src="/bootstrap/img/arrow-right.png"></div>
+                                        </td>
+                                    </tr>
+                                    <tr id="row_ata_pool" style="display:none">
+                                        <td width="30%">
+                                            <div id="sataIcon" class="big-icons big-icons-ata"></div>
+                                            <div style="position: absolute; margin-top: -47px; margin-left: 50px;"><div id="sataDec"></div></div>
+                                            <div class="arrow-right" id="arrow-ata"><img src="/bootstrap/img/arrow-right.png"></div>
+                                        </td>
+                                    </tr>
+                                    <tr id="row_mmc_slot" style="display:none">
+                                        <td width="30%">
+                                            <div id="cardIcon" class="big-icons big-icons-mmc"></div>
+                                            <div style="position: absolute; margin-top: -47px; margin-left: 50px;"><div id="cardDec"></div></div>
+                                            <div class="arrow-right" id="arrow-mmc"><img src="/bootstrap/img/arrow-right.png"></div>
                                         </td>
                                     </tr>
                                 </tbody>

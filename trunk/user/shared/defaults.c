@@ -48,7 +48,7 @@ struct nvram_pair router_defaults[] = {
 	{ "lan_hwaddr", "" },			/* LAN interface MAC address */
 
 	/* LAN TCP/IP parameters */
-	{ "lan_proto_x", "0" },			/* DHCP client [static|dhcp] in AP mode */
+	{ "lan_proto_x", "1" },			/* DHCP client [static|dhcp] in AP mode */
 	{ "lan_dhcpd_x", "0" },			/* DHCP server in AP mode */
 	{ "lan_ipaddr", "192.168.1.1" },	/* LAN IP address */
 	{ "lan_netmask", "255.255.255.0" },	/* LAN netmask */
@@ -85,7 +85,7 @@ struct nvram_pair router_defaults[] = {
 	{ "wan_route_x", "IP_Routed" },
 	{ "wan_src_phy", "0" },
 	{ "wan_stb_x", "0" },
-	{ "wan_stb_iso", "0" },
+	{ "wan_stb_iso", "1" },
 	{ "vlan_filter", "0" },
 	{ "vlan_vid_cpu", "" },
 	{ "vlan_pri_cpu", "0" },
@@ -126,7 +126,9 @@ struct nvram_pair router_defaults[] = {
 	{ "wan_pptp_mru", "1400" },		/* Negotiate MRU to this value */
 	{ "wan_l2tp_mtu", "1460" },		/* Negotiate MTU to the smaller of this value or the peer MRU */
 	{ "wan_l2tp_mru", "1460" },		/* Negotiate MRU to this value */
+#if defined (APP_RPL2TP)
 	{ "wan_l2tpd", "0" },			/* L2TP control daemon (xL2TPD/RP-L2TP) */
+#endif
 	{ "wan_ppp_peer", "" },			/* VPN server address */
 	{ "wan_ppp_auth", "0" },		/* PPP authentication */
 	{ "wan_ppp_mppe", "0" },		/* MPPE encryption */
@@ -220,6 +222,7 @@ struct nvram_pair router_defaults[] = {
 	{ "wl_HT_MpduDensity", "5" },
 	{ "wl_HT_BAWinSize", "64" },
 	{ "wl_HT_AutoBA", "1" },
+	{ "wl_VgaClamp", "0" },
 
 	// guest AP 5Ghz
 	{ "wl_guest_enable", "0" },
@@ -266,8 +269,6 @@ struct nvram_pair router_defaults[] = {
 	{ "rt_HT_BW", "1" },
 	{ "rt_HT_EXTCHA", "1" },
 	{ "rt_HT_OpMode", "0" },
-	{ "rt_wsc_config_state", "0" },
-	{ "rt_secret_code", "0" },
 	{ "rt_wme", "1" },
 	{ "rt_wme_no_ack", "off" },
 	{ "rt_IgmpSnEnable", "1" },
@@ -349,16 +350,15 @@ struct nvram_pair router_defaults[] = {
 	{ "st_samba_workgroup", DEF_SMB_WORKGROUP },
 	{ "st_ftp_mode", "1" },
 	{ "st_ftp_log", "0" },
+	{ "st_ftp_pmin", "50000" },
+	{ "st_ftp_pmax", "50100" },
+	{ "st_ftp_anmr", "0" },
 	{ "st_max_user", "10" },
 	{ "apps_dms", "0" },
 	{ "apps_itunes", "0"},
 	{ "sh_num", "0" },
 	{ "computer_name", BOARD_NAME },
-#if BOARD_RAM_SIZE < 128
 	{ "pcache_reclaim", "2" },
-#else
-	{ "pcache_reclaim", "0" },
-#endif
 	{ "usb3_disable", "0" },
 	{ "u2ec_enable", "1" },
 	{ "lprd_enable", "1" },
@@ -496,6 +496,8 @@ struct nvram_pair router_defaults[] = {
 	{ "ddns_hostname2_x", "" },
 	{ "ddns_hostname3_x", "" },
 	{ "ddns_wildcard_x", "0" },
+	{ "ddns_cst_svr", "" },
+	{ "ddns_cst_url", "" },
 	{ "ddns_period", "24" },
 	{ "ddns_forced", "10" },
 	{ "ddns_verbose", "1" },
@@ -567,13 +569,19 @@ struct nvram_pair router_defaults[] = {
 
 	{ "fw_pt_pppoe", "0" },
 
+#if defined(BOARD_ROLE_REPEATER)
+	{ "sw_mode", "3" },
+#else
 	{ "sw_mode", "1" },
+#endif
 
 	{ "telnetd", "1" },
 	{ "sshd_enable", "0" },
 	{ "wins_enable", "0" },
 	{ "lltd_enable", "1" },
 	{ "adsc_enable", "0" },
+	{ "crond_enable", "0" },
+	{ "crond_log", "0" },
 
 #if defined(BOARD_N65U)
 	{ "inic_disable", "0" },
@@ -604,32 +612,42 @@ struct nvram_pair router_defaults[] = {
 	{ "front_led_pwr", "1" },
 
 	{ "ether_igmp", "1" },
-	{ "ether_uport", "5" },		/* WAN port in AP mode is static upstream by default */
+	{ "ether_uport", "0" },		/* WAN port in AP mode is static upstream by default */
 	{ "ether_m2u", "2" },
-#if defined(USE_RTL8367_API_8367B)
 	{ "ether_green", "1" },
-#else
-	{ "ether_green", "0" },
-#endif
+	{ "ether_eee", "0" },
 #if defined(USE_RTL8367)
 	{ "ether_jumbo", "1" },
-	{ "ether_led0", "3" },
 #else
 	{ "ether_jumbo", "0" },
+#endif
+#if (BOARD_NUM_ETH_LEDS > 1)
+	{ "ether_led0", "3" },
+#else
 	{ "ether_led0", "7" },
 #endif
 	{ "ether_led1", "0" },
 
 	{ "ether_link_wan",  "0" },
-	{ "ether_link_lan1", "0" },
-	{ "ether_link_lan2", "0" },
-	{ "ether_link_lan3", "0" },
-	{ "ether_link_lan4", "0" },
 	{ "ether_flow_wan",  "0" },
+	{ "ether_link_lan1", "0" },
 	{ "ether_flow_lan1", "0" },
+	{ "ether_link_lan2", "0" },
 	{ "ether_flow_lan2", "0" },
+	{ "ether_link_lan3", "0" },
 	{ "ether_flow_lan3", "0" },
+	{ "ether_link_lan4", "0" },
 	{ "ether_flow_lan4", "0" },
+#if BOARD_NUM_ETH_EPHY > 5
+	{ "ether_link_lan5", "0" },
+	{ "ether_flow_lan5", "0" },
+#if BOARD_NUM_ETH_EPHY > 6
+	{ "ether_link_lan6", "0" },
+	{ "ether_flow_lan6", "0" },
+	{ "ether_link_lan7", "0" },
+	{ "ether_flow_lan7", "0" },
+#endif
+#endif
 
 #if defined(CONFIG_RALINK_MT7621) || (defined(CONFIG_RALINK_MT7620) && !defined(BOARD_N14U))
 	{ "hw_nat_mode", "4" },

@@ -26,7 +26,7 @@
 
 #include "httpd.h"
 
-#include <ra_esw_ioctl.h>
+#include <mtk_esw/ioctl.h>
 
 ////////////////////////////////////////////////////////////////////////////////
 // MIB COUNTERS
@@ -40,6 +40,7 @@ typedef struct esw_mib_counters_s
 	uint32_t TxMcastFrames;
 	uint32_t TxBcastFrames;
 	uint32_t TxDropFrames;
+	uint32_t TxPauseFrames;
 	uint32_t TxCollisions;
 	uint32_t TxCRCError;
 	uint64_t RxGoodOctets;
@@ -47,11 +48,12 @@ typedef struct esw_mib_counters_s
 	uint32_t RxMcastFrames;
 	uint32_t RxBcastFrames;
 	uint32_t RxDropFrames;
+	uint32_t RxPauseFrames;
 	uint32_t RxFilterFrames;
 	uint32_t RxCRCError;
 	uint32_t RxAligmentError;
 } esw_mib_counters_t;
-#else
+#elif defined (CONFIG_RALINK_MT7620)
 typedef struct esw_mib_counters_s
 {
 	uint64_t TxGoodOctets;
@@ -65,6 +67,15 @@ typedef struct esw_mib_counters_s
 	uint32_t RxBadFrames;
 	uint32_t RxDropFramesFilter;
 	uint32_t RxDropFramesErr;
+} esw_mib_counters_t;
+#else
+#define ESW_RT3X5X
+typedef struct esw_mib_counters_s
+{
+	uint32_t TxGoodFrames;
+	uint32_t TxBadFrames;
+	uint32_t RxGoodFrames;
+	uint32_t RxBadFrames;
 } esw_mib_counters_t;
 #endif
 
@@ -99,29 +110,12 @@ int mtk_esw_ioctl(unsigned int cmd, unsigned int par, unsigned int *value)
 // MIB COUNTERS
 ////////////////////////////////////////////////////////////////////////////////
 
-int get_eth_port_bytes(int port_id, uint64_t *rx, uint64_t *tx)
+int get_eth_port_bytes(int port_id_uapi, uint64_t *rx, uint64_t *tx)
 {
 	port_bytes_t pb;
 	int ioctl_result;
-	unsigned int port_mask = SWAPI_PORTMASK_WAN;
 
-	switch (port_id)
-	{
-	case 1:
-		port_mask = SWAPI_PORTMASK_LAN1;
-		break;
-	case 2:
-		port_mask = SWAPI_PORTMASK_LAN2;
-		break;
-	case 3:
-		port_mask = SWAPI_PORTMASK_LAN3;
-		break;
-	case 4:
-		port_mask = SWAPI_PORTMASK_LAN4;
-		break;
-	}
-
-	ioctl_result = mtk_esw_ioctl(MTK_ESW_IOCTL_STATUS_PORT_BYTES, port_mask, (unsigned int *)&pb);
+	ioctl_result = mtk_esw_ioctl(MTK_ESW_IOCTL_STATUS_BYTES_PORT, port_id_uapi, (unsigned int *)&pb);
 	if (ioctl_result < 0)
 		return ioctl_result;
 
@@ -131,29 +125,12 @@ int get_eth_port_bytes(int port_id, uint64_t *rx, uint64_t *tx)
 	return ioctl_result;
 }
 
-int fill_eth_port_status(int port_id, char linkstate[40])
+int fill_eth_port_status(int port_id_uapi, char linkstate[40])
 {
-	unsigned int cmd = MTK_ESW_IOCTL_STATUS_SPEED_PORT_WAN;
 	unsigned int link_value = 0;
 	int has_link = 0;
 
-	switch (port_id)
-	{
-	case 1:
-		cmd = MTK_ESW_IOCTL_STATUS_SPEED_PORT_LAN1;
-		break;
-	case 2:
-		cmd = MTK_ESW_IOCTL_STATUS_SPEED_PORT_LAN2;
-		break;
-	case 3:
-		cmd = MTK_ESW_IOCTL_STATUS_SPEED_PORT_LAN3;
-		break;
-	case 4:
-		cmd = MTK_ESW_IOCTL_STATUS_SPEED_PORT_LAN4;
-		break;
-	}
-
-	if (mtk_esw_ioctl(cmd, 0, &link_value) < 0) {
+	if (mtk_esw_ioctl(MTK_ESW_IOCTL_STATUS_SPEED_PORT, port_id_uapi, &link_value) < 0) {
 		strcpy(linkstate, "I/O Error");
 		return 0;
 	}
@@ -204,35 +181,18 @@ int fill_eth_port_status(int port_id, char linkstate[40])
 	return has_link;
 }
 
-static int fill_eth_status(int port_id, webs_t wp)
+int fill_eth_status(int port_id_uapi, webs_t wp)
 {
 	int ret = 0;
-	unsigned int cmd = MTK_ESW_IOCTL_STATUS_CNT_PORT_WAN;
 	esw_mib_counters_t mibc;
 	char etherlink[40] = {0};
 
-	switch (port_id)
-	{
-	case 1:
-		cmd = MTK_ESW_IOCTL_STATUS_CNT_PORT_LAN1;
-		break;
-	case 2:
-		cmd = MTK_ESW_IOCTL_STATUS_CNT_PORT_LAN2;
-		break;
-	case 3:
-		cmd = MTK_ESW_IOCTL_STATUS_CNT_PORT_LAN3;
-		break;
-	case 4:
-		cmd = MTK_ESW_IOCTL_STATUS_CNT_PORT_LAN4;
-		break;
-	}
-
-	fill_eth_port_status(port_id, etherlink);
+	fill_eth_port_status(port_id_uapi, etherlink);
 
 	ret += websWrite(wp, "Port Link			: %s\n", etherlink);
 
 	memset(&mibc, 0, sizeof(esw_mib_counters_t));
-	if (mtk_esw_ioctl(cmd, 0, (unsigned int *)&mibc) == 0) {
+	if (mtk_esw_ioctl(MTK_ESW_IOCTL_STATUS_MIB_PORT, port_id_uapi, (unsigned int *)&mibc) == 0) {
 		ret += websWrite(wp, "\nMIB Counters\n");
 		ret += websWrite(wp, "----------------------------------------\n");
 #if defined (USE_MTK_GSW)
@@ -241,6 +201,7 @@ static int fill_eth_status(int port_id, webs_t wp)
 		ret += websWrite(wp, "TxMcastFrames			: %u\n", mibc.TxMcastFrames);
 		ret += websWrite(wp, "TxBcastFrames			: %u\n", mibc.TxBcastFrames);
 		ret += websWrite(wp, "TxDropFrames			: %u\n", mibc.TxDropFrames);
+		ret += websWrite(wp, "TxPauseFrames			: %u\n", mibc.TxPauseFrames);
 		ret += websWrite(wp, "TxCollisions			: %u\n", mibc.TxCollisions);
 		ret += websWrite(wp, "TxCRCError			: %u\n", mibc.TxCRCError);
 		ret += websWrite(wp, "RxGoodOctets			: %llu\n", mibc.RxGoodOctets);
@@ -248,10 +209,11 @@ static int fill_eth_status(int port_id, webs_t wp)
 		ret += websWrite(wp, "RxMcastFrames			: %u\n", mibc.RxMcastFrames);
 		ret += websWrite(wp, "RxBcastFrames			: %u\n", mibc.RxBcastFrames);
 		ret += websWrite(wp, "RxDropFrames			: %u\n", mibc.RxDropFrames);
+		ret += websWrite(wp, "RxPauseFrames			: %u\n", mibc.RxPauseFrames);
 		ret += websWrite(wp, "RxFilterFrames			: %u\n", mibc.RxFilterFrames);
 		ret += websWrite(wp, "RxCRCError			: %u\n", mibc.RxCRCError);
 		ret += websWrite(wp, "RxAligmentError			: %u", mibc.RxAligmentError);
-#else
+#elif !defined (ESW_RT3X5X)
 		ret += websWrite(wp, "TxGoodOctets			: %llu\n", mibc.TxGoodOctets);
 		ret += websWrite(wp, "TxGoodFrames			: %u\n", mibc.TxGoodFrames);
 		ret += websWrite(wp, "TxBadOctets			: %u\n", mibc.TxBadOctets);
@@ -263,34 +225,13 @@ static int fill_eth_status(int port_id, webs_t wp)
 		ret += websWrite(wp, "RxBadFrames			: %u\n", mibc.RxBadFrames);
 		ret += websWrite(wp, "RxDropFramesFilter		: %u\n", mibc.RxDropFramesFilter);
 		ret += websWrite(wp, "RxDropFramesErr			: %u", mibc.RxDropFramesErr);
+#else
+		ret += websWrite(wp, "TxGoodFrames			: %u\n", mibc.TxGoodFrames);
+		ret += websWrite(wp, "TxBadFrames			: %u\n", mibc.TxBadFrames);
+		ret += websWrite(wp, "RxGoodFrames			: %u\n", mibc.RxGoodFrames);
+		ret += websWrite(wp, "RxBadFrames			: %u\n", mibc.RxBadFrames);
 #endif
 	}
 
 	return ret;
 }
-
-int ej_eth_status_wan(int eid, webs_t wp, int argc, char **argv)
-{
-	return fill_eth_status(0, wp);
-}
-
-int ej_eth_status_lan1(int eid, webs_t wp, int argc, char **argv)
-{
-	return fill_eth_status(1, wp);
-}
-
-int ej_eth_status_lan2(int eid, webs_t wp, int argc, char **argv)
-{
-	return fill_eth_status(2, wp);
-}
-
-int ej_eth_status_lan3(int eid, webs_t wp, int argc, char **argv)
-{
-	return fill_eth_status(3, wp);
-}
-
-int ej_eth_status_lan4(int eid, webs_t wp, int argc, char **argv)
-{
-	return fill_eth_status(4, wp);
-}
-

@@ -94,6 +94,11 @@ static int show_cpuinfo(struct seq_file *m, void *v)
 		   hweight8(cpu_data[n].kscratch_mask));
 	seq_printf(m, "core\t\t\t: %d\n", cpu_data[n].core);
 
+#if defined(CONFIG_MIPS_MT_SMP)
+	if (cpu_has_mipsmt)
+		seq_printf(m, "VPE\t\t\t: %d\n", cpu_data[n].vpe_id);
+#endif
+
 	sprintf(fmt, "VCE%%c exceptions\t\t: %s\n",
 	        cpu_has_vce ? "%u" : "not available");
 	seq_printf(m, fmt, 'D', vced_count);

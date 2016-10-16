@@ -59,8 +59,12 @@
 
 //#define RLT_RxINT			(INT_R0_DONE | INT_R1_DONE /* | INT_RX_DLY */)	 /* Delayed Rx or indivi rx */
 #define RLT_RxINT			(INT_R1_DONE | INT_RX_DLY )	 /* Delayed Rx or indivi rx */
+#define RLT_TxDataInt	(INT_T0_DONE | \
+						 	INT_T1_DONE | \
+						 	INT_T2_DONE | \
+						 	INT_T3_DONE /*| INT_TX_DLY*/)	/* Delayed Tx or indivi tx */
 
-#define RLT_TxDataInt		(INT_T1_DONE | \
+#define RLT_76x2TxDataInt		(INT_T1_DONE | \
 						 INT_T2_DONE | \
 						 INT_T3_DONE | \
 						 INT_TX_DLY)

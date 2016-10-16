@@ -23,6 +23,7 @@
 #include <string.h>
 #include <sys/time.h>
 #include <sys/sysinfo.h>
+#include <sys/mount.h>
 #include <sys/stat.h>
 #include <sys/mount.h>
 #include <syslog.h>
@@ -132,7 +133,10 @@ valid_subver(char subfs)
 void
 get_eeprom_params(void)
 {
-	int i, i_offset, i_ret;
+#if defined (VENDOR_ASUS)
+	int i;
+#endif
+	int i_offset, i_ret;
 	unsigned char buffer[32];
 	unsigned char ea[ETHER_ADDR_LEN];
 	char macaddr_wl[]  = "00:11:22:33:44:55";
@@ -152,7 +156,7 @@ get_eeprom_params(void)
 #endif
 	memset(buffer, 0xff, ETHER_ADDR_LEN);
 	i_ret = flash_mtd_read(MTD_PART_NAME_FACTORY, i_offset, buffer, ETHER_ADDR_LEN);
-	if (i_ret >= 0 && buffer[0] != 0xff)
+	if (i_ret >= 0 && !(buffer[0] & 0x01))
 		ether_etoa(buffer, macaddr_wl);
 
 #if BOARD_2G_AS_WSOC
@@ -162,13 +166,13 @@ get_eeprom_params(void)
 #endif
 	memset(buffer, 0xff, ETHER_ADDR_LEN);
 	i_ret = flash_mtd_read(MTD_PART_NAME_FACTORY, i_offset, buffer, ETHER_ADDR_LEN);
-	if (i_ret >= 0 && buffer[0] != 0xff)
+	if (i_ret >= 0 && !(buffer[0] & 0x01))
 		ether_etoa(buffer, macaddr_rt);
 
 	i_offset = get_wired_mac_e2p_offset(0);
 	memset(buffer, 0xff, ETHER_ADDR_LEN);
 	i_ret = flash_mtd_read(MTD_PART_NAME_FACTORY, i_offset, buffer, ETHER_ADDR_LEN);
-	if (buffer[0] == 0xff) {
+	if (buffer[0] & 0x01) {
 		if (ether_atoe(macaddr_wl, ea)) {
 			memcpy(buffer, ea, ETHER_ADDR_LEN);
 			strcpy(macaddr_lan, macaddr_wl);
@@ -179,6 +183,9 @@ get_eeprom_params(void)
 		ether_etoa(buffer, macaddr_lan);
 	}
 
+	/* store wired LAN MAC */
+	memcpy(buffer+ETHER_ADDR_LEN, buffer, ETHER_ADDR_LEN);
+
 	if (get_wired_mac_is_single()) {
 		buffer[5] |= 0x03;	// last 2 bits reserved for MBSSID, use 0x03 for WAN (ra1: 0x01, apcli0: 0x02)
 		ether_etoa(buffer, macaddr_wan);
@@ -186,15 +193,19 @@ get_eeprom_params(void)
 		i_offset = get_wired_mac_e2p_offset(1);
 		memset(buffer, 0xff, ETHER_ADDR_LEN);
 		i_ret = flash_mtd_read(MTD_PART_NAME_FACTORY, i_offset, buffer, ETHER_ADDR_LEN);
-		if (buffer[0] == 0xff) {
-			if (ether_atoe(macaddr_rt, ea)) {
-				memcpy(buffer, ea, ETHER_ADDR_LEN);
-				strcpy(macaddr_wan, macaddr_rt);
-#if !defined (USE_SINGLE_MAC)
-				if (i_ret >= 0)
-					flash_mtd_write(MTD_PART_NAME_FACTORY, i_offset, ea, ETHER_ADDR_LEN);
+		if ((buffer[0] & 0x01)
+#if defined (USE_SINGLE_MAC)
+		    /* compare LAN/WAN MAC OID */
+		    || memcmp(buffer, buffer+ETHER_ADDR_LEN, 3) != 0
 #endif
-			}
+		    ) {
+			memcpy(buffer, buffer+ETHER_ADDR_LEN, ETHER_ADDR_LEN);
+			buffer[5] |= 0x03;
+			ether_etoa(buffer, macaddr_wan);
+#if !defined (USE_SINGLE_MAC)
+			if (i_ret >= 0)
+				flash_mtd_write(MTD_PART_NAME_FACTORY, i_offset, buffer, ETHER_ADDR_LEN);
+#endif
 		} else {
 			ether_etoa(buffer, macaddr_wan);
 		}
@@ -363,8 +374,7 @@ get_eeprom_params(void)
 void
 update_router_mode(void)
 {
-	if (nvram_get_int("sw_mode") != 3)
-	{
+	if (nvram_get_int("sw_mode") != 3) {
 		if (nvram_get_int("wan_nat_x") == 0)
 			nvram_set_int("sw_mode", 4);	// Gateway mode
 		else
@@ -378,10 +388,21 @@ set_pagecache_reclaim(void)
 	int pagecache_ratio = 100;
 	int pagecache_reclaim = nvram_get_int("pcache_reclaim");
 
-	if (pagecache_reclaim == 1)
-		pagecache_ratio = 50;
-	else if (pagecache_reclaim == 2)
+	switch (pagecache_reclaim)
+	{
+	case 1:
 		pagecache_ratio = 30;
+		break;
+	case 2:
+		pagecache_ratio = 50;
+		break;
+	case 3:
+		pagecache_ratio = 70;
+		break;
+	case 4:
+		pagecache_ratio = 85;
+		break;
+	}
 
 	fput_int("/proc/sys/vm/pagecache_ratio", pagecache_ratio);
 }
@@ -410,21 +431,17 @@ char_to_ascii(char *output, char *input)
 
 	ptr = output;
 
-	for ( i=0; i<strlen(input); i++ )
-	{
+	for ( i=0; i<strlen(input); i++ ) {
 		if ((input[i]>='0' && input[i] <='9')
 		   ||(input[i]>='A' && input[i]<='Z')
 		   ||(input[i] >='a' && input[i]<='z')
 		   || input[i] == '!' || input[i] == '*'
 		   || input[i] == '(' || input[i] == ')'
 		   || input[i] == '_' || input[i] == '-'
-		   || input[i] == '\'' || input[i] == '.')
-		{
+		   || input[i] == '\'' || input[i] == '.') {
 			*ptr = input[i];
 			ptr ++;
-		}
-		else
-		{
+		} else {
 			sprintf(tmp, "%%%.02X", input[i]);
 			strcpy(ptr, tmp);
 			ptr += 3;
@@ -471,7 +488,7 @@ get_param_int_hex(const char *param)
 }
 
 static int
-is_param_forbidden(char *line, const char **forbid_list)
+is_param_forbidden(const char *line, const char **forbid_list)
 {
 	while (*forbid_list) {
 		if (strncmp(line, *forbid_list, strlen(*forbid_list)) == 0)
@@ -510,7 +527,7 @@ load_user_config(FILE *fp, const char *dir_name, const char *file_name, const ch
 }
 
 int
-is_module_loaded(char *module_name)
+is_module_loaded(const char *module_name)
 {
 	DIR *dir_to_open = NULL;
 	char mod_path[64];
@@ -526,7 +543,7 @@ is_module_loaded(char *module_name)
 }
 
 int
-get_module_refcount(char *module_name)
+get_module_refcount(const char *module_name)
 {
 	FILE *fp;
 	char mod_path[64], mod_refval[16];
@@ -548,7 +565,7 @@ get_module_refcount(char *module_name)
 }
 
 int
-module_smart_load(char *module_name, char *module_param)
+module_smart_load(const char *module_name, const char *module_param)
 {
 	int ret;
 
@@ -564,7 +581,7 @@ module_smart_load(char *module_name, char *module_param)
 }
 
 int
-module_smart_unload(char *module_name, int recurse_unload)
+module_smart_unload(const char *module_name, int recurse_unload)
 {
 	int ret;
 	int refcount = get_module_refcount(module_name);
@@ -586,7 +603,7 @@ module_smart_unload(char *module_name, int recurse_unload)
 }
 
 int
-module_param_get(char *module_name, char *module_param, char *param_value, size_t param_value_size)
+module_param_get(const char *module_name, const char *module_param, char *param_value, size_t param_value_size)
 {
 	FILE *fp;
 	char mod_path[256];
@@ -610,7 +627,7 @@ module_param_get(char *module_name, char *module_param, char *param_value, size_
 }
 
 int
-module_param_set_int(char *module_name, char *module_param, int param_value)
+module_param_set_int(const char *module_name, const char *module_param, int param_value)
 {
 	char mod_path[256];
 
@@ -665,67 +682,117 @@ set_cpu_affinity(int is_ap_mode)
 	/* set initial IRQ affinity and RPS/XPS balancing */
 	int ncpu = sysconf(_SC_NPROCESSORS_ONLN);
 
-#define GIC_OFFSET	0
 #define GIC_IRQ_FE	(GIC_OFFSET+3)
 #define GIC_IRQ_PCIE0	(GIC_OFFSET+4)
 #define GIC_IRQ_PCIE1	(GIC_OFFSET+24)
 #define GIC_IRQ_PCIE2	(GIC_OFFSET+25)
 #define GIC_IRQ_SDXC	(GIC_OFFSET+20)
 #define GIC_IRQ_XHCI	(GIC_OFFSET+22)
+#define GIC_IRQ_EIP93	(GIC_OFFSET+19)
 
 	if (ncpu == 4) {
 		irq_affinity_set(GIC_IRQ_FE,    2);	/* GMAC  -> CPU:0, VPE:1 */
 		irq_affinity_set(GIC_IRQ_PCIE0, 4);	/* PCIe0 -> CPU:1, VPE:0 (usually rai0) */
 		irq_affinity_set(GIC_IRQ_PCIE1, 8);	/* PCIe1 -> CPU:1, VPE:1 (usually ra0) */
-		irq_affinity_set(GIC_IRQ_PCIE2, 1);	/* PCIe2 -> CPU:0, VPE:0 */
+		irq_affinity_set(GIC_IRQ_PCIE2, 1);	/* PCIe2 -> CPU:0, VPE:0 (usually ahci) */
 		irq_affinity_set(GIC_IRQ_SDXC,  4);	/* SDXC  -> CPU:1, VPE:0 */
 		irq_affinity_set(GIC_IRQ_XHCI,  8);	/* xHCI  -> CPU:1, VPE:1 */
+		irq_affinity_set(GIC_IRQ_EIP93, 8);	/* EIP93 -> CPU:1, VPE:1 */
 		
-		rps_queue_set(IFNAME_2G_MAIN, 0x8);	/* CPU:1, VPE:1 */
-		xps_queue_set(IFNAME_2G_MAIN, 0x8);	/* CPU:1, VPE:1 */
+		rps_queue_set(IFNAME_2G_MAIN,  0x8);	/* CPU:1, VPE:1 (PCIe1) */
+		xps_queue_set(IFNAME_2G_MAIN,  0x8);	/* CPU:1, VPE:1 (PCIe1) */
+		rps_queue_set(IFNAME_2G_GUEST, 0x8);	/* CPU:1, VPE:1 (PCIe1) */
+		xps_queue_set(IFNAME_2G_GUEST, 0x8);	/* CPU:1, VPE:1 (PCIe1) */
+		rps_queue_set(IFNAME_2G_APCLI, 0x8);	/* CPU:1, VPE:1 (PCIe1) */
+		xps_queue_set(IFNAME_2G_APCLI, 0x8);	/* CPU:1, VPE:1 (PCIe1) */
+		rps_queue_set(IFNAME_2G_WDS0,  0x8);	/* CPU:1, VPE:1 (PCIe1) */
+		xps_queue_set(IFNAME_2G_WDS0,  0x8);	/* CPU:1, VPE:1 (PCIe1) */
+		rps_queue_set(IFNAME_2G_WDS1,  0x8);	/* CPU:1, VPE:1 (PCIe1) */
+		xps_queue_set(IFNAME_2G_WDS1,  0x8);	/* CPU:1, VPE:1 (PCIe1) */
+		rps_queue_set(IFNAME_2G_WDS2,  0x8);	/* CPU:1, VPE:1 (PCIe1) */
+		xps_queue_set(IFNAME_2G_WDS2,  0x8);	/* CPU:1, VPE:1 (PCIe1) */
+		rps_queue_set(IFNAME_2G_WDS3,  0x8);	/* CPU:1, VPE:1 (PCIe1) */
+		xps_queue_set(IFNAME_2G_WDS3,  0x8);	/* CPU:1, VPE:1 (PCIe1) */
 #if BOARD_HAS_5G_RADIO
-		rps_queue_set(IFNAME_5G_MAIN, 0x4);	/* CPU:1, VPE:0 */
-		xps_queue_set(IFNAME_5G_MAIN, 0x4);	/* CPU:1, VPE:0 */
+		rps_queue_set(IFNAME_5G_MAIN,  0x4);	/* CPU:1, VPE:0 (PCIe0) */
+		xps_queue_set(IFNAME_5G_MAIN,  0x4);	/* CPU:1, VPE:0 (PCIe0) */
+		rps_queue_set(IFNAME_5G_GUEST, 0x4);	/* CPU:1, VPE:0 (PCIe0) */
+		xps_queue_set(IFNAME_5G_GUEST, 0x4);	/* CPU:1, VPE:0 (PCIe0) */
+		rps_queue_set(IFNAME_5G_APCLI, 0x4);	/* CPU:1, VPE:0 (PCIe0) */
+		xps_queue_set(IFNAME_5G_APCLI, 0x4);	/* CPU:1, VPE:0 (PCIe0) */
+		rps_queue_set(IFNAME_5G_WDS0,  0x4);	/* CPU:1, VPE:0 (PCIe0) */
+		xps_queue_set(IFNAME_5G_WDS0,  0x4);	/* CPU:1, VPE:0 (PCIe0) */
+		rps_queue_set(IFNAME_5G_WDS1,  0x4);	/* CPU:1, VPE:0 (PCIe0) */
+		xps_queue_set(IFNAME_5G_WDS1,  0x4);	/* CPU:1, VPE:0 (PCIe0) */
+		rps_queue_set(IFNAME_5G_WDS2,  0x4);	/* CPU:1, VPE:0 (PCIe0) */
+		xps_queue_set(IFNAME_5G_WDS2,  0x4);	/* CPU:1, VPE:0 (PCIe0) */
+		rps_queue_set(IFNAME_5G_WDS3,  0x4);	/* CPU:1, VPE:0 (PCIe0) */
+		xps_queue_set(IFNAME_5G_WDS3,  0x4);	/* CPU:1, VPE:0 (PCIe0) */
 #endif
 		if (is_ap_mode) {
 			rps_queue_set(IFNAME_MAC, 0x3);	/* CPU:0, VPE:0+1 */
 			xps_queue_set(IFNAME_MAC, 0x3);	/* CPU:0, VPE:0+1 */
 		} else {
-			rps_queue_set(IFNAME_LAN, 0x1);	/* CPU:0, VPE:0 */
-			xps_queue_set(IFNAME_LAN, 0x1);	/* CPU:0, VPE:0 */
-			rps_queue_set(IFNAME_WAN, 0x4);	/* CPU:1, VPE:0 */
-			xps_queue_set(IFNAME_WAN, 0x4);	/* CPU:1, VPE:0 */
+			rps_queue_set(IFNAME_LAN, 0x2);	/* CPU:0, VPE:1 */
+			xps_queue_set(IFNAME_LAN, 0x2);	/* CPU:0, VPE:1 */
+			rps_queue_set(IFNAME_WAN, 0x2);	/* CPU:0, VPE:1 */
+			xps_queue_set(IFNAME_WAN, 0x2);	/* CPU:0, VPE:1 */
 #if defined (USE_SINGLE_MAC)
-			rps_queue_set(IFNAME_MAC, 0x5);	/* CPU:0, VPE:0 + CPU:1, VPE:0 */
-			xps_queue_set(IFNAME_MAC, 0x5);	/* CPU:0, VPE:0 + CPU:1, VPE:0 */
+			rps_queue_set(IFNAME_MAC, 0x2);	/* CPU:0, VPE:1 */
+			xps_queue_set(IFNAME_MAC, 0x2);	/* CPU:0, VPE:1 */
 #endif
 		}
 		
 	} else if (ncpu == 2) {
 		irq_affinity_set(GIC_IRQ_FE,    1);	/* GMAC  -> CPU:0, VPE:0 */
 		irq_affinity_set(GIC_IRQ_PCIE0, 2);	/* PCIe0 -> CPU:0, VPE:1 (usually rai0) */
-		irq_affinity_set(GIC_IRQ_PCIE1, 2);	/* PCIe1 -> CPU:0, VPE:1 (usually ra0) */
-		irq_affinity_set(GIC_IRQ_PCIE2, 1);	/* PCIe2 -> CPU:0, VPE:0 */
+		irq_affinity_set(GIC_IRQ_PCIE1, 1);	/* PCIe1 -> CPU:0, VPE:0 (usually ra0) */
+		irq_affinity_set(GIC_IRQ_PCIE2, 1);	/* PCIe2 -> CPU:0, VPE:0 (usually ahci) */
 		irq_affinity_set(GIC_IRQ_SDXC,  2);	/* SDXC  -> CPU:0, VPE:1 */
 		irq_affinity_set(GIC_IRQ_XHCI,  2);	/* xHCI  -> CPU:0, VPE:1 */
+		irq_affinity_set(GIC_IRQ_EIP93, 2);	/* EIP93 -> CPU:0, VPE:1 */
 		
-		rps_queue_set(IFNAME_2G_MAIN, 0x2);	/* CPU:0, VPE:1 */
-		xps_queue_set(IFNAME_2G_MAIN, 0x2);	/* CPU:0, VPE:1 */
+		rps_queue_set(IFNAME_2G_MAIN,  0x1);	/* CPU:0, VPE:0 (PCIe1) */
+		xps_queue_set(IFNAME_2G_MAIN,  0x1);	/* CPU:0, VPE:0 (PCIe1) */
+		rps_queue_set(IFNAME_2G_GUEST, 0x1);	/* CPU:0, VPE:0 (PCIe1) */
+		xps_queue_set(IFNAME_2G_GUEST, 0x1);	/* CPU:0, VPE:0 (PCIe1) */
+		rps_queue_set(IFNAME_2G_APCLI, 0x1);	/* CPU:0, VPE:0 (PCIe1) */
+		xps_queue_set(IFNAME_2G_APCLI, 0x1);	/* CPU:0, VPE:0 (PCIe1) */
+		rps_queue_set(IFNAME_2G_WDS0,  0x1);	/* CPU:0, VPE:0 (PCIe1) */
+		xps_queue_set(IFNAME_2G_WDS0,  0x1);	/* CPU:0, VPE:0 (PCIe1) */
+		rps_queue_set(IFNAME_2G_WDS1,  0x1);	/* CPU:0, VPE:0 (PCIe1) */
+		xps_queue_set(IFNAME_2G_WDS1,  0x1);	/* CPU:0, VPE:0 (PCIe1) */
+		rps_queue_set(IFNAME_2G_WDS2,  0x1);	/* CPU:0, VPE:0 (PCIe1) */
+		xps_queue_set(IFNAME_2G_WDS2,  0x1);	/* CPU:0, VPE:0 (PCIe1) */
+		rps_queue_set(IFNAME_2G_WDS3,  0x1);	/* CPU:0, VPE:0 (PCIe1) */
+		xps_queue_set(IFNAME_2G_WDS3,  0x1);	/* CPU:0, VPE:0 (PCIe1) */
 #if BOARD_HAS_5G_RADIO
-		rps_queue_set(IFNAME_5G_MAIN, 0x2);	/* CPU:0, VPE:1 */
-		xps_queue_set(IFNAME_5G_MAIN, 0x2);	/* CPU:0, VPE:1 */
+		rps_queue_set(IFNAME_5G_MAIN,  0x2);	/* CPU:0, VPE:1 (PCIe0) */
+		xps_queue_set(IFNAME_5G_MAIN,  0x2);	/* CPU:0, VPE:1 (PCIe0) */
+		rps_queue_set(IFNAME_5G_GUEST, 0x2);	/* CPU:0, VPE:1 (PCIe0) */
+		xps_queue_set(IFNAME_5G_GUEST, 0x2);	/* CPU:0, VPE:1 (PCIe0) */
+		rps_queue_set(IFNAME_5G_APCLI, 0x2);	/* CPU:0, VPE:1 (PCIe0) */
+		xps_queue_set(IFNAME_5G_APCLI, 0x2);	/* CPU:0, VPE:1 (PCIe0) */
+		rps_queue_set(IFNAME_5G_WDS0,  0x2);	/* CPU:0, VPE:1 (PCIe0) */
+		xps_queue_set(IFNAME_5G_WDS0,  0x2);	/* CPU:0, VPE:1 (PCIe0) */
+		rps_queue_set(IFNAME_5G_WDS1,  0x2);	/* CPU:0, VPE:1 (PCIe0) */
+		xps_queue_set(IFNAME_5G_WDS1,  0x2);	/* CPU:0, VPE:1 (PCIe0) */
+		rps_queue_set(IFNAME_5G_WDS2,  0x2);	/* CPU:0, VPE:1 (PCIe0) */
+		xps_queue_set(IFNAME_5G_WDS2,  0x2);	/* CPU:0, VPE:1 (PCIe0) */
+		rps_queue_set(IFNAME_5G_WDS3,  0x2);	/* CPU:0, VPE:1 (PCIe0) */
+		xps_queue_set(IFNAME_5G_WDS3,  0x2);	/* CPU:0, VPE:1 (PCIe0) */
 #endif
 		if (is_ap_mode) {
 			rps_queue_set(IFNAME_MAC, 0x3);	/* CPU:0, VPE:0+1 */
 			xps_queue_set(IFNAME_MAC, 0x3);	/* CPU:0, VPE:0+1 */
 		} else {
-			rps_queue_set(IFNAME_LAN, 0x1);	/* CPU:0, VPE:0 */
-			xps_queue_set(IFNAME_LAN, 0x1);	/* CPU:0, VPE:0 */
-			rps_queue_set(IFNAME_WAN, 0x2);	/* CPU:0, VPE:1 */
-			xps_queue_set(IFNAME_WAN, 0x2);	/* CPU:0, VPE:1 */
+			rps_queue_set(IFNAME_LAN, 0x1);	/* CPU:0, VPE:0 (GMAC) */
+			xps_queue_set(IFNAME_LAN, 0x1);	/* CPU:0, VPE:0 (GMAC) */
+			rps_queue_set(IFNAME_WAN, 0x1);	/* CPU:0, VPE:0 (GMAC) */
+			xps_queue_set(IFNAME_WAN, 0x1);	/* CPU:0, VPE:0 (GMAC) */
 #if defined (USE_SINGLE_MAC)
-			rps_queue_set(IFNAME_MAC, 0x3);	/* CPU:0, VPE:0+1 */
-			xps_queue_set(IFNAME_MAC, 0x3);	/* CPU:0, VPE:0+1 */
+			rps_queue_set(IFNAME_MAC, 0x1);	/* CPU:0, VPE:0 (GMAC) */
+			xps_queue_set(IFNAME_MAC, 0x1);	/* CPU:0, VPE:0 (GMAC) */
 #endif
 		}
 	}
@@ -740,6 +807,9 @@ set_vpn_balancing(const char *vpn_ifname)
 	if (ncpu == 4) {
 		rps_queue_set(vpn_ifname, 0x8);	/* CPU:1, VPE:1 */
 		xps_queue_set(vpn_ifname, 0x8);	/* CPU:1, VPE:1 */
+	} else if (ncpu == 2) {
+		rps_queue_set(vpn_ifname, 0x2);	/* CPU:0, VPE:1 */
+		xps_queue_set(vpn_ifname, 0x2);	/* CPU:0, VPE:1 */
 	}
 }
 #else
@@ -821,13 +891,13 @@ void
 kill_services(char* svc_name[], int wtimeout, int forcekill)
 {
 	int i, k, i_waited, i_killed;
-	
+
 	if (wtimeout < 1)
 		wtimeout = 1;
-	
+
 	for (i=0;svc_name[i] && *svc_name[i];i++)
 		doSystem("killall %s %s", "-q", svc_name[i]);
-	
+
 	for (k=0;k<wtimeout;k++) {
 		i_waited = 0;
 		for (i=0;svc_name[i] && *svc_name[i];i++) {
@@ -842,7 +912,7 @@ kill_services(char* svc_name[], int wtimeout, int forcekill)
 		
 		sleep(1);
 	}
-	
+
 	if (forcekill) {
 		i_killed = 0;
 		for (i=0;svc_name[i] && *svc_name[i];i++) {
@@ -947,12 +1017,9 @@ rename_if_dir_exist(const char *dir, const char *subdir)
 	if (!dir || !subdir)
 		return 0;
 
-	if ((dirp = opendir(dir)))
-	{
-		while (dirp && (direntp = readdir(dirp)))
-		{
-			if (!strcasecmp(direntp->d_name, subdir) && strcmp(direntp->d_name, subdir))
-			{
+	if ((dirp = opendir(dir))) {
+		while (dirp && (direntp = readdir(dirp))) {
+			if (!strcasecmp(direntp->d_name, subdir) && strcmp(direntp->d_name, subdir)) {
 				sprintf(oldpath, "%s/%s", dir, direntp->d_name);
 				sprintf(newpath, "%s/%s", dir, subdir);
 				rename(oldpath, newpath);
@@ -976,12 +1043,9 @@ if_dircase_exist(const char *dir, const char *subdir)
 	if (!dir || !subdir)
 		return NULL;
 
-	if ((dirp = opendir(dir)))
-	{
-		while (dirp && (direntp = readdir(dirp)))
-		{
-			if (!strcasecmp(direntp->d_name, subdir) && strcmp(direntp->d_name, subdir))
-			{
+	if ((dirp = opendir(dir))) {
+		while (dirp && (direntp = readdir(dirp))) {
+			if (!strcasecmp(direntp->d_name, subdir) && strcmp(direntp->d_name, subdir)) {
 				sprintf(oldpath, "%s/%s", dir, direntp->d_name);
 				return strdup(oldpath);
 			}
@@ -999,7 +1063,16 @@ file_size(const char *filepath)
 
 	if (!stat(filepath, &stat_buf) && S_ISREG(stat_buf.st_mode))
 		return ((unsigned long) stat_buf.st_size);
-	else
-		return 0;
+
+	return 0;
 }
 
+// 1: add, 0: remove.
+int
+get_hotplug_action(const char *action)
+{
+	if (!strcmp(action, "remove"))
+		return 0;
+
+	return 1;
+}

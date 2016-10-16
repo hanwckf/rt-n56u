@@ -19,7 +19,10 @@ var tabs_desc = [
 	[ 14, "ESW_P1",    "Ethernet port: LAN1" ],
 	[ 15, "ESW_P2",    "Ethernet port: LAN2" ],
 	[ 16, "ESW_P3",    "Ethernet port: LAN3" ],
-	[ 17, "ESW_P4",    "Ethernet port: LAN4" ]
+	[ 17, "ESW_P4",    "Ethernet port: LAN4" ],
+	[ 18, "ESW_P5",    "Ethernet port: LAN5" ],
+	[ 19, "ESW_P6",    "Ethernet port: LAN6" ],
+	[ 20, "ESW_P7",    "Ethernet port: LAN7" ]
 ];
 
 Highcharts.locale = {

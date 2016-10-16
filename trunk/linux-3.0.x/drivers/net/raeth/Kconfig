@@ -101,7 +101,7 @@ choice
 
 	config  GE1_RGMII_NONE
 		bool "NONE (Not used)"
-		depends on (RALINK_MT7621)
+		depends on (RALINK_RT3883 || RALINK_MT7621)
 
 	config  GE1_MAC_ESW
 		bool "Integrated ESW"
@@ -118,7 +118,7 @@ choice
 	default P5_RGMII_TO_MAC_MODE
 
 	config P5_MAC_TO_PHY_MODE
-		bool "Giga_Phy (RGMII)"
+		bool "Giga_Phy (RGMII + AN)"
 
 	config P5_RGMII_TO_MAC_MODE
 		bool "Giga_SW/iNIC (RGMII)"
@@ -240,6 +240,16 @@ config  MAC_TO_GIGAPHY_MODE_ADDR2
 	default 0x4 if (P4_MAC_TO_MT7530_GPHY_P4)
 	depends on RAETH && (P4_MAC_TO_MT7530_GPHY_P0 || P4_MAC_TO_MT7530_GPHY_P4)
 
+config  RAETH_BOTH_GMAC
+	bool
+	default y if (RAETH_GMAC2 && !GE1_RGMII_NONE)
+	depends on RAETH && RAETH_GMAC2
+
+config  RAETH_SWAP_GDMA
+	bool "Swap GDMA1<->GDMA2 ports"
+	depends on RAETH && RAETH_GMAC2
+	default n
+
 config  RAETH_ESW
 	bool "Ralink Embedded Switch"
 	depends on RAETH && GE1_MAC_ESW && !MT7530_GSW
@@ -259,8 +269,26 @@ config  RAETH_SPECIAL_TAG
 
 config  RAETH_ESW_CONTROL
 	bool "Embedded (or MT7530) Switch Control Module (VLAN/Isolation/Status)"
-	depends on RAETH && (RAETH_ESW || MT7530_GSW) && (RALINK_MT7620 || RALINK_MT7621)
+	depends on RAETH && (RAETH_ESW || MT7530_GSW)
 	default y
+
+choice
+	prompt "IGMP/MLD snooping support"
+	depends on RAETH_ESW_CONTROL
+	default RAETH_ESW_IGMP_SNOOP_HW
+
+	config RAETH_ESW_IGMP_SNOOP_OFF
+	bool "Disable IGMP/MLD snooping"
+
+	config RAETH_ESW_IGMP_SNOOP_SW
+	bool "Software mode IGMP/MLD snooping"
+	depends on BRIDGE_IGMP_SNOOPING
+	select BRIDGE_IGMP_EVENT_HOOK
+
+	config RAETH_ESW_IGMP_SNOOP_HW
+	bool "Hardware mode IGMP/MLD snooping"
+	depends on !(RALINK_RT3052 || RALINK_RT3352 || RALINK_RT5350 || RALINK_MT7628)
+endchoice
 
 config  RAETH_ESW_PORT_WAN
 	int "ESW WAN Port ID (0..5)"
@@ -277,25 +305,32 @@ config  RAETH_ESW_PORT_LAN1
 	  please choose port ID from range 0..5
 
 config  RAETH_ESW_PORT_LAN2
-	int "ESW LAN2 Port ID (0..4)"
+	int "ESW LAN2 Port ID (0..5)"
 	depends on RAETH_ESW_CONTROL
 	default 2
 	help
-	  please choose port ID from range 0..4
+	  please choose port ID from range 0..5
 
 config  RAETH_ESW_PORT_LAN3
-	int "ESW LAN3 Port ID (0..4)"
+	int "ESW LAN3 Port ID (0..5)"
 	depends on RAETH_ESW_CONTROL
 	default 1
 	help
-	  please choose port ID from range 0..4
+	  please choose port ID from range 0..5
 
 config  RAETH_ESW_PORT_LAN4
-	int "ESW LAN4 Port ID (0..4)"
+	int "ESW LAN4 Port ID (0..5)"
 	depends on RAETH_ESW_CONTROL
 	default 0
 	help
-	  please choose port ID from range 0..4
+	  please choose port ID from range 0..5
+
+config  RAETH_ESW_PORT_LAN5
+	int "ESW LAN5 Port ID (0..5), -1 is disabled"
+	depends on RAETH_ESW_CONTROL && (GE2_RGMII_AN || P5_MAC_TO_PHY_MODE)
+	default -1
+	help
+	  please choose port ID from range 0..5
 
 config  RAETH_DHCP_TOUCH
 	bool "Send SIGUSR1/2 to udhcpc at media state changed"
@@ -322,28 +357,15 @@ config  RAETH_DEBUG
 	depends on RAETH
 	default n
 
-
-#force 100M
+#force 100M (obsolete, used only in wireless driver)
 config RAETH_ROUTER
 bool
 default y if (GE1_MII_FORCE_100 || GE2_MII_FORCE_100 || GE1_RVMII_FORCE_100 || GE2_RVMII_FORCE_100)
 depends on RAETH
 
-#force 1000M
+#force 1000M (obsolete, used only in wireless driver)
 config MAC_TO_MAC_MODE
 bool
 default y if (GE1_RGMII_FORCE_1000 || GE2_RGMII_FORCE_1000)
 depends on RAETH && (RALINK_RT3883)
-
-#AN
-config GIGAPHY
-bool
-default y if (GE1_RGMII_AN || GE2_RGMII_AN)
-depends on RAETH
-
-#AN
-config 100PHY
-bool
-default y if (GE1_MII_AN || GE2_MII_AN)
-depends on RAETH
 

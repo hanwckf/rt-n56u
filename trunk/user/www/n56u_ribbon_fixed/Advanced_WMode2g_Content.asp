@@ -115,7 +115,7 @@ function change_wireless_bridge(){
 	}
 
 	if (is_apc){
-		if (m == "3")
+		if (!support_2g_inic_mii())
 			is_apc_auto = 1;
 		if (!get_ap_mode() && !support_2g_inic_mii())
 			is_apc_wisp = 1;

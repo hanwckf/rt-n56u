@@ -4,7 +4,7 @@
  *******************************************************************/
 
 #ifndef DROPBEAR_VERSION
-#define DROPBEAR_VERSION "2015.71"
+#define DROPBEAR_VERSION "2016.73"
 #endif
 
 #define LOCAL_IDENT "SSH-2.0-dropbear_" DROPBEAR_VERSION
@@ -113,19 +113,24 @@
 #define RSA_BLINDING
 
 /* hashes which will be linked and registered */
-#if defined(DROPBEAR_SHA2_256_HMAC) || defined(DROPBEAR_ECC_256) || defined(DROPBEAR_CURVE25519)
+#if defined(DROPBEAR_SHA2_256_HMAC) || defined(DROPBEAR_ECC_256) || defined(DROPBEAR_CURVE25519) || DROPBEAR_DH_GROUP14
 #define DROPBEAR_SHA256
 #endif
 #if defined(DROPBEAR_ECC_384)
 #define DROPBEAR_SHA384
 #endif
 /* LTC SHA384 depends on SHA512 */
-#if defined(DROPBEAR_SHA2_512_HMAC) || defined(DROPBEAR_ECC_521) || defined(DROPBEAR_ECC_384)
+#if defined(DROPBEAR_SHA2_512_HMAC) || defined(DROPBEAR_ECC_521) || defined(DROPBEAR_ECC_384) || DROPBEAR_DH_GROUP16
 #define DROPBEAR_SHA512
 #endif
 #if defined(DROPBEAR_MD5_HMAC)
 #define DROPBEAR_MD5
 #endif
+
+/* These are disabled in Dropbear 2016.73 by default since the spec 
+   draft-ietf-curdle-ssh-kex-sha2-02 is under development. */
+#define DROPBEAR_DH_GROUP14_256 0
+#define DROPBEAR_DH_GROUP16 0
 
 /* roughly 2x 521 bits */
 #define MAX_ECC_SIZE 140

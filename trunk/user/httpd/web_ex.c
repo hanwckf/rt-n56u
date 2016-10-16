@@ -681,21 +681,11 @@ ej_dump(int eid, webs_t wp, int argc, char **argv)
 
 #if BOARD_HAS_5G_RADIO
 	if (strcmp(file, "wlan11b.log")==0)
-		return (ej_wl_status_5g(eid, wp, 0, NULL));
+		return ej_wl_status_5g(eid, wp, 0, NULL);
 	else
 #endif
 	if (strcmp(file, "wlan11b_2g.log")==0)
-		return (ej_wl_status_2g(eid, wp, 0, NULL));
-	else if (strcmp(file, "eth_wan.log")==0)
-		return ej_eth_status_wan(eid, wp, 0, NULL);
-	else if (strcmp(file, "eth_lan1.log")==0)
-		return ej_eth_status_lan1(eid, wp, 0, NULL);
-	else if (strcmp(file, "eth_lan2.log")==0)
-		return ej_eth_status_lan2(eid, wp, 0, NULL);
-	else if (strcmp(file, "eth_lan3.log")==0)
-		return ej_eth_status_lan3(eid, wp, 0, NULL);
-	else if (strcmp(file, "eth_lan4.log")==0)
-		return ej_eth_status_lan4(eid, wp, 0, NULL);
+		return ej_wl_status_2g(eid, wp, 0, NULL);
 	else if (strcmp(file, "leases.log")==0)
 		return (ej_lan_leases(eid, wp, 0, NULL));
 	else if (strcmp(file, "vpns_list.log")==0)
@@ -719,6 +709,8 @@ ej_dump(int eid, webs_t wp, int argc, char **argv)
 		snprintf(filename, sizeof(filename), "%s/%s", STORAGE_DNSMASQ_DIR, file+8);
 	else if (strncmp(file, "scripts.", 8)==0)
 		snprintf(filename, sizeof(filename), "%s/%s", STORAGE_SCRIPTS_DIR, file+8);
+	else if (strncmp(file, "crontab.", 8)==0)
+		snprintf(filename, sizeof(filename), "%s/%s", STORAGE_CRONTAB_DIR, nvram_safe_get("http_username"));
 	else
 		snprintf(filename, sizeof(filename), "%s/%s", "/tmp", file);
 
@@ -872,7 +864,7 @@ validate_asp_apply(webs_t wp, int sid)
 	struct variable *v;
 	char *value;
 	char name[64];
-	char buff[100];
+	char buff[160];
 
 	/* Validate and set variables in table order */
 	for (v = GetVariables(sid); v->name != NULL; ++v) {
@@ -898,6 +890,9 @@ validate_asp_apply(webs_t wp, int sid)
 					restart_needed_bits |= event_mask;
 			} else if (!strncmp(v->name, "scripts.", 8)) {
 				if (write_textarea_to_file(value, STORAGE_SCRIPTS_DIR, file_name))
+					restart_needed_bits |= event_mask;
+			} else if (!strncmp(v->name, "crontab.", 8)) {
+				if (write_textarea_to_file(value, STORAGE_CRONTAB_DIR, nvram_safe_get("http_username")))
 					restart_needed_bits |= event_mask;
 			}
 #if defined (SUPPORT_HTTPS)
@@ -925,6 +920,13 @@ validate_asp_apply(webs_t wp, int sid)
 		if (!strcmp(v->name, "http_username") || !strcmp(v->name, "http_passwd")) {
 			if (strlen(value) == 0)
 				continue;
+		}
+		
+		if (!strcmp(v->name, "http_username")) {
+			size_t buf_div = sizeof(buff)/2;
+			snprintf(buff, buf_div, "%s/%s", STORAGE_CRONTAB_DIR, nvram_safe_get(v->name));
+			snprintf(buff+buf_div, buf_div, "%s/%s", STORAGE_CRONTAB_DIR, value);
+			rename(buff, buff+buf_div);
 		}
 		
 		nvram_set(v->name, value);
@@ -970,7 +972,17 @@ validate_asp_apply(webs_t wp, int sid)
 				
 				wl_modified |= WIFI_IWPRIV_CHANGE_BIT;
 			}
-#if 0
+#if defined (USE_WID_5G) && (USE_WID_5G==7612)
+			else if (!strcmp(v->name, "wl_VgaClamp"))
+			{
+				const char *wifn = find_wlan_if_up(1);
+				if (wifn)
+					set_wifi_param_int(wifn, "VgaClamp", value, 0, 4);
+				
+				wl_modified |= WIFI_IWPRIV_CHANGE_BIT;
+			}
+#endif
+#if defined (USE_IGMP_SNOOP)
 			else if (!strcmp(v->name, "wl_IgmpSnEnable"))
 			{
 				set_wifi_param_int(IFNAME_5G_MAIN, "IgmpSnEnable", value, 0, 1);
@@ -1033,7 +1045,7 @@ validate_asp_apply(webs_t wp, int sid)
 				
 				rt_modified |= WIFI_IWPRIV_CHANGE_BIT;
 			}
-#if (BOARD_NUM_UPHY_USB3 > 0)
+#if defined (USE_WID_2G) && (USE_WID_2G==7602 || USE_WID_2G==7612)
 			else if (!strcmp(v->name, "rt_VgaClamp"))
 			{
 				const char *wifn = find_wlan_if_up(0);
@@ -1043,7 +1055,7 @@ validate_asp_apply(webs_t wp, int sid)
 				rt_modified |= WIFI_IWPRIV_CHANGE_BIT;
 			}
 #endif
-#if defined(USE_RT3352_MII)
+#if defined (USE_IGMP_SNOOP) || defined(USE_RT3352_MII)
 			else if (!strcmp(v->name, "rt_IgmpSnEnable"))
 			{
 				set_wifi_param_int(IFNAME_2G_MAIN, "IgmpSnEnable", value, 0, 1);
@@ -1499,7 +1511,7 @@ wanlink_hook(int eid, webs_t wp, int argc, char **argv)
 		wan_ifname = nvram_safe_get(strcat_r(prefix, "ifname_t", tmp));
 		man_ifname = get_man_ifname(unit);
 		
-#if (BOARD_NUM_USB_PORTS > 0)
+#if defined(USE_USB_SUPPORT)
 		if (get_usb_modem_wan(0)) {
 			if (nvram_get_int("modem_prio") == 2)
 				need_eth_link |= 1;
@@ -1606,7 +1618,13 @@ wanlink_hook(int eid, webs_t wp, int argc, char **argv)
 			} else {
 				wan_ifstate = get_if_state(man_ifname, addr4_wan);
 				
-				if (wan_ifstate > 0 && wisp) {
+				if (wan_ifstate > 0 && (wisp ||
+#if !defined (USE_SINGLE_MAC)
+								strcmp(man_ifname, IFNAME_MAC2) == 0 ||
+#endif
+								nvram_get_int("hw_nat_mode") == 2
+							)
+				    ) {
 					wan_bytes_rx = get_ifstats_bytes_rx(man_ifname);
 					wan_bytes_tx = get_ifstats_bytes_tx(man_ifname);
 				}
@@ -1649,7 +1667,11 @@ wanlink_hook(int eid, webs_t wp, int argc, char **argv)
 			wan_uptime = 0;
 			if (ppp_mode) {
 				if (ppp_mode == 2) {
-					char *l2tpd = (nvram_match("wan_l2tpd", "0")) ? "xl2tpd" : "l2tpd";
+					char *l2tpd = "xl2tpd";
+#if defined (APP_RPL2TP)
+					if (nvram_match("wan_l2tpd", "1"))
+						l2tpd = "l2tpd";
+#endif
 					status_code = (pids(l2tpd)) ? INET_STATE_PPP_WAIT : INET_STATE_PPP_INACTIVE;
 				} else
 					status_code = (pids("pppd")) ? INET_STATE_PPP_WAIT : INET_STATE_PPP_INACTIVE;
@@ -1796,23 +1818,35 @@ wanlink_hook(int eid, webs_t wp, int argc, char **argv)
 static int
 lanlink_hook(int eid, webs_t wp, int argc, char **argv)
 {
-	char etherlink0[40] = {0};
-	char etherlink1[40] = {0};
-	char etherlink2[40] = {0};
-	char etherlink3[40] = {0};
-	char etherlink4[40] = {0};
+	int i;
+	char nvram_param[20], port_status[40] = {0};
 
-	fill_eth_port_status(0, etherlink0);
-	fill_eth_port_status(1, etherlink1);
-	fill_eth_port_status(2, etherlink2);
-	fill_eth_port_status(3, etherlink3);
-	fill_eth_port_status(4, etherlink4);
+	websWrite(wp, "function ether_link_mode(idx){\n");
+	websWrite(wp, " if(idx==%d) return %d;\n", 0, nvram_get_int("ether_link_wan"));
+	for (i = 0; i < BOARD_NUM_ETH_EPHY-1; i++) {
+		snprintf(nvram_param, sizeof(nvram_param), "ether_link_lan%d", i+1);
+		websWrite(wp, " if(idx==%d) return %d;\n", i+1, nvram_get_int(nvram_param));
+	}
+	websWrite(wp, " return %d;\n", 0);
+	websWrite(wp, "}\n\n");
 
-	websWrite(wp, "function lanlink_etherlink_wan()  { return '%s';}\n", etherlink0);
-	websWrite(wp, "function lanlink_etherlink_lan1() { return '%s';}\n", etherlink1);
-	websWrite(wp, "function lanlink_etherlink_lan2() { return '%s';}\n", etherlink2);
-	websWrite(wp, "function lanlink_etherlink_lan3() { return '%s';}\n", etherlink3);
-	websWrite(wp, "function lanlink_etherlink_lan4() { return '%s';}\n", etherlink4);
+	websWrite(wp, "function ether_flow_mode(idx){\n");
+	websWrite(wp, " if(idx==%d) return %d;\n", 0, nvram_get_int("ether_flow_wan"));
+	for (i = 0; i < BOARD_NUM_ETH_EPHY-1; i++) {
+		snprintf(nvram_param, sizeof(nvram_param), "ether_flow_lan%d", i+1);
+		websWrite(wp, " if(idx==%d) return %d;\n", i+1, nvram_get_int(nvram_param));
+	}
+	websWrite(wp, " return %d;\n", 0);
+	websWrite(wp, "}\n\n");
+
+	websWrite(wp, "function ether_link_status(idx){\n");
+	for (i = 0; i < BOARD_NUM_ETH_EPHY; i++) {
+		port_status[0] = '\0';
+		fill_eth_port_status(i, port_status);
+		websWrite(wp, " if(idx==%d) return '%s';\n", i, port_status);
+	}
+	websWrite(wp, " return '%s';\n", "No link");
+	websWrite(wp, "}\n");
 
 	return 0;
 }
@@ -1842,7 +1876,7 @@ wan_action_hook(int eid, webs_t wp, int argc, char **argv)
 	else if (!strcmp(wan_action, "WispReassoc")) {
 		notify_rc("manual_wisp_reassoc");
 	}
-#if (BOARD_NUM_USB_PORTS > 0)
+#if defined(USE_USB_SUPPORT)
 	else if (!strcmp(wan_action, "ModemPrio")) {
 		int modem_prio = atoi(websGetVar(wp, "modem_prio", ""));
 		if (modem_prio >= 0 && modem_prio < 3 && nvram_get_int("modem_prio") != modem_prio) {
@@ -2006,6 +2040,11 @@ ej_firmware_caps_hook(int eid, webs_t wp, int argc, char **argv)
 #else
 	int found_app_ftpd = 0;
 #endif
+#if defined(APP_RPL2TP)
+	int found_app_l2tp = 1;
+#else
+	int found_app_l2tp = 0;
+#endif
 #if defined(SRV_U2EC)
 	int found_srv_u2ec = 1;
 #else
@@ -2062,62 +2101,74 @@ ej_firmware_caps_hook(int eid, webs_t wp, int argc, char **argv)
 #else
 	int has_mtd_rwfs = 0;
 #endif
-#if (BOARD_NUM_USB_PORTS > 0)
+#if defined (USE_USB_SUPPORT)
 	int has_usb = 1;
-#else
-	int has_usb = 0;
-#endif
 #if (BOARD_NUM_UPHY_USB3 > 0)
 	int has_usb3 = 1;
 #else
 	int has_usb3 = 0;
 #endif
-#if defined(SUPPORT_PEAP_SSL)
+#else
+	int has_usb = 0;
+	int has_usb3 = 0;
+#endif
+#if defined (USE_STORAGE)
+	int has_stor = 1;
+#else
+	int has_stor = 0;
+#endif
+#if defined (SUPPORT_PEAP_SSL)
 	int has_peap_ssl = 1;
 #else
 	int has_peap_ssl = 0;
 #endif
-#if defined(SUPPORT_HTTPS)
+#if defined (SUPPORT_HTTPS)
 	int has_http_ssl = 1;
 #else
 	int has_http_ssl = 0;
 #endif
-#if defined(SUPPORT_DDNS_SSL)
+#if defined (SUPPORT_DDNS_SSL)
 	int has_ddns_ssl = 1;
 #else
 	int has_ddns_ssl = 0;
 #endif
-#if defined(USE_RT3352_MII)
+#if defined (USE_RT3352_MII)
 	int has_inic_mii = 1;
 #else
 	int has_inic_mii = 0;
 #endif
-#if defined(USE_RTL8367)
+#if defined (USE_RTL8367)
 	int has_switch_type = 0; // Realtek RTL8367
-#elif defined(USE_MTK_ESW)
-	int has_switch_type = 1; // Mediatek MT7620 Embedded ESW
-#elif defined(USE_MTK_GSW)
-	int has_switch_type = 2; // Mediatek MT7621 Internal GSW (or MT7530)
+#elif defined (USE_MTK_GSW)
+	int has_switch_type = 5; // MT7621/MT7623 Internal GSW (or External MT7530)
+#elif defined (USE_MTK_ESW)
+#if defined (CONFIG_RALINK_MT7620)
+	int has_switch_type = 12; // MT7620 Embedded ESW
+#elif defined (CONFIG_RALINK_MT7628)
+	int has_switch_type = 11; // MT7628 Embedded ESW
+#else
+	int has_switch_type = 10; // RT3052/RT3352/RT5350 Embedded ESW
 #endif
-#if defined(BOARD_GPIO_BTN_ROUTER) || defined(BOARD_GPIO_BTN_AP)
+#endif
+#if defined (BOARD_GPIO_BTN_ROUTER) || defined (BOARD_GPIO_BTN_AP)
 	int has_btn_mode = 1;
 #else
 	int has_btn_mode = 0;
 #endif
-#if defined(USE_WID_2G) && (USE_WID_2G==7602 || USE_WID_2G==7612)
-	int has_2g_ldpc = 1;
-#else
-	int has_2g_ldpc = 0;
-#endif
-#if defined(USE_WID_5G) && (USE_WID_5G==7612)
-	int has_5g_ldpc = 1;
-#else
-	int has_5g_ldpc = 0;
-#endif
-#if defined(USE_WID_5G) && (USE_WID_5G==7610 || USE_WID_5G==7612) && BOARD_HAS_5G_11AC
+#if defined (USE_WID_5G) && (USE_WID_5G==7610 || USE_WID_5G==7612) && BOARD_HAS_5G_11AC
 	int has_5g_vht = 1;
 #else
 	int has_5g_vht = 0;
+#endif
+#if defined (USE_WID_2G)
+	int wid_2g = USE_WID_2G;
+#else
+	int wid_2g = 0;
+#endif
+#if defined (USE_WID_5G)
+	int wid_5g = USE_WID_5G;
+#else
+	int wid_5g = 0;
 #endif
 
 	websWrite(wp,
@@ -2131,6 +2182,7 @@ ej_firmware_caps_hook(int eid, webs_t wp, int argc, char **argv)
 		"function found_app_smbd() { return %d;}\n"
 		"function found_app_nmbd() { return %d;}\n"
 		"function found_app_ftpd() { return %d;}\n"
+		"function found_app_l2tp() { return %d;}\n"
 		"function found_srv_u2ec() { return %d;}\n"
 		"function found_srv_lprd() { return %d;}\n"
 		"function found_app_sshd() { return %d;}\n"
@@ -2145,6 +2197,7 @@ ej_firmware_caps_hook(int eid, webs_t wp, int argc, char **argv)
 		found_app_smbd,
 		found_app_nmbd,
 		found_app_ftpd,
+		found_app_l2tp,
 		found_srv_u2ec,
 		found_srv_lprd,
 		found_app_sshd,
@@ -2165,14 +2218,16 @@ ej_firmware_caps_hook(int eid, webs_t wp, int argc, char **argv)
 		"function support_usb() { return %d;}\n"
 		"function support_usb3() { return %d;}\n"
 		"function support_num_usb() { return %d;}\n"
+		"function support_storage() { return %d;}\n"
 		"function support_switch_type() { return %d;}\n"
 		"function support_num_ephy() { return %d;}\n"
 		"function support_ephy_w1000() { return %d;}\n"
+		"function support_ephy_l1000() { return %d;}\n"
 		"function support_2g_inic_mii() { return %d;}\n"
 		"function support_5g_radio() { return %d;}\n"
 		"function support_5g_11ac() { return %d;}\n"
-		"function support_5g_ldpc() { return %d;}\n"
-		"function support_2g_ldpc() { return %d;}\n"
+		"function support_5g_wid() { return %d;}\n"
+		"function support_2g_wid() { return %d;}\n"
 		"function support_5g_stream_tx() { return %d;}\n"
 		"function support_5g_stream_rx() { return %d;}\n"
 		"function support_2g_stream_tx() { return %d;}\n"
@@ -2190,14 +2245,16 @@ ej_firmware_caps_hook(int eid, webs_t wp, int argc, char **argv)
 		has_usb,
 		has_usb3,
 		BOARD_NUM_USB_PORTS,
+		has_stor,
 		has_switch_type,
 		BOARD_NUM_ETH_EPHY,
 		BOARD_HAS_EPHY_W1000,
+		BOARD_HAS_EPHY_L1000,
 		has_inic_mii,
 		BOARD_HAS_5G_RADIO,
 		has_5g_vht,
-		has_5g_ldpc,
-		has_2g_ldpc,
+		wid_5g,
+		wid_2g,
 		BOARD_NUM_ANT_5G_TX,
 		BOARD_NUM_ANT_5G_RX,
 		BOARD_NUM_ANT_2G_TX,
@@ -2240,7 +2297,7 @@ ej_hardware_pins_hook(int eid, webs_t wp, int argc, char **argv)
 #else
 	int has_led_lan = 0;
 #endif
-#if defined (BOARD_GPIO_LED_USB) && (BOARD_NUM_USB_PORTS > 0)
+#if defined (BOARD_GPIO_LED_USB) && defined (USE_USB_SUPPORT)
 	int has_led_usb = 1;
 #else
 	int has_led_usb = 0;
@@ -2759,6 +2816,20 @@ static int ej_dump_syslog_hook(int eid, webs_t wp, int argc, char **argv)
 	fflush(wp);
 
 	return 0;
+}
+
+static int ej_dump_eth_mib_hook(int eid, webs_t wp, int argc, char **argv)
+{
+	int eth_port_id = 0;
+	const char *port_id = get_cgi("port_id");
+
+	if (port_id)
+		eth_port_id = atoi(port_id);
+
+	if (eth_port_id < 0)
+		eth_port_id = 0;
+
+	return fill_eth_status(eth_port_id, wp);
 }
 
 #define MAX_DICT_LANGS (15)
@@ -3437,11 +3508,17 @@ struct mime_handler mime_handlers[] = {
 	/* cached css  */
 	{ "**.css", "text/css", NULL, NULL, do_file, 0 }, // 2012.06 Eagle23
 
+#if defined(APP_ARIA)
+	/* cached font */
+	{ "**.woff", "application/font-woff", NULL, NULL, do_file, 0 }, // 2016.01 Volt1
+#endif
+
 	/* cached images */
 	{ "**.png", "image/png", NULL, NULL, do_file, 0 }, // 2012.06 Eagle23
 	{ "**.gif", "image/gif", NULL, NULL, do_file, 0 }, // 2012.06 Eagle23
 	{ "**.jpg", "image/jpeg", NULL, NULL, do_file, 0 }, // 2012.06 Eagle23
 	{ "**.ico", "image/x-icon", NULL, NULL, do_file, 0 }, // 2013.04 Eagle23
+	{ "**.svg", "image/svg+xml", NULL, NULL, do_file, 0 }, // 2016.04 Volt1
 
 	/* no-cached html/asp files with translations */
 	{ "**.htm*", "text/html", no_cache_IE, do_html_apply_post, do_ej, 1 },
@@ -3623,57 +3700,38 @@ ej_backup_nvram(int eid, webs_t wp, int argc, char **argv)
 	return 0;
 }
 
-#if (!BOARD_NUM_USB_PORTS)
+#if !defined (USE_USB_SUPPORT)
 static int
 ej_get_usb_ports_info(int eid, webs_t wp, int argc, char **argv)
 {
-	/* usb ports num */
-	websWrite(wp, "function get_usb_ports_num(){\n");
-	websWrite(wp, "    return %u;\n", 0);
-	websWrite(wp, "}\n\n");
+	websWrite(wp, "function get_usb_ports_num(){return %u;}\n", 0);
+	websWrite(wp, "function get_device_type_usb(port_num){return \"unknown\";}\n");
+	websWrite(wp, "function printer_ports(){return [];}\n");
+	websWrite(wp, "function modem_ports(){return [];}\n");
+	websWrite(wp, "function modem_devnum(){return [];}\n");
+	return 0;
+}
+#endif
 
-	/* usb device types */
-	websWrite(wp, "function get_device_type_usb(port_num){\n");
-	websWrite(wp, "    return \"%s\";\n", "unknown");
-	websWrite(wp, "}\n\n");
-
-	/* printers */
-	websWrite(wp, "function printer_ports() {\n");
-	websWrite(wp, "    return [");
-	websWrite(wp, "];\n}\n\n");
-
-	websWrite(wp, "function printer_manufacts() {\n");
-	websWrite(wp, "    return [");
-	websWrite(wp, "];\n}\n\n");
-
-	websWrite(wp, "function printer_models() {\n");
-	websWrite(wp, "    return [");
-	websWrite(wp, "];\n}\n\n");
-
-	/* modems */
-	websWrite(wp, "function modem_ports() {\n");
-	websWrite(wp, "    return [");
-	websWrite(wp, "];\n}\n\n");
-
-	websWrite(wp, "function modem_devnum() {\n");
-	websWrite(wp, "    return [");
-	websWrite(wp, "];\n}\n\n");
-
-	websWrite(wp, "function modem_types() {\n");
-	websWrite(wp, "    return [");
-	websWrite(wp, "];\n}\n\n");
-
-	websWrite(wp, "function modem_manufacts() {\n");
-	websWrite(wp, "    return [");
-	websWrite(wp, "];\n}\n\n");
-
-	websWrite(wp, "function modem_models() {\n");
-	websWrite(wp, "    return [");
-	websWrite(wp, "];\n}\n\n");
-
+static int
+ej_get_ext_ports_info(int eid, webs_t wp, int argc, char **argv)
+{
+#if defined (USE_ATA_SUPPORT)
+	int i_ata_support = 1;
+#else
+	int i_ata_support = 0;
+#endif
+#if defined (USE_MMC_SUPPORT)
+	int i_mmc_support = 1;
+#else
+	int i_mmc_support = 0;
+#endif
+	websWrite(wp, "function get_ata_support(){return %d;}\n", i_ata_support);
+	websWrite(wp, "function get_mmc_support(){return %d;}\n", i_mmc_support);
 	return 0;
 }
 
+#if !defined (USE_STORAGE)
 static int
 ej_disk_pool_mapping_info(int eid, webs_t wp, int argc, char **argv)
 {
@@ -3737,11 +3795,13 @@ struct ej_handler ej_handlers[] =
 	{ "hardware_pins", ej_hardware_pins_hook},
 	{ "detect_internet", ej_detect_internet_hook},
 	{ "dump_syslog", ej_dump_syslog_hook},
+	{ "dump_eth_mib", ej_dump_eth_mib_hook},
 	{ "get_usb_ports_info", ej_get_usb_ports_info},
+	{ "get_ext_ports_info", ej_get_ext_ports_info},
 	{ "disk_pool_mapping_info", ej_disk_pool_mapping_info},
 	{ "available_disk_names_and_sizes", ej_available_disk_names_and_sizes},
-#if (BOARD_NUM_USB_PORTS > 0)
-	{ "get_usb_share_list", ej_get_usb_share_list},
+#if defined (USE_STORAGE)
+	{ "get_usb_share_list", ej_get_storage_share_list},
 	{ "get_AiDisk_status", ej_get_AiDisk_status},
 	{ "set_AiDisk_status", ej_set_AiDisk_status},
 	{ "get_all_accounts", ej_get_all_accounts},

@@ -58,6 +58,10 @@ my $usage="Usage: Configure [no-<cipher> ...] [enable-<cipher> ...] [experimenta
 #		library and will be loaded in run-time by the OpenSSL library.
 # sctp          include SCTP support
 # 386           generate 80386 code
+# enable-weak-ssl-ciphers
+#		Enable EXPORT and LOW SSLv3 ciphers that are disabled by
+#		default.  Note, weak SSLv2 ciphers are unconditionally
+#		disabled.
 # no-sse2	disables IA-32 SSE2 code, above option implies no-sse2
 # no-<cipher>   build without specified algorithm (rsa, idea, rc5, ...)
 # -<xxx> +<xxx> compiler options are passed through 
@@ -104,6 +108,9 @@ my $usage="Usage: Configure [no-<cipher> ...] [enable-<cipher> ...] [experimenta
 # past these. 
 
 my $gcc_devteam_warn = "-Wall -pedantic -DPEDANTIC -Wno-long-long -Wsign-compare -Wmissing-prototypes -Wshadow -Wformat -Werror -DCRYPTO_MDEBUG_ALL -DCRYPTO_MDEBUG_ABORT -DREF_CHECK -DOPENSSL_NO_DEPRECATED";
+
+# Warn that "make depend" should be run?
+my $warn_make_depend = 0;
 
 my $clang_devteam_warn = "-Wno-unused-parameter -Wno-missing-field-initializers -Wno-language-extension-token -Wno-extended-offsetof -Qunused-arguments";
 
@@ -723,10 +730,12 @@ my %disabled = ( # "what"         => "comment" [or special keyword "experimental
 		 "md2"            => "default",
 		 "rc5"            => "default",
 		 "rfc3779"	  => "default",
-		 "sctp"       => "default",
+		 "sctp"           => "default",
 		 "shared"         => "default",
+		 "ssl2"           => "default",
 		 "store"	  => "experimental",
 		 "unit-test"	  => "default",
+		 "weak-ssl-ciphers" => "default",
 		 "zlib"           => "default",
 		 "zlib-dynamic"   => "default"
 	       );
@@ -734,7 +743,7 @@ my @experimental = ();
 
 # This is what $depflags will look like with the above defaults
 # (we need this to see if we should advise the user to run "make depend"):
-my $default_depflags = " -DOPENSSL_NO_EC_NISTP_64_GCC_128 -DOPENSSL_NO_GMP -DOPENSSL_NO_JPAKE -DOPENSSL_NO_MD2 -DOPENSSL_NO_RC5 -DOPENSSL_NO_RFC3779 -DOPENSSL_NO_SCTP -DOPENSSL_NO_STORE -DOPENSSL_NO_UNIT_TEST";
+my $default_depflags = " -DOPENSSL_NO_EC_NISTP_64_GCC_128 -DOPENSSL_NO_GMP -DOPENSSL_NO_JPAKE -DOPENSSL_NO_MD2 -DOPENSSL_NO_RC5 -DOPENSSL_NO_RFC3779 -DOPENSSL_NO_SCTP -DOPENSSL_NO_SSL2 -DOPENSSL_NO_STORE -DOPENSSL_NO_UNIT_TEST -DOPENSSL_NO_WEAK_SSL_CIPHERS";
 
 # Explicit "no-..." options will be collected in %disabled along with the defaults.
 # To remove something from %disabled, use "enable-foo" (unless it's experimental).
@@ -1448,7 +1457,7 @@ if ($target =~ /\-icc$/)	# Intel C compiler
 # linker only when --prefix is not /usr.
 if ($target =~ /^BSD\-/)
 	{
-	$shared_ldflag.=" -Wl,-rpath,\$(LIBRPATH)" if ($prefix !~ m|^/usr[/]*$|);
+	$shared_ldflag.=" -Wl,-rpath,\$\$(LIBRPATH)" if ($prefix !~ m|^/usr[/]*$|);
 	}
 
 if ($sys_id ne "")
@@ -1955,14 +1964,8 @@ EOF
 	    &dofile("apps/CA.pl",'/usr/local/bin/perl','^#!/', '#!%s');
 	}
 	if ($depflags ne $default_depflags && !$make_depend) {
-		print <<EOF;
-
-Since you've disabled or enabled at least one algorithm, you need to do
-the following before building:
-
-	make depend
-EOF
-	}
+            $warn_make_depend++;
+        }
 }
 
 # create the ms/version32.rc file if needed
@@ -2041,12 +2044,18 @@ EOF
 
 print <<\EOF if ($no_shared_warn);
 
-You gave the option 'shared'.  Normally, that would give you shared libraries.
-Unfortunately, the OpenSSL configuration doesn't include shared library support
-for this platform yet, so it will pretend you gave the option 'no-shared'.  If
-you can inform the developpers (openssl-dev\@openssl.org) how to support shared
-libraries on this platform, they will at least look at it and try their best
-(but please first make sure you have tried with a current version of OpenSSL).
+You gave the option 'shared', which is not supported on this platform, so
+we will pretend you gave the option 'no-shared'.  If you know how to implement
+shared libraries, please let us know (but please first make sure you have
+tried with a current version of OpenSSL).
+EOF
+
+print <<EOF if ($warn_make_depend);
+
+*** Because of configuration changes, you MUST do the following before
+*** building:
+
+	make depend
 EOF
 
 exit(0);

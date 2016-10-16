@@ -51,8 +51,7 @@ vsf_secbuf_alloc(char** p_ptr, unsigned int size)
    */
   *((unsigned int*)p_mmap) = round_up;
   p_no_access_page = p_mmap;
-  /* fix issue with MIPS SCACHE on MT7621 (and no sense to hide value of mapped block size) */
-  vsf_sysutil_memprotect(p_no_access_page, page_size, kVSFSysUtilMapProtReadOnly);
+  vsf_sysutil_memprotect(p_no_access_page, page_size, kVSFSysUtilMapProtNone);
 
   p_mmap += page_size;
   if (page_offset)

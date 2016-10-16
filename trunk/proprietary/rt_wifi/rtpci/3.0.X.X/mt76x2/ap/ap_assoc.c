@@ -918,6 +918,10 @@ VOID ap_cmm_peer_assoc_req_action(
     /* since sta has been left, ap should receive EapolStart and EapRspId again. */
 	pEntry->Receive_EapolStart_EapRspId = 0;
 	pEntry->bWscCapable = ie_list->bWscCapable;
+#ifdef SMART_MESH_HIDDEN_WPS
+    if(pMbss->SmartMeshCfg.bSupportHiddenWPS && pEntry->bRunningHiddenWPS)
+        pEntry->bWscCapable = TRUE;
+#endif /* SMART_MESH_HIDDEN_WPS */
 #ifdef WSC_V2_SUPPORT
 	if ((wsc_ctrl->WscV2Info.bEnableWpsV2) &&
 		(wsc_ctrl->WscV2Info.bWpsEnable == FALSE))
@@ -1107,6 +1111,26 @@ SendAssocResponse:
 		bAssocNoRsp = TRUE;
 	}
 
+#ifdef SMART_MESH
+	if((pMbss->SmartMeshCfg.bHiFiPeerFilter == TRUE) && 
+		(pEntry && (pEntry->bHyperFiPeer == FALSE)))
+	{
+		bAssocNoRsp = TRUE;
+		DBGPRINT(RT_DEBUG_ERROR, ("Reject this ASSOC_REQ due to not desired Hyper-Fi peer(%02X:%02X:%02X:%02X:%02X:%02X).\n",PRINT_MAC(pEntry->Addr)));
+	}
+#ifdef WSC_AP_SUPPORT
+	if ((bAssocNoRsp == FALSE) &&
+		(wsc_ctrl->WscConfMode != WSC_DISABLE) &&
+		(wsc_ctrl->bWscTrigger == TRUE) &&
+		((wsc_ctrl->WscMode == 2) && (wsc_ctrl->bWscPBCAddrMode == TRUE)) &&
+		(pEntry && pEntry->bWscCapable && !MAC_ADDR_EQUAL(wsc_ctrl->WscPBCAddr,pEntry->Addr)))
+	{
+		bAssocNoRsp = TRUE;
+		DBGPRINT(RT_DEBUG_TRACE, ("Reject this ASSOC_REQ due not desired PBC MAC target.\n"));
+	}
+#endif /* WSC_AP_SUPPORT */
+#endif /* SMART_MESH */
+
 	if (bACLReject == TRUE || bAssocSkip || bAssocNoRsp)
 	{
 		if (!bAssocNoRsp)
@@ -1124,7 +1148,6 @@ SendAssocResponse:
 			              SupRateLen, pAd->CommonCfg.SupRate,
 			              END_OF_ARGS);
 			MiniportMMRequest(pAd, 0, pOutBuffer, FrameLen);
-			MlmeFreeMemory(pAd, (PVOID) pOutBuffer);
 		}
 
 		RTMPSendWirelessEvent(pAd, IW_MAC_FILTER_LIST_EVENT_FLAG, ie_list->Addr2, pEntry->apidx, 0);
@@ -1141,7 +1164,8 @@ SendAssocResponse:
 			if (pEntry)
 				MacTableDeleteEntry(pAd, pEntry->wcid, pEntry->Addr);
 		}
-
+        
+        MlmeFreeMemory(pAd, (PVOID) pOutBuffer);
 		goto LabelOK;
 	}
 
@@ -1573,6 +1597,10 @@ SendAssocResponse:
 
 		if (bNeedAppendExtIE == TRUE)
 		{
+#ifdef RT_BIG_ENDIAN
+		*((UINT32*)(pInfo)) = SWAP32(*((UINT32*)(pInfo)));
+		*((UINT32*)(pInfo+4)) = SWAP32(*((UINT32*)(pInfo+4)))
+#endif		
 			MakeOutgoingFrame(pOutBuffer+FrameLen, &TmpLen,
 							1,			&ExtCapIe,
 							1,			&extInfoLen,
@@ -1607,6 +1635,12 @@ SendAssocResponse:
 	FrameLen += TmpLen;
 
 }
+#ifdef SMART_MESH
+	SMART_MESH_INSERT_IE(pAd->ApCfg.MBSSID[pEntry->apidx].SmartMeshCfg,
+						pOutBuffer,
+						FrameLen,
+						SM_IE_ASSOC_RSP);
+#endif /* SMART_MESH */	
   
 	/* add Mediatek-specific IE here */
 	{
@@ -1629,7 +1663,14 @@ SendAssocResponse:
 	{
 		UCHAR *pWscBuf = NULL, WscIeLen = 0;
 		ULONG WscTmpLen = 0;
+		BOOLEAN bHasWscIe = TRUE;
 
+#ifdef SMART_MESH_HIDDEN_WPS
+		if(pAd->ApCfg.MBSSID[pEntry->apidx].SmartMeshCfg.bSupportHiddenWPS)
+		    bHasWscIe = FALSE;    
+#endif /* SMART_MESH_HIDDEN_WPS */
+        if(bHasWscIe)
+        {
 		os_alloc_mem(NULL, (UCHAR **)&pWscBuf, 512);
 		if(pWscBuf)
 		{
@@ -1638,10 +1679,10 @@ SendAssocResponse:
 			MakeOutgoingFrame(pOutBuffer + FrameLen, &WscTmpLen,
 								  WscIeLen, pWscBuf,
 								  END_OF_ARGS);
-
 			FrameLen += WscTmpLen;
 			os_free_mem(NULL, pWscBuf);
 		}
+	}
 	}
 #endif /* WSC_AP_SUPPORT */
   
@@ -1697,9 +1738,53 @@ SendAssocResponse:
 
 		ap_assoc_info_debugshow(pAd, isReassoc, pEntry, ie_list);
 
+#ifdef MWDS
+		if((pEntry->PortSecured == WPA_802_1X_PORT_SECURED))
+		{
+			MWDSProxyEntryDelete(pAd,pEntry->Addr);
+#ifdef WSC_AP_SUPPORT
+			BOOLEAN bWPSRunning = FALSE;
+			if (((pAd->ApCfg.MBSSID[pEntry->apidx].WscControl.WscConfMode != WSC_DISABLE) &&
+				(pAd->ApCfg.MBSSID[pEntry->apidx].WscControl.bWscTrigger == TRUE)))
+				bWPSRunning = TRUE;
+#ifdef SMART_MESH_HIDDEN_WPS
+             if (pAd->ApCfg.MBSSID[pEntry->apidx].SmartMeshCfg.bSupportHiddenWPS && pEntry->bRunningHiddenWPS)
+                bWPSRunning = TRUE;
+#endif /* SMART_MESH_HIDDEN_WPS */
+#endif /* WSC_AP_SUPPORT */
+
+			if(
+                pEntry->bEnableMWDS
+#ifdef WSC_AP_SUPPORT
+				&& !bWPSRunning
+#endif /* WSC_AP_SUPPORT */
+              )
+			{
+				SET_MWDS_OPMODE_AP(pEntry);
+				MWDSConnEntryUpdate(pAd,pEntry->wcid);
+				DBGPRINT(RT_DEBUG_ERROR, ("SET_MWDS_OPMODE_AP OK!\n"));
+			}
+			else
+				SET_MWDS_OPMODE_NONE(pEntry);
+		}
+#endif /* MWDS */
+
 		/* send wireless event - for association */
 		RTMPSendWirelessEvent(pAd, IW_ASSOC_EVENT_FLAG, pEntry->Addr, 0, 0);
     	
+#ifdef SMART_MESH_MONITOR
+		if (pEntry->PortSecured == WPA_802_1X_PORT_SECURED)
+		{
+			struct nsmpif_drvevnt_buf drvevnt;
+			drvevnt.data.join.type = NSMPIF_DRVEVNT_STA_JOIN;
+			drvevnt.data.join.channel = pAd->CommonCfg.Channel;
+			NdisCopyMemory(drvevnt.data.join.sta_mac, pEntry->Addr, MAC_ADDR_LEN);
+			drvevnt.data.join.aid= pEntry->Aid;
+			RtmpOSWrielessEventSend(pAd->net_dev, RT_WLAN_EVENT_CUSTOM,NSMPIF_DRVEVNT_STA_JOIN,
+									NULL, (PUCHAR)&drvevnt.data.join, sizeof(drvevnt.data.join));
+		}
+#endif /* SMART_MESH_MONITOR */
+
 		/* This is a reassociation procedure */
 		pEntry->IsReassocSta = isReassoc;
 		
@@ -1981,6 +2066,7 @@ VOID APPeerReassocReqAction(RTMP_ADAPTER *pAd, MLME_QUEUE_ELEM *Elem)
  */
 VOID APPeerDisassocReqAction(RTMP_ADAPTER *pAd, MLME_QUEUE_ELEM *Elem)
 {
+	UCHAR Addr1[MAC_ADDR_LEN];
 	UCHAR Addr2[MAC_ADDR_LEN];
 	USHORT Reason;
 	UINT16 SeqNum;		
@@ -1988,7 +2074,7 @@ VOID APPeerDisassocReqAction(RTMP_ADAPTER *pAd, MLME_QUEUE_ELEM *Elem)
 	struct wifi_dev *wdev;
 
 	DBGPRINT(RT_DEBUG_TRACE, ("ASSOC - 1 receive DIS-ASSOC request \n"));
-	if (! PeerDisassocReqSanity(pAd, Elem->Msg, Elem->MsgLen, Addr2, &SeqNum, &Reason))
+	if (! PeerDisassocReqSanity(pAd, Elem->Msg, Elem->MsgLen, Addr1, Addr2, &SeqNum, &Reason))
 		return;
 
 	DBGPRINT(RT_DEBUG_TRACE, ("ASSOC - receive DIS-ASSOC(seq-%d) request from %02x:%02x:%02x:%02x:%02x:%02x, reason=%d\n", 
@@ -2001,8 +2087,19 @@ VOID APPeerDisassocReqAction(RTMP_ADAPTER *pAd, MLME_QUEUE_ELEM *Elem)
 	if (Elem->Wcid < MAX_LEN_OF_MAC_TABLE)
     {
 
-#ifdef DOT1X_SUPPORT
 		wdev = &pAd->ApCfg.MBSSID[pEntry->apidx].wdev;
+		/*
+			iPhone sometimes sends disassoc frame which DA is old AP and BSSID is new AP.
+			@2016/1/26
+		*/
+		if (!MAC_ADDR_EQUAL(wdev->if_addr, Addr1)) {
+			DBGPRINT(RT_DEBUG_TRACE, 
+			("ASSOC - The DA of this DIS-ASSOC request is %02x:%02x:%02x:%02x:%02x:%02x, ignore.\n", 
+				PRINT_MAC(Addr1)));
+			return;
+		}
+		
+#ifdef DOT1X_SUPPORT
 		/* Notify 802.1x daemon to clear this sta info */
 		if (pEntry->AuthMode == Ndis802_11AuthModeWPA || 
 			pEntry->AuthMode == Ndis802_11AuthModeWPA2 ||
@@ -2027,10 +2124,10 @@ VOID APPeerDisassocReqAction(RTMP_ADAPTER *pAd, MLME_QUEUE_ELEM *Elem)
 #ifdef MAC_REPEATER_SUPPORT
 		if (pAd->ApCfg.bMACRepeaterEn == TRUE)
 		{
-			UCHAR apCliIdx, CliIdx;
+			UCHAR apCliIdx, CliIdx, isLinkValid;
 			REPEATER_CLIENT_ENTRY *pReptEntry = NULL;
 
-			pReptEntry = RTMPLookupRepeaterCliEntry(pAd, TRUE, Addr2);
+			pReptEntry = RTMPLookupRepeaterCliEntry(pAd, TRUE, Addr2, TRUE, &isLinkValid);
 			if (pReptEntry && (pReptEntry->CliConnectState != 0))
 			{
 				apCliIdx = pReptEntry->MatchApCliIdx;
@@ -2044,6 +2141,16 @@ VOID APPeerDisassocReqAction(RTMP_ADAPTER *pAd, MLME_QUEUE_ELEM *Elem)
 			}
 		}
 #endif /* MAC_REPEATER_SUPPORT */
+#ifdef SMART_MESH_MONITOR
+        {
+            struct nsmpif_drvevnt_buf drvevnt;
+            drvevnt.data.leave.type = NSMPIF_DRVEVNT_STA_LEAVE;
+            drvevnt.data.leave.channel = pAd->CommonCfg.Channel;
+            NdisCopyMemory(drvevnt.data.leave.sta_mac, Addr2, MAC_ADDR_LEN);
+            RtmpOSWrielessEventSend(pAd->net_dev, RT_WLAN_EVENT_CUSTOM,NSMPIF_DRVEVNT_STA_LEAVE,
+                                    NULL, (PUCHAR)&drvevnt.data.leave, sizeof(drvevnt.data.leave));
+        }
+#endif /* SMART_MESH_MONITOR */
     }
 }
 
@@ -2144,7 +2251,6 @@ VOID APMlmeKickOutAllSta(RTMP_ADAPTER *pAd, UCHAR apidx, USHORT Reason)
     NDIS_STATUS     NStatus;
     UCHAR           BROADCAST_ADDR[MAC_ADDR_LEN] = {0xff, 0xff, 0xff, 0xff, 0xff, 0xff};
     PPMF_CFG        pPmfCfg = NULL;
-    INT             i;
 
     pPmfCfg = &pAd->ApCfg.MBSSID[apidx].PmfCfg;
     if ((apidx < pAd->ApCfg.BssidNum) && (pPmfCfg))

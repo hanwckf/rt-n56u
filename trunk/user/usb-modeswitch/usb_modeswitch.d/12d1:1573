@@ -1,2 +1,2 @@
-# Huawei ME909u-521
-Configuration=1
+# Huawei ME909u-521 (MBIM, handled by kernel, dummy config)
+Configuration=0

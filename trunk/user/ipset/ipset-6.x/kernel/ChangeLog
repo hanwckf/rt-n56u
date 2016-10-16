@@ -1,3 +1,14 @@
+6.29
+  - Fix race condition in ipset save, swap and delete (Vishwanath Pai)
+
+6.28
+  - Check IPSET_ATTR_ETHER netlink attribute length
+  - Fix __aligned_u64 compatibility support for older kernel releases
+  - Add compatibility to support EXPORT_SYMBOL_GPL in module.h
+  - Fix set:list type crash when flush/dump set in parallel
+  - pass down netns pointer to call() and call_rcu() (backport)
+  - allow a 0 netmask with hash_netiface type (Florian Westphal)
+
 6.27
   - Fix reported memory size for hash:* types
   - Fix hash type expire: release empty hash bucket block

@@ -22,10 +22,10 @@
 
 # Instead of unsetting XZ_OPT, just make sure that xz will use file format
 # autodetection. This way memory usage limit and thread limit can be
-# specified via XZ_OPT. With gzip and bzip2 it's OK to just unset the
+# specified via XZ_OPT. With gzip, bzip2, and lzop it's OK to just unset the
 # environment variables.
 xz='@xz@ --format=auto'
-unset GZIP BZIP BZIP2
+unset GZIP BZIP BZIP2 LZOP
 
 case ${0##*/} in
   *egrep*) prog=xzegrep; grep=${GREP:-egrep};;
@@ -106,10 +106,12 @@ while test $# -ne 0; do
     with_filename=1
     continue;;
   (-l | --files-with-*)
-    files_with_matches=1;;
+    files_with_matches=1
+    continue;;
   (-L | --files-witho*)
-    files_without_matches=1;;
-  (--no-f*)
+    files_without_matches=1
+    continue;;
+  (-h | --no-f*)
     no_filename=1;;
   (-V | --v | --ve | --ver | --vers | --versi | --versio | --version)
     echo "$version" || exit 2
@@ -147,12 +149,15 @@ if test $# -eq 0; then
 fi
 
 exec 3>&1
-res=0
+
+# res=1 means that no file matched yet
+res=1
 
 for i; do
   case $i in
     *[-.][zZ] | *_z | *[-.]gz | *.t[ag]z) uncompress="gzip -cdfq";;
     *[-.]bz2 | *[-.]tbz | *.tbz2) uncompress="bzip2 -cdfq";;
+    *[-.]lzo | *[-.]tzo) uncompress="lzop -cdfq";;
     *) uncompress="$xz -cdfq";;
   esac
   # Fail if xz or grep (or sed) fails.
@@ -194,8 +199,17 @@ for i; do
     fi >&3 5>&-
   )
   r=$?
+
+  # fail occured previously, nothing worse can happen
+  test $res -gt 1 && continue
+
   test "$xz_status" -eq 0 || test "$xz_status" -eq 2 \
       || test "$(kill -l "$xz_status" 2> /dev/null)" = "PIPE" || r=2
-  test $res -lt $r && res=$r
+
+  # still no match
+  test $r -eq 1 && continue
+
+  # 0 == match, >=2 == fail
+  res=$r
 done
 exit $res

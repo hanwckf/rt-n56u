@@ -55,12 +55,6 @@ static inline void r4k_on_each_cpu(void (*func) (void *info), void *info)
 	preempt_enable();
 }
 
-#if defined(CONFIG_MIPS_CMP)
-#define cpu_has_safe_index_cacheops 0
-#else
-#define cpu_has_safe_index_cacheops 1
-#endif
-
 /*
  * Must die.
  */
@@ -399,7 +393,14 @@ static inline void local_r4k_flush_cache_range(void * args)
 	if (!(has_valid_asid(vma->vm_mm)))
 		return;
 
-	r4k_blast_dcache();
+	/*
+	 * If dcache can alias, we must blast it since mapping is changing.
+	 * If executable, we must ensure any dirty lines are written back far
+	 * enough to be visible to icache.
+	 */
+	if (cpu_has_dc_aliases || (exec && !cpu_has_ic_fills_f_dc))
+		r4k_blast_dcache();
+	/* If executable, blast stale lines from icache */
 	if (exec)
 		r4k_blast_icache();
 }
@@ -409,7 +410,7 @@ static void r4k_flush_cache_range(struct vm_area_struct *vma,
 {
 	int exec = vma->vm_flags & VM_EXEC;
 
-	if (cpu_has_dc_aliases || (exec && !cpu_has_ic_fills_f_dc))
+	if (cpu_has_dc_aliases || exec)
 		r4k_on_each_cpu(local_r4k_flush_cache_range, vma);
 }
 
@@ -612,7 +613,7 @@ static void r4k_dma_cache_wback_inv(unsigned long addr, unsigned long size)
 	 * subset property so we have to flush the primary caches
 	 * explicitly
 	 */
-	if (cpu_has_safe_index_cacheops && size >= dcache_size) {
+	if (size >= dcache_size) {
 		r4k_blast_dcache();
 	} else {
 		R4600_HIT_CACHEOP_WAR_IMPL;
@@ -644,7 +645,7 @@ static void r4k_dma_cache_inv(unsigned long addr, unsigned long size)
 		return;
 	}
 
-	if (cpu_has_safe_index_cacheops && size >= dcache_size) {
+	if (size >= dcache_size) {
 		r4k_blast_dcache();
 	} else {
 		R4600_HIT_CACHEOP_WAR_IMPL;
@@ -722,7 +723,7 @@ static inline void local_r4k_flush_kernel_vmap_range(void *args)
 	 * Aliases only affect the primary caches so don't bother with
 	 * S-caches or T-caches.
 	 */
-	if (cpu_has_safe_index_cacheops && size >= dcache_size)
+	if (size >= dcache_size)
 		r4k_blast_dcache();
 	else {
 		R4600_HIT_CACHEOP_WAR_IMPL;
@@ -1405,7 +1406,7 @@ void __cpuinit r4k_cache_init(void)
 	 * This code supports virtually indexed processors and will be
 	 * unnecessarily inefficient on physically indexed processors.
 	 */
-	if (c->dcache.linesz)
+	if (c->dcache.linesz && cpu_has_dc_aliases)
 		shm_align_mask = max_t( unsigned long,
 					c->dcache.sets * c->dcache.linesz - 1,
 					PAGE_SIZE - 1);

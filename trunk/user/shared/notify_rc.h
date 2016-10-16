@@ -20,7 +20,7 @@
 
 #define RCN_RESTART_FIREWALL		"restart_firewall"
 #define RCN_RESTART_DHCPD		"restart_dhcpd"
-#define RCN_RESTART_RADVD		"restart_radvd"
+#define RCN_RESTART_RADV		"restart_radv"
 #define RCN_RESTART_DDNS		"restart_ddns"
 #define RCN_RESTART_UPNP		"restart_upnp"
 #define RCN_RESTART_TIME		"restart_time"
@@ -43,6 +43,7 @@
 #define RCN_RESTART_WINS		"restart_wins"
 #define RCN_RESTART_LLTD		"restart_lltd"
 #define RCN_RESTART_ADSC		"restart_adsc"
+#define RCN_RESTART_CROND		"restart_crond"
 #define RCN_RESTART_IPTV		"restart_iptv"
 #define RCN_RESTART_SYSCTL		"restart_sysctl"
 #define RCN_RESTART_TWEAKS		"restart_tweaks"

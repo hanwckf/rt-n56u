@@ -194,13 +194,13 @@ static void base64_encode_fp(FILE * fp, unsigned char *data,
 		int datalen, int cpl)
 {
 	unsigned char out[100];
-    int n;
+	int n;
 	unsigned long outlen;
 	int rawcpl;
 	rawcpl = cpl * 3 / 4;
 	dropbear_assert((unsigned int)cpl < sizeof(out));
 
-    while (datalen > 0) {
+	while (datalen > 0) {
 		n = (datalen < rawcpl ? datalen : rawcpl);
 		outlen = sizeof(out);
 		base64_encode(data, n, out, &outlen);
@@ -208,7 +208,7 @@ static void base64_encode_fp(FILE * fp, unsigned char *data,
 		datalen -= n;
 		fwrite(out, 1, outlen, fp);
 		fputc('\n', fp);
-    }
+	}
 }
 /*
  * Read an ASN.1/BER identifier and length pair.
@@ -1056,7 +1056,7 @@ static int openssh_write(const char *filename, sign_key *key,
 		dropbear_assert(k_size <= curve_size);
 		buf_incrwritepos(seq_buf,
 			ber_write_id_len(buf_getwriteptr(seq_buf, 10), 4, k_size, 0));
-	    mp_to_unsigned_bin((*eck)->k, buf_getwriteptr(seq_buf, k_size));
+		mp_to_unsigned_bin((*eck)->k, buf_getwriteptr(seq_buf, k_size));
 		buf_incrwritepos(seq_buf, k_size);
 
 		/* SECGCurveNames */

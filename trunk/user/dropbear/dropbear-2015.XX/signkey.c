@@ -29,7 +29,7 @@
 #include "ssh.h"
 #include "ecdsa.h"
 
-static const char *signkey_names[DROPBEAR_SIGNKEY_NUM_NAMED] = {
+static const char * const signkey_names[DROPBEAR_SIGNKEY_NUM_NAMED] = {
 #ifdef DROPBEAR_RSA
 	"ssh-rsa",
 #endif
@@ -93,7 +93,7 @@ enum signkey_type signkey_type_from_name(const char* name, unsigned int namelen)
 			}
 #endif
 
-			return i;
+			return (enum signkey_type)i;
 		}
 	}
 
@@ -317,15 +317,15 @@ void buf_put_priv_key(buffer* buf, sign_key *key, enum signkey_type type) {
 #ifdef DROPBEAR_DSS
 	if (type == DROPBEAR_SIGNKEY_DSS) {
 		buf_put_dss_priv_key(buf, key->dsskey);
-	TRACE(("leave buf_put_priv_key: dss done"))
-	return;
+		TRACE(("leave buf_put_priv_key: dss done"))
+		return;
 	}
 #endif
 #ifdef DROPBEAR_RSA
 	if (type == DROPBEAR_SIGNKEY_RSA) {
 		buf_put_rsa_priv_key(buf, key->rsakey);
-	TRACE(("leave buf_put_priv_key: rsa done"))
-	return;
+		TRACE(("leave buf_put_priv_key: rsa done"))
+		return;
 	}
 #endif
 #ifdef DROPBEAR_ECDSA

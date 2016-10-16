@@ -23,6 +23,17 @@ else
 	rm -f $(THISDIR)/$(SRC_NAME)/extensions/libxt_set.*
 	rm -f $(THISDIR)/$(SRC_NAME)/extensions/libxt_SET.*
 endif
+ifeq ($(CONFIG_FIRMWARE_INCLUDE_XFRM),y)
+	cp -f $(THISDIR)/$(SRC_NAME)/extensions/disabled/libxt_policy.* $(THISDIR)/$(SRC_NAME)/extensions
+	cp -f $(THISDIR)/$(SRC_NAME)/extensions/disabled/libipt_ah.* $(THISDIR)/$(SRC_NAME)/extensions
+	cp -f $(THISDIR)/$(SRC_NAME)/extensions/disabled/libip6t_ah.* $(THISDIR)/$(SRC_NAME)/extensions
+	cp -f $(THISDIR)/$(SRC_NAME)/extensions/disabled/libxt_esp.* $(THISDIR)/$(SRC_NAME)/extensions
+else
+	rm -f $(THISDIR)/$(SRC_NAME)/extensions/libxt_policy.*
+	rm -f $(THISDIR)/$(SRC_NAME)/extensions/libipt_ah.*
+	rm -f $(THISDIR)/$(SRC_NAME)/extensions/libip6t_ah.*
+	rm -f $(THISDIR)/$(SRC_NAME)/extensions/libxt_esp.*
+endif
 ifeq ($(CONFIG_FIRMWARE_INCLUDE_QOS),y)
 	cp -f $(THISDIR)/$(SRC_NAME)/extensions/disabled/libxt_CLASSIFY.* $(THISDIR)/$(SRC_NAME)/extensions
 ifeq ($(CONFIG_FIRMWARE_INCLUDE_IMQ),y)
@@ -43,6 +54,11 @@ ifdef CONFIG_NETFILTER_XT_MATCH_PHYSDEV
 	cp -f $(THISDIR)/$(SRC_NAME)/extensions/disabled/libxt_physdev.* $(THISDIR)/$(SRC_NAME)/extensions
 else
 	rm -f $(THISDIR)/$(SRC_NAME)/extensions/libxt_physdev.*
+endif
+ifdef CONFIG_NETFILTER_XT_MATCH_STRING
+	cp -f $(THISDIR)/$(SRC_NAME)/extensions/disabled/libxt_string.* $(THISDIR)/$(SRC_NAME)/extensions
+else
+	rm -f $(THISDIR)/$(SRC_NAME)/extensions/libxt_string.*
 endif
 	( cd $(SRC_NAME) ; \
 	./configure \

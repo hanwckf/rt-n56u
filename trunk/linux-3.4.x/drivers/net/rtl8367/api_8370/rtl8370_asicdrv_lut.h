@@ -5,8 +5,9 @@
 
 #define RTL8370_LUT_AGETIMERMAX     7
 #define RTL8370_LUT_AGESPEEDMAX     3
-#define RTL8370_LUT_LEARNLIMITMAX   0x3FFF
+#define RTL8370_LUT_LEARNLIMITMAX   0x2040
 #define RTL8370_LUT_ADDRMAX         0x203F
+#define RTL8370_LUT_TABLE_SIZE      0x2000
 
 enum RTL8370_LRNOVERACT{
 
@@ -41,7 +42,7 @@ typedef struct LUTTABLE{
 	uint16 	fid:12;
 	uint16 	efid:3;
 	uint16 	ipmul:1;
-        uint16  valid:1;    
+	uint16 	valid:1;
 	uint16 	lookup_hit:1;
 	uint16 	address:14;
 	

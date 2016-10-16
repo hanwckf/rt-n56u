@@ -849,14 +849,20 @@ VOID GREKEYPeriodicExec(
 					(pEntry->WpaState == AS_PTKINITDONE) &&
 						(pEntry->apidx == apidx))
                 {
+#ifdef MWDS
+					if(IS_MWDS_OPMODE_AP(pEntry))
+						continue;
+#endif /* MWDS */
+				
 					pEntry->GTKState = REKEY_NEGOTIATING;
 						
 #ifdef DROP_MASK_SUPPORT
 					/* Disable Drop Mask */
-					set_drop_mask_per_client(pAd, pEntry, 0, 0);
+					drop_mask_set_per_client(pAd, pEntry, FALSE);
 #endif /* DROP_MASK_SUPPORT */
 
                 	WPAStart2WayGroupHS(pAd, pEntry);
+                	pEntry->ReTryCounter = GROUP_MSG1_RETRY_TIMER_CTR;
                     DBGPRINT(RT_DEBUG_TRACE, ("Rekey interval excess, Update Group Key for  %x %x %x  %x %x %x , DefaultKeyId= %x \n",\
 										PRINT_MAC(pEntry->Addr), wdev->DefaultKeyId));
 				}
@@ -1611,9 +1617,7 @@ VOID ApCliWpaDisassocApAndBlockAssoc(
 
 	RTMP_ADAPTER                *pAd = (PRTMP_ADAPTER)FunctionContext;
 	MLME_DISASSOC_REQ_STRUCT    DisassocReq;
-	
 	PAPCLI_STRUCT pApCliEntry;
-	PULONG pCurrState = &pAd->ApCfg.ApCliTab[0].CtrlCurrState;
 
 	pAd->ApCfg.ApCliTab[0].bBlockAssoc = TRUE;
 	DBGPRINT(RT_DEBUG_TRACE, ("(%s) disassociate with current AP after sending second continuous EAPOL frame.\n", __FUNCTION__));

@@ -9,8 +9,8 @@
  * ANY USE OF THE SOFTWARE OTHER THAN AS AUTHORIZED UNDER 
  * THIS LICENSE OR COPYRIGHT LAW IS PROHIBITED. 
  *
- * $Revision: 1.1.1.1 $
- * $Date: 2010/12/02 04:34:38 $
+ * $Revision: 15536 $
+ * $Date: 2011-01-21 17:31:17 +0800 (星期五, 21 一月 2011) $
  *
  * Purpose : RTL8370 switch high-level API for RTL8367B
  * Feature : 
@@ -342,7 +342,7 @@ ret_t rtl8370_setAsicRldpRandomSeed(ether_addr_t seed)
     for (i = 0; i < 3; i++)
     {
         regData = *accessPtr;
-        ret = rtl8370_setAsicReg(RTL8370_RLDP_SEED_NUM_REG_BASE + i, regData);
+        ret = rtl8370_setAsicReg(RTL8370_RLDP_SEED_NUM_REG_BASE - i, regData);
         if(RT_ERR_OK != ret)
             return ret;
 
@@ -374,7 +374,7 @@ ret_t rtl8370_getAsicRldpRandomSeed(ether_addr_t *seed)
 
     for(i = 0; i < 3; i++)
     {
-        ret = rtl8370_getAsicReg(RTL8370_RLDP_SEED_NUM_REG_BASE + i, &regData);
+        ret = rtl8370_getAsicReg(RTL8370_RLDP_SEED_NUM_REG_BASE - i, &regData);
         if(RT_ERR_OK != ret)
             return ret;
         
@@ -468,5 +468,22 @@ ret_t rtl8370_getAsicRldpLoopedPortPair(uint32 port, uint32 *loopedPair)
         return RT_ERR_PORT_ID;
 
     return rtl8370_getAsicRegBits(RTL8370_RLDP_LOOP_PORT_REG(port), RTL8370_RLDP_LOOP_PORT_MASK(port), loopedPair);
+}
+
+/*
+@func ret_t | rtl8370_setAsicRldp_mode | Set RLDP transmitting mode.
+@parm uint32 | mode | 1: Periodically send RLDP packet, 0: Send RLDP packet when SA moving is detected.
+@rvalue RT_ERR_OK | Success.
+@rvalue RT_ERR_INPUT | Invalid input parameter.
+@comm
+    This API Set RLDP transmitting mode. When set to RLDP_TRANSMIT_MODE_0, Asic will send RLDP packet 
+    when SA moving is detected. When set to RLDP_TRANSMIT_MODE_1, Asic will send RLDP packet periodically.
+*/
+ret_t rtl8370_setAsicRldp_mode(uint32 mode)
+{
+    if(mode > 2)
+        return RT_ERR_INPUT;
+
+    return rtl8370_setAsicRegBit(RTL8370_RRCP_CTRL0_REG, RTL8370_RRCP_RLDP_MODE_OFFSET, mode);
 }
 

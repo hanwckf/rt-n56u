@@ -1305,6 +1305,8 @@ typedef struct rtk_stat_port_cntr_s
     rtk_uint32 outOampduPkts;
     rtk_uint32 inOampduPkts;
     rtk_uint32 pktgenPkts;
+#if 0
+    /* reduce MIB counters, align to RTL8370 API */
     rtk_uint32 inMldChecksumError;
     rtk_uint32 inIgmpChecksumError;
     rtk_uint32 inMldSpecificQuery;
@@ -1330,6 +1332,7 @@ typedef struct rtk_stat_port_cntr_s
     rtk_uint32 inKnownMulticastPkts;
     rtk_uint32 ifInMulticastPkts;
     rtk_uint32 ifInBroadcastPkts;
+#endif
 }rtk_stat_port_cntr_t;
 #endif
 
@@ -1372,6 +1375,8 @@ typedef enum rtk_stat_port_type_e
     STAT_OutOampduPkts,
     STAT_InOampduPkts,
     STAT_PktgenPkts,
+#if 0
+    /* reduce MIB counters, align to RTL8370 API */
     STAT_InMldChecksumError,
     STAT_InIgmpChecksumError,
     STAT_InMldSpecificQuery,
@@ -1397,6 +1402,7 @@ typedef enum rtk_stat_port_type_e
     STAT_InKnownMulticastPkts,
     STAT_IfInMulticastPkts,
     STAT_IfInBroadcastPkts,
+#endif
     STAT_PORT_CNTR_END
 }rtk_stat_port_type_t;
 

@@ -126,7 +126,7 @@
 #if defined (USE_NAND_FLASH)
 			{"mtd_rwfs_mount", "", NULL, FALSE},
 #endif
-			{"http_username", "", NULL, EVM_BLOCK_UNSAFE},
+			{"http_username", "", NULL, EVM_RESTART_CROND|EVM_BLOCK_UNSAFE},
 			{"http_passwd", "", NULL, EVM_BLOCK_UNSAFE},
 			{"modem_rule", "", NULL, EVM_RESTART_MODEM},
 			{"modem_type", "", NULL, EVM_RESTART_MODEM},
@@ -185,6 +185,7 @@
 			{"help_enable", "", NULL, FALSE},
 			{"scripts.start_script.sh", "File", NULL, EVM_BLOCK_UNSAFE},
 			{"scripts.started_script.sh", "File", NULL, EVM_BLOCK_UNSAFE},
+			{"scripts.shutdown_script.sh", "File", NULL, EVM_BLOCK_UNSAFE},
 			{"scripts.post_wan_script.sh", "File", NULL, EVM_BLOCK_UNSAFE},
 			{"scripts.post_iptables_script.sh", "File", NULL, EVM_RESTART_FIREWALL|EVM_BLOCK_UNSAFE},
 			{"scripts.ez_buttons_script.sh", "File", NULL, EVM_BLOCK_UNSAFE},
@@ -211,6 +212,9 @@
 			{"enable_ftp", "", NULL, EVM_RESTART_FTPD},
 			{"st_ftp_mode", "", NULL, EVM_RESTART_FTPD},
 			{"st_ftp_log", "", NULL, EVM_RESTART_FTPD},
+			{"st_ftp_pmin", "", NULL, EVM_RESTART_FTPD},
+			{"st_ftp_pmax", "", NULL, EVM_RESTART_FTPD},
+			{"st_ftp_anmr", "", NULL, EVM_RESTART_FTPD},
 #endif
 			{"achk_enable", "", NULL, FALSE},
 			{"optw_enable", "", NULL, FALSE},
@@ -346,8 +350,8 @@
 			{"ip6_lan_auto", "", NULL, EVM_RESTART_IPV6},
 			{"ip6_lan_addr", "", NULL, EVM_RESTART_IPV6},
 			{"ip6_lan_size", "", NULL, EVM_RESTART_IPV6},
-			{"ip6_lan_radv", "", NULL, EVM_RESTART_RADVD},
-			{"ip6_lan_dhcp", "", NULL, EVM_RESTART_RADVD|EVM_RESTART_DHCPD},
+			{"ip6_lan_radv", "", NULL, EVM_RESTART_RADV},
+			{"ip6_lan_dhcp", "", NULL, EVM_RESTART_RADV|EVM_RESTART_DHCPD},
 			{"ip6_lan_sflt", "", NULL, EVM_RESTART_DHCPD},
 			{"ip6_lan_sfps", "", NULL, EVM_RESTART_DHCPD},
 			{"ip6_lan_sfpe", "", NULL, EVM_RESTART_DHCPD},
@@ -369,7 +373,9 @@
 			{"wan_pptp_mru", "", NULL, EVM_RESTART_WAN},
 			{"wan_l2tp_mtu", "", NULL, EVM_RESTART_WAN},
 			{"wan_l2tp_mru", "", NULL, EVM_RESTART_WAN},
+#if defined (APP_RPL2TP)
 			{"wan_l2tpd", "", NULL, EVM_RESTART_WAN},
+#endif
 			{"wan_ppp_peer", "", NULL, EVM_RESTART_WAN},
 			{"wan_ppp_auth", "", NULL, EVM_RESTART_WAN},
 			{"wan_ppp_mppe", "", NULL, EVM_RESTART_WAN},
@@ -502,6 +508,9 @@
 			{"wins_enable", "", NULL, EVM_RESTART_WINS|EVM_REAPPLY_VPNSVR},
 			{"lltd_enable", "", NULL, EVM_RESTART_LLTD},
 			{"adsc_enable", "", NULL, EVM_RESTART_ADSC},
+			{"crond_enable", "", NULL, EVM_RESTART_CROND},
+			{"crond_log", "", NULL, EVM_RESTART_CROND},
+			{"crontab.login", "File", NULL, EVM_RESTART_CROND|EVM_BLOCK_UNSAFE},
 			{"scripts.authorized_keys", "File", NULL, EVM_RESTART_SSHD|EVM_BLOCK_UNSAFE},
 			{"ether_igmp", "", NULL, EVM_RESTART_SWITCH_CFG},
 			{"ether_uport", "", NULL, EVM_RESTART_SWITCH_CFG},
@@ -510,16 +519,28 @@
 			{"ether_led1", "", NULL, EVM_RESTART_SWITCH_CFG},
 			{"ether_jumbo", "", NULL, EVM_RESTART_SWITCH_CFG},
 			{"ether_green", "", NULL, EVM_RESTART_SWITCH_CFG},
+			{"ether_eee", "", NULL, EVM_RESTART_SWITCH_CFG},
+
 			{"ether_link_wan",  "", NULL, EVM_RESTART_SWITCH_CFG},
-			{"ether_link_lan1", "", NULL, EVM_RESTART_SWITCH_CFG},
-			{"ether_link_lan2", "", NULL, EVM_RESTART_SWITCH_CFG},
-			{"ether_link_lan3", "", NULL, EVM_RESTART_SWITCH_CFG},
-			{"ether_link_lan4", "", NULL, EVM_RESTART_SWITCH_CFG},
 			{"ether_flow_wan",  "", NULL, EVM_RESTART_SWITCH_CFG},
+			{"ether_link_lan1", "", NULL, EVM_RESTART_SWITCH_CFG},
 			{"ether_flow_lan1", "", NULL, EVM_RESTART_SWITCH_CFG},
+			{"ether_link_lan2", "", NULL, EVM_RESTART_SWITCH_CFG},
 			{"ether_flow_lan2", "", NULL, EVM_RESTART_SWITCH_CFG},
+			{"ether_link_lan3", "", NULL, EVM_RESTART_SWITCH_CFG},
 			{"ether_flow_lan3", "", NULL, EVM_RESTART_SWITCH_CFG},
+			{"ether_link_lan4", "", NULL, EVM_RESTART_SWITCH_CFG},
 			{"ether_flow_lan4", "", NULL, EVM_RESTART_SWITCH_CFG},
+#if BOARD_NUM_ETH_EPHY > 5
+			{"ether_link_lan5", "", NULL, EVM_RESTART_SWITCH_CFG},
+			{"ether_flow_lan5", "", NULL, EVM_RESTART_SWITCH_CFG},
+#if BOARD_NUM_ETH_EPHY > 6
+			{"ether_link_lan6", "", NULL, EVM_RESTART_SWITCH_CFG},
+			{"ether_flow_lan6", "", NULL, EVM_RESTART_SWITCH_CFG},
+			{"ether_link_lan7", "", NULL, EVM_RESTART_SWITCH_CFG},
+			{"ether_flow_lan7", "", NULL, EVM_RESTART_SWITCH_CFG},
+#endif
+#endif
 			{"controlrate_unknown_unicast", "", NULL, EVM_RESTART_SWITCH_CFG},
 			{"controlrate_unknown_multicast", "", NULL, EVM_RESTART_SWITCH_CFG},
 			{"controlrate_multicast", "", NULL, EVM_RESTART_SWITCH_CFG},
@@ -582,7 +603,7 @@
 			{"ovpncli.ta.key", "File", NULL, EVM_RESTART_VPNCLI},
 #endif
 			{"scripts.vpns_client_script.sh", "File", NULL, FALSE},
-			{"scripts.vpnc_server_script.sh", "File", NULL, FALSE},
+			{"scripts.vpnc_server_script.sh", "File", NULL, EVM_RESTART_VPNCLI},
 			{"log_ipaddr", "", NULL, EVM_RESTART_SYSLOG},
 			{"log_port", "", NULL, EVM_RESTART_SYSLOG},
 			{"log_float_ui", "", NULL, FALSE},
@@ -599,6 +620,8 @@
 			{"ddns_hostname2_x", "", NULL, EVM_RESTART_DDNS},
 			{"ddns_hostname3_x", "", NULL, EVM_RESTART_DDNS},
 			{"ddns_wildcard_x", "", NULL, EVM_RESTART_DDNS},
+			{"ddns_cst_svr", "", NULL, EVM_RESTART_DDNS },
+			{"ddns_cst_url", "", NULL, EVM_RESTART_DDNS },
 			{"ddns_period", "", NULL, EVM_RESTART_DDNS },
 			{"ddns_forced", "", NULL, EVM_RESTART_DDNS },
 			{"ddns_verbose", "", NULL, EVM_RESTART_DDNS },
@@ -700,6 +723,9 @@
 			{"wl_HT_MpduDensity", "", NULL, EVM_RESTART_WIFI5},
 			{"wl_HT_BAWinSize", "", NULL, EVM_RESTART_WIFI5},
 			{"wl_HT_AutoBA", "", NULL, EVM_RESTART_WIFI5},
+#if defined(USE_MT76X2_AP)
+			{"wl_VgaClamp", "", NULL, EVM_RESTART_WIFI5},
+#endif
 			{"wl_country_code", "", NULL, EVM_RESTART_WIFI5},
 			{"wl_stream_tx", "", NULL, EVM_RESTART_WIFI5},
 			{"wl_stream_rx", "", NULL, EVM_RESTART_WIFI5},
@@ -781,7 +807,7 @@
 			{"rt_HT_MpduDensity", "", NULL, EVM_RESTART_WIFI2 },
 			{"rt_HT_BAWinSize", "", NULL, EVM_RESTART_WIFI2 },
 			{"rt_HT_AutoBA", "", NULL, EVM_RESTART_WIFI2},
-#if (BOARD_NUM_UPHY_USB3 > 0)
+#if defined(USE_MT76X2_AP)
 			{"rt_VgaClamp", "", NULL, EVM_RESTART_WIFI2},
 #endif
 			{"rt_country_code", "", NULL, EVM_RESTART_WIFI2},
@@ -840,14 +866,14 @@
 	};
 
 	struct evDesc events_desc[] = {
-		{EVM_RESTART_IPV6,		EVT_RESTART_IPV6,		RCN_RESTART_IPV6,	EVM_RESTART_DHCPD|EVM_RESTART_RADVD|EVM_RESTART_IPTV|EVM_RESTART_DI|EVM_RESTART_UPNP|EVM_RESTART_FIREWALL|EVM_RESTART_VPNCLI|EVM_RESTART_SWITCH_VLAN|EVM_RESTART_LAN|EVM_RESTART_WAN|EVM_RESTART_MODEM},
-		{EVM_RESTART_LAN,		EVT_RESTART_LAN,		RCN_RESTART_LAN,	EVM_RESTART_DHCPD|EVM_RESTART_RADVD|EVM_RESTART_IPTV|EVM_RESTART_DI|EVM_RESTART_UPNP|EVM_RESTART_FIREWALL|EVM_RESTART_VPNSVR},
-#if (BOARD_NUM_USB_PORTS > 0)
+		{EVM_RESTART_IPV6,		EVT_RESTART_IPV6,		RCN_RESTART_IPV6,	EVM_RESTART_DHCPD|EVM_RESTART_RADV|EVM_RESTART_IPTV|EVM_RESTART_DI|EVM_RESTART_UPNP|EVM_RESTART_FIREWALL|EVM_RESTART_VPNCLI|EVM_RESTART_SWITCH_VLAN|EVM_RESTART_LAN|EVM_RESTART_WAN|EVM_RESTART_MODEM},
+		{EVM_RESTART_LAN,		EVT_RESTART_LAN,		RCN_RESTART_LAN,	EVM_RESTART_DHCPD|EVM_RESTART_RADV|EVM_RESTART_IPTV|EVM_RESTART_DI|EVM_RESTART_UPNP|EVM_RESTART_FIREWALL|EVM_RESTART_VPNSVR},
+#if defined(USE_USB_SUPPORT)
 		{EVM_RESTART_MODEM,		EVT_RESTART_MODEM,		RCN_RESTART_MODEM,	EVM_RESTART_IPTV|EVM_RESTART_SWITCH_VLAN|EVM_RESTART_FIREWALL|EVM_RESTART_VPNCLI|EVM_RESTART_WAN},
 #endif
 		{EVM_RESTART_WAN,		EVT_RESTART_WAN,		RCN_RESTART_WAN,	EVM_RESTART_IPTV|EVM_RESTART_SWITCH_VLAN|EVM_RESTART_FIREWALL|EVM_RESTART_VPNCLI|EVM_RESTART_NETFILTER},
 		{EVM_RESTART_NETFILTER,		EVT_RESTART_NETFILTER,		RCN_RESTART_NETFILTER,	EVM_RESTART_FIREWALL},
-		{EVM_RESTART_RADVD,		EVT_RESTART_RADVD,		RCN_RESTART_RADVD,	EVM_RESTART_DHCPD},
+		{EVM_RESTART_RADV,		EVT_RESTART_RADV,		RCN_RESTART_RADV,	EVM_RESTART_DHCPD},
 		{EVM_RESTART_IPTV,		EVT_RESTART_IPTV,		RCN_RESTART_IPTV,	EVM_RESTART_FIREWALL},
 		{EVM_RESTART_VPNSVR,		EVT_RESTART_VPNSVR,		RCN_RESTART_VPNSVR,	EVM_RESTART_FIREWALL|EVM_REAPPLY_VPNSVR},
 		{EVM_RESTART_VPNCLI,		EVT_RESTART_VPNCLI,		RCN_RESTART_VPNCLI,	EVM_RESTART_FIREWALL},
@@ -863,16 +889,17 @@
 		{EVM_RESTART_SWITCH_VLAN,	EVT_RESTART_SWITCH_VLAN,	RCN_RESTART_SWITCH_VLAN,0},
 		{EVM_RESTART_DDNS,		EVT_RESTART_DDNS,		RCN_RESTART_DDNS,	0},
 		{EVM_RESTART_UPNP,		EVT_RESTART_UPNP,		RCN_RESTART_UPNP,	EVM_RESTART_FIREWALL},
-		{EVM_RESTART_TIME,		EVT_RESTART_TIME,		RCN_RESTART_TIME,	0},
+		{EVM_RESTART_TIME,		EVT_RESTART_TIME,		RCN_RESTART_TIME,	EVM_RESTART_CROND},
 		{EVM_RESTART_NTPC,		EVT_RESTART_NTPC,		RCN_RESTART_NTPC,	0},
 		{EVM_RESTART_SYSLOG,		EVT_RESTART_SYSLOG,		RCN_RESTART_SYSLOG,	0},
 		{EVM_RESTART_LLTD,		EVT_RESTART_LLTD,		RCN_RESTART_LLTD,	0},
 		{EVM_RESTART_ADSC,		EVT_RESTART_ADSC,		RCN_RESTART_ADSC,	0},
+		{EVM_RESTART_CROND,		EVT_RESTART_CROND,		RCN_RESTART_CROND,	0},
 		{EVM_RESTART_SYSCTL,		EVT_RESTART_SYSCTL,		RCN_RESTART_SYSCTL,	0},
 		{EVM_RESTART_TWEAKS,		EVT_RESTART_TWEAKS,		RCN_RESTART_TWEAKS,	0},
 		{EVM_RESTART_WDG,		EVT_RESTART_WDG,		RCN_RESTART_WDG,	0},
 		{EVM_RESTART_DI,		EVT_RESTART_DI,			RCN_RESTART_DI,		0},
-#if (BOARD_NUM_USB_PORTS > 0)
+#if defined(USE_USB_SUPPORT)
 		{EVM_RESTART_SPOOLER,		EVT_RESTART_SPOOLER,		RCN_RESTART_SPOOLER,	0},
 		{EVM_RESTART_HDDTUNE,		EVT_RESTART_HDDTUNE,		RCN_RESTART_HDDTUNE,	0},
 #if defined(APP_FTPD)

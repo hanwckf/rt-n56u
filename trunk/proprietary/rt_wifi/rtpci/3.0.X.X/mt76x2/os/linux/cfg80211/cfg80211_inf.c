@@ -804,6 +804,13 @@ static INT CFG80211_DummyP2pIf_Open(
 			
 	wdev->wiphy->interface_modes |= (BIT(NL80211_IFTYPE_P2P_CLIENT)
 				     | BIT(NL80211_IFTYPE_P2P_GO));		
+
+#if (LINUX_VERSION_CODE >= KERNEL_VERSION(3,7,0))
+        wdev->wiphy->interface_modes |=  BIT(RT_CMD_80211_IFTYPE_P2P_DEVICE);
+#ifndef RT_CFG80211_P2P_STATIC_CONCURRENT_DEVICE
+	wdev->iftype = RT_CMD_80211_IFTYPE_P2P_CLIENT;
+#endif /* RT_CFG80211_P2P_STATIC_CONCURRENT_DEVICE */	
+#endif /* LINUX_VERSION_CODE: 3.7.0 */
 	return 0;
 }
 
@@ -816,8 +823,12 @@ static INT CFG80211_DummyP2pIf_Close(
 			return -EINVAL;
 
 	wdev->wiphy->interface_modes = (wdev->wiphy->interface_modes)
-									& (~(BIT(NL80211_IFTYPE_P2P_CLIENT)|
-									BIT(NL80211_IFTYPE_P2P_GO)));
+					& (~(BIT(NL80211_IFTYPE_P2P_CLIENT)
+					| BIT(NL80211_IFTYPE_P2P_GO)
+#if (LINUX_VERSION_CODE >= KERNEL_VERSION(3,7,0))
+					| BIT(RT_CMD_80211_IFTYPE_P2P_DEVICE)
+#endif /* LINUX_VERSION_CODE: 3.7.0 */
+				       ));
 	return 0;
 }
 
@@ -940,7 +951,13 @@ VOID RTMP_CFG80211_DummyP2pIf_Init(
 	pWdev->wiphy = p80211CB->pCfg80211_Wdev->wiphy;
 	SET_NETDEV_DEV(new_dev_p, wiphy_dev(pWdev->wiphy));	
 	pWdev->netdev = new_dev_p;
-	pWdev->iftype = RT_CMD_80211_IFTYPE_STATION;	
+	//pWdev->iftype = RT_CMD_80211_IFTYPE_STATION;	
+#if (LINUX_VERSION_CODE >= KERNEL_VERSION(3,7,0))
+	pWdev->iftype = RT_CMD_80211_IFTYPE_P2P_DEVICE;	
+#else
+	pWdev->iftype = RT_CMD_80211_IFTYPE_P2P_CLIENT;
+#endif /* LINUX_VERSION_CODE: 3.7.0 */
+		/* interface_modes move from IF open to init */
 	
 	RtmpOSNetDevAttach(pAd->OpMode, new_dev_p, pNetDevOps); 
 	cfg80211_ctrl->dummy_p2p_net_dev = new_dev_p;

@@ -385,12 +385,12 @@ int buf_ecdsa_verify(buffer *buf, ecc_key *key, buffer *data_buf) {
 			goto out; 
 		}
 
-    	/* reduce */
+		/* reduce */
 		if (ltc_mp.ecc_map(mG, m, mp) != CRYPT_OK) { 
 			goto out; 
 		}
 	} else {
-      /* use Shamir's trick to compute u1*mG + u2*mQ using half of the doubles */
+		/* use Shamir's trick to compute u1*mG + u2*mQ using half of the doubles */
 		if (ltc_mp.ecc_mul2add(mG, u1, mQ, u2, mG, m) != CRYPT_OK) { 
 			goto out; 
 		}

@@ -442,7 +442,6 @@ static int dwc3_ep0_set_config(struct dwc3 *dwc, struct usb_ctrlrequest *ctrl)
 	u32 cfg;
 	int ret;
 
-	dwc->start_config_issued = false;
 	cfg = le16_to_cpu(ctrl->wValue);
 
 	switch (dwc->dev_state) {
@@ -644,10 +643,6 @@ static void dwc3_ep0_xfer_complete(struct dwc3 *dwc,
 		dev_vdbg(dwc->dev, "Status Phase\n");
 		dwc3_ep0_complete_req(dwc, event);
 		break;
-	case USB_REQ_SET_INTERFACE:
-		dev_vdbg(dwc->dev, "USB_REQ_SET_INTERFACE\n");
-		dwc->start_config_issued = false;
-		/* Fall through */
 	default:
 		WARN(true, "UNKNOWN ep0state %d\n", dwc->ep0state);
 	}

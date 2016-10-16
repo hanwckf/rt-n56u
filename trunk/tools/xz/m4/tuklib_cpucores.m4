@@ -9,8 +9,10 @@
 #   This information is used by tuklib_cpucores.c.
 #
 #   Supported methods:
+#     - GetSystemInfo(): Windows (including Cygwin)
 #     - sysctl(): BSDs, OS/2
-#     - sysconf(): GNU/Linux, Solaris, Tru64, IRIX, AIX, Cygwin
+#     - sysconf(): GNU/Linux, Solaris, Tru64, IRIX, AIX, QNX, Cygwin (but
+#       GetSystemInfo() is used on Cygwin)
 #     - pstat_getdynamic(): HP-UX
 #
 # COPYING
@@ -30,10 +32,46 @@ AC_CHECK_HEADERS([sys/param.h])
 AC_CACHE_CHECK([how to detect the number of available CPU cores],
 	[tuklib_cv_cpucores_method], [
 
-# Look for sysctl() solution first, because on OS/2, both sysconf()
-# and sysctl() pass the tests in this file, but only sysctl()
-# actually works.
+# Maybe checking $host_os would be enough but this matches what
+# tuklib_cpucores.c does.
+#
+# NOTE: IRIX has a compiler that doesn't error out with #error, so use
+# a non-compilable text instead of #error to generate an error.
 AC_COMPILE_IFELSE([AC_LANG_SOURCE([[
+#if defined(_WIN32) || defined(__CYGWIN__)
+int main(void) { return 0; }
+#else
+compile error
+#endif
+]])], [tuklib_cv_cpucores_method=special], [
+
+# FreeBSD has both cpuset and sysctl. Look for cpuset first because
+# it's a better approach.
+AC_COMPILE_IFELSE([AC_LANG_SOURCE([[
+#include <sys/param.h>
+#include <sys/cpuset.h>
+
+int
+main(void)
+{
+	cpuset_t set;
+	cpuset_getaffinity(CPU_LEVEL_WHICH, CPU_WHICH_PID, -1,
+			sizeof(set), &set);
+	return 0;
+}
+]])], [tuklib_cv_cpucores_method=cpuset], [
+
+# On OS/2, both sysconf() and sysctl() pass the tests in this file,
+# but only sysctl() works. On QNX it's the opposite: only sysconf() works
+# (although it assumes that _POSIX_SOURCE, _XOPEN_SOURCE, and _POSIX_C_SOURCE
+# are undefined or alternatively _QNX_SOURCE is defined).
+#
+# We test sysctl() first and intentionally break the sysctl() test on QNX
+# so that sysctl() is never used on QNX.
+AC_COMPILE_IFELSE([AC_LANG_SOURCE([[
+#ifdef __QNX__
+compile error
+#endif
 #include <sys/types.h>
 #ifdef HAVE_SYS_PARAM_H
 #	include <sys/param.h>
@@ -82,9 +120,14 @@ main(void)
 ]])], [tuklib_cv_cpucores_method=pstat_getdynamic], [
 
 	tuklib_cv_cpucores_method=unknown
-])])])])
+])])])])])])
 
 case $tuklib_cv_cpucores_method in
+	cpuset)
+		AC_DEFINE([TUKLIB_CPUCORES_CPUSET], [1],
+			[Define to 1 if the number of available CPU cores
+			can be detected with cpuset(2).])
+		;;
 	sysctl)
 		AC_DEFINE([TUKLIB_CPUCORES_SYSCTL], [1],
 			[Define to 1 if the number of available CPU cores

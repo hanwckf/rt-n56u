@@ -5,8 +5,8 @@
 #include <linux/err.h>
 #include <linux/platform_device.h>
 
+#include <asm/irq.h>
 #include <asm/rt2880/rt_mmap.h>
-#include <asm/rt2880/surfboardint.h>
 
 #include <ralink/mtk_nand_dev.h>
 

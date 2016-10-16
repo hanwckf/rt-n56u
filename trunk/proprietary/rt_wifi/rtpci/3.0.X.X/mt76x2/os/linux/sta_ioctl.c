@@ -1132,11 +1132,11 @@ int rt_ioctl_giwscan(struct net_device *dev,
 								if(pIoctlScan->pBssTable[i].HtCapabilityLen > 0 && pIoctlScan->pBssTable[i].VHTCapabilityLen > 0)
 					RtmpDrvRateGet(pAd, MODE_VHT, shortGI,
                       pIoctlScan->pBssTable[i].ChannelWidth, maxMCS,
-                      newRateGetAntenna(maxMCS), &iwe.u.bitrate.value);
+                      newRateGetAntenna(maxMCS, MODE_VHT), &iwe.u.bitrate.value);
 				else if (pIoctlScan->pBssTable[i].HtCapabilityLen > 0)
 					RtmpDrvRateGet(pAd, MODE_HTMIX, shortGI,
                       pIoctlScan->pBssTable[i].ChannelWidth, maxMCS,
-                      newRateGetAntenna(maxMCS), &iwe.u.bitrate.value);
+                      newRateGetAntenna(maxMCS, MODE_HTMIX), &iwe.u.bitrate.value);
 							}
             
 			iwe.u.bitrate.disabled = 0;

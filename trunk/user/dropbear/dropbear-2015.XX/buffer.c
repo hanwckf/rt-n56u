@@ -98,7 +98,7 @@ buffer* buf_newcopy(buffer* buf) {
 	ret = buf_new(buf->len);
 	ret->len = buf->len;
 	if (buf->len > 0) {
-	    memcpy(ret->data, buf->data, buf->len);
+		memcpy(ret->data, buf->data, buf->len);
 	}
 	return ret;
 }

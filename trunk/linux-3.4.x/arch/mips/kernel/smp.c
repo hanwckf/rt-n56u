@@ -62,6 +62,13 @@ EXPORT_SYMBOL(smp_num_siblings);
 cpumask_t cpu_sibling_map[NR_CPUS] __read_mostly;
 EXPORT_SYMBOL(cpu_sibling_map);
 
+/*
+ * A logcal cpu mask containing only one VPE per core to
+ * reduce the number of IPIs on large MT systems.
+ */
+cpumask_t cpu_foreign_map[NR_CPUS] __read_mostly;
+EXPORT_SYMBOL(cpu_foreign_map);
+
 /* representing cpus for which sibling maps can be computed */
 static cpumask_t cpu_sibling_setup_map;
 
@@ -80,6 +87,31 @@ static inline void set_cpu_sibling_map(int cpu)
 		}
 	} else
 		cpu_set(cpu, cpu_sibling_map[cpu]);
+}
+
+/*
+ * Calculate a new cpu_foreign_map mask whenever a
+ * new cpu appears or disappears.
+ */
+void calculate_cpu_foreign_map(void)
+{
+	int i, k, core_present;
+	cpumask_t temp_foreign_map;
+
+	/* Re-calculate the mask */
+	cpumask_clear(&temp_foreign_map);
+	for_each_online_cpu(i) {
+		core_present = 0;
+		for_each_cpu(k, &temp_foreign_map)
+			if (cpu_data[i].core == cpu_data[k].core)
+				core_present = 1;
+		if (!core_present)
+			cpumask_set_cpu(i, &temp_foreign_map);
+	}
+
+	for_each_online_cpu(i)
+		cpumask_andnot(&cpu_foreign_map[i],
+			       &temp_foreign_map, &cpu_sibling_map[i]);
 }
 
 struct plat_smp_ops *mp_ops;
@@ -126,6 +158,8 @@ asmlinkage __cpuinit void start_secondary(void)
 
 	set_cpu_sibling_map(cpu);
 
+	calculate_cpu_foreign_map();
+
 	cpu_set(cpu, cpu_callin_map);
 
 	synchronise_count_slave(cpu);
@@ -140,23 +174,14 @@ asmlinkage __cpuinit void start_secondary(void)
 	cpu_idle();
 }
 
-/*
- * Call into both interrupt handlers, as we share the IPI for them
- */
-void __irq_entry smp_call_function_interrupt(void)
-{
-	irq_enter();
-	generic_smp_call_function_single_interrupt();
-	generic_smp_call_function_interrupt();
-	irq_exit();
-}
-
 static void stop_this_cpu(void *dummy)
 {
 	/*
 	 * Remove this CPU:
 	 */
+
 	set_cpu_online(smp_processor_id(), false);
+	calculate_cpu_foreign_map();
 	for (;;) {
 		if (cpu_wait)
 			(*cpu_wait)();		/* Wait if available. */
@@ -180,6 +205,7 @@ void __init smp_prepare_cpus(unsigned int max_cpus)
 	current_thread_info()->cpu = 0;
 	mp_ops->prepare_cpus(max_cpus);
 	set_cpu_sibling_map(0);
+	calculate_cpu_foreign_map();
 #ifndef CONFIG_HOTPLUG_CPU
 	init_cpu_present(cpu_possible_mask);
 #endif
@@ -366,10 +392,17 @@ void flush_tlb_range(struct vm_area_struct *vma, unsigned long start, unsigned l
 		smp_on_other_tlbs(flush_tlb_range_ipi, &fd);
 	} else {
 		unsigned int cpu;
+		int exec = vma->vm_flags & VM_EXEC;
 
 		for_each_online_cpu(cpu) {
+			/*
+			 * flush_cache_range() will only fully flush icache if
+			 * the VMA is executable, otherwise we must invalidate
+			 * ASID without it appearing to has_valid_asid() as if
+			 * mm has been completely unused by that CPU.
+			 */
 			if (cpu != smp_processor_id() && cpu_context(cpu, mm))
-				cpu_context(cpu, mm) = 0;
+				cpu_context(cpu, mm) = !exec;
 		}
 	}
 	local_flush_tlb_range(vma, start, end);
@@ -414,8 +447,14 @@ void flush_tlb_page(struct vm_area_struct *vma, unsigned long page)
 		unsigned int cpu;
 
 		for_each_online_cpu(cpu) {
+			/*
+			 * flush_cache_page() only does partial flushes, so
+			 * invalidate ASID without it appearing to
+			 * has_valid_asid() as if mm has been completely unused
+			 * by that CPU.
+			 */
 			if (cpu != smp_processor_id() && cpu_context(cpu, vma->vm_mm))
-				cpu_context(cpu, vma->vm_mm) = 0;
+				cpu_context(cpu, vma->vm_mm) = 1;
 		}
 	}
 	local_flush_tlb_page(vma, page);

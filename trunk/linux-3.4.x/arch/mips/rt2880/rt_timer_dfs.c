@@ -53,7 +53,6 @@
 #include <linux/interrupt.h>
 
 #include <asm/rt2880/surfboard.h>
-#include <asm/rt2880/surfboardint.h>
 
 #include "rt_timer.h"
 

@@ -15,7 +15,7 @@
 #include "ra_phy.h"
 #include "ra_ioctl.h"
 #if defined (CONFIG_RAETH_ESW_CONTROL)
-#include "ra_esw_ioctl.h"
+#include "mtk_esw/ioctl.h"
 #endif
 #if defined (CONFIG_RAETH_ESW) || defined (CONFIG_MT7530_GSW)
 #include "ra_esw_base.h"
@@ -202,13 +202,13 @@ fill_dev_features(struct net_device *dev)
 	dev->vlan_features = dev->features & ~(NETIF_F_HW_VLAN_CTAG_TX | NETIF_F_HW_VLAN_CTAG_RX);
 }
 
-static void
-calc_dev_features(struct net_device *dev)
+static netdev_features_t
+ei_fix_features(struct net_device *dev, netdev_features_t features)
 {
 #if defined (RAETH_SDMA)
 
 #if defined (CONFIG_RAETH_CHECKSUM_OFFLOAD)
-	dev->features |= NETIF_F_RXCSUM;
+	features |= NETIF_F_RXCSUM;
 #endif
 
 #else /* !RAETH_SDMA */
@@ -216,51 +216,53 @@ calc_dev_features(struct net_device *dev)
 #if defined (CONFIG_RAETH_HW_VLAN_RX)
 #if defined (CONFIG_VLAN_8021Q_DOUBLE_TAG)
 	if (vlan_double_tag)
-		dev->features &= ~(NETIF_F_HW_VLAN_CTAG_RX);
+		features &= ~(NETIF_F_HW_VLAN_CTAG_RX);
 	else
 #endif
-		dev->features |= NETIF_F_HW_VLAN_CTAG_RX;
+		features |= NETIF_F_HW_VLAN_CTAG_RX;
 #endif
 
 #if defined (CONFIG_RAETH_HW_VLAN_TX)
 #if defined (CONFIG_VLAN_8021Q_DOUBLE_TAG)
 	if (vlan_double_tag)
-		dev->features &= ~(NETIF_F_HW_VLAN_CTAG_TX);
+		features &= ~(NETIF_F_HW_VLAN_CTAG_TX);
 	else
 #endif
-		dev->features |= NETIF_F_HW_VLAN_CTAG_TX;
+		features |= NETIF_F_HW_VLAN_CTAG_TX;
 #endif
 
 #if defined (CONFIG_RAETH_CHECKSUM_OFFLOAD)
-	dev->features |= NETIF_F_RXCSUM;
+	features |= NETIF_F_RXCSUM;
 	if (hw_offload_csg)
-		dev->features |= NETIF_F_IP_CSUM;
+		features |= NETIF_F_IP_CSUM;
 	else
-		dev->features &= ~NETIF_F_IP_CSUM;
+		features &= ~NETIF_F_IP_CSUM;
 #if defined (CONFIG_RAETH_SG_DMA_TX)
 	if (hw_offload_gso && hw_offload_csg) {
-		dev->features |= NETIF_F_SG;
+		features |= NETIF_F_SG;
 #if defined (CONFIG_RAETH_TSO)
 		if (hw_offload_tso) {
-			dev->features |= NETIF_F_TSO;
+			features |= NETIF_F_TSO;
 #if defined (CONFIG_RAETH_TSOV6)
-			dev->features |= NETIF_F_TSO6;
-			dev->features |= NETIF_F_IPV6_CSUM;
+			features |= NETIF_F_TSO6;
+			features |= NETIF_F_IPV6_CSUM;
 #endif
 		} else {
-			dev->features &= ~(NETIF_F_TSO | NETIF_F_TSO6 | NETIF_F_IPV6_CSUM);
+			features &= ~(NETIF_F_TSO | NETIF_F_TSO6 | NETIF_F_IPV6_CSUM);
 		}
 #endif /* CONFIG_RAETH_TSO */
 	} else {
-		dev->features &= ~(NETIF_F_SG | NETIF_F_TSO | NETIF_F_TSO6 | NETIF_F_IPV6_CSUM);
+		features &= ~(NETIF_F_SG | NETIF_F_TSO | NETIF_F_TSO6 | NETIF_F_IPV6_CSUM);
 	}
 #endif /* CONFIG_RAETH_SG_DMA_TX */
 
 #else /* !CONFIG_RAETH_CHECKSUM_OFFLOAD */
-	dev->features &= ~(NETIF_F_IP_CSUM | NETIF_F_RXCSUM);
+	features &= ~(NETIF_F_IP_CSUM | NETIF_F_RXCSUM);
 #endif
 
 #endif /* RAETH_SDMA */
+
+	return features;
 }
 
 static void
@@ -362,7 +364,7 @@ inc_rx_drop(END_DEVICE *ei_local, int gmac_no)
 static inline int
 dma_recv(struct net_device* dev, END_DEVICE* ei_local, int work_todo)
 {
-	struct PDMA_rxdesc *rxd_ring;
+	struct PDMA_rxdesc *rxd;
 	struct sk_buff *new_skb, *rx_skb;
 	int gmac_no = PSE_PORT_GMAC1;
 	int work_done = 0;
@@ -379,20 +381,21 @@ dma_recv(struct net_device* dev, END_DEVICE* ei_local, int work_todo)
 
 	while (work_done < work_todo) {
 		rxd_dma_owner_idx = (rxd_dma_owner_idx + 1) % NUM_RX_DESC;
-		rxd_ring = &ei_local->rxd_ring[rxd_dma_owner_idx];
+		rxd = &ei_local->rxd_ring[rxd_dma_owner_idx];
 		
-		if (!(rxd_ring->rxd_info2 & RX2_DMA_DONE))
+		rxd_info2 = ACCESS_ONCE(rxd->rxd_info2);
+		
+		if (!(rxd_info2 & RX2_DMA_DONE))
 			break;
+		
+		/* copy RX desc to CPU */
+#if defined (CONFIG_RAETH_HW_VLAN_RX)
+		rxd_info3 = ACCESS_ONCE(rxd->rxd_info3);
+#endif
+		rxd_info4 = ACCESS_ONCE(rxd->rxd_info4);
 		
 		/* load completed skb pointer */
 		rx_skb = ei_local->rxd_buff[rxd_dma_owner_idx];
-		
-		/* copy RX desc to CPU */
-		rxd_info2 = rxd_ring->rxd_info2;
-#if defined (CONFIG_RAETH_HW_VLAN_RX)
-		rxd_info3 = rxd_ring->rxd_info3;
-#endif
-		rxd_info4 = rxd_ring->rxd_info4;
 		
 #if defined (CONFIG_PSEUDO_SUPPORT)
 		gmac_no = RX4_DMA_SP(rxd_info4);
@@ -402,10 +405,12 @@ dma_recv(struct net_device* dev, END_DEVICE* ei_local, int work_todo)
 		new_skb = __dev_alloc_skb(MAX_RX_LENGTH + NET_IP_ALIGN, GFP_ATOMIC);
 		if (unlikely(new_skb == NULL)) {
 #if defined (RAETH_PDMA_V2)
-			rxd_ring->rxd_info2 = RX2_DMA_SDL0_SET(MAX_RX_LENGTH);
+			ACCESS_ONCE(rxd->rxd_info2) = RX2_DMA_SDL0_SET(MAX_RX_LENGTH);
 #else
-			rxd_ring->rxd_info2 = RX2_DMA_LS0;
+			ACCESS_ONCE(rxd->rxd_info2) = RX2_DMA_LS0;
 #endif
+			wmb();
+			
 			/* move CPU pointer to next RXD */
 			sysRegWrite(DMA_RX_CALC_IDX0, cpu_to_le32(rxd_dma_owner_idx));
 			
@@ -427,11 +432,12 @@ dma_recv(struct net_device* dev, END_DEVICE* ei_local, int work_todo)
 		ei_local->rxd_buff[rxd_dma_owner_idx] = new_skb;
 		
 		/* map new skb to ring (unmap is not required on generic mips mm) */
-		rxd_ring->rxd_info1 = (u32)dma_map_single(NULL, new_skb->data, MAX_RX_LENGTH, DMA_FROM_DEVICE);
 #if defined (RAETH_PDMA_V2)
-		rxd_ring->rxd_info2 = RX2_DMA_SDL0_SET(MAX_RX_LENGTH);
+		ACCESS_ONCE(rxd->rxd_info1) = (u32)dma_map_single(NULL, new_skb->data, MAX_RX_LENGTH + NET_IP_ALIGN, DMA_FROM_DEVICE);
+		ACCESS_ONCE(rxd->rxd_info2) = RX2_DMA_SDL0_SET(MAX_RX_LENGTH);
 #else
-		rxd_ring->rxd_info2 = RX2_DMA_LS0;
+		ACCESS_ONCE(rxd->rxd_info1) = (u32)dma_map_single(NULL, new_skb->data, MAX_RX_LENGTH, DMA_FROM_DEVICE);
+		ACCESS_ONCE(rxd->rxd_info2) = RX2_DMA_LS0;
 #endif
 		wmb();
 		
@@ -498,7 +504,8 @@ dma_recv(struct net_device* dev, END_DEVICE* ei_local, int work_todo)
 		{
 #if defined (CONFIG_RAETH_NAPI)
 #if defined (CONFIG_RAETH_NAPI_GRO)
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(3,7,0)
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(3,4,0)
+			/* our 3.4 tree has already backported GRO changes > 3.7 */
 			napi_gro_receive(&ei_local->napi, rx_skb);
 #else
 			if (rx_skb->ip_summed == CHECKSUM_UNNECESSARY)
@@ -535,7 +542,8 @@ dispatch_int_status2(END_DEVICE *ei_local)
 	if (!ei_local->active)
 		return;
 
-#if defined (CONFIG_GE2_INTERNAL_GPHY_P0) || defined (CONFIG_GE2_INTERNAL_GPHY_P4)
+#if defined (CONFIG_GE2_INTERNAL_GPHY_P0) || defined (CONFIG_GE2_RGMII_AN) || \
+    defined (CONFIG_GE2_INTERNAL_GPHY_P4)
 	if (reg_int_val & GE2_LINK_INT) {
 		/* do not touch MDIO registers in hardirq/softirq context */
 		ge2_int2_schedule_wq();
@@ -564,7 +572,8 @@ ei_napi_poll(struct napi_struct *napi, int budget)
 		dispatch_int_status2(ei_local);
 		
 #if defined (CONFIG_RAETH_NAPI_GRO)
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(3,7,0)
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(3,4,0)
+		/* our 3.4 tree has already backported GRO changes > 3.7 */
 		napi_gro_flush(napi, false);
 #else
 		napi_gro_flush(napi);
@@ -762,7 +771,8 @@ VirtualIF_get_stats64(struct net_device *dev, struct rtnl_link_stats64 *stats)
 }
 
 #if defined (CONFIG_RAETH_ESW_CONTROL)
-#if defined (CONFIG_GE2_INTERNAL_GPHY_P4) || defined (CONFIG_GE2_INTERNAL_GPHY_P0)
+#if defined (CONFIG_GE2_INTERNAL_GPHY_P0) || defined (CONFIG_GE2_RGMII_AN) || \
+    defined (CONFIG_GE2_INTERNAL_GPHY_P4)
 int
 VirtualIF_get_bytes(port_bytes_t *pb)
 {
@@ -792,7 +802,7 @@ VirtualIF_get_bytes(port_bytes_t *pb)
 static int
 VirtualIF_open(struct net_device *dev)
 {
-	calc_dev_features(dev);
+	netdev_update_features(dev);
 
 	fe_gdm2_set_mac(dev->dev_addr);
 
@@ -837,6 +847,7 @@ static const struct net_device_ops VirtualIF_netdev_ops = {
 	.ndo_get_stats64	= VirtualIF_get_stats64,
 	.ndo_do_ioctl		= ei_ioctl,
 	.ndo_change_mtu		= ei_change_mtu,
+	.ndo_fix_features	= ei_fix_features,
 	.ndo_set_mac_address	= eth_mac_addr,
 	.ndo_validate_addr	= eth_validate_addr,
 };
@@ -1039,7 +1050,7 @@ ei_open(struct net_device *dev)
 
 	ei_local = netdev_priv(dev);
 
-	calc_dev_features(dev);
+	netdev_update_features(dev);
 	show_dev_features(dev);
 #if !defined (RAETH_HW_PADPKT)
 	calc_dev_min_pkt_len(dev, ei_local);
@@ -1070,7 +1081,7 @@ ei_open(struct net_device *dev)
 #endif
 
 #if defined (CONFIG_RAETH_ESW_CONTROL)
-	esw_control_post_init();
+	esw_ioctl_init_post();
 #endif
 
 #if defined (CONFIG_RA_HW_NAT) || defined (CONFIG_RA_HW_NAT_MODULE)
@@ -1156,12 +1167,13 @@ ei_close(struct net_device *dev)
 #if defined (CONFIG_RAETH_ESW) || defined (CONFIG_MT7530_GSW)
 	esw_irq_cancel_wq();
 #endif
-#if defined (CONFIG_GE2_INTERNAL_GPHY_P0) || defined (CONFIG_GE2_INTERNAL_GPHY_P4)
+#if defined (CONFIG_GE2_INTERNAL_GPHY_P0) || defined (CONFIG_GE2_RGMII_AN) || \
+    defined (CONFIG_GE2_INTERNAL_GPHY_P4)
 	ge2_int2_cancel_wq();
 #endif
 
 	free_irq(dev->irq, dev);
-#if defined (CONFIG_RAETH_ESW) || defined (CONFIG_RALINK_MT7621)
+#if defined (CONFIG_RAETH_ESW) || (defined (CONFIG_RALINK_MT7621) && defined (CONFIG_MT7530_GSW))
 	free_irq(SURFBOARDINT_ESW, dev);
 #elif defined (CONFIG_MT7530_INT_GPIO)
 	// todo, needed capture GPIO interrupt for external MT7530
@@ -1192,6 +1204,7 @@ static const struct net_device_ops ei_netdev_ops = {
 	.ndo_get_stats64	= ei_get_stats64,
 	.ndo_do_ioctl		= ei_ioctl,
 	.ndo_change_mtu		= ei_change_mtu,
+	.ndo_fix_features	= ei_fix_features,
 	.ndo_set_mac_address	= eth_mac_addr,
 	.ndo_validate_addr	= eth_validate_addr,
 };
@@ -1209,22 +1222,21 @@ __init raeth_init(void)
 	struct net_device *dev;
 	END_DEVICE *ei_local;
 
-	/* MT7620 has FrameEngine CDM bugs: */
 #if defined (CONFIG_RALINK_MT7620)
-	/* ECO_ID < 4: TX Csum_Gen raise abnormal TX flood and FrameEngine hungs */
-	if ((ralink_asic_rev_id & 0xf) < 4) {
+	/* MT7620 has Frame Engine bugs (probably in CDM unit).
+	   ECO_ID < 5:
+	   1. TX Csum_Gen raise abnormal TX flood and FE hungs
+	   2. TSO stuck and FE hungs
+	*/
+	if ((ralink_asic_rev_id & 0xf) < 5) {
 #if defined (CONFIG_RAETH_CHECKSUM_OFFLOAD)
 		hw_offload_csg = 0;
 #if defined (CONFIG_RAETH_SG_DMA_TX)
 		hw_offload_gso = 0;
-#endif
-#endif
-	}
-
-	/* ECO_ID < 5: TSO stuck */
-	if ((ralink_asic_rev_id & 0xf) < 5) {
 #if defined (CONFIG_RAETH_TSO)
 		hw_offload_tso = 0;
+#endif
+#endif
 #endif
 	}
 #endif
@@ -1275,6 +1287,8 @@ __init raeth_init(void)
 
 #if defined (CONFIG_RAETH_ESW_CONTROL)
 	esw_ioctl_init();
+#elif defined (CONFIG_RAETH_DHCP_TOUCH)
+	esw_dhcpc_init();
 #endif
 
 	printk("Ralink APSoC Ethernet Driver %s (%s)\n", RAETH_VERSION, RAETH_DEV_NAME);

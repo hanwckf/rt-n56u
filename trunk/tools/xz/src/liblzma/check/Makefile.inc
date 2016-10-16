@@ -47,5 +47,7 @@ endif
 endif
 
 if COND_CHECK_SHA256
+if COND_INTERNAL_SHA256
 liblzma_la_SOURCES += check/sha256.c
+endif
 endif

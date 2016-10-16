@@ -243,7 +243,12 @@ BOOLEAN ApCliCheckHt(
 	NdisMoveMemory(pApCliEntry->RxMcsSet, pHtCapability->MCSSet, 16);
 
 	/* choose smaller setting */
+#ifdef APCLI_AUTO_BW_SUPPORT
+	aux_ht_cap->HtCapInfo.ChannelWidth = pAddHtInfo->AddHtInfo.RecomWidth & pApCliEntry->wdev.bw;
+#else
 	aux_ht_cap->HtCapInfo.ChannelWidth = pAddHtInfo->AddHtInfo.RecomWidth & rt_ht_cap->ChannelWidth;
+#endif /* APCLI_AUTO_BW_SUPPORT */
+
 	aux_ht_cap->HtCapInfo.GF =  pHtCapability->HtCapInfo.GF & rt_ht_cap->GF;
 
 	/* Send Assoc Req with my HT capability. */
@@ -261,6 +266,12 @@ BOOLEAN ApCliCheckHt(
 		aux_ht_cap->ExtHtCapInfo.RDGSupport = pHtCapability->ExtHtCapInfo.RDGSupport;
 	}
 	
+	if (pAd->CommonCfg.Channel < 14) {
+		pApCliEntry->MlmeAux.AddHtInfo.AddHtInfo.RecomWidth = pAddHtInfo->AddHtInfo.RecomWidth;
+		pApCliEntry->MlmeAux.AddHtInfo.AddHtInfo.ExtChanOffset = pAddHtInfo->AddHtInfo.ExtChanOffset;
+		pApCliEntry->MlmeAux.AddHtInfo.ControlChan = pAddHtInfo->ControlChan;
+	}
+	
 	/*COPY_AP_HTSETTINGS_FROM_BEACON(pAd, pHtCapability); */
 	return TRUE;
 }
@@ -274,9 +285,7 @@ BOOLEAN ApCliCheckVht(
 	IN VHT_CAP_IE *vht_cap,
 	IN VHT_OP_IE *vht_op)
 {
-	APCLI_STRUCT *pApCliEntry = NULL;
 	VHT_CAP_INFO *vht_cap_info = &vht_cap->vht_cap;
-	pApCliEntry = &pAd->ApCfg.ApCliTab[0];
 
 	// TODO: shiang-6590, not finish yet!!!!
 
@@ -391,8 +400,19 @@ BOOLEAN ApCliLinkUp(RTMP_ADAPTER *pAd, UCHAR ifIndex)
 #ifdef APCLI_CERT_SUPPORT	
 	UINT32 Data;
 #endif /* APCLI_CERT_SUPPORT */
+	UCHAR   PhyMode = pAd->CommonCfg.PhyMode;
+#ifdef MWDS
+	UCHAR ApCliIdx = 0; /* default use apcli0 */
+#endif /* MWDS */	
 	do
 	{
+#ifdef MWDS
+		if (ifIndex < MAX_APCLI_NUM)
+			ApCliIdx = ifIndex;
+		else if(ifIndex >= 64)
+			ApCliIdx = ((ifIndex - 64) / 16);
+#endif /* MWDS */
+
 		if ((ifIndex < MAX_APCLI_NUM)
 #ifdef MAC_REPEATER_SUPPORT
 			|| (ifIndex >= 64)
@@ -400,7 +420,12 @@ BOOLEAN ApCliLinkUp(RTMP_ADAPTER *pAd, UCHAR ifIndex)
 		)
 		{
 #ifdef MAC_REPEATER_SUPPORT
-			if (pAd->ApCfg.bMACRepeaterEn)
+			if ((pAd->ApCfg.bMACRepeaterEn == TRUE)
+#ifdef MWDS
+				&& ((pAd->ApCfg.ApCliTab[ApCliIdx].bSupportMWDS == FALSE) ||
+					(pAd->ApCfg.ApCliTab[ApCliIdx].MlmeAux.bSupportMWDS == FALSE))
+#endif /* MWDS */			
+			)
 			{
 				if (ifIndex < MAX_APCLI_NUM)
 				{
@@ -454,7 +479,12 @@ BOOLEAN ApCliLinkUp(RTMP_ADAPTER *pAd, UCHAR ifIndex)
 		}
 
 #ifdef MAC_REPEATER_SUPPORT
-		if (CliIdx != 0xFF)
+		if ((CliIdx != 0xFF)
+#ifdef MWDS
+			&& ((pAd->ApCfg.ApCliTab[ApCliIdx].bSupportMWDS == FALSE) ||
+				(pAd->ApCfg.ApCliTab[ApCliIdx].MlmeAux.bSupportMWDS == FALSE))
+#endif /* MWDS */
+		)
 			DBGPRINT(RT_DEBUG_ERROR, ("(%s) ifIndex = %d, CliIdx = %d !!!\n", __FUNCTION__, ifIndex, CliIdx));
 #endif /* MAC_REPEATER_SUPPORT */
 
@@ -474,6 +504,10 @@ BOOLEAN ApCliLinkUp(RTMP_ADAPTER *pAd, UCHAR ifIndex)
 #endif /* APCLI_CONNECTION_TRIAL */	
 
 		wdev = &pApCliEntry->wdev;
+#ifdef APCLI_AUTO_BW_SUPPORT
+		PhyMode = wdev->PhyMode;
+#endif /* APCLI_AUTO_BW_SUPPORT */
+
 		printk("!!! APCLI LINK UP - IF(%s%d) AuthMode(%d)=%s, WepStatus(%d)=%s!\n",
 					INF_APCLI_DEV_NAME, ifIndex, 
 					wdev->AuthMode, GetAuthMode(wdev->AuthMode),
@@ -487,15 +521,25 @@ BOOLEAN ApCliLinkUp(RTMP_ADAPTER *pAd, UCHAR ifIndex)
 			if (wf_fwd_get_rep_hook)
 				wf_fwd_get_rep_hook(pAd->CommonCfg.EtherTrafficBand);
 			
-			if (wf_fwd_entry_insert_hook)
-				wf_fwd_entry_insert_hook (wdev->if_dev, pAd->net_dev);
+			if (wf_fwd_entry_insert_hook) 
+				wf_fwd_entry_insert_hook (wdev->if_dev, pAd->net_dev, pAd);
+			
+			if (wf_fwd_insert_repeater_mapping_hook)
+				wf_fwd_insert_repeater_mapping_hook (pAd, &pAd->ApCfg.ReptCliEntryLock, &pAd->ApCfg.ReptCliHash[0], &pAd->ApCfg.ReptMapHash[0], &pAd->ApCfg.ApCliTab[0].wdev.if_addr);
 		}
+
 #endif /* CONFIG_WIFI_PKT_FWD */
 
 		/* Insert the Remote AP to our MacTable. */
 		/*pMacEntry = MacTableInsertApCliEntry(pAd, (PUCHAR)(pAd->ApCfg.ApCliTab[0].MlmeAux.Bssid)); */
 #ifdef MAC_REPEATER_SUPPORT
-		if (pAd->ApCfg.bMACRepeaterEn)
+		if ((pAd->ApCfg.bMACRepeaterEn == TRUE)
+#ifdef MWDS
+			&& (pApCliEntry != NULL)
+			&& ((pApCliEntry->bSupportMWDS == FALSE) ||
+				(pApCliEntry->MlmeAux.bSupportMWDS == FALSE))
+#endif /* MWDS */
+		)
 			pMacEntry = RTMPInsertRepeaterMacEntry(pAd,
 							(PUCHAR)(pApCliEntry->MlmeAux.Bssid),
 							wdev,
@@ -517,7 +561,13 @@ BOOLEAN ApCliLinkUp(RTMP_ADAPTER *pAd, UCHAR ifIndex)
 			pMacEntry->Sst = SST_ASSOC;
 			pMacEntry->wdev = &pApCliEntry->wdev;
 #ifdef MAC_REPEATER_SUPPORT
-			if (CliIdx != 0xFF)
+			if ((CliIdx != 0xFF)
+#ifdef MWDS
+				&& (pApCliEntry != NULL)
+				&& ((pApCliEntry->bSupportMWDS == FALSE) ||
+					(pApCliEntry->MlmeAux.bSupportMWDS == FALSE))
+#endif /* MWDS */
+			)
 			{
 				pAd->ApCfg.ApCliTab[ifIndex].RepeaterCli[CliIdx].MacTabWCID = pMacEntry->Aid;
 				pAd->ApCfg.ApCliTab[ifIndex].RepeaterCli[CliIdx].CliValid = TRUE;
@@ -558,6 +608,13 @@ BOOLEAN ApCliLinkUp(RTMP_ADAPTER *pAd, UCHAR ifIndex)
 		COPY_MAC_ADDR(pApCliEntry->LastBssid, pAd->MlmeAux.Bssid);
 #endif /* WPA_SUPPLICANT_SUPPORT */
 
+#ifdef SMART_MESH
+			if(pApCliEntry->MlmeAux.bHyperFiPeer)
+				pMacEntry->bHyperFiPeer = TRUE;
+			else
+				pMacEntry->bHyperFiPeer = FALSE;
+#endif /* SMART_MESH */
+
 			if (pMacEntry->AuthMode >= Ndis802_11AuthModeWPA)
 				pMacEntry->PortSecured = WPA_802_1X_PORT_NOT_SECURED;
 			else
@@ -570,9 +627,55 @@ BOOLEAN ApCliLinkUp(RTMP_ADAPTER *pAd, UCHAR ifIndex)
 					pMacEntry->PortSecured = WPA_802_1X_PORT_NOT_SECURED;
 				else
 #endif /*WPA_SUPPLICANT_SUPPORT*/
+				{
 					pMacEntry->PortSecured = WPA_802_1X_PORT_SECURED;
+#ifdef SMART_MESH
+				if(pApCliEntry &&
+				   pApCliEntry->MlmeAux.bSupportSmartMesh && 
+				   pApCliEntry->SmartMeshCfg.bSupportSmartMesh)
+					pMacEntry->bEnableSmartMesh = TRUE;
+				else
+					pMacEntry->bEnableSmartMesh = FALSE;
+#endif /* SMART_MESH */
+
+#ifdef MWDS
+#ifdef WSC_AP_SUPPORT
+				BOOLEAN bWPSRunning = FALSE;
+				if (((pAd->ApCfg.ApCliTab[ifIndex].WscControl.WscConfMode != WSC_DISABLE) &&
+					(pAd->ApCfg.ApCliTab[ifIndex].WscControl.bWscTrigger == TRUE)))
+					bWPSRunning = TRUE;
+#endif /* WSC_AP_SUPPORT */
+				if(
+#ifdef WSC_AP_SUPPORT
+				   !bWPSRunning &&
+#endif /* WSC_AP_SUPPORT */
+				   pApCliEntry->MlmeAux.bSupportMWDS && 
+				   pApCliEntry->bSupportMWDS)
+				{
+					pApCliEntry->bEnableMWDS = TRUE;
+					pMacEntry->bEnableMWDS = TRUE;
+					if((pMacEntry->PortSecured == WPA_802_1X_PORT_SECURED))
+					{
+						SET_MWDS_OPMODE_APCLI(pMacEntry);
+						DBGPRINT(RT_DEBUG_ERROR, ("SET_MWDS_OPMODE_APCLI OK!\n"));
+					}
+				}
+				else
+				{
+					pApCliEntry->bEnableMWDS = FALSE;
+					pMacEntry->bEnableMWDS = FALSE;
+					SET_MWDS_OPMODE_NONE(pMacEntry);
+				}
+#endif /* MWDS */
+				}
 #ifdef MAC_REPEATER_SUPPORT
-				if (CliIdx != 0xFF)
+				if ((CliIdx != 0xFF)
+#ifdef MWDS
+				&& (pApCliEntry != NULL)
+				&& ((pApCliEntry->bSupportMWDS == FALSE) ||
+					(pApCliEntry->MlmeAux.bSupportMWDS == FALSE))
+#endif /* MWDS */
+				)
 					pApCliEntry->RepeaterCli[CliIdx].CliConnectState = 2;
 #endif /* MAC_REPEATER_SUPPORT */
 			}
@@ -760,13 +863,10 @@ BOOLEAN ApCliLinkUp(RTMP_ADAPTER *pAd, UCHAR ifIndex)
 
 
 #ifdef DOT11_VHT_AC
-			if (WMODE_CAP_AC(pAd->CommonCfg.PhyMode) && pApCliEntry->MlmeAux.vht_cap_len &&  pApCliEntry->MlmeAux.vht_op_len)
+			if (WMODE_CAP_AC(PhyMode) && pApCliEntry->MlmeAux.vht_cap_len &&  pApCliEntry->MlmeAux.vht_op_len)
 			{
 			    vht_mode_adjust(pAd, pMacEntry, &(pApCliEntry->MlmeAux.vht_cap), &(pApCliEntry->MlmeAux.vht_op));
 				ApCliCheckVht(pAd,pMacEntry->Aid, pMacEntry,&(pApCliEntry->MlmeAux.vht_cap), &(pApCliEntry->MlmeAux.vht_op));
-#ifdef VHT_TXBF_SUPPORT
-				NdisMoveMemory(&pMacEntry->vht_cap_ie.vht_cap, &pApCliEntry->MlmeAux.vht_cap.vht_cap, sizeof(VHT_CAP_INFO));
-#endif /* VHT_TXBF_SUPPORT */
 			}
 #endif /* DOT11_VHT_AC */
 
@@ -917,7 +1017,7 @@ BOOLEAN ApCliLinkUp(RTMP_ADAPTER *pAd, UCHAR ifIndex)
 #ifdef WSC_AP_SUPPORT
     /* WSC initial connect to AP, jump to Wsc start action and set the correct parameters */
 	if ((result == TRUE) && 
-		(pAd->ApCfg.ApCliTab[ifIndex].WscControl.WscConfMode == WSC_ENROLLEE) &&
+		(pAd->ApCfg.ApCliTab[ifIndex].WscControl.WscConfMode != WSC_DISABLE) &&
 		(pAd->ApCfg.ApCliTab[ifIndex].WscControl.bWscTrigger == TRUE))
 	{
 		pAd->ApCfg.ApCliTab[ifIndex].WscControl.WscState = WSC_STATE_LINK_UP;
@@ -929,7 +1029,10 @@ BOOLEAN ApCliLinkUp(RTMP_ADAPTER *pAd, UCHAR ifIndex)
 	}
     else
     {
-        WscStop(pAd, TRUE, &pAd->ApCfg.ApCliTab[ifIndex].WscControl);
+        DBGPRINT(RT_DEBUG_TRACE, ("WSCSTOP: %d, %d, %d\n", result,
+                pAd->ApCfg.ApCliTab[ifIndex].WscControl.WscConfMode, 
+				pAd->ApCfg.ApCliTab[ifIndex].WscControl.bWscTrigger));	
+	    WscStop(pAd, TRUE, &pApCliEntry->WscControl);    
     }
 #endif /* WSC_AP_SUPPORT */
 #ifdef DOT11_N_SUPPORT
@@ -975,6 +1078,26 @@ BOOLEAN ApCliLinkUp(RTMP_ADAPTER *pAd, UCHAR ifIndex)
 #endif /* APCLI_CERT_SUPPORT */	
 #endif /* DOT11N_DRAFT3 */
 #endif /* DOT11_N_SUPPORT */
+
+#ifdef SMART_MESH_MONITOR
+	if((result == TRUE) && (pMacEntry->PortSecured == WPA_802_1X_PORT_SECURED))
+	{
+		struct nsmpif_drvevnt_buf drvevnt;
+		drvevnt.data.linkstate.type = NSMPIF_DRVEVNT_EXT_UPLINK_STAT;
+		drvevnt.data.linkstate.link_state = NSMP_UPLINK_STAT_CONNECTED;
+		NdisCopyMemory(drvevnt.data.linkstate.bssid,pMacEntry->wdev->bssid,MAC_ADDR_LEN);
+		drvevnt.data.linkstate.channel = pAd->CommonCfg.Channel;
+		NdisZeroMemory(drvevnt.data.linkstate.op_channels,sizeof(drvevnt.data.linkstate.op_channels));
+		drvevnt.data.linkstate.op_channels[0] = pAd->CommonCfg.Channel;
+#ifdef DOT11_N_SUPPORT
+		if(pAd->CommonCfg.HtCapability.HtCapInfo.ChannelWidth == BW_40)
+			drvevnt.data.linkstate.op_channels[1] = N_GetSecondaryChannel(pAd);
+#endif /* DOT11_N_SUPPORT */
+		RtmpOSWrielessEventSend(pAd->net_dev, RT_WLAN_EVENT_CUSTOM,NSMPIF_DRVEVNT_EXT_UPLINK_STAT,
+								NULL, (PUCHAR)&drvevnt.data.linkstate, sizeof(drvevnt.data.linkstate));
+	}
+#endif /* SMART_MESH_MONITOR */
+
 	/* When root AP is Open WEP, it will cause a fake connection state if user keys in wrong password. */
 	if((result == TRUE) &&
 	   (wdev->AuthMode == Ndis802_11AuthModeOpen) &&
@@ -1031,7 +1154,7 @@ VOID ApCliLinkDown(RTMP_ADAPTER *pAd, UCHAR ifIndex)
 	}
 	else
 	{
-		DBGPRINT(RT_DEBUG_TRACE, ("!!! ERROR : APCLI LINK DOWN - IF(%s%d)!!!\n", INF_APCLI_DEV_NAME, ifIndex));
+		DBGPRINT(RT_DEBUG_OFF, ("!!! ERROR : APCLI LINK DOWN - IF(%s%d)!!!\n", INF_APCLI_DEV_NAME, ifIndex));
 		return;
 	}
 
@@ -1049,14 +1172,14 @@ VOID ApCliLinkDown(RTMP_ADAPTER *pAd, UCHAR ifIndex)
 #endif /* MAC_REPEATER_SUPPORT */
 	{
 		if (wf_fwd_entry_delete_hook)
-			wf_fwd_entry_delete_hook (pApCliEntry->wdev.if_dev, pAd->net_dev);
+			wf_fwd_entry_delete_hook (pApCliEntry->wdev.if_dev, pAd->net_dev, 1);
 	}
 #ifdef MAC_REPEATER_SUPPORT
 	else
 	{
 		if (packet_source_delete_entry_hook)
 			packet_source_delete_entry_hook(100);
-	}	
+	}
 #endif /* MAC_REPEATER_SUPPORT */
 #endif /* CONFIG_WIFI_PKT_FWD */
 
@@ -1072,7 +1195,38 @@ VOID ApCliLinkDown(RTMP_ADAPTER *pAd, UCHAR ifIndex)
 #endif /* MAC_REPEATER_SUPPORT */
 	MacTabWCID = pApCliEntry->MacTabWCID;
 
-	MacTableDeleteEntry(pAd, MacTabWCID, APCLI_ROOT_BSSID_GET(pAd, pApCliEntry->MacTabWCID));
+#ifdef MAC_REPEATER_SUPPORT
+	if (CliIdx != 0xFF)
+	{
+		DBGPRINT(RT_DEBUG_TRACE, ("ApCliLinkDown CliIdx != 0xFF(1) MacTabWCID=%d addr=(%02x:%02x:%02x:%02x:%02x:%02x)\n",
+			MacTabWCID,PRINT_MAC(pAd->MacTab.Content[MacTabWCID].Addr)));
+		DBGPRINT(RT_DEBUG_TRACE, ("ApCliLinkDown CliIdx != 0xFF(2) pApCliEntry->MacTabWCID =%d addr=(%02x:%02x:%02x:%02x:%02x:%02x)\n",
+			pApCliEntry->MacTabWCID,PRINT_MAC(APCLI_ROOT_BSSID_GET(pAd, pApCliEntry->MacTabWCID))));
+		
+	} else
+#endif /* MAC_REPEATER_SUPPORT */	
+	{
+		DBGPRINT(RT_DEBUG_TRACE, ("ApCliLinkDown CliIdx == 0xFF(1) MacTabWCID=%d addr=(%02x:%02x:%02x:%02x:%02x:%02x)\n",
+			MacTabWCID,PRINT_MAC(pAd->MacTab.Content[MacTabWCID].Addr)));
+		DBGPRINT(RT_DEBUG_TRACE, ("ApCliLinkDown CliIdx == 0xFF(2) pApCliEntry->MacTabWCID =%d addr=(%02x:%02x:%02x:%02x:%02x:%02x)\n",
+			pApCliEntry->MacTabWCID,PRINT_MAC(APCLI_ROOT_BSSID_GET(pAd, pApCliEntry->MacTabWCID))));
+	
+	}
+	
+#ifdef MAC_REPEATER_SUPPORT
+	if (CliIdx != 0xFF)
+	{
+		DBGPRINT(RT_DEBUG_TRACE, ("ApCliLinkDown CliIdx != 0xFF MacTabWCID=%d addr=(%02x:%02x:%02x:%02x:%02x:%02x)\n",
+			MacTabWCID,PRINT_MAC(pAd->MacTab.Content[MacTabWCID].Addr)));
+		MacTableDeleteEntry(pAd, MacTabWCID, pAd->MacTab.Content[MacTabWCID].Addr);
+	}
+  	else		
+#endif /* MAC_REPEATER_SUPPORT */			
+  	{
+		DBGPRINT(RT_DEBUG_TRACE, ("ApCliLinkDown CliIdx == 0xFF MacTabWCID=%d addr=(%02x:%02x:%02x:%02x:%02x:%02x)\n",
+			MacTabWCID, PRINT_MAC(APCLI_ROOT_BSSID_GET(pAd, pApCliEntry->MacTabWCID))));
+		MacTableDeleteEntry(pAd, MacTabWCID, APCLI_ROOT_BSSID_GET(pAd, pApCliEntry->MacTabWCID));
+  	}
 
 #ifdef MAC_REPEATER_SUPPORT
 	if (CliIdx != 0xFF)
@@ -1086,6 +1240,9 @@ VOID ApCliLinkDown(RTMP_ADAPTER *pAd, UCHAR ifIndex)
 		pApCliEntry->wdev.allow_data_tx = FALSE;
 		pApCliEntry->wdev.PortSecured = WPA_802_1X_PORT_NOT_SECURED;
 	}
+#ifdef MWDS
+	pApCliEntry->bEnableMWDS = FALSE;
+#endif /* MWDS */
 	pApCliEntry->OpenWEPErrPktChk = FALSE;
 	pApCliEntry->OpenWEPErrPktCnt = 0;
 	pApCliEntry->OpenWEPErrMCPktCnt = 0;
@@ -1113,6 +1270,23 @@ VOID ApCliLinkDown(RTMP_ADAPTER *pAd, UCHAR ifIndex)
 	RT_CFG80211_LOST_GO_INFORM(pAd);
 #endif /* RT_CFG80211_P2P_CONCURRENT_DEVICE */
 #endif /* RT_CFG80211_SUPPORT */
+
+#ifdef SMART_MESH_MONITOR
+	{
+		struct nsmpif_drvevnt_buf drvevnt;
+		drvevnt.data.linkstate.type = NSMPIF_DRVEVNT_EXT_UPLINK_STAT;
+		drvevnt.data.linkstate.link_state = NSMP_UPLINK_STAT_DISCONNECT;
+		drvevnt.data.linkstate.channel = pAd->CommonCfg.Channel;
+		NdisZeroMemory(drvevnt.data.linkstate.op_channels,sizeof(drvevnt.data.linkstate.op_channels));
+		drvevnt.data.linkstate.op_channels[0] = pAd->CommonCfg.Channel;
+#ifdef DOT11_N_SUPPORT
+		if(pAd->CommonCfg.HtCapability.HtCapInfo.ChannelWidth == BW_40)
+			drvevnt.data.linkstate.op_channels[1] = N_GetSecondaryChannel(pAd);
+#endif /* DOT11_N_SUPPORT */
+		RtmpOSWrielessEventSend(pAd->net_dev, RT_WLAN_EVENT_CUSTOM,NSMPIF_DRVEVNT_EXT_UPLINK_STAT,
+								NULL, (PUCHAR)&drvevnt.data.linkstate, sizeof(drvevnt.data.linkstate));
+	}
+#endif /* SMART_MESH_MONITOR */
 
 }
 
@@ -1214,6 +1388,11 @@ VOID ApCliIfDown(RTMP_ADAPTER *pAd)
 	for(ifIndex = 0; ifIndex < MAX_APCLI_NUM; ifIndex++)
 	{
 		pApCliEntry = &pAd->ApCfg.ApCliTab[ifIndex];
+
+#if defined (CONFIG_WIFI_PKT_FWD)
+        if (wf_fwd_entry_delete_hook)
+            wf_fwd_entry_delete_hook (pApCliEntry->wdev.if_dev, pAd->net_dev, 1);
+#endif /* CONFIG_WIFI_PKT_FWD */                                
 		DBGPRINT(RT_DEBUG_TRACE, ("(%s) ApCli interface[%d] startdown.\n", __FUNCTION__, ifIndex));
 
 #ifdef MAC_REPEATER_SUPPORT
@@ -1333,18 +1512,24 @@ VOID ApCliIfMonitor(RTMP_ADAPTER *pAd)
 			Wcid = pAd->ApCfg.ApCliTab[index].MacTabWCID;
 			if (!VALID_WCID(Wcid))
 				continue;
+
 			pMacEntry = &pAd->MacTab.Content[Wcid];
- 
-			if ((pMacEntry->AuthMode >= Ndis802_11AuthModeWPA)
-				&& (pMacEntry->PortSecured != WPA_802_1X_PORT_SECURED)
-				&& (RTMP_TIME_AFTER(pAd->Mlme.Now32 , (pApCliEntry->ApCliLinkUpTime + (30 * OS_HZ)))))
+#ifdef WSC_AP_SUPPORT
+            if(!((pAd->ApCfg.ApCliTab[index].WscControl.WscConfMode != WSC_DISABLE) &&
+				 (pAd->ApCfg.ApCliTab[index].WscControl.bWscTrigger == TRUE)))
+#endif /* WSC_AP_SUPPORT */
+            {
+                if ((pMacEntry->AuthMode >= Ndis802_11AuthModeWPA) &&
+				     (pMacEntry->PortSecured != WPA_802_1X_PORT_SECURED) &&
+				     (RTMP_TIME_AFTER(pAd->Mlme.Now32 , (pApCliEntry->ApCliLinkUpTime + (30 * OS_HZ)))))
 				bForceBrocken = TRUE;
+            }
  
-			if (RTMP_TIME_AFTER(pAd->Mlme.Now32 , (pApCliEntry->ApCliRcvBeaconTime + (12 * OS_HZ))))
+			if (RTMP_TIME_AFTER(pAd->Mlme.Now32 , (pApCliEntry->ApCliRcvBeaconTime + (8 * OS_HZ))))
 			{
 				printk("ApCliIfMonitor: IF(%s%d) - no Beacon is received from Root-AP.\n", INF_APCLI_DEV_NAME, index);
 				bForceBrocken = TRUE;
-		}
+			}
 		}
 		else
 		{
@@ -1436,7 +1621,7 @@ BOOLEAN ApCliMsgTypeSubst(
 #ifdef WSC_AP_SUPPORT    
 	        /*WSC EAPOL PACKET */
 	        pEntry = MacTableLookup(pAd, pFrame->Hdr.Addr2);
-	        if (pEntry && IS_ENTRY_APCLI(pEntry) && pAd->ApCfg.ApCliTab[pEntry->apidx].WscControl.WscConfMode == WSC_ENROLLEE)
+            if (pEntry && IS_ENTRY_APCLI(pEntry) && pAd->ApCfg.ApCliTab[pEntry->apidx].WscControl.WscConfMode != WSC_DISABLE)
 	        {
 	            *Machine = WSC_STATE_MACHINE;
 	            EAPType = *((UCHAR*)pFrame + LENGTH_802_11 + LENGTH_802_1_H + 1);
@@ -1568,7 +1753,7 @@ BOOLEAN ApCliPeerAssocRspSanity(
     OUT UCHAR *pCkipFlag,
     OUT IE_LISTS *ie_list) 
 {
-	CHAR          IeType, *Ptr;
+	CHAR          IeType;
 	PFRAME_802_11 pFrame = (PFRAME_802_11)pMsg;
 	PEID_STRUCT   pEid;
 	ULONG         Length = 0;
@@ -1577,7 +1762,6 @@ BOOLEAN ApCliPeerAssocRspSanity(
 	*pHtCapabilityLen = 0;
 	*pAddHtInfoLen = 0;
 	COPY_MAC_ADDR(pAddr2, pFrame->Hdr.Addr2);
-	Ptr = (CHAR *) pFrame->Octet;
 	Length += LENGTH_802_11;
         
 	NdisMoveMemory(pCapabilityInfo, &pFrame->Octet[0], 2);
@@ -1836,17 +2020,22 @@ INT ApCliAllowToSendPacket(
 				break;
 
 #ifdef MAC_REPEATER_SUPPORT
-			if (pAd->ApCfg.bMACRepeaterEn == TRUE)
+			if ((pAd->ApCfg.bMACRepeaterEn == TRUE)
+#ifdef MWDS
+				&& (apcli_entry->bEnableMWDS == FALSE)
+#endif /* MWDS */
+				)
 			{
 				PUCHAR pSrcBufVA = NULL;
 				PACKET_INFO PacketInfo;
 				UINT SrcBufLen;
 				PMAC_TABLE_ENTRY pEntry = NULL;
 				REPEATER_CLIENT_ENTRY *pReptEntry = NULL;
+				UCHAR isLinkValid;
 
 				RTMP_QueryPacketInfo(pPacket, &PacketInfo, &pSrcBufVA, &SrcBufLen);
 
-				pReptEntry = RTMPLookupRepeaterCliEntry(pAd, TRUE, (pSrcBufVA + MAC_ADDR_LEN));
+				pReptEntry = RTMPLookupRepeaterCliEntry(pAd, TRUE, (pSrcBufVA + MAC_ADDR_LEN), TRUE, &isLinkValid);
 				if (pReptEntry)
 				{
 					*pWcid = pReptEntry->MacTabWCID;
@@ -1854,6 +2043,10 @@ INT ApCliAllowToSendPacket(
 				}
 				else
 				{
+					if (!isLinkValid)
+						return FALSE;
+				
+
 					if (RTMPRepeaterVaildMacEntry(pAd, pSrcBufVA + MAC_ADDR_LEN))
 					{
 						pEntry = &pAd->MacTab.Content[pAd->ApCfg.ApCliTab[idx].MacTabWCID];
@@ -2278,23 +2471,44 @@ BOOLEAN ApCliValidateRSNIE(
 		{
 			DBGPRINT(RT_DEBUG_TRACE,("WPA_AUTO Mode ==> peerAp: Rsn IE\n"));
 			wdev->AuthMode = WPA2_AuthMode;
-			wdev->WepStatus = WPA2.PairCipher;
 		}
 		else if (Sanity == 0x3)
 		{
 			DBGPRINT(RT_DEBUG_TRACE, ("WPA_AUTO Mode ==> peerAp: including Rsn/WPA IE (DUAL)\n"));
 			wdev->AuthMode = WPA2_AuthMode;
-                	wdev->WepStatus = WPA2.PairCipher;
 		}
 		else if (Sanity == 0x1)
         	{
                 	DBGPRINT(RT_DEBUG_TRACE, ("WPA_AUTO Mode ==> peerAp: WPA IE\n"));
                 	wdev->AuthMode = WPA_AuthMode;
+    	}
+		else
+		{
+			DBGPRINT(RT_DEBUG_TRACE, ("WPA_AUTO Mode ==> peerAp: no Rsn/WPA IE\n"));
+			return FALSE;
+		}
+	}
+
+    if(wdev->bEncryptAutoMode == TRUE)
+    {
+        if (Sanity == 0x2)
+		{
+			DBGPRINT(RT_DEBUG_TRACE,("ENCRYPT_AUTO Mode ==> peerAp: Rsn IE\n"));
+			wdev->WepStatus = WPA2.PairCipher;
+		}
+		else if (Sanity == 0x3)
+		{
+			DBGPRINT(RT_DEBUG_TRACE, ("ENCRYPT_AUTO Mode ==> peerAp: including Rsn/WPA IE (DUAL)\n"));
+            wdev->WepStatus = WPA2.PairCipher;
+		}
+		else if (Sanity == 0x1)
+    	{
+        	DBGPRINT(RT_DEBUG_TRACE, ("ENCRYPT_AUTO Mode ==> peerAp: WPA IE\n"));
                 	wdev->WepStatus = WPA.PairCipher;
         	}
 		else
 		{
-			DBGPRINT(RT_DEBUG_TRACE, ("WPA_AUTO Mode ==> peerAp: no Rsn/WPA IE\n"));
+			DBGPRINT(RT_DEBUG_TRACE, ("ENCRYPT_AUTO Mode ==> peerAp: no Rsn/WPA IE\n"));
 			return FALSE;
 		}
 	}
@@ -2446,6 +2660,12 @@ BOOLEAN  ApCliHandleRxBroadcastFrame(
 			
 	/* Filter out Bcast frame which AP relayed for us */
 	/* Multicast packet send from AP1 , received by AP2 and send back to AP1, drop this frame */
+#ifdef MWDS
+	if(IS_MWDS_OPMODE_APCLI(pEntry) &&
+	   MAC_ADDR_EQUAL(pHeader->Octet, pApCliEntry->wdev.if_addr))
+			return FALSE;
+#endif /* MWDS */
+
 	if (MAC_ADDR_EQUAL(pHeader->Addr3, pApCliEntry->wdev.if_addr))
 		return FALSE;
 
@@ -2455,7 +2675,9 @@ BOOLEAN  ApCliHandleRxBroadcastFrame(
 #ifdef MAC_REPEATER_SUPPORT
 	if (pAd->ApCfg.bMACRepeaterEn)
 	{
-		pReptEntry = RTMPLookupRepeaterCliEntry(pAd, FALSE, pHeader->Addr3);
+		UCHAR isLinkValid;
+	
+		pReptEntry = RTMPLookupRepeaterCliEntry(pAd, FALSE, pHeader->Addr3, TRUE, &isLinkValid);
 		if (pReptEntry)
 			return FALSE;	/* give up this frame */
 	}
@@ -2464,8 +2686,18 @@ BOOLEAN  ApCliHandleRxBroadcastFrame(
 
 							
 	/* skip the 802.11 header */
-	pRxBlk->pData += LENGTH_802_11;
-	pRxBlk->DataSize -= LENGTH_802_11;
+#ifdef MWDS
+	if(IS_MWDS_OPMODE_APCLI(pEntry))
+	{
+		pRxBlk->pData += LENGTH_802_11_WITH_ADDR4;
+		pRxBlk->DataSize -= LENGTH_802_11_WITH_ADDR4;
+	}
+	else
+#endif /* MWDS */
+	{
+		pRxBlk->pData += LENGTH_802_11;
+		pRxBlk->DataSize -= LENGTH_802_11;
+	}
 
 	/* Use software to decrypt the encrypted frame. */
 	/* Because this received frame isn't my BSS frame, Asic passed to driver without decrypting it. */
@@ -2614,6 +2846,7 @@ VOID ApCliUpdateMlmeRate(RTMP_ADAPTER *pAd, USHORT ifIndex)
 	UCHAR	ProperMlmeRate; /*= RATE_54; */
 	UCHAR	i, j, RateIdx = 12; /* 1, 2, 5.5, 11, 6, 9, 12, 18, 24, 36, 48, 54 */
 	BOOLEAN	bMatch = FALSE;
+	UCHAR   PhyMode = pAd->CommonCfg.PhyMode;
 
 	PAPCLI_STRUCT pApCliEntry = NULL;
 
@@ -2621,8 +2854,11 @@ VOID ApCliUpdateMlmeRate(RTMP_ADAPTER *pAd, USHORT ifIndex)
 		return;
 
 	pApCliEntry = &pAd->ApCfg.ApCliTab[ifIndex];
+#ifdef APCLI_AUTO_BW_SUPPORT
+	PhyMode = pApCliEntry->wdev.PhyMode;	
+#endif /* APCLI_AUTO_BW_SUPPORT */
 
-	switch (pAd->CommonCfg.PhyMode) 
+	switch (PhyMode) 
 	{
 		case (WMODE_B):
 			ProperMlmeRate = RATE_11;
@@ -2812,6 +3048,9 @@ VOID APCli_Init(RTMP_ADAPTER *pAd, RTMP_OS_NETDEV_OP_HOOK *pNetDevOps)
 #endif /* HOSTAPD_SUPPORT */
 		
 		pApCliEntry = &pAd->ApCfg.ApCliTab[idx];
+
+		NdisZeroMemory(&pApCliEntry->ApCliCounter, sizeof(APCLI_COUNTER));
+
 #ifdef APCLI_CONNECTION_TRIAL
 		pApCliEntry->ifIndex = idx;
 		pApCliEntry->pAd = pAd;
@@ -2856,6 +3095,8 @@ VOID APCli_Init(RTMP_ADAPTER *pAd, RTMP_OS_NETDEV_OP_HOOK *pNetDevOps)
 					MacMask = 0xF0;
 #endif /* SPECIFIC_BCN_BUF_SUPPORT */
 
+				idx = (pAd->ApCfg.BssidNum + MAX_MESH_NUM) - 1;
+
 				/* 	
 					Refer to HW definition - 
 						Bit1 of MAC address Byte0 is local administration bit 
@@ -2870,18 +3111,16 @@ VOID APCli_Init(RTMP_ADAPTER *pAd, RTMP_OS_NETDEV_OP_HOOK *pNetDevOps)
 							and should be set to 1 in extended multiple BSSIDs'
 							Bit3~ of MAC address Byte0 is extended multiple BSSID index.
 			 		*/ 
-#ifdef ENHANCE_NEW_MBSSID_MODE
 					wdev->if_addr[0] &= (MacMask << 2);
-#endif /* ENHANCE_NEW_MBSSID_MODE */
 					wdev->if_addr[0] |= 0x2;
-					wdev->if_addr[0] += (((pAd->ApCfg.BssidNum + MAX_MESH_NUM) - 1) << 2);
+					wdev->if_addr[0] |= (idx << 2);
 				}
 #ifdef ENHANCE_NEW_MBSSID_MODE
 				else
 				{
 					wdev->if_addr[0] |= 0x2;
 					wdev->if_addr[pAd->chipCap.MBSSIDMode - 1] &= (MacMask);
-					wdev->if_addr[pAd->chipCap.MBSSIDMode - 1] += ((pAd->ApCfg.BssidNum + MAX_MESH_NUM) - 1);
+					wdev->if_addr[pAd->chipCap.MBSSIDMode - 1] |= idx;
 				}
 #endif /* ENHANCE_NEW_MBSSID_MODE */
 			}
@@ -2931,6 +3170,10 @@ VOID ApCli_Remove(RTMP_ADAPTER *pAd)
 BOOLEAN ApCli_Open(RTMP_ADAPTER *pAd, PNET_DEV dev_p)
 {
 	UCHAR ifIndex;
+#if defined (CONFIG_WIFI_PKT_FWD)
+	if (wf_fwd_probe_adapter)
+		wf_fwd_probe_adapter(pAd);
+#endif 
 
 	for (ifIndex = 0; ifIndex < MAX_APCLI_NUM; ifIndex++)
 	{
@@ -2998,6 +3241,10 @@ BOOLEAN ApCli_Close(RTMP_ADAPTER *pAd, PNET_DEV dev_p)
 					}
 				}
 #endif /* MAC_REPEATER_SUPPORT */
+#ifdef SMART_MESH
+				/* To avoid  to connect to previous bssid setting after interface up later. */
+				NdisZeroMemory(apcli_entry->CfgApCliBssid, MAC_ADDR_LEN);
+#endif /* SMART_MESH */
 
 				MlmeEnqueue(pAd, APCLI_CTRL_STATE_MACHINE, APCLI_CTRL_DISCONNECT_REQ, 0, NULL, ifIndex);
 				RTMP_MLME_HANDLER(pAd);
@@ -3047,6 +3294,80 @@ BOOLEAN ApCli_StatsGet(
 }
 
 #ifdef APCLI_AUTO_CONNECT_SUPPORT
+
+BOOLEAN ApCliSetIfState(
+	IN PRTMP_ADAPTER pAd,
+	IN UCHAR ifIndex,
+	IN BOOLEAN state)
+{
+	pAd->ApCfg.ApCliTab[ifIndex].Enable = state;
+
+#ifdef APCLI_CONNECTION_TRIAL
+	if (pAd->ApCfg.ApCliTab[ifIndex].TrialCh == 0)
+#endif /* APCLI_CONNECTION_TRIAL */
+	ApCliIfDown(pAd);
+
+	return TRUE;
+}
+
+
+BOOLEAN ApCliSetBssid(
+	IN PRTMP_ADAPTER pAd,
+	IN UCHAR ifIndex,
+	IN UCHAR *Bssid)
+{
+	BOOLEAN apcliEn = pAd->ApCfg.ApCliTab[ifIndex].Enable;
+
+	/* bring apcli interface down first */
+	if (apcliEn == TRUE)
+	{
+		pAd->ApCfg.ApCliTab[ifIndex].Enable = FALSE;
+#ifdef APCLI_CONNECTION_TRIAL
+		if (pAd->ApCfg.ApCliTab[ifIndex].TrialCh == 0)
+#endif /* APCLI_CONNECTION_TRIAL */
+		ApCliIfDown(pAd);
+	}
+
+	NdisCopyMemory(pAd->ApCfg.ApCliTab[ifIndex].CfgApCliBssid, Bssid, MAC_ADDR_LEN);
+
+	pAd->ApCfg.ApCliTab[ifIndex].Enable = apcliEn;
+
+	return TRUE;
+}
+
+
+BOOLEAN ApCliAutoConnectStart(
+	IN PRTMP_ADAPTER pAd,
+	IN UCHAR ifIndex)
+{
+	AP_ADMIN_CONFIG *pApCfg = &pAd->ApCfg;
+	NDIS_802_11_SSID Ssid;
+
+#ifdef WSC_AP_SUPPORT
+	if ((pApCfg->ApCliTab[ifIndex].WscControl.WscConfMode != WSC_DISABLE) &&
+	    (pApCfg->ApCliTab[ifIndex].WscControl.bWscTrigger == TRUE))
+		return FALSE;
+#endif /* WSC_AP_SUPPORT */
+
+	if (pApCfg->ApCliAutoConnectRunning == FALSE)
+	{
+		ApCliSetIfState(pAd, ifIndex, FALSE);
+		pApCfg->ApCliAutoConnectRunning = TRUE;
+	}
+	else
+	{
+		return TRUE;
+	}
+
+	/*
+		use site survey function to trigger auto connecting (when pAd->ApCfg.ApAutoConnectRunning == TRUE)
+	*/
+	NdisZeroMemory(&Ssid, sizeof(NDIS_802_11_SSID));
+	ApCliSiteSurvey(pAd, ifIndex, &Ssid, SCAN_ACTIVE, FALSE);
+
+	return TRUE;
+}
+
 /* 
 	===================================================
 	
@@ -3076,7 +3397,29 @@ BOOLEAN ApCliAutoConnectExec(
 	
 	DBGPRINT(RT_DEBUG_TRACE, ("---> ApCliAutoConnectExec()\n"));
 
-	ifIdx = pObj->ioctl_if;
+	pObj->ioctl_if_type = INT_APCLI;
+
+	for(ifIdx=0; ifIdx<MAX_APCLI_NUM; ifIdx++)
+	{
+		if (pAd->ApCfg.ApCliTab[ifIdx].AutoConnectFlag == TRUE)
+			break;
+	}
+
+	if(ifIdx >= MAX_APCLI_NUM)
+	{
+		DBGPRINT(RT_DEBUG_ERROR, ("Error  ifIdx=%d\n", ifIdx));
+		return FALSE;
+	}
+
+#ifdef WSC_AP_SUPPORT
+	if ((pAd->ApCfg.ApCliTab[ifIdx].WscControl.WscConfMode != WSC_DISABLE) &&
+	    (pAd->ApCfg.ApCliTab[ifIdx].WscControl.bWscTrigger == TRUE))
+	{
+		pAd->ApCfg.ApCliAutoConnectRunning = FALSE;
+		return FALSE;
+	}
+#endif /* WSC_AP_SUPPORT */
+
 	CfgSsidLen = pAd->ApCfg.ApCliTab[ifIdx].CfgSsidLen;
 	pCfgSsid = pAd->ApCfg.ApCliTab[ifIdx].CfgSsid;
 	pScanTab = &pAd->ScanTab;
@@ -3091,12 +3434,13 @@ BOOLEAN ApCliAutoConnectExec(
 	for (entryIdx=0; entryIdx<pScanTab->BssNr;entryIdx++)
 	{
 		BSS_ENTRY *pBssEntry = &pScanTab->BssEntry[entryIdx];
+        BOOLEAN bAddEntry = FALSE;
 		
 		if ( pBssEntry->Channel == 0)
 			break;
 
 		if (NdisEqualMemory(pCfgSsid, pBssEntry->Ssid, CfgSsidLen) &&
-							(pBssEntry->SsidLen) &&
+							(CfgSsidLen == pBssEntry->SsidLen) &&
 							(pSsidBssTab->BssNr < MAX_LEN_OF_BSS_TABLE))
 		{
 
@@ -3107,17 +3451,34 @@ BOOLEAN ApCliAutoConnectExec(
 				{
 					DBGPRINT(RT_DEBUG_TRACE, ("WPA_AUTO Mode peerAp: RSN IE (ApCliAutoConnect)\n"));
 					wdev->AuthMode =  pBssEntry->AuthMode;
-                        		wdev->WepStatus = pBssEntry->WPA2.PairCipher;
 				}
 				else if (pBssEntry->WPA.PairCipher != Ndis802_11WEPDisabled)
 				{
 					DBGPRINT(RT_DEBUG_TRACE, ("WPA_AUTO Mode peerAp: WPA IE (ApCliAutoConnect)\n"));
 					wdev->AuthMode =  pBssEntry->AuthMode;
-                                        wdev->WepStatus = pBssEntry->WPA.PairCipher;
 				}
 				else
 				{
 					DBGPRINT(RT_DEBUG_TRACE, ("WPA_AUTO Mode peerAp: no Rsn/WPA IE (ApCliAutoConnect)\n"));
+				}
+			}
+      
+            if (wdev->bEncryptAutoMode == TRUE)
+			{
+				DBGPRINT(RT_DEBUG_TRACE,("ENCRYPT_AUTO Mode under the APCLI_AUTO_CONNECT mode\n"));
+				if (pBssEntry->WPA2.PairCipher != Ndis802_11WEPDisabled)
+				{
+					DBGPRINT(RT_DEBUG_TRACE, ("ENCRYPT_AUTO Mode peerAp: RSN IE (ApCliAutoConnect)\n"));
+					wdev->WepStatus = pBssEntry->WPA2.PairCipher;
+				}
+				else if (pBssEntry->WPA.PairCipher != Ndis802_11WEPDisabled)
+				{
+					DBGPRINT(RT_DEBUG_TRACE, ("ENCRYPT_AUTO Mode peerAp: WPA IE (ApCliAutoConnect)\n"));
+                                        wdev->WepStatus = pBssEntry->WPA.PairCipher;
+				}
+				else
+				{
+					DBGPRINT(RT_DEBUG_TRACE, ("ENCRYPT_AUTO Mode peerAp: no Rsn/WPA IE (ApCliAutoConnect)\n"));
 				}
 			}
 			
@@ -3142,8 +3503,22 @@ BOOLEAN ApCliAutoConnectExec(
 						("I/F(%s%d) ApCliAutoConnectExec::(AuthMode=%s, EncrypType=%s)\n", INF_APCLI_DEV_NAME, ifIdx,
 						GetAuthMode(pBssEntry->AuthMode),
 						GetEncryptType(pBssEntry->WepStatus)) );
-				NdisMoveMemory(&pSsidBssTab->BssEntry[pSsidBssTab->BssNr++],
-								pBssEntry, sizeof(BSS_ENTRY));
+                
+                if(MAC_ADDR_EQUAL(pApCliEntry->CfgApCliBssid, ZERO_MAC_ADDR))
+                {
+                    bAddEntry = TRUE;
+#ifdef SMART_MESH
+                    if(!pApCliEntry->SmartMeshCfg.bHiFiPeerFilter || pBssEntry->bHyperFiPeer)
+                        bAddEntry = TRUE;
+                    else
+                        bAddEntry = FALSE;
+#endif /* SMART_MESH */
+                }
+                else if(MAC_ADDR_EQUAL(pApCliEntry->CfgApCliBssid, pBssEntry->Bssid))
+                    bAddEntry = TRUE;
+                
+                if(bAddEntry)
+                    NdisMoveMemory(&pSsidBssTab->BssEntry[pSsidBssTab->BssNr++],pBssEntry, sizeof(BSS_ENTRY));
 			} 
 		}		
 	}
@@ -3168,35 +3543,60 @@ BOOLEAN ApCliAutoConnectExec(
 		/*
 			Switch to the channel of the candidate AP
 		*/
-		UCHAR tempBuf[20];
-		if (pAd->CommonCfg.Channel != pSsidBssTab->BssEntry[pSsidBssTab->BssNr -1].Channel)
+		UCHAR	CandidateAPChannel[8];
+		UCHAR *pCandidateAPBssid = NULL;
+		BOOLEAN bChangeToCandidateAP = TRUE;
+		
+		if(!MAC_ADDR_EQUAL(pApCliEntry->CfgApCliBssid, ZERO_MAC_ADDR))
 		{
-			sprintf(tempBuf, "%d", pSsidBssTab->BssEntry[pSsidBssTab->BssNr -1].Channel);
-			DBGPRINT(RT_DEBUG_TRACE, ("Switch to channel :%s\n", tempBuf));
-			Set_Channel_Proc(pAd, tempBuf);		
+			/*
+				We don't want this feature to impact desired bssid.
+			*/
+			if(!MAC_ADDR_EQUAL(pApCliEntry->CfgApCliBssid, pSsidBssTab->BssEntry[pSsidBssTab->BssNr -1].Bssid))
+			{
+				bChangeToCandidateAP = FALSE;
+				pAd->ApCfg.ApCliAutoConnectRunning = FALSE;
+				DBGPRINT(RT_DEBUG_TRACE, 
+						("%s: This candidate AP(%02X:%02X:%02X:%02X:%02X:%02X) not match with CfgApCliBssid(%02X:%02X:%02X:%02X:%02X:%02X).\n",
+						__FUNCTION__,PRINT_MAC(pSsidBssTab->BssEntry[pSsidBssTab->BssNr -1].Bssid),
+						PRINT_MAC(pApCliEntry->CfgApCliBssid)));
+			}
 		}
-			sprintf(tempBuf, "%02X:%02X:%02X:%02X:%02X:%02X", 
-					pSsidBssTab->BssEntry[pSsidBssTab->BssNr -1].Bssid[0],
-					pSsidBssTab->BssEntry[pSsidBssTab->BssNr -1].Bssid[1],
-					pSsidBssTab->BssEntry[pSsidBssTab->BssNr -1].Bssid[2],
-					pSsidBssTab->BssEntry[pSsidBssTab->BssNr -1].Bssid[3],
-					pSsidBssTab->BssEntry[pSsidBssTab->BssNr -1].Bssid[4],
-					pSsidBssTab->BssEntry[pSsidBssTab->BssNr -1].Bssid[5]);
-			Set_ApCli_Bssid_Proc(pAd, tempBuf);			
+		else
+		{
+			pCandidateAPBssid = pSsidBssTab->BssEntry[pSsidBssTab->BssNr -1].Bssid;
+		}
+		
+		if(bChangeToCandidateAP)
+		{
+			BSS_ENTRY *pBssEntry = &pSsidBssTab->BssEntry[pSsidBssTab->BssNr -1];
+			
+			if (pAd->CommonCfg.Channel != pBssEntry->Channel)
+			{
+				ApCliSetIfState(pAd, ifIdx, FALSE);
+				
+				sprintf(CandidateAPChannel, "%d", pBssEntry->Channel);
+				DBGPRINT(RT_DEBUG_TRACE, ("Switch to channel :%s\n", CandidateAPChannel));
+				Set_Channel_Proc(pAd, CandidateAPChannel);
+			}
+			
+			if (pCandidateAPBssid)
+				ApCliSetBssid(pAd, ifIdx, pCandidateAPBssid);
+		}
 	}
 	else 
 	{
 		DBGPRINT(RT_DEBUG_ERROR, ("Error! Out of table range: (BssNr=%d).\n", pSsidBssTab->BssNr) );
-		Set_ApCli_Enable_Proc(pAd, "1");
+		ApCliSetIfState(pAd, ifIdx, TRUE);
 		pAd->ApCfg.ApCliAutoConnectRunning = FALSE;
 		DBGPRINT(RT_DEBUG_TRACE, ("<--- ApCliAutoConnectExec()\n"));
 		return FALSE;
-	}	
-	
-	Set_ApCli_Enable_Proc(pAd, "1");
+	}
+
+	ApCliSetIfState(pAd, ifIdx, TRUE);
 	DBGPRINT(RT_DEBUG_TRACE, ("<--- ApCliAutoConnectExec()\n"));
+
 	return TRUE;
-	
 }
 
 /* 
@@ -3216,12 +3616,12 @@ BOOLEAN ApCliAutoConnectExec(
 */
 
 VOID ApCliSwitchCandidateAP(
-	IN PRTMP_ADAPTER pAd)
+	IN PRTMP_ADAPTER pAd,
+	IN UCHAR ifIndex)
 {
-	POS_COOKIE  	pObj = (POS_COOKIE) pAd->OS_Cookie;
 	BSS_TABLE 		*pSsidBssTab;
 	PAPCLI_STRUCT	pApCliEntry;
-	UCHAR			lastEntryIdx, ifIdx = pObj->ioctl_if;
+	UCHAR			lastEntryIdx;
 
 #ifdef AP_PARTIAL_SCAN_SUPPORT
 	if (pAd->ApCfg.bPartialScanning == TRUE)
@@ -3230,8 +3630,14 @@ VOID ApCliSwitchCandidateAP(
 
 	DBGPRINT(RT_DEBUG_TRACE, ("---> ApCliSwitchCandidateAP()\n"));
 	pSsidBssTab = &pAd->MlmeAux.SsidBssTab;
-	pApCliEntry = &pAd->ApCfg.ApCliTab[ifIdx];
-	
+	pApCliEntry = &pAd->ApCfg.ApCliTab[ifIndex];
+
+	if (pSsidBssTab->BssNr == 0)
+	{
+		pAd->ApCfg.ApCliAutoConnectRunning = FALSE;
+		goto exit_and_enable;
+	}
+
 	/*
 		delete (zero) the previous connected-failled entry and always 
 		connect to the last entry in talbe until the talbe is empty.
@@ -3241,22 +3647,44 @@ VOID ApCliSwitchCandidateAP(
 	
 	if ((pSsidBssTab->BssNr > 0) && (pSsidBssTab->BssNr < MAX_LEN_OF_BSS_TABLE))
 	{
-		UCHAR	tempBuf[20];
-		
-		sprintf(tempBuf, "%02X:%02X:%02X:%02X:%02X:%02X", 
-				pSsidBssTab->BssEntry[lastEntryIdx].Bssid[0],
-				pSsidBssTab->BssEntry[lastEntryIdx].Bssid[1],
-				pSsidBssTab->BssEntry[lastEntryIdx].Bssid[2],
-				pSsidBssTab->BssEntry[lastEntryIdx].Bssid[3],
-				pSsidBssTab->BssEntry[lastEntryIdx].Bssid[4],
-				pSsidBssTab->BssEntry[lastEntryIdx].Bssid[5]);
-		Set_ApCli_Bssid_Proc(pAd, tempBuf);
-		if (pAd->CommonCfg.Channel != pSsidBssTab->BssEntry[lastEntryIdx].Channel)
+		UCHAR	CandidateAPChannel[8];
+		UCHAR *pCandidateAPBssid = NULL;
+		BOOLEAN bChangeToCandidateAP = TRUE;
+
+		if(!MAC_ADDR_EQUAL(pApCliEntry->CfgApCliBssid, ZERO_MAC_ADDR))
 		{
-			Set_ApCli_Enable_Proc(pAd, "0");
-			sprintf(tempBuf, "%d", pSsidBssTab->BssEntry[lastEntryIdx].Channel);
-			DBGPRINT(RT_DEBUG_TRACE, ("Switch to channel :%s\n", tempBuf));
-			Set_Channel_Proc(pAd, tempBuf);		
+			/*
+			We don't want this feature to impact desired bssid.
+			*/
+			if(!MAC_ADDR_EQUAL(pApCliEntry->CfgApCliBssid, pSsidBssTab->BssEntry[lastEntryIdx].Bssid))
+			{
+				bChangeToCandidateAP = FALSE;
+				pAd->ApCfg.ApCliAutoConnectRunning = FALSE;
+				DBGPRINT(RT_DEBUG_TRACE, 
+						("%s: This candidate AP(%02X:%02X:%02X:%02X:%02X:%02X) not match with CfgApCliBssid(%02X:%02X:%02X:%02X:%02X:%02X).\n",
+						__FUNCTION__,PRINT_MAC(pSsidBssTab->BssEntry[lastEntryIdx].Bssid),PRINT_MAC(pApCliEntry->CfgApCliBssid)));
+			}
+		}
+		else
+		{
+			pCandidateAPBssid = pSsidBssTab->BssEntry[lastEntryIdx].Bssid;
+		}
+
+		if(bChangeToCandidateAP)
+		{
+			BSS_ENTRY *pBssEntry = &pSsidBssTab->BssEntry[lastEntryIdx];
+			
+			if (pAd->CommonCfg.Channel != pBssEntry->Channel)
+			{
+				ApCliSetIfState(pAd, ifIndex, FALSE);
+				
+				sprintf(CandidateAPChannel, "%d", pBssEntry->Channel);
+				DBGPRINT(RT_DEBUG_TRACE, ("Switch to channel :%s\n", CandidateAPChannel));
+				Set_Channel_Proc(pAd, CandidateAPChannel);
+			}
+			
+			if (pCandidateAPBssid)
+				ApCliSetBssid(pAd, ifIndex, pCandidateAPBssid);
 		}
 	}
 	else
@@ -3264,11 +3692,13 @@ VOID ApCliSwitchCandidateAP(
 		DBGPRINT(RT_DEBUG_TRACE, ("No candidate AP, the process is about to stop.\n"));
 		pAd->ApCfg.ApCliAutoConnectRunning = FALSE;
 	}
-	
-	Set_ApCli_Enable_Proc(pAd, "1");
+
+exit_and_enable:
+
+	ApCliSetIfState(pAd, ifIndex, TRUE);
 	DBGPRINT(RT_DEBUG_TRACE, ("---> ApCliSwitchCandidateAP()\n"));
-	
 }
+
 
 BOOLEAN ApcliCompareAuthEncryp(
 	IN PAPCLI_STRUCT pApCliEntry,
@@ -3422,5 +3852,6 @@ VOID ApCliRxOpenWEPCheck(
 		if(isMCPkt) pApCliEntry->OpenWEPErrMCPktCnt++;
 	}
 }
+
 #endif /* APCLI_SUPPORT */
 

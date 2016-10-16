@@ -155,12 +155,6 @@ int rt28xx_init(VOID *pAdSrc, PSTRING pDefaultMac, PSTRING pHostName)
 #endif /* RT3290 */
 
 
-	/* enable HW to autofallback to legacy rate to prevent ping fail in long range */
-	if (IS_MT76x0(pAd))
-	{
-		RTMP_IO_WRITE32(pAd, HT_FBK_TO_LEGACY , 0x10);
-	}
-
 	/* reset Adapter flags*/
 	RTMP_CLEAR_FLAGS(pAd);
 
@@ -846,17 +840,6 @@ VOID RTMPDrvOpen(
 	/* WSC hardware push button function 0811 */
 	WSC_HDR_BTN_Init(pAd);
 #endif /* WSC_INCLUDED */
-
-#ifdef CONFIG_AP_SUPPORT
-#ifdef MULTI_CLIENT_SUPPORT
-    pAd->CommonCfg.txRetryCfg = 0;
-    {
-        UINT32  TxRtyCfg;
-        RTMP_IO_READ32(pAd, TX_RTY_CFG, &TxRtyCfg);
-        pAd->CommonCfg.txRetryCfg = TxRtyCfg;
-    }
-#endif /* MULTI_CLIENT_SUPPORT */
-#endif /* CONFIG_AP_SUPPORT */
 
 }
 

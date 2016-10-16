@@ -41,7 +41,7 @@
 #include "runopts.h"
 #include "crypto_desc.h"
 
-static void svr_remoteclosed();
+static void svr_remoteclosed(void);
 
 struct serversession svr_ses; /* GLOBAL */
 
@@ -160,7 +160,7 @@ void svr_dropbear_exit(int exitcode, const char* format, va_list param) {
 	} else if (ses.authstate.pw_name) {
 		/* we have a potential user */
 		snprintf(fmtbuf, sizeof(fmtbuf), 
-				"Exit before auth (user '%s', %d fails): %s",
+				"Exit before auth (user '%s', %u fails): %s",
 				ses.authstate.pw_name, ses.authstate.failcount, format);
 	} else {
 		/* before userauth */
@@ -204,7 +204,7 @@ void svr_dropbear_log(int priority, const char* format, va_list param) {
 	vsnprintf(printbuf, sizeof(printbuf), format, param);
 
 #ifndef DISABLE_SYSLOG
-	if (svr_opts.usingsyslog) {
+	if (opts.usingsyslog) {
 		syslog(priority, "%s", printbuf);
 	}
 #endif
@@ -215,8 +215,7 @@ void svr_dropbear_log(int priority, const char* format, va_list param) {
 	havetrace = debug_trace;
 #endif
 
-	if (!svr_opts.usingsyslog || havetrace)
-	{
+	if (!opts.usingsyslog || havetrace) {
 		struct tm * local_tm = NULL;
 		timesec = time(NULL);
 		local_tm = localtime(&timesec);

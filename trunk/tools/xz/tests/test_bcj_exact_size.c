@@ -65,6 +65,7 @@ decompress(void)
 		if (ret == LZMA_STREAM_END) {
 			expect(strm.total_in == compressed_size);
 			expect(strm.total_out == sizeof(in));
+			lzma_end(&strm);
 			return;
 		}
 

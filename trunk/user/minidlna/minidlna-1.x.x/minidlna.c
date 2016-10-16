@@ -238,30 +238,6 @@ getfriendlyname(char *buf, int len)
 		}
 	}
 	fclose(info);
-#if PNPX
-	memcpy(pnpx_hwid+4, "01F2", 4);
-	if (strcmp(modelnumber, "NVX") == 0)
-		memcpy(pnpx_hwid+17, "0101", 4);
-	else if (strcmp(modelnumber, "Pro") == 0 ||
-	         strcmp(modelnumber, "Pro 6") == 0 ||
-	         strncmp(modelnumber, "Ultra 6", 7) == 0)
-		memcpy(pnpx_hwid+17, "0102", 4);
-	else if (strcmp(modelnumber, "Pro 2") == 0 ||
-	         strncmp(modelnumber, "Ultra 2", 7) == 0)
-		memcpy(pnpx_hwid+17, "0103", 4);
-	else if (strcmp(modelnumber, "Pro 4") == 0 ||
-	         strncmp(modelnumber, "Ultra 4", 7) == 0)
-		memcpy(pnpx_hwid+17, "0104", 4);
-	else if (strcmp(modelnumber+1, "100") == 0)
-		memcpy(pnpx_hwid+17, "0105", 4);
-	else if (strcmp(modelnumber+1, "200") == 0)
-		memcpy(pnpx_hwid+17, "0106", 4);
-	/* 0107 = Stora */
-	else if (strcmp(modelnumber, "Duo v2") == 0)
-		memcpy(pnpx_hwid+17, "0108", 4);
-	else if (strcmp(modelnumber, "NV+ v2") == 0)
-		memcpy(pnpx_hwid+17, "0109", 4);
-#endif
 #else
 	char * logname;
 	logname = getenv("LOGNAME");
@@ -758,6 +734,10 @@ init(int argc, char **argv)
 		case MERGE_MEDIA_DIRS:
 			if (strtobool(ary_options[i].value))
 				SETFLAG(MERGE_MEDIA_DIRS_MASK);
+			break;
+		case WIDE_LINKS:
+			if (strtobool(ary_options[i].value))
+				SETFLAG(WIDE_LINKS_MASK);
 			break;
 		default:
 			DPRINTF(E_ERROR, L_GENERAL, "Unknown option in file %s\n",

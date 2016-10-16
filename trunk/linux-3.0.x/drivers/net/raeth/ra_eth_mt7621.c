@@ -14,21 +14,28 @@
 
 extern u32 ralink_asic_rev_id;
 
-#if defined (CONFIG_GE2_INTERNAL_GPHY_P0) || defined (CONFIG_GE2_INTERNAL_GPHY_P4)
+#if defined (CONFIG_GE2_INTERNAL_GPHY_P0) || defined (CONFIG_GE2_RGMII_AN) || \
+    defined (CONFIG_GE2_INTERNAL_GPHY_P4)
 static void ge2_int2_wq_handler(struct work_struct *work)
 {
 #if defined (CONFIG_GE2_INTERNAL_GPHY_P0)
 	u32 port_id = 0;
-#else
+#elif defined (CONFIG_GE2_INTERNAL_GPHY_P4)
 	u32 port_id = 4;
+#else
+	u32 port_id = 5;
 #endif
 	u32 link_state = sysRegRead(REG_ETH_GE2_MAC_STATUS);
+
+#if defined (CONFIG_GE2_INTERNAL_GPHY_P0) || defined (CONFIG_GE2_INTERNAL_GPHY_P4)
 	if (link_state & 0x1) {
 		u32 link_speed = (link_state >> 2) & 0x3;
 		mt7530_gsw_set_csr_delay((link_speed == 1) ? 1 : 0);
 	}
+#endif
 
-	esw_link_status_changed(port_id, link_state & 0x1);
+	if (esw_link_status_hook)
+		esw_link_status_hook(port_id, link_state & 0x1);
 }
 
 static DECLARE_WORK(ge2_int2_wq, ge2_int2_wq_handler);
@@ -147,6 +154,46 @@ void mt7621_apll_trgmii_enable(void)
 }
 #endif
 
+void mt7621_eth_gdma_vlan_pvid(int ge2, u32 vlan_id, u32 prio)
+{
+	u32 gdm_addr = (ge2) ? GDMA2_VLAN_GEN : GDMA1_VLAN_GEN;
+	u32 gdm_vlan_gen = 0x81000000;
+
+	vlan_id &= 0xfff;
+	prio &= 0x7;
+
+	if (vlan_id > 0)
+		gdm_vlan_gen |= (prio << 13) | vlan_id;
+
+	sysRegWrite(gdm_addr, gdm_vlan_gen);
+}
+
+void mt7621_eth_gdma_vlan_insv(int ge2, int insv_en)
+{
+	u32 gdm_addr = (ge2) ? GDMA2_FWD_CFG : GDMA1_FWD_CFG;
+	u32 gdm_ig_ctrl;
+
+	gdm_ig_ctrl = sysRegRead(gdm_addr);
+	if (insv_en)
+		gdm_ig_ctrl |=  BIT(25);
+	else
+		gdm_ig_ctrl &= ~BIT(25);
+	sysRegWrite(gdm_addr, gdm_ig_ctrl);
+}
+
+void mt7621_eth_gdma_vlan_untag(int ge2, int untag_en)
+{
+	u32 gdm_addr = (ge2) ? GDMA2_SHPR_CFG : GDMA1_SHPR_CFG;
+	u32 gdm_eg_ctrl;
+
+	gdm_eg_ctrl = sysRegRead(gdm_addr);
+	if (untag_en)
+		gdm_eg_ctrl |=  BIT(30);
+	else
+		gdm_eg_ctrl &= ~BIT(30);
+	sysRegWrite(gdm_addr, gdm_eg_ctrl);
+}
+
 void mt7621_eth_init(void)
 {
 	u32 reg_val;
@@ -172,6 +219,16 @@ void mt7621_eth_init(void)
 #endif
 	reg_val &= ~(0x3 <<  4);	// MDIO driving = 2mA
 	sysRegWrite(REG_PAD_RGMII2_MDIO_CFG, reg_val);
+
+	/* Init GPHY first */
+#if defined (CONFIG_GE1_RGMII_AN)
+	ge1_set_mode(0, 1);
+	ext_gphy_init(CONFIG_MAC_TO_GIGAPHY_MODE_ADDR);
+#endif
+#if defined (CONFIG_GE2_RGMII_AN)
+	ge2_set_mode(0, 1);
+	ext_gphy_init(CONFIG_MAC_TO_GIGAPHY_MODE_ADDR2);
+#endif
 
 	/* MT7621 GE1 + Internal MCM (MT7530) GSW */
 #if defined (CONFIG_GE1_RGMII_FORCE_1000) || defined (CONFIG_GE1_TRGMII_FORCE_1000) || defined (CONFIG_GE1_TRGMII_FORCE_1200)
@@ -204,9 +261,7 @@ void mt7621_eth_init(void)
 
 	/* MT7621 GE1 + External PHY or CPU */
 #if defined (CONFIG_GE1_RGMII_AN)
-	ge1_set_mode(0, 1);
 	sysRegWrite(REG_ETH_GE1_MAC_CONTROL, 0x21056300);
-	init_ext_giga_phy(1);
 #elif defined (CONFIG_GE1_MII_AN)
 	ge1_set_mode(1, 1);
 	sysRegWrite(REG_ETH_GE1_MAC_CONTROL, 0x21056300);
@@ -222,9 +277,7 @@ void mt7621_eth_init(void)
 
 	/* MT7621 GE2 + External PHY or CPU */
 #if defined (CONFIG_GE2_RGMII_AN)
-	ge2_set_mode(0, 1);
 	sysRegWrite(REG_ETH_GE2_MAC_CONTROL, 0x21056300);
-	init_ext_giga_phy(2);
 #elif defined (CONFIG_GE2_MII_AN)
 	ge2_set_mode(1, 1);
 	sysRegWrite(REG_ETH_GE2_MAC_CONTROL, 0x21056300);

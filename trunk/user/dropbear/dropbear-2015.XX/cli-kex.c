@@ -190,7 +190,7 @@ static void ask_to_confirm(unsigned char* keyblob, unsigned int keybloblen,
 
 	fp = sign_key_fingerprint(keyblob, keybloblen);
 	if (cli_opts.always_accept_key) {
-		fprintf(stderr, "\nHost '%s' key accepted unconditionally.\n(%s fingerprint %s)\n",
+		dropbear_log(LOG_INFO, "\nHost '%s' key accepted unconditionally.\n(%s fingerprint %s)\n",
 				cli_opts.remotehost,
 				algoname,
 				fp);
@@ -290,7 +290,7 @@ static void checkhostkey(unsigned char* keyblob, unsigned int keybloblen) {
 	int ret;
 
 	if (cli_opts.no_hostkey_check) {
-		fprintf(stderr, "Caution, skipping hostkey check for %s\n", cli_opts.remotehost);
+		dropbear_log(LOG_INFO, "Caution, skipping hostkey check for %s\n", cli_opts.remotehost);
 		return;
 	}
 

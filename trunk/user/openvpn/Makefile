@@ -15,6 +15,7 @@ config_test:
 
 configure:
 	( cd $(SRC_NAME) ; \
+	autoreconf -vi ; \
 	IFCONFIG=/sbin/ifconfig \
 	ROUTE=/sbin/route \
 	NETSTAT=/bin/netstat \
@@ -37,7 +38,6 @@ configure:
 		--enable-fragment \
 		--enable-http-proxy \
 		--enable-def-auth \
-		--enable-password-save \
 		--enable-ssl \
 		--enable-crypto \
 		--enable-lzo \

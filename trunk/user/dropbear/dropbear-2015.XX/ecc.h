@@ -20,7 +20,7 @@ extern struct dropbear_ecc_curve ecc_curve_nistp384;
 extern struct dropbear_ecc_curve ecc_curve_nistp521;
 extern struct dropbear_ecc_curve *dropbear_ecc_curves[];
 
-void dropbear_ecc_fill_dp();
+void dropbear_ecc_fill_dp(void);
 struct dropbear_ecc_curve* curve_for_dp(const ltc_ecc_set_type *dp);
 
 /* "pubkey" refers to a point, but LTC uses ecc_key structure for both public

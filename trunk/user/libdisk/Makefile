@@ -1,13 +1,22 @@
+ifndef ROOTDIR
+ROOTDIR=../..
+endif
+
 USERDIR = $(ROOTDIR)/user
 SHDIR = $(ROOTDIR)/user/shared
+
+include $(SHDIR)/boards.mk
+include $(SHDIR)/cflags.mk
 
 CFLAGS += -fPIC
 CFLAGS += -I. -I$(SHDIR) -I$(SHDIR)/include
 
 LDFLAGS = -L$(SHDIR) -lshared
 
-OBJS = usb_info.o disk_io_tools.o disk_initial.o disk_share.o
-#OBJS += disk_swap.o
+OBJS = dev_info.o disk_io_tools.o disk_initial.o disk_share.o
+ifdef CONFIG_USB_SUPPORT
+OBJS += usb_info.o
+endif
 
 all: libdisk.so test_share
 
@@ -16,9 +25,6 @@ libdisk.so: $(OBJS) $(SHDIR)/shutils.o
 
 test_share: test_share.o libdisk.so
 	$(CC) $(CFLAGS) $(LDFLAGS) -o $@ $^
-
-#disk_test: disk_test.o libdisk.so
-#	$(CC) $(CFLAGS) $(LDFLAGS) -o $@ $^
 
 romfs:
 	$(ROMFSINST) /lib/libdisk.so

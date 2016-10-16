@@ -13,6 +13,7 @@ extern u32 ralink_asic_rev_id;
 
 static u8 mt7530_xtal_fsel = 0;
 static u8 mt7530_standalone = 0;
+static u8 mt7530_eee_enabled = 0;
 static u8 mt7530_phy_patched[5] = {0};
 
 #if defined (CONFIG_RALINK_MT7620)
@@ -151,10 +152,30 @@ static void mt7530_gsw_set_pll(void)
 #endif
 }
 
+static void mt7530_gsw_auto_downshift_phy(u32 port_id, int is_ads_enabled)
+{
+	u32 regValue = 0x3a14;	// 0x3a14 is default
+
+#if defined (MT7530_P5_MODE_GPHY_P4)
+	if (port_id == 4)
+		is_ads_enabled = 1;	// EEE on P4 always off
+#elif defined (MT7530_P5_MODE_GPHY_P0)
+	if (port_id == 0)
+		is_ads_enabled = 1;	// EEE on P0 always off
+#endif
+	/* HW auto downshift control */
+	mii_mgr_write(port_id, 31, 0x1);
+	mii_mgr_read(port_id, 20, &regValue);
+	if (is_ads_enabled)
+		regValue |=  (1<<4);
+	else
+		regValue &= ~(1<<4);
+	mii_mgr_write(port_id, 20, regValue);
+	mii_mgr_write(port_id, 31, 0x0);
+}
+
 static void mt7530_gsw_patch_port_phy(u32 port_id)
 {
-	u32 regValue;
-
 /*
  *	Note 1: forced slave mode is bad idea, this needed poll 'MASTER/SLAVE configuration fault'
  *	        (reg 10, bit 15), when both link partners is forced to slave, link failed.
@@ -178,13 +199,8 @@ static void mt7530_gsw_patch_port_phy(u32 port_id)
 	/* Disable mcc */
 	mii_mgr_write_cl45(port_id, 0x1e, 0x00a6, 0x0300);	// 0x03e0 is default
 
-	/* Disable HW auto downshift */
-	regValue = 0x3a14;
-	mii_mgr_write(port_id, 31, 0x1);
-	mii_mgr_read(port_id, 20, &regValue);	// 0x3a14 is default
-	regValue &= ~(1<<4);
-	mii_mgr_write(port_id, 20, regValue);
-	mii_mgr_write(port_id, 31, 0x0);
+	/* HW auto downshift control */
+	mt7530_gsw_auto_downshift_phy(port_id, (mt7530_eee_enabled) ? 0 : 1);
 
 #if 0
 	/* Increase 10M mode RX gain for long cable */
@@ -211,6 +227,8 @@ void mt7530_gsw_eee_enable(int is_eee_enabled)
 {
 	u32 i;
 
+	mt7530_eee_enabled = (is_eee_enabled) ? 1 : 0;
+
 	for (i = 0; i <= 4; i++) {
 #if defined (MT7530_P5_MODE_GPHY_P4)
 		if (i == 4 && is_eee_enabled) continue;
@@ -219,6 +237,9 @@ void mt7530_gsw_eee_enable(int is_eee_enabled)
 #endif
 		/* EEE 1000/100 LPI */
 		mii_mgr_write_cl45(i, 0x07, 0x003c, (is_eee_enabled) ? 0x0006 : 0x0000);
+		
+		/* HW auto downshift control */
+		mt7530_gsw_auto_downshift_phy(i, (is_eee_enabled) ? 0 : 1);
 	}
 
 	/* EEE 10Base-Te (global) */
@@ -245,6 +266,8 @@ void mt7530_gsw_eee_on_link(u32 port_id, int port_link, int is_eee_enabled)
 		mii_mgr_write(port_id, 16, 0x8fae);
 	}
 
+#if 0
+	/* this workaround removed in SDK 5.0.1.0 */
 	if (is_eee_enabled) {
 #if defined (MT7530_P5_MODE_GPHY_P4)
 		if (port_id == 4) return;
@@ -256,6 +279,7 @@ void mt7530_gsw_eee_on_link(u32 port_id, int port_link, int is_eee_enabled)
 		mii_mgr_write(port_id, 17, (port_link) ? 0x00e0 : 0x0000);
 		mii_mgr_write(port_id, 16, 0x9780);
 	}
+#endif
 }
 
 void mt7530_gsw_set_csr_delay(int is_link_100)
@@ -287,6 +311,33 @@ void mt7530_gsw_set_smac(const u8 *mac)
 
 	regValue = ((u32)mac[2] << 24) | ((u32)mac[3] << 16) | ((u32)mac[4] << 8) | mac[5];
 	mii_mgr_write(MT7530_MDIO_ADDR, REG_ESW_MAC_SMACCR0, regValue);
+}
+
+int mt7530_gsw_wait_wt_mac(void)
+{
+	u32 i, atc_val;
+
+	for (i = 0; i < 200; i++) {
+		udelay(100);
+		atc_val = 0;
+		mii_mgr_read(MT7530_MDIO_ADDR, REG_ESW_WT_MAC_ATC, &atc_val);
+		if (!(atc_val & BIT(15)))
+			return 0;
+	}
+
+	return -1;
+}
+
+int mt7530_gsw_mac_table_clear(int static_only)
+{
+	u32 atc_val;
+
+	/* clear all (non)static MAC entries */
+	atc_val = (static_only) ? 0x8602 : 0x8002;
+
+	mii_mgr_write(MT7530_MDIO_ADDR, REG_ESW_WT_MAC_ATC, atc_val);
+
+	return mt7530_gsw_wait_wt_mac();
 }
 
 /* MT7350 standalone or MCM embedded (MT7621/MT7623 on die) switch */
@@ -359,7 +410,7 @@ void mt7530_gsw_init(void)
 #elif defined (MT7530_P5_MODE_GPHY_P0)
 	mii_mgr_write(MT7530_MDIO_ADDR, 0x2604, 0x005e0000);		// P6 has matrix mode (P6|P4|P3|P2|P1)
 	mii_mgr_write(MT7530_MDIO_ADDR, 0x2610, 0x810000c0);		// P6 is transparent port, admit all frames
-#else
+#elif !defined (CONFIG_RAETH_GMAC2)
 	mii_mgr_write(MT7530_MDIO_ADDR, 0x2604, 0x205f0003);		// P6 set security mode, egress always tagged
 	mii_mgr_write(MT7530_MDIO_ADDR, 0x2610, 0x81000000);		// P6 is user port, admit all frames
 #endif
@@ -435,6 +486,12 @@ void mt7530_gsw_init(void)
 		/* disable MT7530 CKG_LNKDN_GLB on external MT7530 */
 		mii_mgr_write(MT7530_MDIO_ADDR, REG_ESW_MAC_CKGCR, 0x1e02);
 	}
+
+	/* TO_CPU check VLAN members */
+	mii_mgr_write(MT7530_MDIO_ADDR, REG_ESW_AGC, 0x0007181d);
+
+	/* Set P6 as CPU Port */
+	mii_mgr_write(MT7530_MDIO_ADDR, REG_ESW_MFC, 0x7f7f7fe0);
 
 #if !defined (CONFIG_RAETH_ESW_CONTROL)
 	/* disable 802.3az EEE by default */

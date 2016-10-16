@@ -21,281 +21,541 @@
 #include <dirent.h>
 #include <unistd.h>
 #include <sys/vfs.h>
+#include <sys/swap.h>
+#include <sys/mount.h>
 #include <limits.h>
 
 #include <shutils.h>
 
+#include "dev_info.h"
+#if defined(USE_USB_SUPPORT)
 #include "usb_info.h"
+#endif
 #include "disk_io_tools.h"
 #include "disk_initial.h"
 
-#define USB_DISK_MAJOR 8
+#define SD_DISK_MAJOR		8
+#define MMC_DISK_MAJOR		179
 
-disk_info_t *read_disk_data(void)
+static int
+is_disk_name(const char *dev_name, int dev_type)
 {
-	FILE *fp;
-	char line[64], device_name[32];
-	u32 major, minor;
-	disk_info_t *disk_info_list, *parent_disk_info, **follow_disk_info_list;
-	partition_info_t *new_partition_info, **follow_partition_list;
-	unsigned long long device_size;
+	size_t len;
 
-	fp = fopen(PARTITION_FILE, "r");
-	if (!fp)
-		return NULL;
-
-	if (!fgets(line, sizeof(line), fp)) {
-		fclose(fp);
-		return NULL;
+	if (dev_type == DEVICE_TYPE_SCSI_DISK) {
+		// sd{a-z}{Y}
+		len = strlen(dev_name);
+		if (!isdigit(dev_name[len-1]))
+			return 1;
 	}
-
-	fgets(line, sizeof(line), fp);
-
-	disk_info_list = NULL;
-
-	while (fgets(line, sizeof(line), fp))
-	{
-		device_name[0] = 0;
-		if (sscanf(line, "%u %u %llu %31[^\n ]", &major, &minor, &device_size, device_name) != 4)
-			continue;
-		if(major != USB_DISK_MAJOR)
-			continue;
-		if(device_size < 10)
-			continue;
-		
-		if (is_disk_name(device_name))
-		{
-			follow_disk_info_list = &disk_info_list;
-			while(*follow_disk_info_list)
-				follow_disk_info_list = &((*follow_disk_info_list)->next);
-			create_disk(device_name, follow_disk_info_list);
-		}
-		else if (is_partition_name(device_name, NULL))
-		{
-			parent_disk_info = disk_info_list;
-			while(1)
-			{
-				if (!parent_disk_info)
-					goto info_exit;
-				
-				if (!strncmp(device_name, parent_disk_info->device, 3))
-					break;
-				
-				parent_disk_info = parent_disk_info->next;
-			}
-			
-			follow_partition_list = &(parent_disk_info->partitions);
-			while(*follow_partition_list)
-				follow_partition_list = &((*follow_partition_list)->next);
-			
-			new_partition_info = create_partition(device_name, follow_partition_list);
-			if(new_partition_info)
-				new_partition_info->disk = parent_disk_info;
-		}
+#if defined (USE_MMC_SUPPORT)
+	else if (dev_type == DEVICE_TYPE_MMC) {
+		// mmcblk{X}p{Y}
+		len = strlen(dev_name);
+		if (len < 9)
+			return 1;
 	}
+#endif
 
-info_exit:
-	fclose(fp);
-	return disk_info_list;
+	return 0;
 }
 
-int is_disk_name(const char *device_name)
+#if defined (USE_MMC_SUPPORT)
+static const char *
+get_mmc_vendor(const char *manfid)
 {
-	if(get_device_type_by_device(device_name) != DEVICE_TYPE_DISK)
+	int i_manfid;
+
+	if (strlen(manfid) > 2 && manfid[0] == '0' && manfid[1] == 'x')
+		manfid += 2;
+
+	i_manfid = strtol(manfid, NULL, 16);
+	switch (i_manfid)
+	{
+	case 0x2:
+		return "SanDisk";
+	case 0x11:
+		return "Toshiba";
+	case 0x13:
+		return "Micron";
+	case 0x15:
+		return "Samsung";
+	case 0x70:
+		return "Kingston";
+	}
+
+	/* todo: need more manfid codes */
+
+	return "";
+}
+#endif
+
+#if defined (USE_ATA_SUPPORT)
+static int
+get_ata_port_by_sd_device(const char *dev_name)
+{
+	char ata_path[PATH_MAX];
+
+	if (!get_blk_sd_path_by_device(dev_name, ata_path, sizeof(ata_path)))
+		return -1;
+
+	// ../../devices/pci0000:00/0000:00:02.0/0000:03:00.0/ata2/host2/target2:0:0/2:0:0:0
+
+	if (strstr(ata_path, "/ata") && strstr(ata_path, "/host"))
+		return ATA_VIRT_PORT_ID;
+
+	return -1;
+}
+#endif
+
+static int
+get_disk_size(disk_info_t *disk_info)
+{
+	FILE *fp;
+	char target_file[64], buf[32] = {0}, *ptr;
+
+	if (!disk_info || !disk_info->device)
 		return 0;
 
-	if(isdigit(device_name[strlen(device_name)-1]))
+	disk_info->size_in_kilobytes = 0;
+
+	snprintf(target_file, sizeof(target_file), "%s/%s/size", SYS_BLOCK, disk_info->device);
+	if((fp = fopen(target_file, "r")) == NULL)
+		return 0;
+
+	ptr = fgets(buf, sizeof(buf), fp);
+	fclose(fp);
+	if (!ptr)
+		return 0;
+
+	disk_info->size_in_kilobytes = ((u64)strtoll(buf, NULL, 10))/2;
+
+	return 1;
+}
+
+static char *
+get_disk_dev_attrib(const char *disk_name, const char *attrib, char *buf, size_t buf_size)
+{
+	FILE *fp;
+	char target_file[64], *ptr;
+	size_t len;
+
+	if (buf_size < 1)
+		return NULL;
+
+	snprintf(target_file, sizeof(target_file), "%s/%s/device/%s", SYS_BLOCK, disk_name, attrib);
+	if((fp = fopen(target_file, "r")) == NULL)
+		return NULL;
+
+	memset(buf, 0, buf_size);
+	ptr = fgets(buf, buf_size, fp);
+	fclose(fp);
+	if(!ptr)
+		return NULL;
+
+	len = strlen(buf);
+	if (len > 0)
+		buf[len-1] = 0;
+
+	return buf;
+}
+
+static int
+is_partition_name(const char *dev_name, int dev_type)
+{
+	size_t len;
+	int part_offs = -1;
+	int part_order = 0;
+
+	if (dev_type == DEVICE_TYPE_SCSI_DISK) {
+		// sd{a-z}{Y}
+		len = strlen(dev_name);
+		if (len < 4)
+			return 0;
+		part_offs = 3;
+	}
+#if defined (USE_MMC_SUPPORT)
+	else if (dev_type == DEVICE_TYPE_MMC) {
+		// mmcblk{X}p{Y}
+		len = strlen(dev_name);
+		if (len < 9)
+			return 0;
+		part_offs = 8;
+		if (dev_name[part_offs] == 'p')
+			part_offs++;
+	}
+#endif
+	if (part_offs < 0)
+		return 0;
+
+	part_order = strtol(dev_name+part_offs, NULL, 10);
+	if (part_order <= 0 || part_order == LONG_MIN || part_order == LONG_MAX)
 		return 0;
 
 	return 1;
 }
 
-
-disk_info_t *create_disk(const char *device_name, disk_info_t **new_disk_info)
+static int
+is_device_swapon(const char *dev_name)
 {
-	disk_info_t *follow_disk_info;
-	u32 major, minor;
-	u64 size_in_kilobytes = 0;
+	FILE *fp;
+	int ret, dev_len;
+	char line[512], dev_dst[32];
+
+	if (!dev_name)
+		return 0;
+
+	fp = fopen(PROC_SWAPS_FILE, "r");
+	if (!fp)
+		return 0;
+
+	/* skip one line */
+	if (!fgets(line, sizeof(line), fp)) {
+		fclose(fp);
+		return 0;
+	}
+
+	snprintf(dev_dst, sizeof(dev_dst), "/dev/%s ", dev_name); // need space!
+	dev_len = strlen(dev_dst);
+
+	ret = 0;
+	while (fgets(line, sizeof(line), fp)) {
+		if (strncmp(line, dev_dst, dev_len) == 0) {
+			ret = 1;
+			break;
+		}
+	}
+
+	fclose(fp);
+
+	return ret;
+}
+
+static int
+get_partition_mount_data(partition_info_t *part_info)
+{
+	FILE *fp;
+	int ret, dev_len;
+	char line[512], mpname[256], fstype[32], fsmode[4], dev_dst[32];
+
+	if (!part_info || !part_info->device)
+		return 0;
+
+	fp = fopen(PROC_MOUNTS_FILE, "r");
+	if (!fp)
+		return 0;
+
+	snprintf(dev_dst, sizeof(dev_dst), "/dev/%s ", part_info->device); // need space!
+	dev_len = strlen(dev_dst);
+
+	ret = 0;
+	while (fgets(line, sizeof(line), fp)) {
+		if (strncmp(line, dev_dst, dev_len))
+			continue;
+		
+		if (sscanf(line, "%*s %255s %31s %3[^\n]", mpname, fstype, fsmode) != 3)
+			continue;
+		
+		fsmode[2] = 0; // "rw"/"ro"
+		if (strcmp(fsmode, "ro") == 0)
+			part_info->read_only = 1;
+		part_info->mount_point = strdup(mpname);
+		part_info->file_system = strdup(fstype);
+		ret = 1;
+		break;
+	}
+
+	fclose(fp);
+
+	return ret;
+}
+
+static int
+get_partition_size(const char *dev_name, int dev_type, partition_info_t *part_info)
+{
+	FILE *fp;
+	char disk_name[32] = {0};
+	char target_file[64], buf[32], *ptr;
+	size_t len;
+
+	if (!part_info)
+		return 0;
+
+	part_info->size_in_kilobytes = 0;
+
+	if (!is_partition_name(dev_name, dev_type))
+		return 0;
+
+	// skip partition chars
+	len = strlen(dev_name);
+	while (len > 0 && isdigit(dev_name[len-1]))
+		--len;
+#if defined (USE_MMC_SUPPORT)
+	if (dev_type == DEVICE_TYPE_MMC && dev_name[len-1] == 'p')
+		--len;
+#endif
+	strncpy(disk_name, dev_name, len);
+
+	snprintf(target_file, sizeof(target_file), "%s/%s/%s/size", SYS_BLOCK, disk_name, dev_name);
+	if((fp = fopen(target_file, "r")) == NULL)
+		return 0;
+
+	memset(buf, 0, sizeof(buf));
+	ptr = fgets(buf, sizeof(buf), fp);
+	fclose(fp);
+	if (!ptr)
+		return 0;
+
+	part_info->size_in_kilobytes = ((u64)strtoll(buf, NULL, 10))/2;
+
+	return 1;
+}
+
+static int
+get_partition_mount_size(partition_info_t *part_info)
+{
+	u64 total_size, free_size, used_size;
+	struct statfs fsbuf;
+
+	if (!part_info || !part_info->mount_point)
+		return 0;
+
+	part_info->size_in_kilobytes = 0;
+	part_info->used_kilobytes = 0;
+
+	if (statfs(part_info->mount_point, &fsbuf))
+		return 0;
+
+	total_size = (u64)((u64)fsbuf.f_blocks*(u64)fsbuf.f_bsize);
+	free_size = (u64)((u64)fsbuf.f_bfree*(u64)fsbuf.f_bsize);
+	used_size = total_size-free_size;
+
+	part_info->size_in_kilobytes = total_size/1024;
+	part_info->used_kilobytes = used_size/1024;
+
+	return 1;
+}
+
+static void
+free_partition_data(partition_info_t **partition_info_list)
+{
+	partition_info_t *follow_partition, *old_partition;
+
+	if (!partition_info_list)
+		return;
+
+	follow_partition = *partition_info_list;
+	while(follow_partition){
+		if(follow_partition->device)
+			free(follow_partition->device);
+		if(follow_partition->mount_point)
+			free(follow_partition->mount_point);
+		if(follow_partition->file_system)
+			free(follow_partition->file_system);
+		
+		follow_partition->disk = NULL;
+		
+		old_partition = follow_partition;
+		follow_partition = follow_partition->next;
+		free(old_partition);
+	}
+}
+
+static partition_info_t *
+create_partition(const char *dev_name, int dev_type, disk_info_t *disk_info, partition_info_t **new_part_info)
+{
+	partition_info_t *part_info;
+
+	if (!disk_info || !new_part_info)
+		return NULL;
+
+	*new_part_info = NULL;
+
+	part_info = (partition_info_t *)malloc(sizeof(partition_info_t));
+	if(!part_info)
+		return NULL;
+
+	memset(part_info, 0, sizeof(partition_info_t));
+
+	part_info->disk = disk_info;
+
+	part_info->device = strdup(dev_name);
+	if (!part_info->device){
+		free_partition_data(&part_info);
+		return NULL;
+	}
+
+	if (get_partition_mount_data(part_info)) {
+		get_partition_mount_size(part_info);
+		disk_info->mounted_number++;
+	} else {
+		if (is_disk_name(dev_name, dev_type)) {
+			free_partition_data(&part_info);
+			return NULL;
+		}
+		
+		get_partition_size(dev_name, dev_type, part_info);
+		
+		if (is_device_swapon(dev_name)) {
+			part_info->file_system = strdup("swap");
+			part_info->swapon = 1;
+			disk_info->swapon_number++;
+		} else {
+			part_info->file_system = strdup(PARTITION_TYPE_UNKNOWN);
+		}
+	}
+
+	disk_info->partition_number++;
+
+	*new_part_info = part_info;
+
+	return part_info;
+}
+
+static int
+has_dev_mountpoint(const char *mount_path)
+{
+	FILE *fp;
+	int ret;
+	char line[256];
+
+	fp = fopen(PROC_MOUNTS_FILE, "r");
+	if (!fp)
+		return 0;
+
+	ret = 0;
+	while (fgets(line, sizeof(line), fp)) {
+		if (strncmp(line, "/dev/sd", 7) == 0) {
+			if (strstr(line, mount_path)) {
+				ret = 1;
+				break;
+			}
+		}
+#if defined (USE_MMC_SUPPORT)
+		else if (strncmp(line, "/dev/mmcblk", 11) == 0) {
+			if (strstr(line, mount_path)) {
+				ret = 1;
+				break;
+			}
+		}
+#endif
+	}
+
+	fclose(fp);
+
+	return ret;
+}
+
+int
+is_usb_storage_mounted(void)
+{
+	FILE *fp;
+	int ret;
+	char line[256];
+
+	fp = fopen(PROC_MOUNTS_FILE, "r");
+	if (!fp)
+		return 0;
+
+	ret = 0;
+	while (fgets(line, sizeof(line), fp)) {
+		if (strncmp(line, "/dev/sd", 7) == 0) {
+#if defined (BOARD_GPIO_LED_USB2)
+			int port_num = get_usb_root_port_by_sd_device(line+5);
+			switch (port_num)
+			{
+			case 1:
+				ret |= 0x1;
+				break;
+			case 2:
+				ret |= 0x2;
+				break;
+			}
+			if ((ret & 0x3) == 0x3)
+				break;
+#else
+			ret = 1;
+			break;
+#endif
+		}
+	}
+
+	fclose(fp);
+
+	return ret;
+}
+
+int
+get_mount_path(const char *const pool, char **mount_path)
+{
 	int len;
-	char buf[128], *vendor, *model, *ptr;
-	partition_info_t *new_partition_info, **follow_partition_list;
+	char *tmppath;
 
-	if(!new_disk_info)
-		return NULL;
+	len = strlen(POOL_MOUNT_ROOT)+strlen("/")+strlen(pool);
 
-	*new_disk_info = NULL; // initial value.
-	vendor = NULL;
-	model = NULL;
+	tmppath = (char *)malloc(len+1);
+	if (!tmppath)
+		return -1;
 
-	if(!device_name || !is_disk_name(device_name))
-		return NULL;
+	sprintf(tmppath, "%s/%s", POOL_MOUNT_ROOT, pool);
 
-	if(!initial_disk_data(&follow_disk_info))
-		return NULL;
-
-	len = strlen(device_name);
-	follow_disk_info->device = (char *)malloc(len+1);
-	if (!follow_disk_info->device){
-		free_disk_data(follow_disk_info);
-		return NULL;
-	}
-	strcpy(follow_disk_info->device, device_name);
-
-	if(!get_disk_major_minor(device_name, &major, &minor)){
-		free_disk_data(follow_disk_info);
-		return NULL;
-	}
-	follow_disk_info->major = major;
-	follow_disk_info->minor = minor;
-
-	if(!get_disk_size(device_name, &size_in_kilobytes)){
-		free_disk_data(follow_disk_info);
-		return NULL;
-	}
-	follow_disk_info->size_in_kilobytes = size_in_kilobytes;
-
-	if(!strncmp(device_name, "sd", 2)){
-		if(!get_usb_root_port_by_device(device_name, buf, sizeof(buf))){
-			free_disk_data(follow_disk_info);
-			return NULL;
-		}
-		
-		len = strlen(buf);
-		if(len > 0){
-			int port_num = get_usb_root_port_number(buf);
-			if (port_num < 0)
-				port_num = 0;
-			
-			follow_disk_info->port_root = port_num;
-		}
-		
-		// start get vendor.
-		if(!get_disk_vendor(device_name, buf, sizeof(buf))){
-			free_disk_data(follow_disk_info);
-			return NULL;
-		}
-		
-		len = strlen(buf);
-		if(len > 0){
-			vendor = (char *)malloc(len+1);
-			if(!vendor){
-				free_disk_data(follow_disk_info);
-				return NULL;
-			}
-			strcpy(vendor, buf);
-			strntrim(vendor);
-			sanity_name(vendor);
-			follow_disk_info->vendor = vendor;
-		}
-		
-		// start get model.
-		if(get_disk_model(device_name, buf, sizeof(buf)) == NULL){
-			free_disk_data(follow_disk_info);
-			return NULL;
-		}
-		
-		len = strlen(buf);
-		if(len > 0){
-			model = (char *)malloc(len+1);
-			if(!model){
-				free_disk_data(follow_disk_info);
-				return NULL;
-			}
-			strcpy(model, buf);
-			strntrim(model);
-			sanity_name(model);
-			follow_disk_info->model = model;
-		}
-		
-		// get USB's tag
-		memset(buf, 0, sizeof(buf));
-		len = 0;
-		ptr = buf;
-		if(vendor){
-			len += strlen(vendor);
-			strcpy(ptr, vendor);
-			ptr += len;
-		}
-		if(model){
-			if(len > 0){
-				++len; // Add a space between vendor and model.
-				strcpy(ptr, " ");
-				++ptr;
-			}
-			len += strlen(model);
-			strcpy(ptr, model);
-			ptr += len;
-		}
-		
-		if(len > 0){
-			follow_disk_info->tag = (char *)malloc(len+1);
-			if(!follow_disk_info->tag){
-				free_disk_data(follow_disk_info);
-				return NULL;
-			}
-			strcpy(follow_disk_info->tag, buf);
-		}
-		else{
-			len = strlen(DEFAULT_USB_TAG);
-			follow_disk_info->tag = (char *)malloc(len+1);
-			if(!follow_disk_info->tag){
-				free_disk_data(follow_disk_info);
-				return NULL;
-			}
-			strcpy(follow_disk_info->tag, DEFAULT_USB_TAG);
-		}
-		
-		follow_partition_list = &(follow_disk_info->partitions);
-		while(*follow_partition_list)
-			follow_partition_list = &((*follow_partition_list)->next);
-		
-		new_partition_info = create_partition(device_name, follow_partition_list);
-		if(new_partition_info){
-			new_partition_info->disk = follow_disk_info;
-			
-			++(follow_disk_info->partition_number);
-			++(follow_disk_info->mounted_number);
-		}
+	if (!has_dev_mountpoint(tmppath)) {
+		free(tmppath);
+		return -1;
 	}
 
-	if(follow_disk_info->partition_number == 0)
-		get_disk_partitionnumber(device_name, &(follow_disk_info->partition_number), &(follow_disk_info->mounted_number));
+	*mount_path = tmppath;
 
-	*new_disk_info = follow_disk_info;
-
-	return *new_disk_info;
+	return 0;
 }
 
-disk_info_t *initial_disk_data(disk_info_t **disk_info_list)
+void
+umount_all_storage(void)
 {
-	disk_info_t *follow_disk;
+	FILE *fp;
+	char line[512], devname[32], mpname[256];
 
-	if(!disk_info_list)
-		return NULL;
+	fp = fopen(PROC_SWAPS_FILE, "r");
+	if (fp) {
+		/* skip one line */
+		fgets(line, sizeof(line), fp);
+		while (fgets(line, sizeof(line), fp)) {
+			if (sscanf(line, "%255s %*[^\n]", mpname) != 1)
+				continue;
+			swapoff(mpname);
+		}
+		fclose(fp);
+	}
 
-	*disk_info_list = (disk_info_t *)malloc(sizeof(disk_info_t));
-	if(*disk_info_list == NULL)
-		return NULL;
-
-	follow_disk = *disk_info_list;
-
-	follow_disk->tag = NULL;
-	follow_disk->vendor = NULL;
-	follow_disk->model = NULL;
-	follow_disk->device = NULL;
-	follow_disk->major = 0;
-	follow_disk->minor = 0;
-	follow_disk->port_root = 0;
-	follow_disk->partition_number = 0;
-	follow_disk->mounted_number = 0;
-	follow_disk->size_in_kilobytes = (u64)0;
-	follow_disk->partitions = NULL;
-	follow_disk->next = NULL;
-
-	return follow_disk;
+	fp = fopen(PROC_MOUNTS_FILE, "r");
+	if (fp) {
+		while (fgets(line, sizeof(line), fp)) {
+			if (sscanf(line, "%31s %255s %*[^\n]", devname, mpname) != 2)
+				continue;
+			if (strncmp(devname, "/dev/sd", 7) != 0 && strncmp(devname, "/dev/mmcblk", 11) != 0)
+				continue;
+			umount(mpname);
+			rmdir(mpname);
+		}
+		fclose(fp);
+	}
 }
 
-void free_disk_data(disk_info_t *disk_info_list)
+int
+try_device_swapoff(const char *dev_name)
+{
+	char dev_dst[32];
+
+	if (!dev_name)
+		return -1;
+
+	snprintf(dev_dst, sizeof(dev_dst), "/dev/%s", dev_name);
+
+	return swapoff(dev_dst);
+}
+
+void
+free_disk_data(disk_info_t *disk_info_list)
 {
 	disk_info_t *follow_disk, *old_disk;
 
@@ -303,8 +563,7 @@ void free_disk_data(disk_info_t *disk_info_list)
 		return;
 
 	follow_disk = disk_info_list;
-	while (follow_disk)
-	{
+	while (follow_disk) {
 		if(follow_disk->tag)
 			free(follow_disk->tag);
 		if(follow_disk->vendor)
@@ -322,573 +581,183 @@ void free_disk_data(disk_info_t *disk_info_list)
 	}
 }
 
-int get_disk_major_minor(const char *disk_name, u32 *major, u32 *minor)
+static disk_info_t *
+create_disk(const char *dev_name, int dev_type, u32 major, u32 minor, disk_info_t **new_disk_info)
 {
-	FILE *fp;
-	char target_file[64], buf[8], *ptr;
+	char buf[128];
+	disk_info_t *follow_disk_info;
+	partition_info_t **follow_partition_list;
 
-	if(major == NULL || minor == NULL)
-		return 0;
-
-	*major = 0; // initial value.
-	*minor = 0; // initial value.
-
-	if(disk_name == NULL || !is_disk_name(disk_name))
-		return 0;
-
-	sprintf(target_file, "%s/%s/dev", SYS_BLOCK, disk_name);
-	if((fp = fopen(target_file, "r")) == NULL)
-		return 0;
-
-	memset(buf, 0, sizeof(buf));
-	ptr = fgets(buf, sizeof(buf), fp);
-	fclose(fp);
-	if(ptr == NULL)
-		return 0;
-
-	if((ptr = strchr(buf, ':')) == NULL)
-		return 0;
-
-	ptr[0] = '\0';
-	*major = (u32)strtol(buf, NULL, 10);
-	*minor = (u32)strtol(ptr+1, NULL, 10);
-
-	return 1;
-}
-
-int get_disk_size(const char *disk_name, u64 *size_in_kilobytes)
-{
-	FILE *fp;
-	char target_file[64], buf[16], *ptr;
-
-	if(size_in_kilobytes == NULL)
-		return 0;
-
-	*size_in_kilobytes = 0; // initial value.
-
-	if(disk_name == NULL || !is_disk_name(disk_name))
-		return 0;
-
-	sprintf(target_file, "%s/%s/size", SYS_BLOCK, disk_name);
-	if((fp = fopen(target_file, "r")) == NULL)
-		return 0;
-
-	memset(buf, 0, sizeof(buf));
-	ptr = fgets(buf, sizeof(buf), fp);
-	fclose(fp);
-	if(ptr == NULL)
-		return 0;
-
-	*size_in_kilobytes = ((u64)strtoll(buf, NULL, 10))/2;
-
-	return 1;
-}
-
-char *get_disk_vendor(const char *disk_name, char *buf, const int buf_size)
-{
-	FILE *fp;
-	char target_file[64], *ptr;
-	int len;
-
-	if(buf_size <= 0)
+	if (!new_disk_info)
 		return NULL;
 
-	if(disk_name == NULL || !is_disk_name(disk_name))
+	*new_disk_info = NULL;
+
+	follow_disk_info = (disk_info_t *)malloc(sizeof(disk_info_t));
+	if (!follow_disk_info)
 		return NULL;
 
-	sprintf(target_file, "%s/%s/device/vendor", SYS_BLOCK, disk_name);
-	if((fp = fopen(target_file, "r")) == NULL)
+	memset(follow_disk_info, 0, sizeof(disk_info_t));
+
+	follow_disk_info->major = (u8)major;
+	follow_disk_info->minor = (u8)minor;
+
+	follow_disk_info->device = strdup(dev_name);
+	if (!follow_disk_info->device){
+		free_disk_data(follow_disk_info);
 		return NULL;
-
-	memset(buf, 0, buf_size);
-	ptr = fgets(buf, buf_size, fp);
-	fclose(fp);
-	if(ptr == NULL)
-		return NULL;
-
-	len = strlen(buf);
-	buf[len-1] = 0;
-
-	return buf;
-}
-
-char *get_disk_model(const char *disk_name, char *buf, const int buf_size)
-{
-	FILE *fp;
-	char target_file[64], *ptr;
-	int len;
-
-	if(buf_size <= 0)
-		return NULL;
-
-	if(disk_name == NULL || !is_disk_name(disk_name))
-		return NULL;
-
-	sprintf(target_file, "%s/%s/device/model", SYS_BLOCK, disk_name);
-	if((fp = fopen(target_file, "r")) == NULL)
-		return NULL;
-
-	memset(buf, 0, buf_size);
-	ptr = fgets(buf, buf_size, fp);
-	fclose(fp);
-	if(ptr == NULL)
-		return NULL;
-
-	len = strlen(buf);
-	buf[len-1] = 0;
-
-	return buf;
-}
-
-int get_disk_partitionnumber(const char *string, u32 *partition_number, u32 *mounted_number)
-{
-	DIR *dp;
-	char disk_name[8];
-	char target_path[64];
-	struct dirent *file;
-	int len;
-
-	if(partition_number == NULL)
-		return 0;
-
-	*partition_number = 0; // initial value.
-	if(mounted_number != NULL)
-		*mounted_number = 0; // initial value.
-
-	if(string == NULL)
-		return 0;
-
-	len = strlen(string);
-	if(!is_disk_name(string)){
-		while(isdigit(string[len-1]))
-			--len;
 	}
-	memset(disk_name, 0, sizeof(disk_name));
-	strncpy(disk_name, string, len);
 
-	sprintf(target_path, "%s/%s", SYS_BLOCK, disk_name);
-	if((dp = opendir(target_path)) == NULL)
-		return 0;
+	if (!get_disk_size(follow_disk_info)){
+		free_disk_data(follow_disk_info);
+		return NULL;
+	}
 
-	len = strlen(disk_name);
-	while((file = readdir(dp)) != NULL){
-		if(file->d_name[0] == '.')
+	buf[0] = 0;
+
+	if (dev_type == DEVICE_TYPE_SCSI_DISK) {
+		int port_num = -1;
+#if defined (USE_ATA_SUPPORT)
+		port_num = get_ata_port_by_sd_device(dev_name);
+#endif
+#if defined (USE_USB_SUPPORT)
+		if (port_num < 0)
+			port_num = get_usb_root_port_by_sd_device(dev_name);
+#endif
+		if (port_num < 0) {
+			free_disk_data(follow_disk_info);
+			return NULL;
+		}
+		
+		follow_disk_info->port_root = (u16)port_num;
+		
+		// get vendor
+		if(!get_disk_dev_attrib(dev_name, "vendor", buf, sizeof(buf)))
+			buf[0] = 0;
+		
+		if(strlen(buf) > 0){
+			strntrim(buf);
+			sanity_name(buf);
+		}
+		follow_disk_info->vendor = strdup(buf);
+		
+		// get model
+		if(!get_disk_dev_attrib(dev_name, "model", buf, sizeof(buf)))
+			buf[0] = 0;
+	}
+#if defined (USE_MMC_SUPPORT)
+	else if (dev_type == DEVICE_TYPE_MMC) {
+		// ../devices/platform/mtk_sd/mmc_host/mmc0/mmc0:b368/block/mmcblk0
+		follow_disk_info->port_root = MMC_VIRT_PORT_ID;
+		
+		// get vendor
+		if(!get_disk_dev_attrib(dev_name, "manfid", buf, sizeof(buf)))
+			buf[0] = 0;
+		
+		follow_disk_info->vendor = strdup(get_mmc_vendor(buf));
+		
+		// get name
+		if(!get_disk_dev_attrib(dev_name, "name", buf, sizeof(buf)))
+			buf[0] = 0;
+	}
+#endif
+	else {
+		free_disk_data(follow_disk_info);
+		return NULL;
+	}
+
+	// create model
+	if (strlen(buf) > 0){
+		strntrim(buf);
+		sanity_name(buf);
+	}
+	follow_disk_info->model = strdup(buf);
+
+	// create tag
+	if (follow_disk_info->vendor && strlen(follow_disk_info->vendor) > 0 && follow_disk_info->model && strlen(follow_disk_info->model) > 0)
+		snprintf(buf, sizeof(buf), "%s %s", follow_disk_info->vendor, follow_disk_info->model);
+	else if (follow_disk_info->model && strlen(follow_disk_info->model) > 0)
+		snprintf(buf, sizeof(buf), "%s", follow_disk_info->model);
+	else
+		strcpy(buf, "Unknown storage");
+	follow_disk_info->tag = strdup(buf);
+
+	follow_partition_list = &(follow_disk_info->partitions);
+	create_partition(dev_name, dev_type, follow_disk_info, follow_partition_list);
+
+	*new_disk_info = follow_disk_info;
+
+	return *new_disk_info;
+}
+
+disk_info_t *
+read_disk_data(void)
+{
+	FILE *fp;
+	char line[64], dev_name[32];
+	disk_info_t *disk_info_list, *parent_disk_info, **follow_disk_info_list;
+	partition_info_t **follow_partition_list;
+	unsigned long long dev_size;
+	u32 major, minor;
+	int dev_type;
+
+	fp = fopen(PROC_PARTITIONS_FILE, "r");
+	if (!fp)
+		return NULL;
+
+	/* skip two lines */
+	if (!fgets(line, sizeof(line), fp)) {
+		fclose(fp);
+		return NULL;
+	}
+
+	if (!fgets(line, sizeof(line), fp)) {
+		fclose(fp);
+		return NULL;
+	}
+
+	disk_info_list = NULL;
+
+	while (fgets(line, sizeof(line), fp)) {
+		dev_name[0] = 0;
+		if (sscanf(line, " %u %u %llu %31[^\n]", &major, &minor, &dev_size, dev_name) != 4)
+			continue;
+		if (major != SD_DISK_MAJOR && major != MMC_DISK_MAJOR)
+			continue;
+		if (dev_size < 8)
 			continue;
 		
-		if(!strncmp(file->d_name, disk_name, len)){
-			++(*partition_number);
+		dev_type = get_device_type_by_device(dev_name);
+		
+		if (is_disk_name(dev_name, dev_type)) {
+			follow_disk_info_list = &disk_info_list;
+			while(*follow_disk_info_list)
+				follow_disk_info_list = &((*follow_disk_info_list)->next);
+			create_disk(dev_name, dev_type, major, minor, follow_disk_info_list);
+		} else
+		if (is_partition_name(dev_name, dev_type)) {
+			parent_disk_info = disk_info_list;
 			
-			if(mounted_number == NULL)
+			while (parent_disk_info) {
+				if (!strncmp(dev_name, parent_disk_info->device, strlen(parent_disk_info->device)))
+					break;
+				
+				parent_disk_info = parent_disk_info->next;
+			}
+			
+			if (!parent_disk_info)
 				continue;
 			
-			if (is_device_mounted(file->d_name))
-				++(*mounted_number);
-		}
-	}
-	closedir(dp);
-
-	return 1;
-}
-
-int is_partition_name(const char *device_name, u32 *partition_order)
-{
-	int order;
-	u32 partition_number;
-
-	if(partition_order != NULL)
-		*partition_order = 0;
-
-	if(get_device_type_by_device(device_name) != DEVICE_TYPE_DISK)
-		return 0;
-
-	// get the partition number in the device_name
-	order = (u32)strtol(device_name+3, NULL, 10);
-	if(order <= 0 || order == LONG_MIN || order == LONG_MAX)
-		return 0;
-
-	if(!get_disk_partitionnumber(device_name, &partition_number, NULL))
-		return 0;
-
-	if(partition_order != NULL)
-		*partition_order = order;
-
-	return 1;
-}
-
-partition_info_t *create_partition(const char *device_name, partition_info_t **new_part_info)
-{
-	partition_info_t *follow_part_info;
-	u32 partition_order;
-	u64 size_in_kilobytes = 0, total_kilobytes = 0, used_kilobytes = 0;
-	char buf1[256], buf2[64], buf3[256]; // options of mount info needs more buffer size.
-	int len;
-
-	if(new_part_info == NULL)
-		return NULL;
-
-	*new_part_info = NULL; // initial value.
-
-	if(device_name == NULL || get_device_type_by_device(device_name) != DEVICE_TYPE_DISK)
-		return NULL;
-
-	if(!is_disk_name(device_name) && !is_partition_name(device_name, &partition_order))
-		return NULL;
-
-	if(initial_part_data(&follow_part_info) == NULL)
-		return NULL;
-
-	len = strlen(device_name);
-	follow_part_info->device = (char *)malloc(len+1);
-	if(!follow_part_info->device){
-		free_partition_data(&follow_part_info);
-		return NULL;
-	}
-	strncpy(follow_part_info->device, device_name, len);
-	follow_part_info->device[len] = 0;
-
-	follow_part_info->partition_order = partition_order;
-
-	if(read_mount_data(device_name, buf1, buf2, buf3)){
-		len = strlen(buf1);
-		follow_part_info->mount_point = (char *)malloc(len+1);
-		if(!follow_part_info->mount_point){
-			free_partition_data(&follow_part_info);
-			return NULL;
-		}
-		strncpy(follow_part_info->mount_point, buf1, len);
-		follow_part_info->mount_point[len] = 0;
-
-		len = strlen(buf2);
-		follow_part_info->file_system = (char *)malloc(len+1);
-		if(!follow_part_info->file_system){
-			free_partition_data(&follow_part_info);
-			return NULL;
-		}
-		strncpy(follow_part_info->file_system, buf2, len);
-		follow_part_info->file_system[len] = 0;
-
-		len = strlen(buf3);
-		follow_part_info->permission = (char *)malloc(len+1);
-		if(!follow_part_info->permission){
-			free_partition_data(&follow_part_info);
-			return NULL;
-		}
-		strncpy(follow_part_info->permission, buf3, len);
-		follow_part_info->permission[len] = 0;
-
-		if(get_mount_size(follow_part_info->mount_point, &total_kilobytes, &used_kilobytes)){
-			follow_part_info->size_in_kilobytes = total_kilobytes;
-			follow_part_info->used_kilobytes = used_kilobytes;
-		}
-	}
-	else{
-		if(is_disk_name(device_name)){	// Disk
-			free_partition_data(&follow_part_info);
-			return NULL;
-		}
-		else{
-			len = strlen(PARTITION_TYPE_UNKNOWN);
-			follow_part_info->file_system = (char *)malloc(len+1);
-			if(!follow_part_info->file_system){
-				free_partition_data(&follow_part_info);
-				return NULL;
-			}
-			strncpy(follow_part_info->file_system, PARTITION_TYPE_UNKNOWN, len);
-			follow_part_info->file_system[len] = 0;
+			follow_partition_list = &(parent_disk_info->partitions);
+			while(*follow_partition_list)
+				follow_partition_list = &((*follow_partition_list)->next);
 			
-			get_partition_size(device_name, &size_in_kilobytes);
-			follow_part_info->size_in_kilobytes = size_in_kilobytes;
-		}
-	}
-
-	*new_part_info = follow_part_info;
-
-	return *new_part_info;
-}
-
-partition_info_t *initial_part_data(partition_info_t **part_info_list)
-{
-	partition_info_t *follow_part;
-
-	if(part_info_list == NULL)
-		return NULL;
-
-	*part_info_list = (partition_info_t *)malloc(sizeof(partition_info_t));
-	if(*part_info_list == NULL)
-		return NULL;
-
-	follow_part = *part_info_list;
-
-	follow_part->device = NULL;
-	follow_part->partition_order = (u32)0;
-	follow_part->mount_point = NULL;
-	follow_part->file_system = NULL;
-	follow_part->permission = NULL;
-	follow_part->size_in_kilobytes = (u64)0;
-	follow_part->used_kilobytes = (u64)0;
-	follow_part->disk = NULL;
-	follow_part->next = NULL;
-
-	return follow_part;
-}
-
-void free_partition_data(partition_info_t **partition_info_list)
-{
-	partition_info_t *follow_partition, *old_partition;
-
-	if(partition_info_list == NULL)
-		return;
-
-	follow_partition = *partition_info_list;
-	while(follow_partition){
-		if(follow_partition->device)
-			free(follow_partition->device);
-		if(follow_partition->mount_point)
-			free(follow_partition->mount_point);
-		if(follow_partition->file_system)
-			free(follow_partition->file_system);
-		if(follow_partition->permission)
-			free(follow_partition->permission);
-		
-		follow_partition->disk = NULL;
-		
-		old_partition = follow_partition;
-		follow_partition = follow_partition->next;
-		free(old_partition);
-	}
-}
-
-int get_partition_size(const char *partition_name, u64 *size_in_kilobytes)
-{
-	FILE *fp;
-	char disk_name[4];
-	char target_file[128], buf[16], *ptr;
-
-	if(size_in_kilobytes == NULL)
-		return 0;
-
-	*size_in_kilobytes = 0; // initial value.
-
-	if(!is_partition_name(partition_name, NULL))
-		return 0;
-
-	strncpy(disk_name, partition_name, 3);
-	disk_name[3] = 0;
-
-	sprintf(target_file, "%s/%s/%s/size", SYS_BLOCK, disk_name, partition_name);
-	if((fp = fopen(target_file, "r")) == NULL)
-		return 0;
-
-	memset(buf, 0, sizeof(buf));
-	ptr = fgets(buf, sizeof(buf), fp);
-	fclose(fp);
-	if(ptr == NULL)
-		return 0;
-
-	*size_in_kilobytes = ((u64)strtoll(buf, NULL, 10))/2;
-
-	return 1;
-}
-
-int read_mount_data(const char *device_name, char *mount_point, char *type, char *right)
-{
-	FILE *fp;
-	int ret, dev_len;
-	char line[256], dev_dst[32];
-
-	if(!mount_point || !type || !right)
-		return 0;
-
-	fp = fopen(MOUNT_FILE, "r");
-	if (!fp)
-		return 0;
-
-	snprintf(dev_dst, sizeof(dev_dst), "/dev/%s ", device_name);
-	dev_len = strlen(dev_dst);
-
-	ret = 0;
-
-	while (fgets(line, sizeof(line), fp))
-	{
-		if (strncmp(line, dev_dst, dev_len))
-			continue;
-		
-		if (sscanf(line, "%*s %255s %63s %255[^\n ]", mount_point, type, right) != 3)
-			continue;
-		
-		right[2] = 0; // "rw"/"ro"
-		ret = 1;
-		break;
-	}
-
-	fclose(fp);
-
-	return ret;
-}
-
-int is_device_mounted(const char *device_name)
-{
-	FILE *fp;
-	int ret, dev_len;
-	char line[256], dev_dst[16];
-
-	fp = fopen(MOUNT_FILE, "r");
-	if (!fp)
-		return 0;
-
-	snprintf(dev_dst, sizeof(dev_dst), "/dev/%s ", device_name);
-	dev_len = strlen(dev_dst);
-
-	ret = 0;
-	while (fgets(line, sizeof(line), fp)) {
-		if (strncmp(line, dev_dst, dev_len) == 0) {
-			ret = 1;
-			break;
+			create_partition(dev_name, dev_type, parent_disk_info, follow_partition_list);
 		}
 	}
 
 	fclose(fp);
 
-	return ret;
-}
-
-int is_usb_mountpoint(const char *mount_path)
-{
-	FILE *fp;
-	int ret;
-	char line[256];
-
-	fp = fopen(MOUNT_FILE, "r");
-	if (!fp)
-		return 0;
-
-	ret = 0;
-	while (fgets(line, sizeof(line), fp)) {
-		if (strncmp(line, "/dev/sd", 7) == 0 && strstr(line, mount_path)) {
-			ret = 1;
-			break;
-		}
-	}
-
-	fclose(fp);
-
-	return ret;
-}
-
-int is_storage_mounted(void)
-{
-	FILE *fp;
-	int ret;
-	char line[256];
-
-	fp = fopen(MOUNT_FILE, "r");
-	if (!fp)
-		return 0;
-
-	ret = 0;
-	while (fgets(line, sizeof(line), fp)) {
-		if (strncmp(line, "/dev/sd", 7) == 0) {
-#if defined BOARD_GPIO_LED_USB2
-			char sysblock_n[] = "/sys/block/sda/device";
-			
-			sysblock_n[13] = line[7];
-			if (readlink(sysblock_n, line, sizeof(line)) > 0) {
-				char port_id[8] = {0};
-				
-				if (get_usb_root_port_by_string(line, port_id, sizeof(port_id))) {
-					int port_num = get_usb_root_port_number(port_id);
-					switch (port_num)
-					{
-					case 1:
-						ret |= 0x1;
-						break;
-					case 2:
-						ret |= 0x2;
-						break;
-					}
-					if ((ret & 0x3) == 0x3)
-						break;
-				}
-			}
-#else
-			ret = 1;
-			break;
-#endif
-		}
-	}
-
-	fclose(fp);
-
-	return ret;
-}
-
-int get_mount_path(const char *const pool, char **mount_path) 
-{
-	int len = strlen(POOL_MOUNT_ROOT)+strlen("/")+strlen(pool);
-	char *tmppath = (char *)malloc(len+1);
-	if (tmppath == NULL) {
-		return -1;
-	}
-
-	sprintf(tmppath, "%s/%s", POOL_MOUNT_ROOT, pool);
-
-	if (!is_usb_mountpoint(tmppath)) {
-		free(tmppath);
-		return -1;
-	}
-
-	*mount_path = tmppath;
-
-	return 0;
-}
-
-
-int get_mount_size(const char *mount_point, u64 *total_kilobytes, u64 *used_kilobytes)
-{
-	u64 total_size, free_size, used_size;
-	struct statfs fsbuf;
-
-	if(total_kilobytes == NULL || used_kilobytes == NULL)
-		return 0;
-
-	*total_kilobytes = 0;
-	*used_kilobytes = 0;
-
-	if(statfs(mount_point, &fsbuf))
-		return 0;
-
-	total_size = (u64)((u64)fsbuf.f_blocks*(u64)fsbuf.f_bsize);
-	free_size = (u64)((u64)fsbuf.f_bfree*(u64)fsbuf.f_bsize);
-	used_size = total_size-free_size;
-
-	*total_kilobytes = total_size/1024;
-	*used_kilobytes = used_size/1024;
-
-	return 1;
-}
-
-char *get_disk_name(const char *string, char *buf, const int buf_size)
-{
-	int len;
-
-	if(string == NULL || buf_size <= 0)
-		return NULL;
-
-	if(!is_disk_name(string) && !is_partition_name(string, NULL))
-		return NULL;
-
-	len = strlen(string);
-	if(!is_disk_name(string)){
-		while(isdigit(string[len-1]))
-			--len;
-	}
-
-	if(len > buf_size)
-		return NULL;
-
-	memset(buf, 0, buf_size);
-	strncpy(buf, string, len);
-
-	return buf;
+	return disk_info_list;
 }
 

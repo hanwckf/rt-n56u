@@ -9,6 +9,8 @@
 #include <linux/string.h>
 #include <linux/sched.h>
 
+#include "ra_esw_base.h"
+
 #define UDHCPC_PID_FILE		"/var/run/udhcpc.pid"
 
 extern int send_sigusr_dhcpc;
@@ -35,7 +37,7 @@ static void send_kill_sig(void)
 	filp_close(fp, NULL);
 }
 
-void esw_link_status_changed(u32 port_id, int port_link)
+static void esw_link_status_changed(u32 port_id, int port_link)
 {
 	u32 port_no_r;
 	char *port_desc, *port_state_desc;
@@ -61,5 +63,11 @@ void esw_link_status_changed(u32 port_id, int port_link)
 	}
 
 	printk("ESW: %sLink Status Changed - Port%d Link %s\n", port_desc, port_no_r, port_state_desc);
+}
+
+void
+esw_dhcpc_init(void)
+{
+	esw_link_status_hook = esw_link_status_changed;
 }
 

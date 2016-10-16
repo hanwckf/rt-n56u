@@ -72,6 +72,11 @@ int __init rt2880_module_init(void)
 	RTMP_ADAPTER *pAd;
 	unsigned int dev_irq;
 	RTMP_OS_NETDEV_OP_HOOK netDevHook;
+#ifdef DBG
+    ULONG start, end, diff_ms;
+    /* Get the current time for calculating startup time */
+    NdisGetSystemUpTime(&start);
+#endif /* DBG */
 
 	DBGPRINT(RT_DEBUG_ERROR, ("===> rt2880_probe\n")); 
 
@@ -130,7 +135,6 @@ int __init rt2880_module_init(void)
 	/* Here are the net_device structure with pci-bus specific parameters. */
 	net_dev->irq = dev_irq;			/* Interrupt IRQ number */
 	net_dev->base_addr = csr_addr;		/* Save CSR virtual address and irq to device structure */
-	//((POS_COOKIE)handle)->pci_dev = net_dev;
 	((POS_COOKIE)handle)->pci_dev = NULL;
 
 #ifdef CONFIG_STA_SUPPORT
@@ -198,7 +202,13 @@ int __init rt2880_module_init(void)
 	
 	wl_proc_init();
 
-	DBGPRINT(RT_DEBUG_ERROR, ("%s: at CSR addr 0x%lx, IRQ %d. \n", net_dev->name, (ULONG)csr_addr, net_dev->irq));
+	DBGPRINT(RT_DEBUG_ERROR, ("%s: at CSR addr 0x%lx, IRQ %u. \n", net_dev->name, (ULONG)csr_addr, net_dev->irq));
+
+#ifdef DBG				
+    /* Get the current time for calculating startup time */
+    NdisGetSystemUpTime(&end); diff_ms = (end-start)*1000/OS_HZ;
+    DBGPRINT(RT_DEBUG_OFF, ("WiFi RBUS Startup Time: %lu.%03lus\n",diff_ms/1000,diff_ms%1000));
+#endif /* DBG */
 
 	DBGPRINT(RT_DEBUG_ERROR, ("<=== rt2880_probe\n"));
 

@@ -12,8 +12,10 @@ PLUGIN_OBJS   = src/plugin.o		plugins/common.o	\
 		plugins/sitelutions.o				\
 		plugins/tzo.o		plugins/zoneedit.o	\
 		plugins/zerigo.o	plugins/dhis.o		\
+		plugins/dynv6.o		plugins/dynv6-ipv4.o	\
 		plugins/dtdns.o		plugins/giradns.o	\
-		plugins/duiadns.o	plugins/netassist.o
+		plugins/duiadns.o	plugins/netassist.o	\
+		plugins/ddnss.o
 
 BASE_OBJS     = src/main.o	src/ddns.o	src/cache.o	\
 		src/cmd.o	src/os.o	src/error.o	\

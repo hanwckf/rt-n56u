@@ -1713,7 +1713,7 @@ NDIS_STATUS	NICInitializeAsic(
 	
 	========================================================================
 */
-static VOID ClearTxRingClientAck(
+VOID ClearTxRingClientAck(
 	IN PRTMP_ADAPTER pAd,
 	IN MAC_TABLE_ENTRY *pEntry)
 
@@ -3029,34 +3029,43 @@ VOID UserCfgInit(RTMP_ADAPTER *pAd)
 
 		for(j = 0; j < MAX_APCLI_NUM; j++) 
 		{
-			pAd->ApCfg.ApCliTab[j].AuthMode = Ndis802_11AuthModeOpen;
-			pAd->ApCfg.ApCliTab[j].WepStatus = Ndis802_11WEPDisabled;
-			pAd->ApCfg.ApCliTab[j].bAutoTxRateSwitch = TRUE;
-			pAd->ApCfg.ApCliTab[j].DesiredTransmitSetting.field.MCS = MCS_AUTO;
-			pAd->ApCfg.ApCliTab[j].UapsdInfo.bAPSDCapable = FALSE;
-			pAd->ApCfg.ApCliTab[j].bPeerExist = FALSE;
+			APCLI_STRUCT *apcli_entry = &pAd->ApCfg.ApCliTab[j];
+
+			apcli_entry->AuthMode = Ndis802_11AuthModeOpen;
+			apcli_entry->WepStatus = Ndis802_11WEPDisabled;
+			apcli_entry->bAutoTxRateSwitch = TRUE;
+			apcli_entry->DesiredTransmitSetting.field.MCS = MCS_AUTO;
+			apcli_entry->UapsdInfo.bAPSDCapable = FALSE;
+			apcli_entry->bPeerExist = FALSE;
 #ifdef APCLI_CONNECTION_TRIAL
-			pAd->ApCfg.ApCliTab[j].TrialCh = 0;//if the channel is 0, AP will connect the rootap is in the same channel with ra0.
+			apcli_entry->TrialCh = 0;//if the channel is 0, AP will connect the rootap is in the same channel with ra0.
 #endif /* APCLI_CONNECTION_TRIAL */
 
 #ifdef APCLI_WPA_SUPPLICANT_SUPPORT
-			pAd->ApCfg.ApCliTab[j].IEEE8021X=FALSE;
-			pAd->ApCfg.ApCliTab[j].IEEE8021x_required_keys=FALSE;
-			pAd->ApCfg.ApCliTab[j].bRSN_IE_FromWpaSupplicant=FALSE;
-			pAd->ApCfg.ApCliTab[j].bLostAp=FALSE;
-			pAd->ApCfg.ApCliTab[j].bScanReqIsFromWebUI=FALSE;
-			pAd->ApCfg.ApCliTab[j].bConfigChanged=FALSE;
-			pAd->ApCfg.ApCliTab[j].DesireSharedKeyId=0;
-			pAd->ApCfg.ApCliTab[j].WpaSupplicantUP=WPA_SUPPLICANT_DISABLE;
-			pAd->ApCfg.ApCliTab[j].WpaSupplicantScanCount=0;
-			pAd->ApCfg.ApCliTab[j].pWpsProbeReqIe=NULL;
-			pAd->ApCfg.ApCliTab[j].WpsProbeReqIeLen=0;
-			pAd->ApCfg.ApCliTab[j].pWpaAssocIe=NULL;
-			pAd->ApCfg.ApCliTab[j].WpaAssocIeLen=0;
-			pAd->ApCfg.ApCliTab[j].SavedPMKNum=0;
-			RTMPZeroMemory(pAd->ApCfg.ApCliTab[j].SavedPMK, (PMKID_NO * sizeof(BSSID_INFO)));
+			apcli_entry->IEEE8021X=FALSE;
+			apcli_entry->IEEE8021x_required_keys=FALSE;
+			apcli_entry->bRSN_IE_FromWpaSupplicant=FALSE;
+			apcli_entry->bLostAp=FALSE;
+			apcli_entry->bScanReqIsFromWebUI=FALSE;
+			apcli_entry->bConfigChanged=FALSE;
+			apcli_entry->DesireSharedKeyId=0;
+			apcli_entry->WpaSupplicantUP=WPA_SUPPLICANT_DISABLE;
+			apcli_entry->WpaSupplicantScanCount=0;
+			apcli_entry->pWpsProbeReqIe=NULL;
+			apcli_entry->WpsProbeReqIeLen=0;
+			apcli_entry->pWpaAssocIe=NULL;
+			apcli_entry->WpaAssocIeLen=0;
+			apcli_entry->SavedPMKNum=0;
+			RTMPZeroMemory(apcli_entry->SavedPMK, (PMKID_NO * sizeof(BSSID_INFO)));
 #endif/*APCLI_WPA_SUPPLICANT_SUPPORT*/
 
+			apcli_entry->bBlockAssoc=FALSE;
+
+			apcli_entry->Valid = FALSE;
+			apcli_entry->CfgSsidLen = 0;
+			NdisZeroMemory(&(apcli_entry->CfgSsid), MAX_LEN_OF_SSID);
+			NdisZeroMemory(apcli_entry->CfgApCliBssid, MAC_ADDR_LEN);
+			NdisZeroMemory(apcli_entry->ApCliMlmeAux.Bssid, MAC_ADDR_LEN);
 		}
 #endif /* APCLI_SUPPORT */
 		pAd->ApCfg.EntryClientCount = 0;
@@ -3532,7 +3541,7 @@ VOID	RTMPModTimer(
 			RTMP_OS_Mod_Timer(&pTimer->TimerObj, Value);
 			RTMP_SEM_UNLOCK(&TimerSemLock);
 		}
-		DBGPRINT(RT_DEBUG_TRACE,("%s: %lx\n",__FUNCTION__, (ULONG)pTimer));
+		DBGPRINT(RT_DEBUG_LOUD,("%s: %lx\n",__FUNCTION__, (ULONG)pTimer));
 	}
 	else
 	{

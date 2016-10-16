@@ -414,10 +414,11 @@ static void CalcRFCalPhase(
 #ifdef MT76x2
 static VOID CalcDividerPhase(
 	IN  PRTMP_ADAPTER	pAd,
+	IN  BOOLEAN agcEnable,
+	IN  UCHAR *preVGAGainIdx,
 	OUT UCHAR *mPhase0
 	)
 {
-	int i;
 	UCHAR  channel = pAd->CommonCfg.Channel;
 	UINT32 phaseCaliStatus, phaseCaliResult, value32;
 	UCHAR  divPhCalPath[2]={RX0TX0, RX1TX1};
@@ -427,6 +428,8 @@ static VOID CalcDividerPhase(
 	UCHAR  peakI[2];
 	UCHAR   VGAGainIdx[2];
 	BOOLEAN gBandFlg = FALSE;
+    UINT32  agcLoopCnt = 20;	
+    INT     i, RF_Path_n = 0;
 
 #ifdef RALINK_ATE
 	if (ATE_ON(pAd))
@@ -435,8 +438,6 @@ static VOID CalcDividerPhase(
 
 	// band check
 	if (channel <= 14) gBandFlg = TRUE;
-
-	printk("channel=%d, Gband=%d\n", channel, gBandFlg);
 
 	/* DPD and TSSI HW off */
 	RTMP_IO_READ32(pAd,TXBE_R8, &value32);
@@ -459,10 +460,6 @@ static VOID CalcDividerPhase(
 		mt_rf_write(pAd, RF_Path1, RG_WF0_RXG_TOP, 0x00492016); // TRSWITCH
 		mt_rf_write(pAd, RF_Path0, RFDIGI_TOP1,    0x0004012C); // tx block mode. 0x0 should behind 0x10
 		mt_rf_write(pAd, RF_Path1, RFDIGI_TOP1,    0x0004012C); // tx block mode. 0x0 should behind 0x10
-//		mt_rf_write(pAd, RF_Path0, RFDIGI_TOP2,    0x10470000); // tx block mode, should 0x0 should behind 0x10
-//		mt_rf_write(pAd, RF_Path1, RFDIGI_TOP2,    0x10470000); // tx block mode, should 0x0 should behind 0x10
-//		mt_rf_write(pAd, RF_Path0, RFDIGI_TOP4,    0x11C73047); // tx block mode, should 0x0 should behind 0x10
-//		mt_rf_write(pAd, RF_Path1, RFDIGI_TOP4,    0x11C73047); // tx block mode, should 0x0 should behind 0x10
 		VGAGainIdx[0] = 2;
 		VGAGainIdx[1] = 2;
 	}
@@ -487,68 +484,45 @@ static VOID CalcDividerPhase(
 	{		
 		//AGCtimeOutCount = (SwAgc1stflg == TRUE) ? 0 : 19;
 		AGCtimeOutCount = 0;
-		while (AGCtimeOutCount < 20) // SW AGC update to make sure I peak value can prevent peak value from satuation or too low
+		while (AGCtimeOutCount < agcLoopCnt) // SW AGC update to make sure I peak value can prevent peak value from satuation or too low
 		{
 			RTMP_IO_WRITE32(pAd,CORE_R4, 0x00000001);	//core soft reset enable
 			RTMP_IO_WRITE32(pAd,CORE_R4, 0x00000000);	//core soft reset disable
 			RTMP_IO_WRITE32(pAd,TXBE_R1, 0x00001010); 	//no attenuation, full DAC swing
 		
-			switch (i)
+            RF_Path_n = i;
+
+			// Set LNA to M
+            if (agcEnable == 1)
 			{
-				case 0: 
-					// Set LNA to M
-					mt_rf_write(pAd, RF_Path0, RFDIGI_TRX4, ((1<<19)|(2<<16)|(1<<15)|((0 + VGAGainIdx[0])<<8)|(1<<7)|(0 + VGAGainIdx[0])));
+                mt_rf_write(pAd, RF_Path_n, RFDIGI_TRX4, ((1<<19)|(2<<16)|(1<<15)|((0 + VGAGainIdx[i])<<8)|(1<<7)|(0 + VGAGainIdx[i])));
+                DBGPRINT(RT_DEBUG_WARN,("VGAGainIdx[i] = %d\n", VGAGainIdx[i]));					
+		    }	
+		    else
+			{
+                mt_rf_write(pAd, RF_Path_n, RFDIGI_TRX4, ((1<<19)|(2<<16)|(1<<15)|((0 + preVGAGainIdx[i])<<8)|(1<<7)|(0 + preVGAGainIdx[i]))); 
+                DBGPRINT(RT_DEBUG_WARN,("preVGAGainIdx[i] = %d\n", preVGAGainIdx[i]));
+			}
+		    
+			// Internal loopback
+			RTMP_IO_WRITE32(pAd, TXBE_R4, 0x00000008); // a default setting, 2T
+            mt_rf_write(pAd, RF_Path_n, RFDIGI_TOP4,    0x304F1047);     // tx block mode
 					
-					// Internal loopback
-					RTMP_IO_WRITE32(pAd, TXBE_R4, 0x00000008); // a default setting, 2T
-					
-					mt_rf_write(pAd, RF_Path0, RFDIGI_TOP4,    0x30D71047); 	// tx block mode
-					
-					if (gBandFlg)
-					{
-						mt_rf_write(pAd, RF_Path0, RFDIGI_TOP0,    0x80056F53); // manul mode for external loopback(chip mode=5)
-					}	
-					else
-					{
-						mt_rf_write(pAd, RF_Path0, RFDIGI_TOP0,    0x80056757); // manul mode for external loopback(chip mode=5)
-					}
-
-					mt_rf_write(pAd, RF_Path0, RFDIGI_ABB_TO_AFE5,0x00C211F1); 	// set ABB config switch
-
-					RTMP_IO_WRITE32(pAd,       RF_BSI_CKDIV,   0x00000008);		// Adjust SPI clock		 
-					mt_rf_write(pAd, RF_Path0, RFDIGI_TRX0,    0x0500010F);	    // start rxiq dcoc
-					RTMP_IO_WRITE32(pAd,       RF_BSI_CKDIV,   0x00000002);		// Adjust SPI clock		 
-					
-					DBGPRINT(RT_DEBUG_TRACE,("Loop0\n"));
-					break;
-				case 1: 
-					// Set LNA to M
-					mt_rf_write(pAd, RF_Path1, RFDIGI_TRX4, ((1<<19)|(2<<16)|(1<<15)|((0 + VGAGainIdx[1])<<8)|(1<<7)|(0 + VGAGainIdx[1])));
-					
-					RTMP_IO_WRITE32(pAd, TXBE_R4, 0x00000008); // a default setting, 2T
-					
-					mt_rf_write(pAd, RF_Path1, RFDIGI_TOP4,    0x30D71047); 	// tx block mode
-					
-					if (gBandFlg)
-					{
-						mt_rf_write(pAd, RF_Path1, RFDIGI_TOP0,    0x80056F53); // manul mode for external loopback(chip mode=5)
-					}
-					else
-					{
-						mt_rf_write(pAd, RF_Path1, RFDIGI_TOP0,    0x80056757); // manul mode for external loopback(chip mode=5)
-					}	
-						
-					mt_rf_write(pAd, RF_Path1, RFDIGI_ABB_TO_AFE5,0x00C211F1); 	// set ABB config switch
-
-					RTMP_IO_WRITE32(pAd,       RF_BSI_CKDIV,   0x00000008); 	// Adjust SPI clock		 
-					mt_rf_write(pAd, RF_Path1, RFDIGI_TRX0,    0x0500010F);		// start rxiq dcoc
-					RTMP_IO_WRITE32(pAd,       RF_BSI_CKDIV,   0x00000002); 	// Adjust SPI clock		 
-					DBGPRINT(RT_DEBUG_TRACE,("Loop1\n"));
-					break;
-				default:
-					break;
+			if (gBandFlg)
+			{
+                mt_rf_write(pAd, RF_Path_n, RFDIGI_TOP0,    0x80056F53); // manul mode for external loopback(chip mode=5)
+			}
+			else
+			{
+                mt_rf_write(pAd, RF_Path_n, RFDIGI_TOP0,    0x80056F57); // manul mode for external loopback(chip mode=5)
 			}	
-
+						
+            mt_rf_write(pAd, RF_Path_n, RFDIGI_ABB_TO_AFE5,0x00C211F1);  // set ABB config switch
+			RTMP_IO_WRITE32(pAd,        RF_BSI_CKDIV,      0x00000008); 	// Adjust SPI clock		 
+            mt_rf_write(pAd, RF_Path_n, RFDIGI_TRX0,       0x0500010F);     // start rxiq dcoc
+			RTMP_IO_WRITE32(pAd,        RF_BSI_CKDIV,      0x00000002); 	// Adjust SPI clock		 
+            
+            DBGPRINT(RT_DEBUG_WARN,("Loop%d\n",i));
 				
 			// Set Tx/Rx index	
 			RTMP_IO_WRITE32(pAd,CAL_R2,  divPhCalPath[i]); 	// Tx0
@@ -566,8 +540,8 @@ static VOID CalcDividerPhase(
 			{
 				if (timeOutCount == 10) 
 				{
-					DBGPRINT(RT_DEBUG_TRACE,("phaseCaliStatus = %x\n", phaseCaliStatus));
-					DBGPRINT(RT_DEBUG_TRACE,("LNA HW calibration can't finish process\n"));
+					DBGPRINT(RT_DEBUG_WARN,("phaseCaliStatus = %x\n", phaseCaliStatus));
+					DBGPRINT(RT_DEBUG_WARN,("LNA HW calibration can't finish process\n"));
 					break;
 				}
 	
@@ -590,7 +564,7 @@ static VOID CalcDividerPhase(
 	
 			peakI[i] = (UCHAR)(phaseCaliResult >> 24);
 	
-			DBGPRINT(RT_DEBUG_TRACE,(
+			DBGPRINT(RT_DEBUG_WARN,(
 				    "Divider phase cal : CAL_R11=0x%x\n" 
 					"Peak I value=0x%x\n"
 					"I value=0x%lx, Q value=0x%lx\n", 
@@ -599,72 +573,88 @@ static VOID CalcDividerPhase(
 					avgIData, avgQData));
 	
 			RTMP_IO_WRITE32(pAd,CAL_R1, 0x00000006); // Disable Calibration
-			// SW AGC calculation
-			//if (SwAgc1stflg == TRUE && VGAGainIdx[i] < 128)
-			if (VGAGainIdx[i] < 128)
-			{
-				// Calculate AGC ad check if AGC update is enough or not
-				//if (peakI[i] >= 120 && VGAGainIdx[i] > 0)
-				if (peakI[i] >= 0x20 && VGAGainIdx[i] > 0)
-					VGAGainIdx[i]--;
-				//else if (peakI[i] >= 60)
-				else if (peakI[i] >= 0x10)
-				{
-					AGCtimeOutCount = 20;
-					//SwAgc1stflg = FALSE;
-					break;
-				}
-				//else if (peakI[i] <= 16)
-				//	VGAGainIdx[i] += 5;
-				//else if (peakI[i] <= 20)
-				//	VGAGainIdx[i] += 4;
-				//else if (peakI[i] <= 25)
-				//	VGAGainIdx[i] += 3;
-				//else if (peakI[i] <= 28)
-				//	VGAGainIdx[i] += 2;
-				else
-					VGAGainIdx[i]++;
-			}
 
-			DBGPRINT(RT_DEBUG_TRACE,("SW AGC = %d\n", VGAGainIdx[i]));
-			AGCtimeOutCount++;	
+            if (agcEnable == 1)
+            {         
+			    // SW AGC calculation
+			    //if (SwAgc1stflg == TRUE && VGAGainIdx[i] < 128)
+			    if ((VGAGainIdx[i] < 128) && (AGCtimeOutCount < (agcLoopCnt -1)))
+			    {
+				    // Calculate AGC ad check if AGC update is enough or not
+				    if (peakI[i] >= 0x20 && VGAGainIdx[i] > 0)
+					    VGAGainIdx[i]--;
+				    else if (peakI[i] >= 0x10)
+				    {
+					    AGCtimeOutCount = 20;
+					    //SwAgc1stflg = FALSE;
+					    break;
+				    }
+				    //else if (peakI[i] <= 16)
+				    //	VGAGainIdx[i] += 5;
+				    //else if (peakI[i] <= 20)
+				    //	VGAGainIdx[i] += 4;
+				    //else if (peakI[i] <= 25)
+				    //	VGAGainIdx[i] += 3;
+				    //else if (peakI[i] <= 28)
+				    //	VGAGainIdx[i] += 2;
+				    else
+					    VGAGainIdx[i]++;
+			    }
+
+			    DBGPRINT(RT_DEBUG_WARN,("SW AGC = %d,AGCtimeOutCount = %d\n"
+                                        "===================================\n", VGAGainIdx[i], AGCtimeOutCount));
+			    AGCtimeOutCount++;	
+            }
+            else
+            {
+			    AGCtimeOutCount = 20;
+			    //SwAgc1stflg = FALSE;
+			    break;
+            }
+		}
+		
+        // Backup AGC gain 
+        if (agcEnable == 1)
+        {
+            preVGAGainIdx[i] = VGAGainIdx[i];
+            DBGPRINT(RT_DEBUG_WARN,("Backup SWAGC = %d\n", preVGAGainIdx[i]));
 		}
 		
 		if (gBandFlg)
 		{
-			// RF0 Chip mode release
+		    // RF0 Chip mode release
 			mt_rf_write(pAd, RF_Path0, RFDIGI_TOP0,    0x00056F53);    // Turn off the RFDIGI logic clock
 			mt_rf_write(pAd, RF_Path0, RFDIGI_TOP0,    0x00056F50);    // Release manual control of top control
-			RtmpOsMsDelay(1); // waiting 1ms
+		    RtmpOsMsDelay(1); // waiting 1ms
 			mt_rf_write(pAd, RF_Path0, RFDIGI_TOP0,    0x80056F50);    // Enable RFDIGI logic clock
 			//mt_rf_write(pAd, RF_Path0, RFDIGI_TOP4,    0x00001047);    // tx block mode, should 0x0 should behind 0x10
 		
-			// RF1 Chip mode release
+		    // RF1 Chip mode release
 			mt_rf_write(pAd, RF_Path1, RFDIGI_TOP0,    0x00056F53);    // Turn off the RFDIGI logic clock
 			mt_rf_write(pAd, RF_Path1, RFDIGI_TOP0,    0x00056F50);    // Release manual control of top control
-			RtmpOsMsDelay(1); // waiting 1ms
+		    RtmpOsMsDelay(1); // waiting 1ms
 			mt_rf_write(pAd, RF_Path1, RFDIGI_TOP0,    0x80056F50);    // Release manual control of top control
 			//mt_rf_write(pAd, RF_Path1, RFDIGI_TOP4,    0x00001047);    // tx block mode, should 0x0 should behind 0x10
 		}		
 		else
 		{
-		// RF0 Chip mode release
-		mt_rf_write(pAd, RF_Path0, RFDIGI_TOP0,    0x00056757);    // Turn off the RFDIGI logic clock
-		mt_rf_write(pAd, RF_Path0, RFDIGI_TOP0,    0x00056754);    // Release manual control of top control
-		RtmpOsMsDelay(1); // waiting 1ms
-		mt_rf_write(pAd, RF_Path0, RFDIGI_TOP0,    0x80056754);    // Enable RFDIGI logic clock
+		    // RF0 Chip mode release
+		    mt_rf_write(pAd, RF_Path0, RFDIGI_TOP0,    0x00056F57);    // Turn off the RFDIGI logic clock
+		    mt_rf_write(pAd, RF_Path0, RFDIGI_TOP0,    0x00056F54);    // Release manual control of top control
+		    RtmpOsMsDelay(1); // waiting 1ms
+		    mt_rf_write(pAd, RF_Path0, RFDIGI_TOP0,    0x80056F54);    // Enable RFDIGI logic clock
 			//mt_rf_write(pAd, RF_Path0, RFDIGI_TOP4,    0x00001047);    // tx block mode, should 0x0 should behind 0x10
 		
-		// RF1 Chip mode release
-		mt_rf_write(pAd, RF_Path1, RFDIGI_TOP0,    0x00056757);    // Turn off the RFDIGI logic clock
-		mt_rf_write(pAd, RF_Path1, RFDIGI_TOP0,    0x00056754);    // Release manual control of top control
-		RtmpOsMsDelay(1); // waiting 1ms
-		mt_rf_write(pAd, RF_Path1, RFDIGI_TOP0,    0x80056754);    // Release manual control of top control
+		    // RF1 Chip mode release
+            mt_rf_write(pAd, RF_Path1, RFDIGI_TOP0,    0x00056F57);    // Turn off the RFDIGI logic clock
+            mt_rf_write(pAd, RF_Path1, RFDIGI_TOP0,    0x00056F54);    // Release manual control of top control
+		    RtmpOsMsDelay(1); // waiting 1ms
+            mt_rf_write(pAd, RF_Path1, RFDIGI_TOP0,    0x80056F54);    // Release manual control of top control
 			//mt_rf_write(pAd, RF_Path1, RFDIGI_TOP4,    0x00001047);    // tx block mode, should 0x0 should behind 0x10
 		}	
 	}
 
-	DBGPRINT(RT_DEBUG_TRACE, (
+	DBGPRINT(RT_DEBUG_WARN, (
 			"HW Phase vs Driver Phase (deg)\n"
 			"Peak I:0x%x	  ANT0/0 :%d		%d\n"
 			"Peak I:0x%x	  ANT1/1 :%d		%d\n"
@@ -672,7 +662,7 @@ static VOID CalcDividerPhase(
 			peakI[0], (360*mPhase0[0])>> 8, DEG180(mCalPhase0[0]),
 			peakI[1], (360*mPhase0[1])>> 8, DEG180(mCalPhase0[1]),
 			(360*(mPhase0[0]-mPhase0[1]))>> 8));
-	    
+	
 }
 #endif // MT76x2
 
@@ -703,7 +693,8 @@ static UINT32 *ITxBFSaveData(PRTMP_ADAPTER pAd)
 
 	maxAddr = 0x10000;
 
-	for (sdPtr=saveData, macAddr=0x4000; macAddr<maxAddr; macAddr += 4, sdPtr++) {
+	for (sdPtr=saveData, macAddr=0x4000; macAddr<maxAddr; macAddr += 4, sdPtr++) 
+	{
 		RTMP_IO_READ32(pAd, macAddr, sdPtr);
 	}
 	return saveData;
@@ -850,27 +841,32 @@ static void mt76x2_ITxBFLnaParams(UCHAR lnaValues[3], int channel, ITXBF_LNA_PAR
 {
 	int i;
 
-	if (channel <= 14) {
+	if (channel <= 14) 
+	{
 		lnaValues[0] = InterpParam(channel, 1, 14, lnaParams->E1gBeg[0], lnaParams->E1gEnd[0]);
 		lnaValues[1] = InterpParam(channel, 1, 14, lnaParams->E1gBeg[1], lnaParams->E1gEnd[1]);
 		lnaValues[2] = InterpParam(channel, 1, 14, lnaParams->E1gBeg[2], lnaParams->E1gEnd[2]);
 	}
-	else if (channel <= 64) {
+	else if (channel <= 64) 
+	{
 		lnaValues[0] = InterpParam_check(channel, 36, 64, lnaParams->E1aLowBeg[0], lnaParams->E1aLowEnd[0]);
 		lnaValues[1] = InterpParam_check(channel, 36, 64, lnaParams->E1aLowBeg[1], lnaParams->E1aLowEnd[1]);
 		lnaValues[2] = InterpParam_check(channel, 36, 64, lnaParams->E1aLowBeg[2], lnaParams->E1aLowEnd[2]);
 	}
-	else if (channel <= 120) {
+	else if (channel <= 120) 
+	{
 		lnaValues[0] = InterpParam(channel, 100, 120, lnaParams->E1aMidBeg[0], lnaParams->E1aMidMid[0]);
 		lnaValues[1] = InterpParam(channel, 100, 120, lnaParams->E1aMidBeg[1], lnaParams->E1aMidMid[1]);
 		lnaValues[2] = InterpParam(channel, 100, 120, lnaParams->E1aMidBeg[2], lnaParams->E1aMidMid[2]);
 	}
-		else if (channel <= 140) {
+	else if (channel <= 140) 
+	{
 		lnaValues[0] = InterpParam(channel, 120, 140, lnaParams->E1aMidMid[0], lnaParams->E1aMidEnd[0]);
 		lnaValues[1] = InterpParam(channel, 120, 140, lnaParams->E1aMidMid[1], lnaParams->E1aMidEnd[1]);
 		lnaValues[2] = InterpParam(channel, 120, 140, lnaParams->E1aMidMid[2], lnaParams->E1aMidEnd[2]);
 	}
-	else {
+	else 
+	{
 		lnaValues[0] = InterpParam(channel, 149, 173, lnaParams->E1aHighBeg[0], lnaParams->E1aHighEnd[0]);
 		lnaValues[1] = InterpParam(channel, 149, 173, lnaParams->E1aHighBeg[1], lnaParams->E1aHighEnd[1]);
 		lnaValues[2] = InterpParam(channel, 149, 173, lnaParams->E1aHighBeg[2], lnaParams->E1aHighEnd[2]);
@@ -887,25 +883,99 @@ static void mt76x2_ITxBFLnaParams(UCHAR lnaValues[3], int channel, ITXBF_LNA_PAR
 */
 
 #ifdef MT76x2
-static void mt76x2_ITxBFPhaseParams(UCHAR phaseValues[2], int channel, ITXBF_PHASE_PARAMS *phaseParams)
+static void mt76x2_ITxBFPhaseParams( RTMP_ADAPTER *pAd, UCHAR phaseValues[2], UCHAR channel, ITXBF_PHASE_PARAMS *phaseParams)
 {
-	if (channel <= 14) {
-		phaseValues[0] = InterpParam(channel, 1, 14, phaseParams->E1gBeg, phaseParams->E1gEnd);
-	}
-	else if (channel <= 64) {
-		phaseValues[0] = InterpParam(channel, 36, 64, phaseParams->E1aLowBeg, phaseParams->E1aLowEnd);
-	}
-	else if (channel <= 120) {
-		phaseValues[0] = InterpParam(channel, 100, 120, phaseParams->E1aMidBeg, phaseParams->E1aMidMid);
-	}
-	else if (channel <= 140) {
-		phaseValues[0] = InterpParam(channel, 120, 140, phaseParams->E1aMidMid, phaseParams->E1aMidEnd);
-	}
-	else {
-		phaseValues[0] = InterpParam(channel, 149, 173, phaseParams->E1aHighBeg, phaseParams->E1aHighEnd);
-	}
+     INT chanIdx; 
+     INT dbg; 
+     UINT dbg1, dbg2; 
+    
+     chanIdx = ate_txbf_get_chan_idx(pAd, channel, 1);
+    
+     if(pAd->CommonCfg.ITxBfCalibMode!=2) //Use the phase of group center for other channels in the group 
+     {
+         if (channel <= 48) 
+         {
+             phaseValues[0] = phaseParams->E1aPhase[1]; //chan44         
+         }
+         else if (channel <= 64) 
+         {
+             phaseValues[0] = phaseParams->E1aPhase[3]; //chan60
+         }      
+         else if (channel <= 118) 
+         {
+             phaseValues[0] = phaseParams->E1aPhase[5]; //chan108
+         }      
+         else if (channel <= 144) 
+         {
+             phaseValues[0] = phaseParams->E1aPhase[8]; //chan132
+         }      
+         else 
+         {
+             phaseValues[0] = phaseParams->E1aPhase[11];//chan157
+         }
+     }
+     else    // interpolate iBF phase from 13 calibrated channels 
+     {
+         if(chanIdx >=0)
+         {
+             phaseValues[0] = phaseParams->E1aPhase[chanIdx]; 
+             DBGPRINT(RT_DEBUG_TRACE,
+		              ("%s : \n"
+		              "Phase idx = %d, Phase = 0x%x\n",
+		              __FUNCTION__,chanIdx, phaseValues[0]));
+         } 
+         else 
+         {
+             if (channel <= 48) 
+	         {
+		         phaseValues[0] = InterpParam(channel, 36, 44, phaseParams->E1aPhase[0], phaseParams->E1aPhase[1]);
+                 dbg =1 ; dbg1= phaseParams->E1aPhase[0];  dbg2 =phaseParams->E1aPhase[1];
+	         }
+	         else if (channel <= 64) 
+	         {
+		        phaseValues[0] = InterpParam(channel, 52, 60, phaseParams->E1aPhase[2], phaseParams->E1aPhase[3]);
+                dbg =2 ; dbg1= phaseParams->E1aPhase[2];  dbg2 =phaseParams->E1aPhase[3];
+	         }
+	         else if (channel <= 108) 
+	         {
+		         phaseValues[0] = InterpParam(channel, 100, 108, phaseParams->E1aPhase[4], phaseParams->E1aPhase[5]);
+                 dbg =3 ; dbg1= phaseParams->E1aPhase[4];  dbg2 =phaseParams->E1aPhase[5];
+	         }
+	         else if (channel <= 118) 
+	         {
+		         phaseValues[0] = InterpParam(channel, 108, 116, phaseParams->E1aPhase[5], phaseParams->E1aPhase[6]);
+                 dbg =4 ; dbg1= phaseParams->E1aPhase[5];  dbg2 =phaseParams->E1aPhase[6];
+	         }
+	         else if (channel <= 132) 
+	         {
+		         phaseValues[0] = InterpParam(channel, 120, 132, phaseParams->E1aPhase[7], phaseParams->E1aPhase[8]);
+                 dbg =5 ; dbg1= phaseParams->E1aPhase[7];  dbg2 =phaseParams->E1aPhase[8];
+	         }
+	         else if (channel <= 144) 
+	         {
+		         phaseValues[0] = InterpParam(channel, 132, 140, phaseParams->E1aPhase[8], phaseParams->E1aPhase[9]);
+                 dbg =6 ; dbg1= phaseParams->E1aPhase[8];  dbg2 =phaseParams->E1aPhase[9];
+	         }
+             else if (channel <= 157) 
+             {
+		         phaseValues[0] = InterpParam(channel, 149, 157, phaseParams->E1aPhase[10], phaseParams->E1aPhase[11]);
+                 dbg =7 ; dbg1= phaseParams->E1aPhase[10];  dbg2 =phaseParams->E1aPhase[11];
+	         }
+	         else 
+	         {
+		         phaseValues[0] = InterpParam(channel, 157, 165, phaseParams->E1aPhase[11], phaseParams->E1aPhase[12]);
+                 dbg =8 ; dbg1= phaseParams->E1aPhase[11];  dbg2 =phaseParams->E1aPhase[12];
+	         }
+
+	         DBGPRINT(RT_DEBUG_TRACE,
+		             ("%s : \n"
+		              "dbg_flag    = %d\n"
+                      " PHASE_base0 = 0x%x, PHASE base1 = 0x%x\n",
+		               __FUNCTION__,dbg, dbg1,dbg2));
+         }
+    }
 }
-#endif
+#endif /*MT76x2*/
 
 
 #define ITXBF_EEPROM_WORDS		19	/* 38 bytes of ITxBF parameters */
@@ -918,96 +988,119 @@ static void mt76x2_ITxBFPhaseParams(UCHAR phaseValues[2], int channel, ITXBF_PHA
 		lnaParams - pointer to BBP LNA calibration parameters. If NULL then parameters are not returned
 		divParams - divider calibration parameters. If NULL then parameters are not returned
 */
-void ITxBFGetEEPROM(
+BOOLEAN ITxBFGetEEPROM(
 	IN RTMP_ADAPTER *pAd,
 	IN ITXBF_PHASE_PARAMS *phaseParams,
 	IN ITXBF_LNA_PARAMS *lnaParams,
-	IN ITXBF_DIV_PARAMS *divParams)
+	IN ITXBF_DIV_PARAMS *divParams,
+	IN ITXBF_TANK_PARAMS *tankParams)
 {
-	USHORT	EE_Value[14], andValue;
-	int		i;
+	USHORT	EE_Value[14], andValue,phase_array_size;
+	INT		i;
+    BOOLEAN EfuseStat;
 
+    for(i=0; i<14; i++)
+    {
+        EE_Value[i]=0xFFFF;
+    }  
+
+    EfuseStat = TRUE;
+    
 	/* Get Phase parameters */
-	if (phaseParams != NULL) {
+	if (phaseParams != NULL) 
+	{
 		/* Read and check for initialized values */
 		andValue = 0xFFFF;
 		
-
 #ifdef MT76x2
 		if (IS_MT76x2(pAd))
 		{
-			if (pAd->chipCap.FlgITxBfBinWrite)
-				NdisMoveMemory((PUCHAR) (&EE_Value[0]), &(pAd->EEPROMImage[EEPROM1_ITXBF_CAL]),2);
-			else
-				RT28xx_EEPROM_READ16(pAd, EEPROM1_ITXBF_CAL, EE_Value[0]);
-		
-			phaseParams->E1gBeg = (EE_Value[0] & 0x00FF);
-			phaseParams->E1gEnd = (EE_Value[0] & 0xFF00)>>8;
+            for(i=0; i<7; i++)
+            {                
+                if (pAd->chipCap.FlgITxBfBinWrite)
+                    NdisMoveMemory((PUCHAR) (&EE_Value[i]), &(pAd->EEPROMImage[EEPROM1_ITXBF_CAL_RESPHASE + 2*i]),2);
+                else
+                    RT28xx_EEPROM_READ16(pAd, EEPROM1_ITXBF_CAL_RESPHASE + 2*i, EE_Value[i]);
+                andValue &= EE_Value[i];
+            }
+                
+            if (andValue == 0xFFFF) 
+            {
+                memset(phaseParams, 0xFF, sizeof(*phaseParams));
+                EfuseStat = FALSE;
+            } 
+            else
+            {
 
-			for (i=0; i<4; i++) {
-				if (pAd->chipCap.FlgITxBfBinWrite)
-					NdisMoveMemory((PUCHAR) (&EE_Value[i]), &(pAd->EEPROMImage[EEPROM1_ITXBF_CAL + 2*i + 4]),2);
-				else
-					RT28xx_EEPROM_READ16(pAd, EEPROM1_ITXBF_CAL + 2*i + 4, EE_Value[i]);
-				andValue &= EE_Value[i];
-			}
-
-			if (andValue == 0xFFFF) {
-				memset(phaseParams, 0, sizeof(*phaseParams));
-			} else {
-				phaseParams->E1aHighBeg = (EE_Value[0] & 0x00FF);
-				phaseParams->E1aHighEnd = (EE_Value[0] & 0xFF00)>>8;
-				phaseParams->E1aLowBeg  = (EE_Value[1] & 0x00FF);
-				phaseParams->E1aLowEnd  = (EE_Value[1] & 0xFF00)>>8;
-				phaseParams->E1aMidBeg  = (EE_Value[2] & 0x00FF);
-				phaseParams->E1aMidMid  = (EE_Value[2] & 0xFF00)>>8;
-				phaseParams->E1aMidEnd  = (EE_Value[3] & 0x00FF);
-			}
+                for(i=0; i<6; i++)
+                {
+                    phaseParams->E1aPhase[2*i]  = (EE_Value[i] & 0x00FF);
+                    phaseParams->E1aPhase[2*i+1]= (EE_Value[i] & 0xFF00)>>8;
+                }
+                phaseParams->E1aPhase[12]  = (EE_Value[6] & 0x00FF);
+            }
+            
+            //PhaseError
+            for(i=0; i<7; i++)
+            {                
+                if (pAd->chipCap.FlgITxBfBinWrite)
+                    NdisMoveMemory((PUCHAR) (&EE_Value[i]), &(pAd->EEPROMImage[EEPROM1_ITXBF_CAL_RESPHASE_ERR + 2*i]),2);
+                else
+                    RT28xx_EEPROM_READ16(pAd, EEPROM1_ITXBF_CAL_RESPHASE_ERR + 2*i, EE_Value[i]);
+                andValue &= EE_Value[i];
+            }
+                            
+            for(i=0; i<6; i++)
+            {
+                phaseParams->E1aPhaseErr[2*i]  = (EE_Value[i] & 0x00FF);
+                phaseParams->E1aPhaseErr[2*i+1]= (EE_Value[i] & 0xFF00)>>8;
+            }
+            phaseParams->E1aPhaseErr[12]  = (EE_Value[6] & 0x00FF);
 		}
-#endif
+#endif /* MT76x2 */
 	}
 
 	/* Get Divider Phase parameters */
-	if (divParams != NULL) {
+	if (divParams != NULL) 
+	{
 		/* Read and check for initialized values */
 		andValue = 0xFFFF;
 
 #ifdef MT76x2
 		if (IS_MT76x2(pAd))
 		{
-			if (pAd->chipCap.FlgITxBfBinWrite)
-				NdisMoveMemory((PUCHAR) (&EE_Value[0]), &(pAd->EEPROMImage[EEPROM1_ITXBF_CAL + 2]),2);
-			else
-				RT28xx_EEPROM_READ16(pAd, EEPROM1_ITXBF_CAL + 2, EE_Value[0]);
-			divParams->E1gBeg = (EE_Value[0] & 0x00FF);
-			divParams->E1gEnd = (EE_Value[0] & 0xFF00)>>8;
-
-			for (i=0; i<4; i++) {
-				if (pAd->chipCap.FlgITxBfBinWrite)
-					NdisMoveMemory((PUCHAR) (&EE_Value[i]), &(pAd->EEPROMImage[EEPROM1_ITXBF_CAL + 12 + 2*i]),2);
-				else
-					RT28xx_EEPROM_READ16(pAd, EEPROM1_ITXBF_CAL + 12 + 2*i, EE_Value[i]);
-				andValue &= EE_Value[i];
-			}
-
-			if (andValue == 0xFFFF) {
-				memset(divParams, 0, sizeof(*divParams));
-			}
-			else {
-				divParams->E1aHighBeg = (EE_Value[0] & 0x00FF);
-				divParams->E1aHighEnd = (EE_Value[0] & 0xFF00)>>8;
-				divParams->E1aLowBeg  = (EE_Value[1] & 0x00FF);
-				divParams->E1aLowEnd  = (EE_Value[1] & 0xFF00)>>8;
-				divParams->E1aMidBeg  = (EE_Value[2] & 0x00FF);
-				divParams->E1aMidMid  = (EE_Value[2] & 0xFF00)>>8;
-				divParams->E1aMidEnd  = (EE_Value[3] & 0x00FF);
-			}
+            for(i=0; i<3; i++)
+            {                
+               if (pAd->chipCap.FlgITxBfBinWrite)
+                   NdisMoveMemory((PUCHAR) (&EE_Value[i]), &(pAd->EEPROMImage[EEPROM1_ITXBF_CAL_DIVPHASE + 2*i ]),2);
+               else
+                   RT28xx_EEPROM_READ16(pAd, EEPROM1_ITXBF_CAL_DIVPHASE + 2*i, EE_Value[i]);
+               
+               andValue &= EE_Value[i];
+            }
+                            
+            if (andValue == 0xFFFF) 
+            {
+                 memset(divParams, 0xFF, sizeof(*divParams));
+                 EfuseStat = FALSE;
+            } 
+            else 
+            {
+                 for(i=0; i<2; i++)
+                 {
+                    divParams->E1aDivPhase[2*i]  = (EE_Value[i] & 0x00FF);
+                    divParams->E1aDivPhase[2*i+1]= (EE_Value[i] & 0xFF00)>>8;
+                 }
+                 
+                 divParams->E1aDivPhase[4]  = (EE_Value[2] & 0x00FF);
+            }
 		}/* IS_MT76x2(pAd) */
 #endif
 	}
 
 	/* Get LNA Parameters */
-	if (lnaParams != NULL) {
+	if (lnaParams != NULL) 
+	{
 		/* Read and check for initialized values */
 		andValue = 0xFFFF;
 		
@@ -1015,7 +1108,8 @@ void ITxBFGetEEPROM(
 #ifdef MT76x2
 		if (IS_MT76x2(pAd))
 		{
-			for (i=0; i<14; i++) {
+			for (i=0; i<14; i++) 
+			{
 				if (pAd->chipCap.FlgITxBfBinWrite)
 					NdisMoveMemory((PUCHAR) (&EE_Value[i]), &(pAd->EEPROMImage[EEPROM1_ITXBF_CAL + 20 + 2*i]),2);
 				else
@@ -1023,10 +1117,13 @@ void ITxBFGetEEPROM(
 				andValue &= EE_Value[i];
 			}
 
-			if (andValue == 0xFFFF) {
-				memset(lnaParams, 0, sizeof(*lnaParams));
+			if (andValue == 0xFFFF) 
+			{
+				memset(lnaParams, 0xFF, sizeof(*lnaParams));
+                EfuseStat = FALSE;
 			}
-			else {
+			else 
+			{
 				lnaParams->E1gBeg[0] = (EE_Value[0] & 0x00FF);
 				lnaParams->E1gBeg[1] = (EE_Value[0] & 0xFF00)>>8;
 				lnaParams->E1gBeg[2] = (EE_Value[1] & 0x00FF);
@@ -1061,6 +1158,43 @@ void ITxBFGetEEPROM(
 		}/* IS_MT76x2(pAd) */
 #endif	
 	}/* lnaParams != NULL */
+	
+    /* Get tank code parameters */
+    if (tankParams != NULL) 
+    {
+        /* Read and check for initialized values */
+        andValue = 0xFFFF;    
+#ifdef MT76x2
+        if (IS_MT76x2(pAd))
+        {                                  
+            for(i=0; i<5; i++)
+            {                
+                if (pAd->chipCap.FlgITxBfBinWrite)
+                    NdisMoveMemory((PUCHAR) (&EE_Value[i]), &(pAd->EEPROMImage[EEPROM1_ITXBF_CAL_TANK + 2*i ]),2);
+                else
+                    RT28xx_EEPROM_READ16(pAd, EEPROM1_ITXBF_CAL_TANK + 2*i , EE_Value[i]);
+                andValue &= EE_Value[i];
+            }
+                                
+            if (andValue == 0xFFFF) 
+            {
+                 memset(tankParams, 0xFF, sizeof(*tankParams));
+                 EfuseStat = FALSE;
+            } 
+            else 
+            {
+                 for(i=0; i<5; i++)
+                 {
+                     tankParams->TankCode[2*i]  = (EE_Value[i] & 0x00FF);      //Repeater tank code
+                     tankParams->TankCode[2*i+1]= (EE_Value[i] & 0xFF00)>>8;   // IQM tank code
+                 }                     
+            }
+        }/* IS_MT76x2(pAd) */
+#endif
+    }
+    
+    return EfuseStat;
+    
 }
 
 
@@ -1074,41 +1208,34 @@ void ITxBFSetEEPROM(
 	IN PRTMP_ADAPTER pAd,
 	IN ITXBF_PHASE_PARAMS *phaseParams,
 	IN ITXBF_LNA_PARAMS *lnaParams,
-	IN ITXBF_DIV_PARAMS *divParams)
+	IN ITXBF_DIV_PARAMS *divParams,
+    IN ITXBF_TANK_PARAMS *tankParams)
 {
 	USHORT	EE_Value[14], eeTmp;
 	int		i, eeAddr;
 
+    for(i=0; i<14; i++)
+    {
+        EE_Value[i]=0xFFFF;
+    }
 	/* Set EEPROM parameters */
 
 	/* Phase parameters */
-	if (phaseParams != NULL) {
+	if (phaseParams != NULL) 
+	{
 
 #ifdef MT76x2
 		if (IS_MT76x2(pAd))
 		{
-            EE_Value[0] = phaseParams->E1gBeg | (phaseParams->E1gEnd<<8);			
-			if (pAd->chipCap.FlgITxBfBinWrite)
-				NdisMoveMemory((PUCHAR) (&eeTmp), &(pAd->EEPROMImage[EEPROM1_ITXBF_CAL]),2);
-			else
-				RT28xx_EEPROM_READ16(pAd, EEPROM1_ITXBF_CAL, eeTmp);
-		
-			if (eeTmp != EE_Value[0])
-			{
-				if (pAd->chipCap.FlgITxBfBinWrite)
-					NdisMoveMemory(&(pAd->EEPROMImage[EEPROM1_ITXBF_CAL]), (PUCHAR) (&EE_Value[0]),2);
-				else
-					RT28xx_EEPROM_WRITE16(pAd, EEPROM1_ITXBF_CAL, EE_Value[0]);
-			}
+            for (i=0; i<6 ; i++)
+            {      
+			    EE_Value[i] = phaseParams->E1aPhase[2*i] | (phaseParams->E1aPhase[2*i+1]<<8);
+            }
+			EE_Value[6] = phaseParams->E1aPhase[12]  | 0xFF00;
 
-			EE_Value[0] = phaseParams->E1aHighBeg | (phaseParams->E1aHighEnd<<8);
-			EE_Value[1] = phaseParams->E1aLowBeg  | (phaseParams->E1aLowEnd <<8);
-			EE_Value[2] = phaseParams->E1aMidBeg  | (phaseParams->E1aMidMid <<8);
-			EE_Value[3] = phaseParams->E1aMidEnd  | 0xFF00;
-
-			for (i=0; i<4; i++)
+			for (i=0; i<7; i++)
 			{
-				eeAddr = EEPROM1_ITXBF_CAL + 2*i + 4;
+				eeAddr = EEPROM1_ITXBF_CAL_RESPHASE + 2*i ;
 			
 				if (pAd->chipCap.FlgITxBfBinWrite)
 					NdisMoveMemory((PUCHAR) (&eeTmp), &(pAd->EEPROMImage[eeAddr]),2);
@@ -1123,7 +1250,7 @@ void ITxBFSetEEPROM(
 						RT28xx_EEPROM_WRITE16(pAd, eeAddr, EE_Value[i]);
 				}
 
-				DBGPRINT(RT_DEBUG_INFO, 
+				DBGPRINT(RT_DEBUG_TRACE, 
 				   ("ITxBFGetEEPROM check ::: \n"
 				   	"EEPROM origina data =0x%x\n"
 				   	"Input data = 0x%x\n"
@@ -1134,38 +1261,48 @@ void ITxBFSetEEPROM(
 				   	pAd->EEPROMImage[eeAddr],
 				   	pAd->EEPROMImage[eeAddr + 1]));
 			}
+			
+            //PhaseError
+            for (i=0; i<6 ; i++){      
+			    EE_Value[i] = phaseParams->E1aPhaseErr[2*i] | (phaseParams->E1aPhaseErr[2*i+1]<<8);
+            }
+			EE_Value[6] = phaseParams->E1aPhaseErr[12] | 0xFF00;
+
+			for (i=0; i<7; i++)
+			{
+				eeAddr = EEPROM1_ITXBF_CAL_RESPHASE_ERR + 2*i ;
+			
+				if (pAd->chipCap.FlgITxBfBinWrite)
+					NdisMoveMemory((PUCHAR) (&eeTmp), &(pAd->EEPROMImage[eeAddr]),2);
+				else
+					RT28xx_EEPROM_READ16(pAd, eeAddr, eeTmp);
+			
+				if (eeTmp != EE_Value[i])
+				{
+					if (pAd->chipCap.FlgITxBfBinWrite)
+						NdisMoveMemory(&(pAd->EEPROMImage[eeAddr]), (PUCHAR) (&EE_Value[i]),2);
+					else
+						RT28xx_EEPROM_WRITE16(pAd, eeAddr, EE_Value[i]);
+				}				
+			}
 		}/* IS_MT76x2(pAd) */
 #endif	
 	}/* phaseParams != NULL */
 
 	/* Divider Phase parameters */
-	if (divParams != NULL) {
+	if (divParams != NULL) 
+	{
 
 #ifdef MT76x2
 		if (IS_MT76x2(pAd))
 		{
-            EE_Value[0] = divParams->E1gBeg | (divParams->E1gEnd<<8);
-			if (pAd->chipCap.FlgITxBfBinWrite)
-				NdisMoveMemory((PUCHAR) (&eeTmp), &(pAd->EEPROMImage[EEPROM1_ITXBF_CAL + 2]),2);
-			else
-				RT28xx_EEPROM_READ16(pAd, EEPROM1_ITXBF_CAL + 2, eeTmp);
-		
-			if (eeTmp != EE_Value[0])
+            EE_Value[0] = divParams->E1aDivPhase[0] | (divParams->E1aDivPhase[1]<<8);
+			EE_Value[1] = divParams->E1aDivPhase[2] | (divParams->E1aDivPhase[3] <<8);
+			EE_Value[2] = divParams->E1aDivPhase[4] | 0xFF00;
+			
+			for (i=0; i<3; i++)
 			{
-				if (pAd->chipCap.FlgITxBfBinWrite)
-					NdisMoveMemory(&(pAd->EEPROMImage[EEPROM1_ITXBF_CAL + 2]), (PUCHAR) (&EE_Value[0]),2);
-				else
-					RT28xx_EEPROM_WRITE16(pAd, EEPROM1_ITXBF_CAL + 2, EE_Value[0]);
-			}
-		
-			EE_Value[0] = divParams->E1aHighBeg | (divParams->E1aHighEnd<<8);
-			EE_Value[1] = divParams->E1aLowBeg  | (divParams->E1aLowEnd <<8);
-			EE_Value[2] = divParams->E1aMidBeg  | (divParams->E1aMidMid <<8);
-			EE_Value[3] = divParams->E1aMidEnd  | 0xFF00;
-
-			for (i=0; i<4; i++)
-			{
-				eeAddr = EEPROM1_ITXBF_CAL + 12 + 2*i;
+				eeAddr = EEPROM1_ITXBF_CAL_DIVPHASE + 2*i;
 				if (pAd->chipCap.FlgITxBfBinWrite)
 					NdisMoveMemory((PUCHAR) (&eeTmp), &(pAd->EEPROMImage[eeAddr]),2);
 				else
@@ -1235,6 +1372,49 @@ void ITxBFSetEEPROM(
 		}/* IS_MT76x2(pAd) */
 #endif	
 	}/* lnaParams != NULL */
+
+    /* tank code parameters */
+	if (tankParams != NULL) 
+	{
+#ifdef MT76x2
+		if (IS_MT76x2(pAd))
+		{         
+            for (i=0; i<5 ; i++)
+            {      
+                EE_Value[i] = tankParams->TankCode[2*i] | (tankParams->TankCode[2*i+1]<<8);
+            }
+
+            for (i=0; i<5; i++)
+            {
+                eeAddr = EEPROM1_ITXBF_CAL_TANK + 2*i;
+                if (pAd->chipCap.FlgITxBfBinWrite)
+                    NdisMoveMemory((PUCHAR) (&eeTmp), &(pAd->EEPROMImage[eeAddr]),2);
+                else
+                    RT28xx_EEPROM_READ16(pAd, eeAddr, eeTmp);
+                   
+                if (eeTmp != EE_Value[i])
+                {
+                    if (pAd->chipCap.FlgITxBfBinWrite)
+                        NdisMoveMemory(&(pAd->EEPROMImage[eeAddr]), (PUCHAR) (&EE_Value[i]),2);
+                    else
+                        RT28xx_EEPROM_WRITE16(pAd, eeAddr, EE_Value[i]);
+                }
+
+				DBGPRINT(RT_DEBUG_INFO, 
+				   ("ITxBFGetEEPROM check ::: \n"
+				   	"EEPROM origina data =0x%x\n"
+				   	"Input data = 0x%x\n"
+				   	"Saved low byte data in EEPROM=0x%x\n"
+				   	"Saved high byte data in EEPROM=0x%x\n",
+				   	eeTmp,
+				   	pAd->EEPROMImage[eeAddr],
+				   	pAd->EEPROMImage[eeAddr + 1],
+				   	EE_Value[i]));
+            }
+                    	    
+		}/* IS_MT76x2(pAd) */
+#endif
+	}/* phaseParams != NULL */
 }
 
 
@@ -1260,7 +1440,7 @@ VOID mt76x2_ITxBFLoadLNAComp(
 #endif /* RALINK_ATE */
 
 	/* Get values */
-	ITxBFGetEEPROM(pAd, 0, &lnaParams, 0);
+	ITxBFGetEEPROM(pAd, 0, &lnaParams, 0, 0);
 
 	mt76x2_ITxBFLnaParams(lnaValues, channel, &lnaParams);
 
@@ -1313,21 +1493,20 @@ INT ITxBFLoPhaseCalibrationStartUp(
 	mt_rf_read(pAd, RF_Path1, RFDIGI_TRX4, &CR_BK[9]);
 
 	RTMP_IO_READ32(pAd, TXBE_R8,   &CR_BK[10]);
-	RTMP_IO_READ32(pAd, CORE_R34,   &CR_BK[11]);
+	RTMP_IO_READ32(pAd, CORE_R34,  &CR_BK[11]);
 	RTMP_IO_READ32(pAd, CORE_R1,   &CR_BK[12]);
-	RTMP_IO_READ32(pAd, RF_BSI_CKDIV,   &CR_BK[13]);
+	RTMP_IO_READ32(pAd, RF_BSI_CKDIV,  &CR_BK[13]);
 	RTMP_IO_READ32(pAd, DACCLK_EN_DLY_CFG,   &CR_BK[14]);
 	RTMP_IO_READ32(pAd, PWR_PIN_CFG,   &CR_BK[15]);
-	RTMP_IO_READ32(pAd, CORE_R33,   &CR_BK[16]);
+	RTMP_IO_READ32(pAd, CORE_R33,  &CR_BK[16]);
 	RTMP_IO_READ32(pAd, TXBE_R6,   &CR_BK[17]);
 	RTMP_IO_READ32(pAd, CORE_R4,   &CR_BK[18]);
 	RTMP_IO_READ32(pAd, TXBE_R1,   &CR_BK[19]);
 	RTMP_IO_READ32(pAd, AGC1_R0,   &CR_BK[20]);
 	RTMP_IO_READ32(pAd, TXBE_R4,   &CR_BK[21]);
-	RTMP_IO_READ32(pAd, CAL_R2,   &CR_BK[22]);
+	RTMP_IO_READ32(pAd, CAL_R2,    &CR_BK[22]);
 	RTMP_IO_READ32(pAd, TXBE_R6,   &CR_BK[23]);
-	RTMP_IO_READ32(pAd, CAL_R5,   &CR_BK[24]);
-	
+	RTMP_IO_READ32(pAd, CAL_R5,    &CR_BK[24]);
 
 	NdisGetSystemUpTime(&stTimeChk1);
 	DBGPRINT(RT_DEBUG_INFO, ("%s : Lo Phase calibration duration1 = %ld ms\n", 
@@ -1356,20 +1535,20 @@ INT ITxBFLoPhaseCalibrationStartUp(
 	mt_rf_write(pAd, RF_Path1, RFDIGI_TRX4, CR_BK[9]);
 
 	RTMP_IO_WRITE32(pAd, TXBE_R8,   CR_BK[10]);
-	RTMP_IO_WRITE32(pAd, CORE_R34,   CR_BK[11]);
+	RTMP_IO_WRITE32(pAd, CORE_R34,  CR_BK[11]);
 	RTMP_IO_WRITE32(pAd, CORE_R1,   CR_BK[12]);
-	RTMP_IO_WRITE32(pAd, RF_BSI_CKDIV,   CR_BK[13]);
+	RTMP_IO_WRITE32(pAd, RF_BSI_CKDIV,  CR_BK[13]);
 	RTMP_IO_WRITE32(pAd, DACCLK_EN_DLY_CFG,   CR_BK[14]);
 	RTMP_IO_WRITE32(pAd, PWR_PIN_CFG,   CR_BK[15]);
-	RTMP_IO_WRITE32(pAd, CORE_R33,   CR_BK[16]);
+	RTMP_IO_WRITE32(pAd, CORE_R33,  CR_BK[16]);
 	RTMP_IO_WRITE32(pAd, TXBE_R6,   CR_BK[17]);
 	RTMP_IO_WRITE32(pAd, CORE_R4,   CR_BK[18]);
 	RTMP_IO_WRITE32(pAd, TXBE_R1,   CR_BK[19]);
 	RTMP_IO_WRITE32(pAd, AGC1_R0,   CR_BK[20]);
 	RTMP_IO_WRITE32(pAd, TXBE_R4,   CR_BK[21]);
-	RTMP_IO_WRITE32(pAd, CAL_R2,   CR_BK[22]);
+	RTMP_IO_WRITE32(pAd, CAL_R2,    CR_BK[22]);
 	RTMP_IO_WRITE32(pAd, TXBE_R6,   CR_BK[23]);
-	RTMP_IO_WRITE32(pAd, CAL_R5,   CR_BK[24]);
+	RTMP_IO_WRITE32(pAd, CAL_R5,    CR_BK[24]);
 
 	return calStatusReport;
 }
@@ -1383,7 +1562,8 @@ INT mt76x2_ITxBFLoPhaseCalibration(
 	int i;
 	UINT32 phaseCaliStatus, phaseCaliResult, value32;
 	UCHAR  LoPhCalPath[2]={RX1TX0, RX0TX1};
-	UINT32 LnaVgaSet[2] = {0x000B8F8F, 0x000B9999}, TxgGain[2] = {0x160, 0x150};
+	//UINT32 LnaVgaSet[2] = {0x000B8F8F, 0x000B9999}, TxgGain[2] = {0x160, 0x150};
+    UINT32 LnaVgaSet[2] = {0x000A8585, 0x000A8585}, TxgGain[2] = {0x110, 0x110};
 	UCHAR timeOutCount;
 	INT      mPhase[2];
 	INT      mCalPhase[2];
@@ -1509,7 +1689,7 @@ INT mt76x2_ITxBFLoPhaseCalibration(
 	}
 
 	/* Save new reference values in EEPROM and BBP */
-	ITxBFGetEEPROM(pAd, 0, 0, &LoPhaseParams);
+	ITxBFGetEEPROM(pAd, 0, 0, &LoPhaseParams, 0);
 
 	if (eepromUpdateFlg == TRUE)
 	{
@@ -1523,13 +1703,15 @@ INT mt76x2_ITxBFLoPhaseCalibration(
             LoPhaseParams.E1gEnd= mPhase[1];
         }
 
-		ITxBFSetEEPROM(pAd, 0, 0, &LoPhaseParams);
+		ITxBFSetEEPROM(pAd, 0, 0, &LoPhaseParams, 0);
 
 		*LoPhase = 0;
 
+        DBGPRINT(RT_DEBUG_TRACE,(
+                "####### DebugKK[2] chan= %d ,LOphase in efuse  = 0x%2x\n",
+			    channel,mPhase[1]));
 	}
 	else
-
 	{
         if ( channel == 1)
         {
@@ -1542,10 +1724,10 @@ INT mt76x2_ITxBFLoPhaseCalibration(
 
 		*LoPhase = (mPhase[1] - LoPhaseOffset) & 0xFF;
 
-		DBGPRINT(RT_DEBUG_TRACE,(                         
-                "mPhase[1]      = 0x%x\n"                         
-			    "LoPhaseP10     = 0x%x\n"
-			    "LoPhaseOffset  = 0x%x\n",
+		DBGPRINT(RT_DEBUG_TRACE,(
+                "LO phase this time      = 0x%x\n"                         
+			    "Lo Phase difference    = 0x%x\n"
+			    "Lo Phase in Efuse  = 0x%x\n",
 			    mPhase[1],*LoPhase, LoPhaseOffset));
 	}
 
@@ -1583,9 +1765,6 @@ INT ITxBFDividerCalibrationStartUp(
 	mt_rf_read(pAd, RF_Path1, RFDIGI_TRX4,	&CR_BK[15]);
     mt_rf_read(pAd, RF_Path0, RFDIGI_TOP1,  &CR_BK[16]);
     mt_rf_read(pAd, RF_Path1, RFDIGI_TOP1,  &CR_BK[17]);
-//	mt_rf_read(pAd, RF_Path0, RFDIGI_TOP0,	&CR_BK[16]);
-//	mt_rf_read(pAd, RF_Path0, RFDIGI_TOP4,  &CR_BK[17]);
-//	mt_rf_read(pAd, RF_Path1, RFDIGI_TOP4,  &CR_BK[18]);
 	mt_rf_read(pAd, RF_Path0, RFDIGI_ABB_TO_AFE5,&CR_BK[19]);
 	mt_rf_read(pAd, RF_Path1, RFDIGI_ABB_TO_AFE5,&CR_BK[20]);
 	
@@ -1630,29 +1809,23 @@ INT ITxBFDividerCalibrationStartUp(
 	mt_rf_write(pAd, RF_Path1, RFDIGI_TRX0,  CR_BK[13]);
 	mt_rf_write(pAd, RF_Path0, RFDIGI_TRX4,  CR_BK[14]);
 	mt_rf_write(pAd, RF_Path1, RFDIGI_TRX4,  CR_BK[15]);
-
-    mt_rf_write(pAd, RF_Path0, RFDIGI_TOP1,	CR_BK[16]);
-    mt_rf_write(pAd, RF_Path1, RFDIGI_TOP1, CR_BK[17]);
-
-//	mt_rf_write(pAd, RF_Path0, RFDIGI_TOP0,	CR_BK[16]);
-//	mt_rf_write(pAd, RF_Path0, RFDIGI_TOP4, CR_BK[17]);
-//	mt_rf_write(pAd, RF_Path1, RFDIGI_TOP4,  CR_BK[18]);
-    
+    mt_rf_write(pAd, RF_Path0, RFDIGI_TOP1,	 CR_BK[16]);
+    mt_rf_write(pAd, RF_Path1, RFDIGI_TOP1,  CR_BK[17]);
 	mt_rf_write(pAd, RF_Path0, RFDIGI_ABB_TO_AFE5,CR_BK[19]);
 	mt_rf_write(pAd, RF_Path1, RFDIGI_ABB_TO_AFE5,CR_BK[20]);
 	
-	RTMP_IO_WRITE32(pAd,CORE_R1,   CR_BK[22]);
-	RTMP_IO_WRITE32(pAd,CORE_R33,  CR_BK[23]);
+	RTMP_IO_WRITE32(pAd,CORE_R1,    CR_BK[22]);
+	RTMP_IO_WRITE32(pAd,CORE_R33,   CR_BK[23]);
 	RTMP_IO_WRITE32(pAd,DACCLK_EN_DLY_CFG, CR_BK[24]);
-	RTMP_IO_WRITE32(pAd,TXBE_R6,   CR_BK[25]);  
+	RTMP_IO_WRITE32(pAd,TXBE_R6,    CR_BK[25]);
 	//RTMP_IO_WRITE32(pAd,CORE_R4,   CR_BK[26]);
-	RTMP_IO_WRITE32(pAd,TXBE_R1,   CR_BK[27]);
-	RTMP_IO_WRITE32(pAd,AGC1_R0,   CR_BK[28]);
-	RTMP_IO_WRITE32(pAd,TXBE_R4,   CR_BK[29]);
-	RTMP_IO_WRITE32(pAd,CAL_R2,    CR_BK[30]);
-	RTMP_IO_WRITE32(pAd,CAL_R5,    CR_BK[31]);
-	RTMP_IO_WRITE32(pAd,CAL_R1,    CR_BK[32]);	
-	RTMP_IO_WRITE32(pAd,TXBE_R5,   CR_BK[33]);
+	RTMP_IO_WRITE32(pAd,TXBE_R1,    CR_BK[27]);
+	RTMP_IO_WRITE32(pAd,AGC1_R0,    CR_BK[28]);
+	RTMP_IO_WRITE32(pAd,TXBE_R4,    CR_BK[29]);
+	RTMP_IO_WRITE32(pAd,CAL_R2,     CR_BK[30]);
+	RTMP_IO_WRITE32(pAd,CAL_R5,     CR_BK[31]);
+	RTMP_IO_WRITE32(pAd,CAL_R1,     CR_BK[32]);	
+	RTMP_IO_WRITE32(pAd,TXBE_R5,    CR_BK[33]);
 	RTMP_IO_WRITE32(pAd,PWR_PIN_CFG,CR_BK[34]);	
 
     //Reset bbp
@@ -1689,12 +1862,14 @@ INT mt76x2_ITxBFDividerCalibration(
 	ITXBF_DIV_PARAMS divParams;
 	UCHAR channel = pAd->CommonCfg.Channel;
 	UCHAR phase[2];
+    UCHAR preVGAGainIdx[2];
 	int result = TRUE;
 	UINT32 value32;
+    int chanidx,groupIdx;
 
 	UCHAR divPhaseValue[2];
 	ITXBF_PHASE_PARAMS phaseParams;
-	UCHAR phaseValues[2];
+	UCHAR i,phaseValues[2];
 
 #ifdef TIMESTAMP_CAL_CAPTURE1
 	struct timeval tval0, tval1;
@@ -1718,11 +1893,15 @@ INT mt76x2_ITxBFDividerCalibration(
 
 	/* Do Calibration */
 	// Optional A-Band or G-Band. RF Cal with each TX active */
-	CalcDividerPhase(pAd, phase);
+	//CalcDividerPhase(pAd, phase);  
+    CalcDividerPhase(pAd, TRUE, preVGAGainIdx, phase);
 
 	/* Calculate difference */
 	divPhase[0] = phase[0] - phase[1];
 	
+    DBGPRINT(RT_DEBUG_WARN, (
+			"############## DebugKK[0] divderPase=0x%x,divderPase_0=0x%x,divderPase_1=0x%x\n",divPhase[0],phase[0],phase[1]));
+
 	/* Compute the quantized delta phase */
 	/* Quantize to 180 deg (0x80) with rounding */
 	DBGPRINT(RT_DEBUG_WARN, (
@@ -1734,10 +1913,7 @@ INT mt76x2_ITxBFDividerCalibration(
 				(360*phase[1])>> 8,
 				(360*divPhase[0])>> 8));
 
-	divPhase[0] = (divPhase[0] + 0x40) & 0x80;	
-
-	DBGPRINT(RT_DEBUG_WARN, (
-				"After divderPase[0] : %d\n",(360*divPhase[0])>> 8));
+	//divPhase[0] = (divPhase[0] + 0x40) & 0x80;	
 
 	/* Either display parameters, update EEPROM, update BBP registers or dump capture data */
 	switch (calFunction) {
@@ -1749,8 +1925,7 @@ INT mt76x2_ITxBFDividerCalibration(
 			Save new reference values in EEPROM. The new reference is just the delta phase
 			values with the old ref value added back in
 		*/
-
-		ITxBFGetEEPROM(pAd, 0, 0, &divParams);
+		ITxBFGetEEPROM(pAd, 0, 0, &divParams, 0);
 
 		/* Only allow calibration on specific channels */
 		if (channel == 1)
@@ -1777,7 +1952,7 @@ INT mt76x2_ITxBFDividerCalibration(
 			goto exitDivCal;
 		}
 
-		ITxBFSetEEPROM(pAd, 0, 0, &divParams);
+		ITxBFSetEEPROM(pAd, 0, 0, &divParams, 0);
 		break;
 
 	case 2:
@@ -1785,15 +1960,21 @@ INT mt76x2_ITxBFDividerCalibration(
 			Update BBP Registers. Quantize DeltaPhase to 90 or 180 depending on band. Then
 			update original phase calibration values from EEPROM and set R176 for Ant 0 and Ant2
 		*/
-		ITxBFGetEEPROM(pAd, &phaseParams, 0, 0);
-		mt76x2_ITxBFPhaseParams(phaseValues, channel, &phaseParams);
+		ITxBFGetEEPROM(pAd, &phaseParams, 0, 0, 0);
+		mt76x2_ITxBFPhaseParams(pAd, phaseValues, channel, &phaseParams);
+
+        groupIdx = ate_txbf_chan_group_base_idx(pAd, channel);
+        ITxBFGetEEPROM(pAd, 0, 0,  &divParams, 0);
+        
+        divPhase[0] -= divParams.E1aDivPhase[groupIdx];
+        divPhase[0] = (divPhase[0] + 0x40) & 0x80; 
 
 		/* Ant0 */
 		RTMP_IO_WRITE32(pAd, CAL_R0, 0);
 		RTMP_IO_WRITE32(pAd, TXBE_R13, phaseValues[0] + divPhase[0]);  // for method1
 		//RTMP_IO_WRITE32(pAd, TXBE_R13, 0xC4);
 
-		DBGPRINT(RT_DEBUG_TRACE, (
+		DBGPRINT(RT_DEBUG_WARN, (
 			   " ============================================================ \n"
 		       " Divider phase  = 0x%x\n"
 		       " Residual phase = 0x%x\n"
@@ -1811,23 +1992,61 @@ INT mt76x2_ITxBFDividerCalibration(
 			Update BBP Registers. Quantize DeltaPhase to 90 or 180 depending on band. Then
 			update original phase calibration values from EEPROM and set R176 for Ant 0 and Ant2
 		*/
-		ITxBFGetEEPROM(pAd, &phaseParams, 0, 0);
-		mt76x2_ITxBFPhaseParams(phaseValues, channel, &phaseParams);
+		ITxBFGetEEPROM(pAd, &phaseParams, 0, 0, 0);
+		mt76x2_ITxBFPhaseParams(pAd, phaseValues, channel, &phaseParams);
+
+        groupIdx = ate_txbf_chan_group_base_idx(pAd, channel);
+        ITxBFGetEEPROM(pAd, 0, 0, &divParams, 0);
+        
+        divPhase[0] -= divParams.E1aDivPhase[groupIdx];
+        divPhase[0] = (divPhase[0] + 0x40) & 0x80;  
 
 		/* Ant0 */
 		RTMP_IO_WRITE32(pAd, CAL_R0, 0);
-		RTMP_IO_WRITE32(pAd, TXBE_R13, phaseValues[0] + divPhase[0]);  // for method1
+		RTMP_IO_WRITE32(pAd, TXBE_R13, phaseValues[0] + divPhase[0]);  
 		
-		DBGPRINT(RT_DEBUG_TRACE, (
+		DBGPRINT(RT_DEBUG_WARN, (
 				" ============================================================ \n"
+                " Group base [%d] divider phase = 0x%x\n"
 		   		" Divider phase  = 0x%x\n"
 		       	" Residual phase = 0x%x\n"
 		       	" Tx phase compensated value = 0x%x\n"
 		       	" ============================================================ \n", 
-		       	divPhase[0], phaseValues[0], phaseValues[0] + divPhase[0]));
+		       	groupIdx,divParams.E1aDivPhase[groupIdx],divPhase[0], phaseValues[0], phaseValues[0] + divPhase[0]));
 
 		break;
 	case 10:
+        /*Save divPhase in efuse if its a group center channel */        
+        /* Update EEPROM */        
+        ITxBFGetEEPROM(pAd, 0, 0, &divParams, 0);
+
+        chanidx = ate_txbf_get_chan_idx(pAd, channel, 0);
+        groupIdx = ate_txbf_chan_group_base_idx(pAd, channel);
+        if (chanidx != -1)  // group center chan
+        {       
+            divParams.E1aDivPhase[chanidx] = divPhase[0]; 
+            ITxBFSetEEPROM(pAd, 0, 0, &divParams, 0);
+            divPhase[0] = 0;
+          
+            DBGPRINT(RT_DEBUG_WARN, (
+			   " ============================================================ \n"
+		       " Save Divider phase to efuse[%d], value = 0x%x\n"
+		       " ============================================================ \n", 
+		       chanidx, divParams.E1aDivPhase[chanidx]));
+        }
+        else if (groupIdx >= 0) 
+        {             
+            divPhase[0] -= divParams.E1aDivPhase[groupIdx];
+            divPhase[0] = (divPhase[0] + 0x40) & 0x80;                        
+
+            DBGPRINT(RT_DEBUG_WARN, (
+			     " ============================================================ \n"
+		         " group index  = %d\n"
+                 " Base Divider phase  = 0x%x\n"
+		         " Diff Divider phase  = 0x%x\n"
+		         " ============================================================ \n", 
+		         groupIdx, divParams.E1aDivPhase[groupIdx], divPhase[0]));
+        }
 		break;
 
 	default:
@@ -1939,7 +2158,7 @@ INT ITxBFLNACalibrationStartUp(
 	RTMP_IO_READ32(pAd,CAL_R2,  			 &pCR_BK[63]);
 	RTMP_IO_READ32(pAd,CAL_R5,  			 &pCR_BK[64]);
 	RTMP_IO_READ32(pAd,PWR_PIN_CFG,          &pCR_BK[65]);
-	RTMP_IO_READ32(pAd,TXBE_R4,          &pCR_BK[66]);
+	RTMP_IO_READ32(pAd,TXBE_R4,              &pCR_BK[66]);
 
 	// Do the LNA calibration
 	cal_StatusFlg = mt76x2_ITxBFLNACalibration(pAd, calFunction, calMethod, gBand);
@@ -2011,12 +2230,13 @@ INT ITxBFLNACalibrationStartUp(
 	RTMP_IO_WRITE32(pAd,CAL_R2,  			 pCR_BK[63]);
 	RTMP_IO_WRITE32(pAd,CAL_R5,  			 pCR_BK[64]);
 	RTMP_IO_WRITE32(pAd,PWR_PIN_CFG,         pCR_BK[65]);
-	RTMP_IO_WRITE32(pAd,TXBE_R4,         	pCR_BK[66]);
+	RTMP_IO_WRITE32(pAd,TXBE_R4,         	 pCR_BK[66]);
 
 	os_free_mem(NULL, pCR_BK);
 
 	return cal_StatusFlg;
 }
+
 
 INT    avgPhase32[3];
 UCHAR  MidVGA[2];
@@ -2029,14 +2249,16 @@ INT mt76x2_ITxBFLNACalibration(
 {
 
 	UINT32  phaseCaliStatus, phaseCaliResult;
-	UCHAR   timeOutCount;
+	UCHAR   AGCtimeOutCount, timeOutCount, agcGain;
 	INT     mPhase0[2], mPhase1[2];
 	INT     mCalPhase0[2], mCalPhase1[2];
 	INT     avgIData, avgQData, peakIValue;
 	UINT32  value32;
 	UINT32  TRXSel_aband[2] = {0x01FECD28, 0x01FECD28};
-	UINT32  RXGainSel[4] = {0x000B8888, 0x000A8888, 0x000A8888, 0x00098888};
-	UINT32  RXGainSel_aBand[4] = {0x000B8888, 0x000A8888, 0x000A8888, 0x00098888};
+	UINT32  RXGainSel[4]    = {0x000B8888, 0x000A8888, 0x000A8888, 0x00098888};
+	//UINT32  RXGainSel_aBand[4] = {0x000B8888, 0x000A8888, 0x000A8888, 0x00098888};
+    UINT32  agcGainSet;
+
 	UINT32  TRSW[2]       = {0xF004013B, 0xF004012A};
 	UINT32  TRSW_aband[2] = {0x0004012F, 0x0004012A};
 	UINT32  TxgGainSel[2] = {0x00010130, 0x00010100};
@@ -2136,7 +2358,7 @@ INT mt76x2_ITxBFLNACalibration(
 				mt_rf_write(pAd, pathIdx[ii], 0x029C, 0x2E1F1F10);
 			}
 				
-    		RTMP_IO_WRITE32(pAd,          0x2704, 0x00000000); 
+    		RTMP_IO_WRITE32(pAd, 0x2704, 0x00000000); 
 
 			if (gBand)
 			{
@@ -2153,42 +2375,46 @@ INT mt76x2_ITxBFLNACalibration(
 			{
 				mt_rf_write(pAd, pathIdx[ii], 0x02A8, TRXSel_aband[i]); 
 			}
+
+            AGCtimeOutCount = 0;
+            agcGain = RXGainSel[2*i] & 0x3F; 
+
+            while (AGCtimeOutCount < 20) // SW AGC update to make sure I peak value can prevent peak value from satuation or too low
+            {
+		        //********* cal setting ********
+    		    RTMP_IO_WRITE32(pAd,          0x2004, 0x00000000); // BW=20MHz ADC=40MHz
+			    mt_rf_write(pAd, pathIdx[ii], 0x0200, 0x0500010F); // start rxiq dcoc
+    		    RTMP_IO_WRITE32(pAd,          0x1264, 0x80008000); // DAC Clock on
+    		    RTMP_IO_WRITE32(pAd,          0x1204, 0x00000000); // [3] to turn off "adda power down"
+    		    RTMP_IO_WRITE32(pAd,          0x2084, 0x00021E00); // RF/BBP clk control
+    		    RTMP_IO_WRITE32(pAd,          0x2010, 0x00000001); // core soft reset enable
+    		    RTMP_IO_WRITE32(pAd,          0x2010, 0x00000000); // core soft reset disable
+    		    RTMP_IO_WRITE32(pAd,          0x2704, 0x00000000); // Tx power control
+
+                agcGainSet = (RXGainSel[2*i] & 0xF8080)|(agcGain << 8)| agcGain ; 
+
+			    //********* HG LNA Phase cal  *********
+                mt_rf_write(pAd, pathIdx[ii], 0x0210, agcGainSet); // Use 2cf4 force RXGAIN, HG(B)/MG(A)/8484 LG(9)/8585
+            	
+			    //********* start iBF cal
+			    mt_rf_write(pAd, pathIdx[ii], 0x0114, 0x00C211F1); // connecting TxLPF out and RxLPF in, and closing the TIA
+    		    RTMP_IO_WRITE32(pAd,          0x2300, ADCSel[ii]); // 01:1R ADC1, 00 : 1R ADC0
+    		    RTMP_IO_WRITE32(pAd,          0x2710, 0x00000008); // a default setting, 2T
+    		    RTMP_IO_WRITE32(pAd,          0x2c08, TRLoopSel[ii]); // TR loop setting(0:T0R0,1:T1R0,5:T1R1,4:T0R1)
+    		    RTMP_IO_WRITE32(pAd,          0x2714, DACSel[ii]); // 1 : DAC1, 0 : DAC0                                                    
+    		    RTMP_IO_WRITE32(pAd,          0x2718, 0xC0002101); // Test format contol : Tx single tone setting
+
+			    RtmpOsMsDelay(10); // waiting 10ms
+
+    		    RTMP_IO_WRITE32(pAd,          0x2c14, 0x0000040c); // set accumulation length
+
+			    // Enable LNA phase calibration and polling if HW is ready to read phase result
+			    RTMP_IO_WRITE32(pAd,CAL_R1, 0x00000086);
+
+			    RtmpOsMsDelay(1); // waiting 1ms
 			
-			//********* cal setting ********
-    		RTMP_IO_WRITE32(pAd,          0x2004, 0x00000000); // BW=20MHz ADC=40MHz
-			mt_rf_write(pAd, pathIdx[ii], 0x0200, 0x0500010F); // start rxiq dcoc
-    		RTMP_IO_WRITE32(pAd,          0x1264, 0x80008000); // DAC Clock on
-    		RTMP_IO_WRITE32(pAd,          0x1204, 0x00000000); // [3] to turn off "adda power down"
-    		RTMP_IO_WRITE32(pAd,          0x2084, 0x00021E00); // RF/BBP clk control
-    		RTMP_IO_WRITE32(pAd,          0x2010, 0x00000001); // core soft reset enable
-    		RTMP_IO_WRITE32(pAd,          0x2010, 0x00000000); // core soft reset disable
-    		RTMP_IO_WRITE32(pAd,          0x2704, 0x00000000); // Tx power control
-
-			//********* HG LNA Phase cal  *********
-			if (gBand)
-			mt_rf_write(pAd, pathIdx[ii], 0x0210, RXGainSel[2*i]); // Use 2cf4 force RXGAIN, HG(B)/MG(A)/8484 LG(9)/8585
-			else
-				mt_rf_write(pAd, pathIdx[ii], 0x0210, RXGainSel_aBand[2*i]); // Use 2cf4 force RXGAIN, HG(B)/MG(A)/8484 LG(9)/8585
-	
-			//********* start iBF cal
-			mt_rf_write(pAd, pathIdx[ii], 0x0114, 0x00C211F1); // connecting TxLPF out and RxLPF in, and closing the TIA
-    		RTMP_IO_WRITE32(pAd,          0x2300, ADCSel[ii]); // 01:1R ADC1, 00 : 1R ADC0
-    		RTMP_IO_WRITE32(pAd,          0x2710, 0x00000008); // a default setting, 2T
-    		RTMP_IO_WRITE32(pAd,          0x2c08, TRLoopSel[ii]); // TR loop setting(0:T0R0,1:T1R0,5:T1R1,4:T0R1)
-    		RTMP_IO_WRITE32(pAd,          0x2714, DACSel[ii]); // 1 : DAC1, 0 : DAC0                                                    
-    		RTMP_IO_WRITE32(pAd,          0x2718, 0xC0002101); // Test format contol : Tx single tone setting
-
-			RtmpOsMsDelay(10); // waiting 10ms
-
-    			RTMP_IO_WRITE32(pAd,          0x2c14, 0x0000040c); // set accumulation length
-
-				// Enable LNA phase calibration and polling if HW is ready to read phase result
-				RTMP_IO_WRITE32(pAd,CAL_R1, 0x00000086);
-
-			RtmpOsMsDelay(1); // waiting 1ms
-			
-				RTMP_IO_READ32(pAd,CAL_R1, &phaseCaliStatus);
-				timeOutCount = 0;
+			    RTMP_IO_READ32(pAd,CAL_R1, &phaseCaliStatus);
+			    timeOutCount = 0;
 				while (phaseCaliStatus & 0x80)
 				{
 					if (timeOutCount == 3) 
@@ -2201,15 +2427,15 @@ INT mt76x2_ITxBFLNACalibration(
 
 					timeOutCount++;
 
-				RtmpOsMsDelay(1); // waiting 1ms
+				    RtmpOsMsDelay(1); // waiting 1ms
 			
 					RTMP_IO_READ32(pAd,CAL_R1, &phaseCaliStatus);
 				}
 
 				// 0x2C2C
 				// Bit 23:16    Correlator Phase
-				// Bit 15:8      Correlator Q value
-				// Bit 7:0        Correlator I value
+				// Bit 15:8     Correlator Q value
+				// Bit 7:0      Correlator I value
 				RTMP_IO_READ32(pAd,CAL_R11, &phaseCaliResult);
 				mPhase0[ii] = (INT)((INT)((phaseCaliResult << 8) & 0xFF000000) >> 24);
 				avgQData = (INT)((INT)((phaseCaliResult << 16) & 0xFF000000) >> 24);
@@ -2217,44 +2443,68 @@ INT mt76x2_ITxBFLNACalibration(
 				mCalPhase0[ii] = iAtan2(avgQData, avgIData);
 				peakIValue = phaseCaliResult >> 24;
 
-				DBGPRINT(RT_DEBUG_TRACE, (
-					" ============================ Loop%d, Path%d, High ======================== \n"
+			    DBGPRINT(RT_DEBUG_TRACE, (
+					" ==========================LNACAL= Loop%d, Path%d, agcCnt %d,agcGain=%d,High ======================== \n"
+					" agcGainSet = %x\n"
 					" CAL_R11=0x%x\n" 
 					" Peak I value=0x%x\n"
 					" I value=0x%x, Q value=0x%x\n"
 					" mPhase0 = 0x%x\n"
 					" ============================================================ \n", 
-					i, ii,
+					i, ii,AGCtimeOutCount,agcGain,
+                    agcGainSet,
 					phaseCaliResult, 
 					peakIValue,
 					avgIData, avgQData,
 					mPhase0[ii]));
+			    
+                //SW AGC gain control
+                if ((agcGain < 62) && (AGCtimeOutCount < 19)) // BP_AGC gain 0~63
+                {
+                    // Calculate AGC ad check if AGC update is enough or not
+                    if (peakIValue >= 0x40 && agcGain > 0)
+                        agcGain --;
+                    else if (peakIValue >= 0x30)
+                    {
+                        AGCtimeOutCount = 20;
+                        break;
+                    } 
+                    else
+                        agcGain++;
+                }
+                DBGPRINT(RT_DEBUG_TRACE,("LNA SW AGC = %d\n", agcGain));
+                AGCtimeOutCount++;  
+            }
 
 			//********* BBP Soft Reset  *********
-			RTMP_IO_WRITE32(pAd,       0x2718, 0x40002101); //Test format contol : Tx single tone setting
-			RTMP_IO_WRITE32(pAd,       0x2010, 0x00000001); // core soft reset enable
-			RTMP_IO_WRITE32(pAd,       0x2010, 0x00000000); // core soft reset disable
+			RTMP_IO_WRITE32(pAd, 0x2718, 0x40002101); //Test format contol : Tx single tone setting
+			RTMP_IO_WRITE32(pAd, 0x2010, 0x00000001); // core soft reset enable
+			RTMP_IO_WRITE32(pAd, 0x2010, 0x00000000); // core soft reset disable
 				
 			//********* MG LNA Phase cal  *********
+            agcGainSet = (RXGainSel[2*i + 1] & 0xF8080)|(agcGain << 8)| agcGain ; 
 			if (gBand)
 			{
 				mt_rf_write(pAd, pathIdx[ii], 0x0004, TRSW[i]);    // set TRSW in TX mode for WF0
-				mt_rf_write(pAd, pathIdx[ii], 0x0210, RXGainSel[2*i + 1]); // Use 2cf4 force RXGAIN, HG(B)/MG(A)/8484 LG(9)/8585
+				mt_rf_write(pAd, pathIdx[ii], 0x0210, agcGainSet); // Use 2cf4 force RXGAIN, HG(B)/MG(A)/8484 LG(9)/8585
+				//mt_rf_write(pAd, pathIdx[ii], 0x0210, RXGainSel[2*i + 1]); // Use 2cf4 force RXGAIN, HG(B)/MG(A)/8484 LG(9)/8585
+				//mt_rf_write(pAd, pathIdx[ii], 0x0210, RXGainSel[2*i + 1]); // Use 2cf4 force RXGAIN, HG(B)/MG(A)/8484 LG(9)/8585
 			}
 			else
 			{
 				mt_rf_write(pAd, pathIdx[ii], 0x0004, TRSW_aband[i]); // set TRSW in TX mode for WF0
-				mt_rf_write(pAd, pathIdx[ii], 0x0210, RXGainSel_aBand[2*i + 1]); // Use 2cf4 force RXGAIN, HG(B)/MG(A)/8484 LG(9)/8585
+				mt_rf_write(pAd, pathIdx[ii], 0x0210, agcGainSet); // Use 2cf4 force RXGAIN, HG(B)/MG(A)/8484 LG(9)/8585
+				//mt_rf_write(pAd, pathIdx[ii], 0x0210, RXGainSel_aBand[2*i + 1]); // Use 2cf4 force RXGAIN, HG(B)/MG(A)/8484 LG(9)/8585
 			}
-
+			
 			//********* start iBF cal *********
 			mt_rf_write(pAd, pathIdx[ii], 0x0114, 0x00C211F1); // connecting TxLPF out and RxLPF in, and closing the TIA
-			RTMP_IO_WRITE32(pAd,       0x2300, ADCSel[ii]); // 01:1R ADC1, 00 : 1R ADC0
-			RTMP_IO_WRITE32(pAd,       0x2710, 0x00000008); // a default setting, 2T
-			RTMP_IO_WRITE32(pAd,       0x2c08, TRLoopSel[ii]); // TR loop setting(0:T0R0,1:T1R0,5:T1R1,4:T0R1)
-			RTMP_IO_WRITE32(pAd,       0x2714, DACSel[ii]); // 1 : DAC1, 0 : DAC0   
-			RTMP_IO_WRITE32(pAd,       0x2718, 0xC0002101); // Test format contol : Tx single tone setting
-			RTMP_IO_WRITE32(pAd,       0x2c14, 0x0000040c); // set accumulation length
+			RTMP_IO_WRITE32(pAd, 0x2300, ADCSel[ii]); // 01:1R ADC1, 00 : 1R ADC0
+			RTMP_IO_WRITE32(pAd, 0x2710, 0x00000008); // a default setting, 2T
+			RTMP_IO_WRITE32(pAd, 0x2c08, TRLoopSel[ii]); // TR loop setting(0:T0R0,1:T1R0,5:T1R1,4:T0R1)
+			RTMP_IO_WRITE32(pAd, 0x2714, DACSel[ii]); // 1 : DAC1, 0 : DAC0   
+			RTMP_IO_WRITE32(pAd, 0x2718, 0xC0002101); // Test format contol : Tx single tone setting
+			RTMP_IO_WRITE32(pAd, 0x2c14, 0x0000040c); // set accumulation length
 
 			// Enable LNA phase calibration and polling if HW is ready to read phase result
 			RTMP_IO_WRITE32(pAd,CAL_R1, 0x00000086);
@@ -2282,8 +2532,8 @@ INT mt76x2_ITxBFLNACalibration(
 	
 			// 0x2C2C
 			// Bit 23:16	Correlator Phase
-			// Bit 15:8 	 Correlator Q value
-			// Bit 7:0		  Correlator I value
+			// Bit 15:8 	Correlator Q value
+			// Bit 7:0		Correlator I value
 			RTMP_IO_READ32(pAd,CAL_R11, &phaseCaliResult);
 			mPhase1[ii] = (INT)((INT)((phaseCaliResult << 8) & 0xFF000000) >> 24);
 			avgQData = (INT)((INT)((phaseCaliResult << 16) & 0xFF000000) >> 24);
@@ -2292,13 +2542,15 @@ INT mt76x2_ITxBFLNACalibration(
 			peakIValue = phaseCaliResult >> 24;
 
 			DBGPRINT(RT_DEBUG_TRACE, (
-					" ============================ Loop%d, Path%d, Low ======================== \n"
+					" ========================LNACAL= Loop%d, Path%d, Low ======================== \n"
+					" agcGainSet = %x\n"
 					" CAL_R11=0x%x\n" 
 					" Peak I value=0x%x\n"
 					" I value=0x%x, Q value=0x%x\n"
 					" mPhase1 = 0x%x\n"
 					" ============================================================ \n", 
 					i, ii,
+                    agcGainSet,
 					phaseCaliResult, 
 					peakIValue,
 					avgIData, avgQData,
@@ -2318,13 +2570,13 @@ INT mt76x2_ITxBFLNACalibration(
 					mt_rf_write(pAd, RF_Path0, RFDIGI_TOP0, 0x00056F50); // WF0 manul mode
 					mt_rf_write(pAd, RF_Path0, RFDIGI_TOP0, 0x80056F50); // WF0 manul mode
 				}
-			}
+		    }
 		}
 
 		DiffPhase32[i] = ((INT)(((INT)((mPhase0[0]-mPhase1[0]) << 24)) >> 24) + 
-			                   (INT)(((INT)((mPhase0[1]-mPhase1[1]) << 24)) >> 24)) >> 2;
-		
-		DBGPRINT(RT_DEBUG_TRACE, (
+			              (INT)(((INT)((mPhase0[1]-mPhase1[1]) << 24)) >> 24)) >> 1;
+
+		DBGPRINT(RT_DEBUG_OFF, (
 				" ============================ Loop%d ======================== \n"
 				" ((mPhase0[0]-mPhase1[0])+(mPhase0[1]-mPhase1[1])) >> 1\n"
 				" ((0x%x - 0x%x) + (0x%x - 0x%x)) >> 1 = 0x%x\n"
@@ -2336,23 +2588,16 @@ INT mt76x2_ITxBFLNACalibration(
 
 	}
 
-	//avgPhase32[0] = ((64 * avgPhase32[0]) + (64 * DiffPhase32[0])) >> 7;
-	//avgPhase32[1] = ((64 * avgPhase32[1]) + (64 * DiffPhase32[1])) >> 7;
-	//avgPhase32[2] = ((64 * avgPhase32[2]) + (64 * DiffPhase32[2])) >> 7;
-
-	
 	avgPhase32[0] = DiffPhase32[0];
 	avgPhase32[1] = DiffPhase32[1];
 	avgPhase32[2] = DiffPhase32[1];
-
 
 	DBGPRINT(RT_DEBUG_TRACE, (
 			"Channel%d LNA average phase (deg)\n"
 			"Ant0\n"
 			"  PHM  :%d    Avg PHM  :%d\n"
 			"  PML  :%d    Avg PML  :%d\n"
-			"  PLUL :%d    Avg PLUL :%d\n",
-					
+			"  PLUL :%d    Avg PLUL :%d\n",					
 			channel,
 			(360*DiffPhase32[0])>>8,(360*avgPhase32[0])>>8,
 			(360*DiffPhase32[1])>>8,(360*avgPhase32[1])>>8,
@@ -2365,7 +2610,7 @@ INT mt76x2_ITxBFLNACalibration(
 
 	case 1:
 		/* Save new reference values in EEPROM and BBP */
-		ITxBFGetEEPROM(pAd, 0, &lnaParams, 0);
+		ITxBFGetEEPROM(pAd, 0, &lnaParams, 0, 0);
 
 		/* Only allow calibration on specific channels */
 		if (channel == 1) {
@@ -2420,7 +2665,7 @@ INT mt76x2_ITxBFLNACalibration(
 			goto exitLnaCal;
 		}
 
-		ITxBFSetEEPROM(pAd, 0, &lnaParams, 0);
+		ITxBFSetEEPROM(pAd, 0, &lnaParams, 0, 0);
 		/* FALL THROUGH to update BBP */
 
 		break;
@@ -2450,11 +2695,7 @@ exitLnaCal:
 	return result;
 }
 
-#endif // MT76x2
 
-
-
-#ifdef MT76x2
 INT ITxBFPhaseCalibrationStartUp(
 	IN RTMP_ADAPTER *pAd,
 	IN INT calFunction,
@@ -2555,17 +2796,16 @@ INT mt76x2_ITxBFPhaseCalibration(
 	UINT32 value32[2];
 	UCHAR  timeOutCount;
 	INT    mPhase[2];
-    INT    mPhase0;
     INT    mCalPhase0;
 	LONG   avgIData, avgQData;
 	UCHAR  i;
-	UCHAR   divPhase[2] = {0};
-	UCHAR   phaseValues[2] = {0};
-	BOOLEAN gBandFlg = FALSE;
-	CHAR    rf_Path[2] = {RF_Path0, RF_Path1};
+	UCHAR   divPhase[2]    = {0};
+	INT     phaseValues[2] = {0};
+	BOOLEAN gBandFlg      = FALSE;
+	CHAR    rf_Path[2]    = {RF_Path0, RF_Path1};
 	CHAR    rf_RevPath[2] = {RF_Path1, RF_Path0};
 	CHAR    trLoopSetting[2] = {4, 1};
-	CHAR    A_D_Sel[2] = {0x80, 0x81};
+	CHAR    A_D_Sel[2]    = {0x80, 0x81};
 	CHAR    LoPhase;
 
 #ifdef RALINK_ATE
@@ -2606,9 +2846,9 @@ INT mt76x2_ITxBFPhaseCalibration(
 			mt_rf_write(pAd, rf_RevPath[i], RFDIGI_TOP1, 0xF0040122); // set TRSW in TX mode for WF0
 			mt_rf_write(pAd, rf_Path[i], RFDIGI_TOP0, 0x80056F23); // enable SX/RX/for WF1
 			mt_rf_write(pAd, rf_Path[i], RFDIGI_TOP1, 0xF0040123); // set TRSW in TX mode for WF1
-	}
-	else
-	{
+	    }
+	    else
+	    {
 			// ********* external llopback *********
 			mt_rf_write(pAd, rf_RevPath[i], RFDIGI_TRX17, 0x000101C0); // Set txg gain table = to manual mode
 	
@@ -2618,64 +2858,64 @@ INT mt76x2_ITxBFPhaseCalibration(
 			mt_rf_write(pAd, rf_RevPath[i], RFDIGI_TOP1, 0xF0040122); // set TRSW in TX mode for WF0
 			mt_rf_write(pAd, rf_Path[i], RFDIGI_TOP0, 0x80056F27); // enable SX/RX/for WF1
 			mt_rf_write(pAd, rf_Path[i], RFDIGI_TOP1, 0xF0040123); // set TRSW in TX mode for WF1
-	}
+	    }
 	
 		// ********* cal setting ********
-	// DCOC for RXA IQ Cal
-	RTMP_IO_WRITE32(pAd,CORE_R1,   0x00000000); // BW=20MHz ADC=40MHz
+	    // DCOC for RXA IQ Cal
+	    RTMP_IO_WRITE32(pAd,CORE_R1, 0x00000000); // BW=20MHz ADC=40MHz
 
 		// ********* pre dcoc ********
-		RTMP_IO_WRITE32(pAd,    RF_BSI_CKDIV, 0x00000008);
-		mt_rf_write(pAd, rf_RevPath[i], RFDIGI_TRX0,  0x0500010F); // start rxiq dcoc   keter
+		RTMP_IO_WRITE32(pAd, RF_BSI_CKDIV, 0x00000008);
+		mt_rf_write(pAd, rf_RevPath[i], RFDIGI_TRX0, 0x0500010F); // start rxiq dcoc   keter
 
 		RtmpOsMsDelay(1); // waiting 1ms          
 
-		RTMP_IO_WRITE32(pAd, RF_BSI_CKDIV, 0x00000002);
-	RTMP_IO_WRITE32(pAd,DACCLK_EN_DLY_CFG,	   0x80008000);  //DAC Clock on
+		RTMP_IO_WRITE32(pAd, RF_BSI_CKDIV,      0x00000002);
+	    RTMP_IO_WRITE32(pAd, DACCLK_EN_DLY_CFG, 0x80008000);  //DAC Clock on
 
 		// ********* send single tone ******                                                                             
-	RTMP_IO_WRITE32(pAd,PWR_PIN_CFG,           0x00000000);  //[3] to turn off "adda power down"
-	RTMP_IO_WRITE32(pAd,CORE_R33,              0x00021E00);  //RF/BBP clk control
-		RTMP_IO_WRITE32(pAd,TXBE_R6, 		0x40002101);  // Test format contol : Tx single tone setting                                                                                                      
-		RTMP_IO_WRITE32(pAd,CORE_R4,   	0x00000001);  // core soft reset enable                                  
-		 
-		RtmpOsMsDelay(1); // waiting 1ms     
+	    RTMP_IO_WRITE32(pAd,PWR_PIN_CFG, 0x00000000);  //[3] to turn off "adda power down"
+	    RTMP_IO_WRITE32(pAd,CORE_R33,    0x00021E00);  //RF/BBP clk control
+		RTMP_IO_WRITE32(pAd,TXBE_R6, 	 0x40002101);  // Test format contol : Tx single tone setting                                                                                                      
+		RTMP_IO_WRITE32(pAd,CORE_R4,   	 0x00000001);  // core soft reset enable                                  
 
-		RTMP_IO_WRITE32(pAd,CORE_R4,   0x00000000); // core soft reset disable                                                                                                                                            
-		RTMP_IO_WRITE32(pAd,TXBE_R1,   0x00000606); // Tx power control      
+		RtmpOsMsDelay(1); // waiting 1ms     
+	
+		RTMP_IO_WRITE32(pAd,CORE_R4,     0x00000000); // core soft reset disable
+		RTMP_IO_WRITE32(pAd,TXBE_R1,     0x00000606); // Tx power control
 
 		// ********* LNA VGA setting : MG                                                                                              
-	//mt_rf_write(pAd, RF_Path0,	   RFDIGI_TRX4, ((1<<19)|(2<<16)|(1<<15)|(MidVGA[0]<<8)|(1<<7)|MidVGA[0]));
-	//mt_rf_write(pAd, RF_Path1,	   RFDIGI_TRX4, ((1<<19)|(2<<16)|(1<<15)|(MidVGA[1]<<8)|(1<<7)|MidVGA[1]));
-		if (gBandFlg)                                                                                            
-		{                                                                                                        
+	    //mt_rf_write(pAd, RF_Path0,	   RFDIGI_TRX4, ((1<<19)|(2<<16)|(1<<15)|(MidVGA[0]<<8)|(1<<7)|MidVGA[0]));
+	    //mt_rf_write(pAd, RF_Path1,	   RFDIGI_TRX4, ((1<<19)|(2<<16)|(1<<15)|(MidVGA[1]<<8)|(1<<7)|MidVGA[1]));
+		if (gBandFlg)
+		{
 			mt_rf_write(pAd, rf_RevPath[i], RFDIGI_TRX4, ((1<<19)|(2<<16)|(1<<15)|(4<<8)|(1<<7)|4));                    
-		}                                                                                                        
-		else                                                                                                     
-		{                                                                                                        
+		}
+		else
+		{
 			mt_rf_write(pAd, rf_RevPath[i], RFDIGI_TRX4, ((1<<19)|(2<<16)|(1<<15)|(4<<8)|(1<<7)|4));                
-		}	
+		}
 
 		// ********* start iBF cal
-	RTMP_IO_WRITE32(pAd, AGC1_R0,  0x7408); // a default setting, 2R
-	RTMP_IO_WRITE32(pAd, TXBE_R4,  0x0008); // a default setting, 2T
-		RTMP_IO_WRITE32(pAd,CAL_R2,  trLoopSetting[i]); // TR loop setting(0:T0R0,1:T1R0,5:T1R1,4:T0R1)              
+		RTMP_IO_WRITE32(pAd, AGC1_R0,  0x7408); // a default setting, 2R
+		RTMP_IO_WRITE32(pAd, TXBE_R4,  0x0008); // a default setting, 2T
+		RTMP_IO_WRITE32(pAd, CAL_R2,   trLoopSetting[i]); // TR loop setting(0:T0R0,1:T1R0,5:T1R1,4:T0R1)              
 		RTMP_IO_WRITE32(pAd, TXBE_R5,  A_D_Sel[i]); // 1 : DAC1, 0 : DAC0 
-		RTMP_IO_WRITE32(pAd,TXBE_R6, 0xC0002101); // Test format contol : Tx single tone setting               
+		RTMP_IO_WRITE32(pAd, TXBE_R6,  0xC0002101); // Test format contol : Tx single tone setting
 
 		RtmpOsMsDelay(1); // waiting 1ms   
 
 		if (gBandFlg)
 		{
-			RTMP_IO_WRITE32(pAd,CAL_R5,  0x0000040c); // set accumulation length       
+		RTMP_IO_WRITE32(pAd,CAL_R5,  0x0000040c); // set accumulation length
 		}
 		else
 		{
 			RTMP_IO_WRITE32(pAd,CAL_R5,  0x00001c0c); // set accumulation length                                   
 		}
-
-		// Enable phase calibration                                                                            
-		RTMP_IO_WRITE32(pAd,CAL_R1, 0x00000086);    
+		
+		// Enable phase calibration
+		RTMP_IO_WRITE32(pAd,CAL_R1, 0x00000086);
 	
 		RtmpOsMsDelay(1); // waiting 1ms   
 		
@@ -2702,8 +2942,8 @@ INT mt76x2_ITxBFPhaseCalibration(
 				
 		// 0x2C2C
 		// Bit 23:16	Correlator Phase
-		// Bit 15:8 	 Correlator Q value
-		// Bit 7:0		  Correlator I value
+		// Bit 15:8 	Correlator Q value
+		// Bit 7:0		Correlator I value
 		RTMP_IO_READ32(pAd,CAL_R11, &phaseCaliResult);
 		mPhase[i] = (INT)((INT)((phaseCaliResult << 8) & 0xFF000000) >> 24);                                     
 		avgQData = (INT)((INT)((phaseCaliResult << 16) & 0xFF000000) >> 24);
@@ -2711,16 +2951,16 @@ INT mt76x2_ITxBFPhaseCalibration(
 		mCalPhase0 = iAtan2(avgQData, avgIData);
 		
 		DBGPRINT(RT_DEBUG_TRACE, (
-					"===============================Path%d==============================\n"                             
-			    		"Tx phase cal : CAL_R11=0x%x\n"                                                                           
-			    		"Phase=0x%x\n"                                                                                     
+				"===============================Path%d==============================\n"                             
+			    "Tx phase cal : CAL_R11=0x%x\n"                                                                           
+			    "Phase=0x%x\n"                                                                                     
 				"Peak I value=0x%x\n"
 				"I value=0x%lx, Q value=0x%lx\n"
 				"MidVGA[0] = 0x%x\n",
-					rf_Path[i],
+				rf_Path[i],
 				phaseCaliResult, 
-					//(360*mPhase[i])>>8,                                                                                  
-					mPhase[i],                                                                                         
+				//(360*mPhase[i])>>8,                                                                                  
+				mPhase[i],                                                                                         
 				phaseCaliResult >> 24,
 				avgIData, avgQData,
 				MidVGA[0]));
@@ -2753,19 +2993,18 @@ INT mt76x2_ITxBFPhaseCalibration(
 			mt_rf_write(pAd, rf_RevPath[i], RFDIGI_TOP0, 0x00056734); // enable SX/RX/for WF1  
 			mt_rf_write(pAd, rf_RevPath[i], RFDIGI_TOP0, 0x80056734); // enable SX/RX/for WF1   
 			//mt_rf_write(pAd, rf_RevPath[i], RFDIGI_TOP1, 0x00040120);				
-			mt_rf_write(pAd, rf_Path[i], RFDIGI_TOP0, 0x00056F27); // enable SX/RX/for WF0,                        		                     
-			mt_rf_write(pAd, rf_Path[i], RFDIGI_TOP0, 0x00056F24); // enable SX/RX/for WF0,                                              
-			mt_rf_write(pAd, rf_Path[i], RFDIGI_TOP0, 0x80056F24); // enable SX/RX/for WF0,                        
+			mt_rf_write(pAd, rf_Path[i],    RFDIGI_TOP0, 0x00056F27); // enable SX/RX/for WF0,                        		                     
+			mt_rf_write(pAd, rf_Path[i],    RFDIGI_TOP0, 0x00056F24); // enable SX/RX/for WF0,                                              
+			mt_rf_write(pAd, rf_Path[i],    RFDIGI_TOP0, 0x80056F24); // enable SX/RX/for WF0,                        
 			//mt_rf_write(pAd, rf_Path[i], RFDIGI_TOP1, 0x00040120);
 			//mt_rf_write(pAd, rf_Path[i], RFDIGI_TRX0, 0x0508000F);
 			//mt_rf_write(pAd, rf_RevPath[i], RFDIGI_TRX4, 0x00000C0C);
-			}
-		}
-				
-	phaseValues[0] = mPhase[0] - mPhase[1];
-	
-		DBGPRINT(RT_DEBUG_TRACE, (
-			"Tx phase : 0x%x\n", phaseValues[0]));
+	    }
+    }
+
+    phaseValues[0] = mPhase[0] - mPhase[1];
+		
+    DBGPRINT(RT_DEBUG_TRACE, ("Tx phase : 0x%x\n", phaseValues[0]));
 
 	/* Either display parameters, update EEPROM and BBP registers or dump capture data */
 	switch (calFunction) {
@@ -2773,7 +3012,7 @@ INT mt76x2_ITxBFPhaseCalibration(
 		/* Remove Divider phase */
 		ITxBFDividerCalibrationStartUp(pAd, 0, 0, divPhase);
 		//phaseValues[0] -= divPhase[0];
-
+		
 		DBGPRINT(RT_DEBUG_TRACE, (
 			"Divider phase  : 0x%x\n"
 			"Before Residual phase : 0x%x\n", divPhase[0], phaseValues[0]));
@@ -2783,27 +3022,26 @@ INT mt76x2_ITxBFPhaseCalibration(
 			ITxBFLoPhaseCalibrationStartUp(pAd, loOffsetCkFlg, &LoPhase);
 			printk("Before LoPhase = 0x%x\n", LoPhase);
 			LoPhase = ABS_One(LoPhase);
-			
+		
 			if (LoPhase > 0x20 && LoPhase < 0x60)
 			{
 				phaseValues[0] = phaseValues[0] + 0x80;
-			}
-
+		    }
+				
 			printk("After LoPhase = 0x%x\n", LoPhase);
 		}
-
+		
 		DBGPRINT(RT_DEBUG_TRACE, (
 			"After Residual phase : 0x%x\n", phaseValues[0]));
-
+		
 		break;
 
 	case 1:
 		RTMP_IO_WRITE32(pAd, CAL_R0, 0);
 		RTMP_IO_WRITE32(pAd, TXBE_R13, phaseValues[0]);  // for method1
+	
+		DBGPRINT(RT_DEBUG_TRACE, ("Tx phase : 0x%x\n", phaseValues[0]));
 
-		DBGPRINT(RT_DEBUG_TRACE, (
-			"Tx phase : 0x%x\n", phaseValues[0]));
-		
 		/* Remove Divider phase */
 		ITxBFDividerCalibrationStartUp(pAd, 0, 0, divPhase);
 		phaseValues[0] -= divPhase[0];
@@ -2818,7 +3056,7 @@ INT mt76x2_ITxBFPhaseCalibration(
 		}
 		
 		/* Save new reference values in EEPROM and BBP */
-		ITxBFGetEEPROM(pAd, &phaseParams, 0, 0);
+		ITxBFGetEEPROM(pAd, &phaseParams, 0, 0, 0);
 				
 		/* Only allow calibration on specific channels */
 		if (ch == 1) 
@@ -2845,7 +3083,7 @@ INT mt76x2_ITxBFPhaseCalibration(
 			return FALSE;
 		}
 
-		ITxBFSetEEPROM(pAd, &phaseParams, 0, 0);
+		ITxBFSetEEPROM(pAd, &phaseParams, 0, 0, 0);
 
 	case 2:
 		/* Remove Divider phase */
@@ -2870,15 +3108,12 @@ INT mt76x2_ITxBFPhaseCalibration(
 			printk("After LoPhase = 0x%x\n", LoPhase);
 		}
 
-		DBGPRINT(RT_DEBUG_TRACE, (
-			"After Residual phase : 0x%x\n", phaseValues[0]));
+		DBGPRINT(RT_DEBUG_TRACE, ("After Residual phase : 0x%x\n", phaseValues[0]));
 
 		RTMP_IO_WRITE32(pAd, CAL_R0, 0);
 		RTMP_IO_WRITE32(pAd, TXBE_R13, phaseValues[0]);  // for method1
 
-
 		break;
-
 	}
 
 	return TRUE;
@@ -2896,7 +3131,6 @@ INT TxBfProfileTagRead(
 	IN PFMU_PROFILE      *prof,
 	IN UCHAR             profileIdx)
 {
-
 	UINT    value32, readValue32[5];
 	
 	// Read PFMU_R10 (0x2f28) first
@@ -2913,10 +3147,10 @@ INT TxBfProfileTagRead(
 
 	/*
 	    Bit 63:62       ng[1:0]
-	         61:60       cw[1:0]
-	         59:58       nrow[1:0]
-	         57:56       ncol[1:0]
-	         1 :  0       LM[1:0]
+	        61:60       cw[1:0]
+	        59:58       nrow[1:0]
+	        57:56       ncol[1:0]
+	        1 : 0       LM[1:0]
 	*/
 	prof->ng   = (UCHAR)((readValue32[1] >> 30) & 0x3);
 	prof->cw   = (UCHAR)((readValue32[1] >> 28) & 0x3);
@@ -2936,9 +3170,9 @@ INT TxBfProfileTagRead(
 
 	/*
 	    Bit 63 : 56       Tx1_scale_2ss[7:0]
-	         55 : 48       Tx0_scale_2ss[7:0]
-	         47 : 40       Tx1_scale_1ss[7:0]
-	         36 : 32       Tx0_scale_1ss[7:0]
+	        55 : 48       Tx0_scale_2ss[7:0]
+	        47 : 40       Tx1_scale_1ss[7:0]
+	        36 : 32       Tx0_scale_1ss[7:0]
 	*/
 	prof->Tx1_scale_2ss = (UCHAR)((readValue32[3] >> 24) & 0x0FF);
 	prof->Tx0_scale_2ss = (UCHAR)((readValue32[3] >> 16) & 0x0FF);
@@ -2947,7 +3181,7 @@ INT TxBfProfileTagRead(
 
 	/*
 	    Bit 31 : 24       STS1_SNR[7:0]
-	         23 : 16       STS0_SNR[7:0]
+	        23 : 16       STS0_SNR[7:0]
 	*/
 	prof->STS1_SNR = (UCHAR)((readValue32[2] >> 24) & 0x0FF);
 	prof->STS0_SNR = (UCHAR)((readValue32[2] >> 16) & 0x0FF);
@@ -2970,7 +3204,7 @@ INT TxBfProfileTagRead(
 	*/
 	prof->validFlg = (readValue32[0] >> 7) & 0x1;
 
-	printk("============================= TxBf profile Tage Info ==============================\n"
+	DBGPRINT(RT_DEBUG_TRACE, ("============================= TxBf profile Tage Info ==============================\n"
 		   "Pofile valid status = %d\n"
 		   "Profile index = %d\n\n"
 		   "PFMU_11 = 0x%x, PFMU_R12=0x%x, PFMU_R13=0x%x, PFMU_R14=0x%x\n\n"
@@ -2989,7 +3223,7 @@ INT TxBfProfileTagRead(
 		   prof->Tx1_scale_2ss, prof->Tx0_scale_2ss, prof->Tx1_scale_1ss, prof->Tx0_scale_1ss,
 		   prof->STS1_SNR, prof->STS0_SNR,
 		   prof->timeout,
-		   prof->LD, prof->EO, prof->IO, prof->I_E);
+		   prof->LD, prof->EO, prof->IO, prof->I_E));
 
 	return TRUE;
 }
@@ -3014,9 +3248,9 @@ INT TxBfProfileTagWrite(
 	RTMP_IO_READ32(pAd, PFMU_R14, &readValue32[3]);
 	RTMP_IO_READ32(pAd, PFMU_R15, &readValue32[4]);
 
-	printk("============================= TxBf profile Tage Write ==============================\n"
+	DBGPRINT(RT_DEBUG_TRACE, ("============================= TxBf profile Tage Write ==============================\n"
 		   "Profile index = %d\n\n",
-		   profileIdx);
+		   profileIdx));
 
 	/*
 	    Bit 63:62       ng[1:0]
@@ -3058,15 +3292,15 @@ INT TxBfProfileTagWrite(
 		readValue32[0] &= 0x000000FF;
 		readValue32[0] |= value32;
 		
-		printk("Destimation MAC Address=%x:%x:%x:%x:%x:%x\n\n",
-			   prof->DMAC[0], prof->DMAC[1], prof->DMAC[2], prof->DMAC[3], prof->DMAC[4], prof->DMAC[5]);
+		DBGPRINT(RT_DEBUG_TRACE,("Destimation MAC Address=%x:%x:%x:%x:%x:%x\n\n",
+			   prof->DMAC[0], prof->DMAC[1], prof->DMAC[2], prof->DMAC[3], prof->DMAC[4], prof->DMAC[5]));
 	}
 
 	/*
 	    Bit 63 : 56       Tx1_scale_2ss[7:0]
-	         55 : 48       Tx0_scale_2ss[7:0]
-	         47 : 40       Tx1_scale_1ss[7:0]
-	         36 : 32       Tx0_scale_1ss[7:0]
+	        55 : 48       Tx0_scale_2ss[7:0]
+	        47 : 40       Tx1_scale_1ss[7:0]
+	        36 : 32       Tx0_scale_1ss[7:0]
 	*/	
 	if (prof->CMDInIdx & 4)
 	{
@@ -3082,7 +3316,7 @@ INT TxBfProfileTagWrite(
 
 	/*
 	    Bit 31 : 24       STS1_SNR[7:0]
-	         23 : 16       STS0_SNR[7:0]
+	        23 : 16       STS0_SNR[7:0]
 	*/
 	if (prof->CMDInIdx & 8)
 	{
@@ -3105,8 +3339,8 @@ INT TxBfProfileTagWrite(
 		printk("timeout[15:0]=0x%x\n\n", prof->timeout);
 	}
 
-	printk("PFMU_11 = 0x%x, PFMU_R12=0x%x, PFMU_R13=0x%x, PFMU_R14=0x%x\n\n",
-		   readValue32[0], readValue32[1], readValue32[2], readValue32[3]);
+	DBGPRINT(RT_DEBUG_TRACE,("PFMU_11 = 0x%x, PFMU_R12=0x%x, PFMU_R13=0x%x, PFMU_R14=0x%x\n\n",
+		   readValue32[0], readValue32[1], readValue32[2], readValue32[3]));
 
 	/*
 		Bit 8 : 5	    LD, EO, IO, I/E
@@ -3143,14 +3377,12 @@ INT TxBfProfileTagWrite(
 }
 
 
-
 INT TxBfProfileDataRead(
     IN PRTMP_ADAPTER     pAd,
 	IN PFMU_DATA        *pData,
 	IN UCHAR             profileIdx,
 	IN UCHAR             subcarrierIdx)
 {
-	
 	UINT    value32, readValue32[5];	
 
 	// Read PFMU_R10 (0x2f28) first
@@ -3168,7 +3400,6 @@ INT TxBfProfileDataRead(
 	pData->phill = (readValue32[0] >> 0)  & 0x00FF;
 	return TRUE;
 }
-
 
 
 INT TxBfProfileDataWrite(
@@ -3233,6 +3464,7 @@ INT TxBfProfileDataWrite(
 	return TRUE;
 }
 
+
 INT TxBfProfileTagValid(
     IN PRTMP_ADAPTER     pAd,
 	IN PFMU_PROFILE      *prof,
@@ -3251,7 +3483,6 @@ INT TxBfProfileTagValid(
 	RTMP_IO_READ32(pAd, PFMU_R13, &readValue32[2]);
 	RTMP_IO_READ32(pAd, PFMU_R14, &readValue32[3]);
 	RTMP_IO_READ32(pAd, PFMU_R15, &readValue32[4]);
-
 
 	/*
 	    Update the valid bit
@@ -3309,18 +3540,18 @@ UCHAR Read_PFMUTxBfProfile(
 
 		if (implicitProfile == 1 && prof->I_E == 0 && prof->validFlg == 1)
 		{
-			printk("@@@@@@@@ Valid ITxBf profile is found @@@@@@@@@\n"
+			DBGPRINT(RT_DEBUG_TRACE,("@@@@@@@@ Valid ITxBf profile is found @@@@@@@@@\n"
 				   "implicitProfile = %d   prof->cw = %d \n",
-				   implicitProfile, prof->cw);
+				   implicitProfile, prof->cw));
 			pTab = &impSubCarrierTable[prof->cw];
 			break; // While valid implicit profile is found, break the seeking loop
 		}
 		
 		if (implicitProfile == 0 && prof->I_E == 1 && prof->validFlg == 1)
 		{
-			printk("@@@@@@@@ Valid ETxBf profile is found @@@@@@@@@\n"
+			DBGPRINT(RT_DEBUG_TRACE,("@@@@@@@@ Valid ETxBf profile is found @@@@@@@@@\n"
 					"implicitProfile = %d   prof->cw = %d \n",
-				   	implicitProfile, prof->cw);
+				   	implicitProfile, prof->cw));
 			pTab = &expSubCarrierTable[prof->cw];
 			break; // While valid explicit profile is found, break the seeking loop
 		}	
@@ -3359,7 +3590,6 @@ UCHAR Read_PFMUTxBfProfile(
 	return prof->validFlg;
 }
 #endif // MT76x2
-
 
 
 #ifdef DBG
@@ -3438,8 +3668,8 @@ int iCalcCalibration(PRTMP_ADAPTER pAd, int calParams[2], int profileNum)
 
 	maxCarriers = maxCarrTab[pImpProf->cw];
 	for (pi=0; pi<maxCarriers; pi++) {
-		printk("pImpData->data[%d][0]=0x%x                     pImpData->data[%d][1]=0x%x\n",
-			    pi, pImpData->data[pi][0], pi, pImpData->data[pi][1]);
+		DBGPRINT(RT_DEBUG_TRACE,("pImpData->data[%d][0]=0x%x                     pImpData->data[%d][1]=0x%x\n",
+			    pi, pImpData->data[pi][0], pi, pImpData->data[pi][1]));
 	}
     if (Read_PFMUTxBfProfile(pAd, pExpProf, pExpData, FALSE) != 1)
     {
@@ -3449,19 +3679,17 @@ int iCalcCalibration(PRTMP_ADAPTER pAd, int calParams[2], int profileNum)
 
 	maxCarriers = maxCarrTab[pExpProf->cw];
 	for (pi=0; pi<maxCarriers; pi++) {
-		printk("pExpData->data[%d][0]=0x%x                     pExpData->data[%d][1]=0x%x\n",
-			    pi, pExpData->data[pi][0], pi, pExpData->data[pi][1]);
+		DBGPRINT(RT_DEBUG_TRACE,("pExpData->data[%d][0]=0x%x                     pExpData->data[%d][1]=0x%x\n",
+			    pi, pExpData->data[pi][0], pi, pExpData->data[pi][1]));
 	}
 
 	/* Quit if MAC addresses don't match */
 	for (ii=0; ii<6; ii++) {
-
 		if (pImpProf->DMAC[ii] != pExpProf->DMAC[ii]) {
 			result = -2;
 			printk("MAC Addr in ITxBf and ETxBf tag is different!!!!!!!\n");
 			goto exitCalcCal;
 		}
-
 	}
 
 	/* Quit if profiles cannot be used */

@@ -45,7 +45,7 @@ typedef u_int8_t u8;
 
 #define EVM_RESTART_FIREWALL		(1ULL <<  0)
 #define EVM_RESTART_DHCPD		(1ULL <<  1)
-#define EVM_RESTART_RADVD		(1ULL <<  2)
+#define EVM_RESTART_RADV		(1ULL <<  2)
 #define EVM_RESTART_DDNS		(1ULL <<  3)
 #define EVM_RESTART_UPNP		(1ULL <<  4)
 #define EVM_RESTART_TIME		(1ULL <<  5)
@@ -69,6 +69,7 @@ typedef u_int8_t u8;
 #define EVM_RESTART_LLTD		(1ULL << 24)
 #define EVM_RESTART_ADSC		(1ULL << 25)
 #define EVM_RESTART_IPTV		(1ULL << 26)
+#define EVM_RESTART_CROND		(1ULL << 27)
 #define EVM_RESTART_SYSCTL		(1ULL << 28)
 #define EVM_RESTART_TWEAKS		(1ULL << 29)
 #define EVM_RESTART_WDG			(1ULL << 30)
@@ -91,7 +92,7 @@ typedef u_int8_t u8;
 
 #define EVT_RESTART_FIREWALL		1
 #define EVT_RESTART_DHCPD		1
-#define EVT_RESTART_RADVD		1
+#define EVT_RESTART_RADV		1
 #define EVT_RESTART_DDNS		1
 #define EVT_RESTART_UPNP		1
 #define EVT_RESTART_TIME		2
@@ -118,6 +119,7 @@ typedef u_int8_t u8;
 #define EVT_RESTART_WINS		2
 #define EVT_RESTART_LLTD		1
 #define EVT_RESTART_ADSC		1
+#define EVT_RESTART_CROND		1
 #define EVT_RESTART_IPTV		1
 #define EVT_RESTART_SYSCTL		1
 #define EVT_RESTART_TWEAKS		1

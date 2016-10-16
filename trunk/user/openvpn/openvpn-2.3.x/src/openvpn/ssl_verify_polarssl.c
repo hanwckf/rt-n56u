@@ -131,18 +131,13 @@ backend_x509_get_serial (openvpn_x509_cert_t *cert, struct gc_arena *gc)
   char *buf = NULL;
   size_t buflen = 0;
   mpi serial_mpi = { 0 };
-  int retval = 0;
 
   /* Transform asn1 integer serial into PolarSSL MPI */
   mpi_init(&serial_mpi);
-  retval = mpi_read_binary(&serial_mpi, cert->serial.p, cert->serial.len);
-  if (retval < 0)
+  if (!polar_ok(mpi_read_binary(&serial_mpi, cert->serial.p, cert->serial.len)))
     {
-      char errbuf[128];
-      error_strerror(retval, errbuf, sizeof(errbuf));
-
-      msg(M_WARN, "Failed to retrieve serial from certificate: %s.", errbuf);
-      return NULL;
+      msg(M_WARN, "Failed to retrieve serial from certificate.");
+      goto end;
     }
 
   /* Determine decimal representation length, allocate buffer */
@@ -150,16 +145,15 @@ backend_x509_get_serial (openvpn_x509_cert_t *cert, struct gc_arena *gc)
   buf = gc_malloc(buflen, true, gc);
 
   /* Write MPI serial as decimal string into buffer */
-  retval = mpi_write_string(&serial_mpi, 10, buf, &buflen);
-  if (retval < 0)
+  if (!polar_ok(mpi_write_string(&serial_mpi, 10, buf, &buflen)))
     {
-      char errbuf[128];
-      error_strerror(retval, errbuf, sizeof(errbuf));
-
-      msg(M_WARN, "Failed to write serial to string: %s.", errbuf);
-      return NULL;
+      msg(M_WARN, "Failed to write serial to string.");
+      buf = NULL;
+      goto end;
     }
 
+end:
+  mpi_free(&serial_mpi);
   return buf;
 }
 
@@ -372,12 +366,9 @@ x509_verify_crl(const char *crl_file, x509_crt *cert, const char *subject)
   struct gc_arena gc = gc_new();
   char *serial;
 
-  int polar_retval = x509_crl_parse_file(&crl, crl_file);
-  if (polar_retval != 0)
+  if (!polar_ok(x509_crl_parse_file(&crl, crl_file)))
     {
-      char errstr[128];
-      polarssl_strerror(polar_retval, errstr, sizeof(errstr));
-      msg (M_WARN, "CRL: cannot read CRL from file %s (%s)", crl_file, errstr);
+      msg (M_WARN, "CRL: cannot read CRL from file %s", crl_file);
       goto end;
     }
 
@@ -390,7 +381,7 @@ x509_verify_crl(const char *crl_file, x509_crt *cert, const char *subject)
       goto end;
     }
 
-  if (0 != x509_crt_revoked(cert, &crl))
+  if (!polar_ok(x509_crt_revoked(cert, &crl)))
     {
       serial = backend_x509_get_serial_hex(cert, &gc);
       msg (D_HANDSHAKE, "CRL CHECK FAILED: %s (serial %s) is REVOKED", subject, (serial ? serial : "NOT AVAILABLE"));

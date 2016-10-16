@@ -239,8 +239,16 @@ VOID BuildChannelList(RTMP_ADAPTER *pAd)
 				for (j=0; j<16; j++)
 				{
 					if (pChannelList[i] == RadarCh[j])
+					{
 						pAd->ChannelList[index+i].DfsReq = TRUE;
+#ifdef SMART_MESH
+						pAd->ChannelList[index+i].bDfsAPExist = FALSE;
+#endif /* SMART_MESH */
+					}
 				}
+#ifdef SMART_MESH
+						pAd->ChannelList[index+i].FalseCCA = 0;
+#endif /* SMART_MESH */	
 				pAd->ChannelList[index+i].MaxTxPwr = 20;
 			}
 			index += num;
@@ -508,10 +516,12 @@ extern int DetectOverlappingPeriodicRound;
 VOID Handle_BSS_Width_Trigger_Events(RTMP_ADAPTER *pAd) 
 {
 	ULONG Now32;
+
 #ifdef DOT11N_DRAFT3
 	if (pAd->CommonCfg.bBssCoexEnable == FALSE)
 		return;
 #endif
+
 	if ((pAd->CommonCfg.HtCapability.HtCapInfo.ChannelWidth == BW_40) &&
 		(pAd->CommonCfg.Channel <=14))
 	{	

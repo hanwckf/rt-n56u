@@ -1,0 +1,167 @@
+[ V4.0.1.3 ]
+	1. Fixed issues:
+		(1) Apcli/Repeater mode, Rx is sometimes disabled after connected to a root AP.
+		(2) ICV error cause disconnection with some AP at apclient/repeater mode.
+		(3) Correct CR setting for Carrier Detection (Japan).
+		(4) Fix an length error in the HT Extended Capability imformation element, which may cause some STAs fail to validate the beacons.
+	2. Sniffer mode support (under AP mode).
+	3. Band Steering support.
+	4. Firmware update:
+		(1) Update BBP init and eLNA auto-cal.
+		(2) Add eLNA UL gain minimum protect.
+		(3) Update DPD enable/disable setting and value protection.
+		(4) PM4 setting update.
+
+[ V4.0.1.2 ]
+	<V4.0.1.2-Revision 1>
+	1. Fixed issues:
+		(1) Kernel panic in ParseTxSPacket() when running repeater mode
+	2. Support mini STA mode:
+		Security: OPEN-NONE/OPEN-WEP/SHARED-WEP/WPAPSK-TKIPAES/WPA2PSK-TKIPAES
+		Throughput: 20Mbps ~ 40 Mbps
+		Number of AP scan: 8
+		Note: ra0 should be removed from br0 when running STA mode(brctl delif br0 ra0)
+
+[ V4.0.1.2 ]
+	1. Fixed issues: 
+		(1)Driver function abnormal while doing site survey and play VLC at the same time.
+		(2)A disconnection of repeater client causes the disconnection of apcli.
+		(3)Memory leakage in sending mcu command.
+		(4)WPS PBC of apcli fails at the first time.
+		(5)Connection issue of AIR play function
+	3. Firmware update:
+		(1) fix iPA_eLNA DPD
+		(2) Add PTA setting for DPD
+		(3) TOAE calibration: 
+			Update TOAE for TOAE_CTRL and NORMAL_TRX
+			Re-calibrate TOAE while TOAE report(0x60200F0C[30:17]) <= 0x0
+		(4) LED
+			Add LED TX blink mode select.
+			Allow input polarity paramter in LED command.
+		(5) fix Aux LPF gain index calculation in eLNA auto-calibration
+	4. Support Passpoint Release 2
+
+[ V4.0.1.1 ]
+	1. Fix firmware load failed issue when interface down/up
+	2. Reduce test time on ATE.
+	3. Correct rate tuning issue.
+	4. Turn off EDCCA by default. Turn it on when country region is CE.
+	5. Firmware: fix SIFS timing
+	6. Fix issue: MAC1200 BCM 3x3 11ac PCIE Card connect to MT7628 fail.
+	7. Fix issue: Class2 Error Handler didn't work
+	8. Fix TXCoherent happened due to sw cpu index incorrect (tx done tasklet de-q and scan resume de-q race condition)
+	9. Fix issue: skb_under_panic in kernel 3.10
+	10.Support MT7688
+
+[ V4.0.1.1 ]
+	Beta release
+	1. Fix RTS/CTS protection setting for 802.11n qualification test.
+	2. Fix WMM VO/VI priority issue.
+	3. Add Concurrent WPS function
+	4. Fix connection issue in repeater mode
+	5. Fix some protential coding issues
+
+[ V4.0.1.1 ]
+	Alpha release 1
+	1. Add Partial Scan feature
+	2. Add AP-Cli Auto Connection feature
+	3. Add Air Play function
+	4. Clear Compile Warnings
+	5. Add hostapd & monitor mode support
+	6. Fix interface down up memory leakage
+	7. LED support
+
+[ V4.0.1.0 ]
+	Alpha Release revision 2
+	1. WPS PIN connection issue for APCLI is fixed.
+
+
+[ V4.0.1.0 ]
+	Alpha Release revision 1
+	1. TGn and WPS 2.0 certification support for MT7628 APCLI mode.
+	2. Known issues:
+		(1) WPS PIN connection does not work if SSID is not configured.
+
+[ V4.0.1.0 ]
+	Formal Release
+	1. Remove unused EXT_CMD_AP_PWR_SAVING_CAPABILITY command function call. 
+		This can save 3 sec during intialization sequence.
+	2. Bug fix: 
+		(1)Retry of MAC layer fragments dropped as "duplicate frames"
+		(2)Occasionally run into dead lock while switch channel.
+		(3)WDS unstable throughput when running as WDS Repeater Mode.
+		(4)Race condition between register access.
+	3. Add Makefile and Kconfig for compiling 7628+7612 concurrent AP.
+	4.  Since MT7628 will not use eeprom mode and efuse mode,
+		Remove eeprom mode and efuse mode of the 1st WiFi interface in configuation menu.
+	   
+
+[ V4.0.1.0 ]
+	Alpha release 4
+	1. Fix wrong type/subtype assignment of write_tmac_info_Data
+	2. Improve HT20 middle range throughput.
+	3. Correct calibration free process
+	4. Fix kernel panic issue ruuning on Linux 3.10.
+
+[ V4.0.1.0 ]
+	Alpha release 3
+	1. Fix issue: MCS32 is wrongly sent with STBC
+	2. Enhance Tx/Rx stability
+	3. Enhance Power saving handle
+
+[ V4.0.1.0 ]
+	Alpha release 2
+	1. Firmware:
+		(1) Fix 802.11B power sweep bumps.
+		(2) Enable CFG_TXM_SHRINK compile flag to shrink code size.
+		(3) Disable support EXT_CMD_ID_ASIC_INIT_UNINIT_CTRL.
+		(4) Check TMAC Tx power register saturate while add or substract.
+		(5) Fix EVM bump caused by "DPD uses super PA lut to compensate half PA"
+
+	2. ATE:
+		[Test Mode] ContinuousTx Power gap patch
+		(1) 8 packets are not enough for TSSI training
+		(2) Restore TSSI enable CR
+		(3) Add second round for TSSI training
+		(4) Fix Tx1 Wrong Antenna Parameter 
+		(5) Fix Restore CR in StopContinuousTx 
+		
+	3. Improve throughput of legacy mode
+	4. Enhance rate tuning stability at high MCS rate.
+	5. Fixed Single-SKU bug & Support Tx Power %
+	6. [TGn] Fix 4.2.41 AP 20/40 MHz Coexistence Issue
+
+[ V4.0.1.0 ]
+	Alpha release 1
+	1. 7628 E2 support
+	2. Update DMA scheduler setting for Tx/Rx stability.
+	3. ATE:
+	    (1) Fix "Tx single tone is very small under test mode" issue.
+	    (2) Add feature get thermal sensoir value
+	    (3) Fix "MT7628 continuous Tx power" issue
+	4. Fix lock issue in TxS call back function.
+	5. Improve downlink long range performance in 2.4G Legacy Butler mode.
+	6. Firmware:
+	    (1) Fix GPIO_5 Pin MUX mask bit define
+	    (2) Fix LED GPIO_5 initial setting
+	7. "One button through wall" feature support
+	8. Fix "WDS send wrong BAR" issue
+	9. Fix "power saving cause throughput drop" issue
+
+[ V4.0.1.0 ]
+	First version of Jedi Wifi
+
+[ V4.0.0.3 ]
+1. Fixed WPS ER failed issue.
+
+
+[ V4.0.0.2 ]
+1. Support MT7603 E1/E2 chip.
+2. Fixed apcli open/shared wep connection fail.
+3. Send RTS/CTS when aggregation size >= 3
+4. Update MT7603 E1 FW to version 20140311.
+5. Enable PMF.
+
+
+[ V4.0.0.1 ]
+1. Branch from //Embedded_WIFI/main/WIFI_NXTC.

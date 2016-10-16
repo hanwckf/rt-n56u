@@ -50,7 +50,8 @@
 #define IOCTL_GPIO_DIR_OUT		0x01
 #define IOCTL_GPIO_READ			0x02
 #define IOCTL_GPIO_WRITE		0x03
-
+#define IOCTL_GPIO_MODE_GET		0x04
+#define IOCTL_GPIO_MODE_SET		0x05
 #define IOCTL_GPIO_IRQ_SET		0x10
 #define IOCTL_GPIO_LED_SET		0x20
 #define IOCTL_GPIO_LED_ENABLED		0x21
@@ -419,16 +420,14 @@ typedef struct {
 } ralink_gpio_led_info;
 
 #ifdef __KERNEL__
+extern void ralink_gpio_lock(void);
+extern void ralink_gpio_unlock(void);
 extern void ralink_gpio_set_pin_direction(u32 pin, u32 is_output);
 extern void ralink_gpio_set_pin_value(u32 pin, u32 value);
 extern u32  ralink_gpio_get_pin_value(u32 pin);
 extern void ralink_gpio_mode_set_bit(u32 idx, u32 value);
 extern u32  ralink_gpio_mode_get_bit(u32 idx);
-extern void ralink_gpio_mode_set(u32 value);
-extern u32  ralink_gpio_mode_get(void);
 #ifdef CONFIG_RALINK_GPIO_LED
-extern int  ralink_gpio_led_set(u32 led_gpio, const ralink_gpio_led_info *led);
-extern int  ralink_gpio_led_enabled(u32 led_gpio, u32 enabled);
 extern int  ralink_gpio_led_blink(u32 led_gpio);
 #endif
 #endif

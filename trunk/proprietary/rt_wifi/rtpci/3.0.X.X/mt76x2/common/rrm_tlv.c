@@ -631,6 +631,84 @@ VOID RRM_EnqueueNeighborRep(
 			BssidInfo.field.DelayBlockAck = (pBssEntry->CapabilityInfo & (1 << 14))?1:0;
 			BssidInfo.field.ImmediateBA = (pBssEntry->CapabilityInfo & (1 << 15))?1:0;
 
+/* 
+	reference 2012 spec.
+	802.11-2012.pdf
+	page#581 (0 is not euqal to no security )
+	The Security bit, if 1, indicates that the AP identified by this BSSID supports the same security provisioning
+	as used by the STA in its current association. If the bit is 0, it indicates either that the AP does not support
+	the same security provisioning or that the security information is not available at this time.
+*/
+
+			
+			BssidInfo.field.KeyScope = 0; /* "report AP has same authenticator as the AP. */
+/*
+	reference 2012 spec.
+	802.11-2012.pdf
+	page#582 (0 means information is not available  )
+	The Key Scope bit, when set, indicates the AP indicated by this BSSID has the same authenticator as the AP
+	sending the report. If this bit is 0, it indicates a distinct authenticator or the information is not available.
+*/
+
+			BssidInfo.field.SepctrumMng = (pBssEntry->CapabilityInfo & (1 << 8))?1:0;
+			BssidInfo.field.Qos = (pBssEntry->CapabilityInfo & (1 << 9))?1:0;
+			BssidInfo.field.APSD = (pBssEntry->CapabilityInfo & (1 << 11))?1:0;
+			BssidInfo.field.RRM = (pBssEntry->CapabilityInfo & RRM_CAP_BIT)?1:0;
+			BssidInfo.field.DelayBlockAck = (pBssEntry->CapabilityInfo & (1 << 14))?1:0;
+			BssidInfo.field.ImmediateBA = (pBssEntry->CapabilityInfo & (1 << 15))?1:0;
+
+
+			BssidInfo.field.MobilityDomain = (pBssEntry->bHasMDIE )?1:0;
+			BssidInfo.field.HT = (pBssEntry->HtCapabilityLen != 0)?1:0;
+#ifdef DOT11_VHT_AC			
+			BssidInfo.field.VHT = (pBssEntry->vht_cap_len != 0)?1:0;
+#endif /* DOT11_VHT_AC */
+
+			/*
+			reference spec:
+			dot11FrameRprtPhyType OBJECT-TYPE
+			SYNTAX INTEGER {
+			fhss(1),
+			dsss(2),
+			irbaseband(3),
+			ofdm(4),
+			hrdsss(5),
+			erp(6),
+			ht(7),
+			vht(9)
+			}
+
+			*/
+			
+			if (pBssEntry->Channel > 14) // 5G case
+			{
+				if (pBssEntry->HtCapabilityLen != 0) // HT or Higher case
+				{
+#ifdef DOT11_VHT_AC				
+					if (pBssEntry->vht_cap_len != 0)
+						pBssEntry->CondensedPhyType = 9;
+					else
+#endif /* DOT11_VHT_AC */
+						pBssEntry->CondensedPhyType = 7;
+				}
+				else // OFDM case
+				{
+					pBssEntry->CondensedPhyType = 4;
+				}
+			}
+			else // 2.4G case
+			{
+
+				if (pBssEntry->HtCapabilityLen != 0) //HT case
+					pBssEntry->CondensedPhyType = 7;
+				else if (ERP_IS_NON_ERP_PRESENT(pBssEntry->Erp)) //ERP case
+					pBssEntry->CondensedPhyType = 6;
+				else if (pBssEntry->SupRateLen > 4)// OFDM case (1,2,5.5,11 for CCK 4 Rates)
+					pBssEntry->CondensedPhyType = 4;
+
+				/* no CCK's definition in spec. */
+			}
+
 			RRM_InsertNeighborRepIE(pAd, (pOutBuffer + FrameLen), &FrameLen,
 				sizeof(RRM_NEIGHBOR_REP_INFO), pBssEntry->Bssid,
 				BssidInfo, pBssEntry->RegulatoryClass,

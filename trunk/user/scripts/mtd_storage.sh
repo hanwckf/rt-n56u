@@ -194,6 +194,7 @@ func_fill()
 
 	script_start="$dir_storage/start_script.sh"
 	script_started="$dir_storage/started_script.sh"
+	script_shutd="$dir_storage/shutdown_script.sh"
 	script_postf="$dir_storage/post_iptables_script.sh"
 	script_postw="$dir_storage/post_wan_script.sh"
 	script_inets="$dir_storage/inet_state_script.sh"
@@ -239,6 +240,19 @@ EOF
 		chmod 755 "$script_started"
 	fi
 
+	# create shutdown script
+	if [ ! -f "$script_shutd" ] ; then
+		cat > "$script_shutd" <<EOF
+#!/bin/sh
+
+### Custom user script
+### Called before router shutdown
+### \$1 - action (0: reboot, 1: halt, 2: power-off)
+
+EOF
+		chmod 755 "$script_shutd"
+	fi
+
 	# create post-iptables script
 	if [ ! -f "$script_postf" ] ; then
 		cat > "$script_postf" <<EOF
@@ -260,6 +274,7 @@ EOF
 ### Called after internal WAN up/down action
 ### \$1 - WAN action (up/down)
 ### \$2 - WAN interface name (e.g. eth3 or ppp0)
+### \$3 - WAN IPv4 address
 
 EOF
 		chmod 755 "$script_postw"

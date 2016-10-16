@@ -1,0 +1,4 @@
+# D-Link DWM-221
+TargetVendor=0x2001
+TargetProduct=0x7e19
+StandardEject=1

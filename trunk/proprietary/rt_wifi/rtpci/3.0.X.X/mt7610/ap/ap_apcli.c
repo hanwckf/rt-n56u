@@ -2851,6 +2851,75 @@ BOOLEAN ApCli_StatsGet(
 }
 
 #ifdef APCLI_AUTO_CONNECT_SUPPORT
+
+BOOLEAN ApCliSetIfState(
+	IN PRTMP_ADAPTER pAd,
+	IN UCHAR ifIndex,
+	IN BOOLEAN state)
+{
+	pAd->ApCfg.ApCliTab[ifIndex].Enable = state;
+
+	ApCliIfDown(pAd);
+
+	return TRUE;
+}
+
+
+BOOLEAN ApCliSetBssid(
+	IN PRTMP_ADAPTER pAd,
+	IN UCHAR ifIndex,
+	IN UCHAR *Bssid)
+{
+	BOOLEAN apcliEn = pAd->ApCfg.ApCliTab[ifIndex].Enable;
+
+	/* bring apcli interface down first */
+	if (apcliEn == TRUE)
+	{
+		pAd->ApCfg.ApCliTab[ifIndex].Enable = FALSE;
+		ApCliIfDown(pAd);
+	}
+
+	NdisCopyMemory(pAd->ApCfg.ApCliTab[ifIndex].CfgApCliBssid, Bssid, MAC_ADDR_LEN);
+
+	pAd->ApCfg.ApCliTab[ifIndex].Enable = apcliEn;
+
+	return TRUE;
+}
+
+
+BOOLEAN ApCliAutoConnectStart(
+	IN PRTMP_ADAPTER pAd,
+	IN UCHAR ifIndex)
+{
+	AP_ADMIN_CONFIG *pApCfg = &pAd->ApCfg;
+	NDIS_802_11_SSID Ssid;
+
+#ifdef WSC_AP_SUPPORT
+	if ((pApCfg->ApCliTab[ifIndex].WscControl.WscConfMode != WSC_DISABLE) &&
+	    (pApCfg->ApCliTab[ifIndex].WscControl.bWscTrigger == TRUE))
+		return FALSE;
+#endif /* WSC_AP_SUPPORT */
+
+	if (pApCfg->ApCliAutoConnectRunning == FALSE)
+	{
+		ApCliSetIfState(pAd, ifIndex, FALSE);
+		pApCfg->ApCliAutoConnectRunning = TRUE;
+	}
+	else
+	{
+		return TRUE;
+	}
+
+	/*
+		use site survey function to trigger auto connecting (when pAd->ApCfg.ApAutoConnectRunning == TRUE)
+	*/
+	NdisZeroMemory(&Ssid, sizeof(NDIS_802_11_SSID));
+	ApSiteSurvey(pAd, &Ssid, SCAN_ACTIVE, FALSE);
+
+	return TRUE;
+}
+
+
 /* 
 	===================================================
 	
@@ -2871,14 +2940,33 @@ BOOLEAN ApCli_StatsGet(
 BOOLEAN ApCliAutoConnectExec(
 	IN  PRTMP_ADAPTER   pAd)
 {
-	POS_COOKIE  	pObj = (POS_COOKIE) pAd->OS_Cookie;
 	UCHAR			ifIdx, CfgSsidLen, entryIdx;
 	STRING			*pCfgSsid;
 	BSS_TABLE		*pScanTab, *pSsidBssTab;
 
 	DBGPRINT(RT_DEBUG_TRACE, ("---> ApCliAutoConnectExec()\n"));
 
-	ifIdx = pObj->ioctl_if;
+	for(ifIdx=0; ifIdx<MAX_APCLI_NUM; ifIdx++)
+	{
+		if (pAd->ApCfg.ApCliTab[ifIdx].AutoConnectFlag == TRUE)
+			break;
+	}
+
+	if(ifIdx >= MAX_APCLI_NUM)
+	{
+		DBGPRINT(RT_DEBUG_ERROR, ("Error  ifIdx=%d\n", ifIdx));
+		return FALSE;
+	}
+
+#ifdef WSC_AP_SUPPORT
+	if ((pAd->ApCfg.ApCliTab[ifIdx].WscControl.WscConfMode != WSC_DISABLE) &&
+	    (pAd->ApCfg.ApCliTab[ifIdx].WscControl.bWscTrigger == TRUE))
+	{
+		pAd->ApCfg.ApCliAutoConnectRunning = FALSE;
+		return FALSE;
+	}
+#endif /* WSC_AP_SUPPORT */
+
 	CfgSsidLen = pAd->ApCfg.ApCliTab[ifIdx].CfgSsidLen;
 	pCfgSsid = pAd->ApCfg.ApCliTab[ifIdx].CfgSsid;
 	pScanTab = &pAd->ScanTab;
@@ -2947,34 +3035,30 @@ BOOLEAN ApCliAutoConnectExec(
 			Switch to the channel of the candidate AP
 		*/
 		UCHAR tempBuf[20];
-		if (pAd->CommonCfg.Channel != pSsidBssTab->BssEntry[pSsidBssTab->BssNr -1].Channel)
+		BSS_ENTRY *pBssEntry = &pSsidBssTab->BssEntry[pSsidBssTab->BssNr -1];
+		
+		if (pAd->CommonCfg.Channel != pBssEntry->Channel)
 		{
-			sprintf(tempBuf, "%d", pSsidBssTab->BssEntry[pSsidBssTab->BssNr -1].Channel);
+			ApCliSetIfState(pAd, ifIdx, FALSE);
+			sprintf(tempBuf, "%d", pBssEntry->Channel);
 			DBGPRINT(RT_DEBUG_TRACE, ("Switch to channel :%s\n", tempBuf));
-			Set_Channel_Proc(pAd, tempBuf);		
+			Set_Channel_Proc(pAd, tempBuf);
 		}
-			sprintf(tempBuf, "%02X:%02X:%02X:%02X:%02X:%02X", 
-					pSsidBssTab->BssEntry[pSsidBssTab->BssNr -1].Bssid[0],
-					pSsidBssTab->BssEntry[pSsidBssTab->BssNr -1].Bssid[1],
-					pSsidBssTab->BssEntry[pSsidBssTab->BssNr -1].Bssid[2],
-					pSsidBssTab->BssEntry[pSsidBssTab->BssNr -1].Bssid[3],
-					pSsidBssTab->BssEntry[pSsidBssTab->BssNr -1].Bssid[4],
-					pSsidBssTab->BssEntry[pSsidBssTab->BssNr -1].Bssid[5]);
-			Set_ApCli_Bssid_Proc(pAd, tempBuf);			
+		
+		ApCliSetBssid(pAd, ifIdx, pBssEntry->Bssid);
 	}
-	else 
+	else
 	{
 		DBGPRINT(RT_DEBUG_ERROR, ("Error! Out of table range: (BssNr=%d).\n", pSsidBssTab->BssNr) );
-		Set_ApCli_Enable_Proc(pAd, "1");
+		ApCliSetIfState(pAd, ifIdx, TRUE);
 		pAd->ApCfg.ApCliAutoConnectRunning = FALSE;
 		DBGPRINT(RT_DEBUG_TRACE, ("<--- ApCliAutoConnectExec()\n"));
 		return FALSE;
-	}	
-	
-	Set_ApCli_Enable_Proc(pAd, "1");
+	}
+
+	ApCliSetIfState(pAd, ifIdx, TRUE);
 	DBGPRINT(RT_DEBUG_TRACE, ("<--- ApCliAutoConnectExec()\n"));
 	return TRUE;
-	
 }
 
 /* 
@@ -2994,43 +3078,42 @@ BOOLEAN ApCliAutoConnectExec(
 */
 
 VOID ApCliSwitchCandidateAP(
-	IN PRTMP_ADAPTER pAd)
+	IN PRTMP_ADAPTER pAd,
+	IN UCHAR ifIndex)
 {
-	POS_COOKIE  	pObj = (POS_COOKIE) pAd->OS_Cookie;
 	BSS_TABLE 		*pSsidBssTab;
 	PAPCLI_STRUCT	pApCliEntry;
-	UCHAR			lastEntryIdx, ifIdx = pObj->ioctl_if;
-
 
 	DBGPRINT(RT_DEBUG_TRACE, ("---> ApCliSwitchCandidateAP()\n"));
+
 	pSsidBssTab = &pAd->MlmeAux.SsidBssTab;
-	pApCliEntry = &pAd->ApCfg.ApCliTab[ifIdx];
-	
+	pApCliEntry = &pAd->ApCfg.ApCliTab[ifIndex];
+
+	if (pSsidBssTab->BssNr == 0)
+	{
+		pAd->ApCfg.ApCliAutoConnectRunning = FALSE;
+		goto exit_and_enable;
+	}
+
 	/*
 		delete (zero) the previous connected-failled entry and always 
 		connect to the last entry in talbe until the talbe is empty.
 	*/
 	NdisZeroMemory(&pSsidBssTab->BssEntry[--pSsidBssTab->BssNr], sizeof(BSS_ENTRY));
-	lastEntryIdx = pSsidBssTab->BssNr -1;
-	
-	if ((pSsidBssTab->BssNr > 0) && (pSsidBssTab->BssNr < MAX_LEN_OF_BSS_TABLE))
+
+	if ((pSsidBssTab->BssNr > 0) && (pSsidBssTab->BssNr <= MAX_LEN_OF_BSS_TABLE))
 	{
-		UCHAR	tempBuf[20];
+		UCHAR tempBuf[20];
+		BSS_ENTRY *pBssEntry = &pSsidBssTab->BssEntry[pSsidBssTab->BssNr -1];
 		
-		sprintf(tempBuf, "%02X:%02X:%02X:%02X:%02X:%02X", 
-				pSsidBssTab->BssEntry[lastEntryIdx].Bssid[0],
-				pSsidBssTab->BssEntry[lastEntryIdx].Bssid[1],
-				pSsidBssTab->BssEntry[lastEntryIdx].Bssid[2],
-				pSsidBssTab->BssEntry[lastEntryIdx].Bssid[3],
-				pSsidBssTab->BssEntry[lastEntryIdx].Bssid[4],
-				pSsidBssTab->BssEntry[lastEntryIdx].Bssid[5]);
-		Set_ApCli_Bssid_Proc(pAd, tempBuf);
-		if (pAd->CommonCfg.Channel != pSsidBssTab->BssEntry[lastEntryIdx].Channel)
+		ApCliSetBssid(pAd, ifIndex, pBssEntry->Bssid);
+		
+		if (pAd->CommonCfg.Channel != pBssEntry->Channel)
 		{
-			Set_ApCli_Enable_Proc(pAd, "0");
-			sprintf(tempBuf, "%d", pSsidBssTab->BssEntry[lastEntryIdx].Channel);
+			ApCliSetIfState(pAd, ifIndex, FALSE);
+			sprintf(tempBuf, "%d", pBssEntry->Channel);
 			DBGPRINT(RT_DEBUG_TRACE, ("Switch to channel :%s\n", tempBuf));
-			Set_Channel_Proc(pAd, tempBuf);		
+			Set_Channel_Proc(pAd, tempBuf);
 		}
 	}
 	else
@@ -3038,11 +3121,13 @@ VOID ApCliSwitchCandidateAP(
 		DBGPRINT(RT_DEBUG_TRACE, ("No candidate AP, the process is about to stop.\n"));
 		pAd->ApCfg.ApCliAutoConnectRunning = FALSE;
 	}
-	
-	Set_ApCli_Enable_Proc(pAd, "1");
+
+exit_and_enable:
+
+	ApCliSetIfState(pAd, ifIndex, TRUE);
 	DBGPRINT(RT_DEBUG_TRACE, ("---> ApCliSwitchCandidateAP()\n"));
-	
 }
+
 
 BOOLEAN ApcliCompareAuthEncryp(
 	IN PAPCLI_STRUCT pApCliEntry,

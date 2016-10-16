@@ -186,7 +186,23 @@ static inline void skb_frag_size_sub(skb_frag_t *frag, int delta)
 	frag->size -= delta;
 }
 
-#define HAVE_HW_TIME_STAMP
+/**
+ * Note: Most embedded systems not support HW_TIME_STAMP on MAC.
+ *
+ * The skb_shared_hwtstamps field bloats skb_shared_info struct
+ * size from 160 to 184 bytes on 32-bit CPU. On machines with
+ * 32 byte L1 cache line, macro SKB_DATA_ALIGN() align size of
+ * skb_shared_info struct up to 192 bytes.
+ *
+ * We can disable unused HW_TIME_STAMP to decrease skb allocation
+ * size on 32 bytes per skb. This is very significant for Wireless
+ * MAC with 3840 bytes aggregation buffer + 96 bytes of NET_SKB_PAD.
+ * This allows fit each skb to one SLAB page 4096 bytes.
+ *
+ * To enable HW_TIME_STAMP feature, uncomment HAVE_HW_TIME_STAMP.
+ */
+
+//#define HAVE_HW_TIME_STAMP
 
 /**
  * struct skb_shared_hwtstamps - hardware time stamps
@@ -261,7 +277,9 @@ struct skb_shared_info {
 	unsigned short	gso_segs;
 	unsigned short  gso_type;
 	struct sk_buff	*frag_list;
+#ifdef HAVE_HW_TIME_STAMP
 	struct skb_shared_hwtstamps hwtstamps;
+#endif
 	__be32          ip6_frag_id;
 
 	/*
@@ -675,10 +693,12 @@ static inline unsigned int skb_end_offset(const struct sk_buff *skb)
 /* Internal */
 #define skb_shinfo(SKB)	((struct skb_shared_info *)(skb_end_pointer(SKB)))
 
+#ifdef HAVE_HW_TIME_STAMP
 static inline struct skb_shared_hwtstamps *skb_hwtstamps(struct sk_buff *skb)
 {
 	return &skb_shinfo(skb)->hwtstamps;
 }
+#endif
 
 /**
  *	skb_queue_empty - check if a queue is empty
@@ -1754,7 +1774,26 @@ static inline struct sk_buff *__dev_alloc_skb(unsigned int length,
 	return skb;
 }
 
-extern struct sk_buff *dev_alloc_skb(unsigned int length);
+/**
+ *	dev_alloc_skb - allocate an skbuff for receiving
+ *	@length: length to allocate
+ *
+ *	Allocate a new &sk_buff and assign it a usage count of one. The
+ *	buffer has unspecified headroom built in. Users should allocate
+ *	the headroom they think they need without accounting for the
+ *	built in space. The built in space is used for optimisations.
+ *
+ *	%NULL is returned if there is no free memory. Although this function
+ *	allocates memory it can be called from an interrupt.
+ */
+static inline struct sk_buff *dev_alloc_skb(unsigned int length)
+{
+	/*
+	 * There is more code here than it seems:
+	 * __dev_alloc_skb is an inline
+	 */
+	return __dev_alloc_skb(length, GFP_ATOMIC);
+}
 
 extern struct sk_buff *__netdev_alloc_skb(struct net_device *dev,
 		unsigned int length, gfp_t gfp_mask);

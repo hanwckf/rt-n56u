@@ -80,7 +80,7 @@ void nlm_send_ipi_mask(const struct cpumask *mask, unsigned int action)
 void nlm_smp_function_ipi_handler(unsigned int irq, struct irq_desc *desc)
 {
 	write_c0_eirr(1ull << irq);
-	smp_call_function_interrupt();
+	generic_smp_call_function_interrupt();
 }
 
 /* IRQ_IPI_SMP_RESCHEDULE  handler */

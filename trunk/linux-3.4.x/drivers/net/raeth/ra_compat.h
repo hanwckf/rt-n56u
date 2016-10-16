@@ -37,6 +37,10 @@ static inline dma_addr_t skb_frag_dma_map(struct device *dev,
 }
 #endif
 
+#if LINUX_VERSION_CODE < KERNEL_VERSION(3,3,0)
+typedef u32 netdev_features_t;
+#endif
+
 #if defined (CONFIG_MIPS)
 #define phys_to_bus(a)			((a) & 0x1FFFFFFF)
 #else
@@ -72,8 +76,13 @@ static inline dma_addr_t skb_frag_dma_map(struct device *dev,
 #define MTD_GMAC2_OFFSET	0x22
 #endif
 
+#if defined (CONFIG_RAETH_SWAP_GDMA)
+#define PSE_PORT_GMAC1		2
+#define PSE_PORT_GMAC2		1
+#else
 #define PSE_PORT_GMAC1		1
 #define PSE_PORT_GMAC2		2
+#endif
 #if defined (CONFIG_RALINK_MT7621)
 #define PSE_PORT_PPE		4
 #else
@@ -94,20 +103,20 @@ static inline dma_addr_t skb_frag_dma_map(struct device *dev,
 #endif
 #endif
 
-#if defined (CONFIG_RAETH_QDMA) || defined (CONFIG_RA_HW_NAT_WIFI) || defined (CONFIG_RA_HW_NAT_PCI)
-#define NUM_TX_DESC		512
-#else
-#define NUM_TX_DESC		256
-#endif
-
 #if defined (CONFIG_RAETH_QDMA)
 #define NUM_QRX_DESC		16	/* for memory save (P5 SW RX is not used) */
+#define NUM_PQ_RESV		4
+#define NUM_TX_DESC		1024
 #if defined (CONFIG_RA_HW_NAT_QDMA)
 #define NUM_QDMA_PAGE		512
 #else
 #define NUM_QDMA_PAGE		16	/* for memory save (P5 HW TX is not used) */
 #endif
 #define QDMA_PAGE_SIZE		2048
+#elif defined (CONFIG_RA_HW_NAT_WIFI) || defined (CONFIG_RA_HW_NAT_PCI)
+#define NUM_TX_DESC		512
+#else
+#define NUM_TX_DESC		256
 #endif
 
 #if (NUM_RX_DESC < 256)

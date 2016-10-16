@@ -192,6 +192,41 @@ is_same_subnet2(const char *ip1, const char *ip2, const char *msk1, const char *
 }
 
 void
+create_vlan_iface(const char *dev_ifname, int vid, int prio, int mtu, const char *hwaddr, int do_up)
+{
+	char vlan_ifname[24];
+
+	snprintf(vlan_ifname, sizeof(vlan_ifname), "%s.%d", dev_ifname, vid);
+	if (!is_interface_exist(vlan_ifname))
+		vconfig_add_if(dev_ifname, vid);
+	else
+		ifconfig(vlan_ifname, 0, NULL, NULL);
+
+	if (prio >= 0 && prio <= 7)
+		vconfig_egress_map(vlan_ifname, 0, prio);
+
+	if (mtu >= 1280)
+		set_interface_mtu(vlan_ifname, mtu);
+
+	if (hwaddr)
+		set_interface_hwaddr(vlan_ifname, hwaddr);
+
+	if (do_up)
+		ifconfig(vlan_ifname, IFUP, "0.0.0.0", NULL);
+}
+
+void
+remove_vlan_iface(const char *vlan_ifname)
+{
+	if (!strstr(vlan_ifname, "."))
+		return;
+	if (!is_interface_exist(vlan_ifname))
+		return;
+	ifconfig(vlan_ifname, 0, NULL, NULL);
+	vconfig_del_if(vlan_ifname);
+}
+
+void
 stop_udpxy(void)
 {
 	char* svcs[] = { "udpxy", NULL };
@@ -667,6 +702,8 @@ reload_nat_modules(void)
 	{
 		hwnat_loaded = 0;
 		module_smart_unload("hw_nat", 0);
+		if (hwnat_allow)
+			sleep(1);
 	}
 #endif
 
@@ -764,7 +801,10 @@ void
 set_nf_conntrack(void)
 {
 	int i_nf_nat, i_nf_val;
-#if (BOARD_RAM_SIZE < 64)
+
+#if (BOARD_RAM_SIZE < 32)
+	int i_nf_lim = 4096;
+#elif (BOARD_RAM_SIZE < 64)
 	int i_nf_lim = 16384;
 #elif (BOARD_RAM_SIZE < 128)
 	int i_nf_lim = 65536;
@@ -863,32 +903,21 @@ set_passthrough_pppoe(int is_on)
 void
 set_igmp_mld_version(void)
 {
-	char tmp[64];
-	char *ifname = get_man_ifname(0);
 	int force_value;
+	const char *ifname = get_man_ifname(0);
 
 	force_value = nvram_safe_get_int("force_igmp", 2, 0, 2);
 
-	sprintf(tmp, "/proc/sys/net/%s/conf/%s/%s", "ipv4", "all", "force_igmp_version");
-	fput_int(tmp, force_value);
-
-	sprintf(tmp, "/proc/sys/net/%s/conf/%s/%s", "ipv4", ifname, "force_igmp_version");
-	fput_int(tmp, force_value);
-
-	sprintf(tmp, "/proc/sys/net/%s/conf/%s/%s", "ipv4", IFNAME_BR, "force_igmp_version");
-	fput_int(tmp, force_value);
+	set_interface_conf_int("ipv4", "all", "force_igmp_version", force_value);
+	set_interface_conf_int("ipv4", ifname, "force_igmp_version", force_value);
+	set_interface_conf_int("ipv4", IFNAME_BR, "force_igmp_version", force_value);
 
 #if defined (USE_IPV6)
 	force_value = nvram_safe_get_int("force_mld", 0, 0, 1);
 
-	sprintf(tmp, "/proc/sys/net/%s/conf/%s/%s", "ipv6", "all", "force_mld_version");
-	fput_int(tmp, force_value);
-
-	sprintf(tmp, "/proc/sys/net/%s/conf/%s/%s", "ipv6", ifname, "force_mld_version");
-	fput_int(tmp, force_value);
-
-	sprintf(tmp, "/proc/sys/net/%s/conf/%s/%s", "ipv6", IFNAME_BR, "force_mld_version");
-	fput_int(tmp, force_value);
+	set_interface_conf_int("ipv6", "all", "force_mld_version", force_value);
+	set_interface_conf_int("ipv6", ifname, "force_mld_version", force_value);
+	set_interface_conf_int("ipv6", IFNAME_BR, "force_mld_version", force_value);
 #endif
 }
 

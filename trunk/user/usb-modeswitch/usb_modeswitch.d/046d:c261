@@ -1,0 +1,5 @@
+# Logitech G920 Racing Wheel
+MessageEndpoint=0x01
+ResponseEndpoint=0x01
+TargetClass=0x03
+MessageContent="0f00010142"

@@ -203,7 +203,7 @@
 #define GIC_VPE_WD_COUNT0_OFS		0x0094
 #define GIC_VPE_WD_INITIAL0_OFS		0x0098
 #define GIC_VPE_COMPARE_LO_OFS		0x00a0
-#define GIC_VPE_COMPARE_HI		0x00a4
+#define GIC_VPE_COMPARE_HI_OFS		0x00a4
 
 #define GIC_VPE_EIC_SHADOW_SET_BASE	0x0100
 #define GIC_VPE_EIC_SS(intr) \
@@ -348,7 +348,11 @@ struct gic_shared_intr_map {
 /* Mapped interrupt to pin X, then GIC will generate the vector (X+1). */
 #define GIC_PIN_TO_VEC_OFFSET	(1)
 
+#include <linux/clocksource.h>
+#include <linux/irq.h>
+
 extern unsigned int gic_present;
+extern unsigned int gic_frequency;
 extern unsigned long _gic_base;
 extern unsigned int gic_irq_base;
 extern unsigned int gic_irq_flags[];
@@ -359,6 +363,13 @@ extern void gic_init(unsigned long gic_base_addr,
 	unsigned int intrmap_size, unsigned int irqbase);
 
 extern void gic_clocksource_init(unsigned int);
+extern cycle_t gic_read_count(void);
+extern unsigned int gic_get_count_width(void);
+extern cycle_t gic_read_compare(void);
+extern void gic_write_compare(cycle_t cnt);
+extern void gic_write_cpu_compare(cycle_t cnt, int cpu);
+extern void gic_start_count(void);
+extern void gic_stop_count(void);
 extern void gic_irq_dispatch(void);
 extern void gic_send_ipi(unsigned int intr);
 extern unsigned int plat_ipi_call_int_xlate(unsigned int);

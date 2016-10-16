@@ -1900,9 +1900,6 @@ typedef struct _COMMON_CONFIG {
 #endif /* defined(MICROWAVE_OVEN_SUPPORT) || defined(DYNAMIC_VGA_SUPPORT) */
 	BOOLEAN bEnTemperatureTrack;
 
-#ifdef MULTI_CLIENT_SUPPORT
-    UINT txRetryCfg;
-#endif /* MULTI_CLIENT_SUPPORT */
 } COMMON_CONFIG, *PCOMMON_CONFIG;
 
 #ifdef DBG_CTRL_SUPPORT
@@ -2403,10 +2400,7 @@ typedef struct _MAC_TABLE_ENTRY {
 #endif				/* ADHOC_WPA2PSK_SUPPORT */
 
 #ifdef DROP_MASK_SUPPORT
-	BOOLEAN 		tx_fail_drop_mask_enabled;
-	BOOLEAN 		ps_drop_mask_enabled;
-	NDIS_SPIN_LOCK		drop_mask_lock;
-	RALINK_TIMER_STRUCT	tx_dropmask_timer;
+	RALINK_TIMER_STRUCT	dropmask_timer;
 #endif /* DROP_MASK_SUPPORT */
 
 	/*jan for wpa */
@@ -2678,6 +2672,7 @@ typedef struct _MAC_TABLE_ENTRY {
 	struct _MAC_TABLE_ENTRY *pNext;
 	USHORT TxSeq[NUM_OF_TID];
 	USHORT NonQosDataSeq;
+	INT TxBarSeq[NUM_OF_TID];
 
 	RSSI_SAMPLE RssiSample;
 	UINT32 LastRxRate;
@@ -2960,6 +2955,7 @@ typedef struct _APCLI_STRUCT {
 
 #ifdef APCLI_AUTO_CONNECT_SUPPORT
 	USHORT	ProbeReqCnt;
+	BOOLEAN AutoConnectFlag;
 #endif /* APCLI_AUTO_CONNECT_SUPPORT */
 	USHORT AuthReqCnt;
 	USHORT AssocReqCnt;
@@ -3782,6 +3778,9 @@ struct _RTMP_ADAPTER {
 	NDIS_SPIN_LOCK ShrMemLock;
 #endif /* SPECIFIC_BCN_BUF_SUPPORT */
 
+#ifdef DROP_MASK_SUPPORT
+	NDIS_SPIN_LOCK drop_mask_lock;
+#endif /* DROP_MASK_SUPPORT */
 
 /*****************************************************************************************/
 /*      802.11 related parameters                                                        */
@@ -5086,6 +5085,12 @@ VOID NICUpdateFifoStaCounters(
 VOID NICUpdateRawCounters(
 	IN  PRTMP_ADAPTER   pAd);
 
+#ifdef CONFIG_AP_SUPPORT
+VOID ClearTxRingClientAck(
+	IN PRTMP_ADAPTER pAd,
+	IN MAC_TABLE_ENTRY *pEntry);
+#endif /* CONFIG_AP_SUPPORT */
+
 #ifdef FIFO_EXT_SUPPORT
 BOOLEAN NicGetMacFifoTxCnt(
 	IN RTMP_ADAPTER *pAd,
@@ -5866,16 +5871,6 @@ INT Set_StreamModeMCS_Proc(
     IN  PRTMP_ADAPTER   pAd,
     IN  PSTRING         arg);
 #endif /* STREAM_MODE_SUPPORT */
-
-#ifdef DROP_MASK_SUPPORT
-VOID asic_set_drop_mask(
-	PRTMP_ADAPTER ad,
-	USHORT	wcid,
-	BOOLEAN enable);
-
-VOID asic_drop_mask_reset(
-	PRTMP_ADAPTER ad);
-#endif /* DROP_MASK_SUPPORT */
 
 #ifdef WOW_SUPPORT
 #endif /* WOW_SUPPORT */
@@ -8827,24 +8822,28 @@ BOOLEAN RxDoneInterruptHandle(
 	IN	PRTMP_ADAPTER	pAd);
 
 #ifdef DROP_MASK_SUPPORT
+VOID asic_set_drop_mask(
+	RTMP_ADAPTER *ad,
+	USHORT	wcid,
+	BOOLEAN enable);
+
+VOID asic_drop_mask_reset(
+	RTMP_ADAPTER *ad);
+
 VOID drop_mask_init_per_client(
-	PRTMP_ADAPTER	ad,
-	PMAC_TABLE_ENTRY entry);
+	RTMP_ADAPTER *ad,
+	MAC_TABLE_ENTRY *entry);
 
 VOID drop_mask_release_per_client(
-	PRTMP_ADAPTER	ad,
-	PMAC_TABLE_ENTRY entry);
+	RTMP_ADAPTER *ad,
+	MAC_TABLE_ENTRY *entry);
 
-VOID drop_mask_per_client_reset(
-	PRTMP_ADAPTER	ad);
+VOID drop_mask_set_per_client(
+	RTMP_ADAPTER *ad,
+	MAC_TABLE_ENTRY *entry,
+	BOOLEAN enable);
 
-VOID set_drop_mask_per_client(
-	PRTMP_ADAPTER		ad,
-	PMAC_TABLE_ENTRY 	entry,
-	UINT8				type,
-	BOOLEAN				enable);
-
-VOID  tx_drop_mask_timer_action(
+VOID drop_mask_timer_action(
 	PVOID SystemSpecific1, 
 	PVOID FunctionContext, 
 	PVOID SystemSpecific2, 

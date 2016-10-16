@@ -9,8 +9,8 @@
  * ANY USE OF THE SOFTWARE OTHER THAN AS AUTHORIZED UNDER 
  * THIS LICENSE OR COPYRIGHT LAW IS PROHIBITED. 
  *
- * $Revision: 1.1.1.1 $
- * $Date: 2010/12/02 04:34:21 $
+ * $Revision: 23354 $
+ * $Date: 2011-09-27 18:29:01 +0800 (星期二, 27 九月 2011) $
  *
  * Purpose : RTL8370 switch high-level API for RTL8367B
  * Feature : 
@@ -18,7 +18,7 @@
  */
 
 #include "rtl8370_asicdrv_port.h"
-
+#include "rtl8370_asicdrv_phy.h"
 /*
 @func ret_t | rtl8370_setAsicPortForceFlush | Set per port force flush setting
 @parm uint32 | pmsk | portmask(0~0xFFFF)
@@ -591,4 +591,132 @@ ret_t rtl8370_getAsicPortEnableAll(uint32 *enable)
 
     return RT_ERR_OK;
 }
+
+/* Function Name:
+ *      rtl8367b_setAsicPortRTCT
+ * Description:
+ *      Set RTCT
+ * Input:
+ *      portmask 	- Port mask of RTCT enabled (0-4)
+ * Output:
+ *      None.
+ * Return:
+ *      RT_ERR_OK 		    - Success
+ *      RT_ERR_SMI  	    - SMI access error
+ *      RT_ERR_PORT_MASK    - Invalid port mask
+ * Note:
+ *      RTCT test takes 4.8 seconds at most.
+ */
+ret_t rtl8370_setAsicPortRTCT(uint32 portmask)
+{
+    ret_t   retVal;
+
+    if(portmask > (0x0001 << RTL8370_PHYNO))
+		return RT_ERR_PORT_MASK;
+
+    if((retVal = rtl8370_setAsicRegBits(RTL8370_REG_RTCT_ENABLE, 0xFF, portmask)) != RT_ERR_OK)
+        return retVal;
+
+    if((retVal = rtl8370_setAsicRegBit(RTL8370_REG_SEL_RTCT_PARA, RTL8370_EN_RTCT_TIMOUT_OFFSET, 1)) != RT_ERR_OK)
+        return retVal;
+
+    if((retVal = rtl8370_setAsicRegBit(RTL8370_REG_SEL_RTCT_PARA, RTL8370_EN_ALL_RTCT_OFFSET, 0)) != RT_ERR_OK)
+        return retVal;
+
+    if((retVal = rtl8370_setAsicRegBit(RTL8370_REG_SEL_RTCT_PARA, RTL8370_DO_RTCT_COMMAND_OFFSET, 0)) != RT_ERR_OK)
+        return retVal;
+
+    if((retVal = rtl8370_setAsicRegBit(RTL8370_REG_SEL_RTCT_PARA, RTL8370_DO_RTCT_COMMAND_OFFSET, 1)) != RT_ERR_OK)
+        return retVal;
+
+    return RT_ERR_OK;
+}
+
+/* Function Name:
+ *      rtl8367b_getAsicPortRTCTResult
+ * Description:
+ *      Get RTCT result
+ * Input:
+ *      port 	- Port ID of RTCT result
+ * Output:
+ *      pResult - The result of port ID
+ * Return:
+ *      RT_ERR_OK 		            - Success
+ *      RT_ERR_SMI  	            - SMI access error
+ *      RT_ERR_PORT_MASK            - Invalid port mask
+ *      RT_ERR_PHY_RTCT_NOT_FINISH  - RTCT test doesn't finish.
+ * Note:
+ *      RTCT test takes 4.8 seconds at most.
+ *      If this API returns RT_ERR_PHY_RTCT_NOT_FINISH,
+ *      users should wait a whole then read it again.
+ */
+ret_t rtl8370_getAsicPortRTCTResult(uint32 port, rtl8370_port_rtct_result_t *pResult)
+{
+    ret_t       retVal;
+    uint32  regData, finish = 1;
+
+    if(port >= RTL8370_PHYNO)
+		return RT_ERR_PORT_ID;
+
+    if((retVal = rtl8370_setAsicPHYReg(port, RTL8370_PHY_PAGE_ADDRESS, RTL8370_RTCT_PAGE)) != RT_ERR_OK)
+        return retVal;
+
+    if((retVal = rtl8370_getAsicPHYReg(port, RTL8370_RTCT_RESULT_A_REG, &regData)) != RT_ERR_OK)
+        return retVal;
+
+    if((regData & 0x4000) == 0x4000)
+    {
+        pResult->channelALen = regData & 0x1FFF;
+
+        if((retVal = rtl8370_getAsicPHYReg(port, RTL8370_RTCT_RESULT_B_REG, &regData)) != RT_ERR_OK)
+            return retVal;
+
+        pResult->channelBLen = regData & 0x1FFF;
+
+        if((retVal = rtl8370_getAsicPHYReg(port, RTL8370_RTCT_RESULT_C_REG, &regData)) != RT_ERR_OK)
+            return retVal;
+
+        pResult->channelCLen = regData & 0x1FFF;
+
+        if((retVal = rtl8370_getAsicPHYReg(port, RTL8370_RTCT_RESULT_D_REG, &regData)) != RT_ERR_OK)
+            return retVal;
+
+        pResult->channelDLen = regData & 0x1FFF;
+
+        if((retVal = rtl8370_getAsicPHYReg(port, RTL8370_RTCT_STATUS_REG, &regData)) != RT_ERR_OK)
+            return retVal;
+
+        pResult->channelALinedriver = (regData & 0x0001);
+        pResult->channelBLinedriver = (regData & 0x0002);
+        pResult->channelCLinedriver = (regData & 0x0004);
+        pResult->channelDLinedriver = (regData & 0x0008);
+
+        pResult->channelAMismatch   = (regData & 0x0010);
+        pResult->channelBMismatch   = (regData & 0x0020);
+        pResult->channelCMismatch   = (regData & 0x0040);
+        pResult->channelDMismatch   = (regData & 0x0080);
+
+        pResult->channelAOpen       = (regData & 0x0100);
+        pResult->channelBOpen       = (regData & 0x0200);
+        pResult->channelCOpen       = (regData & 0x0400);
+        pResult->channelDOpen       = (regData & 0x0800);
+
+        pResult->channelAShort      = (regData & 0x1000);
+        pResult->channelBShort      = (regData & 0x2000);
+        pResult->channelCShort      = (regData & 0x4000);
+        pResult->channelDShort      = (regData & 0x8000);
+    }
+    else
+        finish = 0;
+
+    if((retVal = rtl8370_setAsicPHYReg(port, RTL8370_PHY_PAGE_ADDRESS, 0)) != RT_ERR_OK)
+        return retVal;
+
+    if(finish == 0)
+        return RT_ERR_PHY_RTCT_NOT_FINISH;
+    else
+        return RT_ERR_OK;
+}
+
+
 

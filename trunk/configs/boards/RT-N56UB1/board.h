@@ -5,7 +5,7 @@
 #define BOARD_DESC		"ASUS RT-N56U B1 Wireless Router"
 #define BOARD_VENDOR_NAME	"ASUSTek Computer Inc."
 #define BOARD_VENDOR_URL	"http://www.asus.com/"
-#define BOARD_MODEL_URL		"http://www.asus.com/Networking/RTN56UB1/"
+#define BOARD_MODEL_URL		"http://www.asus.com/Networking/RTN56U_B1/"
 #define BOARD_BOOT_TIME		30
 #define BOARD_FLASH_TIME	120
 #define BOARD_GPIO_BTN_RESET	6

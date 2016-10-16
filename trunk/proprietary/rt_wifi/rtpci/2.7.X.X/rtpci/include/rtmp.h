@@ -2108,6 +2108,7 @@ typedef struct _MAC_TABLE_ENTRY {
 	struct _MAC_TABLE_ENTRY *pNext;
 	USHORT TxSeq[NUM_OF_TID];
 	USHORT NonQosDataSeq;
+	INT TxBarSeq[NUM_OF_TID];
 
 	RSSI_SAMPLE RssiSample;
 	UINT32 LastRxRate;
@@ -2309,6 +2310,7 @@ typedef struct _APCLI_STRUCT {
 
 #ifdef APCLI_AUTO_CONNECT_SUPPORT
 	USHORT	ProbeReqCnt;
+	BOOLEAN AutoConnectFlag;
 #endif /* APCLI_AUTO_CONNECT_SUPPORT */
 	USHORT AuthReqCnt;
 	USHORT AssocReqCnt;
@@ -4280,6 +4282,12 @@ VOID NICUpdateFifoStaCounters(
 
 VOID NICUpdateRawCounters(
 	IN  PRTMP_ADAPTER   pAd);
+
+#ifdef CONFIG_AP_SUPPORT
+VOID ClearTxRingClientAck(
+	IN PRTMP_ADAPTER pAd,
+	IN MAC_TABLE_ENTRY *pEntry);
+#endif /* CONFIG_AP_SUPPORT */
 
 #ifdef FIFO_EXT_SUPPORT
 BOOLEAN NicGetMacFifoTxCnt(

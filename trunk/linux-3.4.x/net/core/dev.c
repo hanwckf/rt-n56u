@@ -140,6 +140,8 @@
 #include <linux/ppp_defs.h>
 #include <linux/net_tstamp.h>
 #include <linux/static_key.h>
+#include <net/gre.h>
+#include <net/pptp.h>
 #include <net/flow_keys.h>
 
 #include "net-sysfs.h"
@@ -148,16 +150,16 @@
 #include "pthrough/pthrough.h"
 #endif
 
+#if IS_ENABLED(CONFIG_RA_HW_NAT)
+#if !defined(CONFIG_RAETH_BOTH_GMAC)
 #if defined(CONFIG_RTL8367)
-#if !defined(CONFIG_RAETH_GMAC2)
 extern int rtl8367_get_traffic_port_wan(struct rtnl_link_stats64 *stats);
-#endif
 #if defined(CONFIG_RTL8367_USE_INIC_EXT)
 extern int rtl8367_get_traffic_port_inic(struct rtnl_link_stats64 *stats);
 #endif
-#elif defined (CONFIG_RAETH_ESW_CONTROL)
-#if !defined (CONFIG_RAETH_GMAC2)
+#elif defined(CONFIG_RAETH_ESW_CONTROL)
 extern int esw_get_traffic_port_wan(struct rtnl_link_stats64 *stats);
+#endif
 #endif
 #endif
 
@@ -2772,30 +2774,83 @@ ipv6:
 
 	switch (ip_proto) {
 	case IPPROTO_GRE: {
-		struct gre_hdr {
-			__be16 flags;
-			__be16 proto;
-		} *hdr, _hdr;
+		struct gre_base_hdr *hdr, _hdr;
+		u16 gre_ver;
+		int offset = 0;
 
 		hdr = skb_header_pointer(skb, nhoff, sizeof(_hdr), &_hdr);
 		if (!hdr)
 			return false;
-		/*
-		 * Only look inside GRE if version zero and no
-		 * routing
-		 */
-		if (!(hdr->flags & (GRE_VERSION|GRE_ROUTING))) {
-			proto = hdr->proto;
-			nhoff += 4;
-			if (hdr->flags & GRE_CSUM)
-				nhoff += 4;
-			if (hdr->flags & GRE_KEY)
-				nhoff += 4;
-			if (hdr->flags & GRE_SEQ)
-				nhoff += 4;
-			goto again;
+
+		/* Only look inside GRE without routing */
+		if (hdr->flags & GRE_ROUTING)
+			break;
+
+		/* Only look inside GRE for version 0 and 1 */
+		gre_ver = ntohs(hdr->flags & GRE_VERSION);
+		if (gre_ver > 1)
+			break;
+
+		proto = hdr->protocol;
+		if (gre_ver) {
+			/* Version1 must be PPTP, and check the flags */
+			if (!(proto == GRE_PROTO_PPP && (hdr->flags & GRE_KEY)))
+				break;
 		}
-		break;
+
+		offset += sizeof(struct gre_base_hdr);
+
+		if (hdr->flags & GRE_CSUM)
+			offset += sizeof(((struct gre_full_hdr *)0)->csum) +
+				  sizeof(((struct gre_full_hdr *)0)->reserved1);
+
+		if (hdr->flags & GRE_KEY)
+			offset += sizeof(((struct gre_full_hdr *)0)->key);
+
+		if (hdr->flags & GRE_SEQ)
+			offset += sizeof(((struct pptp_gre_header *)0)->seq);
+
+		if (gre_ver == 0) {
+			if (proto == htons(ETH_P_TEB)) {
+				const struct ethhdr *eth;
+				struct ethhdr _eth;
+
+				eth = skb_header_pointer(skb, nhoff + offset,
+							 sizeof(_eth), &_eth);
+				if (!eth)
+					return false;
+				proto = eth->h_proto;
+				offset += sizeof(*eth);
+			}
+		} else { /* version 1, must be PPTP */
+			u8 _ppp_hdr[PPP_HDRLEN];
+			u8 *ppp_hdr;
+
+			if (hdr->flags & GRE_ACK)
+				offset += sizeof(((struct pptp_gre_header *)0)->ack);
+
+			ppp_hdr = skb_header_pointer(skb, nhoff + offset,
+						     sizeof(_ppp_hdr), _ppp_hdr);
+			if (!ppp_hdr)
+				return false;
+
+			switch (PPP_PROTOCOL(ppp_hdr)) {
+			case PPP_IP:
+				proto = __constant_htons(ETH_P_IP);
+				break;
+			case PPP_IPV6:
+				proto = __constant_htons(ETH_P_IPV6);
+				break;
+			default:
+				/* Could probably catch some more like MPLS */
+				break;
+			}
+
+			offset += PPP_HDRLEN;
+		}
+
+		nhoff += offset;
+		goto again;
 	}
 	case IPPROTO_IPIP:
 		proto = __constant_htons(ETH_P_IP);
@@ -3594,6 +3649,8 @@ static int napi_gro_complete(struct sk_buff *skb)
 	struct list_head *head = &ptype_base[ntohs(type) & PTYPE_HASH_MASK];
 	int err = -ENOENT;
 
+	BUILD_BUG_ON(sizeof(struct napi_gro_cb) > sizeof(skb->cb));
+
 	if (NAPI_GRO_CB(skb)->count == 1) {
 		skb_shinfo(skb)->gso_size = 0;
 		goto out;
@@ -3619,17 +3676,31 @@ out:
 	return netif_receive_skb(skb);
 }
 
-inline void napi_gro_flush(struct napi_struct *napi)
+/* napi->gro_list contains packets ordered by age.
+ * youngest packets at the head of it.
+ * Complete skbs in reverse order to reduce latencies.
+ */
+void napi_gro_flush(struct napi_struct *napi, bool flush_old)
 {
-	struct sk_buff *skb, *next;
+	struct sk_buff *skb, *prev = NULL;
 
-	for (skb = napi->gro_list; skb; skb = next) {
-		next = skb->next;
-		skb->next = NULL;
-		napi_gro_complete(skb);
+	/* scan list and build reverse chain */
+	for (skb = napi->gro_list; skb != NULL; skb = skb->next) {
+		skb->prev = prev;
+		prev = skb;
 	}
 
-	napi->gro_count = 0;
+	for (skb = prev; skb; skb = prev) {
+		skb->next = NULL;
+
+		if (flush_old && NAPI_GRO_CB(skb)->age == jiffies)
+			return;
+
+		prev = skb->prev;
+		napi_gro_complete(skb);
+		napi->gro_count--;
+	}
+
 	napi->gro_list = NULL;
 }
 EXPORT_SYMBOL(napi_gro_flush);
@@ -3712,11 +3783,25 @@ static enum gro_result dev_gro_receive(struct napi_struct *napi, struct sk_buff 
 	if (same_flow)
 		goto ok;
 
-	if (NAPI_GRO_CB(skb)->flush || napi->gro_count >= MAX_GRO_SKBS)
+	if (NAPI_GRO_CB(skb)->flush)
 		goto normal;
 
-	napi->gro_count++;
+	if (unlikely(napi->gro_count >= MAX_GRO_SKBS)) {
+		struct sk_buff *nskb = napi->gro_list;
+
+		/* locate the end of the list to select the 'oldest' flow */
+		while (nskb->next) {
+			pp = &nskb->next;
+			nskb = *pp;
+		}
+		*pp = NULL;
+		nskb->next = NULL;
+		napi_gro_complete(nskb);
+	} else {
+		napi->gro_count++;
+	}
 	NAPI_GRO_CB(skb)->count = 1;
+	NAPI_GRO_CB(skb)->age = jiffies;
 	skb_shinfo(skb)->gso_size = skb_gro_len(skb);
 	skb->next = napi->gro_list;
 	napi->gro_list = skb;
@@ -4031,7 +4116,7 @@ void napi_complete(struct napi_struct *n)
 	if (unlikely(test_bit(NAPI_STATE_NPSVC, &n->state)))
 		return;
 
-	napi_gro_flush(n);
+	napi_gro_flush(n, false);
 
 	if (likely(list_empty(&n->poll_list))) {
 		WARN_ON_ONCE(!test_and_clear_bit(NAPI_STATE_SCHED, &n->state));
@@ -4121,6 +4206,13 @@ static int napi_poll(struct napi_struct *n, struct list_head *repoll)
 	if (unlikely(napi_disable_pending(n))) {
 		napi_complete(n);
 		goto out_unlock;
+	}
+
+	if (n->gro_list) {
+		/* flush too old packets
+		 * If HZ < 1000, flush all packets.
+		 */
+		napi_gro_flush(n, HZ >= 1000);
 	}
 
 	list_add_tail(&n->poll_list, repoll);
@@ -4371,21 +4463,22 @@ static void dev_seq_printf_stats(struct seq_file *seq, struct net_device *dev)
 	struct rtnl_link_stats64 temp;
 	const struct rtnl_link_stats64 *stats = dev_get_stats(dev, &temp);
 
+#if IS_ENABLED(CONFIG_RA_HW_NAT)
+#if !defined(CONFIG_RAETH_BOTH_GMAC)
 #if defined(CONFIG_RTL8367)
-#if !defined(CONFIG_RAETH_GMAC2)
 	if(strcmp(dev->name, "eth2.2") == 0)
 		rtl8367_get_traffic_port_wan(&temp);
-#endif
 #if defined(CONFIG_RTL8367_USE_INIC_EXT)
 	else if(strcmp(dev->name, "rai0") == 0)
 		rtl8367_get_traffic_port_inic(&temp);
 #endif
-#elif defined (CONFIG_RAETH_ESW_CONTROL)
-#if !defined (CONFIG_RAETH_GMAC2)
+#elif defined(CONFIG_RAETH_ESW_CONTROL)
 	if(strcmp(dev->name, "eth2.2") == 0)
 		esw_get_traffic_port_wan(&temp);
 #endif
 #endif
+#endif
+
 	seq_printf(seq, "%6s: %7llu %7llu %4llu %4llu %4llu %5llu %10llu %9llu "
 		   "%8llu %7llu %4llu %4llu %4llu %5llu %7llu %10llu\n",
 		   dev->name, stats->rx_bytes, stats->rx_packets,

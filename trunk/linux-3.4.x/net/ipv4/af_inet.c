@@ -247,20 +247,18 @@ void build_ehash_secret(void)
 }
 EXPORT_SYMBOL(build_ehash_secret);
 
-static inline int inet_netns_ok(struct net *net, int protocol)
+static inline int inet_netns_ok(struct net *net, __u8 protocol)
 {
-	int hash;
 	const struct net_protocol *ipprot;
 
 	if (net_eq(net, &init_net))
 		return 1;
 
-	hash = protocol & (MAX_INET_PROTOS - 1);
-	ipprot = rcu_dereference(inet_protos[hash]);
-
-	if (ipprot == NULL)
+	ipprot = rcu_dereference(inet_protos[protocol]);
+	if (ipprot == NULL) {
 		/* raw IP is OK */
 		return 1;
+	}
 	return ipprot->netns_ok;
 }
 
@@ -1224,8 +1222,8 @@ EXPORT_SYMBOL(inet_sk_rebuild_header);
 
 static int inet_gso_send_check(struct sk_buff *skb)
 {
-	const struct iphdr *iph;
 	const struct net_protocol *ops;
+	const struct iphdr *iph;
 	int proto;
 	int ihl;
 	int err = -EINVAL;
@@ -1238,7 +1236,7 @@ static int inet_gso_send_check(struct sk_buff *skb)
 	if (ihl < sizeof(*iph))
 		goto out;
 
-	proto = iph->protocol & (MAX_INET_PROTOS - 1);
+	proto = iph->protocol;
 
 	/* Warning: after this point, iph might be no longer valid */
 	if (unlikely(!pskb_may_pull(skb, ihl)))
@@ -1260,8 +1258,8 @@ static struct sk_buff *inet_gso_segment(struct sk_buff *skb,
 	netdev_features_t features)
 {
 	struct sk_buff *segs = ERR_PTR(-EINVAL);
-	struct iphdr *iph;
 	const struct net_protocol *ops;
+	struct iphdr *iph;
 	int proto;
 	int ihl;
 	int id;
@@ -1287,7 +1285,7 @@ static struct sk_buff *inet_gso_segment(struct sk_buff *skb,
 		goto out;
 
 	id = ntohs(iph->id);
-	proto = iph->protocol & (MAX_INET_PROTOS - 1);
+	proto = iph->protocol;
 
 	/* Warning: after this point, iph might be no longer valid */
 	if (unlikely(!pskb_may_pull(skb, ihl)))
@@ -1346,7 +1344,7 @@ static struct sk_buff **inet_gro_receive(struct sk_buff **head,
 			goto out;
 	}
 
-	proto = iph->protocol & (MAX_INET_PROTOS - 1);
+	proto = iph->protocol;
 
 	rcu_read_lock();
 	ops = rcu_dereference(inet_protos[proto]);
@@ -1405,11 +1403,11 @@ out:
 
 static int inet_gro_complete(struct sk_buff *skb)
 {
-	const struct net_protocol *ops;
-	struct iphdr *iph = ip_hdr(skb);
-	int proto = iph->protocol & (MAX_INET_PROTOS - 1);
-	int err = -ENOSYS;
 	__be16 newlen = htons(skb->len - skb_network_offset(skb));
+	struct iphdr *iph = ip_hdr(skb);
+	const struct net_protocol *ops;
+	int proto = iph->protocol;
+	int err = -ENOSYS;
 
 	csum_replace2(&iph->check, iph->tot_len, newlen);
 	iph->tot_len = newlen;

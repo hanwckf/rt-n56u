@@ -528,9 +528,12 @@ UCHAR RT6352_NUM_RF_DCCAL_BW = (sizeof(RT6352_RFDCCal_BW) / sizeof(REG_PAIR_BW))
 
 RTMP_REG_PAIR	RT6352_MACRegTable[] =	{
 	{TX_SW_CFG0,		0x0401},   // Jason,2012-08-27
-	{TX_SW_CFG1,		0x000C0000},   // Jason,2012-09-13
+	{TX_SW_CFG1,		0x000C0001},   // Jason,2012-09-13, 2015-10-08
 	{TX_SW_CFG2,		0x00},   // Jason,2012-08-27
 	{MIMO_PS_CFG,		0x02},   // Jason,2012-09-13
+
+	/* enable HW to autofallback to legacy rate to prevent ping fail in long range */
+	{HT_FBK_TO_LEGACY,	0x1818},	// HT_FBK_TO_LEGACY = OFDM_6
 };
 
 UCHAR RT6352_NUM_MAC_REG_PARMS = (sizeof(RT6352_MACRegTable) / sizeof(RTMP_REG_PAIR));
@@ -5551,7 +5554,6 @@ VOID RT6352_ReCalibration(
 void RT6352_UpdateRssiForChannelModel(RTMP_ADAPTER * pAd)
 {
 	INT32 rx0_rssi, rx1_rssi;
-	UINT32 bbp_valuse = 0;
 	
 #ifdef CONFIG_STA_SUPPORT
 	IF_DEV_CONFIG_OPMODE_ON_STA(pAd)
@@ -5594,8 +5596,8 @@ static VOID RT6352_AsicDynamicVgaGainControl(
 		(pAd->bCalibrationDone)
 		)
 	{
-		UCHAR BbpReg = 0, bbp_196 = 0;
-                UCHAR VgaGainLowerBound = 0x10;
+		UCHAR BbpReg = 0;
+        UCHAR VgaGainLowerBound = 0x10;
 		
 
 		if (((pAd->chipCap.avg_rssi_all <= -76) && (pAd->CommonCfg.BBPCurrentBW == BW_80))

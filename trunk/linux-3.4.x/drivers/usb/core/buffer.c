@@ -116,6 +116,9 @@ void *hcd_buffer_alloc(
 	struct usb_hcd		*hcd = bus_to_hcd(bus);
 	int			i;
 
+	if (size == 0)
+		return NULL;
+
 	/* some USB hosts just use PIO */
 	if (!bus->controller->dma_mask &&
 	    !(hcd->driver->flags & HCD_LOCAL_MEM)) {

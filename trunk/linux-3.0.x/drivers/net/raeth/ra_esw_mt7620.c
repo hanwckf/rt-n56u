@@ -141,6 +141,7 @@ void mt7620_esw_eee_on_link(u32 port_id, int port_link, int is_eee_enabled)
 }
 #endif
 
+#if !defined (CONFIG_RAETH_ESW)
 static int mt7620_esw_write_vtcr(u32 vtcr_cmd, u32 vtcr_val)
 {
 	u32 i, reg_vtcr;
@@ -183,6 +184,8 @@ int mt7620_esw_vlan_set_idx(u32 idx, u32 cvid, u32 port_member)
 	reg_val |= (port_member << 16);		// PORT_MEM
 
 	sysRegWrite(RALINK_ETH_SW_BASE+REG_ESW_VLAN_VAWD1, reg_val);
+	sysRegWrite(RALINK_ETH_SW_BASE+REG_ESW_VLAN_VAWD2, 0);
+
 	return mt7620_esw_write_vtcr(1, idx);
 }
 
@@ -199,26 +202,53 @@ void mt7620_esw_pvid_set(u32 port_id, u32 pvid, u32 prio)
 
 	sysRegWrite(RALINK_ETH_SW_BASE+REG_ESW_PORT_PPBV1_P0+0x100*port_id, reg_ppbv);
 }
+#endif
 
-int mt7620_esw_mac_table_clear(void)
+int mt7620_esw_wait_wt_mac(void)
 {
-	u32 i, reg_atc;
-
-	sysRegWrite(RALINK_ETH_SW_BASE+REG_ESW_WT_MAC_ATC, 0x8002);
+	u32 i, atc_val;
 
 	for (i = 0; i < 200; i++) {
 		udelay(100);
-		reg_atc = sysRegRead(RALINK_ETH_SW_BASE+REG_ESW_WT_MAC_ATC);
-		if (!(reg_atc & 0x8000))
+		atc_val = sysRegRead(RALINK_ETH_SW_BASE+REG_ESW_WT_MAC_ATC);
+		if (!(atc_val & BIT(15)))
 			return 0;
 	}
 
 	return -1;
 }
 
+int mt7620_esw_mac_table_clear(int static_only)
+{
+	u32 atc_val;
+
+	/* clear all (non)static MAC entries */
+	atc_val = (static_only) ? 0x8602 : 0x8002;
+
+	/* clear all non-static MAC entries */
+	sysRegWrite(RALINK_ETH_SW_BASE+REG_ESW_WT_MAC_ATC, atc_val);
+
+	return mt7620_esw_wait_wt_mac();
+}
+
 /* MT7620 embedded switch */
 void mt7620_esw_init(void)
 {
+	/* disable internal EPHY 4 */
+#if defined (CONFIG_RAETH_ESW) && defined (CONFIG_RAETH_HAS_PORT4)
+	sysRegWrite(RALINK_ETH_SW_BASE+0x7014, 0x10e0000c);
+#endif
+
+	/* init GPHY first */
+#if defined (CONFIG_P5_MAC_TO_PHY_MODE)
+	ge1_set_mode(0, 1);
+	ext_gphy_init(CONFIG_MAC_TO_GIGAPHY_MODE_ADDR);
+#endif
+#if defined (CONFIG_P4_MAC_TO_PHY_MODE)
+	ge2_set_mode(0, 1);
+	ext_gphy_init(CONFIG_MAC_TO_GIGAPHY_MODE_ADDR2);
+#endif
+
 #if defined (CONFIG_RAETH_ESW)
 	/* init EPHY only internal switch is used */
 	mt7620_ephy_init();
@@ -278,12 +308,13 @@ void mt7620_esw_init(void)
 	mt7620_esw_vlan_set_idx(1, 2, 0xd0);			// VID=2 members (P7|P6|P4)
 	mt7620_esw_pvid_set(5, 1, 0);				// P5 PVID=1
 	mt7620_esw_pvid_set(4, 2, 0);				// P4 PVID=2
-	mt7620_esw_mac_table_clear();
+	mt7620_esw_mac_table_clear(0);
 #endif
 #endif
 
 	/* Port 6 (CPU) */
 	sysRegWrite(RALINK_ETH_SW_BASE+0x3600, 0x0005e33b);	// (P6, Force mode, Link Up, 1000Mbps, Full-Duplex, FC ON)
+	sysRegWrite(RALINK_ETH_SW_BASE+0x000c, 0x0007181d);	// TO_CPU check VLAN members
 	sysRegWrite(RALINK_ETH_SW_BASE+0x0010, 0x7f7f7fe0);	// Set Port6 CPU Port
 
 	/* Port 5 */
@@ -307,9 +338,7 @@ void mt7620_esw_init(void)
 	sysRegWrite(RALINK_ETH_SW_BASE+0x3500, 0x0005e337);	// (P5, Force mode, Link Up, 100Mbps, Full-Duplex, FC ON)
 #elif defined (CONFIG_P5_MAC_TO_PHY_MODE)
 	/* Use P5 for connect to external GigaPHY (with autopolling) */
-	ge1_set_mode(0, 1);
 	sysRegWrite(RALINK_ETH_SW_BASE+0x3500, 0x00056330);	// (P5, AN)
-	init_ext_giga_phy(1);
 	enable_autopoll_phy(1);
 #else
 	/* Disable P5 */
@@ -336,9 +365,7 @@ void mt7620_esw_init(void)
 	sysRegWrite(RALINK_ETH_SW_BASE+0x3400, 0x0005e337);	// (P4, Force mode, Link Up, 100Mbps, Full-Duplex, FC ON)
 #elif defined (CONFIG_P4_MAC_TO_PHY_MODE)
 	/* Use P4 for connect to external GigaPHY (with autopolling) */
-	ge2_set_mode(0, 1);
 	sysRegWrite(RALINK_ETH_SW_BASE+0x3400, 0x00056330);	// (P4, AN)
-	init_ext_giga_phy(2);
 	enable_autopoll_phy(1);
 #elif defined (CONFIG_P4_MAC_TO_MT7530_GPHY_P4) || defined (CONFIG_P4_MAC_TO_MT7530_GPHY_P0)
 	/* Use P4 for connect to external MT7530 GigaPHY P4 or P0 (with autopolling) */

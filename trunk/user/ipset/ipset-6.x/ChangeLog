@@ -1,3 +1,18 @@
+6.29
+  - Suppress unnecessary stderr in command loop for resize and list
+  - Correction in comment test
+  - Support chroot buildroots (reported by Jan Engelhardt)
+  - Fix "configure" breakage due to pkg-config related changes
+    (reported by Jan Engelhardt)
+
+6.28
+  - Support older pkg-config packages
+  - Add bash completion to the install routine (Mart Frauenlob)
+  - Fix misleading error message with comment extension
+  - Test added to check 0.0.0.0/0,iface to be matched in
+    hash:net,iface type
+  - Fix link with libtool >= 2.4.4 (Olivier Blin)
+
 6.27
   - Handle uint64_t alignment issue in ipset tool
 

@@ -9,8 +9,8 @@
  * ANY USE OF THE SOFTWARE OTHER THAN AS AUTHORIZED UNDER 
  * THIS LICENSE OR COPYRIGHT LAW IS PROHIBITED. 
  *
- * $Revision: 10458 $
- * $Date: 2010-06-25 18:59:16 +0800 (?Ÿæ?äº? 25 ?­æ? 2010) $
+ * $Revision: 23355 $
+ * $Date: 2011-09-27 18:33:58 +0800 (æ˜ŸæœŸäºŒ, 27 ä¹æœˆ 2011) $
  *
  * Purpose : RTK switch high-level API for RTL8370/RTL8367
  * Feature : Here is a list of all functions and variables in this module.
@@ -73,10 +73,6 @@ typedef enum rtk_filter_data_type_e
     RTK_FILTER_DATA_TCPFLAG,
     RTK_FILTER_DATA_IPV6,
 } rtk_filter_data_type_t;
-
-static rtk_api_ret_t _rtk_switch_init0(void);
-static rtk_api_ret_t _rtk_switch_init1(void);
-static rtk_api_ret_t _rtk_switch_init2(void);
 
 #if 0	// ASUS EXT
 /* Function Name:
@@ -2629,7 +2625,6 @@ rtk_api_ret_t rtk_storm_bypass_get(rtk_storm_bypass_t type, rtk_data_t *pEnable)
 
     return RT_ERR_OK;
 }
-#endif	// ASUS EXT
 
 /* Function Name:
  *      rtk_port_phyAutoNegoAbility_set
@@ -2807,10 +2802,7 @@ rtk_api_ret_t rtk_port_phyAutoNegoAbility_set(rtk_port_t port, rtk_port_phy_abil
 
     if ((retVal = rtl8370_setAsicPHYReg(port,PHY_CONTROL_REG,phyData))!=RT_ERR_OK)
         return retVal;    
-    
-    if ((retVal = rtl8370_setAsicPHYReg(port,PHY_PAGE_ADDRESS,0))!=RT_ERR_OK)
-        return retVal;   
-    
+
     return RT_ERR_OK;
 }
 
@@ -2899,9 +2891,6 @@ rtk_api_ret_t rtk_port_phyAutoNegoAbility_get(rtk_port_t port, rtk_port_phy_abil
         pAbility->AutoNegotiation= 1;
     else
         pAbility->AutoNegotiation= 0;
-
-    if ((retVal = rtl8370_setAsicPHYReg(port,PHY_PAGE_ADDRESS,0))!=RT_ERR_OK)
-        return retVal; 
 
     return RT_ERR_OK;
 }
@@ -3074,9 +3063,6 @@ rtk_api_ret_t rtk_port_phyForceModeAbility_set(rtk_port_t port, rtk_port_phy_abi
     if ((retVal = rtl8370_setAsicPHYReg(port,PHY_CONTROL_REG,phyData))!=RT_ERR_OK)
         return retVal;
 
-    if ((retVal = rtl8370_setAsicPHYReg(port,PHY_PAGE_ADDRESS,0))!=RT_ERR_OK)
-        return retVal;    
-
     return RT_ERR_OK;
 }
 
@@ -3166,9 +3152,6 @@ rtk_api_ret_t rtk_port_phyForceModeAbility_get(rtk_port_t port, rtk_port_phy_abi
     else
         pAbility->AutoNegotiation= 0;
 
-    if ((retVal = rtl8370_setAsicPHYReg(port,PHY_PAGE_ADDRESS,0))!=RT_ERR_OK)
-        return retVal; 
-
     return RT_ERR_OK;
 }
 
@@ -3237,13 +3220,8 @@ rtk_api_ret_t rtk_port_phyStatus_get(rtk_port_t port, rtk_port_linkStatus_t *pLi
         *pDuplex = 0; 
     }
 
-    if ((retVal = rtl8370_setAsicPHYReg(port,PHY_PAGE_ADDRESS,0))!=RT_ERR_OK)
-        return retVal; 
-
     return RT_ERR_OK;
 }
-
-#if 0
 
 /* Function Name:
  *      rtk_port_phyTestMode_set
@@ -4149,22 +4127,16 @@ rtk_api_ret_t rtk_port_macStatus_get(rtk_port_t port, rtk_port_mac_ability_t *pP
 rtk_api_ret_t rtk_port_phyReg_set(rtk_port_t port, rtk_port_phy_reg_t reg, rtk_port_phy_data_t regData)
 {
     rtk_api_ret_t retVal;
-    
-    if (port > RTK_PORT_ID_MAX)
+
+    if (port > RTK_PHY_ID_MAX)
         return RT_ERR_PORT_ID;
 
     if ((retVal = rtl8370_setAsicPHYReg(port,PHY_PAGE_ADDRESS,0))!=RT_ERR_OK)
-        return retVal; 	
-
-    if (reg==0&&((regData&0x1000)>0)&&((regData&0x0800)>0))
-        regData = regData | 0x0200;
+        return retVal;
 
     if ((retVal = rtl8370_setAsicPHYReg(port,reg,regData))!=RT_ERR_OK)
         return retVal;
 
-    if ((retVal = rtl8370_setAsicPHYReg(port,PHY_PAGE_ADDRESS,0))!=RT_ERR_OK)
-        return retVal; 	
-   
     return RT_ERR_OK;
 }
 
@@ -4191,7 +4163,7 @@ rtk_api_ret_t rtk_port_phyReg_get(rtk_port_t port, rtk_port_phy_reg_t reg, rtk_p
 {
     rtk_api_ret_t retVal;
 
-    if (port > RTK_PORT_ID_MAX)
+    if (port > RTK_PHY_ID_MAX)
         return RT_ERR_PORT_ID;
 
     if ((retVal = rtl8370_setAsicPHYReg(port,PHY_PAGE_ADDRESS,0))!=RT_ERR_OK)
@@ -4199,9 +4171,6 @@ rtk_api_ret_t rtk_port_phyReg_get(rtk_port_t port, rtk_port_phy_reg_t reg, rtk_p
 
     if ((retVal = rtl8370_getAsicPHYReg(port,reg,pData))!=RT_ERR_OK)
         return retVal;
-
-    if ((retVal = rtl8370_setAsicPHYReg(port,PHY_PAGE_ADDRESS,0))!=RT_ERR_OK)
-        return retVal; 
 
     return RT_ERR_OK;
 }
@@ -4279,7 +4248,6 @@ rtk_api_ret_t rtk_port_backpressureEnable_get(rtk_port_t port, rtk_data_t *pEnab
 
     return RT_ERR_OK;
 }
-#endif	// ASUS EXT
 
 /* Function Name:
  *      rtk_port_adminEnable_set
@@ -4370,6 +4338,7 @@ rtk_api_ret_t rtk_port_adminEnable_get(rtk_port_t port, rtk_data_t *pEnable)
     
     return RT_ERR_OK;
 }
+#endif	// ASUS EXT
 
 /* Function Name:
  *      rtk_port_isolation_set
@@ -4712,6 +4681,7 @@ rtk_api_ret_t rtk_port_efid_get(rtk_port_t port, rtk_data_t *pEfid)
 }
 
 #if 0	// ASUS EXT
+
 /* Function Name:
  *      rtk_leaky_vlan_set
  * Description:
@@ -5157,6 +5127,7 @@ rtk_api_ret_t rtk_leaky_portIsolation_get(rtk_leaky_type_t type, rtk_data_t *pEn
 
     return RT_ERR_OK;
 }
+
 
 /* Function Name:
  *      rtk_vlan_init
@@ -5675,6 +5646,7 @@ rtk_api_ret_t rtk_vlan_portAcceptFrameType_get(rtk_port_t port, rtk_data_t *pAcc
 
     return RT_ERR_OK;
 }    
+
 
 /* Function Name:
  *      rtk_vlan_vlanBasedPriority_set
@@ -10427,7 +10399,6 @@ rtk_api_ret_t rtk_trunk_qeueuEmptyStatus_get(rtk_portmask_t *pPortmask)
 
     return RT_ERR_OK;
 }
-#endif	// ASUS EXT
 
 static rtk_api_ret_t _rtk_switch_init0(void)
 {
@@ -10473,7 +10444,7 @@ static rtk_api_ret_t _rtk_switch_init0(void)
                                      {0x0802,0x0100},{0x1700,0x014C},{0x0301,0x00FF},{0x12AA,0x0096},
                                      {0x133f,0x0030},{0x133e,0x000e},{0x221f,0x0005},{0x2200,0x00C4},
                                      {0x221f,0x0000},{0x2210,0x05EF},{0x2204,0x05E1},{0x2200,0x1340},
-                                     {0x133f,0x0010},{0x20A0,0x1940},{0x20C0,0x1940},{0x20E0,0x1940},
+                                     {0x133f,0x0010},{0x20A0,0x0940},{0x20C0,0x0940},{0x20E0,0x0940},
                                      {0xFFFF, 0xABCD}};
  
     CONST_T uint16 chipData1[][2] = {{0x133f,0x0030},{0x133e,0x000e},{0x221f,0x0000},{0x2215,0x1006}, 
@@ -10542,24 +10513,6 @@ static rtk_api_ret_t _rtk_switch_init0(void)
                 if (5 == cnt)
                     return RT_ERR_BUSYWAIT_TIMEOUT;
 
-                if ((retVal = rtl8370_setAsicReg(RTK_INDRECT_ACCESS_WRITE_DATA, 0)) !=  RT_ERR_OK)
-                    return retVal;
-                if ((retVal = rtl8370_setAsicReg(RTK_INDRECT_ACCESS_ADDRESS, PHY_PAGE_ADDRESS)) !=  RT_ERR_OK)
-                    return retVal;    
-                if ((retVal = rtl8370_setAsicReg(RTK_INDRECT_ACCESS_CRTL, RTK_CMD_MASK | RTK_RW_MASK)) !=  RT_ERR_OK)
-                    return retVal; 
-
-                cnt = 0;
-                busyFlag = 1;
-                while (busyFlag&&cnt<5)
-                {
-                    cnt++;
-                    if ((retVal = rtl8370_getAsicRegBit(RTK_INDRECT_ACCESS_STATUS, RTK_PHY_BUSY_OFFSET,&busyFlag)) !=  RT_ERR_OK)
-                        return retVal;
-                }
-                if (5 == cnt)
-                    return RT_ERR_BUSYWAIT_TIMEOUT;
-            
                 if ((retVal = rtl8370_setAsicReg(RTK_INDRECT_ACCESS_WRITE_DATA, (uint32)chipData0[index][1])) !=  RT_ERR_OK)
                     return retVal;
                 if ((retVal = rtl8370_setAsicReg(RTK_INDRECT_ACCESS_ADDRESS, (uint32)chipData0[index][0])) !=  RT_ERR_OK)
@@ -10579,24 +10532,6 @@ static rtk_api_ret_t _rtk_switch_init0(void)
         {    
             if ((chipData1[index][0]&0xF000)==0x2000)
             {
-                cnt = 0;
-                busyFlag = 1;
-                while (busyFlag&&cnt<5)
-                {
-                    cnt++;
-                    if ((retVal = rtl8370_getAsicRegBit(RTK_INDRECT_ACCESS_STATUS, RTK_PHY_BUSY_OFFSET,&busyFlag)) !=  RT_ERR_OK)
-                        return retVal;
-                }
-                if (5 == cnt)
-                    return RT_ERR_BUSYWAIT_TIMEOUT;
-
-                if ((retVal = rtl8370_setAsicReg(RTK_INDRECT_ACCESS_WRITE_DATA, 0)) !=  RT_ERR_OK)
-                    return retVal;
-                if ((retVal = rtl8370_setAsicReg(RTK_INDRECT_ACCESS_ADDRESS, PHY_PAGE_ADDRESS)) !=  RT_ERR_OK)
-                    return retVal;    
-                if ((retVal = rtl8370_setAsicReg(RTK_INDRECT_ACCESS_CRTL, RTK_CMD_MASK | RTK_RW_MASK)) !=  RT_ERR_OK)
-                    return retVal; 
-
                 cnt = 0;
                 busyFlag = 1;
                 while (busyFlag&&cnt<5)
@@ -10631,24 +10566,6 @@ static rtk_api_ret_t _rtk_switch_init0(void)
         {    
             if ((chipData1[index][0]&0xF000)==0x2000)
             {
-                cnt = 0;
-                busyFlag = 1;
-                while (busyFlag&&cnt<5)
-                {
-                    cnt++;
-                    if ((retVal = rtl8370_getAsicRegBit(RTK_INDRECT_ACCESS_STATUS, RTK_PHY_BUSY_OFFSET,&busyFlag)) !=  RT_ERR_OK)
-                        return retVal;
-                }
-                if (5 == cnt)
-                    return RT_ERR_BUSYWAIT_TIMEOUT;
-
-                if ((retVal = rtl8370_setAsicReg(RTK_INDRECT_ACCESS_WRITE_DATA, 0)) !=  RT_ERR_OK)
-                    return retVal;
-                if ((retVal = rtl8370_setAsicReg(RTK_INDRECT_ACCESS_ADDRESS, PHY_PAGE_ADDRESS)) !=  RT_ERR_OK)
-                    return retVal;    
-                if ((retVal = rtl8370_setAsicReg(RTK_INDRECT_ACCESS_CRTL, RTK_CMD_MASK | RTK_RW_MASK)) !=  RT_ERR_OK)
-                    return retVal; 
-
                 cnt = 0;
                 busyFlag = 1;
                 while (busyFlag&&cnt<5)
@@ -10809,6 +10726,8 @@ static rtk_api_ret_t _rtk_switch_init0(void)
     
     return RT_ERR_OK;
 }
+#endif	// ASUS EXT
+
 
 static rtk_api_ret_t _rtk_switch_init1(void)
 {
@@ -10818,111 +10737,114 @@ static rtk_api_ret_t _rtk_switch_init1(void)
     uint32 busyFlag,cnt;
 #endif
     CONST_T uint16 chipData0[][2] ={{0x1B24, 0x0000},{0x1B25, 0x0000},{0x1B26, 0x0000},{0x1B27, 0x0000},
-                                    {0x207F, 0x0002},{0x2079, 0x0200},{0x207F, 0x0000},{0x133F, 0x0030},
-                                    {0x133E, 0x000E},{0x221F, 0x0005},{0x2201, 0x0700},{0x2205, 0x8B82},
-                                    {0x2206, 0x05CB},{0x221F, 0x0002},{0x2204, 0x80C2},{0x2205, 0x0938},
-                                    {0x221F, 0x0003},{0x2212, 0xC4D2},{0x220D, 0x0207},{0x221F, 0x0001},
-                                    {0x2207, 0x267E},{0x221C, 0xE5F7},{0x221B, 0x0424},{0x221F, 0x0007},
-                                    {0x221E, 0x0040},{0x2218, 0x0000},{0x221F, 0x0007},{0x221E, 0x002C},
-                                    {0x2218, 0x008B},{0x221F, 0x0005},{0x2205, 0xFFF6},{0x2206, 0x0080},
-                                    {0x2205, 0x8000},{0x2206, 0xF8E0},{0x2206, 0xE000},{0x2206, 0xE1E0},
-                                    {0x2206, 0x01AC},{0x2206, 0x2408},{0x2206, 0xE08B},{0x2206, 0x84F7},
-                                    {0x2206, 0x20E4},{0x2206, 0x8B84},{0x2206, 0xFC05},{0x2206, 0xF8FA},
-                                    {0x2206, 0xEF69},{0x2206, 0xE08B},{0x2206, 0x86AC},{0x2206, 0x201A},
-                                    {0x2206, 0xBF80},{0x2206, 0x59D0},{0x2206, 0x2402},{0x2206, 0x803D},
-                                    {0x2206, 0xE0E0},{0x2206, 0xE4E1},{0x2206, 0xE0E5},{0x2206, 0x5806},
-                                    {0x2206, 0x68C0},{0x2206, 0xD1D2},{0x2206, 0xE4E0},{0x2206, 0xE4E5},
-                                    {0x2206, 0xE0E5},{0x2206, 0xEF96},{0x2206, 0xFEFC},{0x2206, 0x05FB},
-                                    {0x2206, 0x0BFB},{0x2206, 0x58FF},{0x2206, 0x9E11},{0x2206, 0x06F0},
-                                    {0x2206, 0x0C81},{0x2206, 0x8AE0},{0x2206, 0x0019},{0x2206, 0x1B89},
-                                    {0x2206, 0xCFEB},{0x2206, 0x19EB},{0x2206, 0x19B0},{0x2206, 0xEFFF},
-                                    {0x2206, 0x0BFF},{0x2206, 0x0425},{0x2206, 0x0807},{0x2206, 0x2640},
-                                    {0x2206, 0x7227},{0x2206, 0x267E},{0x2206, 0x2804},{0x2206, 0xB729},
-                                    {0x2206, 0x2576},{0x2206, 0x2A68},{0x2206, 0xE52B},{0x2206, 0xAD00},
-                                    {0x2206, 0x2CDB},{0x2206, 0xF02D},{0x2206, 0x67BB},{0x2206, 0x2E7B},
-                                    {0x2206, 0x0F2F},{0x2206, 0x7365},{0x2206, 0x31AC},{0x2206, 0xCC32},
-                                    {0x2206, 0x2300},{0x2206, 0x332D},{0x2206, 0x1734},{0x2206, 0x7F52},
-                                    {0x2206, 0x3510},{0x2206, 0x0036},{0x2206, 0x0600},{0x2206, 0x370C},
-                                    {0x2206, 0xC038},{0x2206, 0x7FCE},{0x2206, 0x3CE5},{0x2206, 0xF73D},
-                                    {0x2206, 0x3DA4},{0x2206, 0x6530},{0x2206, 0x3E67},{0x2206, 0x0053},
-                                    {0x2206, 0x69D2},{0x2206, 0x0F6A},{0x2206, 0x012C},{0x2206, 0x6C2B},
-                                    {0x2206, 0x136E},{0x2206, 0xE100},{0x2206, 0x6F12},{0x2206, 0xF771},
-                                    {0x2206, 0x006B},{0x2206, 0x7306},{0x2206, 0xEB74},{0x2206, 0x94C7},
-                                    {0x2206, 0x7698},{0x2206, 0x0A77},{0x2206, 0x5000},{0x2206, 0x788A},
-                                    {0x2206, 0x1579},{0x2206, 0x7F6F},{0x2206, 0x7A06},{0x2206, 0xA600},
-                                    {0x2205, 0x8B90},{0x2206, 0x8000},{0x2205, 0x8B92},{0x2206, 0x8000},
-                                    {0x2205, 0x8B94},{0x2206, 0x8014},{0x2208, 0xFFFA},{0x2202, 0x3C65},
-                                    {0x2205, 0xFFF6},{0x2206, 0x00F7},{0x221F, 0x0000},{0x221F, 0x0007},
-                                    {0x221E, 0x0042},{0x2218, 0x0000},{0x221E, 0x002D},{0x2218, 0xF010},
-                                    {0x221E, 0x0020},{0x2215, 0x0000},{0x221E, 0x0023},{0x2216, 0x8000},
-                                    {0x221F, 0x0000},{0x133F, 0x0010},{0x133E, 0x0FFE},{0x1362, 0x0115},
-                                    {0x1363, 0x0002},{0x1363, 0x0000},{0x1306, 0x000C},{0x1307, 0x000C},
-                                    {0x1303, 0x0067},{0x1304, 0x4444},{0x1203, 0xFF00},{0x1200, 0x7FC4},
-                                    {0x121D, 0x7D16},{0x121E, 0x03E8},{0x121F, 0x024E},{0x1220, 0x0230},
-                                    {0x1221, 0x0244},{0x1222, 0x0226},{0x1223, 0x024E},{0x1224, 0x0230},
-                                    {0x1225, 0x0244},{0x1226, 0x0226},{0x1227, 0x00C0},{0x1228, 0x00B4},
-                                    {0x122F, 0x00C0},{0x1230, 0x00B4},{0x0208, 0x03E8},{0x0209, 0x03E8},
-                                    {0x020A, 0x03E8},{0x020B, 0x03E8},{0x020C, 0x03E8},{0x020D, 0x03E8},
-                                    {0x020E, 0x03E8},{0x020F, 0x03E8},{0x0210, 0x03E8},{0x0211, 0x03E8},
-                                    {0x0212, 0x03E8},{0x0213, 0x03E8},{0x0214, 0x03E8},{0x0215, 0x03E8},
-                                    {0x0216, 0x03E8},{0x0217, 0x03E8},{0x0900, 0x0000},{0x0901, 0x0000},
-                                    {0x0902, 0x0000},{0x0903, 0x0000},{0x0865, 0x3210},{0x087B, 0x0000},
-                                    {0x087C, 0xFF00},{0x087D, 0x0000},{0x087E, 0x0000},{0x0801, 0x0100},
-                                    {0x0802, 0x0100},{0x0A20, 0x2040},{0x0A21, 0x2040},{0x0A22, 0x2040},
-                                    {0x0A23, 0x2040},{0x0A24, 0x2040},{0x0A28, 0x2040},{0x0A29, 0x2040},
-                                    {0x133F, 0x0030},{0x133E, 0x000E},{0x221F, 0x0000},{0x2200, 0x1340},
-                                    {0x221F, 0x0000},{0x133F, 0x0010},{0x133E, 0x0FFE},{0x20A0, 0x1940},
-                                    {0x20C0, 0x1940},{0x20E0, 0x1940},{0x130c, 0x0050},{0xFFFF, 0xABCD}};
+                                    {0x207F, 0x0007},{0x207E, 0x000B},{0x2076, 0x1A00},{0x207F, 0x0000},
+                                    {0x205F, 0x0007},{0x205E, 0x000A},{0x2059, 0x0000},{0x205A, 0x0000},
+                                    {0x205B, 0x0000},{0x205C, 0x0000},{0x205E, 0x000B},{0x2055, 0x0500},
+                                    {0x2056, 0x0000},{0x2057, 0x0000},{0x2058, 0x0000},{0x205F, 0x0000},
+                                    {0x133F, 0x0030},{0x133E, 0x000E},{0x221F, 0x0005},{0x2201, 0x0700},
+                                    {0x2205, 0x8B82},{0x2206, 0x05CB},{0x221F, 0x0007},{0x221E, 0x0008},
+                                    {0x2219, 0x80C2},{0x221A, 0x0938},{0x221F, 0x0000},{0x221F, 0x0003},
+                                    {0x2212, 0xC4D2},{0x220D, 0x0207},{0x221F, 0x0001},{0x2207, 0x267E},
+                                    {0x221C, 0xE5F7},{0x221B, 0x0424},{0x221F, 0x0007},{0x221E, 0x0040},
+                                    {0x2218, 0x0000},{0x221F, 0x0007},{0x221E, 0x002C},{0x2218, 0x008B},
+                                    {0x221F, 0x0005},{0x2205, 0xFFF6},{0x2206, 0x0080},{0x2205, 0x8000},
+                                    {0x2206, 0xF8E0},{0x2206, 0xE000},{0x2206, 0xE1E0},{0x2206, 0x01AC},
+                                    {0x2206, 0x2408},{0x2206, 0xE08B},{0x2206, 0x84F7},{0x2206, 0x20E4},
+                                    {0x2206, 0x8B84},{0x2206, 0xFC05},{0x2206, 0xF8FA},{0x2206, 0xEF69},
+                                    {0x2206, 0xE08B},{0x2206, 0x86AC},{0x2206, 0x201A},{0x2206, 0xBF80},
+                                    {0x2206, 0x59D0},{0x2206, 0x2402},{0x2206, 0x803D},{0x2206, 0xE0E0},
+                                    {0x2206, 0xE4E1},{0x2206, 0xE0E5},{0x2206, 0x5806},{0x2206, 0x68C0},
+                                    {0x2206, 0xD1D2},{0x2206, 0xE4E0},{0x2206, 0xE4E5},{0x2206, 0xE0E5},
+                                    {0x2206, 0xEF96},{0x2206, 0xFEFC},{0x2206, 0x05FB},{0x2206, 0x0BFB},
+                                    {0x2206, 0x58FF},{0x2206, 0x9E11},{0x2206, 0x06F0},{0x2206, 0x0C81},
+                                    {0x2206, 0x8AE0},{0x2206, 0x0019},{0x2206, 0x1B89},{0x2206, 0xCFEB},
+                                    {0x2206, 0x19EB},{0x2206, 0x19B0},{0x2206, 0xEFFF},{0x2206, 0x0BFF},
+                                    {0x2206, 0x0425},{0x2206, 0x0807},{0x2206, 0x2640},{0x2206, 0x7227},
+                                    {0x2206, 0x267E},{0x2206, 0x2804},{0x2206, 0xB729},{0x2206, 0x2576},
+                                    {0x2206, 0x2A68},{0x2206, 0xE52B},{0x2206, 0xAD00},{0x2206, 0x2CDB},
+                                    {0x2206, 0xF02D},{0x2206, 0x67BB},{0x2206, 0x2E7B},{0x2206, 0x0F2F},
+                                    {0x2206, 0x7365},{0x2206, 0x31AC},{0x2206, 0xCC32},{0x2206, 0x2300},
+                                    {0x2206, 0x332D},{0x2206, 0x1734},{0x2206, 0x7F52},{0x2206, 0x3510},
+                                    {0x2206, 0x0036},{0x2206, 0x1000},{0x2206, 0x3710},{0x2206, 0x0038},
+                                    {0x2206, 0x7FCE},{0x2206, 0x3CE5},{0x2206, 0xF73D},{0x2206, 0x3DA4},
+                                    {0x2206, 0x6530},{0x2206, 0x3E67},{0x2206, 0x0053},{0x2206, 0x69D2},
+                                    {0x2206, 0x0F6A},{0x2206, 0x012C},{0x2206, 0x6C2B},{0x2206, 0x136E},
+                                    {0x2206, 0xE100},{0x2206, 0x6F12},{0x2206, 0xF771},{0x2206, 0x006B},
+                                    {0x2206, 0x7306},{0x2206, 0xEB74},{0x2206, 0x94C7},{0x2206, 0x7698},
+                                    {0x2206, 0x0A77},{0x2206, 0x5000},{0x2206, 0x788A},{0x2206, 0x1579},
+                                    {0x2206, 0x7F6F},{0x2206, 0x7A06},{0x2206, 0xA600},{0x2205, 0x8B90},
+                                    {0x2206, 0x8000},{0x2205, 0x8B92},{0x2206, 0x8000},{0x2205, 0x8B94},
+                                    {0x2206, 0x8014},{0x2208, 0xFFFA},{0x2202, 0x3C65},{0x2205, 0xFFF6},
+                                    {0x2206, 0x00F7},{0x221F, 0x0000},{0x221F, 0x0007},{0x221E, 0x0042},
+                                    {0x2218, 0x0000},{0x221E, 0x002D},{0x2218, 0xF010},{0x221E, 0x0020},
+                                    {0x2215, 0x0000},{0x221E, 0x0023},{0x2216, 0x8000},{0x221F, 0x0000},
+                                    {0x133F, 0x0010},{0x133E, 0x0FFE},{0x1362, 0x0115},{0x1363, 0x0002},
+                                    {0x1363, 0x0000},{0x1306, 0x000C},{0x1307, 0x000C},{0x1303, 0x0367},
+                                    {0x1304, 0x7777},{0x1203, 0xFF00},{0x1200, 0x7FC4},{0x121D, 0x7D16},
+                                    {0x121E, 0x03E8},{0x121F, 0x024E},{0x1220, 0x0230},{0x1221, 0x0244},
+                                    {0x1222, 0x0226},{0x1223, 0x024E},{0x1224, 0x0230},{0x1225, 0x0244},
+                                    {0x1226, 0x0226},{0x1227, 0x00C0},{0x1228, 0x00B4},{0x122F, 0x00C0},
+                                    {0x1230, 0x00B4},{0x0208, 0x03E8},{0x0209, 0x03E8},{0x020A, 0x03E8},
+                                    {0x020B, 0x03E8},{0x020C, 0x03E8},{0x020D, 0x03E8},{0x020E, 0x03E8},
+                                    {0x020F, 0x03E8},{0x0210, 0x03E8},{0x0211, 0x03E8},{0x0212, 0x03E8},
+                                    {0x0213, 0x03E8},{0x0214, 0x03E8},{0x0215, 0x03E8},{0x0216, 0x03E8},
+                                    {0x0217, 0x03E8},{0x0865, 0x3210},{0x087B, 0x0000},{0x087C, 0xFF00},
+                                    {0x087D, 0x0000},{0x087E, 0x0000},{0x0801, 0x0100},{0x0802, 0x0100},
+                                    {0x0A20, 0x2040},{0x0A21, 0x2040},{0x0A22, 0x2040},{0x0A23, 0x2040},
+                                    {0x0A24, 0x2040},{0x0A28, 0x2040},{0x0A29, 0x2040},{0x20A0, 0x0940},
+                                    {0x20C0, 0x0940},{0x20E0, 0x0940},{0x130C, 0x0050},{0x1B03, 0x0876},
+                                    {0xFFFF, 0xABCD}};
 
     CONST_T uint16 chipData1[][2] ={{0x1B24, 0x0000},{0x1B25, 0x0000},{0x1B26, 0x0000},{0x1B27, 0x0000},    
-                                    {0x207F, 0x0002},{0x2079, 0x0200},{0x207F, 0x0000},{0x133F, 0x0030},     
-                                    {0x133E, 0x000E},{0x221F, 0x0005},{0x2201, 0x0700},{0x2205, 0x8B82},     
-                                    {0x2206, 0x05CB},{0x221F, 0x0002},{0x2204, 0x80C2},{0x2205, 0x0938},     
-                                    {0x221F, 0x0003},{0x2212, 0xC4D2},{0x220D, 0x0207},{0x221F, 0x0001},     
-                                    {0x2207, 0x267E},{0x221C, 0xE5F7},{0x221B, 0x0424},{0x221F, 0x0007},     
-                                    {0x221E, 0x0040},{0x2218, 0x0000},{0x221F, 0x0007},{0x221E, 0x002C},     
-                                    {0x2218, 0x008B},{0x221F, 0x0005},{0x2205, 0xFFF6},{0x2206, 0x0080},     
-                                    {0x2205, 0x8000},{0x2206, 0xF8E0},{0x2206, 0xE000},{0x2206, 0xE1E0},     
-                                    {0x2206, 0x01AC},{0x2206, 0x2408},{0x2206, 0xE08B},{0x2206, 0x84F7},     
-                                    {0x2206, 0x20E4},{0x2206, 0x8B84},{0x2206, 0xFC05},{0x2206, 0xF8FA},     
-                                    {0x2206, 0xEF69},{0x2206, 0xE08B},{0x2206, 0x86AC},{0x2206, 0x201A},     
-                                    {0x2206, 0xBF80},{0x2206, 0x59D0},{0x2206, 0x2402},{0x2206, 0x803D},     
-                                    {0x2206, 0xE0E0},{0x2206, 0xE4E1},{0x2206, 0xE0E5},{0x2206, 0x5806},     
-                                    {0x2206, 0x68C0},{0x2206, 0xD1D2},{0x2206, 0xE4E0},{0x2206, 0xE4E5},     
-                                    {0x2206, 0xE0E5},{0x2206, 0xEF96},{0x2206, 0xFEFC},{0x2206, 0x05FB},     
-                                    {0x2206, 0x0BFB},{0x2206, 0x58FF},{0x2206, 0x9E11},{0x2206, 0x06F0},     
-                                    {0x2206, 0x0C81},{0x2206, 0x8AE0},{0x2206, 0x0019},{0x2206, 0x1B89},     
-                                    {0x2206, 0xCFEB},{0x2206, 0x19EB},{0x2206, 0x19B0},{0x2206, 0xEFFF},     
-                                    {0x2206, 0x0BFF},{0x2206, 0x0425},{0x2206, 0x0807},{0x2206, 0x2640},     
-                                    {0x2206, 0x7227},{0x2206, 0x267E},{0x2206, 0x2804},{0x2206, 0xB729},     
-                                    {0x2206, 0x2576},{0x2206, 0x2A68},{0x2206, 0xE52B},{0x2206, 0xAD00},     
-                                    {0x2206, 0x2CDB},{0x2206, 0xF02D},{0x2206, 0x67BB},{0x2206, 0x2E7B},     
-                                    {0x2206, 0x0F2F},{0x2206, 0x7365},{0x2206, 0x31AC},{0x2206, 0xCC32},     
-                                    {0x2206, 0x2300},{0x2206, 0x332D},{0x2206, 0x1734},{0x2206, 0x7F52},     
-                                    {0x2206, 0x3510},{0x2206, 0x0036},{0x2206, 0x0600},{0x2206, 0x370C},     
-                                    {0x2206, 0xC038},{0x2206, 0x7FCE},{0x2206, 0x3CE5},{0x2206, 0xF73D},      
-                                    {0x2206, 0x3DA4},{0x2206, 0x6530},{0x2206, 0x3E67},{0x2206, 0x0053},     
-                                    {0x2206, 0x69D2},{0x2206, 0x0F6A},{0x2206, 0x012C},{0x2206, 0x6C2B},     
-                                    {0x2206, 0x136E},{0x2206, 0xE100},{0x2206, 0x6F12},{0x2206, 0xF771},     
-                                    {0x2206, 0x006B},{0x2206, 0x7306},{0x2206, 0xEB74},{0x2206, 0x94C7},     
-                                    {0x2206, 0x7698},{0x2206, 0x0A77},{0x2206, 0x5000},{0x2206, 0x788A},     
-                                    {0x2206, 0x1579},{0x2206, 0x7F6F},{0x2206, 0x7A06},{0x2206, 0xA600},     
-                                    {0x2205, 0x8B90},{0x2206, 0x8000},{0x2205, 0x8B92},{0x2206, 0x8000},     
-                                    {0x2205, 0x8B94},{0x2206, 0x8014},{0x2208, 0xFFFA},{0x2202, 0x3C65},     
-                                    {0x2205, 0xFFF6},{0x2206, 0x00F7},{0x221F, 0x0000},{0x221F, 0x0007},     
-                                    {0x221E, 0x0042},{0x2218, 0x0000},{0x221E, 0x002D},{0x2218, 0xF010},     
-                                    {0x221E, 0x0020},{0x2215, 0x0000},{0x221E, 0x0023},{0x2216, 0x8000},     
-                                    {0x221F, 0x0000},{0x133F, 0x0010},{0x133E, 0x0FFE},{0x1362, 0x0115},     
-                                    {0x1363, 0x0002},{0x1363, 0x0000},{0x1306, 0x000C},{0x1307, 0x000C},     
-                                    {0x1303, 0x0067},{0x1304, 0x4444},{0x1203, 0xFF00},{0x1200, 0x7FC4},
-                                    {0x0900, 0x0000},{0x0901, 0x0000},{0x0902, 0x0000},{0x0903, 0x0000},
-                                    {0x0865, 0x3210},{0x087B, 0x0000},{0x087C, 0xFF00},{0x087D, 0x0000},
-                                    {0x087E, 0x0000},{0x0801, 0x0100},{0x0802, 0x0100},{0x0A20, 0x2040},
-                                    {0x0A21, 0x2040},{0x0A22, 0x2040},{0x0A23, 0x2040},{0x0A24, 0x2040},
-                                    {0x0A25, 0x2040},{0x0A26, 0x2040},{0x0A27, 0x2040},{0x0A28, 0x2040},
-                                    {0x0A29, 0x2040},{0x133F, 0x0030},{0x133E, 0x000E},{0x221F, 0x0000},
-                                    {0x2200, 0x1340},{0x221F, 0x0000},{0x133F, 0x0010},{0x133E, 0x0FFE},
-                                    {0x1B03, 0x0876},{0xFFFF, 0xABCD}};
+                                    {0x207F, 0x0007},{0x207E, 0x000B},{0x2076, 0x1A00},{0x207F, 0x0000},
+                                    {0x205F, 0x0007},{0x205E, 0x000A},{0x2059, 0x0000},{0x205A, 0x0000},
+                                    {0x205B, 0x0000},{0x205C, 0x0000},{0x205E, 0x000B},{0x2055, 0x0500},
+                                    {0x2056, 0x0000},{0x2057, 0x0000},{0x2058, 0x0000},{0x205F, 0x0000},
+                                    {0x133F, 0x0030},{0x133E, 0x000E},{0x221F, 0x0005},{0x2201, 0x0700},
+                                    {0x2205, 0x8B82},{0x2206, 0x05CB},{0x221F, 0x0007},{0x221E, 0x0008},
+                                    {0x2219, 0x80C2},{0x221A, 0x0938},{0x221F, 0x0000},{0x221F, 0x0003},
+                                    {0x2212, 0xC4D2},{0x220D, 0x0207},{0x221F, 0x0001},{0x2207, 0x267E},
+                                    {0x221C, 0xE5F7},{0x221B, 0x0424},{0x221F, 0x0007},{0x221E, 0x0040},
+                                    {0x2218, 0x0000},{0x221F, 0x0007},{0x221E, 0x002C},{0x2218, 0x008B},
+                                    {0x221F, 0x0005},{0x2205, 0xFFF6},{0x2206, 0x0080},{0x2205, 0x8000},
+                                    {0x2206, 0xF8E0},{0x2206, 0xE000},{0x2206, 0xE1E0},{0x2206, 0x01AC},
+                                    {0x2206, 0x2408},{0x2206, 0xE08B},{0x2206, 0x84F7},{0x2206, 0x20E4},
+                                    {0x2206, 0x8B84},{0x2206, 0xFC05},{0x2206, 0xF8FA},{0x2206, 0xEF69},
+                                    {0x2206, 0xE08B},{0x2206, 0x86AC},{0x2206, 0x201A},{0x2206, 0xBF80},
+                                    {0x2206, 0x59D0},{0x2206, 0x2402},{0x2206, 0x803D},{0x2206, 0xE0E0},
+                                    {0x2206, 0xE4E1},{0x2206, 0xE0E5},{0x2206, 0x5806},{0x2206, 0x68C0},
+                                    {0x2206, 0xD1D2},{0x2206, 0xE4E0},{0x2206, 0xE4E5},{0x2206, 0xE0E5},
+                                    {0x2206, 0xEF96},{0x2206, 0xFEFC},{0x2206, 0x05FB},{0x2206, 0x0BFB},
+                                    {0x2206, 0x58FF},{0x2206, 0x9E11},{0x2206, 0x06F0},{0x2206, 0x0C81},
+                                    {0x2206, 0x8AE0},{0x2206, 0x0019},{0x2206, 0x1B89},{0x2206, 0xCFEB},
+                                    {0x2206, 0x19EB},{0x2206, 0x19B0},{0x2206, 0xEFFF},{0x2206, 0x0BFF},
+                                    {0x2206, 0x0425},{0x2206, 0x0807},{0x2206, 0x2640},{0x2206, 0x7227},
+                                    {0x2206, 0x267E},{0x2206, 0x2804},{0x2206, 0xB729},{0x2206, 0x2576},
+                                    {0x2206, 0x2A68},{0x2206, 0xE52B},{0x2206, 0xAD00},{0x2206, 0x2CDB},
+                                    {0x2206, 0xF02D},{0x2206, 0x67BB},{0x2206, 0x2E7B},{0x2206, 0x0F2F},
+                                    {0x2206, 0x7365},{0x2206, 0x31AC},{0x2206, 0xCC32},{0x2206, 0x2300},
+                                    {0x2206, 0x332D},{0x2206, 0x1734},{0x2206, 0x7F52},{0x2206, 0x3510},
+                                    {0x2206, 0x0036},{0x2206, 0x1000},{0x2206, 0x3710},{0x2206, 0x0038},
+                                    {0x2206, 0x7FCE},{0x2206, 0x3CE5},{0x2206, 0xF73D},{0x2206, 0x3DA4},
+                                    {0x2206, 0x6530},{0x2206, 0x3E67},{0x2206, 0x0053},{0x2206, 0x69D2},
+                                    {0x2206, 0x0F6A},{0x2206, 0x012C},{0x2206, 0x6C2B},{0x2206, 0x136E},
+                                    {0x2206, 0xE100},{0x2206, 0x6F12},{0x2206, 0xF771},{0x2206, 0x006B},
+                                    {0x2206, 0x7306},{0x2206, 0xEB74},{0x2206, 0x94C7},{0x2206, 0x7698},
+                                    {0x2206, 0x0A77},{0x2206, 0x5000},{0x2206, 0x788A},{0x2206, 0x1579},
+                                    {0x2206, 0x7F6F},{0x2206, 0x7A06},{0x2206, 0xA600},{0x2205, 0x8B90},
+                                    {0x2206, 0x8000},{0x2205, 0x8B92},{0x2206, 0x8000},{0x2205, 0x8B94},
+                                    {0x2206, 0x8014},{0x2208, 0xFFFA},{0x2202, 0x3C65},{0x2205, 0xFFF6},
+                                    {0x2206, 0x00F7},{0x221F, 0x0000},{0x221F, 0x0007},{0x221E, 0x0042},
+                                    {0x2218, 0x0000},{0x221E, 0x002D},{0x2218, 0xF010},{0x221E, 0x0020},
+                                    {0x2215, 0x0000},{0x221E, 0x0023},{0x2216, 0x8000},{0x221F, 0x0000},
+                                    {0x133F, 0x0010},{0x133E, 0x0FFE},{0x1362, 0x0115},{0x1363, 0x0002},
+                                    {0x1363, 0x0000},{0x1306, 0x000C},{0x1307, 0x000C},{0x1303, 0x0367},
+                                    {0x1304, 0x7777},{0x1203, 0xFF00},{0x1200, 0x7FC4},{0x0865, 0x3210},
+                                    {0x087B, 0x0000},{0x087C, 0xFF00},{0x087D, 0x0000},{0x087E, 0x0000},
+                                    {0x0801, 0x0100},{0x0802, 0x0100},{0x0A20, 0x2040},{0x0A21, 0x2040},
+                                    {0x0A22, 0x2040},{0x0A23, 0x2040},{0x0A24, 0x2040},{0x0A25, 0x2040},
+                                    {0x0A26, 0x2040},{0x0A27, 0x2040},{0x0A28, 0x2040},{0x0A29, 0x2040},
+                                    {0x130C, 0x0050},{0x1B03, 0x0876},{0xFFFF, 0xABCD}};
 
     if ((retVal = rtl8370_setAsicReg(0x13C2,0x0249))!=RT_ERR_OK)
         return retVal;
@@ -10982,24 +10904,6 @@ static rtk_api_ret_t _rtk_switch_init1(void)
                     if (5 == cnt)
                         return RT_ERR_BUSYWAIT_TIMEOUT;
         
-                    if ((retVal = rtl8370_setAsicReg(RTK_INDRECT_ACCESS_WRITE_DATA, 0)) !=  RT_ERR_OK)
-                        return retVal;
-                    if ((retVal = rtl8370_setAsicReg(RTK_INDRECT_ACCESS_ADDRESS, PHY_PAGE_ADDRESS)) !=  RT_ERR_OK)
-                        return retVal;    
-                    if ((retVal = rtl8370_setAsicReg(RTK_INDRECT_ACCESS_CRTL, RTK_CMD_MASK | RTK_RW_MASK)) !=  RT_ERR_OK)
-                        return retVal; 
-        
-                    cnt = 0;
-                    busyFlag = 1;
-                    while (busyFlag&&cnt<5)
-                    {
-                        cnt++;
-                        if ((retVal = rtl8370_getAsicRegBit(RTK_INDRECT_ACCESS_STATUS, RTK_PHY_BUSY_OFFSET,&busyFlag)) !=  RT_ERR_OK)
-                            return retVal;
-                    }
-                    if (5 == cnt)
-                        return RT_ERR_BUSYWAIT_TIMEOUT;
-                    
                     if ((retVal = rtl8370_setAsicReg(RTK_INDRECT_ACCESS_WRITE_DATA, (uint32)chipData0[index][1])) !=  RT_ERR_OK)
                         return retVal;
                     if ((retVal = rtl8370_setAsicReg(RTK_INDRECT_ACCESS_ADDRESS, (uint32)chipData0[index][0])) !=  RT_ERR_OK)
@@ -11031,24 +10935,6 @@ static rtk_api_ret_t _rtk_switch_init1(void)
                     if (5 == cnt)
                         return RT_ERR_BUSYWAIT_TIMEOUT;
       
-                    if ((retVal = rtl8370_setAsicReg(RTK_INDRECT_ACCESS_WRITE_DATA, 0)) !=  RT_ERR_OK)
-                        return retVal;
-                    if ((retVal = rtl8370_setAsicReg(RTK_INDRECT_ACCESS_ADDRESS, PHY_PAGE_ADDRESS)) !=  RT_ERR_OK)
-                        return retVal;    
-                    if ((retVal = rtl8370_setAsicReg(RTK_INDRECT_ACCESS_CRTL, RTK_CMD_MASK | RTK_RW_MASK)) !=  RT_ERR_OK)
-                        return retVal; 
-        
-                    cnt = 0;
-                    busyFlag = 1;
-                    while (busyFlag&&cnt<5)
-                    {
-                        cnt++;
-                        if ((retVal = rtl8370_getAsicRegBit(RTK_INDRECT_ACCESS_STATUS, RTK_PHY_BUSY_OFFSET,&busyFlag)) !=  RT_ERR_OK)
-                            return retVal;
-                    }
-                    if (5 == cnt)
-                        return RT_ERR_BUSYWAIT_TIMEOUT;
-        
                     if ((retVal = rtl8370_setAsicReg(RTK_INDRECT_ACCESS_WRITE_DATA, (uint32)chipData1[index][1])) !=  RT_ERR_OK)
                         return retVal;
                     if ((retVal = rtl8370_setAsicReg(RTK_INDRECT_ACCESS_ADDRESS, (uint32)chipData1[index][0])) !=  RT_ERR_OK)
@@ -11080,24 +10966,6 @@ static rtk_api_ret_t _rtk_switch_init1(void)
                     if (5 == cnt)
                         return RT_ERR_BUSYWAIT_TIMEOUT;
       
-                    if ((retVal = rtl8370_setAsicReg(RTK_INDRECT_ACCESS_WRITE_DATA, 0)) !=  RT_ERR_OK)
-                        return retVal;
-                    if ((retVal = rtl8370_setAsicReg(RTK_INDRECT_ACCESS_ADDRESS, PHY_PAGE_ADDRESS)) !=  RT_ERR_OK)
-                        return retVal;    
-                    if ((retVal = rtl8370_setAsicReg(RTK_INDRECT_ACCESS_CRTL, RTK_CMD_MASK | RTK_RW_MASK)) !=  RT_ERR_OK)
-                        return retVal; 
-        
-                    cnt = 0;
-                    busyFlag = 1;
-                    while (busyFlag&&cnt<5)
-                    {
-                        cnt++;
-                        if ((retVal = rtl8370_getAsicRegBit(RTK_INDRECT_ACCESS_STATUS, RTK_PHY_BUSY_OFFSET,&busyFlag)) !=  RT_ERR_OK)
-                            return retVal;
-                    }
-                    if (5 == cnt)
-                        return RT_ERR_BUSYWAIT_TIMEOUT;
-        
                     if ((retVal = rtl8370_setAsicReg(RTK_INDRECT_ACCESS_WRITE_DATA, (uint32)chipData1[index][1])) !=  RT_ERR_OK)
                         return retVal;
                     if ((retVal = rtl8370_setAsicReg(RTK_INDRECT_ACCESS_ADDRESS, (uint32)chipData1[index][0])) !=  RT_ERR_OK)
@@ -11129,103 +10997,167 @@ static rtk_api_ret_t _rtk_switch_init2(void)
 #ifndef MDC_MDIO_OPERATION 
     uint32 busyFlag,cnt;
 #endif
-    CONST_T uint16 chipData0[][2] ={{0x1b24,0x0000},{0x1b25,0x0000},{0x1b26,0x0000},{0x1b27,0x0000},
-                                     {0x133f,0x0030},{0x133e,0x000e},{0x221f,0x0007},{0x221e,0x0048},
-                                     {0x2219,0x4012},{0x221f,0x0003},{0x2201,0x3554},{0x2202,0x63e8},
-                                     {0x2203,0x99c2},{0x2204,0x0113},{0x2205,0x303e},{0x220d,0x0207},
-                                     {0x220e,0xe100},{0x221f,0x0007},{0x221e,0x0040},{0x2218,0x0000},
-                                     {0x221f,0x0007},{0x221e,0x002c},{0x2218,0x008b},{0x221f,0x0005},
-                                     {0x2205,0xfff6},{0x2206,0x0080},{0x221f,0x0005},{0x2205,0x8000},
-                                     {0x2206,0x0280},{0x2206,0x2bf7},{0x2206,0x00e0},{0x2206,0xfff7},
-                                     {0x2206,0xa080},{0x2206,0x02ae},{0x2206,0xf602},{0x2206,0x804e},
-                                     {0x2206,0x0201},{0x2206,0x5002},{0x2206,0x0163},{0x2206,0x0201},
-                                     {0x2206,0x79e0},{0x2206,0x8b8c},{0x2206,0xe18b},{0x2206,0x8d1e},
-                                     {0x2206,0x01e1},{0x2206,0x8b8e},{0x2206,0x1e01},{0x2206,0xa000},
-                                     {0x2206,0xe4ae},{0x2206,0xd8bf},{0x2206,0x8b88},{0x2206,0xec00},
-                                     {0x2206,0x19a9},{0x2206,0x8b90},{0x2206,0xf9ee},{0x2206,0xfff6},
-                                     {0x2206,0x00ee},{0x2206,0xfff7},{0x2206,0xfce0},{0x2206,0xe140},
-                                     {0x2206,0xe1e1},{0x2206,0x41f7},{0x2206,0x2ff6},{0x2206,0x28e4},
-                                     {0x2206,0xe140},{0x2206,0xe5e1},{0x2206,0x4104},{0x2206,0xf8fa},
-                                     {0x2206,0xef69},{0x2206,0xe08b},{0x2206,0x86ac},{0x2206,0x201a},
-                                     {0x2206,0xbf80},{0x2206,0x77d0},{0x2206,0x6c02},{0x2206,0x2978},
-                                     {0x2206,0xe0e0},{0x2206,0xe4e1},{0x2206,0xe0e5},{0x2206,0x5806},
-                                     {0x2206,0x68c0},{0x2206,0xd1d2},{0x2206,0xe4e0},{0x2206,0xe4e5},
-                                     {0x2206,0xe0e5},{0x2206,0xef96},{0x2206,0xfefc},{0x2206,0x0425},
-                                     {0x2206,0x0807},{0x2206,0x2640},{0x2206,0x7227},{0x2206,0x267e},
-                                     {0x2206,0x2804},{0x2206,0xb729},{0x2206,0x2576},{0x2206,0x2a68},
-                                     {0x2206,0xe52b},{0x2206,0xad00},{0x2206,0x2cdb},{0x2206,0xf02d},
-                                     {0x2206,0x67bb},{0x2206,0x2e7b},{0x2206,0x0f2f},{0x2206,0x7365},
-                                     {0x2206,0x31ac},{0x2206,0xcc32},{0x2206,0x2300},{0x2206,0x332d},
-                                     {0x2206,0x1734},{0x2206,0x7f52},{0x2206,0x3510},{0x2206,0x0036},
-                                     {0x2206,0x0600},{0x2206,0x370c},{0x2206,0xc038},{0x2206,0x7fce},
-                                     {0x2206,0x3ce5},{0x2206,0xf73d},{0x2206,0x3da4},{0x2206,0x6530},
-                                     {0x2206,0x3e67},{0x2206,0x0053},{0x2206,0x69d2},{0x2206,0x0f6a},
-                                     {0x2206,0x012c},{0x2206,0x6c2b},{0x2206,0x136e},{0x2206,0xe100},
-                                     {0x2206,0x6f12},{0x2206,0xf771},{0x2206,0x006b},{0x2206,0x7306},
-                                     {0x2206,0xeb74},{0x2206,0x94c7},{0x2206,0x7698},{0x2206,0x0a77},
-                                     {0x2206,0x5000},{0x2206,0x788a},{0x2206,0x1579},{0x2206,0x7f6f},
-                                     {0x2206,0x7a06},{0x2206,0xa600},{0x2201,0x0701},{0x2200,0x0405},
-                                     {0x221f,0x0000},{0x2200,0x1340},{0x221f,0x0000},{0x133f,0x0010},
-                                     {0x133e,0x0ffe},{0x1203,0xff00},{0x1200,0x7fc4},{0x121d,0x7D16},
-                                     {0x121e,0x03e8},{0x121f,0x024e},{0x1220,0x0230},{0x1221,0x0244},
-                                     {0x1222,0x0226},{0x1223,0x024e},{0x1224,0x0230},{0x1225,0x0244},
-                                     {0x1226,0x0226},{0x1227,0x00c0},{0x1228,0x00b4},{0x122f,0x00c0},
-                                     {0x1230,0x00b4},{0x0208,0x03e8},{0x0209,0x03e8},{0x020a,0x03e8},
-                                     {0x020b,0x03e8},{0x020c,0x03e8},{0x020d,0x03e8},{0x020e,0x03e8},
-                                     {0x020f,0x03e8},{0x0210,0x03e8},{0x0211,0x03e8},{0x0212,0x03e8},
-                                     {0x0213,0x03e8},{0x0214,0x03e8},{0x0215,0x03e8},{0x0216,0x03e8},
-                                     {0x0217,0x03e8},{0x0900,0x0000},{0x0901,0x0000},{0x0902,0x0000},
-                                     {0x0903,0x0000},{0x0865,0x3210},{0x087b,0x0000},{0x087c,0xff00},
-                                     {0x087d,0x0000},{0x087e,0x0000},{0x0801,0x0100},{0x0802,0x0100},
-                                     {0x0A20,0x2040},{0x0A21,0x2040},{0x0A22,0x2040},{0x0A23,0x2040},
-                                     {0x0A24,0x2040},{0x0A28,0x2040},{0x0A29,0x2040},{0x20A0,0x1940},
-                                     {0x20C0,0x1940},{0x20E0,0x1940},{0x130c,0x0050},{0xFFFF,0xABCD}};
+    CONST_T uint16 chipData0[][2] ={{0x1B24, 0x0000},{0x1B25, 0x0000},{0x1B26, 0x0000},{0x1B27, 0x0000},
+                                    {0x207F, 0x0007},{0x207E, 0x000B},{0x2076, 0x1A00},{0x207E, 0x000A},
+                                    {0x2078, 0x1D22},{0x207F, 0x0000},{0x205F, 0x0007},{0x205E, 0x000A},
+                                    {0x2059, 0x0000},{0x205A, 0x0000},{0x205B, 0x0000},{0x205C, 0x0000},
+                                    {0x205E, 0x000B},{0x2055, 0x0500},{0x2056, 0x0000},{0x2057, 0x0000},
+                                    {0x2058, 0x0000},{0x205F, 0x0000},{0x1362, 0x0115},{0x1363, 0x0002},
+                                    {0x1363, 0x0000},{0x133F, 0x0030},{0x133E, 0x000E},{0x221F, 0x0007},
+                                    {0x221E, 0x0040},{0x2218, 0x0000},{0x221F, 0x0007},{0x221E, 0x002C},
+                                    {0x2218, 0x008B},{0x221F, 0x0005},{0x2205, 0x8B6E},{0x2206, 0x0000},
+                                    {0x220F, 0x0100},{0x2205, 0xFFF6},{0x2206, 0x0080},{0x2205, 0x8000},
+                                    {0x2206, 0x0280},{0x2206, 0x1EF7},{0x2206, 0x00E0},{0x2206, 0xFFF7},
+                                    {0x2206, 0xA080},{0x2206, 0x02AE},{0x2206, 0xF602},{0x2206, 0x8046},
+                                    {0x2206, 0x0201},{0x2206, 0x5002},{0x2206, 0x0163},{0x2206, 0x0280},
+                                    {0x2206, 0xCD02},{0x2206, 0x0179},{0x2206, 0xAEE7},{0x2206, 0xBF80},
+                                    {0x2206, 0x61D7},{0x2206, 0x8580},{0x2206, 0xD06C},{0x2206, 0x0229},
+                                    {0x2206, 0x71EE},{0x2206, 0x8B64},{0x2206, 0x00EE},{0x2206, 0x8570},
+                                    {0x2206, 0x00EE},{0x2206, 0x8571},{0x2206, 0x00EE},{0x2206, 0x8AFC},
+                                    {0x2206, 0x07EE},{0x2206, 0x8AFD},{0x2206, 0x73EE},{0x2206, 0xFFF6},
+                                    {0x2206, 0x00EE},{0x2206, 0xFFF7},{0x2206, 0xFC04},{0x2206, 0xBF85},
+                                    {0x2206, 0x80D0},{0x2206, 0x6C02},{0x2206, 0x2978},{0x2206, 0xE0E0},
+                                    {0x2206, 0xE4E1},{0x2206, 0xE0E5},{0x2206, 0x5806},{0x2206, 0x68C0},
+                                    {0x2206, 0xD1D2},{0x2206, 0xE4E0},{0x2206, 0xE4E5},{0x2206, 0xE0E5},
+                                    {0x2206, 0x0425},{0x2206, 0x0807},{0x2206, 0x2640},{0x2206, 0x7227},
+                                    {0x2206, 0x267E},{0x2206, 0x2804},{0x2206, 0xB729},{0x2206, 0x2576},
+                                    {0x2206, 0x2A68},{0x2206, 0xE52B},{0x2206, 0xAD00},{0x2206, 0x2CDB},
+                                    {0x2206, 0xF02D},{0x2206, 0x67BB},{0x2206, 0x2E7B},{0x2206, 0x0F2F},
+                                    {0x2206, 0x7365},{0x2206, 0x31AC},{0x2206, 0xCC32},{0x2206, 0x2300},
+                                    {0x2206, 0x332D},{0x2206, 0x1734},{0x2206, 0x7F52},{0x2206, 0x3510},
+                                    {0x2206, 0x0036},{0x2206, 0x1000},{0x2206, 0x3710},{0x2206, 0x0038},
+                                    {0x2206, 0x7FCE},{0x2206, 0x3CE5},{0x2206, 0xF73D},{0x2206, 0x3DA4},
+                                    {0x2206, 0x6530},{0x2206, 0x3E67},{0x2206, 0x0053},{0x2206, 0x69D2},
+                                    {0x2206, 0x0F6A},{0x2206, 0x012C},{0x2206, 0x6C2B},{0x2206, 0x136E},
+                                    {0x2206, 0xE100},{0x2206, 0x6F12},{0x2206, 0xF771},{0x2206, 0x006B},
+                                    {0x2206, 0x7306},{0x2206, 0xEB74},{0x2206, 0x94C7},{0x2206, 0x7698},
+                                    {0x2206, 0x0A77},{0x2206, 0x5000},{0x2206, 0x788A},{0x2206, 0x1579},
+                                    {0x2206, 0x7F6F},{0x2206, 0x7A06},{0x2206, 0xA6F8},{0x2206, 0xE08B},
+                                    {0x2206, 0x8EAD},{0x2206, 0x2006},{0x2206, 0x0280},{0x2206, 0xDC02},
+                                    {0x2206, 0x8109},{0x2206, 0xFC04},{0x2206, 0xF8F9},{0x2206, 0xE08B},
+                                    {0x2206, 0x87AD},{0x2206, 0x2022},{0x2206, 0xE0E2},{0x2206, 0x00E1},
+                                    {0x2206, 0xE201},{0x2206, 0xAD20},{0x2206, 0x11E2},{0x2206, 0xE022},
+                                    {0x2206, 0xE3E0},{0x2206, 0x23AD},{0x2206, 0x3908},{0x2206, 0x5AC0},
+                                    {0x2206, 0x9F04},{0x2206, 0xF724},{0x2206, 0xAE02},{0x2206, 0xF624},
+                                    {0x2206, 0xE4E2},{0x2206, 0x00E5},{0x2206, 0xE201},{0x2206, 0xFDFC},
+                                    {0x2206, 0x04F8},{0x2206, 0xF9E0},{0x2206, 0x8B85},{0x2206, 0xAD25},
+                                    {0x2206, 0x48E0},{0x2206, 0x8AD2},{0x2206, 0xE18A},{0x2206, 0xD37C},
+                                    {0x2206, 0x0000},{0x2206, 0x9E35},{0x2206, 0xEE8A},{0x2206, 0xD200},
+                                    {0x2206, 0xEE8A},{0x2206, 0xD300},{0x2206, 0xE08A},{0x2206, 0xFCE1},
+                                    {0x2206, 0x8AFD},{0x2206, 0xE285},{0x2206, 0x70E3},{0x2206, 0x8571},
+                                    {0x2206, 0x0229},{0x2206, 0x3AAD},{0x2206, 0x2012},{0x2206, 0xEE8A},
+                                    {0x2206, 0xD203},{0x2206, 0xEE8A},{0x2206, 0xD3B7},{0x2206, 0xEE85},
+                                    {0x2206, 0x7000},{0x2206, 0xEE85},{0x2206, 0x7100},{0x2206, 0xAE11},
+                                    {0x2206, 0x15E6},{0x2206, 0x8570},{0x2206, 0xE785},{0x2206, 0x71AE},
+                                    {0x2206, 0x08EE},{0x2206, 0x8570},{0x2206, 0x00EE},{0x2206, 0x8571},
+                                    {0x2206, 0x00FD},{0x2206, 0xFC04},{0x2206, 0xCCE2},{0x2206, 0x0000},
+                                    {0x2205, 0xE142},{0x2206, 0x0701},{0x2205, 0xE140},{0x2206, 0x0405},
+                                    {0x220F, 0x0000},{0x221F, 0x0000},{0x221F, 0x0005},{0x2205, 0x85E4},
+                                    {0x2206, 0x8A14},{0x2205, 0x85E7},{0x2206, 0x7F6E},{0x221F, 0x0007},
+                                    {0x221E, 0x002D},{0x2218, 0xF030},{0x221E, 0x0023},{0x2216, 0x0005},
+                                    {0x2215, 0x005C},{0x2219, 0x0068},{0x2215, 0x0082},{0x2219, 0x000A},
+                                    {0x2215, 0x00A1},{0x2219, 0x0081},{0x2215, 0x00AF},{0x2219, 0x0080},
+                                    {0x2215, 0x00D4},{0x2219, 0x0000},{0x2215, 0x00E4},{0x2219, 0x0081},
+                                    {0x2215, 0x00E7},{0x2219, 0x0080},{0x2215, 0x010D},{0x2219, 0x0083},
+                                    {0x2215, 0x0118},{0x2219, 0x0083},{0x2215, 0x0120},{0x2219, 0x0082},
+                                    {0x2215, 0x019C},{0x2219, 0x0081},{0x2215, 0x01A4},{0x2219, 0x0080},
+                                    {0x2215, 0x01CD},{0x2219, 0x0000},{0x2215, 0x01DD},{0x2219, 0x0081},
+                                    {0x2215, 0x01E0},{0x2219, 0x0080},{0x2215, 0x0147},{0x2219, 0x0096},
+                                    {0x2216, 0x0000},{0x221E, 0x002D},{0x2218, 0xF010},{0x221F, 0x0005},
+                                    {0x2205, 0x8B84},{0x2206, 0x0062},{0x221F, 0x0000},{0x220D, 0x0003},
+                                    {0x220E, 0x0015},{0x220D, 0x4003},{0x220E, 0x0006},{0x133F, 0x0010},
+                                    {0x133E, 0x0FFE},{0x12A4, 0x380A},{0x1303, 0x0367},{0x1304, 0x7777},
+                                    {0x1203, 0xFF00},{0x1200, 0x7FC4},{0x121D, 0x7D16},{0x121E, 0x03E8},
+                                    {0x121F, 0x024E},{0x1220, 0x0230},{0x1221, 0x0244},{0x1222, 0x0226},
+                                    {0x1223, 0x024E},{0x1224, 0x0230},{0x1225, 0x0244},{0x1226, 0x0226},
+                                    {0x1227, 0x00C0},{0x1228, 0x00B4},{0x122F, 0x00C0},{0x1230, 0x00B4},
+                                    {0x0208, 0x03E8},{0x0209, 0x03E8},{0x020A, 0x03E8},{0x020B, 0x03E8},
+                                    {0x020C, 0x03E8},{0x020D, 0x03E8},{0x020E, 0x03E8},{0x020F, 0x03E8},
+                                    {0x0210, 0x03E8},{0x0211, 0x03E8},{0x0212, 0x03E8},{0x0213, 0x03E8},
+                                    {0x0214, 0x03E8},{0x0215, 0x03E8},{0x0216, 0x03E8},{0x0217, 0x03E8},
+                                    {0x0865, 0x3210},{0x087B, 0x0000},{0x087C, 0xFF00},{0x087D, 0x0000},
+                                    {0x087E, 0x0000},{0x0801, 0x0100},{0x0802, 0x0100},{0x0A20, 0x2040},
+                                    {0x0A21, 0x2040},{0x0A22, 0x2040},{0x0A23, 0x2040},{0x0A24, 0x2040},
+                                    {0x0A28, 0x2040},{0x0A29, 0x2040},{0x20A0, 0x0940},{0x20C0, 0x0940},
+                                    {0x20E0, 0x0940},{0x1B03, 0x0876},{0xFFFF, 0xABCD}};
 
 
-    CONST_T uint16 chipData1[][2] ={{0x1b24,0x0000},{0x1b25,0x0000},{0x1b26,0x0000},{0x1b27,0x0000},
-                                     {0x133f,0x0030},{0x133e,0x000e},{0x221f,0x0007},{0x221e,0x0048},
-                                     {0x2219,0x4012},{0x221f,0x0003},{0x2201,0x3554},{0x2202,0x63e8},
-                                     {0x2203,0x99c2},{0x2204,0x0113},{0x2205,0x303e},{0x220d,0x0207},
-                                     {0x220e,0xe100},{0x221f,0x0007},{0x221e,0x0040},{0x2218,0x0000},
-                                     {0x221f,0x0007},{0x221e,0x002c},{0x2218,0x008b},{0x221f,0x0005},
-                                     {0x2205,0xfff6},{0x2206,0x0080},{0x221f,0x0005},{0x2205,0x8000},
-                                     {0x2206,0x0280},{0x2206,0x2bf7},{0x2206,0x00e0},{0x2206,0xfff7},
-                                     {0x2206,0xa080},{0x2206,0x02ae},{0x2206,0xf602},{0x2206,0x804e},
-                                     {0x2206,0x0201},{0x2206,0x5002},{0x2206,0x0163},{0x2206,0x0201},
-                                     {0x2206,0x79e0},{0x2206,0x8b8c},{0x2206,0xe18b},{0x2206,0x8d1e},
-                                     {0x2206,0x01e1},{0x2206,0x8b8e},{0x2206,0x1e01},{0x2206,0xa000},
-                                     {0x2206,0xe4ae},{0x2206,0xd8bf},{0x2206,0x8b88},{0x2206,0xec00},
-                                     {0x2206,0x19a9},{0x2206,0x8b90},{0x2206,0xf9ee},{0x2206,0xfff6},
-                                     {0x2206,0x00ee},{0x2206,0xfff7},{0x2206,0xfce0},{0x2206,0xe140},
-                                     {0x2206,0xe1e1},{0x2206,0x41f7},{0x2206,0x2ff6},{0x2206,0x28e4},
-                                     {0x2206,0xe140},{0x2206,0xe5e1},{0x2206,0x4104},{0x2206,0xf8fa},
-                                     {0x2206,0xef69},{0x2206,0xe08b},{0x2206,0x86ac},{0x2206,0x201a},
-                                     {0x2206,0xbf80},{0x2206,0x77d0},{0x2206,0x6c02},{0x2206,0x2978},
-                                     {0x2206,0xe0e0},{0x2206,0xe4e1},{0x2206,0xe0e5},{0x2206,0x5806},
-                                     {0x2206,0x68c0},{0x2206,0xd1d2},{0x2206,0xe4e0},{0x2206,0xe4e5},
-                                     {0x2206,0xe0e5},{0x2206,0xef96},{0x2206,0xfefc},{0x2206,0x0425},
-                                     {0x2206,0x0807},{0x2206,0x2640},{0x2206,0x7227},{0x2206,0x267e},
-                                     {0x2206,0x2804},{0x2206,0xb729},{0x2206,0x2576},{0x2206,0x2a68},
-                                     {0x2206,0xe52b},{0x2206,0xad00},{0x2206,0x2cdb},{0x2206,0xf02d},
-                                     {0x2206,0x67bb},{0x2206,0x2e7b},{0x2206,0x0f2f},{0x2206,0x7365},
-                                     {0x2206,0x31ac},{0x2206,0xcc32},{0x2206,0x2300},{0x2206,0x332d},
-                                     {0x2206,0x1734},{0x2206,0x7f52},{0x2206,0x3510},{0x2206,0x0036},
-                                     {0x2206,0x0600},{0x2206,0x370c},{0x2206,0xc038},{0x2206,0x7fce},
-                                     {0x2206,0x3ce5},{0x2206,0xf73d},{0x2206,0x3da4},{0x2206,0x6530},
-                                     {0x2206,0x3e67},{0x2206,0x0053},{0x2206,0x69d2},{0x2206,0x0f6a},
-                                     {0x2206,0x012c},{0x2206,0x6c2b},{0x2206,0x136e},{0x2206,0xe100},
-                                     {0x2206,0x6f12},{0x2206,0xf771},{0x2206,0x006b},{0x2206,0x7306},
-                                     {0x2206,0xeb74},{0x2206,0x94c7},{0x2206,0x7698},{0x2206,0x0a77},
-                                     {0x2206,0x5000},{0x2206,0x788a},{0x2206,0x1579},{0x2206,0x7f6f},
-                                     {0x2206,0x7a06},{0x2206,0xa600},{0x2201,0x0701},{0x2200,0x0405},
-                                     {0x221f,0x0000},{0x2200,0x1340},{0x221f,0x0000},{0x133f,0x0010},
-                                     {0x133e,0x0ffe},{0x1203,0xff00},{0x1200,0x7fc4},{0x0900,0x0000},
-                                     {0x0901,0x0000},{0x0902,0x0000},{0x0903,0x0000},{0x0865,0x3210},
-                                     {0x087b,0x0000},{0x087c,0xff00},{0x087d,0x0000},{0x087e,0x0000},
-                                     {0x0801,0x0100},{0x0802,0x0100},{0x0A20,0x2040},{0x0A21,0x2040},
-                                     {0x0A22,0x2040},{0x0A23,0x2040},{0x0A24,0x2040},{0x0A25,0x2040},
-                                     {0x0A26,0x2040},{0x0A27,0x2040},{0x0A28,0x2040},{0x0A29,0x2040},
-                                     {0x130c,0x0050},{0xFFFF,0xABCD}};
+    CONST_T uint16 chipData1[][2] ={{0x1B24, 0x0000},{0x1B25, 0x0000},{0x1B26, 0x0000},{0x1B27, 0x0000},
+                                    {0x207F, 0x0007},{0x207E, 0x000B},{0x2076, 0x1A00},{0x207E, 0x000A},
+                                    {0x2078, 0x1D22},{0x207F, 0x0000},{0x205F, 0x0007},{0x205E, 0x000A},
+                                    {0x2059, 0x0000},{0x205A, 0x0000},{0x205B, 0x0000},{0x205C, 0x0000},
+                                    {0x205E, 0x000B},{0x2055, 0x0500},{0x2056, 0x0000},{0x2057, 0x0000},
+                                    {0x2058, 0x0000},{0x205F, 0x0000},{0x1362, 0x0115},{0x1363, 0x0002},
+                                    {0x1363, 0x0000},{0x133F, 0x0030},{0x133E, 0x000E},{0x221F, 0x0007},
+                                    {0x221E, 0x0040},{0x2218, 0x0000},{0x221F, 0x0007},{0x221E, 0x002C},
+                                    {0x2218, 0x008B},{0x221F, 0x0005},{0x2205, 0x8B6E},{0x2206, 0x0000},
+                                    {0x220F, 0x0100},{0x2205, 0xFFF6},{0x2206, 0x0080},{0x2205, 0x8000},
+                                    {0x2206, 0x0280},{0x2206, 0x1EF7},{0x2206, 0x00E0},{0x2206, 0xFFF7},
+                                    {0x2206, 0xA080},{0x2206, 0x02AE},{0x2206, 0xF602},{0x2206, 0x8046},
+                                    {0x2206, 0x0201},{0x2206, 0x5002},{0x2206, 0x0163},{0x2206, 0x0280},
+                                    {0x2206, 0xCD02},{0x2206, 0x0179},{0x2206, 0xAEE7},{0x2206, 0xBF80},
+                                    {0x2206, 0x61D7},{0x2206, 0x8580},{0x2206, 0xD06C},{0x2206, 0x0229},
+                                    {0x2206, 0x71EE},{0x2206, 0x8B64},{0x2206, 0x00EE},{0x2206, 0x8570},
+                                    {0x2206, 0x00EE},{0x2206, 0x8571},{0x2206, 0x00EE},{0x2206, 0x8AFC},
+                                    {0x2206, 0x07EE},{0x2206, 0x8AFD},{0x2206, 0x73EE},{0x2206, 0xFFF6},
+                                    {0x2206, 0x00EE},{0x2206, 0xFFF7},{0x2206, 0xFC04},{0x2206, 0xBF85},
+                                    {0x2206, 0x80D0},{0x2206, 0x6C02},{0x2206, 0x2978},{0x2206, 0xE0E0},
+                                    {0x2206, 0xE4E1},{0x2206, 0xE0E5},{0x2206, 0x5806},{0x2206, 0x68C0},
+                                    {0x2206, 0xD1D2},{0x2206, 0xE4E0},{0x2206, 0xE4E5},{0x2206, 0xE0E5},
+                                    {0x2206, 0x0425},{0x2206, 0x0807},{0x2206, 0x2640},{0x2206, 0x7227},
+                                    {0x2206, 0x267E},{0x2206, 0x2804},{0x2206, 0xB729},{0x2206, 0x2576},
+                                    {0x2206, 0x2A68},{0x2206, 0xE52B},{0x2206, 0xAD00},{0x2206, 0x2CDB},
+                                    {0x2206, 0xF02D},{0x2206, 0x67BB},{0x2206, 0x2E7B},{0x2206, 0x0F2F},
+                                    {0x2206, 0x7365},{0x2206, 0x31AC},{0x2206, 0xCC32},{0x2206, 0x2300},
+                                    {0x2206, 0x332D},{0x2206, 0x1734},{0x2206, 0x7F52},{0x2206, 0x3510},
+                                    {0x2206, 0x0036},{0x2206, 0x1000},{0x2206, 0x3710},{0x2206, 0x0038},
+                                    {0x2206, 0x7FCE},{0x2206, 0x3CE5},{0x2206, 0xF73D},{0x2206, 0x3DA4},
+                                    {0x2206, 0x6530},{0x2206, 0x3E67},{0x2206, 0x0053},{0x2206, 0x69D2},
+                                    {0x2206, 0x0F6A},{0x2206, 0x012C},{0x2206, 0x6C2B},{0x2206, 0x136E},
+                                    {0x2206, 0xE100},{0x2206, 0x6F12},{0x2206, 0xF771},{0x2206, 0x006B},
+                                    {0x2206, 0x7306},{0x2206, 0xEB74},{0x2206, 0x94C7},{0x2206, 0x7698},
+                                    {0x2206, 0x0A77},{0x2206, 0x5000},{0x2206, 0x788A},{0x2206, 0x1579},
+                                    {0x2206, 0x7F6F},{0x2206, 0x7A06},{0x2206, 0xA6F8},{0x2206, 0xE08B},
+                                    {0x2206, 0x8EAD},{0x2206, 0x2006},{0x2206, 0x0280},{0x2206, 0xDC02},
+                                    {0x2206, 0x8109},{0x2206, 0xFC04},{0x2206, 0xF8F9},{0x2206, 0xE08B},
+                                    {0x2206, 0x87AD},{0x2206, 0x2022},{0x2206, 0xE0E2},{0x2206, 0x00E1},
+                                    {0x2206, 0xE201},{0x2206, 0xAD20},{0x2206, 0x11E2},{0x2206, 0xE022},
+                                    {0x2206, 0xE3E0},{0x2206, 0x23AD},{0x2206, 0x3908},{0x2206, 0x5AC0},
+                                    {0x2206, 0x9F04},{0x2206, 0xF724},{0x2206, 0xAE02},{0x2206, 0xF624},
+                                    {0x2206, 0xE4E2},{0x2206, 0x00E5},{0x2206, 0xE201},{0x2206, 0xFDFC},
+                                    {0x2206, 0x04F8},{0x2206, 0xF9E0},{0x2206, 0x8B85},{0x2206, 0xAD25},
+                                    {0x2206, 0x48E0},{0x2206, 0x8AD2},{0x2206, 0xE18A},{0x2206, 0xD37C},
+                                    {0x2206, 0x0000},{0x2206, 0x9E35},{0x2206, 0xEE8A},{0x2206, 0xD200},
+                                    {0x2206, 0xEE8A},{0x2206, 0xD300},{0x2206, 0xE08A},{0x2206, 0xFCE1},
+                                    {0x2206, 0x8AFD},{0x2206, 0xE285},{0x2206, 0x70E3},{0x2206, 0x8571},
+                                    {0x2206, 0x0229},{0x2206, 0x3AAD},{0x2206, 0x2012},{0x2206, 0xEE8A},
+                                    {0x2206, 0xD203},{0x2206, 0xEE8A},{0x2206, 0xD3B7},{0x2206, 0xEE85},
+                                    {0x2206, 0x7000},{0x2206, 0xEE85},{0x2206, 0x7100},{0x2206, 0xAE11},
+                                    {0x2206, 0x15E6},{0x2206, 0x8570},{0x2206, 0xE785},{0x2206, 0x71AE},
+                                    {0x2206, 0x08EE},{0x2206, 0x8570},{0x2206, 0x00EE},{0x2206, 0x8571},
+                                    {0x2206, 0x00FD},{0x2206, 0xFC04},{0x2206, 0xCCE2},{0x2206, 0x0000},
+                                    {0x2205, 0xE142},{0x2206, 0x0701},{0x2205, 0xE140},{0x2206, 0x0405},
+                                    {0x220F, 0x0000},{0x221F, 0x0000},{0x221F, 0x0005},{0x2205, 0x85E4},
+                                    {0x2206, 0x8A14},{0x2205, 0x85E7},{0x2206, 0x7F6E},{0x221F, 0x0007},
+                                    {0x221E, 0x002D},{0x2218, 0xF030},{0x221E, 0x0023},{0x2216, 0x0005},
+                                    {0x2215, 0x005C},{0x2219, 0x0068},{0x2215, 0x0082},{0x2219, 0x000A},
+                                    {0x2215, 0x00A1},{0x2219, 0x0081},{0x2215, 0x00AF},{0x2219, 0x0080},
+                                    {0x2215, 0x00D4},{0x2219, 0x0000},{0x2215, 0x00E4},{0x2219, 0x0081},
+                                    {0x2215, 0x00E7},{0x2219, 0x0080},{0x2215, 0x010D},{0x2219, 0x0083},
+                                    {0x2215, 0x0118},{0x2219, 0x0083},{0x2215, 0x0120},{0x2219, 0x0082},
+                                    {0x2215, 0x019C},{0x2219, 0x0081},{0x2215, 0x01A4},{0x2219, 0x0080},
+                                    {0x2215, 0x01CD},{0x2219, 0x0000},{0x2215, 0x01DD},{0x2219, 0x0081},
+                                    {0x2215, 0x01E0},{0x2219, 0x0080},{0x2215, 0x0147},{0x2219, 0x0096},
+                                    {0x2216, 0x0000},{0x221E, 0x002D},{0x2218, 0xF010},{0x221F, 0x0005},
+                                    {0x2205, 0x8B84},{0x2206, 0x0062},{0x221F, 0x0000},{0x220D, 0x0003},
+                                    {0x220E, 0x0015},{0x220D, 0x4003},{0x220E, 0x0006},{0x133F, 0x0010},
+                                    {0x133E, 0x0FFE},{0x12A4, 0x380A},{0x1303, 0x0367},{0x1304, 0x7777},
+                                    {0x1203, 0xFF00},{0x1200, 0x7FC4},{0x0865, 0x3210},{0x087B, 0x0000},
+                                    {0x087C, 0xFF00},{0x087D, 0x0000},{0x087E, 0x0000},{0x0801, 0x0100},
+                                    {0x0802, 0x0100},{0x0A20, 0x2040},{0x0A21, 0x2040},{0x0A22, 0x2040},
+                                    {0x0A23, 0x2040},{0x0A24, 0x2040},{0x0A25, 0x2040},{0x0A26, 0x2040},
+                                    {0x0A27, 0x2040},{0x0A28, 0x2040},{0x0A29, 0x2040},{0x1B03, 0x0876},
+                                    {0xFFFF, 0xABCD}};
 
 
     if ((retVal = rtl8370_setAsicReg(0x13C2,0x0249))!=RT_ERR_OK)
@@ -11286,24 +11218,6 @@ static rtk_api_ret_t _rtk_switch_init2(void)
                     if (5 == cnt)
                         return RT_ERR_BUSYWAIT_TIMEOUT;
         
-                    if ((retVal = rtl8370_setAsicReg(RTK_INDRECT_ACCESS_WRITE_DATA, 0)) !=  RT_ERR_OK)
-                        return retVal;
-                    if ((retVal = rtl8370_setAsicReg(RTK_INDRECT_ACCESS_ADDRESS, PHY_PAGE_ADDRESS)) !=  RT_ERR_OK)
-                        return retVal;    
-                    if ((retVal = rtl8370_setAsicReg(RTK_INDRECT_ACCESS_CRTL, RTK_CMD_MASK | RTK_RW_MASK)) !=  RT_ERR_OK)
-                        return retVal; 
-        
-                    cnt = 0;
-                    busyFlag = 1;
-                    while (busyFlag&&cnt<5)
-                    {
-                        cnt++;
-                        if ((retVal = rtl8370_getAsicRegBit(RTK_INDRECT_ACCESS_STATUS, RTK_PHY_BUSY_OFFSET,&busyFlag)) !=  RT_ERR_OK)
-                            return retVal;
-                    }
-                    if (5 == cnt)
-                        return RT_ERR_BUSYWAIT_TIMEOUT;
-                    
                     if ((retVal = rtl8370_setAsicReg(RTK_INDRECT_ACCESS_WRITE_DATA, (uint32)chipData0[index][1])) !=  RT_ERR_OK)
                         return retVal;
                     if ((retVal = rtl8370_setAsicReg(RTK_INDRECT_ACCESS_ADDRESS, (uint32)chipData0[index][0])) !=  RT_ERR_OK)
@@ -11335,24 +11249,6 @@ static rtk_api_ret_t _rtk_switch_init2(void)
                     if (5 == cnt)
                         return RT_ERR_BUSYWAIT_TIMEOUT;
       
-                    if ((retVal = rtl8370_setAsicReg(RTK_INDRECT_ACCESS_WRITE_DATA, 0)) !=  RT_ERR_OK)
-                        return retVal;
-                    if ((retVal = rtl8370_setAsicReg(RTK_INDRECT_ACCESS_ADDRESS, PHY_PAGE_ADDRESS)) !=  RT_ERR_OK)
-                        return retVal;    
-                    if ((retVal = rtl8370_setAsicReg(RTK_INDRECT_ACCESS_CRTL, RTK_CMD_MASK | RTK_RW_MASK)) !=  RT_ERR_OK)
-                        return retVal; 
-        
-                    cnt = 0;
-                    busyFlag = 1;
-                    while (busyFlag&&cnt<5)
-                    {
-                        cnt++;
-                        if ((retVal = rtl8370_getAsicRegBit(RTK_INDRECT_ACCESS_STATUS, RTK_PHY_BUSY_OFFSET,&busyFlag)) !=  RT_ERR_OK)
-                            return retVal;
-                    }
-                    if (5 == cnt)
-                        return RT_ERR_BUSYWAIT_TIMEOUT;
-        
                     if ((retVal = rtl8370_setAsicReg(RTK_INDRECT_ACCESS_WRITE_DATA, (uint32)chipData1[index][1])) !=  RT_ERR_OK)
                         return retVal;
                     if ((retVal = rtl8370_setAsicReg(RTK_INDRECT_ACCESS_ADDRESS, (uint32)chipData1[index][0])) !=  RT_ERR_OK)
@@ -11384,24 +11280,6 @@ static rtk_api_ret_t _rtk_switch_init2(void)
                     if (5 == cnt)
                         return RT_ERR_BUSYWAIT_TIMEOUT;
       
-                    if ((retVal = rtl8370_setAsicReg(RTK_INDRECT_ACCESS_WRITE_DATA, 0)) !=  RT_ERR_OK)
-                        return retVal;
-                    if ((retVal = rtl8370_setAsicReg(RTK_INDRECT_ACCESS_ADDRESS, PHY_PAGE_ADDRESS)) !=  RT_ERR_OK)
-                        return retVal;    
-                    if ((retVal = rtl8370_setAsicReg(RTK_INDRECT_ACCESS_CRTL, RTK_CMD_MASK | RTK_RW_MASK)) !=  RT_ERR_OK)
-                        return retVal; 
-        
-                    cnt = 0;
-                    busyFlag = 1;
-                    while (busyFlag&&cnt<5)
-                    {
-                        cnt++;
-                        if ((retVal = rtl8370_getAsicRegBit(RTK_INDRECT_ACCESS_STATUS, RTK_PHY_BUSY_OFFSET,&busyFlag)) !=  RT_ERR_OK)
-                            return retVal;
-                    }
-                    if (5 == cnt)
-                        return RT_ERR_BUSYWAIT_TIMEOUT;
-        
                     if ((retVal = rtl8370_setAsicReg(RTK_INDRECT_ACCESS_WRITE_DATA, (uint32)chipData1[index][1])) !=  RT_ERR_OK)
                         return retVal;
                     if ((retVal = rtl8370_setAsicReg(RTK_INDRECT_ACCESS_ADDRESS, (uint32)chipData1[index][0])) !=  RT_ERR_OK)
@@ -11437,8 +11315,8 @@ static rtk_api_ret_t _rtk_switch_init2(void)
  * Output:
  *      None
  * Return:
- *      RT_ERR_OK              - set shared meter successfully
- *      RT_ERR_FAILED          - FAILED to iset shared meter
+ *      RT_ERR_OK              - OK
+ *      RT_ERR_FAILED          - FAILED
  *      RT_ERR_SMI             - SMI access error
  * Note:
  *      The API can set chip registers to default configuration for different release chip model.
@@ -11465,9 +11343,13 @@ rtk_api_ret_t rtk_switch_init(void)
         return retVal; 
 
     if (0 == regData1)
-    {  
+    {
+#if 0
         if ((retVal = _rtk_switch_init0()) != RT_ERR_OK)
             return retVal;
+#else
+        return RT_ERR_CHIP_NOT_SUPPORTED;
+#endif
     }
     else if (1 == regData1)
     {
@@ -11500,8 +11382,8 @@ rtk_api_ret_t rtk_switch_init(void)
  * Output:
  *      None
  * Return:
- *      RT_ERR_OK              - set shared meter successfully
- *      RT_ERR_FAILED          - FAILED to iset shared meter
+ *      RT_ERR_OK              - OK
+ *      RT_ERR_FAILED          - FAILED
  *      RT_ERR_SMI             - SMI access error
  *      RT_ERR_INPUT - Invalid input parameters.
  * Note:
@@ -11559,8 +11441,8 @@ rtk_api_ret_t rtk_switch_maxPktLen_get(rtk_data_t *pLen)
  * Output:
  *      None 
  * Return:
- *      RT_ERR_OK              - set shared meter successfully
- *      RT_ERR_FAILED          - FAILED to iset shared meter
+ *      RT_ERR_OK              - OK
+ *      RT_ERR_FAILED          - FAILED
  *      RT_ERR_SMI             - SMI access error
  *      RT_ERR_ENABLE - Invalid enable input.
  * Note:
@@ -11577,20 +11459,21 @@ rtk_api_ret_t rtk_switch_greenEthernet_set(rtk_enable_t enable)
 #ifndef MDC_MDIO_OPERATION 
     uint32 busyFlag,cnt;
 #endif
+    CONST_T uint32 Para0En[][2] = {{0x133f,0x0030},{0x133e,0x000e},{0x221F,0x0005},{0x2205,0x80BD},
+                                   {0x2206,0x8A15},{0x2205,0x80C0},{0x2206,0x7F6F},{0x221F,0x0000},
+                                   {0x133f,0x0010},{0x133e,0x0ffe},{0xFFFF, 0xABCD}};
     
-    CONST_T uint32 Para0En[][2] = {{0x133f,0x0030},{0x133e,0x000e},{0x221F,0x0003},{0x2218,0x8A15},
+    CONST_T uint32 Para0Dis[][2] = {{0x133f,0x0030},{0x133e,0x000e},{0x221F,0x0005},{0x2205,0x80BD},
+                                   {0x2206,0x8A14},{0x2205,0x80C0},{0x2206,0x7F6E},{0x221F,0x0000},
+                                   {0x133f,0x0010},{0x133e,0x0ffe},{0xFFFF, 0xABCD}};
+    
+    CONST_T uint32 Para1En[][2] = {{0x133f,0x0030},{0x133e,0x000e},{0x221F,0x0005},{0x2201,0x0701},
+                                   {0x2205,0x85E4},{0x2206,0x8A15},{0x2205,0x85E7},{0x2206,0x7F6F},
                                    {0x221F,0x0000},{0x133f,0x0010},{0x133e,0x0ffe},{0xFFFF, 0xABCD}};
     
-    CONST_T uint32 Para0Dis[][2] = {{0x133f,0x0030},{0x133e,0x000e},{0x221F,0x0003},{0x2218,0x8A14},
+    CONST_T uint32 Para1Dis[][2] = {{0x133f,0x0030},{0x133e,0x000e},{0x221F,0x0005},{0x2201,0x0601},
+                                    {0x2205,0x85E4},{0x2206,0x8A14},{0x2205,0x85E7},{0x2206,0x7F6E},
                                     {0x221F,0x0000},{0x133f,0x0010},{0x133e,0x0ffe},{0xFFFF, 0xABCD}};
-
-    CONST_T uint32 Para1En[][2] = {{0x133f,0x0030},{0x133e,0x000e},{0x221F,0x0005},{0x2205,0x80D8},
-                                   {0x2206,0x8A15},{0x221F,0x0000},{0x133f,0x0010},{0x133e,0x0ffe},
-                                   {0xFFFF, 0xABCD}};
-    
-    CONST_T uint32 Para1Dis[][2] = {{0x133f,0x0030},{0x133e,0x000E},{0x221F,0x0005},{0x2205,0x80D8},
-                                    {0x2206,0x8A14},{0x221F,0x0000},{0x133f,0x0010},{0x133e,0x0ffe},
-                                    {0xFFFF, 0xABCD}};
 
 
 
@@ -11677,24 +11560,6 @@ rtk_api_ret_t rtk_switch_greenEthernet_set(rtk_enable_t enable)
                     if (5 == cnt)
                         return RT_ERR_BUSYWAIT_TIMEOUT;
     
-                    if ((retVal = rtl8370_setAsicReg(RTK_INDRECT_ACCESS_WRITE_DATA, 0)) !=  RT_ERR_OK)
-                        return retVal;
-                    if ((retVal = rtl8370_setAsicReg(RTK_INDRECT_ACCESS_ADDRESS, PHY_PAGE_ADDRESS)) !=  RT_ERR_OK)
-                        return retVal; 
-                    if ((retVal = rtl8370_setAsicReg(RTK_INDRECT_ACCESS_CRTL, RTK_CMD_MASK | RTK_RW_MASK)) !=  RT_ERR_OK)
-                        return retVal;
-    
-                    cnt = 0;
-                    busyFlag = 1;
-                    while (busyFlag&&cnt<5)
-                    {
-                        cnt++;
-                        if ((retVal = rtl8370_getAsicRegBit(RTK_INDRECT_ACCESS_STATUS, RTK_PHY_BUSY_OFFSET,&busyFlag)) !=  RT_ERR_OK)
-                            return retVal;
-                    }
-                    if (5 == cnt)
-                        return RT_ERR_BUSYWAIT_TIMEOUT;
-                
                     if ((retVal = rtl8370_setAsicReg(RTK_INDRECT_ACCESS_WRITE_DATA, Para0En[index][1])) !=  RT_ERR_OK)
                         return retVal;
                     if ((retVal = rtl8370_setAsicReg(RTK_INDRECT_ACCESS_ADDRESS, Para0En[index][0])) !=  RT_ERR_OK)
@@ -11728,24 +11593,6 @@ rtk_api_ret_t rtk_switch_greenEthernet_set(rtk_enable_t enable)
                     if (5 == cnt)
                         return RT_ERR_BUSYWAIT_TIMEOUT;
     
-                    if ((retVal = rtl8370_setAsicReg(RTK_INDRECT_ACCESS_WRITE_DATA, 0)) !=  RT_ERR_OK)
-                        return retVal;
-                    if ((retVal = rtl8370_setAsicReg(RTK_INDRECT_ACCESS_ADDRESS, PHY_PAGE_ADDRESS)) !=  RT_ERR_OK)
-                        return retVal;    
-                    if ((retVal = rtl8370_setAsicReg(RTK_INDRECT_ACCESS_CRTL, RTK_CMD_MASK | RTK_RW_MASK)) !=  RT_ERR_OK)
-                        return retVal; 
-    
-                    cnt = 0;
-                    busyFlag = 1;
-                    while (busyFlag&&cnt<5)
-                    {
-                        cnt++;
-                        if ((retVal = rtl8370_getAsicRegBit(RTK_INDRECT_ACCESS_STATUS, RTK_PHY_BUSY_OFFSET,&busyFlag)) !=  RT_ERR_OK)
-                            return retVal;
-                    }
-                    if (5 == cnt)
-                        return RT_ERR_BUSYWAIT_TIMEOUT;
-                
                     if ((retVal = rtl8370_setAsicReg(RTK_INDRECT_ACCESS_WRITE_DATA, Para1En[index][1])) !=  RT_ERR_OK)
                         return retVal;
                     if ((retVal = rtl8370_setAsicReg(RTK_INDRECT_ACCESS_ADDRESS, Para1En[index][0])) !=  RT_ERR_OK)
@@ -11782,24 +11629,6 @@ rtk_api_ret_t rtk_switch_greenEthernet_set(rtk_enable_t enable)
                     if (5 == cnt)
                         return RT_ERR_BUSYWAIT_TIMEOUT;
     
-                    if ((retVal = rtl8370_setAsicReg(RTK_INDRECT_ACCESS_WRITE_DATA, 0)) !=  RT_ERR_OK)
-                        return retVal;
-                    if ((retVal = rtl8370_setAsicReg(RTK_INDRECT_ACCESS_ADDRESS, PHY_PAGE_ADDRESS)) !=  RT_ERR_OK)
-                        return retVal; 
-                    if ((retVal = rtl8370_setAsicReg(RTK_INDRECT_ACCESS_CRTL, RTK_CMD_MASK | RTK_RW_MASK)) !=  RT_ERR_OK)
-                        return retVal;
-    
-                    cnt = 0;
-                    busyFlag = 1;
-                    while (busyFlag&&cnt<5)
-                    {
-                        cnt++;
-                        if ((retVal = rtl8370_getAsicRegBit(RTK_INDRECT_ACCESS_STATUS, RTK_PHY_BUSY_OFFSET,&busyFlag)) !=  RT_ERR_OK)
-                            return retVal;
-                    }
-                    if (5 == cnt)
-                        return RT_ERR_BUSYWAIT_TIMEOUT;
-                
                     if ((retVal = rtl8370_setAsicReg(RTK_INDRECT_ACCESS_WRITE_DATA, Para0Dis[index][1])) !=  RT_ERR_OK)
                         return retVal;
                     if ((retVal = rtl8370_setAsicReg(RTK_INDRECT_ACCESS_ADDRESS, Para0Dis[index][0])) !=  RT_ERR_OK)
@@ -11833,24 +11662,6 @@ rtk_api_ret_t rtk_switch_greenEthernet_set(rtk_enable_t enable)
                     if (5 == cnt)
                         return RT_ERR_BUSYWAIT_TIMEOUT;
     
-                    if ((retVal = rtl8370_setAsicReg(RTK_INDRECT_ACCESS_WRITE_DATA, 0)) !=  RT_ERR_OK)
-                        return retVal;
-                    if ((retVal = rtl8370_setAsicReg(RTK_INDRECT_ACCESS_ADDRESS, PHY_PAGE_ADDRESS)) !=  RT_ERR_OK)
-                        return retVal;    
-                    if ((retVal = rtl8370_setAsicReg(RTK_INDRECT_ACCESS_CRTL, RTK_CMD_MASK | RTK_RW_MASK)) !=  RT_ERR_OK)
-                        return retVal; 
-    
-                    cnt = 0;
-                    busyFlag = 1;
-                    while (busyFlag&&cnt<5)
-                    {
-                        cnt++;
-                        if ((retVal = rtl8370_getAsicRegBit(RTK_INDRECT_ACCESS_STATUS, RTK_PHY_BUSY_OFFSET,&busyFlag)) !=  RT_ERR_OK)
-                            return retVal;
-                    }
-                    if (5 == cnt)
-                        return RT_ERR_BUSYWAIT_TIMEOUT;
-                
                     if ((retVal = rtl8370_setAsicReg(RTK_INDRECT_ACCESS_WRITE_DATA, Para1Dis[index][1])) !=  RT_ERR_OK)
                         return retVal;
                     if ((retVal = rtl8370_setAsicReg(RTK_INDRECT_ACCESS_ADDRESS, Para1Dis[index][0])) !=  RT_ERR_OK)
@@ -11859,7 +11670,7 @@ rtk_api_ret_t rtk_switch_greenEthernet_set(rtk_enable_t enable)
                         return retVal; 
                 }
                 else
-                {
+                    {
                     if (RT_ERR_OK != rtl8370_setAsicReg(Para1Dis[index][0],Para1Dis[index][1]))
                         return RT_ERR_FAILED;
                 }
@@ -12632,11 +12443,11 @@ rtk_api_ret_t rtk_led_enable_set(rtk_led_group_t group, rtk_portmask_t portmask)
     if (group >= LED_GROUP_END)
         return RT_ERR_INPUT;
 
-    if (portmask.bits[0] > (1<<RTK_PHY_ID_MAX))
-        return RT_ERR_INPUT;  
+    if (portmask.bits[0] >= (1 << (RTK_PHY_ID_MAX + 1)))
+        return RT_ERR_INPUT;
 
-    if ((retVal = rtl8370_setAsicLedGroupEnable(group, portmask.bits[0]))!=RT_ERR_OK)        
-        return retVal;    
+    if ((retVal = rtl8370_setAsicLedGroupEnable(group, portmask.bits[0]))!=RT_ERR_OK)
+        return retVal;
 
     return RT_ERR_OK;
 }
@@ -14132,8 +13943,8 @@ rtk_api_ret_t rtk_filter_igrAcl_state_get(rtk_port_t port, rtk_filter_state_t* p
  * Output:
  *      None 
  * Return:
- *      RT_ERR_OK              - set shared meter successfully
- *      RT_ERR_FAILED          - FAILED to iset shared meter
+ *      RT_ERR_OK              - OK
+ *      RT_ERR_FAILED          - FAILED
  *      RT_ERR_SMI             - SMI access error
  * Note:
  *      This API is used to initialize EEE status.
@@ -14947,7 +14758,7 @@ rtk_api_ret_t rtk_eee_init(void)
     {0x2206, 0x7494},{0x2206, 0xC776},{0x2206, 0x980A},{0x2206, 0x7750},
     {0x2206, 0x0078},{0x2206, 0x8A15},{0x2206, 0x797F},{0x2206, 0x6F7A},
     {0x2206, 0x06A6},{0x2205, 0x8BF0},{0x2206, 0x0000},{0x2206, 0x0000},
-    {0x2206,0x0000},{0x2206,0x0000},{0x2206,0x0000},{0x2206,0x0000},
+    {0x2206, 0x0000},{0x2206, 0x0000},{0x2206, 0x0000},{0x2206, 0x0000},
     {0x2206, 0x0000},{0x2206, 0x0000},{0x2201, 0x0701},{0x2200, 0x0405},
     {0x221F, 0x0000},{0x221F, 0x0005},{0x2205, 0x8B84},{0x2206, 0x0062},
     {0x221F, 0x0000},{0x133F, 0x0010},{0x133E, 0x0FFE},{0x12A4, 0x380A},
@@ -14956,20 +14767,11 @@ rtk_api_ret_t rtk_eee_init(void)
     {0x133F, 0x0010},{0x133E, 0x0FFE},{0xFFFF,0xABCD}};
 
     CONST_T uint16 ParaB[][2] = {
-    {0x133f,0x0030},{0x133e,0x000e},{0x221f,0x0007},{0x221e,0x002d},
-    {0x2218,0xf030},{0x221e,0x0023},{0x2216,0x0005},{0x2215,0x005c},
-    {0x2219,0x0068},{0x2215,0x0082},{0x2219,0x000a},{0x2215,0x00a1},
-    {0x2219,0x0081},{0x2215,0x00af},{0x2219,0x0080},{0x2215,0x00d4},
-    {0x2219,0x0000},{0x2215,0x00e4},{0x2219,0x0081},{0x2215,0x00e7},
-    {0x2219,0x0080},{0x2215,0x010d},{0x2219,0x0083},{0x2215,0x0118},
-    {0x2219,0x0083},{0x2215,0x0120},{0x2219,0x0082},{0x2215,0x019c},
-    {0x2219,0x0081},{0x2215,0x01a4},{0x2219,0x0080},{0x2215,0x01cd},
-    {0x2219,0x0000},{0x2215,0x01dd},{0x2219,0x0081},{0x2215,0x01e0},
-    {0x2219,0x0080},{0x2216,0x0000},{0x221e,0x002d},{0x2218,0xf010},
-    {0x221f,0x0007},{0x221e,0x0020},{0x2215,0x0100},{0x221f,0x0005},
-    {0x2205,0x8b84},{0x2206,0x0062},{0x221f,0x0000},{0x2200,0x1340},
-    {0x221f,0x0000},{0x133f,0x0010},{0x133e,0x0ffe},{0x12a4,0x380a},
-    {0x1362,0x0115},{0x1363,0x0002},{0x1363,0x0000},{0xFFFF, 0xABCD}};
+    {0x133F, 0x0030},{0x133E, 0x000E},{0x221F, 0x0005},{0x2205, 0x8B84},
+    {0x2206, 0x0062},{0x221F, 0x0007},{0x221E, 0x0020},{0x2215, 0x0100},
+    {0x221F, 0x0000},{0x133F, 0x0010},{0x133E, 0x0FFE},{0x12A4, 0x380A},
+    {0xFFFF, 0xABCD}};
+    
 
 
     if ((retVal = rtl8370_setAsicPHYReg(0,PHY_PAGE_ADDRESS,5))!=RT_ERR_OK)
@@ -15024,24 +14826,6 @@ rtk_api_ret_t rtk_eee_init(void)
                 if (5 == cnt)
                     return RT_ERR_BUSYWAIT_TIMEOUT;
 
-                if ((retVal = rtl8370_setAsicReg(RTK_INDRECT_ACCESS_WRITE_DATA, 0)) !=  RT_ERR_OK)
-                    return retVal;
-                if ((retVal = rtl8370_setAsicReg(RTK_INDRECT_ACCESS_ADDRESS, PHY_PAGE_ADDRESS)) !=  RT_ERR_OK)
-                    return retVal; 
-                if ((retVal = rtl8370_setAsicReg(RTK_INDRECT_ACCESS_CRTL, RTK_CMD_MASK | RTK_RW_MASK)) !=  RT_ERR_OK)
-                    return retVal;
-
-                cnt = 0;
-                busyFlag = 1;
-                while (busyFlag&&cnt<5)
-                {
-                    cnt++;
-                    if ((retVal = rtl8370_getAsicRegBit(RTK_INDRECT_ACCESS_STATUS, RTK_PHY_BUSY_OFFSET,&busyFlag)) !=  RT_ERR_OK)
-                        return retVal;
-                }
-                if (5 == cnt)
-                    return RT_ERR_BUSYWAIT_TIMEOUT;
-            
                 if ((retVal = rtl8370_setAsicReg(RTK_INDRECT_ACCESS_WRITE_DATA, (uint32)ParaA[index][1])) !=  RT_ERR_OK)
                     return retVal;
                 if ((retVal = rtl8370_setAsicReg(RTK_INDRECT_ACCESS_ADDRESS, (uint32)ParaA[index][0])) !=  RT_ERR_OK)
@@ -15075,24 +14859,6 @@ rtk_api_ret_t rtk_eee_init(void)
                 if (5 == cnt)
                     return RT_ERR_BUSYWAIT_TIMEOUT;
 
-                if ((retVal = rtl8370_setAsicReg(RTK_INDRECT_ACCESS_WRITE_DATA, 0)) !=  RT_ERR_OK)
-                    return retVal;
-                if ((retVal = rtl8370_setAsicReg(RTK_INDRECT_ACCESS_ADDRESS, PHY_PAGE_ADDRESS)) !=  RT_ERR_OK)
-                    return retVal;    
-                if ((retVal = rtl8370_setAsicReg(RTK_INDRECT_ACCESS_CRTL, RTK_CMD_MASK | RTK_RW_MASK)) !=  RT_ERR_OK)
-                    return retVal; 
-
-                cnt = 0;
-                busyFlag = 1;
-                while (busyFlag&&cnt<5)
-                {
-                    cnt++;
-                    if ((retVal = rtl8370_getAsicRegBit(RTK_INDRECT_ACCESS_STATUS, RTK_PHY_BUSY_OFFSET,&busyFlag)) !=  RT_ERR_OK)
-                        return retVal;
-                }
-                if (5 == cnt)
-                    return RT_ERR_BUSYWAIT_TIMEOUT;
-            
                 if ((retVal = rtl8370_setAsicReg(RTK_INDRECT_ACCESS_WRITE_DATA, (uint32)ParaB[index][1])) !=  RT_ERR_OK)
                     return retVal;
                 if ((retVal = rtl8370_setAsicReg(RTK_INDRECT_ACCESS_ADDRESS, (uint32)ParaB[index][0])) !=  RT_ERR_OK)
@@ -15114,23 +14880,6 @@ rtk_api_ret_t rtk_eee_init(void)
     
 #endif /*End of #ifdef MDC_MDIO_OPERATION*/
 
-
-    if ((retVal = rtl8370_setAsicReg(0x13C2,0x0249))!=RT_ERR_OK)
-        return retVal;
-
-    if ((retVal = rtl8370_getAsicRegBits(0x1302, 0x7,&regData))!=RT_ERR_OK)
-        return retVal;   
-
-    if (regData == 0)
-    {
-        if ((retVal = rtk_port_phyReg_set(5, 0, 0x0940))!=RT_ERR_OK)
-            return retVal; 
-        if ((retVal = rtk_port_phyReg_set(6, 0, 0x0940))!=RT_ERR_OK)
-            return retVal; 
-        if ((retVal = rtk_port_phyReg_set(7, 0, 0x0940))!=RT_ERR_OK)
-            return retVal;  
-    }
-
     return RT_ERR_OK;
 }
 
@@ -15145,8 +14894,8 @@ rtk_api_ret_t rtk_eee_init(void)
  * Output:
  *      None 
  * Return:
- *      RT_ERR_OK              - set shared meter successfully
- *      RT_ERR_FAILED          - FAILED to iset shared meter
+ *      RT_ERR_OK              - OK
+ *      RT_ERR_FAILED          - FAILED
  *      RT_ERR_SMI             - SMI access error
  *      RT_ERR_PORT_ID - Invalid port number.
  *      RT_ERR_ENABLE - Invalid enable input.
@@ -15171,6 +14920,42 @@ rtk_api_ret_t rtk_eee_portEnable_set(rtk_port_t port, rtk_enable_t enable)
     if ((retVal = rtl8370_setAsicEeeGiga(port,enable))!=RT_ERR_OK)
         return retVal;
    
+    if (enable == ENABLED)
+    {   
+        if ((retVal = rtl8370_setAsicPHYReg(port,31,5))!=RT_ERR_OK)
+            return retVal; 
+        if ((retVal = rtl8370_setAsicPHYReg(port,5,0x8B84))!=RT_ERR_OK)
+            return retVal; 
+        if ((retVal = rtl8370_setAsicPHYReg(port,6,0x0062))!=RT_ERR_OK)
+            return retVal; 
+        if ((retVal = rtl8370_setAsicPHYReg(port,31,7))!=RT_ERR_OK)
+            return retVal; 
+        if ((retVal = rtl8370_setAsicPHYReg(port,30,32))!=RT_ERR_OK)
+            return retVal;         
+        if ((retVal = rtl8370_setAsicPHYReg(port,21,0x0100))!=RT_ERR_OK)
+            return retVal; 
+        if ((retVal = rtl8370_setAsicPHYReg(port,31,0))!=RT_ERR_OK)
+            return retVal;        
+    }
+    else if (enable == DISABLED)
+    {
+        if ((retVal = rtl8370_setAsicPHYReg(port,31,5))!=RT_ERR_OK)
+            return retVal; 
+        if ((retVal = rtl8370_setAsicPHYReg(port,5,0x8B84))!=RT_ERR_OK)
+            return retVal; 
+        if ((retVal = rtl8370_setAsicPHYReg(port,6,0x0042))!=RT_ERR_OK)
+            return retVal; 
+        if ((retVal = rtl8370_setAsicPHYReg(port,31,7))!=RT_ERR_OK)
+            return retVal; 
+        if ((retVal = rtl8370_setAsicPHYReg(port,30,32))!=RT_ERR_OK)
+            return retVal;         
+        if ((retVal = rtl8370_setAsicPHYReg(port,21,0x0000))!=RT_ERR_OK)
+            return retVal; 
+        if ((retVal = rtl8370_setAsicPHYReg(port,31,0))!=RT_ERR_OK)
+            return retVal;
+    }
+    
+   
     return RT_ERR_OK;
 }
 
@@ -15184,8 +14969,8 @@ rtk_api_ret_t rtk_eee_portEnable_set(rtk_port_t port, rtk_enable_t enable)
  * Output:
  *      pEnable - Back pressure status.
  * Return:
- *      RT_ERR_OK              - set shared meter successfully
- *      RT_ERR_FAILED          - FAILED to iset shared meter
+ *      RT_ERR_OK              - OK
+ *      RT_ERR_FAILED          - FAILED
  *      RT_ERR_SMI             - SMI access error
  *      RT_ERR_PORT_ID - Invalid port number.
  * Note:

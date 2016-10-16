@@ -437,11 +437,6 @@ PNDIS_PACKET DuplicatePacket(
 {
 	struct sk_buff *skb;
 	PNDIS_PACKET pRetPacket = NULL;
-	//USHORT DataSize;
-	//UCHAR *pData;
-
-	//DataSize = (USHORT) GET_OS_PKT_LEN(pPacket);
-	//pData = (PUCHAR) GET_OS_PKT_DATAPTR(pPacket);
 
 	skb = skb_clone(RTPKT_TO_OSPKT(pPacket), MEM_ALLOC_FLAG);
 	if (skb) {
@@ -742,9 +737,9 @@ void wlan_802_11_to_802_3_packet(
 }
 
 
+#ifdef DBG
 void hex_dump(char *str, UCHAR *pSrcBufVA, UINT SrcBufLen)
 {
-#ifdef DBG
 	unsigned char *pt;
 	int x;
 
@@ -761,8 +756,8 @@ void hex_dump(char *str, UCHAR *pSrcBufVA, UINT SrcBufLen)
 			printk("\n");
 	}
 	printk("\n");
-#endif /* DBG */
 }
+#endif /* DBG */
 
 #ifdef SYSTEM_LOG_SUPPORT
 /*

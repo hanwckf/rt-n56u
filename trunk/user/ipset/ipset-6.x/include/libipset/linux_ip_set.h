@@ -263,7 +263,7 @@ struct ip_set_counter_match0 {
 };
 
 struct ip_set_counter_match {
-	__aligned_u64 value;
+	__u64 __attribute__((aligned(8))) value;
 	__u8 op;
 };
 

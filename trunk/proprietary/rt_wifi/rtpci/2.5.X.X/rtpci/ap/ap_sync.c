@@ -510,6 +510,7 @@ VOID APPeerProbeReqAction(
 		    NdisZeroMemory(TmpFrame, sizeof(TmpFrame));
 
 			// prepare channel information
+			MaxTxPower = GetCuntryMaxTxPwr(pAd, pAd->CommonCfg.Channel);
 		    MakeOutgoingFrame(TmpFrame+TmpLen2,     &TmpLen,
 		                          1,                 	&pAd->ChannelList[0].Channel,
 		                          1,                 	&pAd->ChannelListNum,

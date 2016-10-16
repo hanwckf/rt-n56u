@@ -51,6 +51,12 @@ function initial(){
 	var o1 = document.form.ether_uport;
 	var num_ephy = support_num_ephy();
 	if (!support_2g_inic_mii())
+		o1.remove(9);
+	if (num_ephy < 8)
+		o1.remove(8);
+	if (num_ephy < 7)
+		o1.remove(7);
+	if (num_ephy < 6)
 		o1.remove(6);
 	if (num_ephy < 5)
 		o1.remove(5);
@@ -60,16 +66,14 @@ function initial(){
 		o1.remove(3);
 
 	var switch_type = support_switch_type();
-	if (switch_type != 0) {
+	if (switch_type > 1) {
 		showhide_div('row_storm_ucast', 0);
+		showhide_div('row_storm_mcast_unk', 0);
 		showhide_div('row_storm_mcast', 0);
-		showhide_div('row_storm_bcast', 0);
 	}
 
-	if (switch_type == 1)
-		$("lbl_umcast").innerHTML = "[0..100]";
-	else
-		$("lbl_umcast").innerHTML = "[0..1000]";
+	if (switch_type >= 10)
+		$("lbl_bcast").innerHTML = "[0..100]";
 
 	if(document.form.udpxy_enable_x.value == 0)
 		$("web_udpxy_link").style.display = "none";
@@ -119,21 +123,21 @@ function validForm(){
 	}
 
 	var switch_type = support_switch_type();
-	if(document.form.controlrate_unknown_unicast.value != 0 && switch_type == 0){
+	if(document.form.controlrate_unknown_unicast.value != 0 && switch_type < 2){
 		if(!validate_range(document.form.controlrate_unknown_unicast, 0, 1000))
 			return false;
 	}
-	if(document.form.controlrate_unknown_multicast.value != 0){
-		var max_rate = (switch_type == 1) ? 100 : 1000;
-		if(!validate_range(document.form.controlrate_unknown_multicast, 0, max_rate))
+	if(document.form.controlrate_unknown_multicast.value != 0 && switch_type < 2){
+		if(!validate_range(document.form.controlrate_unknown_multicast, 0, 1000))
 			return false;
 	}
-	if(document.form.controlrate_multicast.value != 0 && switch_type == 0){
+	if(document.form.controlrate_multicast.value != 0 && switch_type < 2){
 		if(!validate_range(document.form.controlrate_multicast, 0, 1000))
 			return false;
 	}
-	if(document.form.controlrate_broadcast.value != 0 && switch_type == 0){
-		if(!validate_range(document.form.controlrate_broadcast, 0, 1000))
+	if(document.form.controlrate_broadcast.value != 0){
+		var max_rate = (switch_type >= 10) ? 100 : 1000;
+		if(!validate_range(document.form.controlrate_broadcast, 0, max_rate))
 			return false;
 	}
 
@@ -351,13 +355,16 @@ function on_xupnpd_link(){
                                             <th><#SwitchUport#></th>
                                             <td>
                                                 <select name="ether_uport" class="input">
-                                                    <option value="0" <% nvram_match_x("", "ether_uport", "0", "selected"); %>><#checkbox_No#></option>
-                                                    <option value="5" <% nvram_match_x("", "ether_uport", "5", "selected"); %>>WAN (*)</option>
+                                                    <option value="-1" <% nvram_match_x("", "ether_uport", "-1", "selected"); %>><#checkbox_No#></option>
+                                                    <option value="0" <% nvram_match_x("", "ether_uport", "0", "selected"); %>>WAN (*)</option>
                                                     <option value="1" <% nvram_match_x("", "ether_uport", "1", "selected"); %>>LAN1</option>
                                                     <option value="2" <% nvram_match_x("", "ether_uport", "2", "selected"); %>>LAN2</option>
                                                     <option value="3" <% nvram_match_x("", "ether_uport", "3", "selected"); %>>LAN3</option>
                                                     <option value="4" <% nvram_match_x("", "ether_uport", "4", "selected"); %>>LAN4</option>
-                                                    <option value="7" <% nvram_match_x("", "ether_uport", "7", "selected"); %>>iNIC (2.4GHz)</option>
+                                                    <option value="5" <% nvram_match_x("", "ether_uport", "5", "selected"); %>>LAN5</option>
+                                                    <option value="6" <% nvram_match_x("", "ether_uport", "6", "selected"); %>>LAN6</option>
+                                                    <option value="7" <% nvram_match_x("", "ether_uport", "7", "selected"); %>>LAN7</option>
+                                                    <option value="13" <% nvram_match_x("", "ether_uport", "13", "selected"); %>>iNIC (2.4GHz)</option>
                                                 </select>
                                             </td>
                                         </tr>
@@ -386,17 +393,17 @@ function on_xupnpd_link(){
                                             <th colspan="2" style="background-color: #E3E3E3;"><#SwitchStorm#></th>
                                         </tr>
                                         <tr id="row_storm_ucast">
-                                            <th width="50%"><a class="help_tooltip" href="javascript:void(0);" onmouseover="openTooltip(this, 6, 7);"><#RouterConfig_GWMulticast_unknownUni_itemname#></a></th>
+                                            <th><a class="help_tooltip" href="javascript:void(0);" onmouseover="openTooltip(this, 6, 7);"><#RouterConfig_GWMulticast_unknownUni_itemname#></a></th>
                                             <td>
                                                 <input type="text" maxlength="4" class="input" size="15" name="controlrate_unknown_unicast" value="<% nvram_get_x("", "controlrate_unknown_unicast"); %>" onkeypress="return is_number(this,event);"/>
                                                 &nbsp;<span style="color:#888;">[0..1000]</span>
                                             </td>
                                         </tr>
-                                        <tr>
-                                            <th width="50%"><a class="help_tooltip" href="javascript:void(0);" onmouseover="openTooltip(this, 6, 8);"><#RouterConfig_GWMulticast_unknownMul_itemname#></a></th>
+                                        <tr id="row_storm_mcast_unk">
+                                            <th><a class="help_tooltip" href="javascript:void(0);" onmouseover="openTooltip(this, 6, 8);"><#RouterConfig_GWMulticast_unknownMul_itemname#></a></th>
                                             <td>
                                                 <input type="text" maxlength="4" class="input" size="15" name="controlrate_unknown_multicast" value="<% nvram_get_x("", "controlrate_unknown_multicast"); %>" onkeypress="return is_number(this,event);"/>
-                                                &nbsp;<span id="lbl_umcast" style="color:#888;"></span>
+                                                &nbsp;<span style="color:#888;"></span>
                                             </td>
                                         </tr>
                                         <tr id="row_storm_mcast">
@@ -406,15 +413,14 @@ function on_xupnpd_link(){
                                                 &nbsp;<span style="color:#888;">[0..1000]</span>
                                             </td>
                                         </tr>
-                                        <tr id="row_storm_bcast">
-                                            <th><a class="help_tooltip" href="javascript:void(0);" onmouseover="openTooltip(this, 6, 10);"><#RouterConfig_GWMulticast_Broadcast_itemname#></a></th>
+                                        <tr>
+                                            <th width="50%"><a class="help_tooltip" href="javascript:void(0);" onmouseover="openTooltip(this, 6, 10);"><#RouterConfig_GWMulticast_Broadcast_itemname#></a></th>
                                             <td>
                                                 <input type="text" maxlength="4" class="input" size="15" name="controlrate_broadcast" value="<% nvram_get_x("", "controlrate_broadcast"); %>" onkeypress="return is_number(this,event);"/>
-                                                &nbsp;<span style="color:#888;">[0..1000]</span>
+                                                &nbsp;<span id="lbl_bcast" style="color:#888;">[0..1000]</span>
                                             </td>
                                         </tr>
                                     </table>
-
 
                                     <table class="table">
                                         <tr>

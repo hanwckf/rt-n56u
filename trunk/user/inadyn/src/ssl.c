@@ -165,6 +165,9 @@ ssl_read_socket(SSL* ssl, char *buf, size_t len)
 			case SSL_ERROR_WANT_WRITE:
 			case SSL_ERROR_WANT_READ:
 				break;
+			case SSL_ERROR_SYSCALL:
+				if (ERR_get_error() == 0)
+					goto read_out;
 			default:
 				if (total == 0)
 					total = (ssize_t)-1;
@@ -198,6 +201,9 @@ ssl_write_socket(SSL* ssl, const char *buf, size_t len)
 			case SSL_ERROR_WANT_WRITE:
 			case SSL_ERROR_WANT_READ:
 				break;
+			case SSL_ERROR_SYSCALL:
+				if (ERR_get_error() == 0)
+					goto write_out;
 			default:
 				if (total == 0)
 					total = (ssize_t)-1;

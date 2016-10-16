@@ -10,7 +10,6 @@
 
 #include <asm/rt2880/surfboardint.h>
 
-#define GIC_NUM_INTRS	(64)
 #define NR_IRQS		(SURFBOARDINT_END + 1)
 
 #include_next <irq.h>

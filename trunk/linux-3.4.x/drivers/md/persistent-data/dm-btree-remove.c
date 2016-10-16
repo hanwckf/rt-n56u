@@ -301,35 +301,40 @@ static void redistribute3(struct dm_btree_info *info, struct btree_node *parent,
 {
 	int s;
 	uint32_t max_entries = le32_to_cpu(left->header.max_entries);
-	unsigned target = (nr_left + nr_center + nr_right) / 3;
-	BUG_ON(target > max_entries);
+	unsigned total = nr_left + nr_center + nr_right;
+	unsigned target_right = total / 3;
+	unsigned remainder = (target_right * 3) != total;
+	unsigned target_left = target_right + remainder;
+
+	BUG_ON(target_left > max_entries);
+	BUG_ON(target_right > max_entries);
 
 	if (nr_left < nr_right) {
-		s = nr_left - target;
+		s = nr_left - target_left;
 
 		if (s < 0 && nr_center < -s) {
 			/* not enough in central node */
-			shift(left, center, nr_center);
-			s = nr_center - target;
+			shift(left, center, -nr_center);
+			s += nr_center;
 			shift(left, right, s);
 			nr_right += s;
 		} else
 			shift(left, center, s);
 
-		shift(center, right, target - nr_right);
+		shift(center, right, target_right - nr_right);
 
 	} else {
-		s = target - nr_right;
+		s = target_right - nr_right;
 		if (s > 0 && nr_center < s) {
 			/* not enough in central node */
 			shift(center, right, nr_center);
-			s = target - nr_center;
+			s -= nr_center;
 			shift(left, right, s);
 			nr_left -= s;
 		} else
 			shift(center, right, s);
 
-		shift(left, center, nr_left - target);
+		shift(left, center, nr_left - target_left);
 	}
 
 	*key_ptr(parent, c->index) = center->keys[0];
@@ -544,14 +549,6 @@ static int remove_raw(struct shadow_spine *s, struct dm_btree_info *info,
 	return r;
 }
 
-static struct dm_btree_value_type le64_type = {
-	.context = NULL,
-	.size = sizeof(__le64),
-	.inc = NULL,
-	.dec = NULL,
-	.equal = NULL
-};
-
 int dm_btree_remove(struct dm_btree_info *info, dm_block_t root,
 		    uint64_t *keys, dm_block_t *new_root)
 {
@@ -559,12 +556,14 @@ int dm_btree_remove(struct dm_btree_info *info, dm_block_t root,
 	int index = 0, r = 0;
 	struct shadow_spine spine;
 	struct btree_node *n;
+	struct dm_btree_value_type le64_vt;
 
+	init_le64_type(info->tm, &le64_vt);
 	init_shadow_spine(&spine, info);
 	for (level = 0; level < info->levels; level++) {
 		r = remove_raw(&spine, info,
 			       (level == last_level ?
-				&info->value_type : &le64_type),
+				&info->value_type : &le64_vt),
 			       root, keys[level], (unsigned *)&index);
 		if (r < 0)
 			break;

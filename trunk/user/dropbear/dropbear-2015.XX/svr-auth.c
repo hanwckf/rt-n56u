@@ -35,7 +35,7 @@
 #include "runopts.h"
 #include "dbrandom.h"
 
-static void authclear();
+static void authclear(void);
 static int checkusername(char *username, unsigned int userlen);
 
 /* initialise the first time for a session, resetting all parameters */

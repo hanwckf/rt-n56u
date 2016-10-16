@@ -228,6 +228,32 @@ int rt28xx_init(VOID *pAdSrc, PSTRING pDefaultMac, PSTRING pHostName)
 	}
 	DBGPRINT(RT_DEBUG_OFF, ("1. Phy Mode = %d\n", pAd->CommonCfg.PhyMode));
 
+	if (pAd->CommonCfg.bMcastTest == TRUE)
+	{
+		UINT32 macValue;
+#ifdef RLT_MAC
+		if (pAd->chipCap.hif_type == HIF_RLT) 
+		{
+			RTMP_IO_READ32(pAd, RLT_PBF_CFG, &macValue);
+			macValue = (macValue | 0x2);
+			RTMP_IO_WRITE32(pAd, RLT_PBF_CFG, macValue);
+		}
+		else
+		{
+#endif /* RLT_MAC */
+#ifdef RTMP_MAC
+			if (pAd->chipCap.hif_type == HIF_RTMP)
+			{
+				RTMP_IO_READ32(pAd, PBF_CFG, &macValue);
+				macValue = (macValue | 0x8);
+				RTMP_IO_WRITE32(pAd, PBF_CFG, macValue);
+			}
+#endif /* RTMP_MAC */
+#ifdef RLT_MAC
+		}
+#endif /* RLT_MAC */
+	}
+
 	/* We should read EEPROM for all cases */
 	NICReadEEPROMParameters(pAd, (PSTRING)pDefaultMac);
 #ifdef CONFIG_STA_SUPPORT
@@ -709,6 +735,10 @@ int rt28xx_init(VOID *pAdSrc, PSTRING pDefaultMac, PSTRING pHostName)
 	pAd->ChannelInfo.GetChannelInfo = FALSE;
 #endif
 
+#ifdef REDUCE_TCP_ACK_SUPPORT
+	ReduceAckInit(pAd);
+#endif /* REDUCE_TCP_ACK_SUPPORT */
+	
 	DBGPRINT_S(Status, ("<==== rt28xx_init, Status=%x\n", Status));
 
 	return TRUE;
@@ -716,7 +746,7 @@ int rt28xx_init(VOID *pAdSrc, PSTRING pDefaultMac, PSTRING pHostName)
 err6:
 
 #ifdef IGMP_SNOOP_SUPPORT
-	MultiCastFilterTableReset(&pAd->pMulticastFilterTable);
+	MultiCastFilterTableReset(pAd, &pAd->pMulticastFilterTable);
 #endif /* IGMP_SNOOP_SUPPORT */
 
 	MeasureReqTabExit(pAd);
@@ -930,19 +960,6 @@ VOID RTMPDrvOpen(VOID *pAdSrc)
 	WSC_HDR_BTN_Init(pAd);
 #endif /* WSC_INCLUDED */
 
-#ifdef CONFIG_AP_SUPPORT
-#ifdef MULTI_CLIENT_SUPPORT
-	pAd->CommonCfg.txRetryCfg = 0;
-
-	{
-		UINT32	TxRtyCfg;
-
-		RTMP_IO_READ32(pAd, TX_RTY_CFG, &TxRtyCfg);
-		pAd->CommonCfg.txRetryCfg = TxRtyCfg;
-	}
-#endif /* MULTI_CLIENT_SUPPORT */
-#endif /* CONFIG_AP_SUPPORT */
-
 #ifdef BTCOEX_CONCURRENT
 	RT28xx_EEPROM_READ16(pAd, 0x22, ee_tmp);
 	btcoex_val.eeprom23=(ee_tmp & 0xFF00)>>8;
@@ -1142,6 +1159,11 @@ VOID RTMPDrvClose(VOID *pAdSrc, VOID *net_dev)
 #ifdef CLIENT_WDS
 		CliWds_ProxyTabDestory(pAd);
 #endif /* CLIENT_WDS */
+
+#ifdef MWDS
+		MWDSAPDown(pAd);
+#endif /* MWDS */
+
 		/* Shutdown Access Point function, release all related resources */
 		APShutdown(pAd);
 	}
@@ -1307,6 +1329,9 @@ VOID RTMPDrvClose(VOID *pAdSrc, VOID *net_dev)
 #endif /* CAPTURE_MODE */
 #endif /* CONFIG_FPGA_MODE */
 
+#ifdef REDUCE_TCP_ACK_SUPPORT
+	ReduceAckExit(pAd);
+#endif /* REDUCE_TCP_ACK_SUPPORT */
 }
 
 

@@ -294,7 +294,7 @@ MAC_TABLE_ENTRY *MacTableInsertWDSEntry(
 					pEntry->MaxHTPhyMode.field.MCS = 9;
 			} else if (vht_cap.mcs_set.rx_mcs_map.mcs_ss1 == VHT_MCS_CAP_8) {
 				pEntry->MaxHTPhyMode.field.MCS = 8;
-			} else if (vht_cap.mcs_set.rx_mcs_map.mcs_ss1 == VHT_MCS_CAP_8) {
+			} else if (vht_cap.mcs_set.rx_mcs_map.mcs_ss1 == VHT_MCS_CAP_7) {
 				pEntry->MaxHTPhyMode.field.MCS = 7;
 			}
 			
@@ -727,6 +727,10 @@ VOID WdsPeerBeaconProc(
 			pEntry->MaxHTPhyMode.field.MCS = pEntry->MaxSupportedRate;
 			pEntry->MinHTPhyMode.field.MODE = MODE_CCK;
 			pEntry->MinHTPhyMode.field.MCS = pEntry->MaxSupportedRate;
+#ifdef BB_SOC			
+			pEntry->HTPhyMode.field.MODE = MODE_CCK;
+			pEntry->HTPhyMode.field.MCS = pEntry->MaxSupportedRate;
+#endif			
 		}
 		else
 		{
@@ -734,6 +738,10 @@ VOID WdsPeerBeaconProc(
 			pEntry->MaxHTPhyMode.field.MCS = OfdmRateToRxwiMCS[pEntry->MaxSupportedRate];
 			pEntry->MinHTPhyMode.field.MODE = MODE_OFDM;
 			pEntry->MinHTPhyMode.field.MCS = OfdmRateToRxwiMCS[pEntry->MaxSupportedRate];
+#ifdef 	BB_SOC		
+			pEntry->HTPhyMode.field.MODE = MODE_OFDM;
+			pEntry->HTPhyMode.field.MCS = OfdmRateToRxwiMCS[pEntry->MaxSupportedRate];
+#endif				
 		}
 
 
@@ -841,7 +849,7 @@ VOID WdsPeerBeaconProc(
 					pEntry->MaxHTPhyMode.field.MCS = 9;
 			} else if (vht_cap->mcs_set.rx_mcs_map.mcs_ss1 == VHT_MCS_CAP_8) {
 				pEntry->MaxHTPhyMode.field.MCS = 8;
-			} else if (vht_cap->mcs_set.rx_mcs_map.mcs_ss1 == VHT_MCS_CAP_8) {
+			} else if (vht_cap->mcs_set.rx_mcs_map.mcs_ss1 == VHT_MCS_CAP_7) {
 				pEntry->MaxHTPhyMode.field.MCS = 7;
 			}
 			

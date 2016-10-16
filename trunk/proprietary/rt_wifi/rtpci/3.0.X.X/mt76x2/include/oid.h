@@ -44,6 +44,7 @@
 #define BAND_WIDTH_80		2
 #define BAND_WIDTH_BOTH	3
 #define BAND_WIDTH_10		4	/* 802.11j has 10MHz. This definition is for internal usage. doesn't fill in the IE or other field. */
+#define BAND_WIDTH_160		3
 
 
 /* SHORTGI */
@@ -1021,7 +1022,7 @@ typedef struct _NDIS_802_11_CAPABILITY {
 
 
 
-#ifdef DBG
+#if defined(DBG) || defined(RALINK_ATE)
 /*
 	When use private ioctl oid get/set the configuration, we can use following flags to provide specific rules when handle the cmd
  */
@@ -1128,6 +1129,13 @@ typedef struct _NDIS_802_11_CAPABILITY {
 #ifdef CON_WPS
 #define RT_OID_WSC_SET_CON_WPS_STOP                 0x0764
 #endif /* CON_WPS */
+
+#ifdef SMART_MESH
+#define RT_OID_LAST_TX_RX_STATS                     0x0765
+#define RT_OID_SET_PKT_TX_RX_STATS					0x0766
+#define RT_OID_GET_PKT_TX_RX_STATS                  0x0767
+#define RT_OID_GET_AP_LIST							0x0768
+#endif /* SMART_MESH */
 
 
 #ifdef DOT11R_FT_SUPPORT
@@ -1435,7 +1443,7 @@ typedef struct _RT_LLTD_ASSOICATION_ENTRY {
 
 typedef struct _RT_LLTD_ASSOICATION_TABLE {
 	unsigned int Num;
-	RT_LLTD_ASSOICATION_ENTRY Entry[MAX_NUMBER_OF_MAC];
+	RT_LLTD_ASSOICATION_ENTRY Entry[64]; /* sync from LLTD daemon */
 } RT_LLTD_ASSOICATION_TABLE, *PRT_LLTD_ASSOICATION_TABLE;
 #endif /* LLTD_SUPPORT */
 
@@ -1593,6 +1601,12 @@ typedef struct _FT_CONFIG_INFO {
 #define RT_OID_IWSC_REGISTRAR_IPV4			0x0901
 #define RT_OID_IWSC_SMPBC_ENROLLEE_COUNT	0x0902
 #endif // IWSC_SUPPORT //
+
+#ifdef AIRPLAY_SUPPORT
+#define OID_AIRPLAY_IE_INSERT                   (0x0872)
+#define OID_AIRPLAY_ENABLE                      (0x0873)
+#endif/* AIRPLAY_SUPPORT*/
+
 
 enum {
 	OID_WIFI_TEST_BBP = 0x1000,

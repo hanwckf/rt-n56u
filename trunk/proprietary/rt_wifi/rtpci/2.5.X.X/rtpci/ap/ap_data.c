@@ -255,12 +255,13 @@ NDIS_STATUS APSendPacket(
 	UCHAR			PsMode = PWR_ACTIVE, Rate;
 	USHORT			Wcid;
 	MAC_TABLE_ENTRY *pMacEntry = NULL;
+	MULTISSID_STRUCT *pMbss = NULL;
 	unsigned long	IrqFlags;
 #ifdef IGMP_SNOOP_SUPPORT
 	INT			InIgmpGroup = IGMP_NONE;
 	PMULTICAST_FILTER_TABLE_ENTRY pGroupEntry = NULL;
 #endif // IGMP_SNOOP_SUPPORT //
-	MULTISSID_STRUCT *pMbss = NULL;
+	BOOLEAN is_mcast = FALSE;
 
 	RTMP_QueryPacketInfo(pPacket, &PacketInfo, &pSrcBufVA, &SrcBufLen);
 
@@ -380,8 +381,11 @@ NDIS_STATUS APSendPacket(
 	if (pMbss == NULL)
 		pMbss = &pAd->ApCfg.MBSSID[apidx];
 
+	if (*pSrcBufVA & 0x01)
+		is_mcast = TRUE;
+
 #ifdef IGMP_SNOOP_SUPPORT
-	if (pAd->ApCfg.IgmpSnoopEnable)
+	if (is_mcast && pAd->ApCfg.IgmpSnoopEnable)
 	{
 		UCHAR FromWhichBSSID, checkIgmpPkt = TRUE;
 
@@ -406,10 +410,10 @@ NDIS_STATUS APSendPacket(
 	//	   take encryption overhead into consideration here. The result 
 	//	   "NumberOfFrag" is then just used to pre-check if enough free 
 	//	   TXD are available to hold this MSDU.
-	if ((*pSrcBufVA & 0x01)	// fragmentation not allowed on multicast & broadcast
+	if (is_mcast	// fragmentation not allowed on multicast & broadcast
 #ifdef IGMP_SNOOP_SUPPORT
 		// multicast packets in IgmpSn table should never send to Power-Saving queue.
-		&& (!InIgmpGroup)
+		&& (InIgmpGroup == IGMP_NONE)
 #endif // IGMP_SNOOP_SUPPORT //
 		)
 		NumberOfFrag = 1;
@@ -511,10 +515,10 @@ NDIS_STATUS APSendPacket(
 		}
 	}
 	// M/BCAST frames are put to PSQ as long as there's any associated STA in power-save mode
-	else if ((*pSrcBufVA & 0x01) && pAd->MacTab.fAnyStationInPsm
+	else if (is_mcast && pAd->MacTab.fAnyStationInPsm
 #ifdef IGMP_SNOOP_SUPPORT
 		// multicast packets in IgmpSn table should never send to Power-Saving queue.
-		&& (!InIgmpGroup)
+		&& (InIgmpGroup == IGMP_NONE)
 #endif // IGMP_SNOOP_SUPPORT //
 		)
 	{
@@ -553,7 +557,7 @@ NDIS_STATUS APSendPacket(
 		if (((InIgmpGroup == IGMP_IN_GROUP) && (pGroupEntry) && (IgmpMemberCnt(&pGroupEntry->MemberList) > 0)) ||
 		     (InIgmpGroup == IGMP_PKT))
 		{
-			NDIS_STATUS PktCloneResult = IgmpPktClone(pAd, pSrcBufVA, pPacket, InIgmpGroup, pGroupEntry, QueIdx, UserPriority);
+			NDIS_STATUS PktCloneResult = IgmpPktClone(pAd, pPacket, InIgmpGroup, pGroupEntry, QueIdx, UserPriority);
 			RELEASE_NDIS_PACKET(pAd, pPacket, NDIS_STATUS_SUCCESS);
 			return PktCloneResult;
 		}

@@ -71,6 +71,7 @@ void reset_wan6_vars(void)
 		}
 	}
 
+	set_wan_unit_value(0, "ifname6", "");
 	set_wan_unit_value(0, "addr6", addr6s);
 	set_wan_unit_value(0, "gate6", wan_gate6);
 	set_wan_unit_value(0, "6rd_relay", nvram_safe_get("ip6_6rd_relay"));
@@ -142,7 +143,7 @@ void store_ip6rd_from_dhcp(const char *env_value, const char *prefix)
 {
 	int i;
 	char tmp[100];
-	char ip6rd[64];
+	char ip6rd[64] = {0};
 	char addr6[INET6_ADDRSTRLEN];
 	char *value, *values[4];
 
@@ -151,7 +152,7 @@ void store_ip6rd_from_dhcp(const char *env_value, const char *prefix)
 	if (nvram_match("ip6_6rd_dhcp", "0"))
 		return;
 
-	strncpy(ip6rd, env_value, sizeof(ip6rd));
+	strncpy(ip6rd, env_value, sizeof(ip6rd) - 1);
 	value = ip6rd;
 	for (i = 0; i < 4 && value; i++)
 		values[i] = strsep(&value, " ");
@@ -187,10 +188,25 @@ int store_wan_dns6(char *dns6_new)
 	return 0;
 }
 
-void start_sit_tunnel(int ipv6_type, char *wan_addr4, char *wan_addr6)
+char *get_wan_addr6_host(char *p_addr6s)
+{
+	char *tmp = p_addr6s;
+	char *wan6_ifname = get_wan_unit_value(0, "ifname6");
+
+	if (strlen(wan6_ifname) > 0) {
+		if (get_ifaddr6(wan6_ifname, 0, p_addr6s)) {
+			strsep(&tmp, "/");
+			return p_addr6s;
+		}
+	}
+
+	return NULL;
+}
+
+void start_sit_tunnel(int ipv6_type, char *wan_ifname, char *wan_addr4, char *wan_gate4, char *wan_addr6)
 {
 	int sit_ttl, sit_mtu, size4, size6;
-	char *sit_remote, *sit_relay, *wan_gate6;
+	char *sit_remote, *sit_relay, *sit_ep, *wan_gate6;
 	char addr6s[INET6_ADDRSTRLEN];
 	struct in_addr addr4;
 	struct in6_addr addr6;
@@ -208,18 +224,22 @@ void start_sit_tunnel(int ipv6_type, char *wan_addr4, char *wan_addr6)
 
 	memset(&addr6, 0, sizeof(addr6));
 	size6 = ipv6_from_string(wan_addr6, &addr6);
-	if (size6 < 0) size6 = 0;
+	if (size6 < 0)
+		size6 = 0;
 
+	sit_ep = NULL;
 	sit_relay = "";
 	sit_remote = "any";
-	if (ipv6_type == IPV6_6IN4)
+	if (ipv6_type == IPV6_6IN4) {
 		sit_remote = nvram_safe_get("ip6_6in4_remote");
-	
+		sit_ep = sit_remote;
+	}
+
 	if (is_interface_exist(IFNAME_SIT))
 		doSystem("ip tunnel del %s", IFNAME_SIT);
-	
+
 	doSystem("ip tunnel %s %s mode sit remote %s local %s ttl %d", "add", IFNAME_SIT, sit_remote, wan_addr4, sit_ttl);
-	
+
 	if (ipv6_type == IPV6_6TO4) {
 		size6 = 16;
 		memset(&addr6, 0, sizeof(addr6));
@@ -227,6 +247,7 @@ void start_sit_tunnel(int ipv6_type, char *wan_addr4, char *wan_addr6)
 		ipv6_to_ipv4_map(&addr6, size6, &addr4, 0);
 		addr6.s6_addr16[7] = htons(0x0001);
 		sit_relay = nvram_safe_get("ip6_6to4_relay");
+		sit_ep = sit_relay;
 	}
 	else if (ipv6_type == IPV6_6RD) {
 		struct in_addr net4;
@@ -251,9 +272,13 @@ void start_sit_tunnel(int ipv6_type, char *wan_addr4, char *wan_addr6)
 		ipv6_to_ipv4_map(&addr6, size6, &addr4, size4);
 		addr6.s6_addr16[7] = htons(0x0001);
 		sit_relay = get_wan_unit_value(0, "6rd_relay");
+		sit_ep = sit_relay;
 	}
 
-	// WAN IPv6 address
+	/* direct route to SIT IPv4 endpoint via WAN dgw */
+	route_add(wan_ifname, 0, sit_ep, wan_gate4, "255.255.255.255");
+
+	/* WAN IPv6 address */
 	inet_ntop(AF_INET6, &addr6, addr6s, INET6_ADDRSTRLEN);
 	if (size6 > 0)
 		sprintf(addr6s, "%s/%d", addr6s, size6);
@@ -270,8 +295,7 @@ void start_sit_tunnel(int ipv6_type, char *wan_addr4, char *wan_addr6)
 		wan_gate6 = addr6s;
 		/* add direct default gateway for workaround "No route to host" on new kernel */
 		doSystem("ip -6 route add default dev %s metric %d", IFNAME_SIT, 2048);
-	}
-	else {
+	} else {
 		wan_gate6 = get_wan_unit_value(0, "gate6");
 	}
 	if (*wan_gate6)
@@ -285,8 +309,7 @@ void start_sit_tunnel(int ipv6_type, char *wan_addr4, char *wan_addr6)
 			ipv6_to_ipv4_map(&addr6, 16, &addr4, 0);
 			addr6.s6_addr16[3] = htons(0x0001);
 			addr6.s6_addr16[7] = htons(0x0001);
-		}
-		else {
+		} else {
 			ipv6_from_string(wan_addr6, &addr6);
 			ipv6_to_ipv4_map(&addr6, size6, &addr4, size4);
 			addr6.s6_addr16[7] = htons(0x0001);
@@ -312,8 +335,8 @@ void stop_sit_tunnel(void)
 
 void wan6_up(char *wan_ifname, int unit)
 {
-	int ipv6_type, allow_ra, start_radvd_now;
-	char *wan_addr6, *wan_gate6, *wan_addr4;
+	int ipv6_type, allow_ra;
+	char *wan_addr6, *wan_gate6, *wan_addr4, *wan_gate4;
 
 	ipv6_type = get_ipv6_type();
 	if (ipv6_type == IPV6_DISABLED)
@@ -325,13 +348,18 @@ void wan6_up(char *wan_ifname, int unit)
 
 	control_if_ipv6_dad(IFNAME_BR, 1);
 
-	start_radvd_now = 1;
-
 	if (ipv6_type == IPV6_6IN4 || ipv6_type == IPV6_6TO4 || ipv6_type == IPV6_6RD) {
+		set_wan_unit_value(unit, "ifname6", IFNAME_SIT);
+		
 		wan_addr4 = get_wan_unit_value(unit, "ipaddr");
+		wan_gate4 = get_wan_unit_value(unit, "gateway");
 		wan_addr6 = get_wan_unit_value(unit, "addr6");
-		start_sit_tunnel(ipv6_type, wan_addr4, wan_addr6);
+		if (!is_valid_ipv4(wan_gate4))
+			wan_gate4 = NULL;
+		start_sit_tunnel(ipv6_type, wan_ifname, wan_addr4, wan_gate4, wan_addr6);
 	} else {
+		set_wan_unit_value(unit, "ifname6", wan_ifname);
+		
 		control_if_ipv6_dad(wan_ifname, 1);
 		
 		if (ipv6_type == IPV6_NATIVE_STATIC) {
@@ -355,13 +383,8 @@ void wan6_up(char *wan_ifname, int unit)
 			/* wait for interface ready */
 			sleep(2);
 			start_dhcp6c(wan_ifname);
-			if (nvram_match("ip6_lan_auto", "1"))
-				start_radvd_now = 0;
 		}
 	}
-
-	if (start_radvd_now)
-		reload_radvd();
 }
 
 void wan6_down(char *wan_ifname, int unit)
@@ -373,7 +396,6 @@ void wan6_down(char *wan_ifname, int unit)
 	if (ipv6_type == IPV6_DISABLED)
 		return;
 
-	stop_radvd();
 	stop_dhcp6c();
 	control_if_ipv6_radv(wan_ifname, 0);
 	control_if_ipv6_autoconf(wan_ifname, 0);
@@ -404,7 +426,7 @@ void wan6_down(char *wan_ifname, int unit)
 
 int dhcp6c_main(int argc, char **argv)
 {
-	int ipv6_type, dns6_auto, lan6_auto, is_need_notify_radvd;
+	int ipv6_type, dns6_auto, lan6_auto;
 	char *dns6_new, *lan_addr6_new;
 	char addr6s[INET6_ADDRSTRLEN];
 
@@ -414,25 +436,18 @@ int dhcp6c_main(int argc, char **argv)
 	if (ipv6_type != IPV6_NATIVE_DHCP6)
 		return 0;
 
-	is_need_notify_radvd = 0;
 	lan6_auto = nvram_get_int("ip6_lan_auto");
 	if (lan6_auto) {
 		lan_addr6_new = get_ifaddr6(IFNAME_BR, 0, addr6s);
-		if (store_lan_addr6(lan_addr6_new))
-			is_need_notify_radvd = 1;
+		store_lan_addr6(lan_addr6_new);
 	}
 
 	dns6_auto = nvram_get_int("ip6_dns_auto");
 	if (dns6_auto) {
 		dns6_new = getenv("new_domain_name_servers");
-		if (store_wan_dns6(dns6_new)) {
+		if (store_wan_dns6(dns6_new))
 			update_resolvconf(0, 0);
-			is_need_notify_radvd = 1;
-		}
 	}
-
-	if (is_need_notify_radvd || !pids("radvd"))
-		reload_radvd();
 
 	return 0;
 }

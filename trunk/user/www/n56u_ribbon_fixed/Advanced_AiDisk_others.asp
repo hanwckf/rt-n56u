@@ -37,6 +37,9 @@ $j(document).ready(function() {
 <script>
 
 var lan_ipaddr = '<% nvram_get_x("", "lan_ipaddr_t"); %>';
+var http_proto = '<% nvram_get_x("", "http_proto"); %>';
+var http_port = '<% nvram_get_x("", "http_lanport"); %>';
+var https_port = '<% nvram_get_x("", "https_lport"); %>';
 var ddns_enable = '<% nvram_get_x("", "ddns_enable_x"); %>';
 var ddns_server = '<% nvram_get_x("", "ddns_server_x"); %>';
 var ddns_hostname = '<% nvram_get_x("", "ddns_hostname_x"); %>';
@@ -107,6 +110,10 @@ function initial(){
 		$("web_rpc_link").style.display = "none";
 	}
 
+	if (!document.form.aria_enable[0].checked){
+		$("web_aria_link").style.display = "none";
+	}
+
 	show_usb_share_list(0);
 	show_usb_share_list(1);
 	show_usb_share_list(2);
@@ -115,7 +122,23 @@ function initial(){
 var window_rpc;
 var window_dms;
 var window_ffly;
+var window_aria;
 var window_params="toolbar=yes,location=yes,directories=no,status=yes,menubar=yes,scrollbars=yes,resizable=yes,copyhistory=no,width=800,height=600";
+
+function on_aria_link(){
+	var aria_url="http";
+	var http_url=lan_ipaddr;
+	if (http_proto=='1'){
+		aria_url+="s";
+		if (https_port!='443')
+			http_url+=":"+https_port;
+	}else if (http_port!='80'){
+		http_url+=":"+http_port;
+	}
+	aria_url+="://"+http_url+"/ariaweb/index.html";
+	window_aria = window.open(aria_url, "Aria2", window_params);
+	window_aria.focus();
+}
 
 function on_rpc_link(){
 	var rpc_url="http://" + lan_ipaddr + ":" + document.form.trmd_rport.value;
@@ -235,10 +258,18 @@ function change_smb_enabled(){
 	showhide_div('row_smb_fp', v);
 }
 
+function on_change_ftp_mode(enable){
+	var mode = document.form.st_ftp_mode.value;
+	var v = (mode == "3" || mode == "4") ? 1 : 0;
+	showhide_div('row_ftp_anmr', v&&enable);
+}
+
 function change_ftp_enabled(){
 	var v = document.form.enable_ftp[0].checked;
 	showhide_div('row_ftp_mode', v);
 	showhide_div('row_ftp_log', v);
+	showhide_div('row_ftp_pasv', v);
+	on_change_ftp_mode(v);
 }
 
 function change_dms_enabled(){
@@ -282,6 +313,15 @@ function validForm(){
 
 	String.prototype.Trim = function(){return this.replace(/(^\s*)|(\s*$)/g,"");}
 	document.form.st_samba_workgroup.value = document.form.st_samba_workgroup.value.Trim();
+
+	if(found_app_ftpd()){
+		if(!validate_range(document.form.st_ftp_pmin, 1, 65535))
+			return false;
+		if(!validate_range(document.form.st_ftp_pmax, 1, 65535))
+			return false;
+		if(!validate_range(document.form.st_ftp_anmr, 0, 10000))
+			return false;
+	}
 
 	return true;
 }
@@ -401,8 +441,10 @@ function done_validating(action){
                                             <td>
                                                 <select name="pcache_reclaim" class="input">
                                                     <option value="0" <% nvram_match_x("", "pcache_reclaim", "0", "selected"); %>><#checkbox_No#></option>
-                                                    <option value="1" <% nvram_match_x("", "pcache_reclaim", "1", "selected"); %>>50% RAM</option>
-                                                    <option value="2" <% nvram_match_x("", "pcache_reclaim", "2", "selected"); %>>70% RAM</option>
+                                                    <option value="1" <% nvram_match_x("", "pcache_reclaim", "1", "selected"); %>>70% RAM</option>
+                                                    <option value="2" <% nvram_match_x("", "pcache_reclaim", "2", "selected"); %>>50% RAM</option>
+                                                    <option value="3" <% nvram_match_x("", "pcache_reclaim", "3", "selected"); %>>30% RAM</option>
+                                                    <option value="4" <% nvram_match_x("", "pcache_reclaim", "4", "selected"); %>>15% RAM</option>
                                                 </select>
                                             </td>
                                         </tr>
@@ -519,7 +561,7 @@ function done_validating(action){
                                                 <#StorageShare#>
                                             </th>
                                             <td>
-                                                <select name="st_ftp_mode" class="input" style="width: 300px;">
+                                                <select name="st_ftp_mode" class="input" style="width: 300px;" onchange="on_change_ftp_mode(1);">
                                                     <option value="1" <% nvram_match_x("", "st_ftp_mode", "1", "selected"); %>><#StorageShare1#></option>
                                                     <option value="3" <% nvram_match_x("", "st_ftp_mode", "3", "selected"); %>><#StorageShare3#></option>
                                                     <option value="2" <% nvram_match_x("", "st_ftp_mode", "2", "selected"); %>><#StorageShare2#></option>
@@ -536,6 +578,21 @@ function done_validating(action){
                                                     <option value="0" <% nvram_match_x("", "st_ftp_log", "0", "selected"); %>><#checkbox_No#></option>
                                                     <option value="1" <% nvram_match_x("", "st_ftp_log", "1", "selected"); %>><#checkbox_Yes#></option>
                                                 </select>
+                                            </td>
+                                        </tr>
+                                        <tr id="row_ftp_pasv">
+                                            <th><#StoragePasvPR#></th>
+                                            <td>
+                                                <input type="text" maxlength="5" class="input" size="10" style="width: 94px;" name="st_ftp_pmin" value="<% nvram_get_x("", "st_ftp_pmin"); %>" onkeypress="return is_number(this,event);"/>&nbsp;-
+                                                <input type="text" maxlength="5" class="input" size="10" style="width: 94px;" name="st_ftp_pmax" value="<% nvram_get_x("", "st_ftp_pmax"); %>" onkeypress="return is_number(this,event);"/>
+                                                &nbsp;<span style="color:#888;">[1..65535]</span>
+                                            </td>
+                                        </tr>
+                                        <tr id="row_ftp_anmr" style="display:none;">
+                                            <th><#StorageAnonMR#></th>
+                                            <td>
+                                                <input type="text" name="st_ftp_anmr" class="input" maxlength="32" size="32" value="<% nvram_get_x("", "st_ftp_anmr"); %>" onkeypress="return is_number(this,event);"/>
+                                                &nbsp;<span style="color:#888;">[0..10000]</span>
                                             </td>
                                         </tr>
                                     </table>
@@ -744,13 +801,13 @@ function done_validating(action){
 
                                     <table width="100%" id="tbl_aria" cellpadding="4" cellspacing="0" class="table" style="display:none;">
                                         <tr>
-                                            <th colspan="2" style="background-color: #E3E3E3;"><#StorageAria#></th>
+                                            <th colspan="3" style="background-color: #E3E3E3;"><#StorageAria#></th>
                                         </tr>
                                         <tr>
                                             <th width="50%">
                                                 <a class="help_tooltip" href="javascript:void(0);" onmouseover="openTooltip(this,17,12);"><#StorageEnableAria#></a>
                                             </th>
-                                            <td>
+                                            <td colspan="2">
                                                 <div class="main_itoggle">
                                                     <div id="aria_enable_on_of">
                                                         <input type="checkbox" id="aria_enable_fake" <% nvram_match_x("", "aria_enable", "1", "value=1 checked"); %><% nvram_match_x("", "aria_enable", "0", "value=0"); %>>
@@ -767,16 +824,19 @@ function done_validating(action){
                                             <th>
                                                 <#StoragePPortTRMD#>
                                             </th>
-                                            <td>
+                                            <td colspan="2">
                                                 <input type="text" maxlength="5" size="5" name="aria_pport" class="input" value="<% nvram_get_x("", "aria_pport"); %>" onkeypress="return is_number(this,event);"/>
                                             </td>
                                         </tr>
                                         <tr id="row_aria_rport">
-                                            <th>
+                                            <th width="50%">
                                                 <#StorageRPortTRMD#>
                                             </th>
                                             <td>
                                                <input type="text" maxlength="5" size="5" name="aria_rport" class="input" value="<% nvram_get_x("", "aria_rport"); %>" onkeypress="return is_number(this,event);"/>
+                                            </td>
+                                            <td>
+                                               <a href="javascript:on_aria_link();" id="web_aria_link">Web control</a>
                                             </td>
                                         </tr>
                                     </table>

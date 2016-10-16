@@ -421,6 +421,7 @@ typedef struct __CMD_RTPRIV_IOCTL_80211_BEACON {
 #define RT_CMD_80211_IFTYPE_MONITOR             0x06
 #define RT_CMD_80211_IFTYPE_P2P_CLIENT          0x08
 #define RT_CMD_80211_IFTYPE_P2P_GO              0x09
+#define RT_CMD_80211_IFTYPE_P2P_DEVICE          0x10
 
 /* Must sync with nl80211_channel_type@nl80211.h */
 #define RT_CMD_80211_CHANTYPE_NOHT		0x00
@@ -457,9 +458,11 @@ typedef struct __CMD_RTPRIV_IOCTL_80211_VIF_PARM {
 } CMD_RTPRIV_IOCTL_80211_VIF_PARM;
 
 typedef struct __CMD_RTPRIV_IOCTL_80211_IBSS {
-
-	UINT32 BeaconInterval;
-	UCHAR *pSsid;
+	UINT  BeaconInterval;
+	UCHAR Ssid[33];
+	UINT  privacy;
+	PUCHAR BeaconExtraIe;
+	UINT  BeaconExtraIeLen;
 } CMD_RTPRIV_IOCTL_80211_IBSS;
 
 #define RT_CMD_80211_TXRATE_LEGACY		0x01

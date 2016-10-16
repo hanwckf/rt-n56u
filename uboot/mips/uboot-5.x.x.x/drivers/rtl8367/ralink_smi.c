@@ -35,11 +35,11 @@ extern u32 mii_mgr_write(u32 phy_addr, u32 phy_register, u32 write_data);
 
 static const u32 g_phy_id = 0;
 
-void smi_init(void)
+void smi_init(const char *asic_name)
 {
 	gpio_init_mdio();
 
-	printf(" Switch control i/f: %s\n", "MDIO");
+	printf("\n %s GSW control i/f: %s\n", asic_name, "MDIO");
 }
 
 int smi_read(rtk_uint32 addr, rtk_uint32 *data)
@@ -106,47 +106,29 @@ int smi_write(rtk_uint32 addr, rtk_uint32 data)
 #define SMI_CLK_DELAY_US		3
 #define SMI_SLAVE_ADDR			0xB8
 
-static const u32 g_gpio_sda = 1;
-static const u32 g_gpio_sck = 2;
+static const u32 g_gpio_sda = SWITCH_SMI_GPIO_SDA;
+static const u32 g_gpio_sck = SWITCH_SMI_GPIO_SCK;
 
 /////////////////////////////////////////////////////////////////////////////////
 
 static void _gpio_direction_output(u32 pin)
 {
-	u32 tmp;
-
-	tmp = le32_to_cpu(*(volatile u32 *)(RT2880_REG_PIODIR));
-	tmp |= (1U << pin);
-	*(volatile u32 *)(RT2880_REG_PIODIR) = cpu_to_le32(tmp);
+	mtk_set_gpio_dir(pin, 1);
 }
 
 static void _gpio_direction_input(u32 pin)
 {
-	u32 tmp;
-
-	tmp = le32_to_cpu(*(volatile u32 *)(RT2880_REG_PIODIR));
-	tmp &= ~(1U << pin);
-	*(volatile u32 *)(RT2880_REG_PIODIR) = cpu_to_le32(tmp);
+	mtk_set_gpio_dir(pin, 0);
 }
 
 static void _gpio_set_value(u32 pin, u32 value)
 {
-	u32 tmp = (1U << pin);
-
-	if (value)
-		*(volatile u32 *)(RT2880_REG_PIOSET) = cpu_to_le32(tmp);
-	else
-		*(volatile u32 *)(RT2880_REG_PIORESET) = cpu_to_le32(tmp);
+	mtk_set_gpio_pin(pin, value);
 }
 
 static u32 _gpio_get_value(u32 pin)
 {
-	u32 tmp;
-
-	tmp = le32_to_cpu(*(volatile u32 *)(RT2880_REG_PIODATA));
-	tmp = (tmp >> pin) & 1U;
-
-	return tmp;
+	return mtk_get_gpio_pin(pin);
 }
 
 /////////////////////////////////////////////////////////////////////////////////
@@ -163,9 +145,9 @@ static void _smi_start(void)
 	 * SCK = 0, SDA = 1
 	 */
 	_gpio_direction_output(g_gpio_sck);
-	_gpio_set_value(g_gpio_sck, 0);
-	
 	_gpio_direction_output(g_gpio_sda);
+
+	_gpio_set_value(g_gpio_sck, 0);
 	_gpio_set_value(g_gpio_sda, 1);
 	_smi_clk_delay();
 
@@ -287,9 +269,15 @@ static void _smi_read_byte_x(u32 byte_index, u8 *data)
 
 /////////////////////////////////////////////////////////////////////////////////
 
-void smi_init(void)
+void smi_init(const char *asic_name)
 {
-	printf(" Switch control i/f: %s\n", "SMI GPIO");
+	_gpio_direction_output(g_gpio_sck);
+	_gpio_direction_output(g_gpio_sda);
+
+	_gpio_set_value(g_gpio_sck, 1);
+	_gpio_set_value(g_gpio_sda, 1);
+
+	printf("\n %s GSW control i/f: %s\n", asic_name, "SMI via GPIO");
 }
 
 int smi_read(u32 addr, u32 *data)

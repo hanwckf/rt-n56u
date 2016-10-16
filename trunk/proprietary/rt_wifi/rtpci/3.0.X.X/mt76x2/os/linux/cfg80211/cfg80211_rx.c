@@ -76,6 +76,8 @@ BOOLEAN CFG80211_CheckActionFrameType(
 	mgmt = (struct ieee80211_mgmt *)pData;
 	if (ieee80211_is_mgmt(mgmt->frame_control)) 
 	{
+		PP2P_PUBLIC_FRAME pFrame = (PP2P_PUBLIC_FRAME)pData;
+		
 		if (ieee80211_is_probe_resp(mgmt->frame_control)) 
 		{
 			DBGPRINT(RT_DEBUG_INFO, ("CFG80211_PKT: %s ProbeRsp Frame %d\n", preStr, pAd->LatchRfRegs.Channel));
@@ -96,7 +98,6 @@ BOOLEAN CFG80211_CheckActionFrameType(
 		}
 		else if (ieee80211_is_action(mgmt->frame_control)) 
 		{
-			PP2P_PUBLIC_FRAME pFrame = (PP2P_PUBLIC_FRAME)pData;
 			if ((pFrame->p80211Header.FC.SubType == SUBTYPE_ACTION) &&
 			    (pFrame->Category == CATEGORY_PUBLIC) &&
 			    (pFrame->Action == ACTION_WIFI_DIRECT))
@@ -235,6 +236,15 @@ BOOLEAN CFG80211_HandleP2pMgmtFrame(RTMP_ADAPTER *pAd, RX_BLK *pRxBlk, UCHAR OpM
 			{	 
 				DBGPRINT(RT_DEBUG_INFO,("MAIN STA RtmpOsCFG80211RxMgmt OK!! TYPE = %d, freq = %d, %02x:%02x:%02x:%02x:%02x:%02x\n",
 										pHeader->FC.SubType, freq, PRINT_MAC(pHeader->Addr2))); 
+#ifdef RT_CFG80211_P2P_CONCURRENT_DEVICE
+				if (pAd->cfg80211_ctrl.dummy_p2p_net_dev == NULL) //Fix crash problem when hostapd boot up.
+				{
+					DBGPRINT(RT_DEBUG_INFO, ("pAd->dummy_p2p_net_dev is NULL!!!!!!!!!!!\n"));	
+
+					return FALSE;
+				}
+				else
+#endif /* RT_CFG80211_P2P_CONCURRENT_DEVICE */					
 				CFG80211OS_RxMgmt(CFG80211_GetEventDevice(pAd), freq, (PUCHAR)pHeader, pRxWI->RXWI_N.MPDUtotalByteCnt);								
 				
 				if (OpMode == OPMODE_AP) 

@@ -1,4 +1,4 @@
-/* $OpenBSD: channels.c,v 1.347 2015/07/01 02:26:31 djm Exp $ */
+/* $OpenBSD: channels.c,v 1.351 2016/07/19 11:38:53 dtucker Exp $ */
 /*
  * Author: Tatu Ylonen <ylo@cs.hut.fi>
  * Copyright (c) 1995 Tatu Ylonen <ylo@cs.hut.fi>, Espoo, Finland
@@ -137,6 +137,9 @@ static int num_adm_permitted_opens = 0;
 
 /* special-case port number meaning allow any port */
 #define FWD_PERMIT_ANY_PORT	0
+
+/* special-case wildcard meaning allow any host */
+#define FWD_PERMIT_ANY_HOST	"*"
 
 /*
  * If this is true, all opens are permitted.  This is the case on the server
@@ -662,7 +665,7 @@ channel_open_message(void)
 		case SSH_CHANNEL_INPUT_DRAINING:
 		case SSH_CHANNEL_OUTPUT_DRAINING:
 			snprintf(buf, sizeof buf,
-			    "  #%d %.300s (t%d r%d i%d/%d o%d/%d fd %d/%d cc %d)\r\n",
+			    "  #%d %.300s (t%d r%d i%u/%d o%u/%d fd %d/%d cc %d)\r\n",
 			    c->self, c->remote_name,
 			    c->type, c->remote_id,
 			    c->istate, buffer_len(&c->input),
@@ -1416,7 +1419,7 @@ port_open_helper(Channel *c, char *rtype)
 {
 	char buf[1024];
 	char *local_ipaddr = get_local_ipaddr(c->sock);
-	int local_port = c->sock == -1 ? 65536 : get_sock_port(c->sock, 1);
+	int local_port = c->sock == -1 ? 65536 : get_local_port(c->sock);
 	char *remote_ipaddr = get_peer_ipaddr(c->sock);
 	int remote_port = get_peer_port(c->sock);
 
@@ -1896,13 +1899,13 @@ read_mux(Channel *c, u_int need)
 	if (buffer_len(&c->input) < need) {
 		rlen = need - buffer_len(&c->input);
 		len = read(c->rfd, buf, MIN(rlen, CHAN_RBUF));
+		if (len < 0 && (errno == EINTR || errno == EAGAIN))
+			return buffer_len(&c->input);
 		if (len <= 0) {
-			if (errno != EINTR && errno != EAGAIN) {
-				debug2("channel %d: ctl read<=0 rfd %d len %d",
-				    c->self, c->rfd, len);
-				chan_read_failed(c);
-				return 0;
-			}
+			debug2("channel %d: ctl read<=0 rfd %d len %d",
+			    c->self, c->rfd, len);
+			chan_read_failed(c);
+			return 0;
 		} else
 			buffer_append(&c->input, buf, len);
 	}
@@ -2935,7 +2938,7 @@ channel_setup_fwd_listener_tcpip(int type, struct Forward *fwd,
 		if (type == SSH_CHANNEL_RPORT_LISTENER && fwd->listen_port == 0 &&
 		    allocated_listen_port != NULL &&
 		    *allocated_listen_port == 0) {
-			*allocated_listen_port = get_sock_port(sock, 1);
+			*allocated_listen_port = get_local_port(sock);
 			debug("Allocated listen port %d",
 			    *allocated_listen_port);
 		}
@@ -3298,7 +3301,8 @@ open_match(ForwardPermission *allowed_open, const char *requestedhost,
 	if (allowed_open->port_to_connect != FWD_PERMIT_ANY_PORT &&
 	    allowed_open->port_to_connect != requestedport)
 		return 0;
-	if (strcmp(allowed_open->host_to_connect, requestedhost) != 0)
+	if (strcmp(allowed_open->host_to_connect, FWD_PERMIT_ANY_HOST) != 0 &&
+	    strcmp(allowed_open->host_to_connect, requestedhost) != 0)
 		return 0;
 	return 1;
 }

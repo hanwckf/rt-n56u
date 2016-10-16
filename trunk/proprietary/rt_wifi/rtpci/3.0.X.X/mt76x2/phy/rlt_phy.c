@@ -170,34 +170,6 @@ static INT rlt_bbp_set_rxpath(struct _RTMP_ADAPTER *pAd, INT rxpath)
 	return TRUE;
 }
 
-
-static UCHAR vht_prim_ch_val[] = {
-	42, 36, 0,
-	42, 40, 1,
-	42, 44, 2,
-	42, 48, 3,
-	58, 52, 0,
-	58, 56, 1,
-	58, 60, 2,
-	58, 64, 3,
-	106, 100, 0,
-	106, 104, 1,
-	106, 108, 2,
-	106, 112, 3,
-	122, 116, 0,
-	122, 120, 1,
-	122, 124, 2,
-	122, 128, 3,
-	138, 132, 0,
-	138, 136, 1,
-	138, 140, 2,
-	138, 144, 3,
-	155, 149, 0,
-	155, 153, 1,
-	155, 157, 2,
-	155, 161, 3
-};
-
 	
 static INT rlt_bbp_set_ctrlch(struct _RTMP_ADAPTER *pAd, UINT8 ext_ch)
 {
@@ -307,9 +279,6 @@ static INT rlt_bbp_set_bw(struct _RTMP_ADAPTER *pAd, UINT8 bw)
 	UINT32 core, core_r1 = 0;
 	UINT32 agc, agc_r0 = 0;
 
-#if defined(MT76x0) || defined(MT76x2)
-	UINT32 core_r4;
-#endif /* defined(MT76x0) || defined(MT76x2) */
 
 
 	RTMP_BBP_IO_READ32(pAd, CORE_R1, &core_r1);

@@ -39,6 +39,12 @@ config  MT76X3_AP_APCLI
 	depends on MT76X3_AP
 	default y
 
+config  MT76X3_AP_APCLI_CERT
+	bool "AP-Client TGn Cert support"
+	depends on MT76X3_AP
+	depends on MT76X3_AP_APCLI
+	default n
+
 config  MT76X3_AP_MULTI_APCLI
 	bool "Multi AP-Client support"
 	depends on MT76X3_AP

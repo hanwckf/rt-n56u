@@ -619,8 +619,8 @@ VOID AsicGetAutoAgcOffsetForExternalTxAlc(
 			/* bg channel */
 			bAutoTxAgc = pAd->bAutoTxAgcG;
 			TssiRef = pAd->TssiRefG;
-			pTssiMinusBoundary = &pAd->TssiMinusBoundaryG[0];
-			pTssiPlusBoundary = &pAd->TssiPlusBoundaryG[0];
+			pTssiMinusBoundary = (UCHAR *)&pAd->TssiMinusBoundaryG[0];
+			pTssiPlusBoundary = (UCHAR *)&pAd->TssiPlusBoundaryG[0];
 			TxAgcStep = pAd->TxAgcStepG;
 			pTxAgcCompensate = &pAd->TxAgcCompensateG;
 		}
@@ -629,8 +629,8 @@ VOID AsicGetAutoAgcOffsetForExternalTxAlc(
 			/* a channel */
 			bAutoTxAgc = pAd->bAutoTxAgcA;
 			TssiRef = pAd->TssiRefA;
-			pTssiMinusBoundary = &pAd->TssiMinusBoundaryA[0];
-			pTssiPlusBoundary = &pAd->TssiPlusBoundaryA[0];
+			pTssiMinusBoundary = (UCHAR *)&pAd->TssiMinusBoundaryA[0];
+			pTssiPlusBoundary = (UCHAR *)&pAd->TssiPlusBoundaryA[0];
 			TxAgcStep = pAd->TxAgcStepA;
 			pTxAgcCompensate = &pAd->TxAgcCompensateA;
 		}
@@ -856,120 +856,6 @@ VOID AsicAdjustTxPower(RTMP_ADAPTER *pAd)
 		return;
 #endif /* MT7601 */
 
-	/* Power will be updated each 4 sec. */
-	if (pAd->Mlme.OneSecPeriodicRound % 4 == 0)
-	{
-		/* Set new Tx power for different Tx rates */
-		for (i=0; i < CfgOfTxPwrCtrlOverMAC.NumOfEntries; i++)
-		{
-			TX_POWER_CONTROL_OVER_MAC_ENTRY *pTxPwrEntry;
-			ULONG reg_val;
-
-			pTxPwrEntry = &CfgOfTxPwrCtrlOverMAC.TxPwrCtrlOverMAC[i];
-			reg_val = pTxPwrEntry->RegisterValue;
-			if (reg_val != 0xffffffff)
-			{	
-				for (j=0; j<8; j++)
-				{
-					CHAR _upbound, _lowbound, t_pwr;
-					BOOLEAN _bValid;
-
-					_lowbound = 0;
-					_bValid = TRUE;
-											
-					Value = (CHAR)((reg_val >> j*4) & 0x0F);
-#ifdef SINGLE_SKU
-					if (pAd->CommonCfg.bSKUMode == TRUE)
-					{
-						TotalDeltaPower = SingleSKUBbpR1Offset + TotalDeltaPowerOri - (CHAR)((SingleSKUTotalDeltaPwr[i] >> j*4) & 0x0F);	
-
-						DBGPRINT(RT_DEBUG_INFO, ("%s: BbpR1Offset(%d) + TX ALC(%d) - SingleSKU[%d/%d](%d) = TotalDeltaPower(%d)\n",
-							__FUNCTION__, SingleSKUBbpR1Offset,
-							TotalDeltaPowerOri, i, j,
-							(CHAR)((SingleSKUTotalDeltaPwr[i] >> j*4) & 0x0F),
-							TotalDeltaPower));
-					}
-#endif /* SINGLE_SKU */
-
-#if defined(RTMP_INTERNAL_TX_ALC) || defined(RTMP_TEMPERATURE_COMPENSATION)
-					/* The upper bounds of MAC 0x1314 ~ 0x1324 are variable */
-					if ((pAd->TxPowerCtrl.bInternalTxALC == TRUE)^(pAd->chipCap.bTempCompTxALC == TRUE))
-					{
-						switch (0x1314 + (i * 4))
-						{
-							case 0x1314:
-#ifdef RT8592
-								if (IS_RT8592(pAd))
-									_upbound = 0xf;
-								else
-#endif /* RT8592 */
-									_upbound = 0xe;
-								break;
-
-							case 0x1318: 
-#ifdef RT8592
-								if (IS_RT8592(pAd))
-									_upbound = 0xf;
-								else
-#endif /* RT8592 */
-									_upbound = (j <= 3) ? 0xc : 0xe;
-								break;
-
-							case 0x131C: 
-								_upbound = ((j == 0) || (j == 2) || (j == 3)) ? 0xc : 0xe;
-								break;
-
-							case 0x1320: 
-								_upbound = (j == 1) ? 0xe : 0xc;
-								break;
-
-							case 0x1324: 
-								_upbound = 0xc;
-								break;
-
-							default: 
-							{
-								/* do nothing */
-								_bValid = FALSE;
-								DBGPRINT(RT_DEBUG_ERROR, ("%s: Unknown register = 0x%x\n", __FUNCTION__, (0x1314 + (i * 4))));
-							}
-							break;
-						}
-					}
-					else
-#endif /* RTMP_INTERNAL_TX_ALC || RTMP_TEMPERATURE_COMPENSATION */
-						_upbound = 0xc;
-
-					if (_bValid)
-					{
-						t_pwr = Value + TotalDeltaPower;
-						if (t_pwr < _lowbound)
-							Value = _lowbound;
-						else if (t_pwr > _upbound)
-							Value = _upbound;
-						else
-							Value = t_pwr;
-					}
-
-					/* Fill new value into the corresponding MAC offset */
-#ifdef E3_DBG_FALLBACK
-				pTxPwrEntry->RegisterValue = (reg_val & ~(0x0000000F << j*4)) | (Value << j*4);
-#else
-					reg_val = (reg_val & ~(0x0000000F << j*4)) | (Value << j*4);
-#endif /* E3_DBG_FALLBACK */
-				}
-
-#ifndef E3_DBG_FALLBACK
-				pTxPwrEntry->RegisterValue = reg_val;
-#endif /* E3_DBG_FALLBACK */
-				RTMP_IO_WRITE32(pAd, pTxPwrEntry->MACRegisterOffset, pTxPwrEntry->RegisterValue);
-
-			}
-		}
-
-		/* Extra set MAC registers to compensate Tx power if any */
-		RTMP_CHIP_ASIC_EXTRA_POWER_OVER_MAC(pAd);
-	}
 
 }
 
@@ -1826,4 +1712,70 @@ VOID RTMPReadChannelPwr(RTMP_ADAPTER *pAd)
 	
 
 }
+
+#ifdef RTMP_TEMPERATURE_COMPENSATION
+/* 
+	Note: This function use E2P_OFFSET_START and E2P_OFFSET_END to
+	determine the table type is minus or plus.
+*/
+BOOLEAN LoadTempCompTableFromEEPROM(
+		IN	RTMP_ADAPTER	*pAd,
+		IN	const USHORT		E2P_OFFSET_START,
+		IN	const USHORT		E2P_OFFSET_END,
+		OUT	PUCHAR			TssiTable,
+		IN	const INT			StartIndex,
+		IN	const UINT32		TABLE_SIZE)
+{
+	USHORT	e2p_value;
+	INT	e2p_index, table_index;
+	CHAR	table_sign; /* +1 for plus table, -1 for minus table */
+
+	table_sign = (E2P_OFFSET_START < E2P_OFFSET_END) ? 1 : (-1);
+
+	if (StartIndex < TABLE_SIZE)
+		table_index = StartIndex;
+	else
+	{
+		DBGPRINT(RT_DEBUG_ERROR, 
+					("%s(): Error! Wrong starting index (%d).\n",
+					__FUNCTION__, StartIndex));
+		return FALSE;
+	}
+
+	DBGPRINT(RT_DEBUG_TRACE,
+				("%s(): Load %s %s table from E2P 0x%x to 0x%x. StartIndex = %d\n",
+				__FUNCTION__, 
+				pAd->CommonCfg.Channel > 14 ? "5G" : "2.4G",
+				(table_sign == 1) ? "plus" : "minus",
+				E2P_OFFSET_START, E2P_OFFSET_END, StartIndex));
+	// TODO: Load two bytes
+	for (e2p_index = E2P_OFFSET_START;
+		 e2p_index != (E2P_OFFSET_END + (1*table_sign));
+		 e2p_index = e2p_index + (1*table_sign))
+	{
+		RT28xx_EEPROM_READ16(pAd, e2p_index, e2p_value);
+		TssiTable[table_index] = (UCHAR)(e2p_value & 0xFF);
+		if ((++table_index) >= TABLE_SIZE)
+			break; /* table full */
+	}
+
+	if (e2p_index != E2P_OFFSET_END)
+	{
+		/* Table is full before e2p_offset_end */
+		DBGPRINT(RT_DEBUG_WARN, 
+					("%s(): Warning! EEPROM table may not be completely loaded.\n",
+					__FUNCTION__));
+		return FALSE;
+	}
+	else
+	{	
+		for (table_index = 0; table_index < TABLE_SIZE; table_index++)
+			DBGPRINT(RT_DEBUG_TRACE, ("\tTable[%d] = %3d (0x%02X)\n", 
+						table_index, (CHAR)TssiTable[table_index], TssiTable[table_index]));
+		return TRUE;
+	}
+
+	return TRUE;
+}
+#endif /* RTMP_TEMPERATURE_COMPENSATION */
 

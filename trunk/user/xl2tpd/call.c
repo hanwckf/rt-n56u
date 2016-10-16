@@ -398,6 +398,9 @@ void destroy_call (struct call *c)
 #ifdef IP_ALLOCATION
     if (c->addr)
         unreserve_addr (c->addr);
+
+    if (c->lns && c->lns->localrange)
+        unreserve_addr (c->lns->localaddr);
 #endif
 
     /*
@@ -407,7 +410,7 @@ void destroy_call (struct call *c)
      * voluntarily
      */
     pid = c->pppd;
-    if (pid)
+    if (pid > 0)
     {
       /* Set c->pppd to zero to prevent recursion with child_handler */
       c->pppd = 0;

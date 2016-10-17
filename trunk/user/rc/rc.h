@@ -671,8 +671,8 @@ int stop_inicd(void);
 void set_cpu_affinity(int is_ap_mode);
 void set_vpn_balancing(const char *vpn_ifname);
 #else
-inline void set_cpu_affinity(int is_ap_mode) {}
-inline void set_vpn_balancing(const char *vpn_ifname) {}
+#define set_cpu_affinity(x)
+#define set_vpn_balancing(ptr)
 #endif
 
 /* rstats.c */

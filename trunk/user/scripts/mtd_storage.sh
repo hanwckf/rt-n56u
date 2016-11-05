@@ -188,6 +188,8 @@ func_fill()
 	dir_dnsmasq="$dir_storage/dnsmasq"
 	dir_ovpnsvr="$dir_storage/openvpn/server"
 	dir_ovpncli="$dir_storage/openvpn/client"
+	dir_sswan="$dir_storage/strongswan"
+	dir_sswan_crt="$dir_sswan/ipsec.d"
 	dir_inadyn="$dir_storage/inadyn"
 	dir_crond="$dir_storage/cron/crontabs"
 	dir_wlan="$dir_storage/wlan"
@@ -208,6 +210,9 @@ func_fill()
 	user_ovpnsvr_conf="$dir_ovpnsvr/server.conf"
 	user_ovpncli_conf="$dir_ovpncli/client.conf"
 	user_inadyn_conf="$dir_inadyn/inadyn.conf"
+	user_sswan_conf="$dir_sswan/strongswan.conf"
+	user_sswan_ipsec_conf="$dir_sswan/ipsec.conf"
+	user_sswan_secrets="$dir_sswan/ipsec.secrets"
 
 	# create crond dir
 	[ ! -d "$dir_crond" ] && mkdir -p -m 730 "$dir_crond"
@@ -562,6 +567,37 @@ mute 10
 
 EOF
 			chmod 644 "$user_ovpncli_conf"
+		fi
+	fi
+
+	# create strongswan files
+	if [ -x /usr/sbin/ipsec ] ; then
+		[ ! -d "$dir_sswan" ] && mkdir -p -m 700 "$dir_sswan"
+		[ ! -d "$dir_sswan_crt" ] && mkdir -p -m 700 "$dir_sswan_crt"
+		[ ! -d "$dir_sswan_crt/cacerts" ] && mkdir -p -m 700 "$dir_sswan_crt/cacerts"
+		[ ! -d "$dir_sswan_crt/certs" ] && mkdir -p -m 700 "$dir_sswan_crt/certs"
+		[ ! -d "$dir_sswan_crt/private" ] && mkdir -p -m 700 "$dir_sswan_crt/private"
+
+		if [ ! -f "$user_sswan_conf" ] ; then
+			cat > "$user_sswan_conf" <<EOF
+### strongswan.conf - user strongswan configuration file
+
+EOF
+			chmod 644 "$user_sswan_conf"
+		fi
+		if [ ! -f "$user_sswan_ipsec_conf" ] ; then
+			cat > "$user_sswan_ipsec_conf" <<EOF
+### ipsec.conf - user strongswan IPsec configuration file
+
+EOF
+			chmod 644 "$user_sswan_ipsec_conf"
+		fi
+		if [ ! -f "$user_sswan_secrets" ] ; then
+			cat > "$user_sswan_secrets" <<EOF
+### ipsec.secrets - user strongswan IPsec secrets file
+
+EOF
+			chmod 644 "$user_sswan_secrets"
 		fi
 	fi
 }

@@ -385,7 +385,11 @@ if [ "$CONFIG_FIRMWARE_INCLUDE_SERIAL" != "y" ] ; then
 fi
 fi
 ############################# XFRM ####################################
-if [ "$CONFIG_FIRMWARE_INCLUDE_XFRM" != "y" ] && [ "$CONFIG_PRODUCT" = "MT7621" ]; then
+if [ "$CONFIG_FIRMWARE_INCLUDE_SSWAN" = "y" ] ; then
+	CONFIG_FIRMWARE_INCLUDE_XFRM=y
+fi
+if [ "$CONFIG_PRODUCT" = "MT7621" ] ; then
+if [ "$CONFIG_FIRMWARE_INCLUDE_XFRM" != "y" ] ; then
 	func_disable_kernel_param "CONFIG_XFRM"
 	func_disable_kernel_param "CONFIG_XFRM_USER"
 	func_disable_kernel_param "CONFIG_XFRM_IPCOMP"
@@ -404,11 +408,11 @@ if [ "$CONFIG_FIRMWARE_INCLUDE_XFRM" != "y" ] && [ "$CONFIG_PRODUCT" = "MT7621" 
 	func_disable_kernel_param "CONFIG_INET6_XFRM_MODE_TRANSPORT"
 	func_disable_kernel_param "CONFIG_INET6_XFRM_MODE_TUNNEL"
 	func_disable_kernel_param "CONFIG_INET6_XFRM_MODE_BEET"
-	func_disable_kernel_param "CONFIG_IPV6_MULTIPLE_TABLES"
 	func_disable_kernel_param "CONFIG_NETFILTER_XT_MATCH_ESP"
 	func_disable_kernel_param "CONFIG_NETFILTER_XT_MATCH_POLICY"
 	func_disable_kernel_param "CONFIG_IP_NF_MATCH_AH"
 	func_disable_kernel_param "CONFIG_IP6_NF_MATCH_AH"
+	func_disable_kernel_param "CONFIG_IPV6_MULTIPLE_TABLES"
 	func_disable_kernel_param "CONFIG_CRYPTO_AEAD"
 	func_disable_kernel_param "CONFIG_CRYPTO_AEAD2"
 	func_disable_kernel_param "CONFIG_CRYPTO_AUTHENC"
@@ -419,6 +423,7 @@ if [ "$CONFIG_FIRMWARE_INCLUDE_XFRM" != "y" ] && [ "$CONFIG_PRODUCT" = "MT7621" 
 	func_disable_kernel_param "CONFIG_CRYPTO_AES"
 	func_disable_kernel_param "CONFIG_CRYPTO_DES"
 	func_disable_kernel_param "CONFIG_CRYPTO_DEFLATE"
+fi
 fi
 ############################ IPSET ####################################
 if [ "$CONFIG_FIRMWARE_INCLUDE_IPSET" != "y" ] ; then

@@ -15,6 +15,11 @@
 #include <net/ip.h>
 #include <net/xfrm.h>
 
+#if IS_ENABLED(CONFIG_RALINK_HWCRYPTO)
+#include <net/esp.h>
+#include <linux/crypto.h>
+#endif
+
 static inline void ipip_ecn_decapsulate(struct sk_buff *skb)
 {
 	struct iphdr *inner_iph = ipip_hdr(skb);
@@ -33,6 +38,28 @@ static int xfrm4_mode_tunnel_output(struct xfrm_state *x, struct sk_buff *skb)
 	struct iphdr *top_iph;
 	int flags;
 
+#if IS_ENABLED(CONFIG_RALINK_HWCRYPTO)
+	if (x->type->proto == IPPROTO_ESP) {
+		struct esp_data *esp;
+		int header_len;
+
+		esp = x->data;
+		if (!esp) {
+			net_warn_ratelimited("%s: esp is NULL\n", __FUNCTION__);
+			return -EPERM;
+		}
+
+		header_len = (x->props.header_len) - (sizeof(struct ip_esp_hdr) +
+			crypto_aead_ivsize(esp->aead));
+
+		if (header_len < 0) {
+			net_warn_ratelimited("%s: Wrong value for header_len: %d\n",
+				__FUNCTION__, header_len);
+			return -EPERM;
+		}
+		skb_set_network_header(skb, -header_len);
+	} else
+#endif
 	skb_set_network_header(skb, -x->props.header_len);
 	skb->mac_header = skb->network_header +
 			  offsetof(struct iphdr, protocol);

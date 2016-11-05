@@ -81,6 +81,9 @@ int xfrm_parse_spi(struct sk_buff *skb, u8 nexthdr, __be32 *spi, __be32 *seq)
 	*seq = *(__be32*)(skb_transport_header(skb) + offset_seq);
 	return 0;
 }
+#if IS_ENABLED(CONFIG_RALINK_HWCRYPTO)
+EXPORT_SYMBOL(xfrm_parse_spi);
+#endif
 
 int xfrm_prepare_input(struct xfrm_state *x, struct sk_buff *skb)
 {
@@ -191,6 +194,23 @@ int xfrm_input(struct sk_buff *skb, int nexthdr, __be32 spi, int encap_type)
 		XFRM_SKB_CB(skb)->seq.input.hi = seq_hi;
 
 		skb_dst_force(skb);
+
+#if IS_ENABLED(CONFIG_RALINK_HWCRYPTO)
+		if (x->type->proto == IPPROTO_ESP) {
+			err = x->type->input(x, skb);
+
+			/* check skb in progress */
+			if (err == HWCRYPTO_OK)
+				return 0;
+
+			/* check skb already freed */
+			if (err == HWCRYPTO_NOMEM)
+				return 0;
+
+			goto drop;
+		}
+#endif
+
 		dev_hold(skb->dev);
 
 		nexthdr = x->type->input(x, skb);

@@ -320,6 +320,9 @@ int ip_output(struct sk_buff *skb)
 			    ip_finish_output,
 			    !(IPCB(skb)->flags & IPSKB_REROUTED));
 }
+#if IS_ENABLED(CONFIG_RALINK_HWCRYPTO)
+EXPORT_SYMBOL(ip_output);
+#endif
 
 int ip_queue_xmit(struct sk_buff *skb, struct flowi *fl)
 {

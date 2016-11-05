@@ -25,7 +25,11 @@
 
 static int xfrm_output2(struct sk_buff *skb);
 
+#if IS_ENABLED(CONFIG_RALINK_HWCRYPTO)
+int xfrm_skb_check_space(struct sk_buff *skb)
+#else
 static int xfrm_skb_check_space(struct sk_buff *skb)
+#endif
 {
 	struct dst_entry *dst = skb_dst(skb);
 	int nhead = dst->header_len + LL_RESERVED_SPACE(dst->dev)
@@ -41,6 +45,9 @@ static int xfrm_skb_check_space(struct sk_buff *skb)
 
 	return pskb_expand_head(skb, nhead, ntail, GFP_ATOMIC);
 }
+#if IS_ENABLED(CONFIG_RALINK_HWCRYPTO)
+EXPORT_SYMBOL(xfrm_skb_check_space);
+#endif
 
 static int xfrm_output_one(struct sk_buff *skb, int err)
 {
@@ -89,6 +96,15 @@ static int xfrm_output_one(struct sk_buff *skb, int err)
 #endif
 
 		err = x->type->output(x, skb);
+#if IS_ENABLED(CONFIG_RALINK_HWCRYPTO)
+		/* check skb in progress */
+		if (err == HWCRYPTO_OK)
+			return -EINPROGRESS;
+
+		/* check skb already freed */
+		if (err == HWCRYPTO_NOMEM)
+			return -ENOMEM;
+#endif
 		if (err == -EINPROGRESS)
 			goto out_exit;
 

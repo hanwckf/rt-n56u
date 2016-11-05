@@ -28,6 +28,10 @@
 
 #include "xfrm_hash.h"
 
+#if IS_ENABLED(CONFIG_RALINK_HWCRYPTO)
+#include "xfrm_hwcrypto.h"
+#endif
+
 /* Each xfrm_state may be linked to two tables:
 
    1. Hash table by (spi,daddr,ah/esp) to find SA by SPI. (input,ctl)
@@ -558,6 +562,14 @@ int __xfrm_state_delete(struct xfrm_state *x)
 		 */
 		xfrm_state_put(x);
 		err = 0;
+
+#if IS_ENABLED(CONFIG_RALINK_HWCRYPTO)
+		if (x->type != NULL) {
+			if (x->type->description[0] == 'E' &&
+			    x->type->description[3] == '4')
+				ipsec_eip93Adapter_mark_free(x->id.spi);
+		}
+#endif
 	}
 
 	return err;

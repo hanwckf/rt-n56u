@@ -14,6 +14,11 @@
 #include <net/ipv6.h>
 #include <net/xfrm.h>
 
+#if IS_ENABLED(CONFIG_RALINK_HWCRYPTO)
+#include <net/esp.h>
+#include <linux/crypto.h>
+#endif
+
 /* Add encapsulation header.
  *
  * The IP header and mutable extension headers will be moved forward to make
@@ -28,8 +33,34 @@ static int xfrm6_transport_output(struct xfrm_state *x, struct sk_buff *skb)
 	iph = ipv6_hdr(skb);
 
 	hdr_len = x->type->hdr_offset(x, skb, &prevhdr);
+
+#if IS_ENABLED(CONFIG_RALINK_HWCRYPTO)
+	if (x->type->proto == IPPROTO_ESP) {
+		struct esp_data *esp;
+		int header_len;
+
+		esp = x->data;
+		if (!esp) {
+			net_warn_ratelimited("%s: esp is NULL\n", __FUNCTION__);
+			return -EPERM;
+		}
+
+		header_len = (x->props.header_len) - (sizeof(struct ip_esp_hdr) +
+			crypto_aead_ivsize(esp->aead));
+
+		if (header_len < 0) {
+			net_warn_ratelimited("%s: Wrong value for header_len: %d\n",
+				 __FUNCTION__, header_len);
+			return -EPERM;
+		}
+		skb_set_mac_header(skb, (prevhdr - header_len) - skb->data);
+		skb_set_network_header(skb, -header_len);
+	} else
+#endif
+	{
 	skb_set_mac_header(skb, (prevhdr - x->props.header_len) - skb->data);
 	skb_set_network_header(skb, -x->props.header_len);
+	}
 	skb->transport_header = skb->network_header + hdr_len;
 	__skb_pull(skb, hdr_len);
 	memmove(ipv6_hdr(skb), iph, hdr_len);

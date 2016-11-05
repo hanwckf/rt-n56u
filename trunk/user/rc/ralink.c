@@ -685,7 +685,7 @@ gen_ralink_config(int is_soc_ap, int is_aband, int disable_autoscan)
 		sprintf(list, "%d", 165);
 	fprintf(fp, "AutoChannelSkipList=%s\n", list);
 
-	//BasicRate (not supported in 5G mode)
+	//BasicRate
 	if (!is_aband) {
 		i_val = 15; // 1, 2, 5.5, 11 Mbps
 		switch (i_phy_mode)
@@ -698,9 +698,10 @@ gen_ralink_config(int is_soc_ap, int is_aband, int disable_autoscan)
 			i_val = 351; // 1, 2, 5.5, 11, 6, 12, 24 Mbps
 			break;
 		}
-		
-		fprintf(fp, "BasicRate=%d\n", i_val);
+	} else {
+		i_val = 336; // 6, 12, 24 Mbps
 	}
+	fprintf(fp, "BasicRate=%d\n", i_val);
 
 	//BeaconPeriod [20..1000], default 100
 	i_val = nvram_wlan_get_int(is_aband, "bcn");

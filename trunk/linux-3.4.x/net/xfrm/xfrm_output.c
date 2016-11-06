@@ -23,6 +23,10 @@
 #include "../nat/hw_nat/ra_nat.h"
 #endif
 
+#if IS_ENABLED(CONFIG_RALINK_HWCRYPTO)
+#include "xfrm_hwcrypto.h"
+#endif
+
 static int xfrm_output2(struct sk_buff *skb);
 
 #if IS_ENABLED(CONFIG_RALINK_HWCRYPTO)

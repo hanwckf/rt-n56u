@@ -48,10 +48,8 @@ void ext_gphy_init(u32 phy_addr)
 		phy_val |= (1<<10);			// enable pause ability
 		mii_mgr_write(phy_addr, 4, phy_val);
 		mii_mgr_read(phy_addr, 0, &phy_val);
-		if (!(phy_val & (1<<11))) {
-			phy_val |= (1<<9);		// restart AN
-			mii_mgr_write(phy_addr, 0, phy_val);
-		}
+		phy_val |= (1<<15);			// PHY Software Reset
+		mii_mgr_write(phy_addr, 0, phy_val);
 	} else
 	if ((phy_id0 == EV_REALTEK_PHY_ID0) && ((phy_id1 & 0xfff0) == EV_REALTEK_PHY_ID1)) {
 		phy_devn = "RTL8211";

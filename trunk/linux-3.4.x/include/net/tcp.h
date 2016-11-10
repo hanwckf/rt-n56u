@@ -978,6 +978,7 @@ static inline int tcp_prequeue(struct sock *sk, struct sk_buff *skb)
 	return 1;
 }
 
+int tcp_filter(struct sock *sk, struct sk_buff *skb);
 
 #undef STATE_TRACE
 

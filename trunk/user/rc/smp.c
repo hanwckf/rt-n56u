@@ -79,7 +79,7 @@ set_cpu_affinity(int is_ap_mode)
 		irq_affinity_set(GIC_IRQ_PCIE2, 1);	/* PCIe2 -> CPU:0, VPE:0 (usually ahci) */
 		irq_affinity_set(GIC_IRQ_SDXC,  4);	/* SDXC  -> CPU:1, VPE:0 */
 		irq_affinity_set(GIC_IRQ_XHCI,  8);	/* xHCI  -> CPU:1, VPE:1 */
-		irq_affinity_set(GIC_IRQ_EIP93, 8);	/* EIP93 -> CPU:1, VPE:1 */
+		irq_affinity_set(GIC_IRQ_EIP93, 2);	/* EIP93 -> CPU:0, VPE:1 */
 		
 		rps_queue_set(IFNAME_2G_MAIN,  0x8);	/* CPU:1, VPE:1 (PCIe1) */
 		xps_queue_set(IFNAME_2G_MAIN,  0x8);	/* CPU:1, VPE:1 (PCIe1) */
@@ -132,7 +132,7 @@ set_cpu_affinity(int is_ap_mode)
 		irq_affinity_set(GIC_IRQ_PCIE2, 1);	/* PCIe2 -> CPU:0, VPE:0 (usually ahci) */
 		irq_affinity_set(GIC_IRQ_SDXC,  2);	/* SDXC  -> CPU:0, VPE:1 */
 		irq_affinity_set(GIC_IRQ_XHCI,  2);	/* xHCI  -> CPU:0, VPE:1 */
-		irq_affinity_set(GIC_IRQ_EIP93, 2);	/* EIP93 -> CPU:0, VPE:1 */
+		irq_affinity_set(GIC_IRQ_EIP93, 1);	/* EIP93 -> CPU:0, VPE:0 */
 		
 		rps_queue_set(IFNAME_2G_MAIN,  0x1);	/* CPU:0, VPE:0 (PCIe1) */
 		xps_queue_set(IFNAME_2G_MAIN,  0x1);	/* CPU:0, VPE:0 (PCIe1) */

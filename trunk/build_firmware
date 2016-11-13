@@ -217,6 +217,15 @@ dir_ppe_src="$ROOTDIR/proprietary/rt_ppe"
 dir_ppe_dst="$ROOTDIR/$CONFIG_LINUXDIR/net/nat"
 rm -rf "$dir_ppe_dst/hw_nat"
 cp -rf "$dir_ppe_src/hw_nat" "$dir_ppe_dst/"
+############################ EIP93 ####################################
+dir_eip_src="$ROOTDIR/proprietary/rt_eip"
+dir_eip_dst="$ROOTDIR/$CONFIG_LINUXDIR/drivers/net"
+if [ "$CONFIG_PRODUCT" = "MT7621" ] ; then
+	if [ -d "$dir_eip_src" ] ; then
+		rm -rf "$dir_eip_dst/rt_eip"
+		cp -rf "$dir_eip_src" "$dir_eip_dst/"
+	fi
+fi
 ############################# CPU #####################################
 if [ "$CONFIG_FIRMWARE_CPU_SLEEP" = "y" -o "$CONFIG_RALINK_SYSTICK_COUNTER" = "y" ] ; then
 	func_enable_kernel_param "CONFIG_RALINK_SYSTICK_COUNTER"

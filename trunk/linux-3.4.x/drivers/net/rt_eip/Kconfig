@@ -1,0 +1,16 @@
+config RALINK_HWCRYPTO
+	depends on (XFRM && INET_ESP)
+	depends on (RALINK_MT7621)
+	tristate "EIP93 IPsec HW Crypto Engine"
+	default n
+
+config RALINK_HWCRYPTO_ESP6
+	depends on RALINK_HWCRYPTO
+	depends on IPV6
+	bool "Offload ESP6 via Crypto Engine"
+	default n
+
+config RALINK_HWCRYPTO_DEBUG
+	depends on RALINK_HWCRYPTO
+	default n
+	bool "Include additional debug messages"

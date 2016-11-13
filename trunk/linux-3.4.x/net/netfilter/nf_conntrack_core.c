@@ -89,7 +89,7 @@ EXPORT_SYMBOL_GPL(web_str_loaded);
 #if IS_ENABLED(CONFIG_RA_HW_NAT)
 static inline bool is_local_svc(u_int8_t protonm)
 {
-	/* Local gre/esp/ah/ip-ip/ipv6_in_ipv4/icmp proto must be skip from hw/sw offload
+	/* Local gre/esp/ah/ip-ip/ipv6_in_ipv4 must be skip from hw/sw offload
 	    and mark as interested by ALG  for correct tracking this */
 	switch (protonm) {
 	case IPPROTO_IPIP:
@@ -97,7 +97,6 @@ static inline bool is_local_svc(u_int8_t protonm)
 	case IPPROTO_IPV6:
 #endif
 	case IPPROTO_GRE:
-	case IPPROTO_ICMP:
 	case IPPROTO_ESP:
 	case IPPROTO_AH:
 		return true;
@@ -1214,6 +1213,13 @@ nf_conntrack_in(struct net *net, u_int8_t pf, unsigned int hooknum,
 		goto skip_pkt_check;
 	}
 
+#ifdef CONFIG_XFRM
+	if (skb_sec_path(skb)) {
+		skip_offload = 1;
+		goto skip_pkt_check;
+	}
+#endif
+
 	/* this code section may be used for skip some types traffic,
 	    only if hardware nat support enabled or software fastnat support enabled */
 	if (ra_sw_nat_hook_tx != NULL) {
@@ -1223,7 +1229,7 @@ nf_conntrack_in(struct net *net, u_int8_t pf, unsigned int hooknum,
 		    pf == PF_INET && protonum == IPPROTO_TCP && CTINFO2DIR(ctinfo) == IP_CT_DIR_ORIGINAL) {
 			struct tcphdr _tcph, *tcph;
 			unsigned char _data[2], *data;
-			
+
 			/* For URL filter; RFC-HTTP: GET, POST, HEAD */
 			if ((tcph = skb_header_pointer(skb, dataoff, sizeof(_tcph), &_tcph)) &&
 				(data = skb_header_pointer(skb, dataoff + tcph->doff*4, sizeof(_data), &_data)) &&

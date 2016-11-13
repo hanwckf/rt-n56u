@@ -13,11 +13,6 @@
 #include <net/ip.h>
 #include <net/xfrm.h>
 
-#if IS_ENABLED(CONFIG_RALINK_HWCRYPTO)
-#include <net/esp.h>
-#include <linux/crypto.h>
-#endif
-
 /* Add encapsulation header.
  *
  * The IP header will be moved forward to make space for the encapsulation
@@ -30,23 +25,19 @@ static int xfrm4_transport_output(struct xfrm_state *x, struct sk_buff *skb)
 
 #if IS_ENABLED(CONFIG_RALINK_HWCRYPTO)
 	if (x->type->proto == IPPROTO_ESP) {
-		struct esp_data *esp;
-		int header_len;
+		int header_len = 0;
 
-		esp = x->data;
-		if (!esp) {
-			net_warn_ratelimited("%s: esp is NULL\n", __FUNCTION__);
-			return -EPERM;
+		if (x->props.mode == XFRM_MODE_TUNNEL)
+			header_len += sizeof(struct iphdr);
+
+		if (x->encap) {
+			struct xfrm_encap_tmpl *encap = x->encap;
+
+			header_len += sizeof(struct udphdr);
+			if (encap->encap_type == UDP_ENCAP_ESPINUDP_NON_IKE)
+				header_len += 2 * sizeof(u32);
 		}
 
-		header_len = (x->props.header_len) - (sizeof(struct ip_esp_hdr) +
-			crypto_aead_ivsize(esp->aead));
-
-		if (header_len < 0) {
-			net_warn_ratelimited("%s: Wrong value for header_len: %d\n",
-				__FUNCTION__, header_len);
-			return -EPERM;
-		}
 		skb_set_network_header(skb, -header_len);
 	} else
 #endif

@@ -1222,7 +1222,7 @@ try_again:
 
 	if (copied < ulen
 #if defined (CONFIG_INET_UDPLITE)
-	    || UDP_SKB_CB(skb)->partial_cov
+	    || (is_udplite && UDP_SKB_CB(skb)->partial_cov)
 #endif
 	 ) {
 		checksum_valid = !udp_lib_checksum_complete(skb);

@@ -212,33 +212,48 @@ void gic_irq_dispatch(void)
 
 static void gic_mask_irq(struct irq_data *d)
 {
+	int irq = (d->irq - gic_irq_base);
+
 #if defined (CONFIG_CEVT_GIC)
-	/* handle GIC local compare */
-	if (d->irq == (gic_irq_base + MIPS_GIC_LOCAL_INT_COMPARE)) {
+	/* Disable GIC local compare interrupt */
+	if (irq == MIPS_GIC_LOCAL_INT_COMPARE) {
 		GICWRITE(GIC_REG(VPE_LOCAL, GIC_VPE_RMASK), GIC_VPE_RMASK_CMP_MSK);
 		return;
 	}
 #endif
 
-	GIC_CLR_INTR_MASK(d->irq - gic_irq_base);
+	GIC_CLR_INTR_MASK(irq);
 }
 
 static void gic_unmask_irq(struct irq_data *d)
 {
+	int irq = (d->irq - gic_irq_base);
+
 #if defined (CONFIG_CEVT_GIC)
-	/* handle GIC local compare */
-	if (d->irq == (gic_irq_base + MIPS_GIC_LOCAL_INT_COMPARE)) {
+	/* Enable GIC local compare interrupt */
+	if (irq == MIPS_GIC_LOCAL_INT_COMPARE) {
 		GICWRITE(GIC_REG(VPE_LOCAL, GIC_VPE_SMASK), GIC_VPE_SMASK_CMP_MSK);
 		return;
 	}
 #endif
 
-	GIC_SET_INTR_MASK(d->irq - gic_irq_base);
+	GIC_SET_INTR_MASK(irq);
 }
 
-static void gic_ack_irq(struct irq_data *d)
+static void gic_mask_ack_irq(struct irq_data *d)
 {
 	int irq = (d->irq - gic_irq_base);
+
+#if defined (CONFIG_CEVT_GIC)
+	/* Disable GIC local compare interrupt */
+	if (irq == MIPS_GIC_LOCAL_INT_COMPARE) {
+		GICWRITE(GIC_REG(VPE_LOCAL, GIC_VPE_RMASK), GIC_VPE_RMASK_CMP_MSK);
+		return;
+	}
+#endif
+
+	/* Disable interrupt */
+	GIC_CLR_INTR_MASK(irq);
 
 	/* Clear edge detector */
 	if (gic_irq_flags[irq] & GIC_TRIG_EDGE)
@@ -280,9 +295,11 @@ static int gic_set_affinity(struct irq_data *d, const struct cpumask *cpumask,
 
 static struct irq_chip gic_irq_controller = {
 	.name			=	"MIPS GIC",
-	.irq_ack		=	gic_ack_irq,
+	.irq_ack		=	gic_mask_ack_irq,
 	.irq_mask		=	gic_mask_irq,
+	.irq_mask_ack		=	gic_mask_ack_irq,
 	.irq_unmask		=	gic_unmask_irq,
+	.irq_eoi		=	gic_unmask_irq,
 	.irq_disable		=	gic_mask_irq,
 	.irq_enable		=	gic_unmask_irq,
 #ifdef CONFIG_SMP

@@ -780,6 +780,7 @@ static const struct ums_ma_addon_t {
 	const char *uMa[10];
 } ums_ma_addon[] = {
 	{ 0x05c6, 0x1000, {"AnyDATA", "CELOT", "Co.,Ltd", "DGT", "SAMSUNG", "SSE", "StrongRising", "Vertex", NULL} },
+	{ 0x0408, 0xf000, {"Yota", NULL} },
 	{ 0x0471, 0x1210, {"Philips", NULL} },
 	{ 0,      0,      {NULL} }
 };

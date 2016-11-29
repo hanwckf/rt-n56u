@@ -1,0 +1,4 @@
+# Vodafone / ZTE R212 Router
+TargetVendor=0x19d2
+TargetProductList="1027,1028,1029"
+StandardEject=1

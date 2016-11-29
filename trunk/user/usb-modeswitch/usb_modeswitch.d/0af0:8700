@@ -1,4 +1,3 @@
 # Option GI0643 (aka XYFI)
 TargetClass=0xff
 OptionMode=1
-NoDriverLoading=1

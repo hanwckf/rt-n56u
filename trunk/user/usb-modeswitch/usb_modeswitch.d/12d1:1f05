@@ -1,0 +1,4 @@
+# Vodafone / Huawei R207 Router
+TargetVendor=0x12d1
+TargetProduct=0x15bd
+HuaweiNewMode=1

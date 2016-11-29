@@ -1,0 +1,4 @@
+# LG L-02A
+TargetVendor=0x1004
+TargetProduct=0x6109
+StandardEject=1

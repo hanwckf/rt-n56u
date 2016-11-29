@@ -2,4 +2,3 @@
 TargetVendor=0x13b1
 TargetProduct=0x0031
 CiscoMode=1
-NoDriverLoading=1

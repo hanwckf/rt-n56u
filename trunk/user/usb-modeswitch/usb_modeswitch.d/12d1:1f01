@@ -2,4 +2,3 @@
 TargetVendor=0x12d1
 TargetProductList="14db,14dc"
 HuaweiNewMode=1
-NoDriverLoading=1

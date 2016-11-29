@@ -1,4 +1,4 @@
-# Celot K-300
+# Celot K-300 a.o.
 TargetVendor=0x211f
-TargetProduct=0x6801
+TargetProductList="6801,6802"
 StandardEject=1

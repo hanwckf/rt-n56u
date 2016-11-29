@@ -2,4 +2,3 @@
 TargetVendor=0x0af0
 TargetProduct=0x9100
 OptionMode=1
-NoDriverLoading=1

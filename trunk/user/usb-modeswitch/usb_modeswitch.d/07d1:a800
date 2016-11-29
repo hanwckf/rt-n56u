@@ -1,4 +1,4 @@
-# D-Link DWM-156 HSUPA 3.75G USB Modem 
+# D-Link DWM-156 HSUPA 3.75G a.o.
 TargetVendor=0x07d1
-TargetProduct=0x3e02
-StandardEject=1 
+TargetProductList="3e01,3e02,7e0c"
+StandardEject=1

@@ -1,4 +1,4 @@
 # Huawei E173s
 TargetVendor=0x12d1
-TargetProductList="1c05,1c07,1c08,1c10"
+TargetProductList="1c05,1c06,1c07,1c08,1c10"
 HuaweiNewMode=1

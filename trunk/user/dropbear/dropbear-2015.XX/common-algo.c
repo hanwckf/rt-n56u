@@ -531,21 +531,6 @@ check_algo(const char* algo_name, algo_type *algos)
 	return NULL;
 }
 
-static void
-try_add_algo(const char *algo_name, algo_type *algos, 
-		const char *algo_desc, algo_type * new_algos, int *num_ret)
-{
-	algo_type *match_algo = check_algo(algo_name, algos);
-	if (!match_algo)
-	{
-		dropbear_log(LOG_WARNING, "This Dropbear program does not support '%s' %s algorithm", algo_name, algo_desc);
-		return;
-	}
-
-	new_algos[*num_ret] = *match_algo;
-	(*num_ret)++;
-}
-
 /* Checks a user provided comma-separated algorithm list for available
  * options. Any that are not acceptable are removed in-place. Returns the
  * number of valid algorithms. */
@@ -553,30 +538,43 @@ int
 check_user_algos(const char* user_algo_list, algo_type * algos, 
 		const char *algo_desc)
 {
-	algo_type new_algos[MAX_PROPOSED_ALGO];
-	/* this has two passes. first we sweep through the given list of
-	 * algorithms and mark them as usable=2 in the algo_type[] array... */
-	int num_ret = 0;
+	algo_type new_algos[MAX_PROPOSED_ALGO+1];
 	char *work_list = m_strdup(user_algo_list);
-	char *last_name = work_list;
+	char *start = work_list;
 	char *c;
-	for (c = work_list; *c; c++)
+	int n;
+	/* So we can iterate and look for null terminator */
+	memset(new_algos, 0x0, sizeof(new_algos));
+	for (c = work_list, n = 0; ; c++)
 	{
-		if (*c == ',')
-		{
+		char oc = *c;
+		if (n >= MAX_PROPOSED_ALGO) {
+			dropbear_exit("Too many algorithms '%s'", user_algo_list);
+		}
+		if (*c == ',' || *c == '\0') {
+			algo_type *match_algo = NULL;
 			*c = '\0';
-			try_add_algo(last_name, algos, algo_desc, new_algos, &num_ret);
+			match_algo = check_algo(start, algos);
+			if (match_algo) {
+				if (check_algo(start, new_algos)) {
+					TRACE(("Skip repeated algorithm '%s'", start))
+				} else {
+					new_algos[n] = *match_algo;
+					n++;
+				}
+			} else {
+				dropbear_log(LOG_WARNING, "This Dropbear program does not support '%s' %s algorithm", start, algo_desc);
+			}
 			c++;
-			last_name = c;
+			start = c;
+		}
+		if (oc == '\0') {
+			break;
 		}
 	}
-	try_add_algo(last_name, algos, algo_desc, new_algos, &num_ret);
 	m_free(work_list);
-
-	new_algos[num_ret].name = NULL;
-
-	/* Copy one more as a blank delimiter */
-	memcpy(algos, new_algos, sizeof(*new_algos) * (num_ret+1));
-	return num_ret;
+	/* n+1 to include a null terminator */
+	memcpy(algos, new_algos, sizeof(*new_algos) * (n+1));
+	return n;
 }
 #endif /* ENABLE_USER_ALGO_LIST */

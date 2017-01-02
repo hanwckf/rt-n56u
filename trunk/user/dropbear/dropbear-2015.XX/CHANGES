@@ -1,3 +1,35 @@
+2016.74 - 21 July 2016
+
+- Security: Message printout was vulnerable to format string injection.
+
+  If specific usernames including "%" symbols can be created on a system
+  (validated by getpwnam()) then an attacker could run arbitrary code as root
+  when connecting to Dropbear server.
+
+  A dbclient user who can control username or host arguments could potentially
+  run arbitrary code as the dbclient user. This could be a problem if scripts
+  or webpages pass untrusted input to the dbclient program.
+
+- Security: dropbearconvert import of OpenSSH keys could run arbitrary code as
+  the local dropbearconvert user when parsing malicious key files
+
+- Security: dbclient could run arbitrary code as the local dbclient user if
+  particular -m or -c arguments are provided. This could be an issue where
+  dbclient is used in scripts.
+
+- Security: dbclient or dropbear server could expose process memory to the
+  running user if compiled with DEBUG_TRACE and running with -v
+
+  The security issues were reported by an anonymous researcher working with
+  Beyond Security's SecuriTeam Secure Disclosure www.beyondsecurity.com/ssd.html
+
+- Fix port forwarding failure when connecting to domains that have both
+  IPv4 and IPv6 addresses. The bug was introduced in 2015.68
+
+- Fix 100% CPU use while waiting for rekey to complete. Thanks to Zhang Hui P
+  for the patch
+
+
 2016.73 - 18 March 2016
 
 - Support syslog in dbclient, option -o usesyslog=yes. Patch from Konstantin Tokarev

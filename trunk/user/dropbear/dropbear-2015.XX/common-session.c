@@ -361,7 +361,7 @@ static void read_session_identification() {
 	}
 
 	if (!done) {
-		TRACE(("err: %s for '%s'\n", strerror(errno), linebuf))
+		TRACE(("error reading remote ident: %s\n", strerror(errno)))
 		ses.remoteclosed();
 	} else {
 		/* linebuf is already null terminated */

@@ -99,29 +99,30 @@ int main(int argc, char ** argv) {
 #endif /* DBMULTI stuff */
 
 static void cli_dropbear_exit(int exitcode, const char* format, va_list param) {
+	char exitmsg[150];
+	char fullmsg[300];
 
-	char fmtbuf[300];
-	char exitmsg[500];
+	/* Note that exit message must be rendered before session cleanup */
 
+	/* Render the formatted exit message */
+	vsnprintf(exitmsg, sizeof(exitmsg), format, param);
+
+	/* Add the prefix depending on session/auth state */
 	if (!sessinitdone) {
-		snprintf(fmtbuf, sizeof(fmtbuf), "Exited: %s",
-				format);
+		snprintf(fullmsg, sizeof(fullmsg), "Exited: %s", exitmsg);
 	} else {
-		snprintf(fmtbuf, sizeof(fmtbuf), 
+		snprintf(fullmsg, sizeof(fullmsg), 
 				"Connection to %s@%s:%s exited: %s", 
 				cli_opts.username, cli_opts.remotehost, 
-				cli_opts.remoteport, format);
+				cli_opts.remoteport, exitmsg);
 	}
-
-	/* Arguments to the exit printout may be unsafe to use after session_cleanup() */
-	vsnprintf(exitmsg, sizeof(exitmsg), fmtbuf, param);
 
 	/* Do the cleanup first, since then the terminal will be reset */
 	session_cleanup();
 	/* Avoid printing onwards from terminal cruft */
 	fprintf(stderr, "\n");
 
-	dropbear_log(LOG_INFO, "%s", exitmsg);;
+	dropbear_log(LOG_INFO, "%s", fullmsg);
 	exit(exitcode);
 }
 

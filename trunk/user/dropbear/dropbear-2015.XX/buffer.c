@@ -141,9 +141,10 @@ void buf_incrwritepos(buffer* buf, unsigned int incr) {
 /* increment the position by incr, negative values are allowed, to
  * decrement the pos*/
 void buf_incrpos(buffer* buf,  int incr) {
-	if (incr > BUF_MAX_INCR ||
-			(unsigned int)((int)buf->pos + incr) > buf->len 
-			|| ((int)buf->pos + incr) < 0) {
+	if (incr > BUF_MAX_INCR 
+		|| incr < -BUF_MAX_INCR 
+		|| (unsigned int)((int)buf->pos + incr) > buf->len
+		|| ((int)buf->pos + incr) < 0) {
 		dropbear_exit("Bad buf_incrpos");
 	}
 	buf->pos += incr;
@@ -184,7 +185,7 @@ void buf_putbyte(buffer* buf, unsigned char val) {
  * the next len bytes from that position can be used */
 unsigned char* buf_getptr(buffer* buf, unsigned int len) {
 
-	if (buf->pos + len > buf->len) {
+	if (len > BUF_MAX_INCR || buf->pos + len > buf->len) {
 		dropbear_exit("Bad buf_getptr");
 	}
 	return &buf->data[buf->pos];
@@ -194,7 +195,7 @@ unsigned char* buf_getptr(buffer* buf, unsigned int len) {
  * This allows writing past the used length, but not past the size */
 unsigned char* buf_getwriteptr(buffer* buf, unsigned int len) {
 
-	if (buf->pos + len > buf->size) {
+	if (len > BUF_MAX_INCR || buf->pos + len > buf->size) {
 		dropbear_exit("Bad buf_getwriteptr");
 	}
 	return &buf->data[buf->pos];

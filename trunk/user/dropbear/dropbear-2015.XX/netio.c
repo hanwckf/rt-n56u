@@ -61,7 +61,7 @@ static void connect_try_next(struct dropbear_progress_connection *c) {
 	{
 		dropbear_assert(c->sock == -1);
 
-		c->sock = socket(c->res_iter->ai_family, c->res_iter->ai_socktype, c->res_iter->ai_protocol);
+		c->sock = socket(r->ai_family, r->ai_socktype, r->ai_protocol);
 		if (c->sock < 0) {
 			continue;
 		}

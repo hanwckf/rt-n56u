@@ -144,31 +144,33 @@ void svr_session(int sock, int childpipe) {
 
 /* failure exit - format must be <= 100 chars */
 void svr_dropbear_exit(int exitcode, const char* format, va_list param) {
-
-	char fmtbuf[300];
+	char exitmsg[150];
+	char fullmsg[300];
 	int i;
 
+	/* Render the formatted exit message */
+	vsnprintf(exitmsg, sizeof(exitmsg), format, param);
+
+	/* Add the prefix depending on session/auth state */
 	if (!sessinitdone) {
 		/* before session init */
-		snprintf(fmtbuf, sizeof(fmtbuf), 
-				"Early exit: %s", format);
+		snprintf(fullmsg, sizeof(fullmsg), "Early exit: %s", exitmsg);
 	} else if (ses.authstate.authdone) {
 		/* user has authenticated */
-		snprintf(fmtbuf, sizeof(fmtbuf),
+		snprintf(fullmsg, sizeof(fullmsg),
 				"Exit (%s): %s", 
-				ses.authstate.pw_name, format);
+				ses.authstate.pw_name, exitmsg);
 	} else if (ses.authstate.pw_name) {
 		/* we have a potential user */
-		snprintf(fmtbuf, sizeof(fmtbuf), 
+		snprintf(fullmsg, sizeof(fullmsg), 
 				"Exit before auth (user '%s', %u fails): %s",
-				ses.authstate.pw_name, ses.authstate.failcount, format);
+				ses.authstate.pw_name, ses.authstate.failcount, exitmsg);
 	} else {
 		/* before userauth */
-		snprintf(fmtbuf, sizeof(fmtbuf), 
-				"Exit before auth: %s", format);
+		snprintf(fullmsg, sizeof(fullmsg), "Exit before auth: %s", exitmsg);
 	}
 
-	_dropbear_log(LOG_INFO, fmtbuf, param);
+	dropbear_log(LOG_INFO, "%s", fullmsg);
 
 #ifdef USE_VFORK
 	/* For uclinux only the main server process should cleanup - we don't want

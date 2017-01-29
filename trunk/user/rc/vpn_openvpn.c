@@ -584,7 +584,7 @@ openvpn_create_client_conf(const char *conf_file, int is_tun)
 }
 
 static void
-openvpn_tapif_start(const char *ifname, int insert_to_bridge)
+openvpn_tapif_start(const char *ifname, int is_server, int insert_to_bridge)
 {
 	if (!is_interface_exist(ifname))
 		doSystem("%s %s --dev %s", OPENVPN_EXE, "--mktun", ifname);
@@ -592,7 +592,7 @@ openvpn_tapif_start(const char *ifname, int insert_to_bridge)
 	if (insert_to_bridge)
 		br_add_del_if(IFNAME_BR, ifname, 1);
 	doSystem("ifconfig %s %s %s", ifname, "0.0.0.0", "promisc up");
-	set_vpn_balancing(ifname);
+	set_vpn_balancing(ifname, is_server);
 }
 
 static void
@@ -606,11 +606,11 @@ openvpn_tapif_stop(const char *ifname)
 }
 
 static void
-openvpn_tunif_start(const char *ifname)
+openvpn_tunif_start(const char *ifname, int is_server)
 {
 	if (!is_interface_exist(ifname))
 		doSystem("%s %s --dev %s", OPENVPN_EXE, "--mktun", ifname);
-	set_vpn_balancing(ifname);
+	set_vpn_balancing(ifname, is_server);
 }
 
 static void
@@ -826,9 +826,9 @@ start_openvpn_server(void)
 
 	/* create tun or tap device (and add tap to bridge) */
 	if (i_mode_tun)
-		openvpn_tunif_start(IFNAME_SERVER_TUN);
+		openvpn_tunif_start(IFNAME_SERVER_TUN, 1);
 	else
-		openvpn_tapif_start(IFNAME_SERVER_TAP, 1);
+		openvpn_tapif_start(IFNAME_SERVER_TAP, 1, 1);
 
 	/* create script symlink */
 	symlink("/sbin/rc", vpns_scr);
@@ -865,9 +865,9 @@ start_openvpn_client(void)
 
 	/* create tun or tap device */
 	if (i_mode_tun)
-		openvpn_tunif_start(IFNAME_CLIENT_TUN);
+		openvpn_tunif_start(IFNAME_CLIENT_TUN, 0);
 	else
-		openvpn_tapif_start(IFNAME_CLIENT_TAP, (nvram_get_int("vpnc_ov_cnat") == 1) ? 0 : 1);
+		openvpn_tapif_start(IFNAME_CLIENT_TAP, 0, (nvram_get_int("vpnc_ov_cnat") == 1) ? 0 : 1);
 
 	/* create script symlink */
 	symlink("/sbin/rc", vpnc_scr);

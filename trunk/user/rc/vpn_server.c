@@ -424,6 +424,8 @@ ipup_vpns_main(int argc, char **argv)
 	/* add route to client's LAN */
 	vpns_route_to_remote_lan(peer_name, argv[1], NULL, 1);
 
+	set_vpn_balancing(argv[1], 1);
+
 	fp = fopen(VPN_SERVER_LEASE_FILE, "a+");
 	if (fp) {
 		fprintf(fp, "%s %s %s %s\n", argv[1], argv[5], argv[6], peer_name);

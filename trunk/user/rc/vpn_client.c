@@ -319,7 +319,7 @@ ipup_vpnc_main(int argc, char **argv)
 	vpnc_route_to_remote_lan(ifname, gw, 1);
 	vpnc_route_dgw(ifname, gw, 1);
 
-	set_vpn_balancing(ifname);
+	set_vpn_balancing(ifname, 0);
 
 	nvram_set_int_temp("vpnc_state_t", 1);
 

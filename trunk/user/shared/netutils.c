@@ -444,6 +444,27 @@ get_interface_index(const char *ifname)
 }
 
 int
+get_interface_irq(const char *ifname)
+{
+	struct ifreq ifr;
+	int sockfd, irq;
+
+	if ((sockfd = socket(AF_INET, SOCK_RAW, IPPROTO_RAW)) < 0)
+		return -1;
+
+	memset(&ifr, 0, sizeof(ifr));
+	strncpy(ifr.ifr_name, ifname, IFNAMSIZ);
+	if (ioctl(sockfd, SIOCGIFMAP, &ifr) < 0)
+		irq = -1;
+	else
+		irq = ifr.ifr_map.irq;
+
+	close(sockfd);
+
+	return irq;
+}
+
+int
 get_interface_mtu(const char *ifname)
 {
 	int sockfd;

@@ -173,6 +173,7 @@ extern int       is_interface_exist(const char *ifname);
 extern int       is_interface_up(const char *ifname);
 extern int       get_interface_flags(const char *ifname);
 extern int       get_interface_index(const char *ifname);
+extern int       get_interface_irq(const char *ifname);
 extern int       get_interface_mtu(const char *ifname);
 extern int       set_interface_mtu(const char *ifname, int mtu);
 extern int       get_interface_hwaddr(const char *ifname, unsigned char mac[6]);

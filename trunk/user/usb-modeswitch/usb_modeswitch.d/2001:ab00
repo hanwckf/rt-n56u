@@ -1,0 +1,4 @@
+# D-Link DWM-222
+TargetVendor=0x2001
+TargetProduct=0x7e35
+StandardEject=1

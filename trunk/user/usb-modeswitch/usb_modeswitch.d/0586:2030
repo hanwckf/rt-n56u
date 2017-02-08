@@ -1,0 +1,4 @@
+# ZyXel WAH1004/WAH3004
+TargetVendor=0x0586
+TargetProductList="3443,3444"
+StandardEject=1

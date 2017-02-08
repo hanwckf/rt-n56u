@@ -1,0 +1,4 @@
+# ZTE MU330
+TargetVendor=0x19d2
+TargetProduct=0x0034
+StandardEject=1

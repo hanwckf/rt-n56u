@@ -1,5 +1,5 @@
 # LG AD600
 TargetVendor=0x1004
-TargetProduct=0x61a7
+TargetProductList="6183,61a7"
 WaitBefore=10
 StandardEject=1

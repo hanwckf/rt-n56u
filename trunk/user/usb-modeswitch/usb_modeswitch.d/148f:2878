@@ -1,0 +1,4 @@
+# RaLink MT7601U
+TargetVendor=0x148f
+TargetProduct=0x7601
+StandardEject=1

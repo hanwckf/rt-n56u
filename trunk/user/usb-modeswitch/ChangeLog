@@ -2,6 +2,19 @@
 History of USB_ModeSwitch
 =========================
 
+Version 2.5.0, 2017/01/17
+    ATTENTION: Parameter transmitted from udev now reduced to %k (kernel
+    name), however, rules file parameters can be '%b/%k' or '%k' - this
+    fixes issues with parameter handling by the systemd unit file;
+    remove endpoint reset ahead of bulk message transmission, only reset
+    if endpoints are actually stalled, helping with quirky device behaviour
+    (see www.draisberghof.de/usb_modeswitch/bb/viewtopic.php?f=2&t=2582 );
+    stability fix by making a buffer in the config parser static, preventing
+    problems seen in Fedora (thanks to Lubomir Rintel for patches and hints
+    regarding the three previous issues); removed premature driver unbinding
+    in wrapper which could disrupt certain devices already in target mode
+    (reported by Aleksander Morgado); improved check for determining install
+    mode (essential with generic config files present, e.g. 12d1:#linux)
 Version 2.4.0, 2016/06/12
     ATTENTION: All ad-hoc driver binding code (using new_id driver attribute)
     removed - was a potential source of side effects and should now be

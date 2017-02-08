@@ -62,6 +62,7 @@ configure:
 		--enable-dhcp \
 		--enable-farp \
 		--enable-openssl \
+		--enable-eap-dynamic \
 		--enable-eap-identity \
 		--enable-eap-tls \
 		--enable-eap-mschapv2 \

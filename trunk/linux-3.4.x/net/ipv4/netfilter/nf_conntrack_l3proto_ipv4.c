@@ -171,6 +171,10 @@ static unsigned int ipv4_conntrack_local(unsigned int hooknum,
 	if (skb->len < sizeof(struct iphdr) ||
 	    ip_hdrlen(skb) < sizeof(struct iphdr))
 		return NF_ACCEPT;
+
+	if (ip_is_fragment(ip_hdr(skb))) /* IP_NODEFRAG setsockopt set */
+		return NF_ACCEPT;
+
 	return nf_conntrack_in(dev_net(out), PF_INET, hooknum, skb);
 }
 

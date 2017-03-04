@@ -28,11 +28,11 @@
 
 /* GCMP specific definitions */
 #define GCMP_BASE_ADDR			0x1fbf8000
-#define GCMP_ADDRSPACE_SZ		(256 * 1024)
+#define GCMP_ADDRSPACE_SZ		(32 * 1024)
 
 /* CPC specific definitions */
 #define CPC_BASE_ADDR			0x1fbf0000
-#define CPC_ADDRSPACE_SZ		(128 * 1024)
+#define CPC_ADDRSPACE_SZ		(32 * 1024)
 
 /* GIC specific definitions */
 #define GIC_BASE_ADDR			0x1fbc0000

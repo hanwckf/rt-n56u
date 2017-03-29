@@ -498,6 +498,9 @@ static void pppol2tp_session_destruct(struct sock *sk)
 {
 	struct l2tp_session *session;
 
+	skb_queue_purge(&sk->sk_receive_queue);
+	skb_queue_purge(&sk->sk_write_queue);
+
 	if (sk->sk_user_data != NULL) {
 		session = sk->sk_user_data;
 		if (session == NULL)
@@ -537,9 +540,6 @@ static int pppol2tp_release(struct socket *sock)
 
 	session = pppol2tp_sock_to_session(sk);
 
-	/* Purge any queued data */
-	skb_queue_purge(&sk->sk_receive_queue);
-	skb_queue_purge(&sk->sk_write_queue);
 	if (session != NULL) {
 		struct sk_buff *skb;
 		while ((skb = skb_dequeue(&session->reorder_q))) {

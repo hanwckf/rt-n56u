@@ -4118,49 +4118,39 @@ VOID dynamic_tune_be_tx_op(RTMP_ADAPTER *pAd, ULONG nonBEpackets)
 				UCHAR   txop_value = 0;
 
 				pAd->ApCfg.ChangeTxOpClient = pAd->MacTab.Size;
-#ifdef LINUX
-#ifdef RTMP_RBUS_SUPPORT
-				if (pAd->infType == RTMP_DEV_INF_RBUS)
-				{
-#ifdef CONFIG_RAETH_ROUTER
-					txop_value_burst = 0x10;
-#endif /* CONFIG_RAETH_ROUTER */
-#ifdef CONFIG_MAC_TO_MAC_MODE
-					txop_value_burst = 0x30;
-#endif /* CONFIG_MAC_TO_MAC_MODE */
-				}
-#endif /* RTMP_RBUS_SUPPORT */
-#endif /* LINUX */
-				
+
 				if (RTMP_TEST_FLAG(pAd, fRTMP_ADAPTER_RALINK_BURST_MODE))
-					txop_value = 0x80;				
+					txop_value = 0x80;
 				else if (RTMP_TEST_FLAG(pAd, fRTMP_ADAPTER_RDG_ACTIVE))
 					txop_value = 0x80;
-#ifdef DOT11_VHT_AC
 				else if ((pAd->MacTab.Size == 1) && (pAd->CommonCfg.bEnableTxBurst)) {
 					MAC_TABLE_ENTRY *pEntry = NULL;
 					UINT32 i = 0;
 
-		                    for (i = 1; i< MAX_LEN_OF_MAC_TABLE; i++) {
+					txop_value = txop_value_burst;
+
+					for (i = 1; i< MAX_LEN_OF_MAC_TABLE; i++) {
 						pEntry = &pAd->MacTab.Content[i];
 
 						if (IS_ENTRY_CLIENT(pEntry) && (pEntry->Sst == SST_ASSOC))
 							break;
-		                    }
+					}
 
 					if (pEntry && i < MAX_LEN_OF_MAC_TABLE) {
 						if (((pEntry->HTPhyMode.field.MODE == MODE_HTMIX || pEntry->HTPhyMode.field.MODE == MODE_HTGREENFIELD) &&
 							(((pAd->CommonCfg.TxStream == 2) && (pEntry->HTPhyMode.field.MCS >= MCS_14)) ||
-							((pAd->CommonCfg.TxStream == 1) && (pEntry->HTPhyMode.field.MCS >= MCS_6))))
-							|| ((pEntry->HTPhyMode.field.MODE == MODE_VHT) &&
+							 ((pAd->CommonCfg.TxStream == 1) && (pEntry->HTPhyMode.field.MCS >= MCS_6))))
+#ifdef DOT11_VHT_AC
+						 || ((pEntry->HTPhyMode.field.MODE == MODE_VHT) &&
 							(((pAd->CommonCfg.TxStream == 2) && (pEntry->HTPhyMode.field.MCS >= 23)) ||
-							((pAd->CommonCfg.TxStream == 1) && (pEntry->HTPhyMode.field.MCS >= 7))))) {
+							 ((pAd->CommonCfg.TxStream == 1) && (pEntry->HTPhyMode.field.MCS >= 7))))
+#endif /* DOT11_VHT_AC */
+						    ) {
 							txop_value = 0x60;
 							DBGPRINT(RT_DEBUG_INFO, ("%s::enable Tx burst to 0x60 under HT/VHT mode\n", __FUNCTION__));
 						}
 					}
 				}
-#endif /* DOT11_VHT_AC */
 				else if (pAd->CommonCfg.bEnableTxBurst)
 					txop_value = txop_value_burst;
 				else
@@ -4174,7 +4164,7 @@ VOID dynamic_tune_be_tx_op(RTMP_ADAPTER *pAd, ULONG nonBEpackets)
 #ifdef APCLI_SUPPORT
 #ifdef TRAFFIC_BASED_TXOP
 				/* Traffic Base Txop Rule */
-				if (((txop_value == 0) || (txop_value == 0x20)) &&
+				if ((txop_value == txop_value_burst) &&
 					((pAd->StaTxopAbledCnt >= 1) || (pAd->ApClientTxopAbledCnt >= 1))) {
 					txop_value = 0x60;
 				}

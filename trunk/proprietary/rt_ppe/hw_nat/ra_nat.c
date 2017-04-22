@@ -1014,15 +1014,19 @@ static uint16_t PpeGetChkBase(struct iphdr *iph)
 {
 	uint16_t org_chksum = ntohs(iph->check);
 	uint16_t org_tot_len = ntohs(iph->tot_len);
-	uint32_t tmp = 0;
-	uint16_t chksum_base = 0;
+	uint16_t org_id = ntohs(iph->id);
+	uint16_t chksum_tmp, tot_len_tmp, id_tmp;
+	uint32_t tmp;
 
-	tmp = ~(org_chksum) + ~(org_tot_len);
-	tmp = ((tmp >> 16) && 0x7) + (tmp & 0xFFFF);
-	tmp = ((tmp >> 16) && 0x7) + (tmp & 0xFFFF);
-	chksum_base = tmp & 0xFFFF;
+	chksum_tmp = ~(org_chksum);
+	tot_len_tmp = ~(org_tot_len);
+	id_tmp = ~(org_id);
 
-	return chksum_base;
+	tmp = chksum_tmp + tot_len_tmp + id_tmp;
+	tmp = ((tmp >> 16) & 0x7) + (tmp & 0xFFFF);
+	tmp = ((tmp >> 16) & 0x7) + (tmp & 0xFFFF);
+
+	return (uint16_t)(tmp & 0xFFFF);
 }
 #endif
 

@@ -579,13 +579,12 @@ static void ip6_copy_metadata(struct sk_buff *to, struct sk_buff *from)
 int ip6_find_1stfragopt(struct sk_buff *skb, u8 **nexthdr)
 {
 	u16 offset = sizeof(struct ipv6hdr);
-	struct ipv6_opt_hdr *exthdr =
-				(struct ipv6_opt_hdr *)(ipv6_hdr(skb) + 1);
 	unsigned int packet_len = skb->tail - skb->network_header;
 	int found_rhdr = 0;
 	*nexthdr = &ipv6_hdr(skb)->nexthdr;
 
-	while (offset + 1 <= packet_len) {
+	while (offset <= packet_len) {
+		struct ipv6_opt_hdr *exthdr;
 
 		switch (**nexthdr) {
 
@@ -606,13 +605,16 @@ int ip6_find_1stfragopt(struct sk_buff *skb, u8 **nexthdr)
 			return offset;
 		}
 
-		offset += ipv6_optlen(exthdr);
-		*nexthdr = &exthdr->nexthdr;
+		if (offset + sizeof(struct ipv6_opt_hdr) > packet_len)
+			return -EINVAL;
+
 		exthdr = (struct ipv6_opt_hdr *)(skb_network_header(skb) +
 						 offset);
+		offset += ipv6_optlen(exthdr);
+		*nexthdr = &exthdr->nexthdr;
 	}
 
-	return offset;
+	return -EINVAL;
 }
 
 int ip6_fragment(struct sk_buff *skb, int (*output)(struct sk_buff *))
@@ -630,6 +632,10 @@ int ip6_fragment(struct sk_buff *skb, int (*output)(struct sk_buff *))
 	struct net *net = dev_net(skb_dst(skb)->dev);
 
 	hlen = ip6_find_1stfragopt(skb, &prevhdr);
+	if (hlen < 0) {
+		err = hlen;
+		goto fail;
+	}
 	nexthdr = *prevhdr;
 
 	mtu = ip6_skb_dst_mtu(skb);

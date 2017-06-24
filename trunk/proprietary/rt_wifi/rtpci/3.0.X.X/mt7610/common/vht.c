@@ -200,17 +200,48 @@ UCHAR vht_cent_ch_freq(RTMP_ADAPTER *pAd, UCHAR prim_ch)
 
 INT vht_mode_adjust(RTMP_ADAPTER *pAd, MAC_TABLE_ENTRY *pEntry, VHT_CAP_IE *cap, VHT_OP_IE *op)
 {
+	INT vht_bw = pAd->ApCfg.MBSSID[pEntry->apidx].DesiredHtPhyInfo.vht_bw;
+
 	pEntry->MaxHTPhyMode.field.MODE = MODE_VHT;
 	pAd->CommonCfg.AddHTInfo.AddHtInfo2.NonGfPresent = 1;
 	pAd->MacTab.fAnyStationNonGF = TRUE;
 
-	if (op->vht_op_info.ch_width >= 1 && pEntry->MaxHTPhyMode.field.BW == BW_40)
+	DBGPRINT(RT_DEBUG_TRACE, ("%s: DesiredHtPhyInfo->vht_bw=%d, ch_width=%d\n", __FUNCTION__,
+		vht_bw, cap->vht_cap.ch_width));
+
+	if (pEntry->MaxHTPhyMode.field.BW == BW_40)
 	{
-		pEntry->MaxHTPhyMode.field.BW= BW_80;
-		pEntry->MaxHTPhyMode.field.ShortGI = (cap->vht_cap.sgi_80M);
-		pEntry->MaxHTPhyMode.field.STBC = (cap->vht_cap.rx_stbc > 1 ? 1 : 0);
+		if (vht_bw == VHT_BW_80)
+		{
+			if (cap->vht_cap.ch_width == 0)
+			{
+				if (op != NULL)
+				{
+					if (op->vht_op_info.ch_width != 0)
+					{
+						pEntry->MaxHTPhyMode.field.BW = BW_80;
+					}
+				}
+				else
+				{
+					/* can not know peer capability, use it's maximum capability */
+					pEntry->MaxHTPhyMode.field.BW = BW_80;
+				}
+			}
+			else
+			{
+				pEntry->MaxHTPhyMode.field.BW = BW_80;
+			}
+		}
 	}
-				
+
+	pEntry->MaxHTPhyMode.field.STBC = (pAd->CommonCfg.vht_stbc && cap->vht_cap.rx_stbc > 1) ? 1 : 0;
+
+	if (pEntry->MaxHTPhyMode.field.BW == BW_80)
+	{
+		pEntry->MaxHTPhyMode.field.ShortGI = (pAd->CommonCfg.vht_sgi_80 && cap->vht_cap.sgi_80M) ? 1 : 0;
+	}
+
 	return TRUE;
 }
 

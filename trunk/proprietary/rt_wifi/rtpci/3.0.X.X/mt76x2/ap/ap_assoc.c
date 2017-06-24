@@ -353,10 +353,8 @@ static USHORT update_associated_mac_entry(
 		{
 			VHT_CAP_INFO *vht_cap_info = &ie_list->vht_cap.vht_cap;
 
-			pEntry->MaxHTPhyMode.field.MODE = MODE_VHT;
-			if ((pEntry->MaxHTPhyMode.field.BW== BW_40) && (wdev->DesiredHtPhyInfo.vht_bw == VHT_BW_80))
-				pEntry->MaxHTPhyMode.field.BW = BW_80;
-			
+			vht_mode_adjust(pAd, pEntry, &ie_list->vht_cap, (ie_list->vht_op_len == 0) ? NULL : &ie_list->vht_op);
+
 			pEntry->VhtMaxRAmpduFactor = ie_list->vht_cap.vht_cap.max_ampdu_exp;
 
 			DBGPRINT(RT_DEBUG_TRACE, ("Orig HT MaxRAmpduFactor %d , VHT MaxRAmpduFactor %d \n"

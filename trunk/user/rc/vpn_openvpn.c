@@ -257,6 +257,15 @@ openvpn_add_cipher(FILE *fp, int cipher_idx)
 	case 11:
 		cipher_str = "CAMELLIA-256-CBC";
 		break;
+	case 12:
+		cipher_str = "AES-128-GCM";
+		break;
+	case 13:
+		cipher_str = "AES-192-GCM";
+		break;
+	case 14:
+		cipher_str = "AES-256-GCM";
+		break;
 	default:
 		return;
 	}

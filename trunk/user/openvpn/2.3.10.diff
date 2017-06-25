@@ -1,0 +1,4448 @@
+diff -urp openvpn-2.3.10/aclocal.m4 openvpn-2.3.x/aclocal.m4
+--- openvpn-2.3.10/aclocal.m4	2016-01-04 19:18:04.000000000 +0700
++++ openvpn-2.3.x/aclocal.m4	2016-09-03 17:42:55.507647188 +0700
+@@ -103,10 +103,9 @@ _AM_AUTOCONF_VERSION(m4_defn([AC_AUTOCON
+ # configured tree to be moved without reconfiguration.
+ 
+ AC_DEFUN([AM_AUX_DIR_EXPAND],
+-[dnl Rely on autoconf to set up CDPATH properly.
+-AC_PREREQ([2.50])dnl
+-# expand $ac_aux_dir to an absolute path
+-am_aux_dir=`cd $ac_aux_dir && pwd`
++[AC_REQUIRE([AC_CONFIG_AUX_DIR_DEFAULT])dnl
++# Expand $ac_aux_dir to an absolute path.
++am_aux_dir=`cd "$ac_aux_dir" && pwd`
+ ])
+ 
+ # AM_CONDITIONAL                                            -*- Autoconf -*-
+@@ -573,7 +572,8 @@ to "yes", and re-run configure.
+ END
+     AC_MSG_ERROR([Your 'rm' program is bad, sorry.])
+   fi
+-fi])
++fi
++])
+ 
+ dnl Hook into '_AC_COMPILER_EXEEXT' early to learn its expansion.  Do not
+ dnl add the conditional right here, as _AC_COMPILER_EXEEXT may be further
+diff -urp openvpn-2.3.10/build/Makefile.in openvpn-2.3.x/build/Makefile.in
+--- openvpn-2.3.10/build/Makefile.in	2016-01-04 19:18:09.000000000 +0700
++++ openvpn-2.3.x/build/Makefile.in	2016-09-03 17:42:55.507647188 +0700
+@@ -196,6 +196,7 @@ AWK = @AWK@
+ CC = @CC@
+ CCDEPMODE = @CCDEPMODE@
+ CFLAGS = @CFLAGS@
++CMAKE = @CMAKE@
+ CPP = @CPP@
+ CPPFLAGS = @CPPFLAGS@
+ CYGPATH_W = @CYGPATH_W@
+@@ -289,6 +290,11 @@ TAP_CFLAGS = @TAP_CFLAGS@
+ TAP_WIN_COMPONENT_ID = @TAP_WIN_COMPONENT_ID@
+ TAP_WIN_MIN_MAJOR = @TAP_WIN_MIN_MAJOR@
+ TAP_WIN_MIN_MINOR = @TAP_WIN_MIN_MINOR@
++TEST_CFLAGS = @TEST_CFLAGS@
++TEST_LDFLAGS = @TEST_LDFLAGS@
++VENDOR_BUILD_ROOT = @VENDOR_BUILD_ROOT@
++VENDOR_DIST_ROOT = @VENDOR_DIST_ROOT@
++VENDOR_SRC_ROOT = @VENDOR_SRC_ROOT@
+ VERSION = @VERSION@
+ abs_builddir = @abs_builddir@
+ abs_srcdir = @abs_srcdir@
+diff -urp openvpn-2.3.10/build/msvc/Makefile.in openvpn-2.3.x/build/msvc/Makefile.in
+--- openvpn-2.3.10/build/msvc/Makefile.in	2016-01-04 19:18:09.000000000 +0700
++++ openvpn-2.3.x/build/msvc/Makefile.in	2016-09-03 17:42:55.507647188 +0700
+@@ -197,6 +197,7 @@ AWK = @AWK@
+ CC = @CC@
+ CCDEPMODE = @CCDEPMODE@
+ CFLAGS = @CFLAGS@
++CMAKE = @CMAKE@
+ CPP = @CPP@
+ CPPFLAGS = @CPPFLAGS@
+ CYGPATH_W = @CYGPATH_W@
+@@ -290,6 +291,11 @@ TAP_CFLAGS = @TAP_CFLAGS@
+ TAP_WIN_COMPONENT_ID = @TAP_WIN_COMPONENT_ID@
+ TAP_WIN_MIN_MAJOR = @TAP_WIN_MIN_MAJOR@
+ TAP_WIN_MIN_MINOR = @TAP_WIN_MIN_MINOR@
++TEST_CFLAGS = @TEST_CFLAGS@
++TEST_LDFLAGS = @TEST_LDFLAGS@
++VENDOR_BUILD_ROOT = @VENDOR_BUILD_ROOT@
++VENDOR_DIST_ROOT = @VENDOR_DIST_ROOT@
++VENDOR_SRC_ROOT = @VENDOR_SRC_ROOT@
+ VERSION = @VERSION@
+ abs_builddir = @abs_builddir@
+ abs_srcdir = @abs_srcdir@
+diff -urp openvpn-2.3.10/build/msvc/msvc-generate/Makefile.in openvpn-2.3.x/build/msvc/msvc-generate/Makefile.in
+--- openvpn-2.3.10/build/msvc/msvc-generate/Makefile.in	2016-01-04 19:18:09.000000000 +0700
++++ openvpn-2.3.x/build/msvc/msvc-generate/Makefile.in	2016-09-03 17:42:55.507647188 +0700
+@@ -140,6 +140,7 @@ AWK = @AWK@
+ CC = @CC@
+ CCDEPMODE = @CCDEPMODE@
+ CFLAGS = @CFLAGS@
++CMAKE = @CMAKE@
+ CPP = @CPP@
+ CPPFLAGS = @CPPFLAGS@
+ CYGPATH_W = @CYGPATH_W@
+@@ -233,6 +234,11 @@ TAP_CFLAGS = @TAP_CFLAGS@
+ TAP_WIN_COMPONENT_ID = @TAP_WIN_COMPONENT_ID@
+ TAP_WIN_MIN_MAJOR = @TAP_WIN_MIN_MAJOR@
+ TAP_WIN_MIN_MINOR = @TAP_WIN_MIN_MINOR@
++TEST_CFLAGS = @TEST_CFLAGS@
++TEST_LDFLAGS = @TEST_LDFLAGS@
++VENDOR_BUILD_ROOT = @VENDOR_BUILD_ROOT@
++VENDOR_DIST_ROOT = @VENDOR_DIST_ROOT@
++VENDOR_SRC_ROOT = @VENDOR_SRC_ROOT@
+ VERSION = @VERSION@
+ abs_builddir = @abs_builddir@
+ abs_srcdir = @abs_srcdir@
+diff -urp openvpn-2.3.10/ChangeLog openvpn-2.3.x/ChangeLog
+--- openvpn-2.3.10/ChangeLog	2016-01-04 19:17:32.000000000 +0700
++++ openvpn-2.3.x/ChangeLog	2016-09-03 17:42:55.507647188 +0700
+@@ -1,6 +1,97 @@
+ OpenVPN Change Log
+ Copyright (C) 2002-2015 OpenVPN Technologies, Inc. <sales@openvpn.net>
+ 
++2016.08.23 -- Version 2.3.12
++Arne Schwabe (2):
++      Complete push-peer-info documentation and allow IV_PLAT_VER for other platforms than Windows if the client UI supplies it.
++      Move ASSERT so external-key with OpenSSL works again
++
++David Sommerseth (3):
++      Only build and run cmocka unit tests if its submodule is initialized
++      Another fix related to unit test framework
++      Remove NOP function and callers
++
++Dorian Harmans (1):
++      Add CHACHA20-POLY1305 ciphersuite IANA name translations.
++
++Ivo Manca (1):
++      Plug memory leak in mbedTLS backend
++
++Jeffrey Cutter (1):
++      Update contrib/pull-resolv-conf/client.up for no DOMAIN
++
++Jens Neuhalfen (2):
++      Add unit testing support via cmocka
++      Add a test for auth-pam searchandreplace
++
++Josh Cepek (1):
++      Push an IPv6 CIDR mask used by the server, not the pool's size
++
++Leon Klingele (1):
++      Add link to bug tracker
++
++Samuli Seppänen (2):
++      Update CONTRIBUTING.rst to allow GitHub PRs for code review purposes
++      Clarify the fact that build instructions in README are for release tarballs
++
++Selva Nair (4):
++      Make error non-fatal while deleting address using netsh
++      Make block-outside-dns work with persist-tun
++      Ignore SIGUSR1/SIGHUP during exit notification
++      Promptly close the netcmd_semaphore handle after use
++
++Steffan Karger (4):
++      Fix polarssl / mbedtls builds
++      Don't limit max incoming message size based on c2->frame
++      Fix '--cipher none --cipher' crash
++      Discourage using 64-bit block ciphers
++
++
++2016.05.09 -- Version 2.3.11
++James Yonan (1):
++      Fixed port-share bug with DoS potential
++
++Jens Neuhalfen (2):
++      Make intent of utun device name validation clear
++      Fix buffer overflow by user supplied data
++
++Leonardo Basilio (1):
++      Correctly report TCP connection timeout on windows.
++
++Lev Stipakov (1):
++      Report Windows bitness
++
++Michael McConville (1):
++      Fix undefined signed shift overflow
++
++Niels Ole Salscheider (1):
++      Fix build with libressl
++
++Samuli Seppänen (1):
++      Improve LZO, PAM and OpenSSL documentation
++
++Selva Nair (2):
++      Ensure input read using systemd-ask-password is null terminated
++      Support reading the challenge-response from console
++
++Steffan Karger (10):
++      openssl: improve logging
++      polarssl: improve logging
++      Update manpage: OpenSSL might also need /dev/urandom inside chroot
++      socks.c: fix check on get_user_pass() return value(s)
++      Fix OCSP_check.sh
++      hardening: add safe FD_SET() wrapper openvpn_fd_set()
++      Fix memory leak in argv_extract_cmd_name()
++      Replace MSG_TEST() macro for static inline msg_test()
++      Restrict default TLS cipher list
++      Various Changes.rst fixes
++
++ValdikSS (3):
++      Clarify mssfix documentation
++      Clarify --block-outside-dns documentation
++      Update --block-outside-dns to work on Windows Vista
++
++
+ 2016.01.04 -- Version 2.3.10
+ Gert Doering (1):
+       Prepare for v2.3.10 release, list PolarSSL 1.2 to 1.3 upgrade
+diff -urp openvpn-2.3.10/config.sub openvpn-2.3.x/config.sub
+--- openvpn-2.3.10/config.sub	2015-08-04 14:29:54.000000000 +0700
++++ openvpn-2.3.x/config.sub	2016-09-03 17:42:55.507647188 +0700
+@@ -2,7 +2,7 @@
+ # Configuration validation subroutine script.
+ #   Copyright 1992-2014 Free Software Foundation, Inc.
+ 
+-timestamp='2014-07-28'
++timestamp='2014-09-11'
+ 
+ # This file is free software; you can redistribute it and/or modify it
+ # under the terms of the GNU General Public License as published by
+@@ -302,6 +302,7 @@ case $basic_machine in
+ 	| pdp10 | pdp11 | pj | pjl \
+ 	| powerpc | powerpc64 | powerpc64le | powerpcle \
+ 	| pyramid \
++	| riscv32 | riscv64 \
+ 	| rl78 | rx \
+ 	| score \
+ 	| sh | sh[1234] | sh[24]a | sh[24]aeb | sh[23]e | sh[34]eb | sheb | shbe | shle | sh[1234]le | sh3ele \
+@@ -1016,7 +1017,7 @@ case $basic_machine in
+ 		;;
+ 	ppc64)	basic_machine=powerpc64-unknown
+ 		;;
+-	ppc64-* | ppc64p7-*) basic_machine=powerpc64-`echo $basic_machine | sed 's/^[^-]*-//'`
++	ppc64-*) basic_machine=powerpc64-`echo $basic_machine | sed 's/^[^-]*-//'`
+ 		;;
+ 	ppc64le | powerpc64little | ppc64-le | powerpc64-little)
+ 		basic_machine=powerpc64le-unknown
+diff -urp openvpn-2.3.10/configure openvpn-2.3.x/configure
+--- openvpn-2.3.10/configure	2016-01-04 19:18:08.000000000 +0700
++++ openvpn-2.3.x/configure	2016-09-03 17:42:55.511647191 +0700
+@@ -1,6 +1,6 @@
+ #! /bin/sh
+ # Guess values for system-dependent variables and create Makefiles.
+-# Generated by GNU Autoconf 2.69 for OpenVPN 2.3.10.
++# Generated by GNU Autoconf 2.69 for OpenVPN 2.3.12.
+ #
+ # Report bugs to <openvpn-users@lists.sourceforge.net>.
+ #
+@@ -590,8 +590,8 @@ MAKEFLAGS=
+ # Identity of this package.
+ PACKAGE_NAME='OpenVPN'
+ PACKAGE_TARNAME='openvpn'
+-PACKAGE_VERSION='2.3.10'
+-PACKAGE_STRING='OpenVPN 2.3.10'
++PACKAGE_VERSION='2.3.12'
++PACKAGE_STRING='OpenVPN 2.3.12'
+ PACKAGE_BUGREPORT='openvpn-users@lists.sourceforge.net'
+ PACKAGE_URL=''
+ 
+@@ -636,6 +636,14 @@ ac_subst_vars='am__EXEEXT_FALSE
+ am__EXEEXT_TRUE
+ LTLIBOBJS
+ LIBOBJS
++CMOCKA_INITIALIZED_FALSE
++CMOCKA_INITIALIZED_TRUE
++CMAKE
++TEST_CFLAGS
++TEST_LDFLAGS
++VENDOR_DIST_ROOT
++VENDOR_BUILD_ROOT
++VENDOR_SRC_ROOT
+ sampledir
+ plugindir
+ ENABLE_PLUGIN_DOWN_ROOT_FALSE
+@@ -1426,7 +1434,7 @@ if test "$ac_init_help" = "long"; then
+   # Omit some internal or obsolete options to make the list less imposing.
+   # This message is too long to be a string in the A/UX 3.1 sh.
+   cat <<_ACEOF
+-\`configure' configures OpenVPN 2.3.10 to adapt to many kinds of systems.
++\`configure' configures OpenVPN 2.3.12 to adapt to many kinds of systems.
+ 
+ Usage: $0 [OPTION]... [VAR=VALUE]...
+ 
+@@ -1496,7 +1504,7 @@ fi
+ 
+ if test -n "$ac_init_help"; then
+   case $ac_init_help in
+-     short | recursive ) echo "Configuration of OpenVPN 2.3.10:";;
++     short | recursive ) echo "Configuration of OpenVPN 2.3.12:";;
+    esac
+   cat <<\_ACEOF
+ 
+@@ -1698,7 +1706,7 @@ fi
+ test -n "$ac_init_help" && exit $ac_status
+ if $ac_init_version; then
+   cat <<\_ACEOF
+-OpenVPN configure 2.3.10
++OpenVPN configure 2.3.12
+ generated by GNU Autoconf 2.69
+ 
+ Copyright (C) 2012 Free Software Foundation, Inc.
+@@ -2480,7 +2488,7 @@ cat >config.log <<_ACEOF
+ This file contains any messages produced by compilers while
+ running configure, to aid debugging if configure makes a mistake.
+ 
+-It was created by OpenVPN $as_me 2.3.10, which was
++It was created by OpenVPN $as_me 2.3.12, which was
+ generated by GNU Autoconf 2.69.  Invocation command line was
+ 
+   $ $0 $@
+@@ -2844,7 +2852,7 @@ if test -z "${htmldir}"; then
+ fi
+ 
+ 
+-$as_echo "#define OPENVPN_VERSION_RESOURCE 2,3,10,0" >>confdefs.h
++$as_echo "#define OPENVPN_VERSION_RESOURCE 2,3,12,0" >>confdefs.h
+ 
+ 
+ ac_aux_dir=
+@@ -3054,8 +3062,8 @@ test "$program_suffix" != NONE &&
+ ac_script='s/[\\$]/&&/g;s/;s,x,x,$//'
+ program_transform_name=`$as_echo "$program_transform_name" | sed "$ac_script"`
+ 
+-# expand $ac_aux_dir to an absolute path
+-am_aux_dir=`cd $ac_aux_dir && pwd`
++# Expand $ac_aux_dir to an absolute path.
++am_aux_dir=`cd "$ac_aux_dir" && pwd`
+ 
+ if test x"${MISSING+set}" != xset; then
+   case $am_aux_dir in
+@@ -3368,7 +3376,7 @@ fi
+ 
+ # Define the identity of the package.
+  PACKAGE='openvpn'
+- VERSION='2.3.10'
++ VERSION='2.3.12'
+ 
+ 
+ cat >>confdefs.h <<_ACEOF
+@@ -3459,7 +3467,8 @@ to "yes", and re-run configure.
+ END
+     as_fn_error $? "Your 'rm' program is bad, sorry." "$LINENO" 5
+   fi
+-fi # Make sure we can run config.sub.
++fi
++ # Make sure we can run config.sub.
+ $SHELL "$ac_aux_dir/config.sub" sun4 >/dev/null 2>&1 ||
+   as_fn_error $? "cannot run $SHELL $ac_aux_dir/config.sub" "$LINENO" 5
+ 
+@@ -6842,7 +6851,8 @@ else
+     ;;
+   *)
+     lt_cv_sys_max_cmd_len=`(getconf ARG_MAX) 2> /dev/null`
+-    if test -n "$lt_cv_sys_max_cmd_len"; then
++    if test -n "$lt_cv_sys_max_cmd_len" && \
++	test undefined != "$lt_cv_sys_max_cmd_len"; then
+       lt_cv_sys_max_cmd_len=`expr $lt_cv_sys_max_cmd_len \/ 4`
+       lt_cv_sys_max_cmd_len=`expr $lt_cv_sys_max_cmd_len \* 3`
+     else
+@@ -7240,10 +7250,6 @@ freebsd* | dragonfly*)
+   fi
+   ;;
+ 
+-gnu*)
+-  lt_cv_deplibs_check_method=pass_all
+-  ;;
+-
+ haiku*)
+   lt_cv_deplibs_check_method=pass_all
+   ;;
+@@ -7282,11 +7288,11 @@ irix5* | irix6* | nonstopux*)
+   ;;
+ 
+ # This must be glibc/ELF.
+-linux* | k*bsd*-gnu | kopensolaris*-gnu)
++linux* | k*bsd*-gnu | kopensolaris*-gnu | gnu*)
+   lt_cv_deplibs_check_method=pass_all
+   ;;
+ 
+-netbsd*)
++netbsd* | netbsdelf*-gnu)
+   if echo __ELF__ | $CC -E - | $GREP __ELF__ > /dev/null; then
+     lt_cv_deplibs_check_method='match_pattern /lib[^/]+(\.so\.[0-9]+\.[0-9]+|_pic\.a)$'
+   else
+@@ -8376,12 +8382,19 @@ s390*-*linux*|s390*-*tpf*|sparc*-*linux*
+ 	    LD="${LD-ld} -m elf_i386_fbsd"
+ 	    ;;
+ 	  x86_64-*linux*)
+-	    LD="${LD-ld} -m elf_i386"
++	    case `/usr/bin/file conftest.o` in
++	      *x86-64*)
++		LD="${LD-ld} -m elf32_x86_64"
++		;;
++	      *)
++		LD="${LD-ld} -m elf_i386"
++		;;
++	    esac
+ 	    ;;
+-	  powerpc64le-*linux*)
++	  powerpc64le-*)
+ 	    LD="${LD-ld} -m elf32lppclinux"
+ 	    ;;
+-	  powerpc64-*linux*)
++	  powerpc64-*)
+ 	    LD="${LD-ld} -m elf32ppclinux"
+ 	    ;;
+ 	  s390x-*linux*)
+@@ -8400,10 +8413,10 @@ s390*-*linux*|s390*-*tpf*|sparc*-*linux*
+ 	  x86_64-*linux*)
+ 	    LD="${LD-ld} -m elf_x86_64"
+ 	    ;;
+-	  powerpcle-*linux*)
++	  powerpcle-*)
+ 	    LD="${LD-ld} -m elf64lppc"
+ 	    ;;
+-	  powerpc-*linux*)
++	  powerpc-*)
+ 	    LD="${LD-ld} -m elf64ppc"
+ 	    ;;
+ 	  s390*-*linux*|s390*-*tpf*)
+@@ -10242,7 +10255,7 @@ lt_prog_compiler_static=
+       lt_prog_compiler_static='-non_shared'
+       ;;
+ 
+-    linux* | k*bsd*-gnu | kopensolaris*-gnu)
++    linux* | k*bsd*-gnu | kopensolaris*-gnu | gnu*)
+       case $cc_basename in
+       # old Intel for x86_64 which still supported -KPIC.
+       ecc*)
+@@ -10720,6 +10733,9 @@ $as_echo_n "checking whether the $compil
+   openbsd*)
+     with_gnu_ld=no
+     ;;
++  linux* | k*bsd*-gnu | gnu*)
++    link_all_deplibs=no
++    ;;
+   esac
+ 
+   ld_shlibs=yes
+@@ -10941,7 +10957,7 @@ _LT_EOF
+       fi
+       ;;
+ 
+-    netbsd*)
++    netbsd* | netbsdelf*-gnu)
+       if echo __ELF__ | $CC -E - | $GREP __ELF__ >/dev/null; then
+ 	archive_cmds='$LD -Bshareable $libobjs $deplibs $linker_flags -o $lib'
+ 	wlarc=
+@@ -11118,6 +11134,7 @@ _LT_EOF
+ 	if test "$aix_use_runtimelinking" = yes; then
+ 	  shared_flag="$shared_flag "'${wl}-G'
+ 	fi
++	link_all_deplibs=no
+       else
+ 	# not using gcc
+ 	if test "$host_cpu" = ia64; then
+@@ -11571,7 +11588,7 @@ $as_echo "$lt_cv_irix_exported_symbol" >
+       link_all_deplibs=yes
+       ;;
+ 
+-    netbsd*)
++    netbsd* | netbsdelf*-gnu)
+       if echo __ELF__ | $CC -E - | $GREP __ELF__ >/dev/null; then
+ 	archive_cmds='$LD -Bshareable -o $lib $libobjs $deplibs $linker_flags'  # a.out
+       else
+@@ -12408,17 +12425,6 @@ freebsd* | dragonfly*)
+   esac
+   ;;
+ 
+-gnu*)
+-  version_type=linux # correct to gnu/linux during the next big refactor
+-  need_lib_prefix=no
+-  need_version=no
+-  library_names_spec='${libname}${release}${shared_ext}$versuffix ${libname}${release}${shared_ext}${major} ${libname}${shared_ext}'
+-  soname_spec='${libname}${release}${shared_ext}$major'
+-  shlibpath_var=LD_LIBRARY_PATH
+-  shlibpath_overrides_runpath=no
+-  hardcode_into_libs=yes
+-  ;;
+-
+ haiku*)
+   version_type=linux # correct to gnu/linux during the next big refactor
+   need_lib_prefix=no
+@@ -12535,7 +12541,7 @@ linux*oldld* | linux*aout* | linux*coff*
+   ;;
+ 
+ # This must be glibc/ELF.
+-linux* | k*bsd*-gnu | kopensolaris*-gnu)
++linux* | k*bsd*-gnu | kopensolaris*-gnu | gnu*)
+   version_type=linux # correct to gnu/linux during the next big refactor
+   need_lib_prefix=no
+   need_version=no
+@@ -12584,14 +12590,10 @@ fi
+   # before this can be enabled.
+   hardcode_into_libs=yes
+ 
+-  # Add ABI-specific directories to the system library path.
+-  sys_lib_dlsearch_path_spec="/lib64 /usr/lib64 /lib /usr/lib"
+-
+   # Append ld.so.conf contents to the search path
+   if test -f /etc/ld.so.conf; then
+     lt_ld_extra=`awk '/^include / { system(sprintf("cd /etc; cat %s 2>/dev/null", \$2)); skip = 1; } { if (!skip) print \$0; skip = 0; }' < /etc/ld.so.conf | $SED -e 's/#.*//;/^[	 ]*hwcap[	 ]/d;s/[:,	]/ /g;s/=[^=]*$//;s/=[^= ]* / /g;s/"//g;/^$/d' | tr '\n' ' '`
+-    sys_lib_dlsearch_path_spec="$sys_lib_dlsearch_path_spec $lt_ld_extra"
+-
++    sys_lib_dlsearch_path_spec="/lib /usr/lib $lt_ld_extra"
+   fi
+ 
+   # We used to test for /lib/ld.so.1 and disable shared libraries on
+@@ -12603,6 +12605,18 @@ fi
+   dynamic_linker='GNU/Linux ld.so'
+   ;;
+ 
++netbsdelf*-gnu)
++  version_type=linux
++  need_lib_prefix=no
++  need_version=no
++  library_names_spec='${libname}${release}${shared_ext}$versuffix ${libname}${release}${shared_ext}$major ${libname}${shared_ext}'
++  soname_spec='${libname}${release}${shared_ext}$major'
++  shlibpath_var=LD_LIBRARY_PATH
++  shlibpath_overrides_runpath=no
++  hardcode_into_libs=yes
++  dynamic_linker='NetBSD ld.elf_so'
++  ;;
++
+ netbsd*)
+   version_type=sunos
+   need_lib_prefix=no
+@@ -17066,7 +17080,100 @@ sampledir="\$(docdir)/sample"
+ 
+ 
+ 
+-ac_config_files="$ac_config_files version.sh Makefile build/Makefile build/msvc/Makefile build/msvc/msvc-generate/Makefile distro/Makefile distro/rpm/Makefile distro/rpm/openvpn.spec include/Makefile src/Makefile src/compat/Makefile src/openvpn/Makefile src/openvpnserv/Makefile src/plugins/Makefile src/plugins/auth-pam/Makefile src/plugins/down-root/Makefile tests/Makefile sample/Makefile doc/Makefile"
++VENDOR_SRC_ROOT="\$(abs_top_srcdir)/vendor/"
++VENDOR_DIST_ROOT="\$(abs_top_builddir)/vendor/dist"
++VENDOR_BUILD_ROOT="\$(abs_top_builddir)/vendor/.build"
++
++
++
++
++TEST_LDFLAGS="-lcmocka -L\$(abs_top_builddir)/vendor/dist/lib -Wl,-rpath,\$(abs_top_builddir)/vendor/dist/lib"
++TEST_CFLAGS="-I\$(top_srcdir)/include -I\$(abs_top_builddir)/vendor/dist/include"
++
++
++
++
++# Check if cmake is available and cmocka git submodule is initialized,
++# needed for unit testing
++for ac_prog in cmake
++do
++  # Extract the first word of "$ac_prog", so it can be a program name with args.
++set dummy $ac_prog; ac_word=$2
++{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
++$as_echo_n "checking for $ac_word... " >&6; }
++if ${ac_cv_prog_CMAKE+:} false; then :
++  $as_echo_n "(cached) " >&6
++else
++  if test -n "$CMAKE"; then
++  ac_cv_prog_CMAKE="$CMAKE" # Let the user override the test.
++else
++as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
++for as_dir in $PATH
++do
++  IFS=$as_save_IFS
++  test -z "$as_dir" && as_dir=.
++    for ac_exec_ext in '' $ac_executable_extensions; do
++  if as_fn_executable_p "$as_dir/$ac_word$ac_exec_ext"; then
++    ac_cv_prog_CMAKE="$ac_prog"
++    $as_echo "$as_me:${as_lineno-$LINENO}: found $as_dir/$ac_word$ac_exec_ext" >&5
++    break 2
++  fi
++done
++  done
++IFS=$as_save_IFS
++
++fi
++fi
++CMAKE=$ac_cv_prog_CMAKE
++if test -n "$CMAKE"; then
++  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $CMAKE" >&5
++$as_echo "$CMAKE" >&6; }
++else
++  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
++$as_echo "no" >&6; }
++fi
++
++
++  test -n "$CMAKE" && break
++done
++
++if test -n "${CMAKE}"; then
++   if test -f vendor/cmocka/CMakeLists.txt; then
++       if true; then
++  CMOCKA_INITIALIZED_TRUE=
++  CMOCKA_INITIALIZED_FALSE='#'
++else
++  CMOCKA_INITIALIZED_TRUE='#'
++  CMOCKA_INITIALIZED_FALSE=
++fi
++
++   else
++       if false; then
++  CMOCKA_INITIALIZED_TRUE=
++  CMOCKA_INITIALIZED_FALSE='#'
++else
++  CMOCKA_INITIALIZED_TRUE='#'
++  CMOCKA_INITIALIZED_FALSE=
++fi
++
++      { $as_echo "$as_me:${as_lineno-$LINENO}: result: !! WARNING !! The cmoka git submodule has not been initialized or updated.  Unit testing cannot be performed." >&5
++$as_echo "!! WARNING !! The cmoka git submodule has not been initialized or updated.  Unit testing cannot be performed." >&6; }
++   fi
++else
++   { $as_echo "$as_me:${as_lineno-$LINENO}: result: !! WARNING !! CMake is NOT available.  Unit testing cannot be performed." >&5
++$as_echo "!! WARNING !! CMake is NOT available.  Unit testing cannot be performed." >&6; }
++    if false; then
++  CMOCKA_INITIALIZED_TRUE=
++  CMOCKA_INITIALIZED_FALSE='#'
++else
++  CMOCKA_INITIALIZED_TRUE='#'
++  CMOCKA_INITIALIZED_FALSE=
++fi
++
++fi
++
++
++ac_config_files="$ac_config_files version.sh Makefile build/Makefile build/msvc/Makefile build/msvc/msvc-generate/Makefile distro/Makefile distro/rpm/Makefile distro/rpm/openvpn.spec include/Makefile src/Makefile src/compat/Makefile src/openvpn/Makefile src/openvpnserv/Makefile src/plugins/Makefile src/plugins/auth-pam/Makefile src/plugins/down-root/Makefile tests/Makefile tests/unit_tests/Makefile tests/unit_tests/plugins/Makefile tests/unit_tests/plugins/auth-pam/Makefile tests/unit_tests/example_test/Makefile vendor/Makefile sample/Makefile doc/Makefile"
+ 
+ ac_config_files="$ac_config_files tests/t_client.sh"
+ 
+@@ -17219,6 +17326,18 @@ if test -z "${ENABLE_PLUGIN_DOWN_ROOT_TR
+   as_fn_error $? "conditional \"ENABLE_PLUGIN_DOWN_ROOT\" was never defined.
+ Usually this means the macro was only invoked conditionally." "$LINENO" 5
+ fi
++if test -z "${CMOCKA_INITIALIZED_TRUE}" && test -z "${CMOCKA_INITIALIZED_FALSE}"; then
++  as_fn_error $? "conditional \"CMOCKA_INITIALIZED\" was never defined.
++Usually this means the macro was only invoked conditionally." "$LINENO" 5
++fi
++if test -z "${CMOCKA_INITIALIZED_TRUE}" && test -z "${CMOCKA_INITIALIZED_FALSE}"; then
++  as_fn_error $? "conditional \"CMOCKA_INITIALIZED\" was never defined.
++Usually this means the macro was only invoked conditionally." "$LINENO" 5
++fi
++if test -z "${CMOCKA_INITIALIZED_TRUE}" && test -z "${CMOCKA_INITIALIZED_FALSE}"; then
++  as_fn_error $? "conditional \"CMOCKA_INITIALIZED\" was never defined.
++Usually this means the macro was only invoked conditionally." "$LINENO" 5
++fi
+ 
+ : "${CONFIG_STATUS=./config.status}"
+ ac_write_fail=0
+@@ -17616,7 +17735,7 @@ cat >>$CONFIG_STATUS <<\_ACEOF || ac_wri
+ # report actual input values of CONFIG_FILES etc. instead of their
+ # values after options handling.
+ ac_log="
+-This file was extended by OpenVPN $as_me 2.3.10, which was
++This file was extended by OpenVPN $as_me 2.3.12, which was
+ generated by GNU Autoconf 2.69.  Invocation command line was
+ 
+   CONFIG_FILES    = $CONFIG_FILES
+@@ -17682,7 +17801,7 @@ _ACEOF
+ cat >>$CONFIG_STATUS <<_ACEOF || ac_write_fail=1
+ ac_cs_config="`$as_echo "$ac_configure_args" | sed 's/^ //; s/[\\""\`\$]/\\\\&/g'`"
+ ac_cs_version="\\
+-OpenVPN config.status 2.3.10
++OpenVPN config.status 2.3.12
+ configured by $0, generated by GNU Autoconf 2.69,
+   with options \\"\$ac_cs_config\\"
+ 
+@@ -18184,6 +18303,11 @@ do
+     "src/plugins/auth-pam/Makefile") CONFIG_FILES="$CONFIG_FILES src/plugins/auth-pam/Makefile" ;;
+     "src/plugins/down-root/Makefile") CONFIG_FILES="$CONFIG_FILES src/plugins/down-root/Makefile" ;;
+     "tests/Makefile") CONFIG_FILES="$CONFIG_FILES tests/Makefile" ;;
++    "tests/unit_tests/Makefile") CONFIG_FILES="$CONFIG_FILES tests/unit_tests/Makefile" ;;
++    "tests/unit_tests/plugins/Makefile") CONFIG_FILES="$CONFIG_FILES tests/unit_tests/plugins/Makefile" ;;
++    "tests/unit_tests/plugins/auth-pam/Makefile") CONFIG_FILES="$CONFIG_FILES tests/unit_tests/plugins/auth-pam/Makefile" ;;
++    "tests/unit_tests/example_test/Makefile") CONFIG_FILES="$CONFIG_FILES tests/unit_tests/example_test/Makefile" ;;
++    "vendor/Makefile") CONFIG_FILES="$CONFIG_FILES vendor/Makefile" ;;
+     "sample/Makefile") CONFIG_FILES="$CONFIG_FILES sample/Makefile" ;;
+     "doc/Makefile") CONFIG_FILES="$CONFIG_FILES doc/Makefile" ;;
+     "tests/t_client.sh") CONFIG_FILES="$CONFIG_FILES tests/t_client.sh" ;;
+diff -urp openvpn-2.3.10/configure.ac openvpn-2.3.x/configure.ac
+--- openvpn-2.3.10/configure.ac	2016-01-04 19:17:32.000000000 +0700
++++ openvpn-2.3.x/configure.ac	2016-09-03 17:42:55.511647191 +0700
+@@ -1119,6 +1119,35 @@ sampledir="\$(docdir)/sample"
+ AC_SUBST([plugindir])
+ AC_SUBST([sampledir])
+ 
++VENDOR_SRC_ROOT="\$(abs_top_srcdir)/vendor/"
++VENDOR_DIST_ROOT="\$(abs_top_builddir)/vendor/dist"
++VENDOR_BUILD_ROOT="\$(abs_top_builddir)/vendor/.build"
++AC_SUBST([VENDOR_SRC_ROOT])
++AC_SUBST([VENDOR_BUILD_ROOT])
++AC_SUBST([VENDOR_DIST_ROOT])
++
++TEST_LDFLAGS="-lcmocka -L\$(abs_top_builddir)/vendor/dist/lib -Wl,-rpath,\$(abs_top_builddir)/vendor/dist/lib"
++TEST_CFLAGS="-I\$(top_srcdir)/include -I\$(abs_top_builddir)/vendor/dist/include"
++
++AC_SUBST([TEST_LDFLAGS])
++AC_SUBST([TEST_CFLAGS])
++
++# Check if cmake is available and cmocka git submodule is initialized,
++# needed for unit testing
++AC_CHECK_PROGS([CMAKE], [cmake])
++if test -n "${CMAKE}"; then
++   if test -f vendor/cmocka/CMakeLists.txt; then
++      AM_CONDITIONAL([CMOCKA_INITIALIZED], [true])
++   else
++      AM_CONDITIONAL([CMOCKA_INITIALIZED], [false])
++      AC_MSG_RESULT([!! WARNING !! The cmoka git submodule has not been initialized or updated.  Unit testing cannot be performed.])
++   fi
++else
++   AC_MSG_RESULT([!! WARNING !! CMake is NOT available.  Unit testing cannot be performed.])
++   AM_CONDITIONAL([CMOCKA_INITIALIZED], [false])
++fi
++
++
+ AC_CONFIG_FILES([
+ 	version.sh
+ 	Makefile
+@@ -1137,6 +1166,11 @@ AC_CONFIG_FILES([
+ 	src/plugins/auth-pam/Makefile
+ 	src/plugins/down-root/Makefile
+ 	tests/Makefile
++        tests/unit_tests/Makefile
++        tests/unit_tests/plugins/Makefile
++        tests/unit_tests/plugins/auth-pam/Makefile
++        tests/unit_tests/example_test/Makefile
++        vendor/Makefile
+ 	sample/Makefile
+ 	doc/Makefile
+ ])
+diff -urp openvpn-2.3.10/contrib/OCSP_check/OCSP_check.sh openvpn-2.3.x/contrib/OCSP_check/OCSP_check.sh
+--- openvpn-2.3.10/contrib/OCSP_check/OCSP_check.sh	2015-12-21 19:56:50.000000000 +0700
++++ openvpn-2.3.x/contrib/OCSP_check/OCSP_check.sh	2016-05-29 00:06:21.723888253 +0700
+@@ -105,9 +105,9 @@ if [ $check_depth -eq -1 ] || [ $cur_dep
+           exit 1
+       fi
+       # check that the reported status of certificate is ok
+-      if echo "$status" | grep -Fq "^${serial}: good"; then
++      if echo "$status" | grep -Eq "^${serial}: good"; then
+         # check if signature on the OCSP response verified correctly
+-        if echo "$status" | grep -Fq "^Response verify OK"; then
++        if echo "$status" | grep -Eq "^Response verify OK"; then
+             exit 0
+         fi
+       fi
+diff -urp openvpn-2.3.10/contrib/pull-resolv-conf/client.up openvpn-2.3.x/contrib/pull-resolv-conf/client.up
+--- openvpn-2.3.10/contrib/pull-resolv-conf/client.up	2015-05-19 01:48:45.000000000 +0700
++++ openvpn-2.3.x/contrib/pull-resolv-conf/client.up	2016-09-03 17:42:55.511647191 +0700
+@@ -50,9 +50,10 @@ nl='
+ # or
+ # "dhcp-option DNS 10.10.10.10" (multiple allowed)
+ 
+-# each DNS option becomes a "nameserver" option in resolv.con
++# each DNS option becomes a "nameserver" option in resolv.conf
+ # if we get one DOMAIN, that becomes "domain" in resolv.conf
+ # if we get multiple DOMAINS, those become "search" lines in resolv.conf
++# if we get no DOMAINS, then don't use either domain or search.
+ 
+ while true; do
+   eval fopt=\$foreign_option_${i}
+@@ -78,13 +79,15 @@ while true; do
+   i=$((i + 1))
+ done
+ 
+-ds=domain
+-if [ $ndoms -gt 1 ]; then
+-  ds=search
++ds=""
++if [ $ndoms -eq 1 ]; then
++  ds="${nl}domain"
++elif [ $ndoms -gt 1 ]; then
++  ds="${nl}search"
+ fi
+ 
+ # This is the complete file - "$domains" has a leading space already
+-out="# resolv.conf autogenerated by ${0} (${1})${nl}${dns}${nl}${ds}${domains}"
++out="# resolv.conf autogenerated by ${0} (${1})${nl}${dns}${ds}${domains}"
+ 
+ # use resolvconf if it's available
+ if type resolvconf >/dev/null 2>&1; then
+diff -urp openvpn-2.3.10/distro/Makefile.in openvpn-2.3.x/distro/Makefile.in
+--- openvpn-2.3.10/distro/Makefile.in	2016-01-04 19:18:09.000000000 +0700
++++ openvpn-2.3.x/distro/Makefile.in	2016-09-03 17:42:55.511647191 +0700
+@@ -197,6 +197,7 @@ AWK = @AWK@
+ CC = @CC@
+ CCDEPMODE = @CCDEPMODE@
+ CFLAGS = @CFLAGS@
++CMAKE = @CMAKE@
+ CPP = @CPP@
+ CPPFLAGS = @CPPFLAGS@
+ CYGPATH_W = @CYGPATH_W@
+@@ -290,6 +291,11 @@ TAP_CFLAGS = @TAP_CFLAGS@
+ TAP_WIN_COMPONENT_ID = @TAP_WIN_COMPONENT_ID@
+ TAP_WIN_MIN_MAJOR = @TAP_WIN_MIN_MAJOR@
+ TAP_WIN_MIN_MINOR = @TAP_WIN_MIN_MINOR@
++TEST_CFLAGS = @TEST_CFLAGS@
++TEST_LDFLAGS = @TEST_LDFLAGS@
++VENDOR_BUILD_ROOT = @VENDOR_BUILD_ROOT@
++VENDOR_DIST_ROOT = @VENDOR_DIST_ROOT@
++VENDOR_SRC_ROOT = @VENDOR_SRC_ROOT@
+ VERSION = @VERSION@
+ abs_builddir = @abs_builddir@
+ abs_srcdir = @abs_srcdir@
+diff -urp openvpn-2.3.10/distro/rpm/Makefile.in openvpn-2.3.x/distro/rpm/Makefile.in
+--- openvpn-2.3.10/distro/rpm/Makefile.in	2016-01-04 19:18:09.000000000 +0700
++++ openvpn-2.3.x/distro/rpm/Makefile.in	2016-09-03 17:42:55.511647191 +0700
+@@ -140,6 +140,7 @@ AWK = @AWK@
+ CC = @CC@
+ CCDEPMODE = @CCDEPMODE@
+ CFLAGS = @CFLAGS@
++CMAKE = @CMAKE@
+ CPP = @CPP@
+ CPPFLAGS = @CPPFLAGS@
+ CYGPATH_W = @CYGPATH_W@
+@@ -233,6 +234,11 @@ TAP_CFLAGS = @TAP_CFLAGS@
+ TAP_WIN_COMPONENT_ID = @TAP_WIN_COMPONENT_ID@
+ TAP_WIN_MIN_MAJOR = @TAP_WIN_MIN_MAJOR@
+ TAP_WIN_MIN_MINOR = @TAP_WIN_MIN_MINOR@
++TEST_CFLAGS = @TEST_CFLAGS@
++TEST_LDFLAGS = @TEST_LDFLAGS@
++VENDOR_BUILD_ROOT = @VENDOR_BUILD_ROOT@
++VENDOR_DIST_ROOT = @VENDOR_DIST_ROOT@
++VENDOR_SRC_ROOT = @VENDOR_SRC_ROOT@
+ VERSION = @VERSION@
+ abs_builddir = @abs_builddir@
+ abs_srcdir = @abs_srcdir@
+Только в openvpn-2.3.10/distro/rpm: openvpn.spec
+diff -urp openvpn-2.3.10/doc/Makefile.in openvpn-2.3.x/doc/Makefile.in
+--- openvpn-2.3.10/doc/Makefile.in	2016-01-04 19:18:09.000000000 +0700
++++ openvpn-2.3.x/doc/Makefile.in	2016-09-03 17:42:55.511647191 +0700
+@@ -174,6 +174,7 @@ AWK = @AWK@
+ CC = @CC@
+ CCDEPMODE = @CCDEPMODE@
+ CFLAGS = @CFLAGS@
++CMAKE = @CMAKE@
+ CPP = @CPP@
+ CPPFLAGS = @CPPFLAGS@
+ CYGPATH_W = @CYGPATH_W@
+@@ -267,6 +268,11 @@ TAP_CFLAGS = @TAP_CFLAGS@
+ TAP_WIN_COMPONENT_ID = @TAP_WIN_COMPONENT_ID@
+ TAP_WIN_MIN_MAJOR = @TAP_WIN_MIN_MAJOR@
+ TAP_WIN_MIN_MINOR = @TAP_WIN_MIN_MINOR@
++TEST_CFLAGS = @TEST_CFLAGS@
++TEST_LDFLAGS = @TEST_LDFLAGS@
++VENDOR_BUILD_ROOT = @VENDOR_BUILD_ROOT@
++VENDOR_DIST_ROOT = @VENDOR_DIST_ROOT@
++VENDOR_SRC_ROOT = @VENDOR_SRC_ROOT@
+ VERSION = @VERSION@
+ abs_builddir = @abs_builddir@
+ abs_srcdir = @abs_srcdir@
+diff -urp openvpn-2.3.10/doc/openvpn.8 openvpn-2.3.x/doc/openvpn.8
+--- openvpn-2.3.10/doc/openvpn.8	2016-01-04 19:17:32.000000000 +0700
++++ openvpn-2.3.x/doc/openvpn.8	2016-09-03 17:42:55.511647191 +0700
+@@ -1360,7 +1360,11 @@ parameter is interpreted in the same way
+ .B \-\-link\-mtu
+ parameter, i.e. the UDP packet size after encapsulation
+ overhead has been added in, but not including
+-the UDP header itself.
++the UDP header itself. Resulting packet would be at most 28
++bytes larger for IPv4 and 48 bytes for IPv6 (20/40 bytes for IP
++header and 8 bytes for UDP header). Default value of 1450 allows
++IPv4 packets to be transmitted over a link with MTU 1473 or higher
++without IP level fragmentation.
+ 
+ The
+ .B \-\-mssfix
+@@ -2118,15 +2122,12 @@ parameter can point to an empty director
+ complications can result when scripts or restarts
+ are executed after the chroot operation.
+ 
+-Note: if OpenVPN is built using the PolarSSL SSL
+-library,
+-.B \-\-chroot
+-will only work if a /dev/urandom device node is available
+-inside the chroot directory
++Note: The SSL library will probably need /dev/urandom to be available inside
++the chroot directory
+ .B dir.
+-This is due to the way PolarSSL works (it wants to open
+-/dev/urandom every time randomness is needed, not just once
+-at startup) and nothing OpenVPN can influence.
++This is because SSL libraries occasionally need to collect fresh random.  Newer
++linux kernels and some BSDs implement a getrandom() or getentropy() syscall
++that removes the need for /dev/urandom to be available.
+ .\"*********************************************************
+ .TP
+ .B \-\-setcon context
+@@ -2895,16 +2896,41 @@ configuration file.  This option will ig
+ options at the global config file level.
+ .TP
+ .B \-\-push\-peer\-info
+-Push additional information about the client to server.  The additional information
+-consists of the following data:
++Push additional information about the client to server.
++The following data is always pushed to the server:
+ 
+ IV_VER=<version> -- the client OpenVPN version
+ 
+ IV_PLAT=[linux|solaris|openbsd|mac|netbsd|freebsd|win] -- the client OS platform
+ 
++IV_LZO_STUB=1 -- if client was built with LZO stub capability
++
++IV_LZ4=1 -- if the client supports LZ4 compressions.
++
++IV_RGI6=1 -- if the client supports
++.B \-\-redirect\-gateway
++for ipv6
++
++IV_PROTO=2 -- if the client supports peer-id floating mechansim
++
++IV_NCP=2 -- negotiable ciphers, client supports
++.B \-\-cipher
++pushed by the server, a value of 2 or greater indicates client
++supports AES-GCM-128 and AES-GCM-256.
++
++IV_UI_VER=<gui_id> <version> -- the UI version of a UI if one is
++running, for example "de.blinkt.openvpn 0.5.47" for the
++Android app.
++
++When
++.B \-\-push\-peer\-info
++is enabled the additional information consists of the following data:
++
+ IV_HWADDR=<mac address> -- the MAC address of clients default gateway
+ 
+-IV_LZO_STUB=1 -- if client was built with LZO stub capability
++IV_SSL=<version string> -- the ssl version used by the client, e.g. "OpenSSL 1.0.2f 28 Jan 2016".
++
++IV_PLAT_VER=x.y - the version of the operating system, e.g. 6.1 for Windows 7.
+ 
+ UV_<name>=<value> -- client environment variables whose names start with "UV_"
+ .\"*********************************************************
+@@ -4554,8 +4580,9 @@ is an expert feature, which - if used co
+ your VPN connection.  But it is also easy to unwittingly use it to carefully
+ align a gun with your foot, or just break your connection.  Use with care!
+ 
+-The default for --tls-cipher is to use PolarSSL's default cipher list
+-when using PolarSSL or "DEFAULT:!EXP:!PSK:!SRP:!kRSA" when using OpenSSL.
++The default for \-\-tls\-cipher is to use PolarSSL's default cipher list
++when using PolarSSL or "DEFAULT:!EXP:!LOW:!MEDIUM:!PSK:!SRP:!kRSA" when using
++OpenSSL.
+ .\"*********************************************************
+ .TP
+ .B \-\-tls\-timeout n
+@@ -5454,6 +5481,16 @@ DNS leaks. This option prevents any appl
+ TCP or UDP port 53 except one inside the tunnel. It uses
+ Windows Filtering Platform (WFP) and works on Windows Vista or
+ later.
++
++This option is considered unknown on non-Windows platforms
++and unsupported on Windows XP, resulting in fatal error.
++You may want to use
++.B \-\-setenv opt
++or
++.B \-\-ignore\-unknown\-option
++(not suitable for Windows XP) to ignore said error.
++Note that pushing unknown options from server does not trigger
++fatal errors.
+ .\"*********************************************************
+ .TP
+ .B \-\-dhcp\-renew
+@@ -5610,10 +5647,7 @@ Is only accepted if ``\-\-mode server''
+ Specify an IPv6 address pool for dynamic assignment to clients.  The
+ pool starts at
+ .B ipv6addr
+-and increments by +1 for every new client (linear mode).  The
+-.B /bits
+-setting controls the size of the pool.  Due to implementation details,
+-the pool size must be between /64 and /112.
++and matches the offset determined from the start of the IPv4 pool.
+ .TP
+ .B \-\-ifconfig\-ipv6\-push ipv6addr/bits ipv6remote
+ for ccd/ per-client static IPv6 interface configuration, see
+diff -urp openvpn-2.3.10/include/Makefile.in openvpn-2.3.x/include/Makefile.in
+--- openvpn-2.3.10/include/Makefile.in	2016-01-04 19:18:09.000000000 +0700
++++ openvpn-2.3.x/include/Makefile.in	2016-09-03 17:42:55.511647191 +0700
+@@ -186,6 +186,7 @@ AWK = @AWK@
+ CC = @CC@
+ CCDEPMODE = @CCDEPMODE@
+ CFLAGS = @CFLAGS@
++CMAKE = @CMAKE@
+ CPP = @CPP@
+ CPPFLAGS = @CPPFLAGS@
+ CYGPATH_W = @CYGPATH_W@
+@@ -279,6 +280,11 @@ TAP_CFLAGS = @TAP_CFLAGS@
+ TAP_WIN_COMPONENT_ID = @TAP_WIN_COMPONENT_ID@
+ TAP_WIN_MIN_MAJOR = @TAP_WIN_MIN_MAJOR@
+ TAP_WIN_MIN_MINOR = @TAP_WIN_MIN_MINOR@
++TEST_CFLAGS = @TEST_CFLAGS@
++TEST_LDFLAGS = @TEST_LDFLAGS@
++VENDOR_BUILD_ROOT = @VENDOR_BUILD_ROOT@
++VENDOR_DIST_ROOT = @VENDOR_DIST_ROOT@
++VENDOR_SRC_ROOT = @VENDOR_SRC_ROOT@
+ VERSION = @VERSION@
+ abs_builddir = @abs_builddir@
+ abs_srcdir = @abs_srcdir@
+diff -urp openvpn-2.3.10/INSTALL openvpn-2.3.x/INSTALL
+--- openvpn-2.3.10/INSTALL	2015-12-21 19:57:26.000000000 +0700
++++ openvpn-2.3.x/INSTALL	2016-05-29 00:06:30.359888198 +0700
+@@ -16,6 +16,10 @@ QUICK START:
+ 
+     See INSTALL-win32.txt
+ 
++  Compile OpenVPN with OpenSSL/LZO built from source tarballs
++
++    See INSTALL-nonstandard.txt
++
+ *************************************************************************
+ 
+ To download OpenVPN, go to:
+@@ -71,11 +75,26 @@ REQUIRES:
+       a virtual point-to-point IP or Ethernet device.  See
+       TUN/TAP Driver Configuration section below for more info.
+ 
++  (2) PAM/PAM-Devel (Pluggable Authentication Modules).  In most
++      Linux distributions, these packages are usually listed as
++      the following (here is what they look like on Fedora):
++
++      pam-1.1.8-18.fc22.x86_64.rpm (64-bit package)
++      pam-devel-1.1.8-18.fc.22.x86_64.rpm (64-bit package)
++
+ OPTIONAL (but recommended):
+   (1) OpenSSL library, necessary for encryption, version 0.9.8 or higher
+-      required, available from http://www.openssl.org/
++      required, available from http://www.openssl.org/.  If you build
++      OpenSSL from source tarball, you will need to let OpenVPN-2.3.x
++      know where the libraries and header files were installed to:
++
++      If you configured OpenSSL with stock options, it will install
++      the headers (i.e. - .h files) in /usr/local/ssl/include and
++      the libraries (i.e. - .a or .so files) in /usr/local/ssl/lib/openssl
++
+   (2) PolarSSL library, an alternative for encryption, version 1.1 or higher
+       required, available from https://polarssl.org/
++
+   (3) LZO real-time compression library, required for link compression,
+       available from http://www.oberhumer.com/opensource/lzo/
+       OpenBSD users can use ports or packages to install lzo, but remember
+diff -urp openvpn-2.3.10/ltmain.sh openvpn-2.3.x/ltmain.sh
+--- openvpn-2.3.10/ltmain.sh	2015-08-04 14:29:49.000000000 +0700
++++ openvpn-2.3.x/ltmain.sh	2016-09-03 17:42:55.515647194 +0700
+@@ -70,7 +70,7 @@
+ #         compiler:		$LTCC
+ #         compiler flags:		$LTCFLAGS
+ #         linker:		$LD (gnu? $with_gnu_ld)
+-#         $progname:	(GNU libtool) 2.4.2
++#         $progname:	(GNU libtool) 2.4.2 Debian-2.4.2-1.11
+ #         automake:	$automake_version
+ #         autoconf:	$autoconf_version
+ #
+@@ -80,7 +80,7 @@
+ 
+ PROGRAM=libtool
+ PACKAGE=libtool
+-VERSION=2.4.2
++VERSION="2.4.2 Debian-2.4.2-1.11"
+ TIMESTAMP=""
+ package_revision=1.3337
+ 
+@@ -6124,7 +6124,10 @@ func_mode_link ()
+ 	case $pass in
+ 	dlopen) libs="$dlfiles" ;;
+ 	dlpreopen) libs="$dlprefiles" ;;
+-	link) libs="$deplibs %DEPLIBS% $dependency_libs" ;;
++	link)
++	  libs="$deplibs %DEPLIBS%"
++	  test "X$link_all_deplibs" != Xno && libs="$libs $dependency_libs"
++	  ;;
+ 	esac
+       fi
+       if test "$linkmode,$pass" = "lib,dlpreopen"; then
+@@ -6444,19 +6447,19 @@ func_mode_link ()
+ 	    # It is a libtool convenience library, so add in its objects.
+ 	    func_append convenience " $ladir/$objdir/$old_library"
+ 	    func_append old_convenience " $ladir/$objdir/$old_library"
++	    tmp_libs=
++	    for deplib in $dependency_libs; do
++	      deplibs="$deplib $deplibs"
++	      if $opt_preserve_dup_deps ; then
++		case "$tmp_libs " in
++		*" $deplib "*) func_append specialdeplibs " $deplib" ;;
++		esac
++	      fi
++	      func_append tmp_libs " $deplib"
++	    done
+ 	  elif test "$linkmode" != prog && test "$linkmode" != lib; then
+ 	    func_fatal_error "\`$lib' is not a convenience library"
+ 	  fi
+-	  tmp_libs=
+-	  for deplib in $dependency_libs; do
+-	    deplibs="$deplib $deplibs"
+-	    if $opt_preserve_dup_deps ; then
+-	      case "$tmp_libs " in
+-	      *" $deplib "*) func_append specialdeplibs " $deplib" ;;
+-	      esac
+-	    fi
+-	    func_append tmp_libs " $deplib"
+-	  done
+ 	  continue
+ 	fi # $pass = conv
+ 
+@@ -7349,6 +7352,9 @@ func_mode_link ()
+ 	    revision="$number_minor"
+ 	    lt_irix_increment=no
+ 	    ;;
++	  *)
++	    func_fatal_configuration "$modename: unknown library version type \`$version_type'"
++	    ;;
+ 	  esac
+ 	  ;;
+ 	no)
+diff -urp openvpn-2.3.10/m4/libtool.m4 openvpn-2.3.x/m4/libtool.m4
+--- openvpn-2.3.10/m4/libtool.m4	2015-08-04 14:29:49.000000000 +0700
++++ openvpn-2.3.x/m4/libtool.m4	2016-09-03 17:42:55.515647194 +0700
+@@ -1324,12 +1324,19 @@ s390*-*linux*|s390*-*tpf*|sparc*-*linux*
+ 	    LD="${LD-ld} -m elf_i386_fbsd"
+ 	    ;;
+ 	  x86_64-*linux*)
+-	    LD="${LD-ld} -m elf_i386"
++	    case `/usr/bin/file conftest.o` in
++	      *x86-64*)
++		LD="${LD-ld} -m elf32_x86_64"
++		;;
++	      *)
++		LD="${LD-ld} -m elf_i386"
++		;;
++	    esac
+ 	    ;;
+-	  powerpc64le-*linux*)
++	  powerpc64le-*)
+ 	    LD="${LD-ld} -m elf32lppclinux"
+ 	    ;;
+-	  powerpc64-*linux*)
++	  powerpc64-*)
+ 	    LD="${LD-ld} -m elf32ppclinux"
+ 	    ;;
+ 	  s390x-*linux*)
+@@ -1348,10 +1355,10 @@ s390*-*linux*|s390*-*tpf*|sparc*-*linux*
+ 	  x86_64-*linux*)
+ 	    LD="${LD-ld} -m elf_x86_64"
+ 	    ;;
+-	  powerpcle-*linux*)
++	  powerpcle-*)
+ 	    LD="${LD-ld} -m elf64lppc"
+ 	    ;;
+-	  powerpc-*linux*)
++	  powerpc-*)
+ 	    LD="${LD-ld} -m elf64ppc"
+ 	    ;;
+ 	  s390*-*linux*|s390*-*tpf*)
+@@ -1694,7 +1701,8 @@ AC_CACHE_VAL([lt_cv_sys_max_cmd_len], [d
+     ;;
+   *)
+     lt_cv_sys_max_cmd_len=`(getconf ARG_MAX) 2> /dev/null`
+-    if test -n "$lt_cv_sys_max_cmd_len"; then
++    if test -n "$lt_cv_sys_max_cmd_len" && \
++	test undefined != "$lt_cv_sys_max_cmd_len"; then
+       lt_cv_sys_max_cmd_len=`expr $lt_cv_sys_max_cmd_len \/ 4`
+       lt_cv_sys_max_cmd_len=`expr $lt_cv_sys_max_cmd_len \* 3`
+     else
+@@ -2518,17 +2526,6 @@ freebsd* | dragonfly*)
+   esac
+   ;;
+ 
+-gnu*)
+-  version_type=linux # correct to gnu/linux during the next big refactor
+-  need_lib_prefix=no
+-  need_version=no
+-  library_names_spec='${libname}${release}${shared_ext}$versuffix ${libname}${release}${shared_ext}${major} ${libname}${shared_ext}'
+-  soname_spec='${libname}${release}${shared_ext}$major'
+-  shlibpath_var=LD_LIBRARY_PATH
+-  shlibpath_overrides_runpath=no
+-  hardcode_into_libs=yes
+-  ;;
+-
+ haiku*)
+   version_type=linux # correct to gnu/linux during the next big refactor
+   need_lib_prefix=no
+@@ -2645,7 +2642,7 @@ linux*oldld* | linux*aout* | linux*coff*
+   ;;
+ 
+ # This must be glibc/ELF.
+-linux* | k*bsd*-gnu | kopensolaris*-gnu)
++linux* | k*bsd*-gnu | kopensolaris*-gnu | gnu*)
+   version_type=linux # correct to gnu/linux during the next big refactor
+   need_lib_prefix=no
+   need_version=no
+@@ -2675,14 +2672,10 @@ linux* | k*bsd*-gnu | kopensolaris*-gnu)
+   # before this can be enabled.
+   hardcode_into_libs=yes
+ 
+-  # Add ABI-specific directories to the system library path.
+-  sys_lib_dlsearch_path_spec="/lib64 /usr/lib64 /lib /usr/lib"
+-
+   # Append ld.so.conf contents to the search path
+   if test -f /etc/ld.so.conf; then
+     lt_ld_extra=`awk '/^include / { system(sprintf("cd /etc; cat %s 2>/dev/null", \[$]2)); skip = 1; } { if (!skip) print \[$]0; skip = 0; }' < /etc/ld.so.conf | $SED -e 's/#.*//;/^[	 ]*hwcap[	 ]/d;s/[:,	]/ /g;s/=[^=]*$//;s/=[^= ]* / /g;s/"//g;/^$/d' | tr '\n' ' '`
+-    sys_lib_dlsearch_path_spec="$sys_lib_dlsearch_path_spec $lt_ld_extra"
+-
++    sys_lib_dlsearch_path_spec="/lib /usr/lib $lt_ld_extra"
+   fi
+ 
+   # We used to test for /lib/ld.so.1 and disable shared libraries on
+@@ -2694,6 +2687,18 @@ linux* | k*bsd*-gnu | kopensolaris*-gnu)
+   dynamic_linker='GNU/Linux ld.so'
+   ;;
+ 
++netbsdelf*-gnu)
++  version_type=linux
++  need_lib_prefix=no
++  need_version=no
++  library_names_spec='${libname}${release}${shared_ext}$versuffix ${libname}${release}${shared_ext}$major ${libname}${shared_ext}'
++  soname_spec='${libname}${release}${shared_ext}$major'
++  shlibpath_var=LD_LIBRARY_PATH
++  shlibpath_overrides_runpath=no
++  hardcode_into_libs=yes
++  dynamic_linker='NetBSD ld.elf_so'
++  ;;
++
+ netbsd*)
+   version_type=sunos
+   need_lib_prefix=no
+@@ -3253,10 +3258,6 @@ freebsd* | dragonfly*)
+   fi
+   ;;
+ 
+-gnu*)
+-  lt_cv_deplibs_check_method=pass_all
+-  ;;
+-
+ haiku*)
+   lt_cv_deplibs_check_method=pass_all
+   ;;
+@@ -3295,11 +3296,11 @@ irix5* | irix6* | nonstopux*)
+   ;;
+ 
+ # This must be glibc/ELF.
+-linux* | k*bsd*-gnu | kopensolaris*-gnu)
++linux* | k*bsd*-gnu | kopensolaris*-gnu | gnu*)
+   lt_cv_deplibs_check_method=pass_all
+   ;;
+ 
+-netbsd*)
++netbsd* | netbsdelf*-gnu)
+   if echo __ELF__ | $CC -E - | $GREP __ELF__ > /dev/null; then
+     lt_cv_deplibs_check_method='match_pattern /lib[[^/]]+(\.so\.[[0-9]]+\.[[0-9]]+|_pic\.a)$'
+   else
+@@ -4047,7 +4048,7 @@ m4_if([$1], [CXX], [
+ 	    ;;
+ 	esac
+ 	;;
+-      linux* | k*bsd*-gnu | kopensolaris*-gnu)
++      linux* | k*bsd*-gnu | kopensolaris*-gnu | gnu*)
+ 	case $cc_basename in
+ 	  KCC*)
+ 	    # KAI C++ Compiler
+@@ -4111,7 +4112,7 @@ m4_if([$1], [CXX], [
+ 	    ;;
+ 	esac
+ 	;;
+-      netbsd*)
++      netbsd* | netbsdelf*-gnu)
+ 	;;
+       *qnx* | *nto*)
+         # QNX uses GNU C++, but need to define -shared option too, otherwise
+@@ -4346,7 +4347,7 @@ m4_if([$1], [CXX], [
+       _LT_TAGVAR(lt_prog_compiler_static, $1)='-non_shared'
+       ;;
+ 
+-    linux* | k*bsd*-gnu | kopensolaris*-gnu)
++    linux* | k*bsd*-gnu | kopensolaris*-gnu | gnu*)
+       case $cc_basename in
+       # old Intel for x86_64 which still supported -KPIC.
+       ecc*)
+@@ -4588,6 +4589,9 @@ m4_if([$1], [CXX], [
+       ;;
+     esac
+     ;;
++  linux* | k*bsd*-gnu | gnu*)
++    _LT_TAGVAR(link_all_deplibs, $1)=no
++    ;;
+   *)
+     _LT_TAGVAR(export_symbols_cmds, $1)='$NM $libobjs $convenience | $global_symbol_pipe | $SED '\''s/.* //'\'' | sort | uniq > $export_symbols'
+     ;;
+@@ -4650,6 +4654,9 @@ dnl Note also adjust exclude_expsyms for
+   openbsd*)
+     with_gnu_ld=no
+     ;;
++  linux* | k*bsd*-gnu | gnu*)
++    _LT_TAGVAR(link_all_deplibs, $1)=no
++    ;;
+   esac
+ 
+   _LT_TAGVAR(ld_shlibs, $1)=yes
+@@ -4871,7 +4878,7 @@ _LT_EOF
+       fi
+       ;;
+ 
+-    netbsd*)
++    netbsd* | netbsdelf*-gnu)
+       if echo __ELF__ | $CC -E - | $GREP __ELF__ >/dev/null; then
+ 	_LT_TAGVAR(archive_cmds, $1)='$LD -Bshareable $libobjs $deplibs $linker_flags -o $lib'
+ 	wlarc=
+@@ -5048,6 +5055,7 @@ _LT_EOF
+ 	if test "$aix_use_runtimelinking" = yes; then
+ 	  shared_flag="$shared_flag "'${wl}-G'
+ 	fi
++	_LT_TAGVAR(link_all_deplibs, $1)=no
+       else
+ 	# not using gcc
+ 	if test "$host_cpu" = ia64; then
+@@ -5352,7 +5360,7 @@ _LT_EOF
+       _LT_TAGVAR(link_all_deplibs, $1)=yes
+       ;;
+ 
+-    netbsd*)
++    netbsd* | netbsdelf*-gnu)
+       if echo __ELF__ | $CC -E - | $GREP __ELF__ >/dev/null; then
+ 	_LT_TAGVAR(archive_cmds, $1)='$LD -Bshareable -o $lib $libobjs $deplibs $linker_flags'  # a.out
+       else
+@@ -6232,9 +6240,6 @@ if test "$_lt_caught_CXX_error" != yes;
+         _LT_TAGVAR(ld_shlibs, $1)=yes
+         ;;
+ 
+-      gnu*)
+-        ;;
+-
+       haiku*)
+         _LT_TAGVAR(archive_cmds, $1)='$CC -shared $libobjs $deplibs $compiler_flags ${wl}-soname $wl$soname -o $lib'
+         _LT_TAGVAR(link_all_deplibs, $1)=yes
+@@ -6396,7 +6401,7 @@ if test "$_lt_caught_CXX_error" != yes;
+         _LT_TAGVAR(inherit_rpath, $1)=yes
+         ;;
+ 
+-      linux* | k*bsd*-gnu | kopensolaris*-gnu)
++      linux* | k*bsd*-gnu | kopensolaris*-gnu | gnu*)
+         case $cc_basename in
+           KCC*)
+ 	    # Kuck and Associates, Inc. (KAI) C++ Compiler
+diff -urp openvpn-2.3.10/Makefile.am openvpn-2.3.x/Makefile.am
+--- openvpn-2.3.10/Makefile.am	2015-12-21 19:57:26.000000000 +0700
++++ openvpn-2.3.x/Makefile.am	2016-09-03 17:42:55.507647188 +0700
+@@ -54,7 +54,7 @@ BUILT_SOURCES = \
+ 	config-version.h
+ endif
+ 
+-SUBDIRS = build distro include src sample doc tests
++SUBDIRS = build distro include src sample doc vendor tests
+ 
+ dist_doc_DATA = \
+ 	README \
+diff -urp openvpn-2.3.10/Makefile.in openvpn-2.3.x/Makefile.in
+--- openvpn-2.3.10/Makefile.in	2016-01-04 19:18:09.000000000 +0700
++++ openvpn-2.3.x/Makefile.in	2016-09-03 17:42:55.507647188 +0700
+@@ -113,8 +113,8 @@ DIST_COMMON = $(srcdir)/Makefile.in $(sr
+ 	$(srcdir)/config.h.in $(srcdir)/version.sh.in \
+ 	$(am__dist_doc_DATA_DIST) $(am__dist_noinst_DATA_DIST) \
+ 	$(dist_noinst_HEADERS) AUTHORS COPYING ChangeLog INSTALL NEWS \
+-	README compile config.guess config.sub depcomp install-sh \
+-	missing ltmain.sh
++	README compile config.guess config.sub install-sh missing \
++	ltmain.sh
+ ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
+ am__aclocal_m4_deps = $(top_srcdir)/m4/ax_emptyarray.m4 \
+ 	$(top_srcdir)/m4/ax_socklen_t.m4 \
+@@ -278,6 +278,7 @@ AWK = @AWK@
+ CC = @CC@
+ CCDEPMODE = @CCDEPMODE@
+ CFLAGS = @CFLAGS@
++CMAKE = @CMAKE@
+ CPP = @CPP@
+ CPPFLAGS = @CPPFLAGS@
+ CYGPATH_W = @CYGPATH_W@
+@@ -371,6 +372,11 @@ TAP_CFLAGS = @TAP_CFLAGS@
+ TAP_WIN_COMPONENT_ID = @TAP_WIN_COMPONENT_ID@
+ TAP_WIN_MIN_MAJOR = @TAP_WIN_MIN_MAJOR@
+ TAP_WIN_MIN_MINOR = @TAP_WIN_MIN_MINOR@
++TEST_CFLAGS = @TEST_CFLAGS@
++TEST_LDFLAGS = @TEST_LDFLAGS@
++VENDOR_BUILD_ROOT = @VENDOR_BUILD_ROOT@
++VENDOR_DIST_ROOT = @VENDOR_DIST_ROOT@
++VENDOR_SRC_ROOT = @VENDOR_SRC_ROOT@
+ VERSION = @VERSION@
+ abs_builddir = @abs_builddir@
+ abs_srcdir = @abs_srcdir@
+@@ -454,7 +460,7 @@ EXTRA_DIST = \
+ @GIT_CHECKOUT_TRUE@BUILT_SOURCES = \
+ @GIT_CHECKOUT_TRUE@	config-version.h
+ 
+-SUBDIRS = build distro include src sample doc tests
++SUBDIRS = build distro include src sample doc vendor tests
+ dist_doc_DATA = README README.IPv6 README.polarssl COPYRIGHT.GPL \
+ 	COPYING $(am__append_1)
+ dist_noinst_DATA = .gitignore .gitattributes config-version.h.in PORTS \
+Только в openvpn-2.3.x: Makefile.in.orig
+diff -urp openvpn-2.3.10/README openvpn-2.3.x/README
+--- openvpn-2.3.10/README	2015-12-21 19:56:50.000000000 +0700
++++ openvpn-2.3.x/README	2016-09-03 17:42:55.507647188 +0700
+@@ -7,12 +7,14 @@ as published by the Free Software Founda
+ 
+ *************************************************************************
+ 
+-For the latest version of OpenVPN, go to:
++To get the latest release of OpenVPN, go to:
+ 
+-	http://openvpn.net/
++	https://openvpn.net/index.php/download/community-downloads.html
+ 
+ To Build and Install,
+ 
++	tar -zxf openvpn-<version>.tar.gz
++	cd openvpn-<version>
+ 	./configure
+ 	make
+ 	make install
+@@ -27,6 +29,9 @@ For detailed information on OpenVPN, inc
+ For a sample VPN configuration, see
+   http://openvpn.net/howto.html
+ 
++To report an issue, see
++  https://community.openvpn.net/openvpn/report
++
+ For a description of OpenVPN's underlying protocol,
+   see the file ssl.h included in the source distribution.
+ 
+diff -urp openvpn-2.3.10/sample/Makefile.in openvpn-2.3.x/sample/Makefile.in
+--- openvpn-2.3.10/sample/Makefile.in	2016-01-04 19:18:09.000000000 +0700
++++ openvpn-2.3.x/sample/Makefile.in	2016-09-03 17:42:55.515647194 +0700
+@@ -167,6 +167,7 @@ AWK = @AWK@
+ CC = @CC@
+ CCDEPMODE = @CCDEPMODE@
+ CFLAGS = @CFLAGS@
++CMAKE = @CMAKE@
+ CPP = @CPP@
+ CPPFLAGS = @CPPFLAGS@
+ CYGPATH_W = @CYGPATH_W@
+@@ -260,6 +261,11 @@ TAP_CFLAGS = @TAP_CFLAGS@
+ TAP_WIN_COMPONENT_ID = @TAP_WIN_COMPONENT_ID@
+ TAP_WIN_MIN_MAJOR = @TAP_WIN_MIN_MAJOR@
+ TAP_WIN_MIN_MINOR = @TAP_WIN_MIN_MINOR@
++TEST_CFLAGS = @TEST_CFLAGS@
++TEST_LDFLAGS = @TEST_LDFLAGS@
++VENDOR_BUILD_ROOT = @VENDOR_BUILD_ROOT@
++VENDOR_DIST_ROOT = @VENDOR_DIST_ROOT@
++VENDOR_SRC_ROOT = @VENDOR_SRC_ROOT@
+ VERSION = @VERSION@
+ abs_builddir = @abs_builddir@
+ abs_srcdir = @abs_srcdir@
+diff -urp openvpn-2.3.10/src/compat/Makefile.in openvpn-2.3.x/src/compat/Makefile.in
+--- openvpn-2.3.10/src/compat/Makefile.in	2016-01-04 19:18:09.000000000 +0700
++++ openvpn-2.3.x/src/compat/Makefile.in	2016-09-03 17:42:55.515647194 +0700
+@@ -189,6 +189,7 @@ AWK = @AWK@
+ CC = @CC@
+ CCDEPMODE = @CCDEPMODE@
+ CFLAGS = @CFLAGS@
++CMAKE = @CMAKE@
+ CPP = @CPP@
+ CPPFLAGS = @CPPFLAGS@
+ CYGPATH_W = @CYGPATH_W@
+@@ -282,6 +283,11 @@ TAP_CFLAGS = @TAP_CFLAGS@
+ TAP_WIN_COMPONENT_ID = @TAP_WIN_COMPONENT_ID@
+ TAP_WIN_MIN_MAJOR = @TAP_WIN_MIN_MAJOR@
+ TAP_WIN_MIN_MINOR = @TAP_WIN_MIN_MINOR@
++TEST_CFLAGS = @TEST_CFLAGS@
++TEST_LDFLAGS = @TEST_LDFLAGS@
++VENDOR_BUILD_ROOT = @VENDOR_BUILD_ROOT@
++VENDOR_DIST_ROOT = @VENDOR_DIST_ROOT@
++VENDOR_SRC_ROOT = @VENDOR_SRC_ROOT@
+ VERSION = @VERSION@
+ abs_builddir = @abs_builddir@
+ abs_srcdir = @abs_srcdir@
+diff -urp openvpn-2.3.10/src/Makefile.in openvpn-2.3.x/src/Makefile.in
+--- openvpn-2.3.10/src/Makefile.in	2016-01-04 19:18:09.000000000 +0700
++++ openvpn-2.3.x/src/Makefile.in	2016-09-03 17:42:55.515647194 +0700
+@@ -197,6 +197,7 @@ AWK = @AWK@
+ CC = @CC@
+ CCDEPMODE = @CCDEPMODE@
+ CFLAGS = @CFLAGS@
++CMAKE = @CMAKE@
+ CPP = @CPP@
+ CPPFLAGS = @CPPFLAGS@
+ CYGPATH_W = @CYGPATH_W@
+@@ -290,6 +291,11 @@ TAP_CFLAGS = @TAP_CFLAGS@
+ TAP_WIN_COMPONENT_ID = @TAP_WIN_COMPONENT_ID@
+ TAP_WIN_MIN_MAJOR = @TAP_WIN_MIN_MAJOR@
+ TAP_WIN_MIN_MINOR = @TAP_WIN_MIN_MINOR@
++TEST_CFLAGS = @TEST_CFLAGS@
++TEST_LDFLAGS = @TEST_LDFLAGS@
++VENDOR_BUILD_ROOT = @VENDOR_BUILD_ROOT@
++VENDOR_DIST_ROOT = @VENDOR_DIST_ROOT@
++VENDOR_SRC_ROOT = @VENDOR_SRC_ROOT@
+ VERSION = @VERSION@
+ abs_builddir = @abs_builddir@
+ abs_srcdir = @abs_srcdir@
+diff -urp openvpn-2.3.10/src/openvpn/console.c openvpn-2.3.x/src/openvpn/console.c
+--- openvpn-2.3.10/src/openvpn/console.c	2015-12-21 19:56:50.000000000 +0700
++++ openvpn-2.3.x/src/openvpn/console.c	2016-05-29 00:06:30.399888029 +0700
+@@ -172,8 +172,9 @@ get_console_input_systemd (const char *p
+   if ((std_out = openvpn_popen (&argv, NULL)) < 0) {
+ 	  return false;
+   }
+-  CLEAR (*input);
+-  if (read (std_out, input, capacity) != 0)
++
++  memset (input, 0, capacity);
++  if (read (std_out, input, capacity-1) > 0)
+     {
+        chomp (input);
+        ret = true;
+diff -urp openvpn-2.3.10/src/openvpn/crypto.c openvpn-2.3.x/src/openvpn/crypto.c
+--- openvpn-2.3.10/src/openvpn/crypto.c	2015-12-21 19:57:26.000000000 +0700
++++ openvpn-2.3.x/src/openvpn/crypto.c	2016-09-03 17:42:55.515647194 +0700
+@@ -492,9 +492,16 @@ init_key_ctx (struct key_ctx *ctx, struc
+       dmsg (D_SHOW_KEYS, "%s: CIPHER KEY: %s", prefix,
+           format_hex (key->cipher, kt->cipher_length, 0, &gc));
+       dmsg (D_CRYPTO_DEBUG, "%s: CIPHER block_size=%d iv_size=%d",
+-          prefix,
+-          cipher_kt_block_size(kt->cipher),
+-          cipher_kt_iv_size(kt->cipher));
++          prefix, cipher_kt_block_size(kt->cipher),
++	  cipher_kt_iv_size(kt->cipher));
++#if 0
++      if (cipher_kt_block_size(kt->cipher) < 128/8)
++	{
++	  msg (M_WARN, "WARNING: this cipher's block size is less than 128 bit "
++	      "(%d bit).  Consider using a --cipher with a larger block size.",
++	      cipher_kt_block_size(kt->cipher)*8);
++	}
++#endif
+     }
+   if (kt->digest && kt->hmac_length > 0)
+     {
+diff -urp openvpn-2.3.10/src/openvpn/crypto_openssl.c openvpn-2.3.x/src/openvpn/crypto_openssl.c
+--- openvpn-2.3.10/src/openvpn/crypto_openssl.c	2015-12-21 19:57:26.000000000 +0700
++++ openvpn-2.3.x/src/openvpn/crypto_openssl.c	2016-09-03 17:42:55.515647194 +0700
+@@ -135,13 +135,15 @@ setup_engine (const char *engine)
+       if ((e = ENGINE_by_id (engine)) == NULL
+ 	 && (e = try_load_engine (engine)) == NULL)
+ 	{
+-	  msg (M_FATAL, "OpenSSL error: cannot load engine '%s'", engine);
++	  crypto_msg (M_FATAL, "OpenSSL error: cannot load engine '%s'",
++	      engine);
+ 	}
+ 
+       if (!ENGINE_set_default (e, ENGINE_METHOD_ALL))
+ 	{
+-	  msg (M_FATAL, "OpenSSL error: ENGINE_set_default failed on engine '%s'",
+-	       engine);
++	  crypto_msg (M_FATAL,
++	      "OpenSSL error: ENGINE_set_default failed on engine '%s'",
++	      engine);
+ 	}
+ 
+       msg (M_INFO, "Initializing OpenSSL support for engine '%s'",
+@@ -230,6 +232,14 @@ crypto_clear_error (void)
+   ERR_clear_error ();
+ }
+ 
++void
++crypto_print_openssl_errors(const unsigned int flags) {
++  size_t err = 0;
++
++  while ((err = ERR_get_error ()))
++    msg (flags, "OpenSSL: %s", ERR_error_string (err, NULL));
++}
++
+ /*
+  *
+  * OpenSSL memory debugging.  If dmalloc debugging is enabled, tell
+@@ -278,11 +288,45 @@ translate_cipher_name_to_openvpn (const
+   return cipher_name;
+ }
+ 
++static int
++cipher_name_cmp(const void *a, const void *b)
++{
++  const EVP_CIPHER * const *cipher_a = a;
++  const EVP_CIPHER * const *cipher_b = b;
++
++  const char *cipher_name_a =
++      translate_cipher_name_to_openvpn(EVP_CIPHER_name(*cipher_a));
++  const char *cipher_name_b =
++      translate_cipher_name_to_openvpn(EVP_CIPHER_name(*cipher_b));
++
++  return strcmp(cipher_name_a, cipher_name_b);
++}
++
++static void
++print_cipher(const EVP_CIPHER *cipher)
++{
++  const char *var_key_size =
++	(EVP_CIPHER_flags (cipher) & EVP_CIPH_VARIABLE_LENGTH) ?
++	     " by default" : "";
++  const char *ssl_only = cipher_kt_mode_cbc(cipher) ?
++	"" : ", TLS client/server mode only";
++
++  printf ("%s  (%d bit key%s, %d bit block%s)\n",
++	translate_cipher_name_to_openvpn (EVP_CIPHER_name (cipher)),
++	EVP_CIPHER_key_length (cipher) * 8, var_key_size,
++	cipher_kt_block_size (cipher) * 8, ssl_only);
++}
++
+ void
+ show_available_ciphers ()
+ {
+   int nid;
++  size_t i;
+ 
++  /* If we ever exceed this, we must be more selective */
++  const size_t cipher_list_len = 1000;
++  const EVP_CIPHER *cipher_list[cipher_list_len];
++  size_t num_ciphers = 0;
+ #ifndef ENABLE_SMALL
+   printf ("The following ciphers and cipher modes are available\n"
+ 	  "for use with " PACKAGE_NAME ".  Each cipher shown below may be\n"
+@@ -292,29 +336,37 @@ show_available_ciphers ()
+ 	  "is recommended. In static key mode only CBC mode is allowed.\n\n");
+ #endif
+ 
+-  for (nid = 0; nid < 10000; ++nid)	/* is there a better way to get the size of the nid list? */
++  for (nid = 0; nid < 10000; ++nid)
+     {
+-      const EVP_CIPHER *cipher = EVP_get_cipherbynid (nid);
+-      if (cipher)
+-	{
+-	  if (cipher_kt_mode_cbc(cipher)
++      const EVP_CIPHER *cipher = EVP_get_cipherbynid(nid);
++      if (cipher && (cipher_kt_mode_cbc(cipher)
+ #ifdef ENABLE_OFB_CFB_MODE
+ 	      || cipher_kt_mode_ofb_cfb(cipher)
+ #endif
+-	      )
+-	    {
+-	      const char *var_key_size =
+-		  (EVP_CIPHER_flags (cipher) & EVP_CIPH_VARIABLE_LENGTH) ?
+-		       "variable" : "fixed";
+-	      const char *ssl_only = cipher_kt_mode_ofb_cfb(cipher) ?
+-		  " (TLS client/server mode)" : "";
+-
+-	      printf ("%s %d bit default key (%s)%s\n", OBJ_nid2sn (nid),
+-		      EVP_CIPHER_key_length (cipher) * 8, var_key_size,
+-		      ssl_only);
+-	    }
++          ))
++	{
++	  cipher_list[num_ciphers++] = cipher;
++	}
++      if (num_ciphers == cipher_list_len)
++	{
++	  msg (M_WARN, "WARNING: Too many ciphers, not showing all");
++	  break;
+ 	}
+     }
++
++  qsort (cipher_list, num_ciphers, sizeof(*cipher_list), cipher_name_cmp);
++
++  for (i = 0; i < num_ciphers; i++) {
++      if (cipher_kt_block_size(cipher_list[i]) >= 128/8)
++	print_cipher(cipher_list[i]);
++  }
++
++  printf ("\nThe following ciphers have a block size of less than 128 bits, \n"
++	  "and are therefore deprecated.  Do not use unless you have to.\n\n");
++  for (i = 0; i < num_ciphers; i++) {
++      if (cipher_kt_block_size(cipher_list[i]) < 128/8)
++	print_cipher(cipher_list[i]);
++  }
+   printf ("\n");
+ }
+ 
+@@ -380,7 +432,7 @@ int rand_bytes(uint8_t *output, int len)
+ {
+   if (unlikely(1 != RAND_bytes (output, len)))
+     {
+-      msg(D_CRYPT_ERRORS, "RAND_bytes() failed");
++      crypto_msg(D_CRYPT_ERRORS, "RAND_bytes() failed");
+       return 0;
+     }
+   return 1;
+@@ -426,17 +478,20 @@ key_des_check (uint8_t *key, int key_len
+       DES_cblock *dc = (DES_cblock*) buf_read_alloc (&b, sizeof (DES_cblock));
+       if (!dc)
+ 	{
+-	  msg (D_CRYPT_ERRORS, "CRYPTO INFO: check_key_DES: insufficient key material");
++	  crypto_msg (D_CRYPT_ERRORS,
++	      "CRYPTO INFO: check_key_DES: insufficient key material");
+ 	  goto err;
+ 	}
+       if (DES_is_weak_key(dc))
+ 	{
+-	  msg (D_CRYPT_ERRORS, "CRYPTO INFO: check_key_DES: weak key detected");
++	  crypto_msg (D_CRYPT_ERRORS,
++	      "CRYPTO INFO: check_key_DES: weak key detected");
+ 	  goto err;
+ 	}
+       if (!DES_check_key_parity (dc))
+ 	{
+-	  msg (D_CRYPT_ERRORS, "CRYPTO INFO: check_key_DES: bad parity detected");
++	  crypto_msg (D_CRYPT_ERRORS,
++	      "CRYPTO INFO: check_key_DES: bad parity detected");
+ 	  goto err;
+ 	}
+     }
+@@ -485,7 +540,7 @@ cipher_kt_get (const char *ciphername)
+   cipher = EVP_get_cipherbyname (ciphername);
+ 
+   if (NULL == cipher)
+-    msg (M_SSLERR, "Cipher algorithm '%s' not found", ciphername);
++    crypto_msg (M_FATAL, "Cipher algorithm '%s' not found", ciphername);
+ 
+   if (EVP_CIPHER_key_length (cipher) > MAX_CIPHER_KEY_LENGTH)
+     msg (M_FATAL, "Cipher algorithm '%s' uses a default key size (%d bytes) which is larger than " PACKAGE_NAME "'s current maximum key size (%d bytes)",
+@@ -517,9 +572,37 @@ cipher_kt_iv_size (const EVP_CIPHER *cip
+ }
+ 
+ int
+-cipher_kt_block_size (const EVP_CIPHER *cipher_kt)
+-{
+-  return EVP_CIPHER_block_size (cipher_kt);
++cipher_kt_block_size (const EVP_CIPHER *cipher) {
++  /* OpenSSL reports OFB/CFB/GCM cipher block sizes as '1 byte'.  To work
++   * around that, try to replace the mode with 'CBC' and return the block size
++   * reported for that cipher, if possible.  If that doesn't work, just return
++   * the value reported by OpenSSL.
++   */
++  char *name = NULL;
++  char *mode_str = NULL;
++  const char *orig_name = NULL;
++  const EVP_CIPHER *cbc_cipher = NULL;
++
++  int block_size = EVP_CIPHER_block_size(cipher);
++
++  orig_name = cipher_kt_name(cipher);
++  if (!orig_name)
++    goto cleanup;
++
++  name = string_alloc(translate_cipher_name_to_openvpn(orig_name), NULL);
++  mode_str = strrchr (name, '-');
++  if (!mode_str || strlen(mode_str) < 4)
++    goto cleanup;
++
++  strcpy (mode_str, "-CBC");
++
++  cbc_cipher = EVP_get_cipherbyname(translate_cipher_name_from_openvpn(name));
++  if (cbc_cipher)
++    block_size = EVP_CIPHER_block_size(cbc_cipher);
++
++cleanup:
++  free (name);
++  return block_size;
+ }
+ 
+ int
+@@ -569,13 +652,13 @@ cipher_ctx_init (EVP_CIPHER_CTX *ctx, ui
+ 
+   EVP_CIPHER_CTX_init (ctx);
+   if (!EVP_CipherInit (ctx, kt, NULL, NULL, enc))
+-    msg (M_SSLERR, "EVP cipher init #1");
++    crypto_msg (M_FATAL, "EVP cipher init #1");
+ #ifdef HAVE_EVP_CIPHER_CTX_SET_KEY_LENGTH
+   if (!EVP_CIPHER_CTX_set_key_length (ctx, key_len))
+-    msg (M_SSLERR, "EVP set key size");
++    crypto_msg (M_FATAL, "EVP set key size");
+ #endif
+   if (!EVP_CipherInit (ctx, NULL, key, NULL, enc))
+-    msg (M_SSLERR, "EVP cipher init #2");
++    crypto_msg (M_FATAL, "EVP cipher init #2");
+ 
+   /* make sure we used a big enough key */
+   ASSERT (EVP_CIPHER_CTX_key_length (ctx) <= key_len);
+@@ -622,7 +705,9 @@ int
+ cipher_ctx_update (EVP_CIPHER_CTX *ctx, uint8_t *dst, int *dst_len,
+     uint8_t *src, int src_len)
+ {
+-  return EVP_CipherUpdate (ctx, dst, dst_len, src, src_len);
++  if (!EVP_CipherUpdate (ctx, dst, dst_len, src, src_len))
++    crypto_msg(M_FATAL, "%s: EVP_CipherUpdate() failed", __func__);
++  return 1;
+ }
+ 
+ int
+@@ -657,12 +742,14 @@ md_kt_get (const char *digest)
+   ASSERT (digest);
+   md = EVP_get_digestbyname (digest);
+   if (!md)
+-    msg (M_SSLERR, "Message hash algorithm '%s' not found", digest);
++    crypto_msg (M_FATAL, "Message hash algorithm '%s' not found", digest);
+   if (EVP_MD_size (md) > MAX_HMAC_KEY_LENGTH)
+-    msg (M_FATAL, "Message hash algorithm '%s' uses a default hash size (%d bytes) which is larger than " PACKAGE_NAME "'s current maximum hash size (%d bytes)",
+-	 digest,
+-	 EVP_MD_size (md),
+-	 MAX_HMAC_KEY_LENGTH);
++    {
++      crypto_msg (M_FATAL, "Message hash algorithm '%s' uses a default hash "
++	  "size (%d bytes) which is larger than " PACKAGE_NAME "'s current "
++	  "maximum hash size (%d bytes)",
++	  digest, EVP_MD_size (md), MAX_HMAC_KEY_LENGTH);
++    }
+   return md;
+ }
+ 
+diff -urp openvpn-2.3.10/src/openvpn/crypto_openssl.h openvpn-2.3.x/src/openvpn/crypto_openssl.h
+--- openvpn-2.3.10/src/openvpn/crypto_openssl.h	2015-12-21 19:57:26.000000000 +0700
++++ openvpn-2.3.x/src/openvpn/crypto_openssl.h	2016-05-29 00:06:30.399888029 +0700
+@@ -70,4 +70,29 @@ typedef HMAC_CTX hmac_ctx_t;
+ #define DES_KEY_LENGTH 8
+ #define MD4_DIGEST_LENGTH 	16
+ 
++/**
++ * Retrieve any occurred OpenSSL errors and print those errors.
++ *
++ * Note that this function uses the not thread-safe OpenSSL error API.
++ *
++ * @param flags		Flags to indicate error type and priority.
++ */
++void crypto_print_openssl_errors(const unsigned int flags);
++
++/**
++ * Retrieve any OpenSSL errors, then print the supplied error message.
++ *
++ * This is just a convenience wrapper for often occurring situations.
++ *
++ * @param flags		Flags to indicate error type and priority.
++ * @param format	Format string to print.
++ * @param format args	(optional) arguments for the format string.
++ */
++# define crypto_msg(flags, ...) \
++do { \
++  crypto_print_openssl_errors(nonfatal(flags)); \
++  msg((flags), __VA_ARGS__); \
++} while (false)
++
++
+ #endif /* CRYPTO_OPENSSL_H_ */
+diff -urp openvpn-2.3.10/src/openvpn/crypto_polarssl.c openvpn-2.3.x/src/openvpn/crypto_polarssl.c
+--- openvpn-2.3.10/src/openvpn/crypto_polarssl.c	2015-12-21 19:57:26.000000000 +0700
++++ openvpn-2.3.x/src/openvpn/crypto_polarssl.c	2016-09-03 17:42:55.515647194 +0700
+@@ -46,6 +46,7 @@
+ #include "misc.h"
+ 
+ #include <polarssl/des.h>
++#include <polarssl/error.h>
+ #include <polarssl/md5.h>
+ #include <polarssl/cipher.h>
+ #include <polarssl/havege.h>
+@@ -86,6 +87,32 @@ crypto_clear_error (void)
+ {
+ }
+ 
++bool polar_log_err(unsigned int flags, int errval, const char *prefix)
++{
++  if (0 != errval)
++    {
++      char errstr[256];
++      polarssl_strerror(errval, errstr, sizeof(errstr));
++
++      if (NULL == prefix) prefix = "PolarSSL error";
++      msg (flags, "%s: %s", prefix, errstr);
++    }
++
++  return 0 == errval;
++}
++
++bool polar_log_func_line(unsigned int flags, int errval, const char *func,
++    int line)
++{
++  char prefix[256];
++
++  if (!openvpn_snprintf(prefix, sizeof(prefix), "%s:%d", func, line))
++    return polar_log_err(flags, errval, func);
++
++  return polar_log_err(flags, errval, prefix);
++}
++
++
+ #ifdef DMALLOC
+ void
+ crypto_init_dmalloc (void)
+@@ -141,6 +168,25 @@ translate_cipher_name_to_openvpn (const
+   return pair->openvpn_name;
+ }
+ 
++static void print_cipher(const cipher_kt_t *info)
++{
++  if (info && (cipher_kt_mode_cbc(info)
++#ifdef HAVE_AEAD_CIPHER_MODES
++      || cipher_kt_mode_aead(info)
++#endif
++  ))
++    {
++      const char *ssl_only = cipher_kt_mode_cbc(info) ?
++	  "" : ", TLS client/server mode only";
++      const char *var_key_size = info->flags & POLARSSL_CIPHER_VARIABLE_KEY_LEN
++	  ? " by default" : "";
++
++      printf ("%s  (%d bit key%s, %d bit block%s)\n",
++	  cipher_kt_name(info), cipher_kt_key_size(info) * 8, var_key_size,
++	  cipher_kt_block_size(info) * 8, ssl_only);
++    }
++}
++
+ void
+ show_available_ciphers ()
+ {
+@@ -157,12 +203,24 @@ show_available_ciphers ()
+ 
+   while (*ciphers != 0)
+     {
+-      const cipher_info_t *info = cipher_info_from_type(*ciphers);
+-
+-      if (info && info->mode == POLARSSL_MODE_CBC)
+-	printf ("%s %d bit default key\n",
+-		cipher_kt_name(info), cipher_kt_key_size(info) * 8);
++      const cipher_kt_t *info = cipher_info_from_type(*ciphers);
++      if (info && cipher_kt_block_size(info) >= 128/8)
++	{
++	  print_cipher(info);
++	}
++      ciphers++;
++    }
+ 
++  printf ("\nThe following ciphers have a block size of less than 128 bits, \n"
++	  "and are therefore deprecated.  Do not use unless you have to.\n\n");
++  ciphers = cipher_list();
++  while (*ciphers != 0)
++    {
++      const cipher_kt_t *info = cipher_info_from_type(*ciphers);
++      if (info && cipher_kt_block_size(info) < 128/8)
++	{
++	  print_cipher(info);
++	}
+       ciphers++;
+     }
+   printf ("\n");
+@@ -234,7 +292,8 @@ ctr_drbg_context * rand_ctx_get()
+       /* Initialise PolarSSL RNG, and built-in entropy sources */
+       entropy_init(&ec);
+ 
+-      if (0 != ctr_drbg_init(&cd_ctx, entropy_func, &ec, BPTR(&pers_string), BLEN(&pers_string)))
++      if (!polar_ok(ctr_drbg_init(&cd_ctx, entropy_func, &ec,
++		    BPTR(&pers_string), BLEN(&pers_string))))
+         msg (M_FATAL, "Failed to initialize random generator");
+ 
+       gc_free(&gc);
+@@ -445,10 +504,10 @@ cipher_ctx_init (cipher_context_t *ctx,
+ 
+   CLEAR (*ctx);
+ 
+-  if (0 != cipher_init_ctx(ctx, kt))
++  if (!polar_ok(cipher_init_ctx(ctx, kt)))
+     msg (M_FATAL, "PolarSSL cipher context init #1");
+ 
+-  if (0 != cipher_setkey(ctx, key, key_len*8, enc))
++  if (!polar_ok(cipher_setkey(ctx, key, key_len*8, enc)))
+     msg (M_FATAL, "PolarSSL cipher set key");
+ 
+   /* make sure we used a big enough key */
+@@ -487,36 +546,38 @@ cipher_ctx_get_cipher_kt (const cipher_c
+ 
+ int cipher_ctx_reset (cipher_context_t *ctx, uint8_t *iv_buf)
+ {
+-  int retval = cipher_reset(ctx);
++  if (!polar_ok(cipher_reset(ctx)))
++    return 0;
+ 
+-  if (0 == retval)
+-    retval = cipher_set_iv(ctx, iv_buf, ctx->cipher_info->iv_size);
++  if (!polar_ok(cipher_set_iv(ctx, iv_buf, ctx->cipher_info->iv_size)))
++    return 0;
+ 
+-  return 0 == retval;
++  return 1;
+ }
+ 
+ int cipher_ctx_update (cipher_context_t *ctx, uint8_t *dst, int *dst_len,
+     uint8_t *src, int src_len)
+ {
+-  int retval = 0;
+   size_t s_dst_len = *dst_len;
+ 
+-  retval = cipher_update(ctx, src, (size_t)src_len, dst, &s_dst_len);
++  if (!polar_ok(cipher_update(ctx, src, (size_t)src_len, dst, &s_dst_len)))
++    return 0;
+ 
+   *dst_len = s_dst_len;
+ 
+-  return 0 == retval;
++  return 1;
+ }
+ 
+ int cipher_ctx_final (cipher_context_t *ctx, uint8_t *dst, int *dst_len)
+ {
+-  int retval = 0;
+   size_t s_dst_len = *dst_len;
+ 
+-  retval = cipher_finish(ctx, dst, &s_dst_len);
++  if (!polar_ok(cipher_finish(ctx, dst, &s_dst_len)))
++    return 0;
++
+   *dst_len = s_dst_len;
+ 
+-  return 0 == retval;
++  return 1;
+ }
+ 
+ void
+@@ -526,8 +587,8 @@ cipher_des_encrypt_ecb (const unsigned c
+ {
+     des_context ctx;
+ 
+-    des_setkey_enc(&ctx, key);
+-    des_crypt_ecb(&ctx, src, dst);
++    ASSERT (polar_ok(des_setkey_enc(&ctx, key)));
++    ASSERT (polar_ok(des_crypt_ecb(&ctx, src, dst)));
+ }
+ 
+ 
+diff -urp openvpn-2.3.10/src/openvpn/crypto_polarssl.h openvpn-2.3.x/src/openvpn/crypto_polarssl.h
+--- openvpn-2.3.10/src/openvpn/crypto_polarssl.h	2015-12-21 19:57:26.000000000 +0700
++++ openvpn-2.3.x/src/openvpn/crypto_polarssl.h	2016-05-29 00:06:30.419888026 +0700
+@@ -91,4 +91,53 @@ ctr_drbg_context * rand_ctx_get();
+ void rand_ctx_enable_prediction_resistance();
+ #endif
+ 
++/**
++ * Log the supplied PolarSSL error, prefixed by supplied prefix.
++ *
++ * @param flags		Flags to indicate error type and priority.
++ * @param errval	PolarSSL error code to convert to error message.
++ * @param prefix	Prefix to PolarSSL error message.
++ *
++ * @returns true if no errors are detected, false otherwise.
++ */
++bool polar_log_err(unsigned int flags, int errval, const char *prefix);
++
++/**
++ * Log the supplied PolarSSL error, prefixed by function name and line number.
++ *
++ * @param flags		Flags to indicate error type and priority.
++ * @param errval	PolarSSL error code to convert to error message.
++ * @param func		Function name where error was reported.
++ * @param line		Line number where error was reported.
++ *
++ * @returns true if no errors are detected, false otherwise.
++ */
++bool polar_log_func_line(unsigned int flags, int errval, const char *func,
++    int line);
++
++/** Wraps polar_log_func_line() to prevent function calls for non-errors */
++static inline bool polar_log_func_line_lite(unsigned int flags, int errval,
++    const char *func, int line) {
++  if (errval) {
++    return polar_log_func_line (flags, errval, func, line);
++  }
++  return true;
++}
++
++/**
++ * Check errval and log on error.
++ *
++ * Convenience wrapper to put around polarssl library calls, e.g.
++ *   if (!polar_ok(polarssl_func())) return 0;
++ * or
++ *   ASSERT (polar_ok(polarssl_func()));
++ *
++ * @param errval	PolarSSL error code to convert to error message.
++ *
++ * @returns true if no errors are detected, false otherwise.
++ */
++#define polar_ok(errval) \
++  polar_log_func_line_lite (D_CRYPT_ERRORS, errval, __func__, __LINE__)
++
++
+ #endif /* CRYPTO_POLARSSL_H_ */
+diff -urp openvpn-2.3.10/src/openvpn/error.c openvpn-2.3.x/src/openvpn/error.c
+--- openvpn-2.3.10/src/openvpn/error.c	2015-12-21 19:57:26.000000000 +0700
++++ openvpn-2.3.x/src/openvpn/error.c	2016-05-29 00:06:30.419888026 +0700
+@@ -43,13 +43,6 @@
+ #include "ps.h"
+ #include "mstats.h"
+ 
+-#ifdef ENABLE_CRYPTO
+-#ifdef ENABLE_CRYPTO_OPENSSL
+-#include <openssl/err.h>
+-#endif
+-#endif
+-
+-#include "memdbg.h"
+ 
+ #if SYSLOG_CAPABILITY
+ #ifndef LOG_OPENVPN
+@@ -224,7 +217,7 @@ void x_msg_va (const unsigned int flags,
+ 
+ #ifndef HAVE_VARARG_MACROS
+   /* the macro has checked this otherwise */
+-  if (!MSG_TEST (flags))
++  if (!msg_test (flags))
+     return;
+ #endif
+ 
+@@ -254,28 +247,6 @@ void x_msg_va (const unsigned int flags,
+       SWAP;
+     }
+ 
+-#ifdef ENABLE_CRYPTO
+-#ifdef ENABLE_CRYPTO_OPENSSL
+-  if (flags & M_SSL)
+-    {
+-      int nerrs = 0;
+-      int err;
+-      while ((err = ERR_get_error ()))
+-	{
+-	  openvpn_snprintf (m2, ERR_BUF_SIZE, "%s: %s",
+-			    m1, ERR_error_string (err, NULL));
+-	  SWAP;
+-	  ++nerrs;
+-	}
+-      if (!nerrs)
+-	{
+-	  openvpn_snprintf (m2, ERR_BUF_SIZE, "%s (OpenSSL)", m1);
+-	  SWAP;
+-	}
+-    }
+-#endif
+-#endif
+-
+   if (flags & M_OPTERR)
+     {
+       openvpn_snprintf (m2, ERR_BUF_SIZE, "Options error: %s", m1);
+diff -urp openvpn-2.3.10/src/openvpn/error.h openvpn-2.3.x/src/openvpn/error.h
+--- openvpn-2.3.10/src/openvpn/error.h	2015-12-21 19:57:26.000000000 +0700
++++ openvpn-2.3.x/src/openvpn/error.h	2016-05-29 00:06:30.423888026 +0700
+@@ -93,10 +93,6 @@ extern int x_msg_line_num;
+ 
+ #define M_ERRNO           (1<<8)	 /* show errno description */
+ 
+-#ifdef ENABLE_CRYPTO_OPENSSL
+-#  define M_SSL             (1<<10)	 /* show SSL error */
+-#endif
+-
+ #define M_NOMUTE          (1<<11)        /* don't do mute processing */
+ #define M_NOPREFIX        (1<<12)        /* don't show date/time prefix */
+ #define M_USAGE_SMALL     (1<<13)        /* fatal options error, call usage_small */
+@@ -107,7 +103,6 @@ extern int x_msg_line_num;
+ 
+ /* flag combinations which are frequently used */
+ #define M_ERR     (M_FATAL | M_ERRNO)
+-#define M_SSLERR  (M_FATAL | M_SSL)
+ #define M_USAGE   (M_USAGE_SMALL | M_NOPREFIX | M_OPTERR)
+ #define M_CLIENT  (M_MSG_VIRT_OUT | M_NOMUTE | M_NOIPREFIX)
+ 
+@@ -140,26 +135,31 @@ extern int x_msg_line_num;
+  * msg() as a macro for optimization win.
+  */
+ 
+-bool dont_mute (unsigned int flags); /* check muting filter */
++/** Check muting filter */
++bool dont_mute (unsigned int flags);
+ 
+-#define MSG_TEST(flags) (unlikely((((unsigned int)flags) & M_DEBUG_LEVEL) <= x_debug_level) && dont_mute (flags))
++/** Return true if flags represent an enabled, not muted log level */
++static inline bool msg_test (unsigned int flags)
++{
++  return ((flags & M_DEBUG_LEVEL) <= x_debug_level) && dont_mute (flags);
++}
+ 
+ /* Macro to ensure (and teach static analysis tools) we exit on fatal errors */
+ #define EXIT_FATAL(flags) do { if ((flags) & M_FATAL) _exit(1); } while (false)
+ 
+ #if defined(HAVE_CPP_VARARG_MACRO_ISO) && !defined(__LCLINT__)
+ # define HAVE_VARARG_MACROS
+-# define msg(flags, ...) do { if (MSG_TEST(flags)) x_msg((flags), __VA_ARGS__); EXIT_FATAL(flags); } while (false)
++# define msg(flags, ...) do { if (msg_test(flags)) x_msg((flags), __VA_ARGS__); EXIT_FATAL(flags); } while (false)
+ # ifdef ENABLE_DEBUG
+-#  define dmsg(flags, ...) do { if (MSG_TEST(flags)) x_msg((flags), __VA_ARGS__); EXIT_FATAL(flags); } while (false)
++#  define dmsg(flags, ...) do { if (msg_test(flags)) x_msg((flags), __VA_ARGS__); EXIT_FATAL(flags); } while (false)
+ # else
+ #  define dmsg(flags, ...)
+ # endif
+ #elif defined(HAVE_CPP_VARARG_MACRO_GCC) && !defined(__LCLINT__)
+ # define HAVE_VARARG_MACROS
+-# define msg(flags, args...) do { if (MSG_TEST(flags)) x_msg((flags), args); EXIT_FATAL(flags); } while (false)
++# define msg(flags, args...) do { if (msg_test(flags)) x_msg((flags), args); EXIT_FATAL(flags); } while (false)
+ # ifdef ENABLE_DEBUG
+-#  define dmsg(flags, args...) do { if (MSG_TEST(flags)) x_msg((flags), args); EXIT_FATAL(flags); } while (false)
++#  define dmsg(flags, args...) do { if (msg_test(flags)) x_msg((flags), args); EXIT_FATAL(flags); } while (false)
+ # else
+ #  define dmsg(flags, args...)
+ # endif
+@@ -360,6 +360,12 @@ ignore_sys_error (const int err)
+   return false;
+ }
+ 
++/** Convert fatal errors to nonfatal, don't touch other errors */
++static inline unsigned int
++nonfatal(const unsigned int err) {
++  return err & M_FATAL ? (err ^ M_FATAL) | M_NONFATAL : err;
++}
++
+ #include "errlevel.h"
+ 
+ #endif
+diff -urp openvpn-2.3.10/src/openvpn/event.c openvpn-2.3.x/src/openvpn/event.c
+--- openvpn-2.3.10/src/openvpn/event.c	2015-12-21 19:56:50.000000000 +0700
++++ openvpn-2.3.x/src/openvpn/event.c	2016-05-29 00:06:30.423888026 +0700
+@@ -873,18 +873,18 @@ se_ctl (struct event_set *es, event_t ev
+       if (ses->fast)
+ 	{
+ 	  if (rwflags & EVENT_READ)
+-	    FD_SET (event, &ses->readfds);
++	    openvpn_fd_set (event, &ses->readfds);
+ 	  if (rwflags & EVENT_WRITE)
+-	    FD_SET (event, &ses->writefds);
++	    openvpn_fd_set (event, &ses->writefds);
+ 	}
+       else
+ 	{
+ 	  if (rwflags & EVENT_READ)
+-	    FD_SET (event, &ses->readfds);
++	    openvpn_fd_set (event, &ses->readfds);
+ 	  else
+ 	    FD_CLR (event, &ses->readfds);
+ 	  if (rwflags & EVENT_WRITE)
+-	    FD_SET (event, &ses->writefds);
++	    openvpn_fd_set (event, &ses->writefds);
+ 	  else
+ 	    FD_CLR (event, &ses->writefds);
+ 	}
+diff -urp openvpn-2.3.10/src/openvpn/fdmisc.h openvpn-2.3.x/src/openvpn/fdmisc.h
+--- openvpn-2.3.10/src/openvpn/fdmisc.h	2015-12-21 19:56:50.000000000 +0700
++++ openvpn-2.3.x/src/openvpn/fdmisc.h	2016-05-29 00:06:30.423888026 +0700
+@@ -22,10 +22,26 @@
+  *  59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+  */
+ 
++#ifndef FD_MISC_H
++#define FD_MISC_H
++
+ #include "basic.h"
++#include "error.h"
++#include "syshead.h"
+ 
+ bool set_nonblock_action (int fd);
+ bool set_cloexec_action (int fd);
+ 
+ void set_nonblock (int fd);
+ void set_cloexec (int fd);
++
++static inline void openvpn_fd_set(int fd, fd_set *setp)
++{
++#ifndef WIN32 /* The Windows FD_SET() implementation does not overflow */
++  ASSERT (fd >= 0 && fd < FD_SETSIZE);
++#endif
++  FD_SET (fd, setp);
++}
++#undef FD_SET /* prevent direct use of FD_SET() */
++
++#endif /* FD_MISC_H */
+diff -urp openvpn-2.3.10/src/openvpn/forward.c openvpn-2.3.x/src/openvpn/forward.c
+--- openvpn-2.3.10/src/openvpn/forward.c	2015-12-21 19:57:26.000000000 +0700
++++ openvpn-2.3.x/src/openvpn/forward.c	2016-09-03 17:42:55.519647195 +0700
+@@ -674,7 +674,6 @@ read_incoming_link (struct context *c)
+ 
+   status = link_socket_read (c->c2.link_socket,
+ 			     &c->c2.buf,
+-			     MAX_RW_SIZE_LINK (&c->c2.frame),
+ 			     &c->c2.from);
+ 
+   if (socket_connection_reset (c->c2.link_socket, status))
+diff -urp openvpn-2.3.10/src/openvpn/init.c openvpn-2.3.x/src/openvpn/init.c
+--- openvpn-2.3.10/src/openvpn/init.c	2015-12-21 19:57:26.000000000 +0700
++++ openvpn-2.3.x/src/openvpn/init.c	2016-09-03 17:42:55.519647195 +0700
+@@ -1522,6 +1522,15 @@ do_open_tun (struct context *c)
+ 		     NULL,
+ 		     "up",
+ 		     c->c2.es);
++#if defined(WIN32)
++      if (c->options.block_outside_dns)
++        {
++          dmsg (D_LOW, "Blocking outside DNS");
++          if (!win_wfp_block_dns(c->c1.tuntap->adapter_index))
++            msg (M_FATAL, "Blocking DNS failed!");
++        }
++#endif
++
+     }
+   gc_free (&gc);
+   return ret;
+@@ -1651,6 +1660,15 @@ do_close_tun (struct context *c, bool fo
+ 					     c->sig->signal_text),
+ 			 "down",
+ 			 c->c2.es);
++
++#if defined(WIN32)
++          if (c->options.block_outside_dns)
++            {
++              if (!win_wfp_uninit())
++                  msg (M_FATAL, "Uninitialising WFP failed!");
++            }
++#endif
++
+ 	}
+     }
+   gc_free (&gc);
+@@ -2525,8 +2543,10 @@ do_option_warnings (struct context *c)
+     msg (M_WARN, "WARNING: using --pull/--client and --ifconfig together is probably not what you want");
+ 
+ #if P2MP_SERVER
++#if 0
+   if (o->server_bridge_defined | o->server_bridge_proxy_dhcp)
+     msg (M_WARN, "NOTE: when bridging your LAN adapter with the TAP adapter, note that the new bridge adapter will often take on its own IP address that is different from what the LAN adapter was previously set to");
++#endif
+ 
+   if (o->mode == MODE_SERVER)
+     {
+diff -urp openvpn-2.3.10/src/openvpn/Makefile.in openvpn-2.3.x/src/openvpn/Makefile.in
+--- openvpn-2.3.10/src/openvpn/Makefile.in	2016-01-04 19:18:09.000000000 +0700
++++ openvpn-2.3.x/src/openvpn/Makefile.in	2016-09-03 17:42:55.515647194 +0700
+@@ -259,6 +259,7 @@ AWK = @AWK@
+ CC = @CC@
+ CCDEPMODE = @CCDEPMODE@
+ CFLAGS = @CFLAGS@
++CMAKE = @CMAKE@
+ CPP = @CPP@
+ CPPFLAGS = @CPPFLAGS@
+ CYGPATH_W = @CYGPATH_W@
+@@ -352,6 +353,11 @@ TAP_CFLAGS = @TAP_CFLAGS@
+ TAP_WIN_COMPONENT_ID = @TAP_WIN_COMPONENT_ID@
+ TAP_WIN_MIN_MAJOR = @TAP_WIN_MIN_MAJOR@
+ TAP_WIN_MIN_MINOR = @TAP_WIN_MIN_MINOR@
++TEST_CFLAGS = @TEST_CFLAGS@
++TEST_LDFLAGS = @TEST_LDFLAGS@
++VENDOR_BUILD_ROOT = @VENDOR_BUILD_ROOT@
++VENDOR_DIST_ROOT = @VENDOR_DIST_ROOT@
++VENDOR_SRC_ROOT = @VENDOR_SRC_ROOT@
+ VERSION = @VERSION@
+ abs_builddir = @abs_builddir@
+ abs_srcdir = @abs_srcdir@
+diff -urp openvpn-2.3.10/src/openvpn/misc.c openvpn-2.3.x/src/openvpn/misc.c
+--- openvpn-2.3.10/src/openvpn/misc.c	2015-12-21 19:57:26.000000000 +0700
++++ openvpn-2.3.x/src/openvpn/misc.c	2016-05-29 00:06:30.447888025 +0700
+@@ -1044,6 +1044,7 @@ get_user_pass_cr (struct user_pass *up,
+       bool from_authfile = (auth_file && !streq (auth_file, "stdin"));
+       bool username_from_stdin = false;
+       bool password_from_stdin = false;
++      bool response_from_stdin = true;
+ 
+       if (flags & GET_USER_PASS_PREVIOUS_CREDS_FAILED)
+ 	msg (M_WARN, "Note: previous '%s' credentials failed", prefix);
+@@ -1053,10 +1054,11 @@ get_user_pass_cr (struct user_pass *up,
+        * Get username/password from management interface?
+        */
+       if (management
+-	  && ((auth_file && streq (auth_file, "management")) || (!from_authfile && (flags & GET_USER_PASS_MANAGEMENT)))
++          && (!from_authfile && (flags & GET_USER_PASS_MANAGEMENT))
+ 	  && management_query_user_pass_enabled (management))
+ 	{
+ 	  const char *sc = NULL;
++          response_from_stdin = false;
+ 
+ 	  if (flags & GET_USER_PASS_PREVIOUS_CREDS_FAILED)
+ 	    management_auth_failure (management, prefix, "previous auth credentials failed");
+@@ -1090,7 +1092,10 @@ get_user_pass_cr (struct user_pass *up,
+ 	  if (!strlen (up->password))
+ 	    strcpy (up->password, "ok");
+ 	}
+-      else if (from_authfile)
++      /*
++       * Read from auth file unless this is a dynamic challenge request.
++       */
++      else if (from_authfile && !(flags & GET_USER_PASS_DYNAMIC_CHALLENGE))
+         {
+           /*
+            * Try to get username/password from a file.
+@@ -1141,10 +1146,10 @@ get_user_pass_cr (struct user_pass *up,
+       /*
+        * Get username/password from standard input?
+        */
+-      if (username_from_stdin || password_from_stdin)
++      if (username_from_stdin || password_from_stdin || response_from_stdin)
+ 	{
+ #ifdef ENABLE_CLIENT_CR
+-	  if (auth_challenge && (flags & GET_USER_PASS_DYNAMIC_CHALLENGE))
++          if (auth_challenge && (flags & GET_USER_PASS_DYNAMIC_CHALLENGE) && response_from_stdin)
+ 	    {
+ 	      struct auth_challenge_info *ac = get_auth_challenge (auth_challenge, &gc);
+ 	      if (ac)
+@@ -1154,7 +1159,8 @@ get_user_pass_cr (struct user_pass *up,
+ 
+ 		  buf_set_write (&packed_resp, (uint8_t*)up->password, USER_PASS_LEN);
+ 		  msg (M_INFO|M_NOPREFIX, "CHALLENGE: %s", ac->challenge_text);
+-		  if (!get_console_input ("Response:", BOOL_CAST(ac->flags&CR_ECHO), response, USER_PASS_LEN))
++                  if (!get_console_input (ac->challenge_text, BOOL_CAST(ac->flags&CR_ECHO),
++                                          response, USER_PASS_LEN))
+ 		    msg (M_FATAL, "ERROR: could not read challenge response from stdin");
+ 		  strncpynt (up->username, ac->user, USER_PASS_LEN);
+ 		  buf_printf (&packed_resp, "CRV1::%s::%s", ac->state_id, response);
+@@ -1185,14 +1191,16 @@ get_user_pass_cr (struct user_pass *up,
+ 		msg (M_FATAL, "ERROR: could not not read %s password from stdin", prefix);
+ 
+ #ifdef ENABLE_CLIENT_CR
+-	      if (auth_challenge && (flags & GET_USER_PASS_STATIC_CHALLENGE))
++              if (auth_challenge && (flags & GET_USER_PASS_STATIC_CHALLENGE) && response_from_stdin)
+ 		{
+ 		  char *response = (char *) gc_malloc (USER_PASS_LEN, false, &gc);
+ 		  struct buffer packed_resp;
+ 		  char *pw64=NULL, *resp64=NULL;
+ 
+ 		  msg (M_INFO|M_NOPREFIX, "CHALLENGE: %s", auth_challenge);
+-		  if (!get_console_input ("Response:", BOOL_CAST(flags & GET_USER_PASS_STATIC_CHALLENGE_ECHO), response, USER_PASS_LEN))
++
++                  if (!get_console_input (auth_challenge, BOOL_CAST(flags & GET_USER_PASS_STATIC_CHALLENGE_ECHO),
++                                          response, USER_PASS_LEN))
+ 		    msg (M_FATAL, "ERROR: could not read static challenge response from stdin");
+ 		  if (openvpn_base64_encode(up->password, strlen(up->password), &pw64) == -1
+ 		      || openvpn_base64_encode(response, strlen(response), &resp64) == -1)
+@@ -1648,22 +1656,27 @@ argv_system_str_append (struct argv *a,
+ static char *
+ argv_extract_cmd_name (const char *path)
+ {
++  char *ret = NULL;
+   if (path)
+     {
+       char *path_cp = string_alloc(path, NULL); /* POSIX basename() implementaions may modify its arguments */
+       const char *bn = basename (path_cp);
+       if (bn)
+ 	{
+-	  char *ret = string_alloc (bn, NULL);
+-	  char *dot = strrchr (ret, '.');
++	  char *dot = NULL;
++	  ret = string_alloc (bn, NULL);
++	  dot = strrchr (ret, '.');
+ 	  if (dot)
+ 	    *dot = '\0';
+ 	  free(path_cp);
+-	  if (ret[0] != '\0')
+-	    return ret;
++	  if (ret[0] == '\0')
++	    {
++	      free(ret);
++	      ret = NULL;
++	    }
+ 	}
+     }
+-  return NULL;
++  return ret;
+ }
+ 
+ const char *
+diff -urp openvpn-2.3.10/src/openvpn/mudp.c openvpn-2.3.x/src/openvpn/mudp.c
+--- openvpn-2.3.10/src/openvpn/mudp.c	2015-12-21 19:57:26.000000000 +0700
++++ openvpn-2.3.x/src/openvpn/mudp.c	2016-09-03 17:42:55.519647195 +0700
+@@ -168,7 +168,6 @@ multi_process_io_udp (struct multi_conte
+   else if (status & SOCKET_READ)
+     {
+       read_incoming_link (&m->top);
+-      multi_release_io_lock (m);
+       if (!IS_SIG (&m->top))
+ 	multi_process_incoming_link (m, NULL, mpp_flags);
+     }
+@@ -176,7 +175,6 @@ multi_process_io_udp (struct multi_conte
+   else if (status & TUN_READ)
+     {
+       read_incoming_tun (&m->top);
+-      multi_release_io_lock (m);
+       if (!IS_SIG (&m->top))
+ 	multi_process_incoming_tun (m, mpp_flags);
+     }
+diff -urp openvpn-2.3.10/src/openvpn/multi.c openvpn-2.3.x/src/openvpn/multi.c
+--- openvpn-2.3.10/src/openvpn/multi.c	2015-12-21 19:57:26.000000000 +0700
++++ openvpn-2.3.x/src/openvpn/multi.c	2016-05-29 00:16:52.783871796 +0700
+@@ -1354,7 +1354,7 @@ multi_select_virtual_addr (struct multi_
+ 	      mi->context.c2.push_ifconfig_ipv6_remote = 
+ 		    mi->context.c1.tuntap->local_ipv6;
+ 	      mi->context.c2.push_ifconfig_ipv6_netbits = 
+-		    mi->context.options.ifconfig_ipv6_pool_netbits;
++		    mi->context.options.ifconfig_ipv6_netbits;
+ 	      mi->context.c2.push_ifconfig_ipv6_defined = true;
+ 	    }
+ 	}
+diff -urp openvpn-2.3.10/src/openvpn/multi.h openvpn-2.3.x/src/openvpn/multi.h
+--- openvpn-2.3.10/src/openvpn/multi.h	2015-12-21 19:57:26.000000000 +0700
++++ openvpn-2.3.x/src/openvpn/multi.h	2016-09-03 17:42:55.519647195 +0700
+@@ -573,10 +573,5 @@ multi_set_pending (struct multi_context
+   m->pending = mi;
+ }
+ 
+-static inline void
+-multi_release_io_lock (struct multi_context *m)
+-{
+-}
+-
+ #endif /* P2MP_SERVER */
+ #endif /* MULTI_H */
+diff -urp openvpn-2.3.10/src/openvpn/options.c openvpn-2.3.x/src/openvpn/options.c
+--- openvpn-2.3.10/src/openvpn/options.c	2016-01-04 19:17:32.000000000 +0700
++++ openvpn-2.3.x/src/openvpn/options.c	2016-09-03 17:42:55.519647195 +0700
+@@ -6446,7 +6446,7 @@ add_option (struct options *options,
+   else if (streq (p[0], "auth"))
+     {
+       VERIFY_PERMISSION (OPT_P_CRYPTO);
+-      options->authname_defined = true;
++      msg (M_WARN, "WARNING: Using --auth without alg is deprecated.");
+     }
+   else if (streq (p[0], "cipher") && p[1])
+     {
+@@ -6462,7 +6462,7 @@ add_option (struct options *options,
+   else if (streq (p[0], "cipher"))
+     {
+       VERIFY_PERMISSION (OPT_P_CRYPTO);
+-      options->ciphername_defined = true;
++      msg (M_WARN, "WARNING: Using --cipher without alg is deprecated.");
+     }
+   else if (streq (p[0], "prng") && p[1])
+     {
+diff -urp openvpn-2.3.10/src/openvpn/plugin.c openvpn-2.3.x/src/openvpn/plugin.c
+--- openvpn-2.3.10/src/openvpn/plugin.c	2015-12-21 19:57:26.000000000 +0700
++++ openvpn-2.3.x/src/openvpn/plugin.c	2016-05-29 00:06:30.447888025 +0700
+@@ -316,7 +316,7 @@ plugin_vlog (openvpn_plugin_log_flags_t
+   if (flags & PLOG_NOMUTE)
+     msg_flags |= M_NOMUTE;
+ 
+-  if (MSG_TEST (msg_flags))
++  if (msg_test (msg_flags))
+     {
+       struct gc_arena gc;
+       char* msg_fmt;
+diff -urp openvpn-2.3.10/src/openvpn/proxy.c openvpn-2.3.x/src/openvpn/proxy.c
+--- openvpn-2.3.10/src/openvpn/proxy.c	2015-12-21 19:57:26.000000000 +0700
++++ openvpn-2.3.x/src/openvpn/proxy.c	2016-05-29 00:06:30.459888024 +0700
+@@ -94,7 +94,7 @@ recv_line (socket_descriptor_t sd,
+ 	}
+ 
+       FD_ZERO (&reads);
+-      FD_SET (sd, &reads);
++      openvpn_fd_set (sd, &reads);
+       tv.tv_sec = timeout_sec;
+       tv.tv_usec = 0;
+ 
+diff -urp openvpn-2.3.10/src/openvpn/push.c openvpn-2.3.x/src/openvpn/push.c
+--- openvpn-2.3.10/src/openvpn/push.c	2015-12-21 19:57:26.000000000 +0700
++++ openvpn-2.3.x/src/openvpn/push.c	2016-05-29 00:06:30.459888024 +0700
+@@ -74,8 +74,11 @@ receive_auth_failed (struct context *c,
+ 	  if (buf_string_compare_advance (&buf, "AUTH_FAILED,") && BLEN (&buf))
+ 	    reason = BSTR (&buf);
+ 	  management_auth_failure (management, UP_TYPE_AUTH, reason);
+-	} else
++	}
+ #endif
++      /*
++       * Save the dynamic-challenge text even when management is defined
++       */
+ 	{
+ #ifdef ENABLE_CLIENT_CR
+ 	  struct buffer buf = *buffer;
+diff -urp openvpn-2.3.10/src/openvpn/route.c openvpn-2.3.x/src/openvpn/route.c
+--- openvpn-2.3.10/src/openvpn/route.c	2016-01-04 19:17:32.000000000 +0700
++++ openvpn-2.3.x/src/openvpn/route.c	2016-05-29 00:06:30.467888024 +0700
+@@ -2639,7 +2639,8 @@ void
+ get_default_gateway (struct route_gateway_info *rgi)
+ {
+   struct gc_arena gc = gc_new ();
+-  int s, seq, l, pid, rtm_addrs, i;
++  int s, seq, l, pid, rtm_addrs;
++  unsigned int i;
+   struct sockaddr so_dst, so_mask;
+   char *cp = m_rtmsg.m_space; 
+   struct sockaddr *gate = NULL, *sa;
+@@ -2776,7 +2777,8 @@ get_default_gateway (struct route_gatewa
+   struct gc_arena gc = gc_new ();
+   struct rtmsg m_rtmsg;
+   int sockfd = -1;
+-  int seq, l, pid, rtm_addrs, i;
++  int seq, l, pid, rtm_addrs;
++  unsigned int i;
+   struct sockaddr so_dst, so_mask;
+   char *cp = m_rtmsg.m_space; 
+   struct sockaddr *gate = NULL, *ifp = NULL, *sa;
+@@ -2976,7 +2978,8 @@ void
+ get_default_gateway (struct route_gateway_info *rgi)
+ {
+   struct gc_arena gc = gc_new ();
+-  int s, seq, l, rtm_addrs, i;
++  int s, seq, l, rtm_addrs;
++  unsigned int i;
+   pid_t pid;
+   struct sockaddr so_dst, so_mask;
+   char *cp = m_rtmsg.m_space; 
+diff -urp openvpn-2.3.10/src/openvpn/sig.c openvpn-2.3.x/src/openvpn/sig.c
+--- openvpn-2.3.10/src/openvpn/sig.c	2015-12-21 19:57:26.000000000 +0700
++++ openvpn-2.3.x/src/openvpn/sig.c	2016-09-03 17:42:55.519647195 +0700
+@@ -360,12 +360,35 @@ process_sigterm (struct context *c)
+   return ret;
+ }
+ 
++/**
++ * If a restart signal is received during exit-notification, reset the
++ * signal and return true.
++ */
++static bool
++ignore_restart_signals (struct context *c)
++{
++  bool ret = false;
++#ifdef ENABLE_OCC
++  if ( (c->sig->signal_received == SIGUSR1 || c->sig->signal_received == SIGHUP) &&
++        event_timeout_defined(&c->c2.explicit_exit_notification_interval) )
++    {
++       msg (M_INFO, "Ignoring %s received during exit notification",
++            signal_name(c->sig->signal_received, true));
++       signal_reset (c->sig);
++       ret = true;
++    }
++#endif
++  return ret;
++}
++
+ bool
+ process_signal (struct context *c)
+ {
+   bool ret = true;
+ 
+-  if (c->sig->signal_received == SIGTERM || c->sig->signal_received == SIGINT)
++  if (ignore_restart_signals (c))
++    ret = false;
++  else if (c->sig->signal_received == SIGTERM || c->sig->signal_received == SIGINT)
+     {
+       ret = process_sigterm (c);
+     }
+diff -urp openvpn-2.3.10/src/openvpn/socket.c openvpn-2.3.x/src/openvpn/socket.c
+--- openvpn-2.3.10/src/openvpn/socket.c	2015-12-21 19:57:26.000000000 +0700
++++ openvpn-2.3.x/src/openvpn/socket.c	2016-09-03 17:42:55.519647195 +0700
+@@ -842,7 +842,7 @@ socket_listen_accept (socket_descriptor_
+       struct timeval tv;
+ 
+       FD_ZERO (&reads);
+-      FD_SET (sd, &reads);
++      openvpn_fd_set (sd, &reads);
+       tv.tv_sec = 0;
+       tv.tv_usec = 0;
+ 
+@@ -934,16 +934,22 @@ openvpn_connect (socket_descriptor_t sd,
+     {
+       while (true)
+ 	{
++#if POLL
++	  struct pollfd fds[1];
++	  fds[0].fd = sd;
++	  fds[0].events = POLLOUT;
++	  status = poll(fds, 1, 0);
++#else
+ 	  fd_set writes;
+ 	  struct timeval tv;
+ 
+ 	  FD_ZERO (&writes);
+-	  FD_SET (sd, &writes);
++	  openvpn_fd_set (sd, &writes);
+ 	  tv.tv_sec = 0;
+ 	  tv.tv_usec = 0;
+ 
+ 	  status = select (sd + 1, NULL, &writes, NULL, &tv);
+-
++#endif
+ 	  if (signal_received)
+ 	    {
+ 	      get_signal (signal_received);
+@@ -962,7 +968,11 @@ openvpn_connect (socket_descriptor_t sd,
+ 	    {
+ 	      if (--connect_timeout < 0)
+ 		{
++#ifdef WIN32
++		  status = WSAETIMEDOUT;
++#else
+ 		  status = ETIMEDOUT;
++#endif
+ 		  break;
+ 		}
+ 	      openvpn_sleep (1);
+@@ -2687,7 +2697,6 @@ union openvpn_pktinfo {
+ static socklen_t
+ link_socket_read_udp_posix_recvmsg (struct link_socket *sock,
+ 				    struct buffer *buf,
+-				    int maxsize,
+ 				    struct link_socket_actual *from)
+ {
+   struct iovec iov;
+@@ -2696,7 +2705,7 @@ link_socket_read_udp_posix_recvmsg (stru
+   socklen_t fromlen = sizeof (from->dest.addr);
+ 
+   iov.iov_base = BPTR (buf);
+-  iov.iov_len = maxsize;
++  iov.iov_len = buf_forward_capacity_total (buf);
+   mesg.msg_iov = &iov;
+   mesg.msg_iovlen = 1;
+   mesg.msg_name = &from->dest.addr;
+@@ -2750,20 +2759,18 @@ link_socket_read_udp_posix_recvmsg (stru
+ int
+ link_socket_read_udp_posix (struct link_socket *sock,
+ 			    struct buffer *buf,
+-			    int maxsize,
+ 			    struct link_socket_actual *from)
+ {
+   socklen_t fromlen = sizeof (from->dest.addr);
+   socklen_t expectedlen = af_addr_size(proto_sa_family(sock->info.proto));
+   addr_zero_host(&from->dest);
+-  ASSERT (buf_safe (buf, maxsize));
+ #if ENABLE_IP_PKTINFO
+   /* Both PROTO_UDPv4 and PROTO_UDPv6 */
+   if (proto_is_udp(sock->info.proto) && sock->sockflags & SF_USE_IP_PKTINFO)
+-    fromlen = link_socket_read_udp_posix_recvmsg (sock, buf, maxsize, from);
++    fromlen = link_socket_read_udp_posix_recvmsg (sock, buf, from);
+   else
+ #endif
+-    buf->len = recvfrom (sock->sd, BPTR (buf), maxsize, 0,
++    buf->len = recvfrom (sock->sd, BPTR (buf), buf_forward_capacity(buf), 0,
+ 			 &from->dest.addr.sa, &fromlen);
+   if (buf->len >= 0 && expectedlen && fromlen != expectedlen)
+     bad_address_length (fromlen, expectedlen);
+diff -urp openvpn-2.3.10/src/openvpn/socket.h openvpn-2.3.x/src/openvpn/socket.h
+--- openvpn-2.3.10/src/openvpn/socket.h	2015-12-21 19:57:26.000000000 +0700
++++ openvpn-2.3.x/src/openvpn/socket.h	2016-09-03 17:42:55.519647195 +0700
+@@ -865,7 +865,6 @@ link_socket_read_udp_win32 (struct link_
+ 
+ int link_socket_read_udp_posix (struct link_socket *sock,
+ 				struct buffer *buf,
+-				int maxsize,
+ 				struct link_socket_actual *from);
+ 
+ #endif
+@@ -874,7 +873,6 @@ int link_socket_read_udp_posix (struct l
+ static inline int
+ link_socket_read (struct link_socket *sock,
+ 		  struct buffer *buf,
+-		  int maxsize,
+ 		  struct link_socket_actual *from)
+ {
+   if (proto_is_udp(sock->info.proto)) /* unified UDPv4 and UDPv6 */
+@@ -884,7 +882,7 @@ link_socket_read (struct link_socket *so
+ #ifdef WIN32
+       res = link_socket_read_udp_win32 (sock, buf, from);
+ #else
+-      res = link_socket_read_udp_posix (sock, buf, maxsize, from);
++      res = link_socket_read_udp_posix (sock, buf, from);
+ #endif
+       return res;
+     }
+diff -urp openvpn-2.3.10/src/openvpn/socks.c openvpn-2.3.x/src/openvpn/socks.c
+--- openvpn-2.3.10/src/openvpn/socks.c	2015-12-21 19:57:26.000000000 +0700
++++ openvpn-2.3.x/src/openvpn/socks.c	2016-05-29 00:06:30.475888024 +0700
+@@ -105,10 +105,13 @@ socks_username_password_auth (struct soc
+   ssize_t size;
+ 
+   creds.defined = 0;
+-  get_user_pass (&creds, p->authfile, UP_TYPE_SOCKS, GET_USER_PASS_MANAGEMENT);
++  if (!get_user_pass (&creds, p->authfile, UP_TYPE_SOCKS, GET_USER_PASS_MANAGEMENT))
++    {
++      msg (M_NONFATAL, "SOCKS failed to get username/password.");
++      return false;
++    }
+ 
+-  if( !creds.username || (strlen(creds.username) > 255)
+-      || !creds.password || (strlen(creds.password) > 255) ) {
++  if( (strlen(creds.username) > 255) || (strlen(creds.password) > 255) ) {
+           msg (M_NONFATAL,
+                "SOCKS username and/or password exceeds 255 characters.  "
+                "Authentication not possible.");
+@@ -133,7 +136,7 @@ socks_username_password_auth (struct soc
+       char c;
+ 
+       FD_ZERO (&reads);
+-      FD_SET (sd, &reads);
++      openvpn_fd_set (sd, &reads);
+       tv.tv_sec = timeout_sec;
+       tv.tv_usec = 0;
+ 
+@@ -212,7 +215,7 @@ socks_handshake (struct socks_proxy_info
+       char c;
+ 
+       FD_ZERO (&reads);
+-      FD_SET (sd, &reads);
++      openvpn_fd_set (sd, &reads);
+       tv.tv_sec = timeout_sec;
+       tv.tv_usec = 0;
+ 
+@@ -318,7 +321,7 @@ recv_socks_reply (socket_descriptor_t sd
+       char c;
+ 
+       FD_ZERO (&reads);
+-      FD_SET (sd, &reads);
++      openvpn_fd_set (sd, &reads);
+       tv.tv_sec = timeout_sec;
+       tv.tv_usec = 0;
+ 
+diff -urp openvpn-2.3.10/src/openvpn/ssl.c openvpn-2.3.x/src/openvpn/ssl.c
+--- openvpn-2.3.10/src/openvpn/ssl.c	2016-01-04 19:17:32.000000000 +0700
++++ openvpn-2.3.x/src/openvpn/ssl.c	2016-09-03 17:42:55.519647195 +0700
+@@ -150,6 +150,7 @@ static const tls_cipher_name_pair tls_ci
+     {"DHE-RSA-CAMELLIA128-SHA", "TLS-DHE-RSA-WITH-CAMELLIA-128-CBC-SHA"},
+     {"DHE-RSA-CAMELLIA256-SHA256", "TLS-DHE-RSA-WITH-CAMELLIA-256-CBC-SHA256"},
+     {"DHE-RSA-CAMELLIA256-SHA", "TLS-DHE-RSA-WITH-CAMELLIA-256-CBC-SHA"},
++    {"DHE-RSA-CHACHA20-POLY1305", "TLS-DHE-RSA-WITH-CHACHA20-POLY1305-SHA256"},
+     {"DHE-RSA-SEED-SHA", "TLS-DHE-RSA-WITH-SEED-CBC-SHA"},
+     {"DH-RSA-SEED-SHA", "TLS-DH-RSA-WITH-SEED-CBC-SHA"},
+     {"ECDH-ECDSA-AES128-GCM-SHA256", "TLS-ECDH-ECDSA-WITH-AES-128-GCM-SHA256"},
+@@ -178,6 +179,7 @@ static const tls_cipher_name_pair tls_ci
+     {"ECDHE-ECDSA-CAMELLIA128-SHA", "TLS-ECDHE-ECDSA-WITH-CAMELLIA-128-CBC-SHA"},
+     {"ECDHE-ECDSA-CAMELLIA256-SHA256", "TLS-ECDHE-ECDSA-WITH-CAMELLIA-256-CBC-SHA256"},
+     {"ECDHE-ECDSA-CAMELLIA256-SHA", "TLS-ECDHE-ECDSA-WITH-CAMELLIA-256-CBC-SHA"},
++    {"ECDHE-ECDSA-CHACHA20-POLY1305", "TLS-ECDHE-ECDSA-WITH-CHACHA20-POLY1305-SHA256"},
+     {"ECDHE-ECDSA-DES-CBC3-SHA", "TLS-ECDHE-ECDSA-WITH-3DES-EDE-CBC-SHA"},
+     {"ECDHE-ECDSA-DES-CBC-SHA", "TLS-ECDHE-ECDSA-WITH-DES-CBC-SHA"},
+     {"ECDHE-ECDSA-RC4-SHA", "TLS-ECDHE-ECDSA-WITH-RC4-128-SHA"},
+@@ -193,6 +195,7 @@ static const tls_cipher_name_pair tls_ci
+     {"ECDHE-RSA-CAMELLIA128-SHA", "TLS-ECDHE-RSA-WITH-CAMELLIA-128-CBC-SHA"},
+     {"ECDHE-RSA-CAMELLIA256-SHA256", "TLS-ECDHE-RSA-WITH-CAMELLIA-256-CBC-SHA256"},
+     {"ECDHE-RSA-CAMELLIA256-SHA", "TLS-ECDHE-RSA-WITH-CAMELLIA-256-CBC-SHA"},
++    {"ECDHE-RSA-CHACHA20-POLY1305", "TLS-ECDHE-RSA-WITH-CHACHA20-POLY1305-SHA256"},
+     {"ECDHE-RSA-DES-CBC3-SHA", "TLS-ECDHE-RSA-WITH-3DES-EDE-CBC-SHA"},
+     {"ECDHE-RSA-DES-CBC-SHA", "TLS-ECDHE-RSA-WITH-DES-CBC-SHA"},
+     {"ECDHE-RSA-RC4-SHA", "TLS-ECDHE-RSA-WITH-RC4-128-SHA"},
+@@ -561,10 +564,7 @@ init_ssl (const struct options *options,
+   tls_ctx_check_cert_time(new_ctx);
+ 
+   /* Allowable ciphers */
+-  if (options->cipher_list)
+-    {
+-      tls_ctx_restrict_ciphers(new_ctx, options->cipher_list);
+-    }
++  tls_ctx_restrict_ciphers(new_ctx, options->cipher_list);
+ 
+ #ifdef ENABLE_CRYPTO_POLARSSL
+   /* Personalise the random by mixing in the certificate */
+@@ -1854,12 +1854,14 @@ push_peer_info(struct buffer *buf, struc
+ #endif
+         }
+ 
+-      /* push env vars that begin with UV_ and IV_GUI_VER */
++      /* push env vars that begin with UV_, IV_PLAT_VER and IV_GUI_VER */
+       for (e=es->list; e != NULL; e=e->next)
+ 	{
+ 	  if (e->string)
+ 	    {
+-	      if (((strncmp(e->string, "UV_", 3)==0 && session->opt->push_peer_info_detail >= 2)
++	      if ((((strncmp(e->string, "UV_", 3)==0 ||
++		     strncmp(e->string, "IV_PLAT_VER=", sizeof("IV_PLAT_VER=")-1)==0)
++		    && session->opt->push_peer_info_detail >= 2)
+ 		   || (strncmp(e->string,"IV_GUI_VER=",sizeof("IV_GUI_VER=")-1)==0))
+ 		  && buf_safe(&out, strlen(e->string)+1))
+ 		buf_printf (&out, "%s\n", e->string);
+diff -urp openvpn-2.3.10/src/openvpn/ssl_openssl.c openvpn-2.3.x/src/openvpn/ssl_openssl.c
+--- openvpn-2.3.10/src/openvpn/ssl_openssl.c	2016-01-04 19:17:32.000000000 +0700
++++ openvpn-2.3.x/src/openvpn/ssl_openssl.c	2016-09-03 17:42:55.519647195 +0700
+@@ -111,7 +111,7 @@ tmp_rsa_cb (SSL * s, int is_export, int
+ 
+       if(!bn || !BN_set_word(bn, RSA_F4) ||
+ 	  !RSA_generate_key_ex(rsa_tmp, keylength, bn, NULL))
+-	msg(M_SSLERR, "Failed to generate temp RSA key");
++	crypto_msg(M_FATAL, "Failed to generate temp RSA key");
+ 
+       if (bn) BN_free( bn );
+     }
+@@ -132,7 +132,7 @@ tls_ctx_server_new(struct tls_root_ctx *
+     ctx->ctx = SSL_CTX_new (SSLv23_server_method ());
+ 
+   if (ctx->ctx == NULL)
+-    msg (M_SSLERR, "SSL_CTX_new SSLv23_server_method");
++    crypto_msg (M_FATAL, "SSL_CTX_new SSLv23_server_method");
+ 
+   SSL_CTX_set_tmp_rsa_callback (ctx->ctx, tmp_rsa_cb);
+ }
+@@ -151,7 +151,7 @@ tls_ctx_client_new(struct tls_root_ctx *
+     ctx->ctx = SSL_CTX_new (SSLv23_client_method ());
+ 
+   if (ctx->ctx == NULL)
+-    msg (M_SSLERR, "SSL_CTX_new SSLv23_client_method");
++    crypto_msg (M_FATAL, "SSL_CTX_new SSLv23_client_method");
+ }
+ 
+ void
+@@ -267,6 +267,20 @@ tls_ctx_set_options (struct tls_root_ctx
+ void
+ tls_ctx_restrict_ciphers(struct tls_root_ctx *ctx, const char *ciphers)
+ {
++  if (ciphers == NULL)
++    {
++      /* Use sane default TLS cipher list */
++      if(!SSL_CTX_set_cipher_list(ctx->ctx,
++	  /* Use openssl's default list as a basis */
++	  "DEFAULT"
++	  /* Disable export ciphers and openssl's 'low' and 'medium' ciphers */
++	  ":!EXP:!LOW:!MEDIUM"
++	  /* Disable unsupported TLS modes */
++	  ":!PSK:!SRP:!kRSA"))
++	crypto_msg (M_FATAL, "Failed to set default TLS cipher list.");
++      return;
++    }
++
+   size_t begin_of_cipher, end_of_cipher;
+ 
+   const char *current_cipher;
+@@ -313,9 +327,12 @@ tls_ctx_restrict_ciphers(struct tls_root
+ 	}
+ 
+       // Make sure new cipher name fits in cipher string
+-      if (((sizeof(openssl_ciphers)-1) - openssl_ciphers_len) < current_cipher_len) {
+-	msg(M_SSLERR, "Failed to set restricted TLS cipher list, too long (>%d).", (int)sizeof(openssl_ciphers)-1);
+-      }
++      if (((sizeof(openssl_ciphers)-1) - openssl_ciphers_len) < current_cipher_len)
++	{
++	  msg (M_FATAL,
++	      "Failed to set restricted TLS cipher list, too long (>%d).",
++	      (int)sizeof(openssl_ciphers)-1);
++	}
+ 
+       // Concatenate cipher name to OpenSSL cipher string
+       memcpy(&openssl_ciphers[openssl_ciphers_len], current_cipher, current_cipher_len);
+@@ -331,7 +348,7 @@ tls_ctx_restrict_ciphers(struct tls_root
+ 
+   // Set OpenSSL cipher list
+   if(!SSL_CTX_set_cipher_list(ctx->ctx, openssl_ciphers))
+-    msg(M_SSLERR, "Failed to set restricted TLS cipher list: %s", openssl_ciphers);
++    crypto_msg (M_FATAL, "Failed to set restricted TLS cipher list: %s", openssl_ciphers);
+ }
+ 
+ void
+@@ -342,7 +359,7 @@ tls_ctx_check_cert_time (const struct tl
+ 
+   ASSERT (ctx);
+ 
+-#if OPENSSL_VERSION_NUMBER >= 0x10002000L
++#if OPENSSL_VERSION_NUMBER >= 0x10002000L && !defined(LIBRESSL_VERSION_NUMBER)
+   /* OpenSSL 1.0.2 and up */
+   cert = SSL_CTX_get0_certificate (ctx->ctx);
+ #else
+@@ -377,7 +394,7 @@ tls_ctx_check_cert_time (const struct tl
+     }
+ 
+ cleanup:
+-#if OPENSSL_VERSION_NUMBER < 0x10002000L
++#if OPENSSL_VERSION_NUMBER < 0x10002000L || defined(LIBRESSL_VERSION_NUMBER)
+   SSL_free (ssl);
+ #endif
+   return;
+@@ -396,22 +413,22 @@ tls_ctx_load_dh_params (struct tls_root_
+   if (!strcmp (dh_file, INLINE_FILE_TAG) && dh_file_inline)
+     {
+       if (!(bio = BIO_new_mem_buf ((char *)dh_file_inline, -1)))
+-	msg (M_SSLERR, "Cannot open memory BIO for inline DH parameters");
++	crypto_msg (M_FATAL, "Cannot open memory BIO for inline DH parameters");
+     }
+   else
+     {
+       /* Get Diffie Hellman Parameters */
+       if (!(bio = BIO_new_file (dh_file, "r")))
+-	msg (M_SSLERR, "Cannot open %s for DH parameters", dh_file);
++	crypto_msg (M_FATAL, "Cannot open %s for DH parameters", dh_file);
+     }
+ 
+   dh = PEM_read_bio_DHparams (bio, NULL, NULL, NULL);
+   BIO_free (bio);
+ 
+   if (!dh)
+-    msg (M_SSLERR, "Cannot load DH parameters from %s", dh_file);
++    crypto_msg (M_FATAL, "Cannot load DH parameters from %s", dh_file);
+   if (!SSL_CTX_set_tmp_dh (ctx->ctx, dh))
+-    msg (M_SSLERR, "SSL_CTX_set_tmp_dh");
++    crypto_msg (M_FATAL, "SSL_CTX_set_tmp_dh");
+ 
+   msg (D_TLS_DEBUG_LOW, "Diffie-Hellman initialized with %d bit key",
+        8 * DH_size (dh));
+@@ -444,7 +461,7 @@ tls_ctx_load_pkcs12(struct tls_root_ctx
+       BIO_push(b64, bio);
+       p12 = d2i_PKCS12_bio(b64, NULL);
+       if (!p12)
+-	msg(M_SSLERR, "Error reading inline PKCS#12 file");
++	crypto_msg (M_FATAL, "Error reading inline PKCS#12 file");
+       BIO_free(b64);
+       BIO_free(bio);
+     }
+@@ -452,11 +469,11 @@ tls_ctx_load_pkcs12(struct tls_root_ctx
+     {
+       /* Load the PKCS #12 file */
+       if (!(fp = platform_fopen(pkcs12_file, "rb")))
+-	msg(M_SSLERR, "Error opening file %s", pkcs12_file);
++	crypto_msg (M_FATAL, "Error opening file %s", pkcs12_file);
+       p12 = d2i_PKCS12_fp(fp, NULL);
+       fclose(fp);
+       if (!p12)
+-	msg(M_SSLERR, "Error reading PKCS#12 file %s", pkcs12_file);
++	crypto_msg (M_FATAL, "Error reading PKCS#12 file %s", pkcs12_file);
+     }
+ 
+   /* Parse the PKCS #12 file */
+@@ -479,16 +496,16 @@ tls_ctx_load_pkcs12(struct tls_root_ctx
+ 
+   /* Load Certificate */
+   if (!SSL_CTX_use_certificate (ctx->ctx, cert))
+-   msg (M_SSLERR, "Cannot use certificate");
++    crypto_msg (M_FATAL, "Cannot use certificate");
+ 
+   /* Load Private Key */
+   if (!SSL_CTX_use_PrivateKey (ctx->ctx, pkey))
+-   msg (M_SSLERR, "Cannot use private key");
++    crypto_msg (M_FATAL, "Cannot use private key");
+   warn_if_group_others_accessible (pkcs12_file);
+ 
+   /* Check Private Key */
+   if (!SSL_CTX_check_private_key (ctx->ctx))
+-   msg (M_SSLERR, "Private key does not match the certificate");
++    crypto_msg (M_FATAL, "Private key does not match the certificate");
+ 
+   /* Set Certificate Verification chain */
+   if (load_ca_file)
+@@ -502,9 +519,9 @@ tls_ctx_load_pkcs12(struct tls_root_ctx
+ 	for (i = 0; i < sk_X509_num(ca); i++)
+ 	  {
+ 	    if (!X509_STORE_add_cert(ctx->ctx->cert_store,sk_X509_value(ca, i)))
+-	      msg (M_SSLERR, "Cannot add certificate to certificate chain (X509_STORE_add_cert)");
++	      crypto_msg (M_FATAL,"Cannot add certificate to certificate chain (X509_STORE_add_cert)");
+ 	    if (!SSL_CTX_add_client_CA(ctx->ctx, sk_X509_value(ca, i)))
+-	      msg (M_SSLERR, "Cannot add certificate to client CA list (SSL_CTX_add_client_CA)");
++	      crypto_msg (M_FATAL,"Cannot add certificate to client CA list (SSL_CTX_add_client_CA)");
+ 	  }
+       }
+    } else {
+@@ -518,7 +535,7 @@ tls_ctx_load_pkcs12(struct tls_root_ctx
+ 	for (i = 0; i < sk_X509_num(ca); i++)
+ 	  {
+ 	    if (!SSL_CTX_add_extra_chain_cert(ctx->ctx,sk_X509_value(ca, i)))
+-	      msg (M_SSLERR, "Cannot add extra certificate to chain (SSL_CTX_add_extra_chain_cert)");
++	      crypto_msg (M_FATAL, "Cannot add extra certificate to chain (SSL_CTX_add_extra_chain_cert)");
+ 	  }
+       }
+    }
+@@ -533,8 +550,7 @@ tls_ctx_load_cryptoapi(struct tls_root_c
+ 
+   /* Load Certificate and Private Key */
+   if (!SSL_CTX_use_CryptoAPI_certificate (ctx->ctx, cryptoapi_cert))
+-    msg (M_SSLERR, "Cannot load certificate \"%s\" from Microsoft Certificate Store",
+-	   cryptoapi_cert);
++    crypto_msg (M_FATAL, "Cannot load certificate \"%s\" from Microsoft Certificate Store", cryptoapi_cert);
+ }
+ #endif /* WIN32 */
+ 
+@@ -548,9 +564,9 @@ tls_ctx_add_extra_certs (struct tls_root
+       if (!PEM_read_bio_X509 (bio, &cert, 0, NULL)) /* takes ownership of cert */
+         break;
+       if (!cert)
+-        msg (M_SSLERR, "Error reading extra certificate");
++	crypto_msg (M_FATAL, "Error reading extra certificate");
+       if (SSL_CTX_add_extra_chain_cert(ctx->ctx, cert) != 1)
+-        msg (M_SSLERR, "Error adding extra certificate");
++	crypto_msg (M_FATAL, "Error adding extra certificate");
+     }
+ }
+ 
+@@ -598,9 +614,9 @@ end:
+   if (!ret)
+     {
+       if (inline_file)
+-        msg (M_SSLERR, "Cannot load inline certificate file");
++	crypto_msg (M_FATAL, "Cannot load inline certificate file");
+       else
+-        msg (M_SSLERR, "Cannot load certificate file %s", cert_file);
++	crypto_msg (M_FATAL, "Cannot load certificate file %s", cert_file);
+     }
+ 
+   if (in != NULL)
+@@ -659,14 +675,14 @@ tls_ctx_load_priv_file (struct tls_root_
+       if (management && (ERR_GET_REASON (ERR_peek_error()) == EVP_R_BAD_DECRYPT))
+           management_auth_failure (management, UP_TYPE_PRIVATE_KEY, NULL);
+ #endif
+-      msg (M_WARN|M_SSL, "Cannot load private key file %s", priv_key_file);
++      crypto_msg (M_WARN, "Cannot load private key file %s", priv_key_file);
+       goto end;
+     }
+   warn_if_group_others_accessible (priv_key_file);
+ 
+   /* Check Private Key */
+   if (!SSL_CTX_check_private_key (ssl_ctx))
+-    msg (M_SSLERR, "Private key does not match the certificate");
++    crypto_msg (M_FATAL, "Private key does not match the certificate");
+   ret = 0;
+ 
+ end:
+@@ -764,10 +780,11 @@ tls_ctx_use_external_private_key (struct
+   X509 *cert = NULL;
+ 
+   ASSERT (NULL != ctx);
+-  ASSERT (NULL != cert);
+ 
+   tls_ctx_load_cert_file_and_copy (ctx, cert_file, cert_file_inline, &cert);
+ 
++  ASSERT (NULL != cert);
++
+   /* allocate custom RSA method object */
+   ALLOC_OBJ_CLEAR (rsa_meth, RSA_METHOD);
+   rsa_meth->name = "OpenVPN external private key RSA Method";
+@@ -816,7 +833,7 @@ tls_ctx_use_external_private_key (struct
+       if (rsa_meth)
+ 	free(rsa_meth);
+     }
+-  msg (M_SSLERR, "Cannot enable SSL external private key capability");
++  crypto_msg (M_FATAL, "Cannot enable SSL external private key capability");
+   return 0;
+ }
+ 
+@@ -846,7 +863,7 @@ tls_ctx_load_ca (struct tls_root_ctx *ct
+ 
+   store = SSL_CTX_get_cert_store(ctx->ctx);
+   if (!store)
+-    msg(M_SSLERR, "Cannot get certificate store (SSL_CTX_get_cert_store)");
++    crypto_msg (M_FATAL, "Cannot get certificate store");
+ 
+   /* Try to add certificates and CRLs from ca_file */
+   if (ca_file)
+@@ -869,7 +886,7 @@ tls_ctx_load_ca (struct tls_root_ctx *ct
+ 
+               if (tls_server && !info->x509)
+                 {
+-                  msg (M_SSLERR, "X509 name was missing in TLS mode");
++                  crypto_msg (M_FATAL, "X509 name was missing in TLS mode");
+                 }
+ 
+               if (info->x509)
+@@ -904,9 +921,12 @@ tls_ctx_load_ca (struct tls_root_ctx *ct
+ 
+               if (tls_server) {
+                 int cnum = sk_X509_NAME_num (cert_names);
+-                if (cnum != (prev + 1)) {
+-                  msg (M_WARN, "Cannot load CA certificate file %s (entry %d did not validate)", np(ca_file), added);
+-                }
++                if (cnum != (prev + 1))
++                  {
++		    crypto_msg (M_WARN,
++			"Cannot load CA certificate file %s (entry %d did not validate)",
++			np(ca_file), added);
++                  }
+                 prev = cnum;
+               }
+ 
+@@ -918,12 +938,20 @@ tls_ctx_load_ca (struct tls_root_ctx *ct
+         SSL_CTX_set_client_CA_list (ctx->ctx, cert_names);
+ 
+       if (!added)
+-        msg (M_SSLERR, "Cannot load CA certificate file %s (no entries were read)", np(ca_file));
++	{
++	  crypto_msg (M_FATAL,
++	      "Cannot load CA certificate file %s (no entries were read)",
++	      np(ca_file));
++	}
+ 
+       if (tls_server) {
+         int cnum = sk_X509_NAME_num (cert_names);
+         if (cnum != added)
+-          msg (M_SSLERR, "Cannot load CA certificate file %s (only %d of %d entries were valid X509 names)", np(ca_file), cnum, added);
++          {
++            crypto_msg (M_FATAL, "Cannot load CA certificate file %s (only %d "
++		"of %d entries were valid X509 names)",
++		np(ca_file), cnum, added);
++          }
+       }
+ 
+       if (in)
+@@ -937,7 +965,7 @@ tls_ctx_load_ca (struct tls_root_ctx *ct
+       if (lookup && X509_LOOKUP_add_dir (lookup, ca_path, X509_FILETYPE_PEM))
+         msg(M_WARN, "WARNING: experimental option --capath %s", ca_path);
+       else
+-        msg(M_SSLERR, "Cannot add lookup at --capath %s", ca_path);
++	crypto_msg (M_FATAL, "Cannot add lookup at --capath %s", ca_path);
+ #if OPENSSL_VERSION_NUMBER >= 0x00907000L
+       X509_STORE_set_flags (store, X509_V_FLAG_CRL_CHECK | X509_V_FLAG_CRL_CHECK_ALL);
+ #else
+@@ -958,7 +986,7 @@ tls_ctx_load_extra_certs (struct tls_roo
+     in = BIO_new_file (extra_certs_file, "r");
+ 
+   if (in == NULL)
+-    msg (M_SSLERR, "Cannot load extra-certs file: %s", extra_certs_file);
++    crypto_msg (M_FATAL, "Cannot load extra-certs file: %s", extra_certs_file);
+   else
+     tls_ctx_add_extra_certs (ctx, in);
+ 
+@@ -1050,7 +1078,7 @@ getbio (BIO_METHOD * type, const char *d
+   BIO *ret;
+   ret = BIO_new (type);
+   if (!ret)
+-    msg (M_SSLERR, "Error creating %s BIO", desc);
++    crypto_msg (M_FATAL, "Error creating %s BIO", desc);
+   return ret;
+ }
+ 
+@@ -1084,16 +1112,15 @@ bio_write (BIO *bio, const uint8_t *data
+ 	    }
+ 	  else
+ 	    {
+-	      msg (D_TLS_ERRORS | M_SSL, "TLS ERROR: BIO write %s error",
+-		   desc);
++	      crypto_msg (D_TLS_ERRORS, "TLS ERROR: BIO write %s error", desc);
+ 	      ret = -1;
+ 	      ERR_clear_error ();
+ 	    }
+ 	}
+       else if (i != size)
+ 	{
+-	  msg (D_TLS_ERRORS | M_SSL,
+-	       "TLS ERROR: BIO write %s incomplete %d/%d", desc, i, size);
++	  crypto_msg (D_TLS_ERRORS, "TLS ERROR: BIO write %s incomplete %d/%d",
++	      desc, i, size);
+ 	  ret = -1;
+ 	  ERR_clear_error ();
+ 	}
+@@ -1159,8 +1186,7 @@ bio_read (BIO *bio, struct buffer *buf,
+ 	    }
+ 	  else
+ 	    {
+-	      msg (D_TLS_ERRORS | M_SSL, "TLS_ERROR: BIO read %s error",
+-		   desc);
++	      crypto_msg (D_TLS_ERRORS, "TLS_ERROR: BIO read %s error", desc);
+ 	      buf->len = 0;
+ 	      ret = -1;
+ 	      ERR_clear_error ();
+@@ -1190,7 +1216,7 @@ key_state_ssl_init(struct key_state_ssl
+ 
+   ks_ssl->ssl = SSL_new (ssl_ctx->ctx);
+   if (!ks_ssl->ssl)
+-    msg (M_SSLERR, "SSL_new failed");
++    crypto_msg (M_FATAL, "SSL_new failed");
+ 
+   /* put session * in ssl object so we can access it
+      from verify callback*/
+@@ -1366,14 +1392,13 @@ show_available_tls_ciphers (const char *
+ 
+   tls_ctx.ctx = SSL_CTX_new (SSLv23_method ());
+   if (!tls_ctx.ctx)
+-    msg (M_SSLERR, "Cannot create SSL_CTX object");
++    crypto_msg (M_FATAL, "Cannot create SSL_CTX object");
+ 
+   ssl = SSL_new (tls_ctx.ctx);
+   if (!ssl)
+-    msg (M_SSLERR, "Cannot create SSL object");
++    crypto_msg (M_FATAL, "Cannot create SSL object");
+ 
+-  if (cipher_list)
+-    tls_ctx_restrict_ciphers(&tls_ctx, cipher_list);
++  tls_ctx_restrict_ciphers(&tls_ctx, cipher_list);
+ 
+   printf ("Available TLS Ciphers,\n");
+   printf ("listed in order of preference:\n\n");
+@@ -1404,10 +1429,10 @@ get_highest_preference_tls_cipher (char
+ 
+   ctx = SSL_CTX_new (SSLv23_method ());
+   if (!ctx)
+-    msg (M_SSLERR, "Cannot create SSL_CTX object");
++    crypto_msg (M_FATAL, "Cannot create SSL_CTX object");
+   ssl = SSL_new (ctx);
+   if (!ssl)
+-    msg (M_SSLERR, "Cannot create SSL object");
++    crypto_msg (M_FATAL, "Cannot create SSL object");
+ 
+   cipher_name = SSL_get_cipher_list (ssl, 0);
+   strncpynt (buf, cipher_name, size);
+diff -urp openvpn-2.3.10/src/openvpn/ssl_polarssl.c openvpn-2.3.x/src/openvpn/ssl_polarssl.c
+--- openvpn-2.3.10/src/openvpn/ssl_polarssl.c	2016-01-04 19:17:32.000000000 +0700
++++ openvpn-2.3.x/src/openvpn/ssl_polarssl.c	2016-05-29 00:16:35.935872300 +0700
+@@ -49,6 +49,7 @@
+ #include <polarssl/havege.h>
+ 
+ #include "ssl_verify_polarssl.h"
++#include <polarssl/debug.h>
+ #include <polarssl/error.h>
+ #include <polarssl/oid.h>
+ #include <polarssl/pem.h>
+@@ -175,7 +176,12 @@ tls_ctx_restrict_ciphers(struct tls_root
+ {
+   char *tmp_ciphers, *tmp_ciphers_orig, *token;
+   int i, cipher_count;
+-  int ciphers_len = strlen (ciphers);
++  int ciphers_len;
++
++  if (NULL == ciphers)
++    return; /* Nothing to do */
++
++  ciphers_len = strlen (ciphers);
+ 
+   ASSERT (NULL != ctx);
+   ASSERT (0 != ciphers_len);
+@@ -231,13 +237,13 @@ tls_ctx_load_dh_params (struct tls_root_
+ {
+   if (!strcmp (dh_file, INLINE_FILE_TAG) && dh_inline)
+     {
+-      if (0 != dhm_parse_dhm(ctx->dhm_ctx, (const unsigned char *) dh_inline,
+-	  strlen(dh_inline)))
++      if (!polar_ok(dhm_parse_dhm(ctx->dhm_ctx,
++	  (const unsigned char *) dh_inline, strlen(dh_inline))))
+ 	msg (M_FATAL, "Cannot read inline DH parameters");
+   }
+ else
+   {
+-    if (0 != dhm_parse_dhmfile(ctx->dhm_ctx, dh_file))
++    if (!polar_ok(dhm_parse_dhmfile(ctx->dhm_ctx, dh_file)))
+       msg (M_FATAL, "Cannot read DH parameters from file %s", dh_file);
+   }
+ 
+@@ -277,14 +283,16 @@ tls_ctx_load_cert_file (struct tls_root_
+ 
+   if (!strcmp (cert_file, INLINE_FILE_TAG) && cert_inline)
+     {
+-      if (0 != x509_crt_parse(ctx->crt_chain,
+-	  (const unsigned char *) cert_inline, strlen(cert_inline)))
++      if (!polar_ok(x509_crt_parse(ctx->crt_chain,
++	  (const unsigned char *) cert_inline, strlen(cert_inline))))
+         msg (M_FATAL, "Cannot load inline certificate file");
+     }
+   else
+     {
+-      if (0 != x509_crt_parse_file(ctx->crt_chain, cert_file))
+-	msg (M_FATAL, "Cannot load certificate file %s", cert_file);
++      if (!polar_ok(x509_crt_parse_file(ctx->crt_chain, cert_file)))
++	{
++	  msg (M_FATAL, "Cannot load certificate file %s", cert_file);
++	}
+     }
+ }
+ 
+@@ -326,7 +334,7 @@ tls_ctx_load_priv_file (struct tls_root_
+ 	  status = pk_parse_keyfile(ctx->priv_key, priv_key_file, passbuf);
+ 	}
+     }
+-  if (0 != status)
++  if (!polar_ok(status))
+     {
+ #ifdef ENABLE_MANAGEMENT
+       if (management && (POLARSSL_ERR_PK_PASSWORD_MISMATCH == status))
+@@ -403,7 +411,7 @@ static inline int external_pkcs1_sign( v
+       if( md_info == NULL )
+         return( POLARSSL_ERR_RSA_BAD_INPUT_DATA );
+ 
+-      if( oid_get_oid_by_md( md_alg, &oid, &oid_size ) != 0 )
++      if (!polar_ok(oid_get_oid_by_md( md_alg, &oid, &oid_size )))
+         return( POLARSSL_ERR_RSA_BAD_INPUT_DATA );
+ 
+       hashlen = md_get_size( md_info );
+@@ -501,8 +509,8 @@ tls_ctx_use_external_private_key (struct
+   ctx->external_key->signature_length = pk_get_len(&ctx->crt_chain->pk);
+ 
+   ALLOC_OBJ_CLEAR (ctx->priv_key, pk_context);
+-  if (0 != pk_init_ctx_rsa_alt(ctx->priv_key, ctx->external_key,
+-	    NULL, external_pkcs1_sign, external_key_len))
++  if (!polar_ok (pk_init_ctx_rsa_alt(ctx->priv_key, ctx->external_key,
++	    NULL, external_pkcs1_sign, external_key_len)))
+     return 0;
+ 
+   return 1;
+@@ -510,23 +518,21 @@ tls_ctx_use_external_private_key (struct
+ #endif
+ 
+ void tls_ctx_load_ca (struct tls_root_ctx *ctx, const char *ca_file,
+-    const char *ca_inline,
+-    const char *ca_path, bool tls_server
+-    )
++    const char *ca_inline, const char *ca_path, bool tls_server)
+ {
+   if (ca_path)
+       msg(M_FATAL, "ERROR: PolarSSL cannot handle the capath directive");
+ 
+   if (ca_file && !strcmp (ca_file, INLINE_FILE_TAG) && ca_inline)
+     {
+-      if (0 != x509_crt_parse(ctx->ca_chain, (unsigned char *) ca_inline,
+-	  strlen(ca_inline)))
++      if (!polar_ok(x509_crt_parse(ctx->ca_chain,
++	  (const unsigned char *) ca_inline, strlen(ca_inline))))
+ 	msg (M_FATAL, "Cannot load inline CA certificates");
+     }
+   else
+     {
+       /* Load CA file for verifying peer supplied certificate */
+-      if (0 != x509_crt_parse_file(ctx->ca_chain, ca_file))
++      if (!polar_ok(x509_crt_parse_file(ctx->ca_chain, ca_file)))
+ 	msg (M_FATAL, "Cannot load CA certificate file %s", ca_file);
+     }
+ }
+@@ -545,14 +551,14 @@ tls_ctx_load_extra_certs (struct tls_roo
+ 
+   if (!strcmp (extra_certs_file, INLINE_FILE_TAG) && extra_certs_inline)
+     {
+-      if (0 != x509_crt_parse(ctx->crt_chain,
++      if (!polar_ok(x509_crt_parse(ctx->crt_chain,
+           (const unsigned char *) extra_certs_inline,
+-	  strlen(extra_certs_inline)))
++	  strlen(extra_certs_inline))))
+         msg (M_FATAL, "Cannot load inline extra-certs file");
+     }
+   else
+     {
+-      if (0 != x509_crt_parse_file(ctx->crt_chain, extra_certs_file))
++      if (!polar_ok(x509_crt_parse_file(ctx->crt_chain, extra_certs_file)))
+ 	msg (M_FATAL, "Cannot load extra-certs file: %s", extra_certs_file);
+     }
+ }
+@@ -658,10 +664,8 @@ static int endless_buf_write( void *ctx,
+ 
+ static void my_debug( void *ctx, int level, const char *str )
+ {
+-  if (level == 1)
+-    {
+-      dmsg (D_HANDSHAKE_VERBOSE, "PolarSSL alert: %s", str);
+-    }
++  int my_loglevel = (level < 3) ? D_TLS_DEBUG_MED : D_TLS_DEBUG;
++  msg (my_loglevel, "PolarSSL msg: %s", str);
+ }
+ 
+ /*
+@@ -740,9 +744,10 @@ void key_state_ssl_init(struct key_state
+   CLEAR(*ks_ssl);
+ 
+   ALLOC_OBJ_CLEAR(ks_ssl->ctx, ssl_context);
+-  if (0 == ssl_init(ks_ssl->ctx))
++  if (polar_ok(ssl_init(ks_ssl->ctx)))
+     {
+       /* Initialise SSL context */
++      debug_set_threshold(3);
+       ssl_set_dbg (ks_ssl->ctx, my_debug, NULL);
+       ssl_set_endpoint (ks_ssl->ctx, ssl_ctx->endpoint);
+ 
+@@ -761,9 +766,10 @@ void key_state_ssl_init(struct key_state
+ 
+       /* Initialise authentication information */
+       if (is_server)
+-	ssl_set_dh_param_ctx (ks_ssl->ctx, ssl_ctx->dhm_ctx);
++	polar_ok (ssl_set_dh_param_ctx (ks_ssl->ctx, ssl_ctx->dhm_ctx));
+ 
+-      ssl_set_own_cert (ks_ssl->ctx, ssl_ctx->crt_chain, ssl_ctx->priv_key);
++      polar_ok (ssl_set_own_cert (ks_ssl->ctx, ssl_ctx->crt_chain,
++	  ssl_ctx->priv_key));
+ 
+       /* Initialise SSL verification */
+ #if P2MP_SERVER
+@@ -912,7 +918,8 @@ key_state_write_plaintext_const (struct
+       perf_pop ();
+       if (POLARSSL_ERR_NET_WANT_WRITE == retval || POLARSSL_ERR_NET_WANT_READ == retval)
+ 	return 0;
+-      msg (D_TLS_ERRORS, "TLS ERROR: write tls_write_plaintext_const error");
++      polar_log_err (D_TLS_ERRORS, retval,
++	  "TLS ERROR: write tls_write_plaintext_const error");
+       return -1;
+     }
+ 
+@@ -938,7 +945,6 @@ key_state_read_ciphertext (struct key_st
+ {
+   int retval = 0;
+   int len = 0;
+-  char error_message[1024];
+ 
+   perf_push (PERF_BIO_READ_CIPHERTEXT);
+ 
+@@ -964,8 +970,7 @@ key_state_read_ciphertext (struct key_st
+       perf_pop ();
+       if (POLARSSL_ERR_NET_WANT_WRITE == retval || POLARSSL_ERR_NET_WANT_READ == retval)
+ 	return 0;
+-      error_strerror(retval, error_message, sizeof(error_message));
+-      msg (D_TLS_ERRORS, "TLS_ERROR: read tls_read_ciphertext error: %d %s", retval, error_message);
++      polar_log_err (D_TLS_ERRORS, retval, "TLS_ERROR: read tls_read_ciphertext error");
+       buf->len = 0;
+       return -1;
+     }
+@@ -1008,14 +1013,14 @@ key_state_write_ciphertext (struct key_s
+ 
+       if (POLARSSL_ERR_NET_WANT_WRITE == retval || POLARSSL_ERR_NET_WANT_READ == retval)
+ 	return 0;
+-      msg (D_TLS_ERRORS, "TLS ERROR: write tls_write_ciphertext error");
++      polar_log_err (D_TLS_ERRORS, retval,
++	  "TLS ERROR: write tls_write_ciphertext error");
+       return -1;
+     }
+ 
+   if (retval != buf->len)
+     {
+-      msg (D_TLS_ERRORS,
+-	  "TLS ERROR: write tls_write_ciphertext incomplete %d/%d",
++      msg (D_TLS_ERRORS, "TLS ERROR: write tls_write_ciphertext incomplete %d/%d",
+ 	  retval, buf->len);
+       perf_pop ();
+       return -1;
+@@ -1037,7 +1042,6 @@ key_state_read_plaintext (struct key_sta
+ {
+   int retval = 0;
+   int len = 0;
+-  char error_message[1024];
+ 
+   perf_push (PERF_BIO_READ_PLAINTEXT);
+ 
+@@ -1062,8 +1066,7 @@ key_state_read_plaintext (struct key_sta
+     {
+       if (POLARSSL_ERR_NET_WANT_WRITE == retval || POLARSSL_ERR_NET_WANT_READ == retval)
+ 	return 0;
+-      error_strerror(retval, error_message, sizeof(error_message));
+-      msg (D_TLS_ERRORS, "TLS_ERROR: read tls_read_plaintext error: %d %s", retval, error_message);
++      polar_log_err (D_TLS_ERRORS, retval, "TLS_ERROR: read tls_read_plaintext error");
+       buf->len = 0;
+       perf_pop ();
+       return -1;
+diff -urp openvpn-2.3.10/src/openvpn/ssl_verify_polarssl.c openvpn-2.3.x/src/openvpn/ssl_verify_polarssl.c
+--- openvpn-2.3.10/src/openvpn/ssl_verify_polarssl.c	2015-12-21 19:57:26.000000000 +0700
++++ openvpn-2.3.x/src/openvpn/ssl_verify_polarssl.c	2016-09-03 17:42:55.519647195 +0700
+@@ -131,18 +131,13 @@ backend_x509_get_serial (openvpn_x509_ce
+   char *buf = NULL;
+   size_t buflen = 0;
+   mpi serial_mpi = { 0 };
+-  int retval = 0;
+ 
+   /* Transform asn1 integer serial into PolarSSL MPI */
+   mpi_init(&serial_mpi);
+-  retval = mpi_read_binary(&serial_mpi, cert->serial.p, cert->serial.len);
+-  if (retval < 0)
++  if (!polar_ok(mpi_read_binary(&serial_mpi, cert->serial.p, cert->serial.len)))
+     {
+-      char errbuf[128];
+-      error_strerror(retval, errbuf, sizeof(errbuf));
+-
+-      msg(M_WARN, "Failed to retrieve serial from certificate: %s.", errbuf);
+-      return NULL;
++      msg(M_WARN, "Failed to retrieve serial from certificate.");
++      goto end;
+     }
+ 
+   /* Determine decimal representation length, allocate buffer */
+@@ -150,16 +145,15 @@ backend_x509_get_serial (openvpn_x509_ce
+   buf = gc_malloc(buflen, true, gc);
+ 
+   /* Write MPI serial as decimal string into buffer */
+-  retval = mpi_write_string(&serial_mpi, 10, buf, &buflen);
+-  if (retval < 0)
++  if (!polar_ok(mpi_write_string(&serial_mpi, 10, buf, &buflen)))
+     {
+-      char errbuf[128];
+-      error_strerror(retval, errbuf, sizeof(errbuf));
+-
+-      msg(M_WARN, "Failed to write serial to string: %s.", errbuf);
+-      return NULL;
++      msg(M_WARN, "Failed to write serial to string.");
++      buf = NULL;
++      goto end;
+     }
+ 
++end:
++  mpi_free(&serial_mpi);
+   return buf;
+ }
+ 
+@@ -372,12 +366,9 @@ x509_verify_crl(const char *crl_file, x5
+   struct gc_arena gc = gc_new();
+   char *serial;
+ 
+-  int polar_retval = x509_crl_parse_file(&crl, crl_file);
+-  if (polar_retval != 0)
++  if (!polar_ok(x509_crl_parse_file(&crl, crl_file)))
+     {
+-      char errstr[128];
+-      polarssl_strerror(polar_retval, errstr, sizeof(errstr));
+-      msg (M_WARN, "CRL: cannot read CRL from file %s (%s)", crl_file, errstr);
++      msg (M_WARN, "CRL: cannot read CRL from file %s", crl_file);
+       goto end;
+     }
+ 
+@@ -390,7 +381,7 @@ x509_verify_crl(const char *crl_file, x5
+       goto end;
+     }
+ 
+-  if (0 != x509_crt_revoked(cert, &crl))
++  if (!polar_ok(x509_crt_revoked(cert, &crl)))
+     {
+       serial = backend_x509_get_serial_hex(cert, &gc);
+       msg (D_HANDSHAKE, "CRL CHECK FAILED: %s (serial %s) is REVOKED", subject, (serial ? serial : "NOT AVAILABLE"));
+diff -urp openvpn-2.3.10/src/openvpn/tun.c openvpn-2.3.x/src/openvpn/tun.c
+--- openvpn-2.3.10/src/openvpn/tun.c	2016-01-04 19:17:32.000000000 +0700
++++ openvpn-2.3.x/src/openvpn/tun.c	2016-05-29 00:16:47.635871960 +0700
+@@ -62,7 +62,7 @@ static void netsh_ifconfig (const struct
+ 			    const in_addr_t ip,
+ 			    const in_addr_t netmask,
+ 			    const unsigned int flags);
+-static void netsh_command (const struct argv *a, int n);
++static void netsh_command (const struct argv *a, int n, int msglevel);
+ 
+ static const char *netsh_get_id (const char *dev_node, struct gc_arena *gc);
+ 
+@@ -1246,7 +1246,7 @@ do_ifconfig (struct tuntap *tt,
+ 		     NETSH_PATH_SUFFIX,
+ 		     win32_version_info() == WIN_XP ? actual : iface,
+ 		     ifconfig_ipv6_local);
+-	netsh_command (&argv, 4);
++	netsh_command (&argv, 4, M_FATAL);
+ 
+ 	/* explicit route needed */
+ 	/* on windows, OpenVPN does ifconfig first, open_tun later, so
+@@ -2626,9 +2626,9 @@ open_darwin_utun (const char *dev, const
+ 
+   /* dev_node is simply utun, do the normal dynamic utun
+    * otherwise try to parse the utun number */
+-  if (dev_node && !strcmp ("utun", dev_node)==0)
++  if (dev_node && (strcmp("utun", dev_node) != 0 ))
+     {
+-      if (!sscanf (dev_node, "utun%d", &utunnum)==1)
++      if (sscanf(dev_node, "utun%d", &utunnum) != 1 )
+         msg (M_FATAL, "Cannot parse 'dev-node %s' please use 'dev-node utunX'"
+              "to use a utun device number X", dev_node);
+     }
+@@ -4246,7 +4246,7 @@ dhcp_renew (const struct tuntap *tt)
+  */
+ 
+ static void
+-netsh_command (const struct argv *a, int n)
++netsh_command (const struct argv *a, int n, int msglevel)
+ {
+   int i;
+   for (i = 0; i < n; ++i)
+@@ -4261,7 +4261,7 @@ netsh_command (const struct argv *a, int
+ 	return;
+       openvpn_sleep (4);
+     }
+-  msg (M_FATAL, "NETSH: command failed");
++  msg (msglevel, "NETSH: command failed");
+ }
+ 
+ void
+@@ -4411,7 +4411,7 @@ netsh_ifconfig_options (const char *type
+ 		   NETSH_PATH_SUFFIX,
+ 		   type,
+ 		   flex_name);
+-      netsh_command (&argv, 2);
++      netsh_command (&argv, 2, M_FATAL);
+     }
+ 
+   /* add new DNS/WINS settings to TAP interface */
+@@ -4432,7 +4432,7 @@ netsh_ifconfig_options (const char *type
+ 			 type,
+ 			 flex_name,
+ 			 print_in_addr_t (addr_list[i], 0, &gc));
+-	    netsh_command (&argv, 2);
++	    netsh_command (&argv, 2, M_FATAL);
+ 	  
+ 	    ++count;
+ 	  }
+@@ -4507,7 +4507,7 @@ netsh_ifconfig (const struct tuntap_opti
+ 		       print_in_addr_t (ip, 0, &gc),
+ 		       print_in_addr_t (netmask, 0, &gc));
+ 
+-	  netsh_command (&argv, 4);
++	  netsh_command (&argv, 4, M_FATAL);
+ 	}
+     }
+ 
+@@ -4553,7 +4553,7 @@ netsh_enable_dhcp (const struct tuntap_o
+ 	       NETSH_PATH_SUFFIX,
+ 	       actual_name);
+ 
+-  netsh_command (&argv, 4);
++  netsh_command (&argv, 4, M_FATAL);
+ 
+   argv_reset (&argv);
+ }
+@@ -5269,7 +5269,7 @@ close_tun (struct tuntap *tt)
+ 		     tt->actual_name,
+ 		     ifconfig_ipv6_local );
+ 
+-	  netsh_command (&argv, 1);
++	  netsh_command (&argv, 1, M_WARN);
+           argv_reset (&argv);
+ 	}
+ #if 1
+diff -urp openvpn-2.3.10/src/openvpn/win32.c openvpn-2.3.x/src/openvpn/win32.c
+--- openvpn-2.3.10/src/openvpn/win32.c	2016-01-04 19:17:32.000000000 +0700
++++ openvpn-2.3.x/src/openvpn/win32.c	2016-09-03 17:42:55.519647195 +0700
+@@ -119,7 +119,6 @@ init_win32 (void)
+     }
+   window_title_clear (&window_title);
+   win32_signal_clear (&win32_signal);
+-  netcmd_semaphore_init ();
+ }
+ 
+ void
+@@ -765,6 +764,10 @@ void
+ netcmd_semaphore_lock (void)
+ {
+   const int timeout_seconds = 600;
++
++  if (!netcmd_semaphore.hand)
++    netcmd_semaphore_init ();
++
+   if (!semaphore_lock (&netcmd_semaphore, timeout_seconds * 1000))
+     msg (M_FATAL, "Cannot lock net command semaphore"); 
+ }
+@@ -773,6 +776,8 @@ void
+ netcmd_semaphore_release (void)
+ {
+   semaphore_release (&netcmd_semaphore);
++  /* netcmd_semaphore has max count of 1 - safe to close after release */
++  semaphore_close (&netcmd_semaphore);
+ }
+ 
+ /*
+@@ -1223,13 +1228,14 @@ win_wfp_block_dns (const NET_IFINDEX ind
+     /* Prepare filter. */
+     Filter.subLayerKey = SubLayer.subLayerKey;
+     Filter.displayData.name = FIREWALL_NAME;
+-    Filter.weight.type = FWP_EMPTY;
++    Filter.weight.type = FWP_UINT8;
++    Filter.weight.uint8 = 0xF;
+     Filter.filterCondition = Condition;
+     Filter.numFilterConditions = 2;
+ 
+-    /* First filter. Block IPv4 DNS queries except from OpenVPN itself. */
++    /* First filter. Permit IPv4 DNS queries from OpenVPN itself. */
+     Filter.layerKey = FWPM_LAYER_ALE_AUTH_CONNECT_V4;
+-    Filter.action.type = FWP_ACTION_BLOCK;
++    Filter.action.type = FWP_ACTION_PERMIT;
+ 
+     Condition[0].fieldKey = FWPM_CONDITION_IP_REMOTE_PORT;
+     Condition[0].matchType = FWP_MATCH_EQUAL;
+@@ -1237,26 +1243,44 @@ win_wfp_block_dns (const NET_IFINDEX ind
+     Condition[0].conditionValue.uint16 = 53;
+ 
+     Condition[1].fieldKey = FWPM_CONDITION_ALE_APP_ID;
+-    Condition[1].matchType = FWP_MATCH_NOT_EQUAL;
++    Condition[1].matchType = FWP_MATCH_EQUAL;
+     Condition[1].conditionValue.type = FWP_BYTE_BLOB_TYPE;
+     Condition[1].conditionValue.byteBlob = openvpnblob;
+ 
+     /* Add filter condition to our interface. */
+     if (!win_wfp_add_filter(m_hEngineHandle, &Filter, NULL, &filterid))
+         goto err;
+-    dmsg (D_LOW, "Filter (Block IPv4 DNS) added with ID=%I64d", filterid);
++    dmsg (D_LOW, "Filter (Permit OpenVPN IPv4 DNS) added with ID=%I64d", filterid);
+ 
+-    /* Second filter. Block IPv6 DNS queries except from OpenVPN itself. */
++    /* Second filter. Permit IPv6 DNS queries from OpenVPN itself. */
+     Filter.layerKey = FWPM_LAYER_ALE_AUTH_CONNECT_V6;
+ 
+     /* Add filter condition to our interface. */
+     if (!win_wfp_add_filter(m_hEngineHandle, &Filter, NULL, &filterid))
+         goto err;
++    dmsg (D_LOW, "Filter (Permit OpenVPN IPv6 DNS) added with ID=%I64d", filterid);
++
++    /* Third filter. Block all IPv4 DNS queries. */
++    Filter.layerKey = FWPM_LAYER_ALE_AUTH_CONNECT_V4;
++    Filter.action.type = FWP_ACTION_BLOCK;
++    Filter.weight.type = FWP_EMPTY;
++    Filter.numFilterConditions = 1;
++
++    if (!win_wfp_add_filter(m_hEngineHandle, &Filter, NULL, &filterid))
++        goto err;
++    dmsg (D_LOW, "Filter (Block IPv4 DNS) added with ID=%I64d", filterid);
++
++    /* Forth filter. Block all IPv6 DNS queries. */
++    Filter.layerKey = FWPM_LAYER_ALE_AUTH_CONNECT_V6;
++
++    if (!win_wfp_add_filter(m_hEngineHandle, &Filter, NULL, &filterid))
++        goto err;
+     dmsg (D_LOW, "Filter (Block IPv6 DNS) added with ID=%I64d", filterid);
+ 
+-    /* Third filter. Permit IPv4 DNS queries from TAP. */
++    /* Fifth filter. Permit IPv4 DNS queries from TAP. */
+     Filter.layerKey = FWPM_LAYER_ALE_AUTH_CONNECT_V4;
+     Filter.action.type = FWP_ACTION_PERMIT;
++    Filter.numFilterConditions = 2;
+ 
+     Condition[1].fieldKey = FWPM_CONDITION_IP_LOCAL_INTERFACE;
+     Condition[1].matchType = FWP_MATCH_EQUAL;
+@@ -1268,7 +1292,7 @@ win_wfp_block_dns (const NET_IFINDEX ind
+         goto err;
+     dmsg (D_LOW, "Filter (Permit IPv4 DNS queries from TAP) added with ID=%I64d", filterid);
+ 
+-    /* Forth filter. Permit IPv6 DNS queries from TAP. */
++    /* Sixth filter. Permit IPv6 DNS queries from TAP. */
+     Filter.layerKey = FWPM_LAYER_ALE_AUTH_CONNECT_V6;
+ 
+     /* Add filter condition to our interface. */
+@@ -1323,6 +1347,20 @@ win32_version_info()
+     }
+ }
+ 
++bool
++win32_is_64bit()
++{
++#if defined(_WIN64)
++    return true;  // 64-bit programs run only on Win64
++#elif defined(_WIN32)
++    // 32-bit programs run on both 32-bit and 64-bit Windows
++    BOOL f64 = FALSE;
++    return IsWow64Process(GetCurrentProcess(), &f64) && f64;
++#else
++    return false; // Win64 does not support Win16
++#endif
++}
++
+ const char *
+ win32_version_string(struct gc_arena *gc, bool add_name)
+ {
+@@ -1349,6 +1387,8 @@ win32_version_string(struct gc_arena *gc
+             break;
+     }
+ 
++    buf_printf (&out, win32_is_64bit() ? " 64bit" : " 32bit");
++
+     return (const char *)out.data;
+ }
+ 
+diff -urp openvpn-2.3.10/src/openvpnserv/Makefile.in openvpn-2.3.x/src/openvpnserv/Makefile.in
+--- openvpn-2.3.10/src/openvpnserv/Makefile.in	2016-01-04 19:18:10.000000000 +0700
++++ openvpn-2.3.x/src/openvpnserv/Makefile.in	2016-09-03 17:42:55.519647195 +0700
+@@ -201,6 +201,7 @@ AWK = @AWK@
+ CC = @CC@
+ CCDEPMODE = @CCDEPMODE@
+ CFLAGS = @CFLAGS@
++CMAKE = @CMAKE@
+ CPP = @CPP@
+ CPPFLAGS = @CPPFLAGS@
+ CYGPATH_W = @CYGPATH_W@
+@@ -294,6 +295,11 @@ TAP_CFLAGS = @TAP_CFLAGS@
+ TAP_WIN_COMPONENT_ID = @TAP_WIN_COMPONENT_ID@
+ TAP_WIN_MIN_MAJOR = @TAP_WIN_MIN_MAJOR@
+ TAP_WIN_MIN_MINOR = @TAP_WIN_MIN_MINOR@
++TEST_CFLAGS = @TEST_CFLAGS@
++TEST_LDFLAGS = @TEST_LDFLAGS@
++VENDOR_BUILD_ROOT = @VENDOR_BUILD_ROOT@
++VENDOR_DIST_ROOT = @VENDOR_DIST_ROOT@
++VENDOR_SRC_ROOT = @VENDOR_SRC_ROOT@
+ VERSION = @VERSION@
+ abs_builddir = @abs_builddir@
+ abs_srcdir = @abs_srcdir@
+diff -urp openvpn-2.3.10/src/plugins/auth-pam/auth-pam.c openvpn-2.3.x/src/plugins/auth-pam/auth-pam.c
+--- openvpn-2.3.10/src/plugins/auth-pam/auth-pam.c	2015-12-21 19:56:50.000000000 +0700
++++ openvpn-2.3.x/src/plugins/auth-pam/auth-pam.c	2016-09-03 17:42:55.519647195 +0700
+@@ -47,6 +47,7 @@
+ #include <fcntl.h>
+ #include <signal.h>
+ #include <syslog.h>
++#include "utils.h"
+ 
+ #include <openvpn-plugin.h>
+ 
+@@ -115,74 +116,6 @@ struct user_pass {
+ /* Background process function */
+ static void pam_server (int fd, const char *service, int verb, const struct name_value_list *name_value_list);
+ 
+-/*  Read 'tosearch', replace all occurences of 'searchfor' with 'replacewith' and return
+- *  a pointer to the NEW string.  Does not modify the input strings.  Will not enter an
+- *  infinite loop with clever 'searchfor' and 'replacewith' strings.
+- *  Daniel Johnson - Progman2000@usa.net / djohnson@progman.us
+- */
+-static char *
+-searchandreplace(const char *tosearch, const char *searchfor, const char *replacewith)
+-{
+-  const char *searching=tosearch;
+-  char *scratch;
+-  char temp[strlen(tosearch)*10];
+-  temp[0]=0;
+-
+-  if (!tosearch || !searchfor || !replacewith) return 0;
+-  if (!strlen(tosearch) || !strlen(searchfor) || !strlen(replacewith)) return 0;
+-
+-  scratch = strstr(searching,searchfor);
+-  if (!scratch) return strdup(tosearch);
+-
+-  while (scratch) {
+-    strncat(temp,searching,scratch-searching);
+-    strcat(temp,replacewith);
+-
+-    searching=scratch+strlen(searchfor);
+-    scratch = strstr(searching,searchfor);
+-  }
+-  return strdup(temp);
+-}
+-
+-/*
+- * Given an environmental variable name, search
+- * the envp array for its value, returning it
+- * if found or NULL otherwise.
+- */
+-static const char *
+-get_env (const char *name, const char *envp[])
+-{
+-  if (envp)
+-    {
+-      int i;
+-      const int namelen = strlen (name);
+-      for (i = 0; envp[i]; ++i)
+-	{
+-	  if (!strncmp (envp[i], name, namelen))
+-	    {
+-	      const char *cp = envp[i] + namelen;
+-	      if (*cp == '=')
+-		return cp + 1;
+-	    }
+-	}
+-    }
+-  return NULL;
+-}
+-
+-/*
+- * Return the length of a string array
+- */
+-static int
+-string_array_len (const char *array[])
+-{
+-  int i = 0;
+-  if (array)
+-    {
+-      while (array[i])
+-	++i;
+-    }
+-  return i;
+-}
+ 
+ /*
+  * Socket read/write functions.
+diff -urp openvpn-2.3.10/src/plugins/auth-pam/Makefile.am openvpn-2.3.x/src/plugins/auth-pam/Makefile.am
+--- openvpn-2.3.10/src/plugins/auth-pam/Makefile.am	2015-12-21 19:56:50.000000000 +0700
++++ openvpn-2.3.x/src/plugins/auth-pam/Makefile.am	2016-09-03 17:42:55.519647195 +0700
+@@ -18,6 +18,7 @@ dist_doc_DATA = README.auth-pam
+ endif
+ 
+ openvpn_plugin_auth_pam_la_SOURCES = \
++	utils.c \
+ 	auth-pam.c \
+ 	pamdl.c  pamdl.h \
+ 	auth-pam.exports
+diff -urp openvpn-2.3.10/src/plugins/auth-pam/Makefile.in openvpn-2.3.x/src/plugins/auth-pam/Makefile.in
+--- openvpn-2.3.10/src/plugins/auth-pam/Makefile.in	2016-01-04 19:18:10.000000000 +0700
++++ openvpn-2.3.x/src/plugins/auth-pam/Makefile.in	2016-09-03 17:42:55.519647195 +0700
+@@ -133,7 +133,7 @@ am__installdirs = "$(DESTDIR)$(plugindir
+ LTLIBRARIES = $(plugin_LTLIBRARIES)
+ am__DEPENDENCIES_1 =
+ openvpn_plugin_auth_pam_la_DEPENDENCIES = $(am__DEPENDENCIES_1)
+-am_openvpn_plugin_auth_pam_la_OBJECTS = auth-pam.lo pamdl.lo
++am_openvpn_plugin_auth_pam_la_OBJECTS = utils.lo auth-pam.lo pamdl.lo
+ openvpn_plugin_auth_pam_la_OBJECTS =  \
+ 	$(am_openvpn_plugin_auth_pam_la_OBJECTS)
+ AM_V_lt = $(am__v_lt_@AM_V@)
+@@ -221,6 +221,7 @@ AWK = @AWK@
+ CC = @CC@
+ CCDEPMODE = @CCDEPMODE@
+ CFLAGS = @CFLAGS@
++CMAKE = @CMAKE@
+ CPP = @CPP@
+ CPPFLAGS = @CPPFLAGS@
+ CYGPATH_W = @CYGPATH_W@
+@@ -314,6 +315,11 @@ TAP_CFLAGS = @TAP_CFLAGS@
+ TAP_WIN_COMPONENT_ID = @TAP_WIN_COMPONENT_ID@
+ TAP_WIN_MIN_MAJOR = @TAP_WIN_MIN_MAJOR@
+ TAP_WIN_MIN_MINOR = @TAP_WIN_MIN_MINOR@
++TEST_CFLAGS = @TEST_CFLAGS@
++TEST_LDFLAGS = @TEST_LDFLAGS@
++VENDOR_BUILD_ROOT = @VENDOR_BUILD_ROOT@
++VENDOR_DIST_ROOT = @VENDOR_DIST_ROOT@
++VENDOR_SRC_ROOT = @VENDOR_SRC_ROOT@
+ VERSION = @VERSION@
+ abs_builddir = @abs_builddir@
+ abs_srcdir = @abs_srcdir@
+@@ -382,6 +388,7 @@ AM_CFLAGS = \
+ @ENABLE_PLUGIN_AUTH_PAM_TRUE@plugin_LTLIBRARIES = openvpn-plugin-auth-pam.la
+ @ENABLE_PLUGIN_AUTH_PAM_TRUE@dist_doc_DATA = README.auth-pam
+ openvpn_plugin_auth_pam_la_SOURCES = \
++	utils.c \
+ 	auth-pam.c \
+ 	pamdl.c  pamdl.h \
+ 	auth-pam.exports
+@@ -474,6 +481,7 @@ distclean-compile:
+ 
+ @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/auth-pam.Plo@am__quote@
+ @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/pamdl.Plo@am__quote@
++@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/utils.Plo@am__quote@
+ 
+ .c.o:
+ @am__fastdepCC_TRUE@	$(AM_V_CC)$(COMPILE) -MT $@ -MD -MP -MF $(DEPDIR)/$*.Tpo -c -o $@ $<
+Только в openvpn-2.3.x/src/plugins/auth-pam: utils.c
+Только в openvpn-2.3.x/src/plugins/auth-pam: utils.h
+diff -urp openvpn-2.3.10/src/plugins/down-root/Makefile.in openvpn-2.3.x/src/plugins/down-root/Makefile.in
+--- openvpn-2.3.10/src/plugins/down-root/Makefile.in	2016-01-04 19:18:10.000000000 +0700
++++ openvpn-2.3.x/src/plugins/down-root/Makefile.in	2016-09-03 17:42:55.519647195 +0700
+@@ -220,6 +220,7 @@ AWK = @AWK@
+ CC = @CC@
+ CCDEPMODE = @CCDEPMODE@
+ CFLAGS = @CFLAGS@
++CMAKE = @CMAKE@
+ CPP = @CPP@
+ CPPFLAGS = @CPPFLAGS@
+ CYGPATH_W = @CYGPATH_W@
+@@ -313,6 +314,11 @@ TAP_CFLAGS = @TAP_CFLAGS@
+ TAP_WIN_COMPONENT_ID = @TAP_WIN_COMPONENT_ID@
+ TAP_WIN_MIN_MAJOR = @TAP_WIN_MIN_MAJOR@
+ TAP_WIN_MIN_MINOR = @TAP_WIN_MIN_MINOR@
++TEST_CFLAGS = @TEST_CFLAGS@
++TEST_LDFLAGS = @TEST_LDFLAGS@
++VENDOR_BUILD_ROOT = @VENDOR_BUILD_ROOT@
++VENDOR_DIST_ROOT = @VENDOR_DIST_ROOT@
++VENDOR_SRC_ROOT = @VENDOR_SRC_ROOT@
+ VERSION = @VERSION@
+ abs_builddir = @abs_builddir@
+ abs_srcdir = @abs_srcdir@
+diff -urp openvpn-2.3.10/src/plugins/Makefile.in openvpn-2.3.x/src/plugins/Makefile.in
+--- openvpn-2.3.10/src/plugins/Makefile.in	2016-01-04 19:18:10.000000000 +0700
++++ openvpn-2.3.x/src/plugins/Makefile.in	2016-09-03 17:42:55.519647195 +0700
+@@ -197,6 +197,7 @@ AWK = @AWK@
+ CC = @CC@
+ CCDEPMODE = @CCDEPMODE@
+ CFLAGS = @CFLAGS@
++CMAKE = @CMAKE@
+ CPP = @CPP@
+ CPPFLAGS = @CPPFLAGS@
+ CYGPATH_W = @CYGPATH_W@
+@@ -290,6 +291,11 @@ TAP_CFLAGS = @TAP_CFLAGS@
+ TAP_WIN_COMPONENT_ID = @TAP_WIN_COMPONENT_ID@
+ TAP_WIN_MIN_MAJOR = @TAP_WIN_MIN_MAJOR@
+ TAP_WIN_MIN_MINOR = @TAP_WIN_MIN_MINOR@
++TEST_CFLAGS = @TEST_CFLAGS@
++TEST_LDFLAGS = @TEST_LDFLAGS@
++VENDOR_BUILD_ROOT = @VENDOR_BUILD_ROOT@
++VENDOR_DIST_ROOT = @VENDOR_DIST_ROOT@
++VENDOR_SRC_ROOT = @VENDOR_SRC_ROOT@
+ VERSION = @VERSION@
+ abs_builddir = @abs_builddir@
+ abs_srcdir = @abs_srcdir@
+diff -urp openvpn-2.3.10/tests/Makefile.am openvpn-2.3.x/tests/Makefile.am
+--- openvpn-2.3.10/tests/Makefile.am	2015-12-21 19:56:50.000000000 +0700
++++ openvpn-2.3.x/tests/Makefile.am	2016-09-03 17:42:55.519647195 +0700
+@@ -12,6 +12,8 @@
+ MAINTAINERCLEANFILES = \
+ 	$(srcdir)/Makefile.in
+ 
++SUBDIRS = unit_tests
++
+ test_scripts = t_client.sh t_lpback.sh t_cltsrv.sh
+ 
+ TESTS_ENVIRONMENT = top_srcdir="$(top_srcdir)"
+@@ -20,4 +22,3 @@ TESTS = $(test_scripts)
+ dist_noinst_SCRIPTS = \
+ 	$(test_scripts) \
+ 	t_cltsrv-down.sh
+-
+diff -urp openvpn-2.3.10/tests/Makefile.in openvpn-2.3.x/tests/Makefile.in
+--- openvpn-2.3.10/tests/Makefile.in	2016-01-04 19:18:10.000000000 +0700
++++ openvpn-2.3.x/tests/Makefile.in	2016-09-03 17:42:55.519647195 +0700
+@@ -121,12 +121,46 @@ am__v_at_0 = @
+ am__v_at_1 = 
+ SOURCES =
+ DIST_SOURCES =
++RECURSIVE_TARGETS = all-recursive check-recursive cscopelist-recursive \
++	ctags-recursive dvi-recursive html-recursive info-recursive \
++	install-data-recursive install-dvi-recursive \
++	install-exec-recursive install-html-recursive \
++	install-info-recursive install-pdf-recursive \
++	install-ps-recursive install-recursive installcheck-recursive \
++	installdirs-recursive pdf-recursive ps-recursive \
++	tags-recursive uninstall-recursive
+ am__can_run_installinfo = \
+   case $$AM_UPDATE_INFO_DIR in \
+     n|no|NO) false;; \
+     *) (install-info --version) >/dev/null 2>&1;; \
+   esac
++RECURSIVE_CLEAN_TARGETS = mostlyclean-recursive clean-recursive	\
++  distclean-recursive maintainer-clean-recursive
++am__recursive_targets = \
++  $(RECURSIVE_TARGETS) \
++  $(RECURSIVE_CLEAN_TARGETS) \
++  $(am__extra_recursive_targets)
++AM_RECURSIVE_TARGETS = $(am__recursive_targets:-recursive=) TAGS CTAGS \
++	distdir
+ am__tagged_files = $(HEADERS) $(SOURCES) $(TAGS_FILES) $(LISP)
++# Read a list of newline-separated strings from the standard input,
++# and print each of them once, without duplicates.  Input order is
++# *not* preserved.
++am__uniquify_input = $(AWK) '\
++  BEGIN { nonempty = 0; } \
++  { items[$$0] = 1; nonempty = 1; } \
++  END { if (nonempty) { for (i in items) print i; }; } \
++'
++# Make sure the list of sources is unique.  This is necessary because,
++# e.g., the same source file might be shared among _SOURCES variables
++# for different programs/libraries.
++am__define_uniq_tagged_files = \
++  list='$(am__tagged_files)'; \
++  unique=`for i in $$list; do \
++    if test -f "$$i"; then echo $$i; else echo $(srcdir)/$$i; fi; \
++  done | $(am__uniquify_input)`
++ETAGS = etags
++CTAGS = ctags
+ am__tty_colors_dummy = \
+   mgn= red= grn= lgn= blu= brg= std=; \
+   am__color_tests=no
+@@ -149,7 +183,33 @@ am__tty_colors = { \
+     std='[m'; \
+   fi; \
+ }
++DIST_SUBDIRS = $(SUBDIRS)
+ DISTFILES = $(DIST_COMMON) $(DIST_SOURCES) $(TEXINFOS) $(EXTRA_DIST)
++am__relativize = \
++  dir0=`pwd`; \
++  sed_first='s,^\([^/]*\)/.*$$,\1,'; \
++  sed_rest='s,^[^/]*/*,,'; \
++  sed_last='s,^.*/\([^/]*\)$$,\1,'; \
++  sed_butlast='s,/*[^/]*$$,,'; \
++  while test -n "$$dir1"; do \
++    first=`echo "$$dir1" | sed -e "$$sed_first"`; \
++    if test "$$first" != "."; then \
++      if test "$$first" = ".."; then \
++        dir2=`echo "$$dir0" | sed -e "$$sed_last"`/"$$dir2"; \
++        dir0=`echo "$$dir0" | sed -e "$$sed_butlast"`; \
++      else \
++        first2=`echo "$$dir2" | sed -e "$$sed_first"`; \
++        if test "$$first2" = "$$first"; then \
++          dir2=`echo "$$dir2" | sed -e "$$sed_rest"`; \
++        else \
++          dir2="../$$dir2"; \
++        fi; \
++        dir0="$$dir0"/"$$first"; \
++      fi; \
++    fi; \
++    dir1=`echo "$$dir1" | sed -e "$$sed_rest"`; \
++  done; \
++  reldir="$$dir2"
+ ACLOCAL = @ACLOCAL@
+ AMTAR = @AMTAR@
+ AM_DEFAULT_VERBOSITY = @AM_DEFAULT_VERBOSITY@
+@@ -162,6 +222,7 @@ AWK = @AWK@
+ CC = @CC@
+ CCDEPMODE = @CCDEPMODE@
+ CFLAGS = @CFLAGS@
++CMAKE = @CMAKE@
+ CPP = @CPP@
+ CPPFLAGS = @CPPFLAGS@
+ CYGPATH_W = @CYGPATH_W@
+@@ -255,6 +316,11 @@ TAP_CFLAGS = @TAP_CFLAGS@
+ TAP_WIN_COMPONENT_ID = @TAP_WIN_COMPONENT_ID@
+ TAP_WIN_MIN_MAJOR = @TAP_WIN_MIN_MAJOR@
+ TAP_WIN_MIN_MINOR = @TAP_WIN_MIN_MINOR@
++TEST_CFLAGS = @TEST_CFLAGS@
++TEST_LDFLAGS = @TEST_LDFLAGS@
++VENDOR_BUILD_ROOT = @VENDOR_BUILD_ROOT@
++VENDOR_DIST_ROOT = @VENDOR_DIST_ROOT@
++VENDOR_SRC_ROOT = @VENDOR_SRC_ROOT@
+ VERSION = @VERSION@
+ abs_builddir = @abs_builddir@
+ abs_srcdir = @abs_srcdir@
+@@ -315,6 +381,7 @@ top_srcdir = @top_srcdir@
+ MAINTAINERCLEANFILES = \
+ 	$(srcdir)/Makefile.in
+ 
++SUBDIRS = unit_tests
+ test_scripts = t_client.sh t_lpback.sh t_cltsrv.sh
+ TESTS_ENVIRONMENT = top_srcdir="$(top_srcdir)"
+ TESTS = $(test_scripts)
+@@ -322,7 +389,7 @@ dist_noinst_SCRIPTS = \
+ 	$(test_scripts) \
+ 	t_cltsrv-down.sh
+ 
+-all: all-am
++all: all-recursive
+ 
+ .SUFFIXES:
+ $(srcdir)/Makefile.in:  $(srcdir)/Makefile.am  $(am__configure_deps)
+@@ -363,12 +430,105 @@ mostlyclean-libtool:
+ 
+ clean-libtool:
+ 	-rm -rf .libs _libs
+-tags TAGS:
+ 
+-ctags CTAGS:
++# This directory's subdirectories are mostly independent; you can cd
++# into them and run 'make' without going through this Makefile.
++# To change the values of 'make' variables: instead of editing Makefiles,
++# (1) if the variable is set in 'config.status', edit 'config.status'
++#     (which will cause the Makefiles to be regenerated when you run 'make');
++# (2) otherwise, pass the desired values on the 'make' command line.
++$(am__recursive_targets):
++	@fail=; \
++	if $(am__make_keepgoing); then \
++	  failcom='fail=yes'; \
++	else \
++	  failcom='exit 1'; \
++	fi; \
++	dot_seen=no; \
++	target=`echo $@ | sed s/-recursive//`; \
++	case "$@" in \
++	  distclean-* | maintainer-clean-*) list='$(DIST_SUBDIRS)' ;; \
++	  *) list='$(SUBDIRS)' ;; \
++	esac; \
++	for subdir in $$list; do \
++	  echo "Making $$target in $$subdir"; \
++	  if test "$$subdir" = "."; then \
++	    dot_seen=yes; \
++	    local_target="$$target-am"; \
++	  else \
++	    local_target="$$target"; \
++	  fi; \
++	  ($(am__cd) $$subdir && $(MAKE) $(AM_MAKEFLAGS) $$local_target) \
++	  || eval $$failcom; \
++	done; \
++	if test "$$dot_seen" = "no"; then \
++	  $(MAKE) $(AM_MAKEFLAGS) "$$target-am" || exit 1; \
++	fi; test -z "$$fail"
++
++ID: $(am__tagged_files)
++	$(am__define_uniq_tagged_files); mkid -fID $$unique
++tags: tags-recursive
++TAGS: tags
++
++tags-am: $(TAGS_DEPENDENCIES) $(am__tagged_files)
++	set x; \
++	here=`pwd`; \
++	if ($(ETAGS) --etags-include --version) >/dev/null 2>&1; then \
++	  include_option=--etags-include; \
++	  empty_fix=.; \
++	else \
++	  include_option=--include; \
++	  empty_fix=; \
++	fi; \
++	list='$(SUBDIRS)'; for subdir in $$list; do \
++	  if test "$$subdir" = .; then :; else \
++	    test ! -f $$subdir/TAGS || \
++	      set "$$@" "$$include_option=$$here/$$subdir/TAGS"; \
++	  fi; \
++	done; \
++	$(am__define_uniq_tagged_files); \
++	shift; \
++	if test -z "$(ETAGS_ARGS)$$*$$unique"; then :; else \
++	  test -n "$$unique" || unique=$$empty_fix; \
++	  if test $$# -gt 0; then \
++	    $(ETAGS) $(ETAGSFLAGS) $(AM_ETAGSFLAGS) $(ETAGS_ARGS) \
++	      "$$@" $$unique; \
++	  else \
++	    $(ETAGS) $(ETAGSFLAGS) $(AM_ETAGSFLAGS) $(ETAGS_ARGS) \
++	      $$unique; \
++	  fi; \
++	fi
++ctags: ctags-recursive
+ 
+-cscope cscopelist:
++CTAGS: ctags
++ctags-am: $(TAGS_DEPENDENCIES) $(am__tagged_files)
++	$(am__define_uniq_tagged_files); \
++	test -z "$(CTAGS_ARGS)$$unique" \
++	  || $(CTAGS) $(CTAGSFLAGS) $(AM_CTAGSFLAGS) $(CTAGS_ARGS) \
++	     $$unique
++
++GTAGS:
++	here=`$(am__cd) $(top_builddir) && pwd` \
++	  && $(am__cd) $(top_srcdir) \
++	  && gtags -i $(GTAGS_ARGS) "$$here"
++cscopelist: cscopelist-recursive
++
++cscopelist-am: $(am__tagged_files)
++	list='$(am__tagged_files)'; \
++	case "$(srcdir)" in \
++	  [\\/]* | ?:[\\/]*) sdir="$(srcdir)" ;; \
++	  *) sdir=$(subdir)/$(srcdir) ;; \
++	esac; \
++	for i in $$list; do \
++	  if test -f "$$i"; then \
++	    echo "$(subdir)/$$i"; \
++	  else \
++	    echo "$$sdir/$$i"; \
++	  fi; \
++	done >> $(top_builddir)/cscope.files
+ 
++distclean-tags:
++	-rm -f TAGS ID GTAGS GRTAGS GSYMS GPATH tags
+ 
+ check-TESTS: $(TESTS)
+ 	@failed=0; all=0; xfail=0; xpass=0; skip=0; \
+@@ -493,20 +653,46 @@ distdir: $(DISTFILES)
+ 	    || exit 1; \
+ 	  fi; \
+ 	done
++	@list='$(DIST_SUBDIRS)'; for subdir in $$list; do \
++	  if test "$$subdir" = .; then :; else \
++	    $(am__make_dryrun) \
++	      || test -d "$(distdir)/$$subdir" \
++	      || $(MKDIR_P) "$(distdir)/$$subdir" \
++	      || exit 1; \
++	    dir1=$$subdir; dir2="$(distdir)/$$subdir"; \
++	    $(am__relativize); \
++	    new_distdir=$$reldir; \
++	    dir1=$$subdir; dir2="$(top_distdir)"; \
++	    $(am__relativize); \
++	    new_top_distdir=$$reldir; \
++	    echo " (cd $$subdir && $(MAKE) $(AM_MAKEFLAGS) top_distdir="$$new_top_distdir" distdir="$$new_distdir" \\"; \
++	    echo "     am__remove_distdir=: am__skip_length_check=: am__skip_mode_fix=: distdir)"; \
++	    ($(am__cd) $$subdir && \
++	      $(MAKE) $(AM_MAKEFLAGS) \
++	        top_distdir="$$new_top_distdir" \
++	        distdir="$$new_distdir" \
++		am__remove_distdir=: \
++		am__skip_length_check=: \
++		am__skip_mode_fix=: \
++	        distdir) \
++	      || exit 1; \
++	  fi; \
++	done
+ check-am: all-am
+ 	$(MAKE) $(AM_MAKEFLAGS) check-TESTS
+-check: check-am
++check: check-recursive
+ all-am: Makefile $(SCRIPTS)
+-installdirs:
+-install: install-am
+-install-exec: install-exec-am
+-install-data: install-data-am
+-uninstall: uninstall-am
++installdirs: installdirs-recursive
++installdirs-am:
++install: install-recursive
++install-exec: install-exec-recursive
++install-data: install-data-recursive
++uninstall: uninstall-recursive
+ 
+ install-am: all-am
+ 	@$(MAKE) $(AM_MAKEFLAGS) install-exec-am install-data-am
+ 
+-installcheck: installcheck-am
++installcheck: installcheck-recursive
+ install-strip:
+ 	if test -z '$(STRIP)'; then \
+ 	  $(MAKE) $(AM_MAKEFLAGS) INSTALL_PROGRAM="$(INSTALL_STRIP_PROGRAM)" \
+@@ -529,85 +715,86 @@ maintainer-clean-generic:
+ 	@echo "This command is intended for maintainers to use"
+ 	@echo "it deletes files that may require special tools to rebuild."
+ 	-test -z "$(MAINTAINERCLEANFILES)" || rm -f $(MAINTAINERCLEANFILES)
+-clean: clean-am
++clean: clean-recursive
+ 
+ clean-am: clean-generic clean-libtool mostlyclean-am
+ 
+-distclean: distclean-am
++distclean: distclean-recursive
+ 	-rm -f Makefile
+-distclean-am: clean-am distclean-generic
++distclean-am: clean-am distclean-generic distclean-tags
+ 
+-dvi: dvi-am
++dvi: dvi-recursive
+ 
+ dvi-am:
+ 
+-html: html-am
++html: html-recursive
+ 
+ html-am:
+ 
+-info: info-am
++info: info-recursive
+ 
+ info-am:
+ 
+ install-data-am:
+ 
+-install-dvi: install-dvi-am
++install-dvi: install-dvi-recursive
+ 
+ install-dvi-am:
+ 
+ install-exec-am:
+ 
+-install-html: install-html-am
++install-html: install-html-recursive
+ 
+ install-html-am:
+ 
+-install-info: install-info-am
++install-info: install-info-recursive
+ 
+ install-info-am:
+ 
+ install-man:
+ 
+-install-pdf: install-pdf-am
++install-pdf: install-pdf-recursive
+ 
+ install-pdf-am:
+ 
+-install-ps: install-ps-am
++install-ps: install-ps-recursive
+ 
+ install-ps-am:
+ 
+ installcheck-am:
+ 
+-maintainer-clean: maintainer-clean-am
++maintainer-clean: maintainer-clean-recursive
+ 	-rm -f Makefile
+ maintainer-clean-am: distclean-am maintainer-clean-generic
+ 
+-mostlyclean: mostlyclean-am
++mostlyclean: mostlyclean-recursive
+ 
+ mostlyclean-am: mostlyclean-generic mostlyclean-libtool
+ 
+-pdf: pdf-am
++pdf: pdf-recursive
+ 
+ pdf-am:
+ 
+-ps: ps-am
++ps: ps-recursive
+ 
+ ps-am:
+ 
+ uninstall-am:
+ 
+-.MAKE: check-am install-am install-strip
++.MAKE: $(am__recursive_targets) check-am install-am install-strip
+ 
+-.PHONY: all all-am check check-TESTS check-am clean clean-generic \
+-	clean-libtool cscopelist-am ctags-am distclean \
+-	distclean-generic distclean-libtool distdir dvi dvi-am html \
++.PHONY: $(am__recursive_targets) CTAGS GTAGS TAGS all all-am check \
++	check-TESTS check-am clean clean-generic clean-libtool \
++	cscopelist-am ctags ctags-am distclean distclean-generic \
++	distclean-libtool distclean-tags distdir dvi dvi-am html \
+ 	html-am info info-am install install-am install-data \
+ 	install-data-am install-dvi install-dvi-am install-exec \
+ 	install-exec-am install-html install-html-am install-info \
+ 	install-info-am install-man install-pdf install-pdf-am \
+ 	install-ps install-ps-am install-strip installcheck \
+-	installcheck-am installdirs maintainer-clean \
++	installcheck-am installdirs installdirs-am maintainer-clean \
+ 	maintainer-clean-generic mostlyclean mostlyclean-generic \
+-	mostlyclean-libtool pdf pdf-am ps ps-am tags-am uninstall \
++	mostlyclean-libtool pdf pdf-am ps ps-am tags tags-am uninstall \
+ 	uninstall-am
+ 
+ 
+Только в openvpn-2.3.10/tests: t_client.sh
+diff -urp openvpn-2.3.10/tests/t_lpback.sh openvpn-2.3.x/tests/t_lpback.sh
+--- openvpn-2.3.10/tests/t_lpback.sh	2015-12-21 19:56:50.000000000 +0700
++++ openvpn-2.3.x/tests/t_lpback.sh	2016-09-03 17:42:55.519647195 +0700
+@@ -26,7 +26,7 @@ trap "rm -f key.$$ log.$$ ; exit 1" 0 3
+ 
+ # Get list of supported ciphers from openvpn --show-ciphers output
+ CIPHERS=$(${top_builddir}/src/openvpn/openvpn --show-ciphers | \
+-            sed -e '1,/^$/d' -e s'/ .*//' -e '/^\s*$/d' | sort)
++            sed -e '/The following/,/^$/d' -e s'/ .*//' -e '/^\s*$/d')
+ 
+ # SK, 2014-06-04: currently the DES-EDE3-CFB1 implementation of OpenSSL is
+ # broken (see http://rt.openssl.org/Ticket/Display.html?id=2867), so exclude
+Только в openvpn-2.3.x/tests: unit_tests
+Только в openvpn-2.3.x: vendor
+diff -urp openvpn-2.3.10/version.m4 openvpn-2.3.x/version.m4
+--- openvpn-2.3.10/version.m4	2016-01-04 19:17:32.000000000 +0700
++++ openvpn-2.3.x/version.m4	2016-09-03 17:42:55.523647195 +0700
+@@ -1,9 +1,9 @@
+ dnl define the OpenVPN version
+ define([PRODUCT_NAME], [OpenVPN])
+ define([PRODUCT_TARNAME], [openvpn])
+-define([PRODUCT_VERSION], [2.3.10])
++define([PRODUCT_VERSION], [2.3.12])
+ define([PRODUCT_BUGREPORT], [openvpn-users@lists.sourceforge.net])
+-define([PRODUCT_VERSION_RESOURCE], [2,3,10,0])
++define([PRODUCT_VERSION_RESOURCE], [2,3,12,0])
+ dnl define the TAP version
+ define([PRODUCT_TAP_WIN_COMPONENT_ID], [tap0901])
+ define([PRODUCT_TAP_WIN_MIN_MAJOR], [9])

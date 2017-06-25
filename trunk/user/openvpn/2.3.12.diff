@@ -1,0 +1,35 @@
+Только в openvpn-2.3.12/distro/rpm: openvpn.spec
+Только в openvpn-2.3.x: Makefile.in.orig
+diff -urp openvpn-2.3.12/src/openvpn/crypto.c openvpn-2.3.x/src/openvpn/crypto.c
+--- openvpn-2.3.12/src/openvpn/crypto.c	2016-08-23 21:16:22.000000000 +0700
++++ openvpn-2.3.x/src/openvpn/crypto.c	2016-09-03 17:42:55.515647194 +0700
+@@ -494,12 +494,14 @@ init_key_ctx (struct key_ctx *ctx, struc
+       dmsg (D_CRYPTO_DEBUG, "%s: CIPHER block_size=%d iv_size=%d",
+           prefix, cipher_kt_block_size(kt->cipher),
+ 	  cipher_kt_iv_size(kt->cipher));
++#if 0
+       if (cipher_kt_block_size(kt->cipher) < 128/8)
+ 	{
+ 	  msg (M_WARN, "WARNING: this cipher's block size is less than 128 bit "
+ 	      "(%d bit).  Consider using a --cipher with a larger block size.",
+ 	      cipher_kt_block_size(kt->cipher)*8);
+ 	}
++#endif
+     }
+   if (kt->digest && kt->hmac_length > 0)
+     {
+diff -urp openvpn-2.3.12/src/openvpn/init.c openvpn-2.3.x/src/openvpn/init.c
+--- openvpn-2.3.12/src/openvpn/init.c	2016-08-23 21:16:22.000000000 +0700
++++ openvpn-2.3.x/src/openvpn/init.c	2016-09-03 17:42:55.519647195 +0700
+@@ -2543,8 +2543,10 @@ do_option_warnings (struct context *c)
+     msg (M_WARN, "WARNING: using --pull/--client and --ifconfig together is probably not what you want");
+ 
+ #if P2MP_SERVER
++#if 0
+   if (o->server_bridge_defined | o->server_bridge_proxy_dhcp)
+     msg (M_WARN, "NOTE: when bridging your LAN adapter with the TAP adapter, note that the new bridge adapter will often take on its own IP address that is different from what the LAN adapter was previously set to");
++#endif
+ 
+   if (o->mode == MODE_SERVER)
+     {
+Только в openvpn-2.3.12/tests: t_client.sh

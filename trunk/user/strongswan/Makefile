@@ -1,4 +1,4 @@
-SRC_NAME=strongswan-5.5.1
+SRC_NAME=strongswan-5.5.3
 URL_PATH=https://download.strongswan.org/$(SRC_NAME).tar.bz2
 
 CFLAGS += -ffunction-sections -fdata-sections
@@ -34,8 +34,6 @@ configure:
 		--with-sysroot=$(STAGEDIR) \
 		--prefix=/usr \
 		--sysconfdir=/etc/storage/strongswan \
-		--disable-static \
-		--enable-shared \
 		--disable-pki \
 		--disable-fips-prf \
 		--disable-gmp \
@@ -68,9 +66,10 @@ configure:
 		--enable-eap-mschapv2 \
 		--enable-xauth-eap \
 		--enable-xauth-noauth \
-		--enable-xauth-generic \
 		--enable-systime-fix \
 		--enable-monolithic \
+		--with-resolv-conf=/etc/resolv.conf \
+		--with-user=admin \
 		--host=$(HOST_TARGET) \
 		--build=$(HOST_BUILD) ; \
 	)

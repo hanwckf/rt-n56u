@@ -621,6 +621,7 @@ backup)
 	func_backup
 	;;
 restore)
+	func_get_mtd
 	func_restore
 	;;
 erase)

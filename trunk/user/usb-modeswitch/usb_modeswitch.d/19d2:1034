@@ -1,0 +1,4 @@
+# Vodafone / ZTE R206-z Router
+TargetVendor=0x19d2
+TargetProductList="1035,1036,1037"
+StandardEject=1

@@ -1,5 +1,5 @@
 PROG        = usb_modeswitch
-VERS        = 2.4.0
+VERS        = 2.5.0
 CC          ?= gcc
 CFLAGS     += -I$(STAGEDIR)/include/libusb-1.0
 CFLAGS     += -Wall -ffunction-sections -fdata-sections

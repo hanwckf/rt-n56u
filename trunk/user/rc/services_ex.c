@@ -20,14 +20,14 @@
 #include <string.h>
 #include <signal.h>
 #include <unistd.h>
-#include <sys/fcntl.h>
+#include <errno.h>
+#include <time.h>
 #include <dirent.h>
 #include <syslog.h>
+#include <sys/fcntl.h>
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <sys/time.h>
-#include <errno.h>
-#include <time.h>
 #include <sys/ioctl.h>
 #include <net/ethernet.h>
 

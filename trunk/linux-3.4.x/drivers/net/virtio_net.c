@@ -1072,7 +1072,7 @@ static int virtnet_probe(struct virtio_device *vdev)
 	vi->vdev = vdev;
 	vdev->priv = vi;
 	vi->pages = NULL;
-	vi->stats = alloc_percpu(struct virtnet_stats);
+	vi->stats = netdev_alloc_pcpu_stats(struct virtnet_stats);
 	err = -ENOMEM;
 	if (vi->stats == NULL)
 		goto free;

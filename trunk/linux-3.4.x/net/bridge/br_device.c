@@ -83,7 +83,7 @@ static int br_dev_init(struct net_device *dev)
 {
 	struct net_bridge *br = netdev_priv(dev);
 
-	br->stats = alloc_percpu(struct br_cpu_netstats);
+	br->stats = netdev_alloc_pcpu_stats(struct br_cpu_netstats);
 	if (!br->stats)
 		return -ENOMEM;
 

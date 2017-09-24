@@ -320,6 +320,9 @@ int ip_output(struct sk_buff *skb)
 			    ip_finish_output,
 			    !(IPCB(skb)->flags & IPSKB_REROUTED));
 }
+#if IS_ENABLED(CONFIG_RALINK_HWCRYPTO)
+EXPORT_SYMBOL(ip_output);
+#endif
 
 int ip_queue_xmit(struct sk_buff *skb, struct flowi *fl)
 {
@@ -495,7 +498,7 @@ int ip_fragment(struct sk_buff *skb, int (*output)(struct sk_buff *))
 	 */
 	if (skb_has_frag_list(skb)) {
 		struct sk_buff *frag, *frag2;
-		int first_len = skb_pagelen(skb);
+		unsigned int first_len = skb_pagelen(skb);
 
 		if (first_len - hlen > mtu ||
 		    ((first_len - hlen) & 7) ||

@@ -1,0 +1,4 @@
+# ZTE MF730
+TargetVendor=0x19d2
+TargetProduct=0x1047
+StandardEject=1

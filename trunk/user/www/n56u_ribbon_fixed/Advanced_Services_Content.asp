@@ -496,6 +496,7 @@ function change_crond_enabled(){
                                                 </div>
                                             </td>
                                         </tr>
+                                        <tr>
                                             <th><#Adm_Svc_crond#></th>
                                             <td>
                                                 <div class="main_itoggle">

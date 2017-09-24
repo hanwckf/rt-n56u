@@ -56,7 +56,7 @@ static int xfrm_bundle_ok(struct xfrm_dst *xdst);
 static struct xfrm_policy *__xfrm_policy_unlink(struct xfrm_policy *pol,
 						int dir);
 
-static inline int
+static inline bool
 __xfrm4_selector_match(const struct xfrm_selector *sel, const struct flowi *fl)
 {
 	const struct flowi4 *fl4 = &fl->u.ip4;
@@ -69,7 +69,7 @@ __xfrm4_selector_match(const struct xfrm_selector *sel, const struct flowi *fl)
 		(fl4->flowi4_oif == sel->ifindex || !sel->ifindex);
 }
 
-static inline int
+static inline bool
 __xfrm6_selector_match(const struct xfrm_selector *sel, const struct flowi *fl)
 {
 	const struct flowi6 *fl6 = &fl->u.ip6;
@@ -82,8 +82,8 @@ __xfrm6_selector_match(const struct xfrm_selector *sel, const struct flowi *fl)
 		(fl6->flowi6_oif == sel->ifindex || !sel->ifindex);
 }
 
-int xfrm_selector_match(const struct xfrm_selector *sel, const struct flowi *fl,
-			unsigned short family)
+bool xfrm_selector_match(const struct xfrm_selector *sel, const struct flowi *fl,
+			 unsigned short family)
 {
 	switch (family) {
 	case AF_INET:
@@ -91,7 +91,7 @@ int xfrm_selector_match(const struct xfrm_selector *sel, const struct flowi *fl,
 	case AF_INET6:
 		return __xfrm6_selector_match(sel, fl);
 	}
-	return 0;
+	return false;
 }
 
 static inline struct dst_entry *__xfrm_dst_lookup(struct net *net, int tos,
@@ -584,6 +584,7 @@ int xfrm_policy_insert(int dir, struct xfrm_policy *policy, int excl)
 	xfrm_pol_hold(policy);
 	net->xfrm.policy_count[dir]++;
 	atomic_inc(&flow_cache_genid);
+	rt_cache_flush(net, -1);
 	if (delpol)
 		__xfrm_policy_unlink(delpol, dir);
 	policy->index = delpol ? delpol->index : xfrm_gen_index(net, dir);
@@ -877,7 +878,8 @@ static int xfrm_policy_match(const struct xfrm_policy *pol,
 			     u8 type, u16 family, int dir)
 {
 	const struct xfrm_selector *sel = &pol->selector;
-	int match, ret = -ESRCH;
+	int ret = -ESRCH;
+	bool match;
 
 	if (pol->family != family ||
 	    (fl->flowi_mark & pol->mark.m) != pol->mark.v ||
@@ -962,6 +964,24 @@ __xfrm_policy_lookup(struct net *net, const struct flowi *fl, u16 family, u8 dir
 	return xfrm_policy_lookup_bytype(net, XFRM_POLICY_TYPE_MAIN, fl, family, dir);
 }
 
+static int flow_to_policy_dir(int dir)
+{
+	if (XFRM_POLICY_IN == FLOW_DIR_IN &&
+	    XFRM_POLICY_OUT == FLOW_DIR_OUT &&
+	    XFRM_POLICY_FWD == FLOW_DIR_FWD)
+		return dir;
+
+	switch (dir) {
+	default:
+	case FLOW_DIR_IN:
+		return XFRM_POLICY_IN;
+	case FLOW_DIR_OUT:
+		return XFRM_POLICY_OUT;
+	case FLOW_DIR_FWD:
+		return XFRM_POLICY_FWD;
+	}
+}
+
 static struct flow_cache_object *
 xfrm_policy_lookup(struct net *net, const struct flowi *fl, u16 family,
 		   u8 dir, struct flow_cache_object *old_obj, void *ctx)
@@ -971,7 +991,7 @@ xfrm_policy_lookup(struct net *net, const struct flowi *fl, u16 family,
 	if (old_obj)
 		xfrm_pol_put(container_of(old_obj, struct xfrm_policy, flo));
 
-	pol = __xfrm_policy_lookup(net, fl, family, dir);
+	pol = __xfrm_policy_lookup(net, fl, family, flow_to_policy_dir(dir));
 	if (IS_ERR_OR_NULL(pol))
 		return ERR_CAST(pol);
 
@@ -1006,8 +1026,8 @@ static struct xfrm_policy *xfrm_sk_policy_lookup(struct sock *sk, int dir,
 
 	read_lock_bh(&xfrm_policy_lock);
 	if ((pol = sk->sk_policy[dir]) != NULL) {
-		int match = xfrm_selector_match(&pol->selector, fl,
-						sk->sk_family);
+		bool match = xfrm_selector_match(&pol->selector, fl,
+						 sk->sk_family);
 		int err = 0;
 
 		if (match) {
@@ -1056,7 +1076,7 @@ static struct xfrm_policy *__xfrm_policy_unlink(struct xfrm_policy *pol,
 	if (hlist_unhashed(&pol->bydst))
 		return NULL;
 
-	hlist_del(&pol->bydst);
+	hlist_del_init(&pol->bydst);
 	hlist_del(&pol->byidx);
 	list_del(&pol->walk.all);
 	net->xfrm.policy_count[dir]--;
@@ -1686,7 +1706,8 @@ xfrm_bundle_lookup(struct net *net, const struct flowi *fl, u16 family, u8 dir,
 	 * previous cache entry */
 	if (xdst == NULL) {
 		num_pols = 1;
-		pols[0] = __xfrm_policy_lookup(net, fl, family, dir);
+		pols[0] = __xfrm_policy_lookup(net, fl, family,
+					       flow_to_policy_dir(dir));
 		err = xfrm_expand_policies(fl, family, pols,
 					   &num_pols, &num_xfrms);
 		if (err < 0)
@@ -2291,11 +2312,12 @@ static void __xfrm_garbage_collect(struct net *net)
 	}
 }
 
-static void xfrm_garbage_collect(struct net *net)
+void xfrm_garbage_collect(struct net *net)
 {
 	flow_cache_flush();
 	__xfrm_garbage_collect(net);
 }
+EXPORT_SYMBOL(xfrm_garbage_collect);
 
 static void xfrm_garbage_collect_deferred(struct net *net)
 {
@@ -2645,7 +2667,7 @@ static void xfrm_policy_fini(struct net *net)
 		WARN_ON(!hlist_empty(&net->xfrm.policy_inexact[dir]));
 
 		htab = &net->xfrm.policy_bydst[dir];
-		sz = (htab->hmask + 1);
+		sz = (htab->hmask + 1) * sizeof(struct hlist_head);
 		WARN_ON(!hlist_empty(htab->table));
 		xfrm_hash_free(htab->table, sz);
 	}
@@ -2770,25 +2792,25 @@ EXPORT_SYMBOL_GPL(xfrm_audit_policy_delete);
 #endif
 
 #ifdef CONFIG_XFRM_MIGRATE
-static int xfrm_migrate_selector_match(const struct xfrm_selector *sel_cmp,
-				       const struct xfrm_selector *sel_tgt)
+static bool xfrm_migrate_selector_match(const struct xfrm_selector *sel_cmp,
+					const struct xfrm_selector *sel_tgt)
 {
 	if (sel_cmp->proto == IPSEC_ULPROTO_ANY) {
 		if (sel_tgt->family == sel_cmp->family &&
-		    xfrm_addr_cmp(&sel_tgt->daddr, &sel_cmp->daddr,
-				  sel_cmp->family) == 0 &&
-		    xfrm_addr_cmp(&sel_tgt->saddr, &sel_cmp->saddr,
-				  sel_cmp->family) == 0 &&
+		    xfrm_addr_equal(&sel_tgt->daddr, &sel_cmp->daddr,
+				    sel_cmp->family) &&
+		    xfrm_addr_equal(&sel_tgt->saddr, &sel_cmp->saddr,
+				    sel_cmp->family) &&
 		    sel_tgt->prefixlen_d == sel_cmp->prefixlen_d &&
 		    sel_tgt->prefixlen_s == sel_cmp->prefixlen_s) {
-			return 1;
+			return true;
 		}
 	} else {
 		if (memcmp(sel_tgt, sel_cmp, sizeof(*sel_tgt)) == 0) {
-			return 1;
+			return true;
 		}
 	}
-	return 0;
+	return false;
 }
 
 static struct xfrm_policy * xfrm_migrate_policy_find(const struct xfrm_selector *sel,
@@ -2836,10 +2858,10 @@ static int migrate_tmpl_match(const struct xfrm_migrate *m, const struct xfrm_tm
 		switch (t->mode) {
 		case XFRM_MODE_TUNNEL:
 		case XFRM_MODE_BEET:
-			if (xfrm_addr_cmp(&t->id.daddr, &m->old_daddr,
-					  m->old_family) == 0 &&
-			    xfrm_addr_cmp(&t->saddr, &m->old_saddr,
-					  m->old_family) == 0) {
+			if (xfrm_addr_equal(&t->id.daddr, &m->old_daddr,
+					    m->old_family) &&
+			    xfrm_addr_equal(&t->saddr, &m->old_saddr,
+					    m->old_family)) {
 				match = 1;
 			}
 			break;
@@ -2905,10 +2927,10 @@ static int xfrm_migrate_check(const struct xfrm_migrate *m, int num_migrate)
 		return -EINVAL;
 
 	for (i = 0; i < num_migrate; i++) {
-		if ((xfrm_addr_cmp(&m[i].old_daddr, &m[i].new_daddr,
-				   m[i].old_family) == 0) &&
-		    (xfrm_addr_cmp(&m[i].old_saddr, &m[i].new_saddr,
-				   m[i].old_family) == 0))
+		if (xfrm_addr_equal(&m[i].old_daddr, &m[i].new_daddr,
+				    m[i].old_family) &&
+		    xfrm_addr_equal(&m[i].old_saddr, &m[i].new_saddr,
+				    m[i].old_family))
 			return -EINVAL;
 		if (xfrm_addr_any(&m[i].new_daddr, m[i].new_family) ||
 		    xfrm_addr_any(&m[i].new_saddr, m[i].new_family))

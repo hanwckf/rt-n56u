@@ -5254,17 +5254,16 @@ static void mt76x2_long_range_dync_vga(RTMP_ADAPTER * pAd)
 {
 	UCHAR val1;
 	UINT32 bbp_val1;
-	static UCHAR long_range_compensate_level = 0;
 
 	RTMP_BBP_IO_READ32(pAd, AGC1_R8, &bbp_val1);
 	/* start with initial gain in this phase */
-	val1 = pAd->CommonCfg.lna_vga_ctl.agc_vga_ori_0 - long_range_compensate_level;
-		
+	val1 = pAd->CommonCfg.lna_vga_ctl.agc_vga_ori_0 - pAd->CommonCfg.lna_vga_ctl.long_range_compensate_level;
+
 	if (pAd->RalinkCounters.OneSecFalseCCACnt > pAd->CommonCfg.lna_vga_ctl.nFalseCCATh) {
 		if (val1 > (pAd->CommonCfg.lna_vga_ctl.agc_vga_ori_0 - 0x04)) {
 			val1 -= 0x02;
-			if(long_range_compensate_level + 0x02 <= 0x04)
-				long_range_compensate_level += 0x02;
+			if ((pAd->CommonCfg.lna_vga_ctl.long_range_compensate_level + 0x02) <= 0x04)
+				pAd->CommonCfg.lna_vga_ctl.long_range_compensate_level += 0x02;
 			bbp_val1 = (bbp_val1 & 0xffff80ff) | (val1 << 8);
 			RTMP_BBP_IO_WRITE32(pAd, AGC1_R8, bbp_val1);
 			if (pAd->CommonCfg.RxStream >= 2) { 			
@@ -5274,13 +5273,13 @@ static void mt76x2_long_range_dync_vga(RTMP_ADAPTER * pAd)
 			pAd->CommonCfg.RadarDetect.bAdjustDfsAgc = TRUE;
 #endif
 		}			
-	} else if (pAd->RalinkCounters.OneSecFalseCCACnt < 
-				pAd->CommonCfg.lna_vga_ctl.nLowFalseCCATh) {
+	} else if (pAd->RalinkCounters.OneSecFalseCCACnt < pAd->CommonCfg.lna_vga_ctl.nLowFalseCCATh) {
 		if (val1 < pAd->CommonCfg.lna_vga_ctl.agc_vga_ori_0) {
 			val1 += 0x02;				
-			long_range_compensate_level -= 0x02;
-			if(long_range_compensate_level < 0)
-				long_range_compensate_level = 0;				
+			if (pAd->CommonCfg.lna_vga_ctl.long_range_compensate_level < 2)
+				pAd->CommonCfg.lna_vga_ctl.long_range_compensate_level = 0;
+			else
+				pAd->CommonCfg.lna_vga_ctl.long_range_compensate_level -= 0x02;
 			bbp_val1 = (bbp_val1 & 0xffff80ff) | (val1 << 8);
 			RTMP_BBP_IO_WRITE32(pAd, AGC1_R8, bbp_val1);
 			if (pAd->CommonCfg.RxStream >= 2) { 				

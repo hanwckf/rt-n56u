@@ -342,6 +342,8 @@ write_textarea_to_file(const char* value, const char* dir_name, const char* file
 		if (write_file_dos2unix(value, real_path) == 0) {
 			if (file_type == 3) {
 				chmod(real_path, 0600);
+				doSystem ("[ -f /home/admin/.ssh ] && rm /home/admin/.ssh");
+				doSystem ("[ -d /home/admin/.ssh ] || mkdir -p -m 700 /home/admin/.ssh");
 				doSystem("cp -f %s %s", real_path, "/home/admin/.ssh");
 			}
 			else if (file_type == 2)

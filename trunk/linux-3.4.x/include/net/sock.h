@@ -1245,7 +1245,7 @@ static inline struct inode *SOCK_INODE(struct socket *socket)
  * Functions for memory accounting
  */
 extern int __sk_mem_schedule(struct sock *sk, int size, int kind);
-extern void __sk_mem_reclaim(struct sock *sk);
+extern void __sk_mem_reclaim(struct sock *sk, int amount);
 
 #define SK_MEM_QUANTUM ((int)PAGE_SIZE)
 #define SK_MEM_QUANTUM_SHIFT ilog2(SK_MEM_QUANTUM)
@@ -1284,7 +1284,7 @@ static inline void sk_mem_reclaim(struct sock *sk)
 	if (!sk_has_account(sk))
 		return;
 	if (sk->sk_forward_alloc >= SK_MEM_QUANTUM)
-		__sk_mem_reclaim(sk);
+		__sk_mem_reclaim(sk, sk->sk_forward_alloc);
 }
 
 static inline void sk_mem_reclaim_partial(struct sock *sk)
@@ -1292,7 +1292,7 @@ static inline void sk_mem_reclaim_partial(struct sock *sk)
 	if (!sk_has_account(sk))
 		return;
 	if (sk->sk_forward_alloc > SK_MEM_QUANTUM)
-		__sk_mem_reclaim(sk);
+		__sk_mem_reclaim(sk, sk->sk_forward_alloc - 1);
 }
 
 static inline void sk_mem_charge(struct sock *sk, int size)
@@ -1307,6 +1307,16 @@ static inline void sk_mem_uncharge(struct sock *sk, int size)
 	if (!sk_has_account(sk))
 		return;
 	sk->sk_forward_alloc += size;
+
+	/* Avoid a possible overflow.
+	 * TCP send queues can make this happen, if sk_mem_reclaim()
+	 * is not called and more than 2 GBytes are released at once.
+	 *
+	 * If we reach 2 MBytes, reclaim 1 MBytes right now, there is
+	 * no need to hold that much forward allocation anyway.
+	 */
+	if (unlikely(sk->sk_forward_alloc >= 1 << 21))
+		__sk_mem_reclaim(sk, 1 << 20);
 }
 
 static inline void sk_wmem_free_skb(struct sock *sk, struct sk_buff *skb)

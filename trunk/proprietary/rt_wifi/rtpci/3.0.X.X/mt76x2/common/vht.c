@@ -27,6 +27,15 @@
 
 #include "rt_config.h"
 
+/* some buggy BCM clients can not work with 80MHz */
+#define BAD_VHT80_WORKAROUND
+
+#ifdef BAD_VHT80_WORKAROUND
+static const UCHAR BAD_VHT80_OUI[][3] = {
+	{0x3C, 0xFA, 0x43},	// Huawei P9
+	{0x7C, 0x11, 0xCB},	// Huawei Honor 8
+};
+#endif /* BAD_VHT80_WORKAROUND */
 
 struct vht_ch_layout{
 	UCHAR ch_low_bnd;
@@ -280,17 +289,75 @@ UCHAR vht_cent_ch_freq(RTMP_ADAPTER *pAd, UCHAR prim_ch)
 
 INT vht_mode_adjust(RTMP_ADAPTER *pAd, MAC_TABLE_ENTRY *pEntry, VHT_CAP_IE *cap, VHT_OP_IE *op)
 {
+	struct wifi_dev *wdev;
+	INT vht_bw = VHT_BW_80;
+
 	pEntry->MaxHTPhyMode.field.MODE = MODE_VHT;
 	pAd->CommonCfg.AddHTInfo.AddHtInfo2.NonGfPresent = 1;
 	pAd->MacTab.fAnyStationNonGF = TRUE;
 
-	if (op->vht_op_info.ch_width >= 1 && pEntry->MaxHTPhyMode.field.BW == BW_40)
+	wdev = pEntry->wdev;
+	if (wdev)
+		vht_bw = wdev->DesiredHtPhyInfo.vht_bw;
+
+	DBGPRINT(RT_DEBUG_TRACE, ("%s: DesiredHtPhyInfo->vht_bw=%d, ch_width=%d\n", __FUNCTION__,
+		vht_bw, cap->vht_cap.ch_width));
+
+	if (pEntry->MaxHTPhyMode.field.BW == BW_40)
 	{
-		pEntry->MaxHTPhyMode.field.BW= BW_80;
-		pEntry->MaxHTPhyMode.field.ShortGI = (cap->vht_cap.sgi_80M);
-		pEntry->MaxHTPhyMode.field.STBC = (cap->vht_cap.rx_stbc > 1 ? 1 : 0);
+		if (vht_bw == VHT_BW_80)
+		{
+			if (cap->vht_cap.ch_width == 0)
+			{
+				if (op != NULL)
+				{
+					if (op->vht_op_info.ch_width != 0)
+					{
+						pEntry->MaxHTPhyMode.field.BW = BW_80;
+					}
+				}
+				else
+				{
+					/* can not know peer capability, use it's maximum capability */
+					pEntry->MaxHTPhyMode.field.BW = BW_80;
+#ifdef BAD_VHT80_WORKAROUND
+					/* skip DB region */
+					if ((pAd->CommonCfg.CountryRegionForABand & 0x7f) != 7)
+					{
+						INT i;
+
+						/* some buggy BCM clients can not work with 80MHz */
+						for (i = 0; i < sizeof(BAD_VHT80_OUI) / 3; i++)
+						{
+							if (NdisEqualMemory(pEntry->Addr, &BAD_VHT80_OUI[i][0], 3))
+							{
+								pEntry->MaxHTPhyMode.field.BW = BW_40;
+								printk("%s: drop buggy OUI: %02X-%02X-%02X to VHT40!\n",
+									"mt7612",
+									BAD_VHT80_OUI[i][0],
+									BAD_VHT80_OUI[i][1],
+									BAD_VHT80_OUI[i][2]);
+								break;
+							}
+						}
+					}
+#endif /* BAD_VHT80_WORKAROUND */
+				}
+			}
+			else
+			{
+				pEntry->MaxHTPhyMode.field.BW = BW_80;
+			}
+		}
 	}
-				
+
+	pEntry->MaxHTPhyMode.field.STBC = (pAd->CommonCfg.vht_stbc && cap->vht_cap.rx_stbc > 1) ? 1 : 0;
+
+	if (pEntry->MaxHTPhyMode.field.BW == BW_80)
+	{
+		pEntry->MaxHTPhyMode.field.ShortGI = (pAd->CommonCfg.vht_sgi_80 && cap->vht_cap.sgi_80M) ? 1 : 0;
+	}
+
 	return TRUE;
 }
 

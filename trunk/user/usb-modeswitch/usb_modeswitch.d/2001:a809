@@ -1,0 +1,4 @@
+# D-Link DWM-157 A1
+TargetVendor=0x2001
+TargetProduct=0x7900
+StandardEject=1

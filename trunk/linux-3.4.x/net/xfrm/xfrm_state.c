@@ -28,6 +28,13 @@
 
 #include "xfrm_hash.h"
 
+#if IS_ENABLED(CONFIG_RALINK_HWCRYPTO)
+#include "xfrm_hwcrypto.h"
+
+void (*ipsec_spi_free_hook)(unsigned int spi) = NULL;
+EXPORT_SYMBOL(ipsec_spi_free_hook);
+#endif
+
 /* Each xfrm_state may be linked to two tables:
 
    1. Hash table by (spi,daddr,ah/esp) to find SA by SPI. (input,ctl)
@@ -38,9 +45,6 @@
 static DEFINE_SPINLOCK(xfrm_state_lock);
 
 static unsigned int xfrm_state_hashmax __read_mostly = 1 * 1024 * 1024;
-
-static struct xfrm_state_afinfo *xfrm_state_get_afinfo(unsigned int family);
-static void xfrm_state_put_afinfo(struct xfrm_state_afinfo *afinfo);
 
 static inline unsigned int xfrm_dst_hash(struct net *net,
 					 const xfrm_address_t *daddr,
@@ -415,8 +419,17 @@ static enum hrtimer_restart xfrm_timer_handler(struct hrtimer * me)
 	if (x->lft.hard_add_expires_seconds) {
 		long tmo = x->lft.hard_add_expires_seconds +
 			x->curlft.add_time - now;
-		if (tmo <= 0)
-			goto expired;
+		if (tmo <= 0) {
+			if (x->xflags & XFRM_SOFT_EXPIRE) {
+				/* enter hard expire without soft expire first?!
+				 * setting a new date could trigger this.
+				 * workarbound: fix x->curflt.add_time by below:
+				 */
+				x->curlft.add_time = now - x->saved_tmo - 1;
+				tmo = x->lft.hard_add_expires_seconds - x->saved_tmo;
+			} else
+				goto expired;
+		}
 		if (tmo < next)
 			next = tmo;
 	}
@@ -433,10 +446,14 @@ static enum hrtimer_restart xfrm_timer_handler(struct hrtimer * me)
 	if (x->lft.soft_add_expires_seconds) {
 		long tmo = x->lft.soft_add_expires_seconds +
 			x->curlft.add_time - now;
-		if (tmo <= 0)
+		if (tmo <= 0) {
 			warn = 1;
-		else if (tmo < next)
+			x->xflags &= ~XFRM_SOFT_EXPIRE;
+		} else if (tmo < next) {
 			next = tmo;
+			x->xflags |= XFRM_SOFT_EXPIRE;
+			x->saved_tmo = tmo;
+		}
 	}
 	if (x->lft.soft_use_expires_seconds) {
 		long tmo = x->lft.soft_use_expires_seconds +
@@ -466,7 +483,7 @@ expired:
 	}
 
 	err = __xfrm_state_delete(x);
-	if (!err && x->id.spi)
+	if (!err)
 		km_state_expired(x, 1, 0);
 
 	xfrm_audit_state_delete(x, err ? 0 : 1,
@@ -494,7 +511,8 @@ struct xfrm_state *xfrm_state_alloc(struct net *net)
 		INIT_HLIST_NODE(&x->bydst);
 		INIT_HLIST_NODE(&x->bysrc);
 		INIT_HLIST_NODE(&x->byspi);
-		tasklet_hrtimer_init(&x->mtimer, xfrm_timer_handler, CLOCK_REALTIME, HRTIMER_MODE_ABS);
+		tasklet_hrtimer_init(&x->mtimer, xfrm_timer_handler,
+					CLOCK_BOOTTIME, HRTIMER_MODE_ABS);
 		setup_timer(&x->rtimer, xfrm_replay_timer_handler,
 				(unsigned long)x);
 		x->curlft.add_time = get_seconds();
@@ -547,6 +565,26 @@ int __xfrm_state_delete(struct xfrm_state *x)
 		 */
 		xfrm_state_put(x);
 		err = 0;
+
+#if IS_ENABLED(CONFIG_RALINK_HWCRYPTO)
+		if (x->type != NULL) {
+			if (x->type->description[0] == 'E' &&
+#if defined(CONFIG_RALINK_HWCRYPTO_ESP6)
+			    x->type->description[1] == 'S')
+#else
+			    x->type->description[3] == '4')
+#endif
+			{
+				typeof(ipsec_spi_free_hook) ipsec_spi_free;
+
+				rcu_read_lock();
+				ipsec_spi_free = rcu_dereference(ipsec_spi_free_hook);
+				if (ipsec_spi_free)
+					ipsec_spi_free(x->id.spi);
+				rcu_read_unlock();
+			}
+		}
+#endif
 	}
 
 	return err;
@@ -686,7 +724,7 @@ static struct xfrm_state *__xfrm_state_lookup(struct net *net, u32 mark,
 		if (x->props.family != family ||
 		    x->id.spi       != spi ||
 		    x->id.proto     != proto ||
-		    xfrm_addr_cmp(&x->id.daddr, daddr, family))
+		    !xfrm_addr_equal(&x->id.daddr, daddr, family))
 			continue;
 
 		if ((mark & x->mark.m) != x->mark.v)
@@ -710,8 +748,8 @@ static struct xfrm_state *__xfrm_state_lookup_byaddr(struct net *net, u32 mark,
 	hlist_for_each_entry(x, entry, net->xfrm.state_bysrc+h, bysrc) {
 		if (x->props.family != family ||
 		    x->id.proto     != proto ||
-		    xfrm_addr_cmp(&x->id.daddr, daddr, family) ||
-		    xfrm_addr_cmp(&x->props.saddr, saddr, family))
+		    !xfrm_addr_equal(&x->id.daddr, daddr, family) ||
+		    !xfrm_addr_equal(&x->props.saddr, saddr, family))
 			continue;
 
 		if ((mark & x->mark.m) != x->mark.v)
@@ -817,7 +855,7 @@ xfrm_state_find(const xfrm_address_t *daddr, const xfrm_address_t *saddr,
 			xfrm_state_look_at(pol, x, fl, encap_family,
 					   &best, &acquire_in_progress, &error);
 	}
-	if (best)
+	if (best || acquire_in_progress)
 		goto found;
 
 	h_wildcard = xfrm_dst_hash(net, daddr, &saddr_wildcard, tmpl->reqid, encap_family);
@@ -826,7 +864,7 @@ xfrm_state_find(const xfrm_address_t *daddr, const xfrm_address_t *saddr,
 		    x->props.reqid == tmpl->reqid &&
 		    (mark & x->mark.m) == x->mark.v &&
 		    !(x->props.flags & XFRM_STATE_WILDRECV) &&
-		    xfrm_state_addr_check(x, daddr, saddr, encap_family) &&
+		    xfrm_addr_equal(&x->id.daddr, daddr, encap_family) &&
 		    tmpl->mode == x->props.mode &&
 		    tmpl->id.proto == x->id.proto &&
 		    (tmpl->id.spi == x->id.spi || !tmpl->id.spi))
@@ -976,8 +1014,8 @@ static void __xfrm_state_bump_genids(struct xfrm_state *xnew)
 		if (x->props.family	== family &&
 		    x->props.reqid	== reqid &&
 		    (mark & x->mark.m) == x->mark.v &&
-		    !xfrm_addr_cmp(&x->id.daddr, &xnew->id.daddr, family) &&
-		    !xfrm_addr_cmp(&x->props.saddr, &xnew->props.saddr, family))
+		    xfrm_addr_equal(&x->id.daddr, &xnew->id.daddr, family) &&
+		    xfrm_addr_equal(&x->props.saddr, &xnew->props.saddr, family))
 			x->genid++;
 	}
 }
@@ -1011,8 +1049,8 @@ static struct xfrm_state *__find_acq_core(struct net *net, struct xfrm_mark *m,
 		    x->id.spi       != 0 ||
 		    x->id.proto	    != proto ||
 		    (mark & x->mark.m) != x->mark.v ||
-		    xfrm_addr_cmp(&x->id.daddr, daddr, family) ||
-		    xfrm_addr_cmp(&x->props.saddr, saddr, family))
+		    !xfrm_addr_equal(&x->id.daddr, daddr, family) ||
+		    !xfrm_addr_equal(&x->props.saddr, saddr, family))
 			continue;
 
 		xfrm_state_hold(x);
@@ -1095,7 +1133,7 @@ int xfrm_state_add(struct xfrm_state *x)
 	if (use_spi && x->km.seq) {
 		x1 = __xfrm_find_acq_byseq(net, mark, x->km.seq);
 		if (x1 && ((x1->id.proto != x->id.proto) ||
-		    xfrm_addr_cmp(&x1->id.daddr, &x->id.daddr, family))) {
+		    !xfrm_addr_equal(&x1->id.daddr, &x->id.daddr, family))) {
 			to_put = x1;
 			x1 = NULL;
 		}
@@ -1221,10 +1259,10 @@ struct xfrm_state * xfrm_migrate_state_find(struct xfrm_migrate *m)
 				continue;
 			if (m->reqid && x->props.reqid != m->reqid)
 				continue;
-			if (xfrm_addr_cmp(&x->id.daddr, &m->old_daddr,
-					  m->old_family) ||
-			    xfrm_addr_cmp(&x->props.saddr, &m->old_saddr,
-					  m->old_family))
+			if (!xfrm_addr_equal(&x->id.daddr, &m->old_daddr,
+					     m->old_family) ||
+			    !xfrm_addr_equal(&x->props.saddr, &m->old_saddr,
+					     m->old_family))
 				continue;
 			xfrm_state_hold(x);
 			return x;
@@ -1236,10 +1274,10 @@ struct xfrm_state * xfrm_migrate_state_find(struct xfrm_migrate *m)
 			if (x->props.mode != m->mode ||
 			    x->id.proto != m->proto)
 				continue;
-			if (xfrm_addr_cmp(&x->id.daddr, &m->old_daddr,
-					  m->old_family) ||
-			    xfrm_addr_cmp(&x->props.saddr, &m->old_saddr,
-					  m->old_family))
+			if (!xfrm_addr_equal(&x->id.daddr, &m->old_daddr,
+					     m->old_family) ||
+			    !xfrm_addr_equal(&x->props.saddr, &m->old_saddr,
+					     m->old_family))
 				continue;
 			xfrm_state_hold(x);
 			return x;
@@ -1264,7 +1302,7 @@ struct xfrm_state * xfrm_state_migrate(struct xfrm_state *x,
 	memcpy(&xc->props.saddr, &m->new_saddr, sizeof(xc->props.saddr));
 
 	/* add state */
-	if (!xfrm_addr_cmp(&x->id.daddr, &m->new_daddr, m->new_family)) {
+	if (xfrm_addr_equal(&x->id.daddr, &m->new_daddr, m->new_family)) {
 		/* a care is needed when the destination address of the
 		   state is to be updated as it is a part of triplet */
 		xfrm_state_insert(xc);
@@ -1864,7 +1902,7 @@ int xfrm_state_unregister_afinfo(struct xfrm_state_afinfo *afinfo)
 }
 EXPORT_SYMBOL(xfrm_state_unregister_afinfo);
 
-static struct xfrm_state_afinfo *xfrm_state_get_afinfo(unsigned int family)
+struct xfrm_state_afinfo *xfrm_state_get_afinfo(unsigned int family)
 {
 	struct xfrm_state_afinfo *afinfo;
 	if (unlikely(family >= NPROTO))
@@ -1876,7 +1914,7 @@ static struct xfrm_state_afinfo *xfrm_state_get_afinfo(unsigned int family)
 	return afinfo;
 }
 
-static void xfrm_state_put_afinfo(struct xfrm_state_afinfo *afinfo)
+void xfrm_state_put_afinfo(struct xfrm_state_afinfo *afinfo)
 	__releases(xfrm_state_afinfo_lock)
 {
 	read_unlock(&xfrm_state_afinfo_lock);
@@ -1981,8 +2019,10 @@ int __xfrm_init_state(struct xfrm_state *x, bool init_replay)
 		goto error;
 
 	x->outer_mode = xfrm_get_mode(x->props.mode, family);
-	if (x->outer_mode == NULL)
+	if (x->outer_mode == NULL) {
+		err = -EPROTONOSUPPORT;
 		goto error;
+	}
 
 	if (init_replay) {
 		err = xfrm_init_replay(x);

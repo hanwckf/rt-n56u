@@ -342,6 +342,9 @@ static int raw_send_hdrinc(struct sock *sk, struct flowi4 *fl4,
 			       rt->dst.dev->mtu);
 		return -EMSGSIZE;
 	}
+	if (length < sizeof(struct iphdr))
+		return -EINVAL;
+
 	if (flags&MSG_PROBE)
 		goto out;
 
@@ -857,7 +860,7 @@ struct proto raw_prot = {
 	.close		   = raw_close,
 	.destroy	   = raw_destroy,
 	.connect	   = ip4_datagram_connect,
-	.disconnect	   = udp_disconnect,
+	.disconnect	   = __udp_disconnect,
 	.ioctl		   = raw_ioctl,
 	.init		   = raw_init,
 	.setsockopt	   = raw_setsockopt,

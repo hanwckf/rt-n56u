@@ -3,6 +3,7 @@
 # Linux kernel .config related params
 ##################################################################
 
+CFLAGS += $(if $(CONFIG_SMP),-DUSE_SMP,)
 CFLAGS += $(if $(CONFIG_IPV6),-DUSE_IPV6,)
 CFLAGS += $(if $(CONFIG_XFRM),-DUSE_XFRM,)
 CFLAGS += $(if $(CONFIG_RAETH_BOTH_GMAC),,-DUSE_SINGLE_MAC)
@@ -153,6 +154,9 @@ CFLAGS += -DAPP_NMBD
 endif
 ifeq ($(CONFIG_FIRMWARE_INCLUDE_OPENVPN),y)
 CFLAGS += -DAPP_OPENVPN
+endif
+ifeq ($(CONFIG_FIRMWARE_INCLUDE_SSWAN),y)
+CFLAGS += -DAPP_SSWAN
 endif
 ifeq ($(CONFIG_FIRMWARE_INCLUDE_XUPNPD),y)
 CFLAGS += -DAPP_XUPNPD

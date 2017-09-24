@@ -1,0 +1,4 @@
+# Vodafone / Huawei R206_MR Router
+TargetVendor=0x12d1
+TargetProduct=0x15bc
+HuaweiNewMode=1

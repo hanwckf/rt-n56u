@@ -1,8 +1,8 @@
 /*
   Mode switching tool for controlling mode of 'multi-state' USB devices
-  Version 2.4.0, 2016/06/12
+  Version 2.5.0, 2017/01/17
 
-  Copyright (C) 2007 - 2016 Josua Dietze (mail to "usb_admin" at the domain
+  Copyright (C) 2007 - 2017 Josua Dietze (mail to "usb_admin" at the domain
   of the home page; or write a personal message through the forum to "Josh".
   NO SUPPORT VIA E-MAIL - please use the forum for that)
 
@@ -45,7 +45,7 @@
 
 /* Recommended tab size: 4 */
 
-#define VERSION "2.4.0"
+#define VERSION "2.5.0"
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -476,11 +476,11 @@ int main(int argc, char **argv)
 
 	if (strlen(MessageContent)) {
 		if (strlen(MessageContent) % 2 != 0) {
-			fprintf(stderr, "Error: MessageContent hex string has uneven length. Abort\n\n");
+			fprintf(stderr, "MessageContent hex string has uneven length. Abort\n\n");
 			exit(1);
 		}
 		if ( hexstr2bin(MessageContent, ByteString, strlen(MessageContent)/2) == -1) {
-			fprintf(stderr, "Error: MessageContent %s\n is not a hex string. Abort\n\n",
+			fprintf(stderr, "MessageContent %s\n is not a hex string. Abort\n\n",
 					MessageContent);
 
 			exit(1);
@@ -582,6 +582,33 @@ int main(int argc, char **argv)
 	/* Get class of default device/interface */
 	interfaceClass = get_interface_class();
 
+	if (interfaceClass == -1) {
+		fprintf(stderr, "Error: Could not get class of interface %d. Does it exist? Abort\n\n",Interface);
+		abortExit();
+	} else {
+		SHOW_PROGRESS(output," with class %d\n", interfaceClass);
+	}
+
+	if (defaultClass == 0 || defaultClass == 0xef)
+		defaultClass = interfaceClass;
+	else
+		if (interfaceClass == LIBUSB_CLASS_MASS_STORAGE && defaultClass != LIBUSB_CLASS_MASS_STORAGE
+				&& defaultClass != LIBUSB_CLASS_VENDOR_SPEC) {
+
+			/* Unexpected default class combined with differing interface class */
+			SHOW_PROGRESS(output,"Bogus Class/InterfaceClass: 0x%02x/0x08\n", defaultClass);
+			defaultClass = 8;
+		}
+
+	if ((strlen(MessageContent) && strncmp("55534243",MessageContent,8) == 0)
+			|| StandardEject || ModeMap & HUAWEINEW_MODE || ModeMap & CISCO_MODE
+			|| ModeMap & OPTION_MODE)
+		if (defaultClass != 8) {
+			fprintf(stderr, "Error: can't use storage command in MessageContent with interface %d; "
+				"interface class is %d, expected 8. Abort\n\n", Interface, defaultClass);
+			abortExit();
+		}
+
 	/* Check or get endpoints and alloc message list if needed*/
 	if (strlen(MessageContent) || StandardEject || InquireDevice || ModeMap & CISCO_MODE
 				|| ModeMap & HUAWEINEW_MODE || ModeMap & OPTION_MODE) {
@@ -608,29 +635,6 @@ int main(int argc, char **argv)
 				ResponseEndpoint);
 
 	}
-
-	if (interfaceClass == -1) {
-		fprintf(stderr, "Error: Could not get class of interface %d. Does it exist? Abort\n\n",Interface);
-		abortExit();
-	}
-
-	if (defaultClass == 0 || defaultClass == 0xef)
-		defaultClass = interfaceClass;
-	else
-		if (interfaceClass == LIBUSB_CLASS_MASS_STORAGE && defaultClass != LIBUSB_CLASS_MASS_STORAGE
-				&& defaultClass != LIBUSB_CLASS_VENDOR_SPEC) {
-
-			/* Unexpected default class combined with differing interface class */
-			SHOW_PROGRESS(output,"Bogus Class/InterfaceClass: 0x%02x/0x08\n", defaultClass);
-			defaultClass = 8;
-		}
-
-	if (strlen(MessageContent) && strncmp("55534243",MessageContent,8) == 0)
-		if (defaultClass != 8) {
-			fprintf(stderr, "Error: can't use storage command in MessageContent with interface %d;\n"
-				"       interface class is %d, expected 8. Abort\n\n", Interface, defaultClass);
-			abortExit();
-		}
 
 	if (InquireDevice) {
 		if (defaultClass == 0x08) {
@@ -1056,6 +1060,7 @@ int switchSendMessage ()
 {
 	const char* cmdHead = "55534243";
 	int ret, i;
+	int retries = 1;
 /*	char* msg[3];
 	msg[0] = MessageContent;
 	msg[1] = MessageContent2;
@@ -1069,11 +1074,12 @@ int switchSendMessage ()
 			return 0;
 		}
 	}
-	libusb_clear_halt(devh, MessageEndpoint);
+
 	SHOW_PROGRESS(output,"Use endpoint 0x%02x for message sending ...\n", MessageEndpoint);
 	if (show_progress)
 		fflush(stdout);
 
+retry:
 	for (i=0; i<MSG_DIM; i++) {
 		if ( strlen(Messages[i]) == 0)
 			break;
@@ -1093,6 +1099,11 @@ int switchSendMessage ()
 			ret = read_bulk(ResponseEndpoint, ByteString, strlen(Messages[i])/2 );
 		}
 		SHOW_PROGRESS(output,"\n");
+		if (ret == LIBUSB_TRANSFER_STALL && retries--) {
+			SHOW_PROGRESS(output,"Endpoint stalled. Resetting ...\n");
+			libusb_clear_halt(devh, MessageEndpoint);
+			goto retry;
+		}
 		if (ret < 0)
 			goto skip;
 	}
@@ -1944,7 +1955,8 @@ char* ReadParseParam(const char* FileName, char *VariableName)
 	char *FirstQuote, *LastQuote, *P1, *P2;
 	int Line=0;
 	unsigned Len=0, Pos=0;
-	char Str[LINE_DIM], *token, *configPos;
+	static char Str[LINE_DIM];
+	char *token, *configPos;
 	FILE *file = NULL;
 
 	// Reading and storing input during the first call
@@ -2117,6 +2129,8 @@ void close_all()
 
 void abortExit()
 {
+	fflush(output);
+	fflush(stderr);
 	close_all();
 	exit(1);
 }
@@ -2126,7 +2140,7 @@ void printVersion()
 {
 	char* version = VERSION;
 	fprintf(output,"\n * usb_modeswitch: handle USB devices with multiple modes\n"
-		" * Version %s (C) Josua Dietze 2016\n"
+		" * Version %s (C) Josua Dietze 2017\n"
 		" * Based on libusb1/libusbx\n\n"
 		" ! PLEASE REPORT NEW CONFIGURATIONS !\n\n", version);
 }

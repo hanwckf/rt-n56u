@@ -940,6 +940,7 @@ typedef struct _MO_CFG_STRUCT {
 typedef struct _LNA_VGA_CTL_STRUCT {
 	BOOLEAN		bEnable;
 	BOOLEAN		bDyncVgaEnable;
+	UINT8		long_range_compensate_level;
 	UINT8  		nPeriod_Cnt; 	/* measurement period 100ms, mitigate the interference period 900 ms */
 	UINT16 		nFalseCCACnt;	
 	UINT16		nFalseCCATh;	/* default is 100 */

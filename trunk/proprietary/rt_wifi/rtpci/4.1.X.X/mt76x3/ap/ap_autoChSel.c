@@ -1034,7 +1034,8 @@ void ChannelInfoDestroy(
  */
 void CheckPhyModeIsABand(RTMP_ADAPTER *pAd)
 {
-	pAd->pChannelInfo->IsABand = (WMODE_CAP_5G(pAd->CommonCfg.PhyMode)) ? TRUE : FALSE;
+	if (pAd->pChannelInfo)
+		pAd->pChannelInfo->IsABand = (WMODE_CAP_5G(pAd->CommonCfg.PhyMode)) ? TRUE : FALSE;
 
 	return;
 }
@@ -1078,10 +1079,6 @@ UCHAR SelectBestChannel(RTMP_ADAPTER *pAd, ChannelSel_Alg Alg)
 VOID APAutoChannelInit(RTMP_ADAPTER *pAd)
 {
 	//UINT32 BusyTime;
-
-    /* Allocate structure memory */
-    AutoChBssTableInit(pAd);
-    ChannelInfoInit(pAd);
 
 	/* reset bss table */
 	AutoChBssTableReset(pAd);

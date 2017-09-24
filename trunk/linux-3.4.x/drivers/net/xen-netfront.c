@@ -1310,7 +1310,7 @@ static struct net_device * __devinit xennet_create_dev(struct xenbus_device *dev
 	np->rx_refill_timer.function = rx_refill_timeout;
 
 	err = -ENOMEM;
-	np->stats = alloc_percpu(struct netfront_stats);
+	np->stats = netdev_alloc_pcpu_stats(struct netfront_stats);
 	if (np->stats == NULL)
 		goto exit;
 

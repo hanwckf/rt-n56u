@@ -52,6 +52,7 @@ int selinux_xfrm_skb_sid(struct sk_buff *skb, u32 *sid);
 static inline void selinux_xfrm_notify_policyload(void)
 {
 	atomic_inc(&flow_cache_genid);
+	rt_cache_flush(&init_net, -1);
 }
 #else
 static inline int selinux_xfrm_enabled(void)

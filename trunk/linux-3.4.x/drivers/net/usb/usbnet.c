@@ -1751,7 +1751,7 @@ usbnet_probe (struct usb_interface *udev, const struct usb_device_id *prod)
 	/* initialize max rx_qlen and tx_qlen */
 	usbnet_update_max_qlen(dev);
 
-	dev->stats64 = alloc_percpu(struct usbnet_stats64);
+	dev->stats64 = netdev_alloc_pcpu_stats(struct usbnet_stats64);
 	if (!dev->stats64) {
 		status = -ENOMEM;
 		goto out4;

@@ -525,7 +525,7 @@ ipup_main(int argc, char **argv)
 
 	wan_up(ppp_ifname, unit, 0);
 
-	set_vpn_balancing(ppp_ifname);
+	set_vpn_balancing(ppp_ifname, 0);
 
 	logmessage(get_wan_unit_value(unit, "proto_t"), "Connected");
 

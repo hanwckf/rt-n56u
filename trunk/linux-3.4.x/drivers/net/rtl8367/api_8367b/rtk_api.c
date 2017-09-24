@@ -8911,6 +8911,10 @@ rtk_api_ret_t rtk_l2_init(void)
     if ((retVal = rtl8367b_setAsicLutIpMulticastLookup(DISABLE)) != RT_ERR_OK)
         return retVal;
 
+    /* disable quick MAC age-out on port link down */
+    if ((retVal = rtl8367b_setAsicLutLinkDownForceAging(DISABLE)) != RT_ERR_OK)
+        return retVal;
+
     /*Enable CAM Usage*/
     if ((retVal = rtl8367b_setAsicLutCamTbUsage(ENABLE)) != RT_ERR_OK)
         return retVal;
@@ -14260,13 +14264,16 @@ rtk_api_ret_t rtk_switch_portMaxPktLen_get(rtk_port_t port, rtk_uint32 *pLength)
  *      - DISABLE
  *      - ENABLE
  */
-rtk_api_ret_t rtk_switch_greenEthernet_set(rtk_enable_t enable)
+rtk_api_ret_t rtk_switch_greenEthernet_set(rtk_enable_t enable, rtk_enable_t set_phy_psm)
 {
     rtk_api_ret_t retVal;
     rtk_uint32 phy;
 
     if ((retVal = rtl8367b_setAsicGreenEthernet(enable))!=RT_ERR_OK)
         return retVal;
+
+    if (set_phy_psm == DISABLED)
+        return RT_ERR_OK;
 
     for (phy=0;phy<=RTK_PHY_ID_MAX;phy++)
     {

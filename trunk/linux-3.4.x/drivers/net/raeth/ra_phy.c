@@ -23,15 +23,22 @@
 
 #if defined (CONFIG_GE1_RGMII_AN) || defined (CONFIG_P5_MAC_TO_PHY_MODE) || \
     defined (CONFIG_GE2_RGMII_AN) || defined (CONFIG_P4_MAC_TO_PHY_MODE)
+static u32 g_phy_id[32] = { 0 };
+
 void ext_gphy_init(u32 phy_addr)
 {
 	const char *phy_devn = NULL;
 	u32 phy_id0 = 0, phy_id1 = 0, phy_val = 0, phy_rev;
 
+	if (phy_addr > 0x1f)
+		return;
+
 	if (!mii_mgr_read(phy_addr, 2, &phy_id0))
 		return;
 	if (!mii_mgr_read(phy_addr, 3, &phy_id1))
 		return;
+
+	g_phy_id[phy_addr] = ((u32)phy_id1 << 16) | phy_id0;
 
 	phy_rev = phy_id1 & 0xf;
 
@@ -41,31 +48,48 @@ void ext_gphy_init(u32 phy_addr)
 		phy_val |= (1<<10);			// enable pause ability
 		mii_mgr_write(phy_addr, 4, phy_val);
 		mii_mgr_read(phy_addr, 0, &phy_val);
-		if (!(phy_val & (1<<11))) {
-			phy_val |= (1<<9);		// restart AN
-			mii_mgr_write(phy_addr, 0, phy_val);
-		}
+		phy_val |= (1<<15);			// PHY Software Reset
+		mii_mgr_write(phy_addr, 0, phy_val);
 	} else
 	if ((phy_id0 == EV_REALTEK_PHY_ID0) && ((phy_id1 & 0xfff0) == EV_REALTEK_PHY_ID1)) {
 		phy_devn = "RTL8211";
 		if (phy_rev == 0x6) {
+			u32 reg31 = 0;
+			
 			phy_devn = "RTL8211F";
+			
+			/* backup reg 0x1f */
+			mii_mgr_read(phy_addr, 31, &reg31);
+			if (reg31 != 0x0000 && reg31 != 0x0a42) {
+				reg31 = 0x0000;
+				mii_mgr_write(phy_addr, 31, reg31);
+			}
 			
 			/* Disable response on MDIO addr 0 (!) */
 			mii_mgr_read(phy_addr, 24, &phy_val);
 			phy_val &= ~(1<<13);		// PHYAD_0 Disable
 			mii_mgr_write(phy_addr, 24, phy_val);
 			
-			/* set RGMII mode */
-			mii_mgr_write(phy_addr, 31, 0x0d08);
-			mii_mgr_read(phy_addr, 17, &phy_val);
-			phy_val |= (1<<8);		// enable TXDLY
-			mii_mgr_write(phy_addr, 17, phy_val);
-			mii_mgr_write(phy_addr, 31, 0x0000);
-			
 			/* Disable Green Ethernet */
 			mii_mgr_write(phy_addr, 27, 0x8011);
 			mii_mgr_write(phy_addr, 28, 0x573f);
+			
+			/* Enable flow control by default */
+			mii_mgr_read(phy_addr, 4, &phy_val);
+			phy_val |=  (1<<10);		// Enable pause ability
+			mii_mgr_write(phy_addr, 4, phy_val);
+			
+			/* Setup LED */
+			mii_mgr_write(phy_addr, 31, 0x0d04);
+			mii_mgr_read(phy_addr, 17, &phy_val);
+			phy_val &= ~(1<<3);		// LED2 EEE Disable
+			phy_val &= ~(1<<2);		// LED1 EEE Disable
+			phy_val &= ~(1<<1);		// LED0 EEE Disable
+			mii_mgr_write(phy_addr, 17, phy_val);
+			
+			/* restore reg 0x1f */
+			mii_mgr_write(phy_addr, 31, reg31);
+			
 		} else if (phy_rev == 0x5) {
 			phy_devn = "RTL8211E";
 			
@@ -77,7 +101,10 @@ void ext_gphy_init(u32 phy_addr)
 		}
 		if (phy_rev >= 0x4) {
 			/* disable EEE LPI 1000/100 advert (for D/E/F) */
-			mii_mgr_write_cl45(phy_addr, 0x07, 0x003c, 0x0000);
+			mii_mgr_write(phy_addr, 13, 0x0007);
+			mii_mgr_write(phy_addr, 14, 0x003c);
+			mii_mgr_write(phy_addr, 13, 0x4007);
+			mii_mgr_write(phy_addr, 14, 0x0000);
 		}
 	} else
 	if ((phy_id0 == EV_MARVELL_PHY_ID0) && (phy_id1 == EV_MARVELL_PHY_ID1)) {
@@ -108,21 +135,53 @@ void ext_gphy_init(u32 phy_addr)
 
 void ext_gphy_eee_enable(u32 phy_addr, int is_eee_enabled)
 {
-	u32 phy_id0 = 0, phy_id1 = 0, phy_rev;
+	u32 phy_id0, phy_id1, phy_rev;
 
-	if (!mii_mgr_read(phy_addr, 2, &phy_id0))
-		return;
-	if (!mii_mgr_read(phy_addr, 3, &phy_id1))
+	if (phy_addr > 0x1f)
 		return;
 
+	phy_id0 = g_phy_id[phy_addr] & 0xffff;
+	phy_id1 = g_phy_id[phy_addr] >> 16;
 	phy_rev = phy_id1 & 0xf;
 
 	if ((phy_id0 == EV_REALTEK_PHY_ID0) && ((phy_id1 & 0xfff0) == EV_REALTEK_PHY_ID1)) {
 		if (phy_rev >= 0x4) {
 			/* EEE LPI 1000/100 advert (for D/E/F) */
-			mii_mgr_write_cl45(phy_addr, 0x07, 0x003c, (is_eee_enabled) ? 0x0006 : 0x0000);
+			mii_mgr_write(phy_addr, 13, 0x0007);
+			mii_mgr_write(phy_addr, 14, 0x003c);
+			mii_mgr_write(phy_addr, 13, 0x4007);
+			mii_mgr_write(phy_addr, 14, (is_eee_enabled) ? 0x0006 : 0x0000);
 		}
 	}
+}
+
+u32 ext_gphy_fill_pmsr(u32 phy_addr)
+{
+	u32 phy_id0, phy_id1, phy_rev, phy_val = 0;
+	u32 pmsr = 0;
+
+	if (phy_addr > 0x1f)
+		return 0;
+
+	phy_id0 = g_phy_id[phy_addr] & 0xffff;
+	phy_id1 = g_phy_id[phy_addr] >> 16;
+	phy_rev = phy_id1 & 0xf;
+
+	if ((phy_id0 == EV_REALTEK_PHY_ID0) && ((phy_id1 & 0xfff0) == EV_REALTEK_PHY_ID1)) {
+		if (phy_rev == 0x6) {
+			mii_mgr_read(phy_addr, 26, &phy_val);
+			if (phy_val && (1 << 2)) {
+				if (phy_val & (1 << 6))
+					pmsr |= (1 << 4);	// FC TX
+				if (phy_val & (1 << 7))
+					pmsr |= (1 << 5);	// FC RX
+				if (phy_val & (1 << 8))
+					pmsr |= (3 << 6);	// EEE
+			}
+		}
+	}
+
+	return pmsr;
 }
 #endif
 
@@ -132,7 +191,6 @@ void ext_gphy_eee_enable(u32 phy_addr, int is_eee_enabled)
 void enable_autopoll_phy(int unused)
 {
 	u32 regValue, addr_s, addr_e;
-
 
 #if defined (CONFIG_RALINK_MT7621)
 	// PHY_ST_ADDR  = always GE1->EPHY address

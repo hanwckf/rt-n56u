@@ -14,6 +14,10 @@
 #include <net/ip.h>
 #include <net/xfrm.h>
 
+#if IS_ENABLED(CONFIG_RALINK_HWCRYPTO)
+#include "xfrm_hwcrypto.h"
+#endif
+
 static struct kmem_cache *secpath_cachep __read_mostly;
 
 void __secpath_destroy(struct sec_path *sp)
@@ -81,6 +85,9 @@ int xfrm_parse_spi(struct sk_buff *skb, u8 nexthdr, __be32 *spi, __be32 *seq)
 	*seq = *(__be32*)(skb_transport_header(skb) + offset_seq);
 	return 0;
 }
+#if defined(CONFIG_RALINK_HWCRYPTO_MODULE)
+EXPORT_SYMBOL(xfrm_parse_spi);
+#endif
 
 int xfrm_prepare_input(struct xfrm_state *x, struct sk_buff *skb)
 {
@@ -192,12 +199,36 @@ int xfrm_input(struct sk_buff *skb, int nexthdr, __be32 spi, int encap_type)
 
 		skb_dst_force(skb);
 
+#if IS_ENABLED(CONFIG_RALINK_HWCRYPTO)
+		if (x->type->proto == IPPROTO_ESP
+#if !defined(CONFIG_RALINK_HWCRYPTO_ESP6)
+		 && family == AF_INET
+#endif
+		   ) {
+			err = x->type->input(x, skb);
+
+			/* check skb in progress */
+			if (err == HWCRYPTO_OK)
+				return 0;
+
+			/* check skb already freed */
+			if (err == HWCRYPTO_NOMEM)
+				return 0;
+
+			goto drop;
+		}
+#endif
+
+		dev_hold(skb->dev);
+
 		nexthdr = x->type->input(x, skb);
 
 		if (nexthdr == -EINPROGRESS)
 			return 0;
 
 resume:
+		dev_put(skb->dev);
+
 		spin_lock(&x->lock);
 		if (nexthdr <= 0) {
 			if (nexthdr == -EBADMSG) {

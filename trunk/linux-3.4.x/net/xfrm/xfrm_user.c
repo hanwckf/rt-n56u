@@ -1104,7 +1104,7 @@ static int xfrm_alloc_userspi(struct sk_buff *skb, struct nlmsghdr *nlh,
 	mark = xfrm_mark_get(attrs, &m);
 	if (p->info.seq) {
 		x = xfrm_find_acq_byseq(net, mark, p->info.seq);
-		if (x && xfrm_addr_cmp(&x->id.daddr, daddr, family)) {
+		if (x && !xfrm_addr_equal(&x->id.daddr, daddr, family)) {
 			xfrm_state_put(x);
 			x = NULL;
 		}
@@ -1666,6 +1666,8 @@ static int xfrm_get_policy(struct sk_buff *skb, struct nlmsghdr *nlh,
 
 out:
 	xfrm_pol_put(xp);
+	if (delete && err == 0)
+		xfrm_garbage_collect(net);
 	return err;
 }
 

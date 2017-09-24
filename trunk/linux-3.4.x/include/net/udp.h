@@ -191,6 +191,7 @@ extern int udp_push_pending_frames(struct sock *sk);
 extern void udp_flush_pending_frames(struct sock *sk);
 extern int udp_rcv(struct sk_buff *skb);
 extern int udp_ioctl(struct sock *sk, int cmd, unsigned long arg);
+extern int __udp_disconnect(struct sock *sk, int flags);
 extern int udp_disconnect(struct sock *sk, int flags);
 extern unsigned int udp_poll(struct file *file, struct socket *sock,
 			     poll_table *wait);

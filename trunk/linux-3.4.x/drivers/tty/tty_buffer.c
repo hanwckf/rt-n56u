@@ -314,6 +314,8 @@ EXPORT_SYMBOL(tty_insert_flip_string_flags);
  *	Takes any pending buffers and transfers their ownership to the
  *	ldisc side of the queue. It then schedules those characters for
  *	processing by the line discipline.
+ *	Note that this function can only be used when the low_latency flag
+ *	is unset. Otherwise the workqueue won't be flushed.
  *
  *	Locking: Takes tty->buf.lock
  */
@@ -430,11 +432,6 @@ static void flush_to_ldisc(struct work_struct *work)
 				tty_buffer_free(tty, head);
 				continue;
 			}
-			/* Ldisc or user is trying to flush the buffers
-			   we are feeding to the ldisc, stop feeding the
-			   line discipline as we want to empty the queue */
-			if (test_bit(TTY_FLUSHPENDING, &tty->flags))
-				break;
 			if (!tty->receive_room)
 				break;
 			if (count > tty->receive_room)
@@ -442,23 +439,25 @@ static void flush_to_ldisc(struct work_struct *work)
 			char_buf = head->char_buf_ptr + head->read;
 			flag_buf = head->flag_buf_ptr + head->read;
 			head->read += count;
-			if (disc->ops->receive_buf) {
-				spin_unlock_irqrestore(&tty->buf.lock, flags);
+			spin_unlock_irqrestore(&tty->buf.lock, flags);
+			if (disc->ops->receive_buf)
 				disc->ops->receive_buf(tty, char_buf,
 							flag_buf, count);
-				spin_lock_irqsave(&tty->buf.lock, flags);
+			spin_lock_irqsave(&tty->buf.lock, flags);
+			/* Ldisc or user is trying to flush the buffers.
+			   We may have a deferred request to flush the
+			   input buffer, if so pull the chain under the lock
+			   and empty the queue */
+			if (test_bit(TTY_FLUSHPENDING, &tty->flags)) {
+				__tty_buffer_flush(tty);
+				clear_bit(TTY_FLUSHPENDING, &tty->flags);
+				wake_up(&tty->read_wait);
+				break;
 			}
 		}
 		clear_bit(TTY_FLUSHING, &tty->flags);
 	}
 
-	/* We may have a deferred request to flush the input buffer,
-	   if so pull the chain under the lock and empty the queue */
-	if (test_bit(TTY_FLUSHPENDING, &tty->flags)) {
-		__tty_buffer_flush(tty);
-		clear_bit(TTY_FLUSHPENDING, &tty->flags);
-		wake_up(&tty->read_wait);
-	}
 	spin_unlock_irqrestore(&tty->buf.lock, flags);
 
 	tty_ldisc_deref(disc);
@@ -474,7 +473,8 @@ static void flush_to_ldisc(struct work_struct *work)
  */
 void tty_flush_to_ldisc(struct tty_struct *tty)
 {
-	flush_work(&tty->buf.work);
+	if (!tty->low_latency)
+		flush_work(&tty->buf.work);
 }
 
 /**

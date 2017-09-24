@@ -2,4 +2,3 @@
 TargetVendor=0x19d2
 TargetProduct=0x1173
 StandardEject=1
-NoDriverLoading=1

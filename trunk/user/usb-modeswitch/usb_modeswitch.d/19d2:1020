@@ -1,0 +1,4 @@
+# Vodafone / ZTE R203 Router
+TargetVendor=0x19d2
+TargetProduct=0x1021
+StandardEject=1

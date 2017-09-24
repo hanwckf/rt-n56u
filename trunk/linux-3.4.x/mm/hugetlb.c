@@ -2836,11 +2836,11 @@ int hugetlb_fault(struct mm_struct *mm, struct vm_area_struct *vma,
 		} else if (unlikely(is_hugetlb_entry_hwpoisoned(entry)))
 			return VM_FAULT_HWPOISON_LARGE |
 			       VM_FAULT_SET_HINDEX(h - hstates);
+	} else {
+		ptep = huge_pte_alloc(mm, address, huge_page_size(h));
+		if (!ptep)
+			return VM_FAULT_OOM;
 	}
-
-	ptep = huge_pte_alloc(mm, address, huge_page_size(h));
-	if (!ptep)
-		return VM_FAULT_OOM;
 
 	/*
 	 * Serialize hugepage allocation and instantiation, so that we don't
@@ -2930,13 +2930,17 @@ out_page_table_lock:
 		unlock_page(pagecache_page);
 		put_page(pagecache_page);
 	}
-	if (page != pagecache_page)
-		unlock_page(page);
-	put_page(page);
-
 out_mutex:
 	mutex_unlock(&hugetlb_instantiation_mutex);
-
+	/*
+	 * Generally it's safe to hold refcount during waiting page lock. But
+	 * here we just wait to defer the next page fault to avoid busy loop and
+	 * the page is not used after unlocked before returning from the current
+	 * page fault. So we are safe from accessing freed page, even if we wait
+	 * here without taking refcount.
+	 */
+	if (need_wait_lock)
+		wait_on_page_locked(page);
 	return ret;
 }
 

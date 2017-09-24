@@ -37,6 +37,16 @@ static int xfrm6_mode_tunnel_output(struct xfrm_state *x, struct sk_buff *skb)
 	struct ipv6hdr *top_iph;
 	int dsfield;
 
+#if defined(CONFIG_RALINK_HWCRYPTO_ESP6)
+	if (x->type->proto == IPPROTO_ESP) {
+		int header_len = 0;
+
+		if (x->props.mode == XFRM_MODE_TUNNEL)
+			header_len += sizeof(struct ipv6hdr);
+
+		skb_set_network_header(skb, -header_len);
+	} else
+#endif
 	skb_set_network_header(skb, -x->props.header_len);
 	skb->mac_header = skb->network_header +
 			  offsetof(struct ipv6hdr, nexthdr);

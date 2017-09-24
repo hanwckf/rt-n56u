@@ -1,4 +1,4 @@
-SRC_NAME=dropbear-2015.XX
+SRC_NAME=dropbear-201X.XX
 
 ifeq ($(CONFIG_FIRMWARE_INCLUDE_SFTP),y)
 COPT=-DSFTPSERVER_PATH=\"/usr/libexec/sftp-server\"

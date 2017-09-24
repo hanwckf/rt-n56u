@@ -213,6 +213,9 @@ struct xfrm_state {
 	struct xfrm_lifetime_cur curlft;
 	struct tasklet_hrtimer	mtimer;
 
+	/* used to fix curlft->add_time when changing date */
+	long		saved_tmo;
+
 	/* Last used time */
 	unsigned long		lastused;
 
@@ -238,6 +241,7 @@ static inline struct net *xs_net(struct xfrm_state *x)
 
 /* xflags - make enum if more show up */
 #define XFRM_TIME_DEFER	1
+#define XFRM_SOFT_EXPIRE 2
 
 enum {
 	XFRM_STATE_VOID,
@@ -334,10 +338,13 @@ struct xfrm_state_afinfo {
 						  struct sk_buff *skb);
 	int			(*transport_finish)(struct sk_buff *skb,
 						    int async);
+	void			(*local_error)(struct sk_buff *skb, u32 mtu);
 };
 
 extern int xfrm_state_register_afinfo(struct xfrm_state_afinfo *afinfo);
 extern int xfrm_state_unregister_afinfo(struct xfrm_state_afinfo *afinfo);
+extern struct xfrm_state_afinfo *xfrm_state_get_afinfo(unsigned int family);
+extern void xfrm_state_put_afinfo(struct xfrm_state_afinfo *afinfo);
 
 extern void xfrm_state_delete_tunnel(struct xfrm_state *x);
 
@@ -889,15 +896,15 @@ __be16 xfrm_flowi_dport(const struct flowi *fl, const union flowi_uli *uli)
 	return port;
 }
 
-extern int xfrm_selector_match(const struct xfrm_selector *sel,
-			       const struct flowi *fl,
-			       unsigned short family);
+extern bool xfrm_selector_match(const struct xfrm_selector *sel,
+				const struct flowi *fl,
+				unsigned short family);
 
 #ifdef CONFIG_SECURITY_NETWORK_XFRM
 /*	If neither has a context --> match
  * 	Otherwise, both must have a context and the sids, doi, alg must match
  */
-static inline int xfrm_sec_ctx_match(struct xfrm_sec_ctx *s1, struct xfrm_sec_ctx *s2)
+static inline bool xfrm_sec_ctx_match(struct xfrm_sec_ctx *s1, struct xfrm_sec_ctx *s2)
 {
 	return ((!s1 && !s2) ||
 		(s1 && s2 &&
@@ -906,9 +913,9 @@ static inline int xfrm_sec_ctx_match(struct xfrm_sec_ctx *s1, struct xfrm_sec_ct
 		 (s1->ctx_alg == s2->ctx_alg)));
 }
 #else
-static inline int xfrm_sec_ctx_match(struct xfrm_sec_ctx *s1, struct xfrm_sec_ctx *s2)
+static inline bool xfrm_sec_ctx_match(struct xfrm_sec_ctx *s1, struct xfrm_sec_ctx *s2)
 {
-	return 1;
+	return true;
 }
 #endif
 
@@ -1029,7 +1036,7 @@ static inline int
 __xfrm6_state_addr_cmp(const struct xfrm_tmpl *tmpl, const struct xfrm_state *x)
 {
 	return	(!ipv6_addr_any((struct in6_addr*)&tmpl->saddr) &&
-		 ipv6_addr_cmp((struct in6_addr *)&tmpl->saddr, (struct in6_addr*)&x->props.saddr));
+		 !ipv6_addr_equal((struct in6_addr *)&tmpl->saddr, (struct in6_addr*)&x->props.saddr));
 }
 
 static inline int
@@ -1149,6 +1156,8 @@ static inline void xfrm_sk_free_policy(struct sock *sk)
 	}
 }
 
+extern void xfrm_garbage_collect(struct net *net);
+
 #else
 
 static inline void xfrm_sk_free_policy(struct sock *sk) {}
@@ -1182,6 +1191,9 @@ static inline int xfrm6_policy_check_reverse(struct sock *sk, int dir,
 					     struct sk_buff *skb)
 {
 	return 1;
+}
+static inline void xfrm_garbage_collect(struct net *net)
+{
 }
 #endif
 
@@ -1240,8 +1252,8 @@ static __inline__ int
 __xfrm6_state_addr_check(const struct xfrm_state *x,
 			 const xfrm_address_t *daddr, const xfrm_address_t *saddr)
 {
-	if (!ipv6_addr_cmp((struct in6_addr *)daddr, (struct in6_addr *)&x->id.daddr) &&
-	    (!ipv6_addr_cmp((struct in6_addr *)saddr, (struct in6_addr *)&x->props.saddr)|| 
+	if (ipv6_addr_equal((struct in6_addr *)daddr, (struct in6_addr *)&x->id.daddr) &&
+	    (ipv6_addr_equal((struct in6_addr *)saddr, (struct in6_addr *)&x->props.saddr) ||
 	     ipv6_addr_any((struct in6_addr *)saddr) || 
 	     ipv6_addr_any((struct in6_addr *)&x->props.saddr)))
 		return 1;
@@ -1460,6 +1472,7 @@ extern int xfrm_input_resume(struct sk_buff *skb, int nexthdr);
 extern int xfrm_output_resume(struct sk_buff *skb, int err);
 extern int xfrm_output(struct sk_buff *skb);
 extern int xfrm_inner_extract_output(struct xfrm_state *x, struct sk_buff *skb);
+extern void xfrm_local_error(struct sk_buff *skb, int mtu);
 extern int xfrm4_extract_header(struct sk_buff *skb);
 extern int xfrm4_extract_input(struct xfrm_state *x, struct sk_buff *skb);
 extern int xfrm4_rcv_encap(struct sk_buff *skb, int nexthdr, __be32 spi,
@@ -1478,6 +1491,7 @@ extern int xfrm4_output(struct sk_buff *skb);
 extern int xfrm4_output_finish(struct sk_buff *skb);
 extern int xfrm4_tunnel_register(struct xfrm_tunnel *handler, unsigned short family);
 extern int xfrm4_tunnel_deregister(struct xfrm_tunnel *handler, unsigned short family);
+extern void xfrm4_local_error(struct sk_buff *skb, u32 mtu);
 extern int xfrm6_extract_header(struct sk_buff *skb);
 extern int xfrm6_extract_input(struct xfrm_state *x, struct sk_buff *skb);
 extern int xfrm6_rcv_spi(struct sk_buff *skb, int nexthdr, __be32 spi);
@@ -1495,6 +1509,7 @@ extern int xfrm6_output(struct sk_buff *skb);
 extern int xfrm6_output_finish(struct sk_buff *skb);
 extern int xfrm6_find_1stfragopt(struct xfrm_state *x, struct sk_buff *skb,
 				 u8 **prevhdr);
+extern void xfrm6_local_error(struct sk_buff *skb, u32 mtu);
 
 #ifdef CONFIG_XFRM
 extern int xfrm4_udp_encap_rcv(struct sock *sk, struct sk_buff *skb);
@@ -1569,17 +1584,23 @@ extern struct xfrm_algo_desc *xfrm_calg_get_byname(const char *name, int probe);
 extern struct xfrm_algo_desc *xfrm_aead_get_byname(const char *name, int icv_len,
 						   int probe);
 
-static inline int xfrm_addr_cmp(const xfrm_address_t *a,
-				const xfrm_address_t *b,
-				int family)
+static inline bool xfrm6_addr_equal(const xfrm_address_t *a,
+				    const xfrm_address_t *b)
+{
+	return ipv6_addr_equal((const struct in6_addr *)a,
+			       (const struct in6_addr *)b);
+}
+
+static inline bool xfrm_addr_equal(const xfrm_address_t *a,
+				   const xfrm_address_t *b,
+				   sa_family_t family)
 {
 	switch (family) {
 	default:
 	case AF_INET:
-		return (__force u32)a->a4 - (__force u32)b->a4;
+		return ((__force u32)a->a4 ^ (__force u32)b->a4) == 0;
 	case AF_INET6:
-		return ipv6_addr_cmp((const struct in6_addr *)a,
-				     (const struct in6_addr *)b);
+		return xfrm6_addr_equal(a, b);
 	}
 }
 

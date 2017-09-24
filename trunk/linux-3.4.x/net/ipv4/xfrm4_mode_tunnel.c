@@ -33,6 +33,24 @@ static int xfrm4_mode_tunnel_output(struct xfrm_state *x, struct sk_buff *skb)
 	struct iphdr *top_iph;
 	int flags;
 
+#if IS_ENABLED(CONFIG_RALINK_HWCRYPTO)
+	if (x->type->proto == IPPROTO_ESP) {
+		int header_len = 0;
+
+		if (x->props.mode == XFRM_MODE_TUNNEL)
+			header_len += sizeof(struct iphdr);
+
+		if (x->encap) {
+			struct xfrm_encap_tmpl *encap = x->encap;
+
+			header_len += sizeof(struct udphdr);
+			if (encap->encap_type == UDP_ENCAP_ESPINUDP_NON_IKE)
+				header_len += 2 * sizeof(u32);
+		}
+
+		skb_set_network_header(skb, -header_len);
+	} else
+#endif
 	skb_set_network_header(skb, -x->props.header_len);
 	skb->mac_header = skb->network_header +
 			  offsetof(struct iphdr, protocol);

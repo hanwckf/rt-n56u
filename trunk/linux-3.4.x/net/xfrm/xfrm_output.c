@@ -23,9 +23,17 @@
 #include "../nat/hw_nat/ra_nat.h"
 #endif
 
+#if IS_ENABLED(CONFIG_RALINK_HWCRYPTO)
+#include "xfrm_hwcrypto.h"
+#endif
+
 static int xfrm_output2(struct sk_buff *skb);
 
+#if IS_ENABLED(CONFIG_RALINK_HWCRYPTO)
+int xfrm_skb_check_space(struct sk_buff *skb)
+#else
 static int xfrm_skb_check_space(struct sk_buff *skb)
+#endif
 {
 	struct dst_entry *dst = skb_dst(skb);
 	int nhead = dst->header_len + LL_RESERVED_SPACE(dst->dev)
@@ -41,6 +49,9 @@ static int xfrm_skb_check_space(struct sk_buff *skb)
 
 	return pskb_expand_head(skb, nhead, ntail, GFP_ATOMIC);
 }
+#if defined(CONFIG_RALINK_HWCRYPTO_MODULE)
+EXPORT_SYMBOL(xfrm_skb_check_space);
+#endif
 
 static int xfrm_output_one(struct sk_buff *skb, int err)
 {
@@ -89,6 +100,15 @@ static int xfrm_output_one(struct sk_buff *skb, int err)
 #endif
 
 		err = x->type->output(x, skb);
+#if IS_ENABLED(CONFIG_RALINK_HWCRYPTO)
+		/* check skb in progress */
+		if (err == HWCRYPTO_OK)
+			return -EINPROGRESS;
+
+		/* check skb already freed */
+		if (err == HWCRYPTO_NOMEM)
+			return -ENOMEM;
+#endif
 		if (err == -EINPROGRESS)
 			goto out_exit;
 
@@ -218,5 +238,26 @@ int xfrm_inner_extract_output(struct xfrm_state *x, struct sk_buff *skb)
 	return inner_mode->afinfo->extract_output(x, skb);
 }
 
+void xfrm_local_error(struct sk_buff *skb, int mtu)
+{
+	unsigned int proto;
+	struct xfrm_state_afinfo *afinfo;
+
+	if (skb->protocol == htons(ETH_P_IP))
+		proto = AF_INET;
+	else if (skb->protocol == htons(ETH_P_IPV6))
+		proto = AF_INET6;
+	else
+		return;
+
+	afinfo = xfrm_state_get_afinfo(proto);
+	if (!afinfo)
+		return;
+
+	afinfo->local_error(skb, mtu);
+	xfrm_state_put_afinfo(afinfo);
+}
+
 EXPORT_SYMBOL_GPL(xfrm_output);
 EXPORT_SYMBOL_GPL(xfrm_inner_extract_output);
+EXPORT_SYMBOL_GPL(xfrm_local_error);

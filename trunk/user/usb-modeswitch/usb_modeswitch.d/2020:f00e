@@ -1,5 +1,5 @@
-# SpeedUp SU-8000
+# SpeedUp SU-8000 and others
 TargetVendor=0x2020
-TargetProduct=0x1008
+TargetProductList="1005,1008"
 StandardEject=1
 WaitBefore=2

@@ -1338,11 +1338,17 @@ static int proc_do_submiturb(struct dev_state *ps, struct usbdevfs_urb *uurb,
 	dr = NULL;
 	as->urb->start_frame = uurb->start_frame;
 	as->urb->number_of_packets = uurb->number_of_packets;
-	if (uurb->type == USBDEVFS_URB_TYPE_ISO ||
-			ps->dev->speed == USB_SPEED_HIGH)
-		as->urb->interval = 1 << min(15, ep->desc.bInterval - 1);
-	else
-		as->urb->interval = ep->desc.bInterval;
+
+	if (ep->desc.bInterval) {
+		if (uurb->type == USBDEVFS_URB_TYPE_ISO ||
+				ps->dev->speed == USB_SPEED_HIGH ||
+				ps->dev->speed >= USB_SPEED_SUPER)
+			as->urb->interval = 1 <<
+					min(15, ep->desc.bInterval - 1);
+		else
+			as->urb->interval = ep->desc.bInterval;
+	}
+
 	as->urb->context = as;
 	as->urb->complete = async_completed;
 	for (totlen = u = 0; u < uurb->number_of_packets; u++) {
@@ -2069,7 +2075,9 @@ static unsigned int usbdev_poll(struct file *file,
 	if (file->f_mode & FMODE_WRITE && !list_empty(&ps->async_completed))
 		mask |= POLLOUT | POLLWRNORM;
 	if (!connected(ps))
-		mask |= POLLERR | POLLHUP;
+		mask |= POLLHUP;
+	if (list_empty(&ps->list))
+		mask |= POLLERR;
 	return mask;
 }
 

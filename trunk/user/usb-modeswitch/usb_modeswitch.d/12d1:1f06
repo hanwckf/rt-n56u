@@ -1,0 +1,4 @@
+# Vodafone / Huawei R215_MR Router
+TargetVendor=0x12d1
+TargetProduct=0x15c7
+HuaweiNewMode=1

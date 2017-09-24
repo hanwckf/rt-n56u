@@ -3323,7 +3323,7 @@ static int queue_bulk_sg_tx(struct xhci_hcd *xhci, gfp_t mem_flags,
 #else
 		if (num_trbs > 1)
 			remainder = xhci_mtk_td_remainder(urb->transfer_buffer_length, running_total,
-				urb->ep->desc.wMaxPacketSize, trb_buff_len);
+				usb_endpoint_maxp(&urb->ep->desc), trb_buff_len);
 #endif
 		length_field = TRB_LEN(trb_buff_len) |
 			remainder |
@@ -3418,7 +3418,7 @@ int xhci_queue_bulk_tx(struct xhci_hcd *xhci, gfp_t mem_flags,
 #if defined (CONFIG_MTK_XHCI)
 	switch (urb->dev->speed) {
 		case USB_SPEED_SUPER:
-			max_packet = urb->ep->desc.wMaxPacketSize;
+			max_packet = usb_endpoint_maxp(&urb->ep->desc);
 			break;
 		case USB_SPEED_HIGH:
 		case USB_SPEED_FULL:
@@ -3426,7 +3426,7 @@ int xhci_queue_bulk_tx(struct xhci_hcd *xhci, gfp_t mem_flags,
 		case USB_SPEED_WIRELESS:
 		case USB_SPEED_UNKNOWN:
 		default:
-			max_packet = urb->ep->desc.wMaxPacketSize & 0x7ff;
+			max_packet = GET_MAX_PACKET(usb_endpoint_maxp(&urb->ep->desc));
 			break;
 	}
 	if ((urb->transfer_flags & URB_ZERO_PACKET) && ((urb->transfer_buffer_length % max_packet) == 0)) {
@@ -3770,7 +3770,7 @@ static int xhci_queue_isoc_tx(struct xhci_hcd *xhci, gfp_t mem_flags,
 #if defined (CONFIG_MTK_XHCI)
 	switch (urb->dev->speed) {
 		case USB_SPEED_SUPER:
-			max_packet = urb->ep->desc.wMaxPacketSize;
+			max_packet = usb_endpoint_maxp(&urb->ep->desc);
 			break;
 		case USB_SPEED_HIGH:
 		case USB_SPEED_FULL:
@@ -3778,7 +3778,7 @@ static int xhci_queue_isoc_tx(struct xhci_hcd *xhci, gfp_t mem_flags,
 		case USB_SPEED_WIRELESS:
 		case USB_SPEED_UNKNOWN:
 		default:
-			max_packet = urb->ep->desc.wMaxPacketSize & 0x7ff;
+			max_packet = GET_MAX_PACKET(usb_endpoint_maxp(&urb->ep->desc));
 			break;
 	}
 #endif

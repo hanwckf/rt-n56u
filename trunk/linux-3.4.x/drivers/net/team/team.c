@@ -743,7 +743,7 @@ static int team_init(struct net_device *dev)
 	team->dev = dev;
 	mutex_init(&team->lock);
 
-	team->pcpu_stats = alloc_percpu(struct team_pcpu_stats);
+	team->pcpu_stats = netdev_alloc_pcpu_stats(struct team_pcpu_stats);
 	if (!team->pcpu_stats)
 		return -ENOMEM;
 

@@ -1874,12 +1874,11 @@ int xhci_add_endpoint(struct usb_hcd *hcd, struct usb_device *udev,
 	else
 		ep_type = USB_EP_CONTROL;
 
+	maxp = GET_MAX_PACKET(usb_endpoint_maxp(&ep->desc));
 	if (udev->speed == USB_SPEED_FULL || udev->speed == USB_SPEED_HIGH || udev->speed == USB_SPEED_LOW) {
-		maxp = ep->desc.wMaxPacketSize & 0x7FF;
-		burst = ep->desc.wMaxPacketSize >> 11;
+		burst = (usb_endpoint_maxp(&ep->desc) & 0x1800) >> 11;
 		mult = 0;
 	} else if (udev->speed == USB_SPEED_SUPER) {
-		maxp = ep->desc.wMaxPacketSize & 0x7FF;
 		burst = ep->ss_ep_comp.bMaxBurst;
 		mult = ep->ss_ep_comp.bmAttributes & 0x3;
 	}

@@ -35,6 +35,7 @@
 #include <sys/time.h>
 
 #include "rc.h"
+#include "gpio_pins.h"
 
 #define CONSOLE_TERMINAL	"vt100"
 #define INIT_HOME_PATH		"/home/root"

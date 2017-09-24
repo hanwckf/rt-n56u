@@ -363,6 +363,13 @@ endif
 endmenu
 
 #######
+# HWCRYPTO
+#######
+menu "Ralink HW Crypto"
+source "drivers/net/rt_eip/Kconfig"
+endmenu
+
+#######
 # DEV
 #######
 menu "Ralink Peripheral Devices"

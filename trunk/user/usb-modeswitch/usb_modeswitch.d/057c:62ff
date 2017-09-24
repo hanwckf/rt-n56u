@@ -1,5 +1,5 @@
 # AVM Fritz!Wlan USB Stick N v2
 TargetVendor=0x057c
 TargetProductList="8501,8502"
-StandardEject=1
-NoDriverLoading=1
+# Std.Eject not working
+MessageContent="5553424312345678000000000000061b000000ff0000000000000000000000"

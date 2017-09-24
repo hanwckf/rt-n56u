@@ -1092,14 +1092,12 @@ int tty_mode_ioctl(struct tty_struct *tty, struct file *file,
 }
 EXPORT_SYMBOL_GPL(tty_mode_ioctl);
 
-int tty_perform_flush(struct tty_struct *tty, unsigned long arg)
-{
-	struct tty_ldisc *ld;
-	int retval = tty_check_change(tty);
-	if (retval)
-		return retval;
 
-	ld = tty_ldisc_ref_wait(tty);
+/* Caller guarantees ldisc reference is held */
+static int __tty_perform_flush(struct tty_struct *tty, unsigned long arg)
+{
+	struct tty_ldisc *ld = tty->ldisc;
+
 	switch (arg) {
 	case TCIFLUSH:
 		if (ld && ld->ops->flush_buffer)
@@ -1113,11 +1111,23 @@ int tty_perform_flush(struct tty_struct *tty, unsigned long arg)
 		tty_driver_flush_buffer(tty);
 		break;
 	default:
-		tty_ldisc_deref(ld);
 		return -EINVAL;
 	}
-	tty_ldisc_deref(ld);
 	return 0;
+}
+
+int tty_perform_flush(struct tty_struct *tty, unsigned long arg)
+{
+	struct tty_ldisc *ld;
+	int retval = tty_check_change(tty);
+	if (retval)
+		return retval;
+
+	ld = tty_ldisc_ref_wait(tty);
+	retval = __tty_perform_flush(tty, arg);
+	if (ld)
+		tty_ldisc_deref(ld);
+	return retval;
 }
 EXPORT_SYMBOL_GPL(tty_perform_flush);
 
@@ -1158,7 +1168,10 @@ int n_tty_ioctl_helper(struct tty_struct *tty, struct file *file,
 		}
 		return 0;
 	case TCFLSH:
-		return tty_perform_flush(tty, arg);
+		retval = tty_check_change(tty);
+		if (retval)
+			return retval;
+		return __tty_perform_flush(tty, arg);
 	case TIOCPKT:
 	{
 		int pktmode;

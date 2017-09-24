@@ -384,7 +384,7 @@ try_again:
 
 	if (copied < ulen
 #if defined (CONFIG_INET_UDPLITE)
-	    || UDP_SKB_CB(skb)->partial_cov
+	    || (is_udplite && UDP_SKB_CB(skb)->partial_cov)
 #endif
 	    ) {
 		checksum_valid = !udp_lib_checksum_complete(skb);
@@ -430,7 +430,7 @@ try_again:
 		else {
 			sin6->sin6_addr = ipv6_hdr(skb)->saddr;
 			if (ipv6_addr_type(&sin6->sin6_addr) & IPV6_ADDR_LINKLOCAL)
-				sin6->sin6_scope_id = IP6CB(skb)->iif;
+				sin6->sin6_scope_id = inet6_iif(skb);
 		}
 		*addr_len = sizeof(*sin6);
 	}

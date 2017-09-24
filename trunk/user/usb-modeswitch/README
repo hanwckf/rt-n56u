@@ -50,8 +50,8 @@ In Linux and friends it is intended to work automatically - via udev events
 and rules - and doing the mode switch without any user interaction.
 However, the core C program should be as portable als libusb itself; it does not
 rely on specific Linux features.
-It can also be run as an interactive command line tool, particularly useful when
-trying to tinker with hitherto unknown devices.
+It can also be run as an interactive command line tool, which can be useful
+when trying to tinker with hitherto unknown devices.
 
 We have already collected a wide range of information on how to mode-switch all
 sorts of devices. If you run into a new one that is unknown yet, don't despair:
@@ -110,8 +110,8 @@ program and a man page.
 
 Install the data package as well and you are set.
 
-NOTE: installing over (possibly outdated) Linux distribution packages of this
-program and the data collection should not be a problem.
+NOTE: installing over (possibly outdated) distribution packages of this
+program and the data collection should generally not be a problem.
 
 
 How to use
@@ -123,18 +123,21 @@ it doesn't work - we will find out why.
 For manual use just run "usb_modeswitch" (as root). Work with the command
 line interface or with a setup file. You can use any file and give its path
 with the "-c" parameter.
+
 The file named "device_reference.txt" that you can find on the home site of
 this package is a device and configuration reference containing most known
 devices; you can use it as a "database" to create your own configuration file.
 It's heavily commented and should tell you what to do. It also contains a
 thorough explanation of all the parameters.
+However, the device list in that reference file is no longer maintained.
+See the data package for the USB IDs of devices known to usb_modeswitch.
 
 Run "usb_modeswitch -h" to list the command line parameters.
 See also the provided man page.
 
 Important note: Manual use is mainly intended for testing and analyzing!!
 The program puts no limits on what you can send to your USB device, so I
-assume it is possible to screw it up profoundly.
+assume it is possible to screw it up profoundly. You have been warned.
 
 Once your new device is switching fine you can add it to the data files to
 make the process automatic.
@@ -167,6 +170,8 @@ Known working hardware, Troubleshooting
 Please go to the homepage (see link at the top). Read carefully.
 For support questions use ONLY public posts in the forum.
 
+Again - to see the USB IDs of known devices, see the data package.
+
 
 
 Contribute
@@ -177,9 +182,8 @@ not supported yet. You could try this approach:
 
 Note the device's vendor and product ID from /proc/bus/usb/devices (or from the
 output of lsusb); the assigned driver is usually "usb-storage". Then try spying
-on the USB communication to the device with the same ID inside MS Windoze. I
-recommend this tool:
-"SniffUSB" (http://benoit.papillault.free.fr/usbsnoop/index.php.en).
+on the USB communication to the device with the same ID inside MS Windoze.
+Nowadays the standard tool for this is Wireshark/USBPcap.
 
 PLEASE post any improvements, new device information and/or bug reports to the
 forum (see above) or send it to the author (see below)!
@@ -188,7 +192,7 @@ forum (see above) or send it to the author (see below)!
 Whodunit
 ========
 
-Copyright 2007 - 2015 Josua Dietze (for non-support notifications write a personal
+Copyright 2007 - 2017 Josua Dietze (for non-support notifications write a personal
 message through the forum to "Josh"; everything else only in a forum thread)
 
  !!! NO SUPPORT QUESTIONS VIA E-MAIL, use the forum !!!
@@ -239,7 +243,7 @@ Code, fixes and ideas contributed by:
  Adam Goode
  Leonid Lisovskiy
  Vladislav Grishenko
- Daniel Drake
+ Lubomir Rintel
 
 Device information contributors are named in the "device_reference.txt" file.
 
@@ -268,4 +272,4 @@ Or find it as the file COPYING in this folder.
 
 
 
-Last revised: 2016-06-12, Josua Dietze
+Last revised: 2017-01-16, Josua Dietze

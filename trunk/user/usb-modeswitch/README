@@ -7,7 +7,7 @@ http://www.draisberghof.de/usb_modeswitch
 What it is
 ==========
 
-USB_ModeSwitch is - hardly surprising -  a mode switching tool for controlling
+USB_ModeSwitch is - hardly surprising - a mode switching tool for controlling
 USB devices with multiple "modes". Now, what does THAT mean?
 
 More and more USB devices have their MS Windows drivers onboard; when plugged

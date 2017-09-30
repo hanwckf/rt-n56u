@@ -2,8 +2,8 @@
   This file is part of usb_modeswitch, a mode switching tool for controlling
   the mode of 'multi-state' USB devices
 
-  Version 2.3.0, 2016/01/12
-  Copyright (C) 2007 - 2016  Josua Dietze
+  Version 2.5.1, 2017/08/06
+  Copyright (C) 2007 - 2017  Josua Dietze
 
   Config file parsing stuff borrowed from Guillaume Dargaud
   (http://www.gdargaud.net/Hack/SourceCode.html)
@@ -43,7 +43,7 @@ void switchBlackberryMode();
 void switchPantechMode();
 void switchCiscoMode();
 int switchSonyMode();
-int detachDriver();
+int detachDrivers();
 int checkSuccess();
 int sendMessage(char* message, int count);
 int write_bulk(int endpoint, unsigned char *message, int length);

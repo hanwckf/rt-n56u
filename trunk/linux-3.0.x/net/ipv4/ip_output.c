@@ -105,7 +105,7 @@ int __ip_local_out(struct sk_buff *skb)
 
 #if defined(CONFIG_NETFILTER_FP_SMB)
 	if ((skb->nf_fp_cache & NF_FP_CACHE_SMB) || nf_fp_smb_hook_out(skb))
-		return dst_output(skb);
+		return 1;
 #endif
 
 	return nf_hook(NFPROTO_IPV4, NF_INET_LOCAL_OUT, skb, NULL,

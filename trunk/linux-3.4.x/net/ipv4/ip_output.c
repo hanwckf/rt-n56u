@@ -105,7 +105,7 @@ int __ip_local_out(struct sk_buff *skb)
 
 #if defined(CONFIG_NETFILTER_FP_SMB)
 	if ((skb->nf_fp_cache & NF_FP_CACHE_SMB) || nf_fp_smb_hook_out(skb))
-		return dst_output(skb);
+		return 1;
 #endif
 
 	return nf_hook(NFPROTO_IPV4, NF_INET_LOCAL_OUT, skb, NULL,
@@ -844,7 +844,7 @@ static int __ip_append_data(struct sock *sk,
 	cork->length += length;
 	if (((length > mtu) || (skb && skb_has_frags(skb))) &&
 	    (sk->sk_protocol == IPPROTO_UDP) &&
-	    (rt->dst.dev->features & NETIF_F_UFO) && !rt->dst.header_len &&
+	    (rt->dst.dev->features & NETIF_F_UFO) && !dst_xfrm(&rt->dst) &&
 	    (sk->sk_type == SOCK_DGRAM)) {
 		err = ip_ufo_append_data(sk, queue, getfrag, from, length,
 					 hh_len, fragheaderlen, transhdrlen,

@@ -74,7 +74,6 @@ int init_config ()
     returnedValue = parse_config (f);
     fclose (f);
     return (returnedValue);
-    filerr[0] = 0;
 }
 
 struct lns *new_lns ()
@@ -900,7 +899,7 @@ struct iprange *set_range (char *word, char *value, struct iprange *in)
                   "format is '%s <host or ip> - <host or ip>'\n", word);
         return NULL;
     }
-    ipr = (struct iprange *) malloc (sizeof (struct iprange));
+    ipr = malloc (sizeof (struct iprange));
     ipr->next = NULL;
     hp = gethostbyname (value);
     if (!hp)
@@ -1500,7 +1499,7 @@ int parse_config (FILE * f)
 #ifdef DEBUG_FILE
             l2tp_log (LOG_DEBUG, "parse_config: field is %s, value is %s\n", s, t);
 #endif
-            /* Okay, bit twidling is done.  Let's handle this */
+            /* Okay, bit twiddling is done.  Let's handle this */
             
             switch (parse_one_option (s, t, context | def, data))
             {
@@ -1512,7 +1511,7 @@ int parse_config (FILE * f)
                 l2tp_log (LOG_CRIT, "parse_config: line %d: Unknown field '%s'\n",
                      linenum, s);
                 return -1;
-            }            
+            }
         }
     }
     return 0;

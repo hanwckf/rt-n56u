@@ -3,7 +3,7 @@
 ;
 ; This example file should give you some idea of how the options for l2tpd
 ; should work.  The best place to look for a list of all options is in
-; the source code itself, until I have the time to write better documetation :)
+; the source code itself, until I have the time to write better documentation :)
 ; Specifically, the file "file.c" contains a list of commands at the end.
 ;
 ; You most definitely don't have to spell out everything as it is done here

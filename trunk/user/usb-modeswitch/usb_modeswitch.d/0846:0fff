@@ -1,0 +1,4 @@
+# Netgear AirCard 779S
+TargetVendor= 0x0846
+TargetProduct=0x68d3
+SierraMode=1

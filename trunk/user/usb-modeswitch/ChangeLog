@@ -2,6 +2,14 @@
 History of USB_ModeSwitch
 =========================
 
+Version 2.5.1, 2017/08/06
+    New parameter "HuaweiAltMode", uses an alternative Huawei standard bulk
+    message which will either provide NCM (newer modems) or plain PPP ports
+    (older modems); new option in the global configuration file
+    "HuaweiAltModeGlobal", allowing easy override of "HuwaeiNewMode" with
+    "HuaweiAltMode"; reworked USB configuration switching, configuring a
+    device reset first before setting the target configuration; improved
+    driver detachment, now taking all configured interfaces into account
 Version 2.5.0, 2017/01/17
     ATTENTION: Parameter transmitted from udev now reduced to %k (kernel
     name), however, rules file parameters can be '%b/%k' or '%k' - this

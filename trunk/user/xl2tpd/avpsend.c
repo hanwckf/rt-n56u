@@ -38,7 +38,7 @@ void add_header(struct buffer *buf, _u16 length, _u16 type) {
 }
 
 /* 
- * These routines should add avp's to a buffer
+ * These routines should add AVP's to a buffer
  * to be sent
  */
 

@@ -1,9 +1,9 @@
-# Example watch control file for uscan
-# Rename this file to "watch" and then you can run the "uscan" command
-# to check for upstream updates and more.
-# See uscan(1) for format
+# The uversionmangle option separates consecutive digits in the version string
+# with a period.  The reason for this is that in the past, upstream used
+# version numbers like 1.00, 1.00, and 1.1.08.  For some time now they have
+# switched to a more "standard" 1.2.8, 1.3.0, 1.3.1, and so forth, versioning
+# scheme.
 
-# Compulsory line, this is a version 3 file
 version=3
+opts="dversionmangle=s/\+dfsg//,uversionmangle=s/(\d)(\d)/\1\.\2/g" https://github.com/xelerance/xl2tpd/tags .*/v?(\d[\d\.]+)\.(?:tgz|tbz2|txz|tar\.(?:gz|bz2|xz)) debian debian/repack.sh
 
-opts="dversionmangle=s/\+dfsg//" ftp://ftp.xelerance.com/xl2tpd/xl2tpd-(.*)\.tar\.gz debian debian/repack.sh

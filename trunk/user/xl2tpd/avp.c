@@ -130,7 +130,7 @@ struct unaligned_u16 {
 } __attribute__((packed));
 
 /*
- * t, c, data, and datalen may be assumed to be defined for all avp's
+ * t, c, data, and datalen may be assumed to be defined for all AVP's
  */
 
 int message_type_avp (struct tunnel *t, struct call *c, void *data,
@@ -167,7 +167,7 @@ int message_type_avp (struct tunnel *t, struct call *c, void *data,
     if (t->sanity)
     {
         /*
-         * Look ou our state for each message and make sure everything
+         * Look out our state for each message and make sure everything
          * make sense...
          */
         if ((c != t->self) && (c->msgtype < Hello))
@@ -381,8 +381,8 @@ int ignore_avp (struct tunnel *t, struct call *c, void *data, int datalen)
      * The spec says we have to accept authentication information
      * even if we just ignore it, so that's exactly what
      * we're going to do at this point.  Proxy authentication is such
-     * a rediculous security threat anyway except from local
-     * controled machines.
+     * a ridiculous security threat anyway except from local
+     * controlled machines.
      *
      * FIXME: I need to handle proxy authentication as an option.
      * One option is to simply change the options we pass to pppd.
@@ -436,7 +436,7 @@ int result_code_avp (struct tunnel *t, struct call *c, void *data,
                      int datalen)
 {
     /*
-     * Find out what version of l2tp the other side is using.
+     * Find out what version of L2TP the other side is using.
      * I'm not sure what we're supposed to do with this but whatever..
      */
 
@@ -539,7 +539,7 @@ int protocol_version_avp (struct tunnel *t, struct call *c, void *data,
                           int datalen)
 {
     /*
-     * Find out what version of l2tp the other side is using.
+     * Find out what version of L2TP the other side is using.
      * I'm not sure what we're supposed to do with this but whatever..
      */
 
@@ -1478,7 +1478,7 @@ int rx_speed_avp (struct tunnel *t, struct call *c, void *data, int datalen)
 int tx_speed_avp (struct tunnel *t, struct call *c, void *data, int datalen)
 {
     /*
-     * What is the tranmsit baud rate of the call?
+     * What is the transmit baud rate of the call?
      */
     struct unaligned_u16 *raw = data;
 
@@ -1634,9 +1634,11 @@ int handle_avps (struct buffer *buf, struct tunnel *t, struct call *c)
     int hidlen = 0;
     char *data = buf->start + sizeof (struct control_hdr);
     avp = (struct avp_hdr *) data;
+    /* I had to comment out the following since Valgrind tells me it leaks like my bathroom faucet
     if (gconfig.debug_avp)
         l2tp_log (LOG_DEBUG, "%s: handling avp's for tunnel %d, call %d\n",
              __FUNCTION__, t->ourtid, c->ourcid);
+    */
     while (len > 0)
     {
         hidlen = 0;
@@ -1660,7 +1662,7 @@ int handle_avps (struct buffer *buf, struct tunnel *t, struct call *c)
             {
                 if (DEBUG)
                     l2tp_log (LOG_WARNING,
-                         "%s:  don't know how to handle atribute %d.\n",
+                         "%s:  don't know how to handle attribute %d.\n",
                          __FUNCTION__, avp->attr);
                 goto next;
             }
@@ -1708,7 +1710,7 @@ int handle_avps (struct buffer *buf, struct tunnel *t, struct call *c)
             l2tp_log (LOG_DEBUG, "%s: Hidden bit set on AVP.\n", __FUNCTION__);
 #endif
             /* We want to rewrite the AVP as an unhidden AVP
-               and then pass it along as normal.  Remeber how
+               and then pass it along as normal.  Remember how
                long the AVP was in the first place though! */
             hidlen = avp->length;
             if (decrypt_avp (data, t))
@@ -1771,7 +1773,7 @@ int handle_avps (struct buffer *buf, struct tunnel *t, struct call *c)
             else
             {
                 if (DEBUG)
-                    l2tp_log (LOG_WARNING, "%s:  no handler for atribute %d (%s).\n",
+                    l2tp_log (LOG_WARNING, "%s:  no handler for attribute %d (%s).\n",
                          __FUNCTION__, avp->attr,
                          avps[avp->attr].description);
             }

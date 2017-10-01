@@ -1,4 +1,4 @@
-xl2tpd (XL2TPDBASEVERSION-1xelerance1) lucid; urgency=low
+xl2tpd (XL2TPDBASEVERSION-0xelerance1) trusty; urgency=low
 
   * Update to XL2TPDBASEVERSION
 
@@ -8,7 +8,7 @@ xl2tpd (XL2TPDBASEVERSION-1xelerance1) lucid; urgency=low
   not file any Debian/Ubuntu bug reports for this package but contact
   <simon@xelerance.com> if you have a problem.
 
- -- Simon Deziel <simon@xelerance.com>  Thu, 10 Mar 2011 11:04:42 -0400
+ -- Simon Deziel <simon@xelerance.com>  Tue, 08 Mar 2016 15:51:48 -0500
 
 Local variables:
 mode: debian-changelog

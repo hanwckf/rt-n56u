@@ -1,4 +1,6 @@
 # Dymo LabelManager Wireless PnP
 TargetVendor= 0x0922
 TargetProduct= 0x1008
+MessageEndpoint=0x01
+ResponseEndpoint=0x01
 MessageContent="1b5a01"

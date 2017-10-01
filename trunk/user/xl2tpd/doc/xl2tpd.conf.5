@@ -5,8 +5,8 @@ xl2tpd.conf \- L2TPD configuration file
 The xl2tpd.conf file contains configuration information for xl2tpd, the implementation of l2tp protocol.
 
 The configuration file is composed of sections and parameters. Each section
-has a given name which will be used when using the configuration FIFO 
-(normaly /var/run/xl2tpd/l2tp\-control). See xl2tpd.8  for more details.
+has a given name which will be used when using the configuration FIFO
+(normally /var/run/xl2tpd/l2tp\-control). See xl2tpd.8  for more details.
 
 The specific given name 
 .B default
@@ -19,11 +19,11 @@ l2tp tunnels. The default is /etc/xl2tpd/l2tp\-secrets.
 
 .TP 
 .B ipsec saref
-Use IPsec Security Association trackinng. When this is enabled, packets
+Use IPsec Security Association tracking. When this is enabled, packets
 received by xl2tpd should have to extra fields (refme and refhim) which
 allows tracking of multiple clients using the same internal NATed IP
 address, and allows tracking of multiple clients behind the same
-NAT router. This neds to be supported by the kernel. Currently, this
+NAT router. This needs to be supported by the kernel. Currently, this
 only works with Openswan KLIPS in "mast" mode. (see http://www.openswan.org/)
 
 Set this to yes and the system will provide proper SAref values in the
@@ -221,8 +221,8 @@ If set to yes, xl2tpd will automatically dial the LAC during startup.
 .TP 
 .B redial
 If set to yes, xl2tpd will attempt to redial if the call get
-disconected.  Note that, if enabled, xl2tpd will keep passwords in
-memory: a potental security risk.
+disconnected.  Note that, if enabled, xl2tpd will keep passwords in
+memory: a potential security risk.
 
 .TP 
 .B redial timeout

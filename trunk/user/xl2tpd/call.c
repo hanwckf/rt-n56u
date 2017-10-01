@@ -129,7 +129,7 @@ int read_packet (struct call *c)
                 /*
                    * Oops, we were interrupted!
                    * Or, we ran out of data too soon
-                   * anyway, we discared whatever it is we
+                   * anyway, we discarded whatever it is we
                    * have
                  */
                 return 0;
@@ -223,8 +223,8 @@ void call_close (struct call *c)
          * entire tunnel
          */
 
-        /* First deschedule any remaining packet transmissions
-           for this tunnel.  That means Hello's and any reminaing
+        /* First de-schedule any remaining packet transmissions
+           for this tunnel.  That means Hello's and any remaining
            packets scheduled for transmission.  This is a very
            nasty little piece of code here. */
 
@@ -265,7 +265,7 @@ void call_close (struct call *c)
         if (c->closing)
         {
             /* Really close this tunnel, as our
-               StopCCN has been ack'd */
+               StopCCN has been ACK'd */
 #ifdef DEBUG_CLOSE
             l2tp_log (LOG_DEBUG, "%s: Actually closing tunnel %d\n", __FUNCTION__,
                  c->container->ourtid);
@@ -317,7 +317,7 @@ void call_close (struct call *c)
             tmp = tmp2;
         }
         l2tp_log (LOG_INFO,
-             "Connection %d closed to %s, port %d (%s)\n", 
+             "Connection %d closed to %s, port %d (%s)\n",
              c->container->tid,
              IPADDY (c->container->peer.sin_addr),
              ntohs (c->container->peer.sin_port), c->errormsg);
@@ -389,7 +389,10 @@ void destroy_call (struct call *c)
      * Close the tty
      */
     if (c->fd > 0)
+    {
         close (c->fd);
+        c->fd = -1;
+    }
 /*	if (c->dethrottle) deschedule(c->dethrottle); */
     if (c->zlb_xmit)
         deschedule (c->zlb_xmit);
@@ -404,9 +407,9 @@ void destroy_call (struct call *c)
 #endif
 
     /*
-     * Kill off pppd and wait for it to 
+     * Kill off PPPD and wait for it to
      * return to us.  This should only be called
-     * in rare cases if pppd hasn't already died
+     * in rare cases if PPPD hasn't already died
      * voluntarily
      */
     pid = c->pppd;
@@ -415,8 +418,8 @@ void destroy_call (struct call *c)
       /* Set c->pppd to zero to prevent recursion with child_handler */
       c->pppd = 0;
       /*
-       * There is a bug in some pppd versions where sending a SIGTERM
-       * does not actually seem to kill pppd, and xl2tpd waits indefinately
+       * There is a bug in some PPPD versions where sending a SIGTERM
+       * does not actually seem to kill PPPD, and xl2tpd waits indefinately
        * using waitpid, not accepting any new connections either. Therefor
        * we now use some more force and send it a SIGKILL instead of SIGTERM.
        * One confirmed buggy version of pppd is ppp-2.4.2-6.4.RHEL4
@@ -537,7 +540,7 @@ struct call *get_call (int tunnel, int call,  struct in_addr addr, int port,
 		       IPsecSAref_t refme, IPsecSAref_t refhim)
 {
     /*
-     * Figure out which call struct should handle this. 
+     * Figure out which call struct should handle this.
      * If we have tunnel and call ID's then they are unique.
      * Otherwise, if the tunnel is 0, look for an existing connection
      * or create a new tunnel.

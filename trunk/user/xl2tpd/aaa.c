@@ -65,7 +65,7 @@ void reserve_addr (unsigned int addr)
     if (ip_used (addr))
         return;
     tmp = uaddr[addr % ADDR_HASH_SIZE];
-    tmp2 = (struct addr_ent *) malloc (sizeof (struct addr_ent));
+    tmp2 = malloc (sizeof (struct addr_ent));
     uaddr[addr % ADDR_HASH_SIZE] = tmp2;
     tmp2->next = tmp;
     tmp2->addr = addr;
@@ -111,7 +111,7 @@ unsigned int get_addr (struct iprange *ipr)
             for (x = ntohl (ipr->start); x <= ntohl (ipr->end); x++)
             {
                 /* Found an IP in an ALLOW range, check to be sure it is
-                   consistant through the remaining regions */
+                   consistent through the remaining regions */
                 if (!ip_used (x))
                 {
                     status = SENSE_ALLOW;
@@ -434,7 +434,7 @@ void encrypt_avp (struct buffer *buf, _u16 len, struct tunnel *t)
 int decrypt_avp (char *buf, struct tunnel *t)
 {
     /* Decrypts a hidden AVP pointed to by buf.  The
-       new header will be exptected to be two characters
+       new header will be expected to be two characters
        offset from the old */
     int cnt = 0;
     int len, olen, flags;

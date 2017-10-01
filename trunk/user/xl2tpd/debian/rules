@@ -22,10 +22,12 @@ configure-stamp:
 	dh_testdir
 	touch configure-stamp
 
-build: build-stamp
+build: build-arch build-indep
+build-arch: build-stamp
+build-indep: build-stamp
 build-stamp: configure-stamp 
 	dh_testdir
-	$(MAKE)
+	$(MAKE) CFLAGS=" -DDEBUG_PPPD -DTRUST_PPPD_TO_DIE -O2 -fno-builtin -Wall -DSANITY -DLINUX -I$(KERNELSRC)/include/ -DIP_ALLOCATION -DUSE_KERNEL $(shell dpkg-buildflags --get CFLAGS)" CPPFLAGS=" -DDEBUG_PPPD -DTRUST_PPPD_TO_DIE -O2 -fno-builtin -Wall -DSANITY -DLINUX -I$(KERNELSRC)/include/ -DIP_ALLOCATION $(shell dpkg-buildflags --get CPPFLAGS)" LDFLAGS=" $(shell dpkg-buildflags --get LDFLAGS)"
 	touch $@
 
 clean:
@@ -46,7 +48,7 @@ install: build
 
 # Build architecture-independent files here.
 binary-indep: build install
-	dh_link -pl2tpd usr/share/doc/xl2tpd usr/share/doc/l2tpd
+	# Nothing to do here
 
 # Build architecture-dependent files here.
 binary-arch: build install

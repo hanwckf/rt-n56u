@@ -20,6 +20,11 @@ This option prevents xl2tpd from detaching from the terminal and
 daemonizing.  
 
 .TP 
+.B -l
+This option tells xl2tpd to use syslog for logging even when \fB\-D\fR
+was specified.
+
+.TP
 .B -c <config file>
 Tells xl2tpd to use an alternate config file.  Default is
 /etc/xl2tpd/xl2tpd.conf. Fallback configuration file is

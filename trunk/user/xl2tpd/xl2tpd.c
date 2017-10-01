@@ -17,7 +17,8 @@
 #define _ISOC99_SOURCE
 #define _XOPEN_SOURCE
 #define _BSD_SOURCE
-#define _XOPEN_SOURCE_EXTENDED
+#define _DEFAULT_SOURCE
+#define _XOPEN_SOURCE_EXTENDED	1
 #define _GNU_SOURCE
 
 #include <stdlib.h>
@@ -30,17 +31,7 @@
 #include <errno.h>
 #include <unistd.h>
 #include <time.h>
-#if (__GLIBC__ < 2)
-# if defined(FREEBSD) || defined(OPENBSD)
-#  include <sys/signal.h>
-# elif defined(LINUX)
-#  include <bsd/signal.h>
-# elif defined(SOLARIS)
-#  include <signal.h>
-# endif
-#else
-# include <signal.h>
-#endif
+#include <signal.h>
 #ifndef LINUX
 # include <sys/socket.h>
 #endif
@@ -71,7 +62,7 @@ static void open_controlfd(void);
 volatile sig_atomic_t sigterm_received;
 volatile sig_atomic_t sigint_received;
 volatile sig_atomic_t sigchld_received;
-volatile sig_atomic_t sigusr1_received;;
+volatile sig_atomic_t sigusr1_received;
 volatile sig_atomic_t sighup_received;
 
 void init_tunnel_list (struct tunnel_list *t)
@@ -145,7 +136,7 @@ void show_status (void)
         while (c)
         {
             cnt++;
-            l2tp_log (LOG_WARNING, 
+            l2tp_log (LOG_WARNING,
                      "Call %s # %lu, ID = %d (local), %d (remote), serno = %u,"
                      " data_seq_num = %d, data_rec_seq_num = %d,"
                      " pLr = %d, tx = %u bytes (%u), rx= %u bytes (%u)",
@@ -189,9 +180,9 @@ void show_status (void)
 
 void null_handler(int sig)
 {
-       /* FIXME 
-        * A sighup is received when a call is terminated, unknown origine .. 
-        * I catch it and ll looks good, but .. 
+       /* FIXME
+        * A sighup is received when a call is terminated, unknown origine ..
+        * I catch it and ll looks good, but ..
         */
 }
 
@@ -206,7 +197,7 @@ void child_handler (int signal)
      * Oops, somebody we launched was killed.
      * It's time to reap them and close that call.
      * But first, we have to find out what PID died.
-     * unfortunately, pppd will 
+     * unfortunately, pppd will
      */
     struct tunnel *t;
     struct call *c;
@@ -250,7 +241,7 @@ void child_handler (int signal)
                          c->cid );
                     }
                     c->needclose = -1;
-                    /* 
+                    /*
                      * OK...pppd died, we can go ahead and close the pty for
                      * it
                      */
@@ -357,7 +348,6 @@ int start_pppd (struct call *c, struct ppp_opts *opts)
     /* char a, b; */
     char tty[512];
     char *stropt[80];
-    struct ppp_opts *p;
 #ifdef USE_KERNEL
     struct sockaddr_pppol2tp sax;
     int flags;
@@ -371,16 +361,7 @@ int start_pppd (struct call *c, struct ppp_opts *opts)
     struct call *sc;
     struct tunnel *st;
 
-    p = opts;
     stropt[0] = strdup (PPPD);
-    while (p)
-    {
-        stropt[pos] = (char *) malloc (strlen (p->option) + 1);
-        strncpy (stropt[pos], p->option, strlen (p->option) + 1);
-        pos++;
-        p = p->next;
-    }
-    stropt[pos] = NULL;
     if (c->pppd > 0)
     {
         l2tp_log(LOG_WARNING, "%s: PPP already started on call!\n", __FUNCTION__);
@@ -429,21 +410,20 @@ int start_pppd (struct call *c, struct ppp_opts *opts)
        stropt[pos++] = strdup ("plugin");
        stropt[pos++] = strdup ("pppol2tp.so");
        stropt[pos++] = strdup ("pppol2tp");
-       stropt[pos] = (char *) malloc (10);
+       stropt[pos] = malloc (10);
        snprintf (stropt[pos], 10, "%d", fd2);
         pos++;
        if (c->container->lns) {
         stropt[pos++] = strdup ("pppol2tp_lns_mode");
         stropt[pos++] = strdup ("pppol2tp_tunnel_id");
-        stropt[pos] = (char *) malloc (10);
+        stropt[pos] = malloc (10);
         snprintf (stropt[pos], 10, "%d", c->container->ourtid);
             pos++;
         stropt[pos++] = strdup ("pppol2tp_session_id");
-        stropt[pos] = (char *) malloc (10);
+        stropt[pos] = malloc (10);
         snprintf (stropt[pos], 10, "%d", c->ourcid);
             pos++;
        }
-        stropt[pos] = NULL;
     }
     else
 #endif
@@ -453,7 +433,7 @@ int start_pppd (struct call *c, struct ppp_opts *opts)
             l2tp_log (LOG_WARNING, "%s: unable to allocate pty, abandoning!\n",
                       __FUNCTION__);
             return -EINVAL;
-        } 
+        }
 
         /* set fd opened above to not echo so we don't see read our own packets
            back of the file descriptor that we just wrote them to */
@@ -472,6 +452,17 @@ int start_pppd (struct call *c, struct ppp_opts *opts)
             return -EINVAL;
         }
         stropt[pos++] = strdup(tty);
+    }
+
+    {
+        struct ppp_opts *p = opts;
+        int maxn_opts = sizeof(stropt) / sizeof(stropt[0]) - 1;
+        while (p && pos < maxn_opts)
+        {
+            stropt[pos] = strdup (p->option);
+            pos++;
+            p = p->next;
+        }
         stropt[pos] = NULL;
     }
 
@@ -484,7 +475,7 @@ int start_pppd (struct call *c, struct ppp_opts *opts)
 #endif
 #ifdef __uClinux__
     c->pppd = vfork ();
-#else 
+#else
     c->pppd = fork ();
 #endif
 
@@ -501,7 +492,7 @@ int start_pppd (struct call *c, struct ppp_opts *opts)
 
         close (0); /* redundant; the dup2() below would do that, too */
         close (1); /* ditto */
-        /* close (2); No, we want to keep the connection to /dev/null. */ 
+        /* close (2); No, we want to keep the connection to /dev/null. */
 #ifdef USE_KERNEL
        if (!kernel_support)
 #endif
@@ -510,35 +501,40 @@ int start_pppd (struct call *c, struct ppp_opts *opts)
         /* connect the pty to stdin and stdout */
         dup2 (fd2, 0);
         dup2 (fd2, 1);
-	close(fd2);
+        close(fd2);
        }
         /* close all the calls pty fds */
         st = tunnels.head;
         while (st)
         {
-            sc = st->call_head;
-            while (sc)
-            {
 #ifdef USE_KERNEL
-                if (kernel_support) {
+            if (kernel_support) {
+                if(st->udp_fd!=-1)
                     close(st->udp_fd); /* tunnel UDP fd */
+                if(st->pppox_fd!=-1)
                     close(st->pppox_fd); /* tunnel PPPoX fd */
-                } else
+            } else
 #endif
-                    close (sc->fd); /* call pty fd */
-                sc = sc->next;
+            {
+                sc = st->call_head;
+                while (sc)
+                {
+                    if(sc->fd!=-1)
+                        close (sc->fd); /* call pty fd */
+                    sc = sc->next;
+                }
             }
             st = st->next;
         }
 
         /* close the UDP socket fd */
-        if (server_socket > 0) {
+        if (server_socket != -1) {
             close (server_socket);
             server_socket = -1;
         }
 
         /* close the control pipe fd */
-        if (control_fd > 0) {
+        if (control_fd != -1) {
             close (control_fd);
             control_fd = -1;
         }
@@ -751,18 +747,15 @@ void magic_lac_tunnel (void *data)
     {
         /* FIXME: I should try different LNS's if I get failures */
         l2tp_call (lac->lns->hostname, lac->lns->port, lac, NULL);
-        return;
     }
     else if (deflac && deflac->lns)
     {
         l2tp_call (deflac->lns->hostname, deflac->lns->port, lac, NULL);
-        return;
     }
     else
     {
         l2tp_log (LOG_WARNING, "%s: Unable to find hostname to dial for '%s'\n",
              __FUNCTION__, lac->entname);
-        return;
     }
 }
 
@@ -928,7 +921,7 @@ struct tunnel *new_tunnel ()
     tmp->txspeed = DEFAULT_TX_BPS;
     memset (tmp->chal_us.reply, 0, MD_SIG_SIZE);
     memset (tmp->chal_them.reply, 0, MD_SIG_SIZE);
-    tmp->chal_them.vector = (unsigned char *) malloc (VECTOR_SIZE);
+    tmp->chal_them.vector = malloc (VECTOR_SIZE);
     return tmp;
 }
 
@@ -947,13 +940,13 @@ int parse_one_line_lac (char* bufp, struct lac *tc)
     /* FIXME: I should check for incompatible options */
     char *s, *d, *t;
     int linenum = 0;
-    
+
     s = strtok (bufp, ";");
-    // parse options token by token    
+    // parse options token by token
     while (s != NULL)
     {
         linenum++;
-        
+
         while ((*s < 33) && *s)
             s++;                /* Skip over beginning white space */
         t = s + strlen (s);
@@ -981,7 +974,7 @@ int parse_one_line_lac (char* bufp, struct lac *tc)
             __FUNCTION__, s, t);
 #endif
         /* Okay, bit twidling is done.  Let's handle this */
-        
+
         switch (parse_one_option (s, t, CONTEXT_LAC, tc))
         {
         case -1:
@@ -1063,7 +1056,6 @@ void do_control ()
             /*FIXME: check quotes to allow filenames with spaces?
               (do not forget quotes escaping to allow filenames with quotes)*/
 
-            /*FIXME: write to res_filename may cause SIGPIPE, need to catch it*/
             resf = fopen (res_filename, "w");
             if (!resf) {
                 l2tp_log (LOG_DEBUG, "%s: Can't open result file %s\n",
@@ -1355,7 +1347,7 @@ void do_control ()
 void usage(void) {
     printf("\nxl2tpd version:  %s\n", SERVER_VERSION);
     printf("Usage: xl2tpd [-c <config file>] [-s <secret file>] [-p <pid file>]\n"
-           "              [-C <control file>] [-D]\n"
+           "              [-C <control file>] [-D] [-l]\n"
            "              [-v, --version]\n");
     printf("\n");
     exit(1);
@@ -1366,6 +1358,7 @@ void init_args(int argc, char *argv[])
     int i=0;
 
     gconfig.daemon=1;
+    gconfig.syslog=-1;
     memset(gconfig.altauthfile,0,STRLEN);
     memset(gconfig.altconfigfile,0,STRLEN);
     memset(gconfig.authfile,0,STRLEN);
@@ -1403,6 +1396,9 @@ void init_args(int argc, char *argv[])
         else if (! strncmp(argv[i],"-D",2)) {
             gconfig.daemon=0;
         }
+        else if (! strncmp(argv[i],"-l",2)) {
+            gconfig.syslog=1;
+        }
         else if (! strncmp(argv[i],"-s",2)) {
             if(++i == argc)
                 usage();
@@ -1428,6 +1424,13 @@ void init_args(int argc, char *argv[])
             usage();
         }
     }
+
+    /*
+     * defaults to syslog if no log facility was explicitly
+     * specified and we are about to daemonize
+     */
+    if (gconfig.syslog < 0)
+        gconfig.syslog = gconfig.daemon;
 }
 
 
@@ -1442,7 +1445,11 @@ void daemonize() {
         exit(1);
     }
     else if (pid)
+    {
+        close(server_socket);
+        closelog();
         exit(0);
+    }
 
     close(0);
     i = open("/dev/null", O_RDWR);
@@ -1507,7 +1514,7 @@ static void consider_pidfile() {
     }
 }
 
-static void open_controlfd() 
+static void open_controlfd()
 {
     control_fd = open (gconfig.controlfile, O_RDONLY | O_NONBLOCK, 0600);
     if (control_fd < 0)
@@ -1528,7 +1535,6 @@ static void open_controlfd()
 void init (int argc,char *argv[])
 {
     struct lac *lac;
-    struct in_addr listenaddr;
     struct utsname uts;
 
     init_args (argc,argv);
@@ -1560,6 +1566,7 @@ void init (int argc,char *argv[])
     signal (SIGCHLD, &sigchld_handler);
     signal (SIGUSR1, &sigusr1_handler);
     signal (SIGHUP, &sighup_handler);
+    signal (SIGPIPE, SIG_IGN);
     init_scheduler ();
 
     unlink(gconfig.controlfile);
@@ -1574,10 +1581,8 @@ void init (int argc,char *argv[])
     l2tp_log (LOG_INFO, "Forked by Scott Balmos and David Stipp, (C) 2001\n");
     l2tp_log (LOG_INFO, "Inherited by Jeff McAdams, (C) 2002\n");
     l2tp_log (LOG_INFO, "Forked again by Xelerance (www.xelerance.com) (C) 2006-2016\n");
-    l2tp_log (LOG_INFO, "Listening on IP address %s, port %d\n", inet_ntoa(listenaddr), gconfig.port);
 #endif
 
-    listenaddr.s_addr = gconfig.listenaddr;
     lac = laclist;
     while (lac)
     {

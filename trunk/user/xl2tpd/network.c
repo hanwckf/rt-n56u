@@ -31,58 +31,10 @@
 #include "ipsecmast.h"
 #include "misc.h"    /* for IPADDY macro */
 
-#include <math.h>
-
 char hostname[256];
 int server_socket = -1;         /* Server socket */
 #ifdef USE_KERNEL
 int kernel_support;             /* Kernel Support there or not? */
-#endif
-
-#if defined(USE_KERNEL) && defined(MODULE_AUTO)
-void modprobe() {
-    char * modules[] = { "l2tp_ppp", "pppol2tp", NULL };
-    char ** module;
-    char buf[256], *tok;
-    int pid, exit_status, fd;
-
-    FILE * fmod = fopen("/proc/modules", "r");
-
-    if (fmod == NULL)
-        return;
-
-    while (fgets(buf, 255, fmod) != NULL) {
-        if ((tok = strtok(buf, " ")) != NULL) {
-            for (module = modules; *module != NULL; ++module) {
-                if (!strcmp(*module, tok)) {
-                    fclose(fmod);
-                    return;
-                }
-            }
-        }
-    }
-
-    fclose(fmod);
-
-    for (module = modules; *module != NULL; ++module) {
-        if ((pid = fork()) >= 0) {
-            if (pid == 0) {
-                setenv("PATH", "/sbin:/usr/sbin:/bin:/usr/bin", 1);
-                if ((fd = open("/dev/null", O_RDWR)) > -1) {
-                    dup2(fd, 1);
-                    dup2(fd, 2);
-                }
-                execlp("modprobe", "modprobe", "-q", *module, (char *)NULL);
-                exit(1);
-            } else {
-                if ((pid = waitpid(pid, &exit_status, 0)) != -1 && WIFEXITED(exit_status)) {
-                    if (WEXITSTATUS(exit_status) == 0)
-                        return;
-                }
-            }
-        }
-    }
-}
 #endif
 
 int init_network (void)
@@ -106,6 +58,9 @@ int init_network (void)
 
     arg=1;
     setsockopt(server_socket, SOL_SOCKET, SO_REUSEADDR, &arg, sizeof(arg));
+#ifdef SO_NO_CHECK
+    setsockopt(server_socket, SOL_SOCKET, SO_NO_CHECK, &arg, sizeof(arg));
+#endif
 
     if (bind (server_socket, (struct sockaddr *) &server, sizeof (server)))
     {
@@ -142,15 +97,6 @@ int init_network (void)
     l2tp_log(LOG_INFO, "No attempt being made to use IPsec SAref's since we're not on a Linux machine.\n");
 #endif
 
-#ifdef SO_NO_CHECK
-    /* turn off UDP checksums */
-    arg=1;
-    if (setsockopt(server_socket, SOL_SOCKET, SO_NO_CHECK , (void*)&arg,
-                   sizeof(arg)) ==-1) {
-        l2tp_log(LOG_INFO, "unable to turn off UDP checksums");
-    }
-#endif
-
 #ifdef USE_KERNEL
     if (gconfig.forceuserspace)
     {
@@ -159,9 +105,6 @@ int init_network (void)
     }
     else
     {
-#if defined(USE_KERNEL) && defined(MODULE_AUTO)
-        modprobe();
-#endif
         int kernel_fd = socket(AF_PPPOX, SOCK_DGRAM, PX_PROTO_OL2TP);
         if (kernel_fd < 0)
         {
@@ -326,7 +269,7 @@ void control_xmit (void *b)
         tv.tv_usec = 0;
 
         if (buf->retries > 1)
-            tv.tv_sec = 1*pow(2, buf->retries-1);
+            tv.tv_sec = 1LL << (buf->retries-1);
 
         schedule (tv, control_xmit, buf);
 #ifdef DEBUG_CONTROL_XMIT
@@ -339,24 +282,21 @@ void control_xmit (void *b)
 
 void udp_xmit (struct buffer *buf, struct tunnel *t)
 {
-    struct cmsghdr *cmsg;
+    struct cmsghdr *cmsg = NULL;
     char cbuf[CMSG_SPACE(sizeof (unsigned int) + sizeof (struct in_pktinfo))];
     unsigned int *refp;
     struct msghdr msgh;
     int err;
     struct iovec iov;
     struct in_pktinfo *pktinfo;
-    int finallen;
-    
+    int finallen = 0;
+
     /*
      * OKAY, now send a packet with the right SAref values.
      */
     memset(&msgh, 0, sizeof(struct msghdr));
-
-    cmsg = NULL;
     msgh.msg_control = cbuf;
     msgh.msg_controllen = sizeof(cbuf);
-    finallen = 0;
 
     if (gconfig.ipsecsaref && t->refhim != IPSEC_SAREF_NULL) {
 	cmsg = CMSG_FIRSTHDR(&msgh);
@@ -372,11 +312,11 @@ void udp_xmit (struct buffer *buf, struct tunnel *t)
 	
 	finallen = cmsg->cmsg_len;
     }
-    
+
     if (t->my_addr.ipi_addr.s_addr){
 
 	if ( ! cmsg) {
-		cmsg = CMSG_FIRSTHDR(&msgh);		
+		cmsg = CMSG_FIRSTHDR(&msgh);
 	}
 	else {
 		cmsg = CMSG_NXTHDR(&msgh, cmsg);
@@ -391,16 +331,24 @@ void udp_xmit (struct buffer *buf, struct tunnel *t)
 	
 	finallen += cmsg->cmsg_len;
     }
-    
+
+    /*
+     * Some OS don't like assigned buffer with zero length (e.g. OpenBSD),
+     * some OS don't like empty buffer with non-zero length (e.g. Linux).
+     * So make them all happy by assigning control buffer only if we really
+     * have something there and zero both fields otherwise.
+     */
     msgh.msg_controllen = finallen;
-    
+    if (!finallen)
+        msgh.msg_control = NULL;
+
     iov.iov_base = buf->start;
     iov.iov_len  = buf->len;
 
     /* return packet from whence it came */
     msgh.msg_name    = &buf->peer;
     msgh.msg_namelen = sizeof(buf->peer);
-    
+
     msgh.msg_iov  = &iov;
     msgh.msg_iovlen = 1;
     msgh.msg_flags = 0;
@@ -675,7 +623,7 @@ void network_thread ()
 		     * have already closed or some such nonsense.  To
 		     * prevent this from closing the tunnel, if we get a
 		     * call on a valid tunnel, but not with a valid CID,
-		     * we'll just send a ZLB to ack receiving the packet.
+		     * we'll just send a ZLB to ACK receiving the packet.
 		     */
 		    if (gconfig.debug_tunnel)
 			l2tp_log (LOG_DEBUG,
@@ -791,7 +739,9 @@ int connect_pppol2tp(struct tunnel *t) {
 
             flags=1;
             setsockopt(ufd, SOL_SOCKET, SO_REUSEADDR, &flags, sizeof(flags));
+#ifdef SO_NO_CHECK
             setsockopt(ufd, SOL_SOCKET, SO_NO_CHECK, &flags, sizeof(flags));
+#endif
 
             if (bind (ufd, (struct sockaddr *) &server, sizeof (server)))
             {

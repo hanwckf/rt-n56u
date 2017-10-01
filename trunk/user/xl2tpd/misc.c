@@ -23,7 +23,7 @@
 #include <errno.h>
 #include <string.h>
 #include <syslog.h>
-#if (__GLIBC__ < 2)
+#if defined (__GLIBC__) && (__GLIBC__ < 2)
 # if defined(FREEBSD) || defined(OPENBSD)
 #  include <sys/signal.h>
 # elif defined(LINUX)
@@ -68,7 +68,7 @@ void l2tp_log (int level, const char *fmt, ...)
     vsnprintf (buf, sizeof (buf), fmt, args);
     va_end (args);
     
-    if(gconfig.daemon) {
+    if(gconfig.syslog) {
 	init_log();
 	SYSLOG_CALL( syslog (level, "%s", buf) );
     } else {
@@ -235,7 +235,7 @@ struct ppp_opts *add_opt (struct ppp_opts *option, char *fmt, ...)
 {
     va_list args;
     struct ppp_opts *new, *last;
-    new = (struct ppp_opts *) malloc (sizeof (struct ppp_opts));
+    new = malloc (sizeof (struct ppp_opts));
     if (!new)
     {
         l2tp_log (LOG_WARNING,

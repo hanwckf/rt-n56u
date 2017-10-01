@@ -26,3 +26,6 @@ IPsec SA Reference tracking do not yet work together.
 Xl2tpd is based on the 0.69 L2TP by Jeff McAdams <jeffm@iglou.com>
 It was de-facto maintained by Jacco de Leeuw <jacco2@dds.nl> in 2002 and 2003.
 
+Mailing Lists :
+    https://lists.openswan.org/cgi-bin/mailman/listinfo/xl2tpd is home of the
+    mailing list. Note: This is a closed list - you *must* be subscribed to post.

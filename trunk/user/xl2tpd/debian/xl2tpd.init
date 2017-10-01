@@ -20,6 +20,8 @@ DESC=xl2tpd
 
 test -x $DAEMON || exit 0
 
+. /lib/lsb/init-functions
+
 # Include xl2tpd defaults if available
 if [ -f /etc/default/xl2tpd ] ; then
 	. /etc/default/xl2tpd
@@ -54,7 +56,7 @@ case "$1" in
   restart)
 	test -d ${XL2TPD_RUN_DIR:-/var/run/xl2tpd} || mkdir -p ${XL2TPD_RUN_DIR:-/var/run/xl2tpd}
 	echo -n "Restarting $DESC: "
-	start-stop-daemon --stop --quiet --pidfile \
+	start-stop-daemon --oknodo --stop --quiet --pidfile \
 		$PIDFILE --exec $DAEMON
 	sleep 1
 	start-stop-daemon --start --quiet --pidfile \

@@ -93,7 +93,7 @@ int main (int argc, char *argv[])
 {
     char* control_filename = NULL;
     char* tunnel_name = NULL;
-    struct command_t* command = NULL;    
+    struct command_t* command = NULL;
     int i; /* argv iterator */
 
     if (argv[1] && !strncmp (argv[1], "--help", 6))

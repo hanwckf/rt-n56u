@@ -123,6 +123,23 @@ https://github.com/miniupnp/miniupnp/pull/114
 Edit the /etc/miniupnpd.conf file to set options. Almost all options are
 also available through command line switches.
 
+A basic configuration would set :
+ext_ifname :   WAN network interface (interface connected to the internet)
+listening_ip : LAN network interface (network where to supply NAT traversal)
+enable_natpmp=yes
+enable_upnp=yes
+and the permission rules (see below).
+
+Historically, LAN had to be specified by IP/mask, such as
+listening_ip=192.168.0.1/24
+but if you compiled with IPv6 support, you need to specify an interface name :
+listening_ip=eth0
+The current code assumes there is only one IPv4 address assigned to LAN
+interfaces. That is not the case with some CARP setup, there is then a risk
+the wrong mask would be picked. You can force the mask when using interface
+names :
+listtening_ip=eth0/24
+
 Miniupnpd supports some kind of security check for allowing or disallowing
 redirection to be made. The UPnP permission rules are read from the
 miniupnpd.conf configuration file.
@@ -162,5 +179,3 @@ To stop the daemon use :
   # kill `cat /var/run/miniupnpd.pid`
 or if your linux system use /etc/init.d/
   # /etc/init.d/miniupnpd stop
-
-

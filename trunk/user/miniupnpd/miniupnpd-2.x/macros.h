@@ -1,4 +1,4 @@
-/* $Id: macros.h,v 1.3 2015/09/22 10:10:54 nanard Exp $ */
+/* $Id: macros.h,v 1.4 2016/12/16 09:11:18 nanard Exp $ */
 /* MiniUPnP project
  * http://miniupnp.free.fr/ or http://miniupnp.tuxfamily.org/
  * (c) 2012-2015 Thomas Bernard
@@ -12,7 +12,9 @@
 
 #include <stdint.h>
 
+#ifndef INLINE
 #define INLINE static inline
+#endif
 /* theses macros are designed to read/write unsigned short/long int
  * from an unsigned char array in network order (big endian).
  * Avoid pointer casting, so avoid accessing unaligned memory, which

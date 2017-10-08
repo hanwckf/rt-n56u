@@ -1,9 +1,10 @@
 #! /bin/sh
-# $Id: iptables_init_and_clean.sh,v 1.6 2016/02/09 09:37:44 nanard Exp $
+# $Id: iptables_init_and_clean.sh,v 1.7 2017/04/21 11:16:09 nanard Exp $
 # Improved Miniupnpd iptables init script.
 # Checks for state of filter before doing anything..
 
 IPTABLES="`which iptables`" || exit 1
+IPTABLES="$IPTABLES -w"
 IP="`which ip`" || exit 1
 
 #EXTIF=eth0

@@ -1,7 +1,7 @@
-/* $Id: miniupnpd.c,v 1.216 2016/03/07 12:26:00 nanard Exp $ */
+/* $Id: miniupnpd.c,v 1.219 2017/04/21 11:22:38 nanard Exp $ */
 /* MiniUPnP project
  * http://miniupnp.free.fr/ or http://miniupnp.tuxfamily.org/
- * (c) 2006-2015 Thomas Bernard
+ * (c) 2006-2016 Thomas Bernard
  * This software is subject to the conditions detailed
  * in the LICENCE file provided within the distribution */
 
@@ -182,7 +182,7 @@ tomato_load(void)
 		current_time = time(NULL);
 		s[sizeof(s) - 1] = 0;
 		while (fgets(s, sizeof(s) - 1, f)) {
-			if (sscanf(s, "%3s %hu %31s %hu [%*[^]]] %u", proto, &eport, iaddr, &iport, &timestamp) >= 4) {
+			if (sscanf(s, "%3s %hu %31s %hu [%*[^]]] %u", proto, &eport, iaddr, &iport, &timestamp) >= 4)
 			{
 				if (((a = strchr(s, '[')) != NULL) && ((b = strrchr(a, ']')) != NULL))
 				{
@@ -322,6 +322,7 @@ OpenAndConfHTTPSocket(unsigned short * port)
 		syslog(LOG_WARNING, "socket(PF_INET6, ...) failed with EAFNOSUPPORT, disabling IPv6");
 		SETFLAG(IPV6DISABLEDMASK);
 		ipv6 = 0;
+		/* Try again with IPv4 */
 		s = socket(PF_INET, SOCK_STREAM, 0);
 	}
 #endif
@@ -1854,9 +1855,11 @@ main(int argc, char * * argv)
 
 	if(
 #ifdef ENABLE_NATPMP
-        !GETFLAG(ENABLENATPMPMASK) &&
+	   !GETFLAG(ENABLENATPMPMASK) && !GETFLAG(ENABLEUPNPMASK)
+#else
+	   !GETFLAG(ENABLEUPNPMASK)
 #endif
-        !GETFLAG(ENABLEUPNPMASK) ) {
+	   ) {
 		syslog(LOG_ERR, "Why did you run me anyway?");
 		return 0;
 	}
@@ -1927,16 +1930,18 @@ main(int argc, char * * argv)
 #endif /* V6SOCKETS_ARE_V6ONLY */
 #endif /* ENABLE_HTTPS */
 #ifdef ENABLE_IPV6
-		if(find_ipv6_addr(lan_addrs.lh_first ? lan_addrs.lh_first->ifname : NULL,
-		                  ipv6_addr_for_http_with_brackets, sizeof(ipv6_addr_for_http_with_brackets)) > 0) {
-			syslog(LOG_NOTICE, "HTTP IPv6 address given to control points : %s",
-			       ipv6_addr_for_http_with_brackets);
-		} else {
-			memcpy(ipv6_addr_for_http_with_brackets, "[::1]", 6);
-			syslog(LOG_WARNING, "no HTTP IPv6 address, disabling IPv6");
-			SETFLAG(IPV6DISABLEDMASK);
+		if(!GETFLAG(IPV6DISABLEDMASK)) {
+			if(find_ipv6_addr(lan_addrs.lh_first ? lan_addrs.lh_first->ifname : NULL,
+			                  ipv6_addr_for_http_with_brackets, sizeof(ipv6_addr_for_http_with_brackets)) > 0) {
+				syslog(LOG_NOTICE, "HTTP IPv6 address given to control points : %s",
+				       ipv6_addr_for_http_with_brackets);
+			} else {
+				memcpy(ipv6_addr_for_http_with_brackets, "[::1]", 6);
+				syslog(LOG_WARNING, "no HTTP IPv6 address, disabling IPv6");
+				SETFLAG(IPV6DISABLEDMASK);
+			}
 		}
-#endif
+#endif	/* ENABLE_IPV6 */
 
 		/* open socket for SSDP connections */
 		sudp = OpenAndConfSSDPReceiveSocket(0);
@@ -2004,7 +2009,9 @@ main(int argc, char * * argv)
 #endif
 
 #if defined(ENABLE_IPV6) && defined(ENABLE_PCP)
-	spcp_v6 = OpenAndConfPCPv6Socket();
+	if(!GETFLAG(IPV6DISABLEDMASK)) {
+		spcp_v6 = OpenAndConfPCPv6Socket();
+	}
 #endif
 
 	/* for miniupnpdctl */

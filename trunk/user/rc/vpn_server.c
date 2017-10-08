@@ -57,7 +57,6 @@ gen_vpns_pppd_options(int vpns_type)
 	if (!(fp = fopen(vpns_opt, "w")))
 		return -1;
 
-	fprintf(fp, "lock\n");
 	fprintf(fp, "name %s\n", get_our_hostname());
 	fprintf(fp, "auth\n");
 	fprintf(fp, "refuse-eap\n");

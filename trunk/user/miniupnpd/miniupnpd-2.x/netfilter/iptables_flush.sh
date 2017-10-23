@@ -1,5 +1,5 @@
 #! /bin/sh
-# $Id: iptables_flush.sh,v 1.5 2016/02/09 09:37:44 nanard Exp $
+# $Id: iptables_flush.sh,v 1.6 2017/04/21 11:16:09 nanard Exp $
 IPTABLES=/sbin/iptables
 
 #flush all rules owned by miniupnpd

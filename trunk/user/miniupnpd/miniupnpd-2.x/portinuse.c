@@ -1,4 +1,4 @@
-/* $Id: portinuse.c,v 1.5 2016/01/13 16:02:08 nanard Exp $ */
+/* $Id: portinuse.c,v 1.6 2016/08/16 09:25:35 nanard Exp $ */
 /* MiniUPnP project
  * (c) 2007-2014 Thomas Bernard
  * http://miniupnp.free.fr/ or http://miniupnp.tuxfamily.org/
@@ -251,7 +251,7 @@ static struct nlist list[] = {
 			abort();
 		}
 		/* no support for IPv6 */
-		if ((inp->inp_vflag & INP_IPV6) != 0)
+		if (INP_ISIPV6(inp) != 0)
 			continue;
 		syslog(LOG_DEBUG, "%08lx:%hu %08lx:%hu <=> %hu %08lx:%hu",
 		       (u_long)inp->inp_laddr.s_addr, ntohs(inp->inp_lport),

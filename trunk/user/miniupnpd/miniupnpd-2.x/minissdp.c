@@ -1,7 +1,7 @@
-/* $Id: minissdp.c,v 1.84 2016/02/20 19:08:40 nanard Exp $ */
+/* $Id: minissdp.c,v 1.85 2017/04/21 11:23:43 nanard Exp $ */
 /* MiniUPnP project
  * http://miniupnp.free.fr/ or http://miniupnp.tuxfamily.org/
- * (c) 2006-2016 Thomas Bernard
+ * (c) 2006-2017 Thomas Bernard
  * This software is subject to the conditions detailed
  * in the LICENCE file provided within the distribution */
 
@@ -17,6 +17,10 @@
 #include <syslog.h>
 
 #include "config.h"
+#if defined(ENABLE_IPV6) && defined(UPNP_STRICT)
+#include <ifaddrs.h>
+#endif /* defined(ENABLE_IPV6) && defined(UPNP_STRICT) */
+
 #include "upnpdescstrings.h"
 #include "miniupnpdpath.h"
 #include "upnphttp.h"
@@ -115,6 +119,29 @@ AddMulticastMembershipIPv6(int s, unsigned int ifindex)
 	return 0;
 }
 #endif
+
+
+#if defined(ENABLE_IPV6) && defined(UPNP_STRICT)
+static int get_link_local_addr(unsigned scope_id, struct in6_addr * addr6)
+{
+	struct ifaddrs * ifap;
+	struct ifaddrs * ife;
+	if(getifaddrs(&ifap)<0) {
+		syslog(LOG_ERR, "getifaddrs: %m");
+		return -1;
+	}
+	for(ife = ifap; ife != NULL; ife = ife->ifa_next) {
+		if(ife->ifa_addr == NULL) continue;
+		if(ife->ifa_addr->sa_family != AF_INET6) continue;
+		if(!IN6_IS_ADDR_LINKLOCAL(&(((const struct sockaddr_in6 *)ife->ifa_addr)->sin6_addr))) continue;
+		if(scope_id != if_nametoindex(ife->ifa_name)) continue;
+		memcpy(addr6, &(((const struct sockaddr_in6 *)ife->ifa_addr)->sin6_addr), sizeof(struct in6_addr));
+		break;
+	}
+	freeifaddrs(ifap);
+	return 0;
+}
+#endif /* defined(ENABLE_IPV6) && defined(UPNP_STRICT) */
 
 /* Open and configure the socket listening for
  * SSDP udp packets sent on 239.255.255.250 port 1900
@@ -888,7 +915,26 @@ ProcessSSDPData(int s, const char *bufr, int n,
 				mx_value = atoi(mx);
 				syslog(LOG_DEBUG, "MX: %.*s (value=%d)", mx_len, mx, mx_value);
 			}
-#endif
+#endif /* defined(UPNP_STRICT) || defined(DELAY_MSEARCH_RESPONSE) */
+#if defined(UPNP_STRICT)
+			/* Fix UDA-1.2.10 Man header empty or invalid */
+			else if((i < n - 4) && (strncasecmp(bufr+i, "man:", 3) == 0))
+			{
+				const char * man;
+				int man_len;
+				man = bufr+i+4;
+				man_len = 0;
+				while((*man == ' ' || *man == '\t') && (man < bufr + n))
+					man++;
+				while(man[man_len]!='\r' && man[man_len]!='\n'
+				     && (man + man_len < bufr + n))
+					man_len++;
+				if(strncmp(man, "\"ssdp:discover\"", 15) != 0) {
+					syslog(LOG_INFO, "ignoring SSDP packet MAN empty or invalid header");
+					return;
+				}
+			}
+#endif /* defined(UPNP_STRICT) */
 		}
 #ifdef UPNP_STRICT
 		/* For multicast M-SEARCH requests, if the search request does
@@ -942,10 +988,13 @@ ProcessSSDPData(int s, const char *bufr, int n,
 				/* retrieve the IPv6 address which
 				 * will be used locally to reach sender */
 				memset(&addr6, 0, sizeof(addr6));
-				if(get_src_for_route_to (sender, &addr6, &addr6_len, &index) < 0) {
+				if(IN6_IS_ADDR_LINKLOCAL(&(((struct sockaddr_in6 *)sender)->sin6_addr))) {
+					get_link_local_addr(((struct sockaddr_in6 *)sender)->sin6_scope_id, &addr6);
+				} else if(get_src_for_route_to (sender, &addr6, &addr6_len, &index) < 0) {
 					syslog(LOG_WARNING, "get_src_for_route_to() failed, using %s", ipv6_addr_for_http_with_brackets);
 					announced_host = ipv6_addr_for_http_with_brackets;
-				} else {
+				}
+				if(announced_host == NULL) {
 					if(inet_ntop(AF_INET6, &addr6,
 					             announced_host_buf+1,
 					             sizeof(announced_host_buf) - 2)) {

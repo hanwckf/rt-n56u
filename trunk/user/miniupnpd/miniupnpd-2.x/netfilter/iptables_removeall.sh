@@ -1,6 +1,7 @@
 #! /bin/sh
-# $Id: iptables_removeall.sh,v 1.9 2016/02/09 09:37:44 nanard Exp $
+# $Id: iptables_removeall.sh,v 1.10 2017/04/21 11:16:09 nanard Exp $
 IPTABLES="`which iptables`" || exit 1
+IPTABLES="$IPTABLES -w"
 IP="`which ip`" || exit 1
 
 #change this parameters :

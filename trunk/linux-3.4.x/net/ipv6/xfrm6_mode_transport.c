@@ -28,6 +28,8 @@ static int xfrm6_transport_output(struct xfrm_state *x, struct sk_buff *skb)
 	iph = ipv6_hdr(skb);
 
 	hdr_len = x->type->hdr_offset(x, skb, &prevhdr);
+	if (hdr_len < 0)
+		return hdr_len;
 
 #if defined(CONFIG_RALINK_HWCRYPTO_ESP6)
 	if (x->type->proto == IPPROTO_ESP) {

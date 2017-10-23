@@ -217,7 +217,8 @@ void tcp_select_initial_window(int __space, __u32 mss,
 		/* Set window scaling on max possible window
 		 * See RFC1323 for an explanation of the limit to 14
 		 */
-		space = max_t(u32, sysctl_tcp_rmem[2], sysctl_rmem_max);
+		space = max_t(u32, space, sysctl_tcp_rmem[2]);
+		space = max_t(u32, space, sysctl_rmem_max);
 		space = min_t(u32, space, *window_clamp);
 		while (space > 65535 && (*rcv_wscale) < 14) {
 			space >>= 1;
@@ -1204,21 +1205,21 @@ static void tcp_cwnd_validate(struct sock *sk)
  * when we would be allowed to send the split-due-to-Nagle skb fully.
  */
 static unsigned int tcp_mss_split_point(const struct sock *sk, const struct sk_buff *skb,
-					unsigned int mss_now, unsigned int max_segs)
+					unsigned int mss_now, unsigned int cwnd)
 {
 	const struct tcp_sock *tp = tcp_sk(sk);
-	u32 needed, window, max_len;
+	u32 needed, window, cwnd_len;
 
 	window = tcp_wnd_end(tp) - TCP_SKB_CB(skb)->seq;
-	max_len = mss_now * max_segs;
+	cwnd_len = mss_now * cwnd;
 
-	if (likely(max_len <= window && skb != tcp_write_queue_tail(sk)))
-		return max_len;
+	if (likely(cwnd_len <= window && skb != tcp_write_queue_tail(sk)))
+		return cwnd_len;
 
 	needed = min(skb->len, window);
 
-	if (max_len <= needed)
-		return max_len;
+	if (cwnd_len <= needed)
+		return cwnd_len;
 
 	return needed - needed % mss_now;
 }
@@ -1447,8 +1448,7 @@ static int tcp_tso_should_defer(struct sock *sk, struct sk_buff *skb)
 	limit = min(send_win, cong_win);
 
 	/* If a full-sized TSO skb can be sent, do it. */
-	if (limit >= min_t(unsigned int, sk->sk_gso_max_size,
-			   sk->sk_gso_max_segs * tp->mss_cache))
+	if (limit >= sk->sk_gso_max_size)
 		goto send_now;
 
 	/* Middle in queue won't get any more data, full sendable already? */
@@ -1674,9 +1674,7 @@ static int tcp_write_xmit(struct sock *sk, unsigned int mss_now, int nonagle,
 		limit = mss_now;
 		if (tso_segs > 1 && !tcp_urg_mode(tp))
 			limit = tcp_mss_split_point(sk, skb, mss_now,
-						    min_t(unsigned int,
-							  cwnd_quota,
-							  sk->sk_gso_max_segs));
+						    cwnd_quota);
 
 		if (skb->len > limit &&
 		    unlikely(tso_fragment(sk, skb, limit, mss_now, gfp)))

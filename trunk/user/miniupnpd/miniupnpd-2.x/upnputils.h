@@ -1,4 +1,4 @@
-/* $Id: upnputils.h,v 1.6 2014/03/31 12:32:57 nanard Exp $ */
+/* $Id: upnputils.h,v 1.7 2016/12/16 09:11:18 nanard Exp $ */
 /* MiniUPnP project
  * http://miniupnp.free.fr/ or http://miniupnp.tuxfamily.org/
  * (c) 2011-2013 Thomas Bernard
@@ -34,7 +34,7 @@ get_lan_for_peer(const struct sockaddr * peer);
  * define portability macros
  */
 #if defined(__sun)
-static size_t _sa_len(const struct sockaddr *addr)
+static __inline size_t _sa_len(const struct sockaddr *addr)
 {
         if (addr->sa_family == AF_INET)
                 return (sizeof(struct sockaddr_in));

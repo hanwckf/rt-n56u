@@ -55,15 +55,16 @@ func_start()
 
 ### XML-RPC
 rpc-listen-all=true
+rpc-allow-origin-all=true
 #rpc-secret=
-rpc-user=$aria_user
-rpc-passwd=$aria_pass
+#rpc-user=$aria_user
+#rpc-passwd=$aria_pass
 
 ### Common
 dir=$DIR_DL1
 max-download-limit=0
 max-overall-download-limit=6M
-disable-ipv6=true
+disable-ipv6=false
 
 ### File
 file-allocation=trunc
@@ -94,9 +95,9 @@ ftp-type=binary
 timeout=120
 connect-timeout=60
 split=5
-max-concurrent-downloads=5
-max-connection-per-server=1
-min-split-size=20M
+max-concurrent-downloads=3
+max-connection-per-server=8
+min-split-size=5M
 
 ### Log
 log=$DIR_CFG/aria2.log
@@ -104,7 +105,7 @@ log-level=notice
 
 EOF
 	fi
-
+:<<!
 	if [ ! -f "$FILE_WEB_CONF" ] ; then
 		cat > "$FILE_WEB_CONF" <<EOF
 angular
@@ -150,7 +151,7 @@ EOF
 		[ "$old_host" != "$lan_ipaddr" ] && sed -i "s/\(host:\).*/\1\ \'$lan_ipaddr\'\,/" $FILE_WEB_CONF
 		[ "$old_port" != "$aria_rport" ] && sed -i "s/\(port:\).*/\1\ \'$aria_rport\'\,/" $FILE_WEB_CONF
 	fi
-
+!
 	# aria2 needed home dir
 	export HOME="$DIR_CFG"
 

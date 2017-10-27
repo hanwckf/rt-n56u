@@ -109,6 +109,13 @@ ifeq ($(CONFIG_FIRMWARE_INCLUDE_LANG_UK),y)
 	sed $(COPYR_PATTERN) -i $(ROMFS_DIR)/www/UK.dict
 	sed $(DWURL_PATTERN) -i $(ROMFS_DIR)/www/UK.dict
 endif
+ifeq ($(CONFIG_FIRMWARE_INCLUDE_LANG_CN),y)
+	echo "LANG_CN=简体中文" >> $(ROMFS_DIR)/www/EN.header
+	cp dict/CN.dict $(ROMFS_DIR)/www
+	sed $(BOARD_PATTERN) -i $(ROMFS_DIR)/www/CN.dict
+	sed $(COPYR_PATTERN) -i $(ROMFS_DIR)/www/CN.dict
+	sed $(DWURL_PATTERN) -i $(ROMFS_DIR)/www/CN.dict
+endif
 	cat $(ROMFS_DIR)/www/EN.header dict/EN.footer > $(ROMFS_DIR)/www/EN.dict
 	sed $(BOARD_PATTERN) -i $(ROMFS_DIR)/www/EN.dict
 	sed $(COPYR_PATTERN) -i $(ROMFS_DIR)/www/EN.dict

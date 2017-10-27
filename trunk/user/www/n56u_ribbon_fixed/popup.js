@@ -104,7 +104,7 @@ function showLoadingBar(seconds){
 }
 
 function showLoadingOne(){
-	showLoading(1, "waiting");
+	showLoading(10, "waiting");
 	setTimeout("location.href = location.href;", 1500);
 }
 

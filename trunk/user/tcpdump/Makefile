@@ -1,5 +1,5 @@
 SRC_NAME=tcpdump-4.4.0
-
+THISDIR=$(shell pwd)
 CFLAGS += -Os -ffunction-sections -fdata-sections -DTCPDUMP_MINI
 LDFLAGS += -Wl,--gc-sections
 
@@ -27,6 +27,7 @@ configure:
 		--host=$(HOST_TARGET) \
 		--build=$(HOST_BUILD) ; \
 	)
+	cp -f $(THISDIR)/makefile_worked/Makefile $(THISDIR)/$(SRC_NAME)/Makefile
 
 build:
 	$(MAKE) -C $(SRC_NAME) TCPDUMP_MINI=1

@@ -1,0 +1,5 @@
+#!/bin/sh
+
+ip6tables -P INPUT ACCEPT
+ip6tables -P FORWARD ACCEPT
+ip6tables -F

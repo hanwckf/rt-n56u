@@ -11,3 +11,4 @@ if [ "$PS1" ] ; then
 fi;
 
 [ -r /opt/etc/profile ] && . /opt/etc/profile
+alias ll='ls -l'

@@ -1,0 +1,23 @@
+#!/bin/sh
+
+cd /etc/storage/
+
+if [ ! -f "cron/crontabs/admin" ] || [ -z "$(cat cron/crontabs/admin |grep "watchcat.sh")" ]; then
+	echo "*/1 * * * * /bin/watchcat.sh > /dev/null 2>&1" >> cron/crontabs/admin
+fi
+
+
+killall crond > /dev/null 2>&1
+if [ "$(nvram get crond_log)" = "1" ]; then
+	crond
+else
+	crond -d8
+fi
+
+mtd_storage.sh save > /dev/null 2>&1
+
+if [ $? -eq 0 ]; then
+	echo "[ DONE! ]"
+else
+	echo "[ ERROR! ]"
+fi

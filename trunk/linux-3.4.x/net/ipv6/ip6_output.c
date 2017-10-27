@@ -398,8 +398,8 @@ int ip6_forward(struct sk_buff *skb)
 	struct net *net = dev_net(dst->dev);
 	u32 mtu;
 
-	if (net->ipv6.devconf_all->forwarding == 0)
-		goto error;
+/*	if (net->ipv6.devconf_all->forwarding == 0)
+		goto error;*/
 
 	if (skb->pkt_type != PACKET_HOST)
 		goto drop;

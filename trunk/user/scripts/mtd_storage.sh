@@ -229,7 +229,7 @@ func_fill()
 	if [ ! -f "$script_started" ] ; then
 		cat > "$script_started" <<EOF
 #!/bin/sh
-
+export PATH='/opt/sbin:/opt/bin:/usr/sbin:/usr/bin:/sbin:/bin'
 ### Custom user script
 ### Called after router started and network is ready
 
@@ -240,6 +240,8 @@ func_fill()
 #modprobe ip_set_bitmap_ip
 #modprobe ip_set_list_set
 #modprobe xt_set
+#vlmcsd
+#start_napt66
 
 EOF
 		chmod 755 "$script_started"
@@ -249,7 +251,7 @@ EOF
 	if [ ! -f "$script_shutd" ] ; then
 		cat > "$script_shutd" <<EOF
 #!/bin/sh
-
+export PATH='/opt/sbin:/opt/bin:/usr/sbin:/usr/bin:/sbin:/bin'
 ### Custom user script
 ### Called before router shutdown
 ### \$1 - action (0: reboot, 1: halt, 2: power-off)
@@ -259,10 +261,11 @@ EOF
 	fi
 
 	# create post-iptables script
+
 	if [ ! -f "$script_postf" ] ; then
 		cat > "$script_postf" <<EOF
 #!/bin/sh
-
+export PATH='/opt/sbin:/opt/bin:/usr/sbin:/usr/bin:/sbin:/bin'
 ### Custom user script
 ### Called after internal iptables reconfig (firewall update)
 
@@ -274,7 +277,7 @@ EOF
 	if [ ! -f "$script_postw" ] ; then
 		cat > "$script_postw" <<EOF
 #!/bin/sh
-
+export PATH='/opt/sbin:/opt/bin:/usr/sbin:/usr/bin:/sbin:/bin'
 ### Custom user script
 ### Called after internal WAN up/down action
 ### \$1 - WAN action (up/down)
@@ -289,13 +292,17 @@ EOF
 	if [ ! -f "$script_inets" ] ; then
 		cat > "$script_inets" <<EOF
 #!/bin/sh
-
+export PATH='/opt/sbin:/opt/bin:/usr/sbin:/usr/bin:/sbin:/bin'
 ### Custom user script
 ### Called on Internet status changed
 ### \$1 - Internet status (0/1)
 ### \$2 - elapsed time (s) from previous state
 
 logger -t "di" "Internet state: \$1, elapsed time: \$2s."
+
+if [ -f "/bin/scutclient.sh" ]; then
+	scutclient.sh restart
+fi
 
 EOF
 		chmod 755 "$script_inets"
@@ -404,7 +411,7 @@ EOF
 	if [ ! -f "$script_ezbtn" ] ; then
 		cat > "$script_ezbtn" <<EOF
 #!/bin/sh
-
+export PATH='/opt/sbin:/opt/bin:/usr/sbin:/usr/bin:/sbin:/bin'
 ### Custom user script
 ### Called on WPS or FN button pressed
 ### \$1 - button param
@@ -447,6 +454,8 @@ dhcp-option=252,"\n"
 
 ### Set the boot filename for netboot/PXE
 #dhcp-boot=pxelinux.0
+
+srv-host=_vlmcs._tcp,my.router,1688,0,100
 
 EOF
 		chmod 644 "$user_dnsmasq_conf"
@@ -633,6 +642,7 @@ reset)
 	func_reset
 	func_fill
 	func_start_apps
+	/usr/bin/sshd.sh start
 	;;
 fill)
 	func_mdir

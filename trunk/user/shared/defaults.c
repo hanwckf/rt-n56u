@@ -56,7 +56,7 @@ struct nvram_pair router_defaults[] = {
 	{ "lan_dns_x", "1" },			/* LAN DNS [static|dhcp] */
 	{ "lan_dns1", "" },			/* LAN DNS1 */
 	{ "lan_dns2", "" },			/* LAN DNS2 */
-	{ "lan_domain", "" },			/* LAN domain name */
+	{ "lan_domain", "lan" },		/* LAN domain name */
 	{ "lan_stp", "1" },			/* LAN spanning tree protocol */
 
 	/* WAN H/W parameters */
@@ -343,8 +343,8 @@ struct nvram_pair router_defaults[] = {
 	// USB related
 	{ "acc_num", "0" },
 	{ "enable_ftp", "0" },
-	{ "enable_samba", "1" },
-	{ "st_samba_fp", "1" },
+	{ "enable_samba", "0" },
+	{ "st_samba_fp", "0" },
 	{ "st_samba_mode", "1" },
 	{ "st_samba_lmb", "1" },
 	{ "st_samba_workgroup", DEF_SMB_WORKGROUP },
@@ -362,8 +362,8 @@ struct nvram_pair router_defaults[] = {
 	{ "usb3_disable", "0" },
 	{ "u2ec_enable", "1" },
 	{ "lprd_enable", "1" },
-	{ "rawd_enable", "1" },
-	{ "achk_enable", "0" },
+	{ "rawd_enable", "0" },
+	{ "achk_enable", "1" },
 	{ "nfsd_enable", "0" },
 	{ "optw_enable", "0" },
 	{ "dlna_disc", "895" },
@@ -466,6 +466,20 @@ struct nvram_pair router_defaults[] = {
 	{ "dr_staticipaddr_x", "" },
 	{ "dr_staticnetmask_x", "0" },
 	{ "dr_staticgateway_x", "" },
+	
+	/* scutclient related */
+	{ "scutclient_enable", "0" },
+	{ "scutclient_debug", "0" },
+	{ "scutclient_hostname", "Lenovo-PC" },
+	{ "scutclient_server_auth_ip", "202.38.210.131" },
+	{ "scutclient_version", "4472434f4d0096022a" },
+	{ "scutclient_hash", "2ec15ad258aee9604b18f2f8114da38db16efd00" },
+	{ "scutclient_done", "0" },
+	{ "scutclient_username", "" },
+	{ "scutclient_password", "" },
+	
+	/* ttyd related */
+	{ "ttyd_enable", "0" },
 
 	/* DHCP server parameters */
 	{ "dhcp_start", DEF_LAN_DHCP_BEG },	/* First assignable DHCP address */
@@ -483,7 +497,7 @@ struct nvram_pair router_defaults[] = {
 	{ "dhcp_staticnum_x", "0" },
 
 	/* NTP client parameters */
-	{ "ntp_period", "24" },
+	{ "ntp_period", "6" },
 	{ "ntp_server0", DEF_NTP_SERVER0 },
 	{ "ntp_server1", DEF_NTP_SERVER1 },
 
@@ -511,7 +525,7 @@ struct nvram_pair router_defaults[] = {
 	{ "ddns2_ssl", "1" },
 	{ "asusddns_tos_agreement", "0" },
 
-	{ "preferred_lang", "" },
+	{ "preferred_lang", "CN" },
 
 	{ "modem_rule", "0" },
 	{ "modem_prio", "1" },
@@ -548,21 +562,21 @@ struct nvram_pair router_defaults[] = {
 	{ "controlrate_broadcast", "10" },
 
 	{ "di_poll_mode", "0" },
-	{ "di_timeout", "3" },
-	{ "di_time_done", "55" },
-	{ "di_time_fail", "5" },
-	{ "di_lost_delay", "10" },
+	{ "di_timeout", "2" },
+	{ "di_time_done", "30" },
+	{ "di_time_fail", "2" },
+	{ "di_lost_delay", "1" },
 	{ "di_lost_action", "0" },
 	{ "di_recon_pause", "0" },
-	{ "di_addr0", "77.88.8.8" },
-	{ "di_addr1", "8.8.8.8" },
-	{ "di_addr2", "208.67.222.222" },
-	{ "di_addr3", "77.88.8.1" },
+	{ "di_addr0", "114.114.114.114" },
+	{ "di_addr1", "208.67.222.222" },
+	{ "di_addr2", "14.17.42.40" },
+	{ "di_addr3", "8.8.8.8" },
 	{ "di_addr4", "8.8.4.4" },
 	{ "di_addr5", "208.67.220.220" },
 	{ "di_port0", "53" },
 	{ "di_port1", "53" },
-	{ "di_port2", "53" },
+	{ "di_port2", "80" },
 	{ "di_port3", "53" },
 	{ "di_port4", "53" },
 	{ "di_port5", "53" },
@@ -580,7 +594,7 @@ struct nvram_pair router_defaults[] = {
 	{ "wins_enable", "0" },
 	{ "lltd_enable", "1" },
 	{ "adsc_enable", "0" },
-	{ "crond_enable", "0" },
+	{ "crond_enable", "1" },
 	{ "crond_log", "0" },
 
 #if defined(BOARD_N65U)
@@ -603,12 +617,12 @@ struct nvram_pair router_defaults[] = {
 	{ "fn2_action_short", "0" },
 	{ "fn2_action_long", "0" },
 #endif
-	{ "watchdog_cpu", "0" },
+	{ "watchdog_cpu", "1" },
 	{ "front_led_all", "1" },
-	{ "front_led_wan", "2" },
-	{ "front_led_lan", "1" },
+	{ "front_led_wan", "1" },
+	{ "front_led_lan", "2" },
 	{ "front_led_wif", "1" },
-	{ "front_led_usb", "1" },
+	{ "front_led_usb", "3" },
 	{ "front_led_pwr", "1" },
 
 	{ "ether_igmp", "1" },
@@ -652,7 +666,7 @@ struct nvram_pair router_defaults[] = {
 #if defined(CONFIG_RALINK_MT7621) || (defined(CONFIG_RALINK_MT7620) && !defined(BOARD_N14U))
 	{ "hw_nat_mode", "4" },
 #else
-	{ "hw_nat_mode", "1" },
+	{ "hw_nat_mode", "4" },
 #endif
 	{ "sw_nat_mode", "0" },
 	{ "fw_syn_cook", "0" },

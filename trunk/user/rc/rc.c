@@ -1183,6 +1183,22 @@ handle_notifications(void)
 			restart_sshd();
 		}
 #endif
+#if defined(APP_SCUT)
+		else if (strcmp(entry->d_name, RCN_RESTART_SCUT) == 0)
+		{
+			restart_scutclient();
+		}
+		else if (strcmp(entry->d_name, "stop_scutclient") == 0)
+		{
+			stop_scutclient();
+		}
+#endif
+#if defined(APP_TTYD)
+		else if (strcmp(entry->d_name, RCN_RESTART_TTYD) == 0)
+		{
+			restart_ttyd();
+		}
+#endif
 #if defined(APP_SMBD) || defined(APP_NMBD)
 		else if (strcmp(entry->d_name, RCN_RESTART_NMBD) == 0)
 		{

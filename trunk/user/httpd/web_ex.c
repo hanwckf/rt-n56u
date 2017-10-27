@@ -1908,6 +1908,28 @@ wan_action_hook(int eid, webs_t wp, int argc, char **argv)
 	return 0;
 }
 
+#if defined (APP_SCUT)
+static int scutclient_action_hook(int eid, webs_t wp, int argc, char **argv)
+{
+	int unit, needed_seconds = 1;
+	char *scut_action = websGetVar(wp, "connect_action", "");
+
+	unit = 0;
+
+	if (!strcmp(scut_action, "Reconnect")) {
+		needed_seconds = 1;
+		notify_rc(RCN_RESTART_SCUT);
+	}
+	else if (!strcmp(scut_action, "Disconnect")) {
+		needed_seconds = 1;
+		notify_rc("stop_scutclient");
+	}
+
+	websWrite(wp, "<script>restart_needed_time(%d);</script>\n", needed_seconds);
+	return 0;
+}
+#endif
+
 static int
 ej_detect_internet_hook(int eid, webs_t wp, int argc, char **argv)
 {
@@ -2062,6 +2084,16 @@ ej_firmware_caps_hook(int eid, webs_t wp, int argc, char **argv)
 #else
 	int found_app_sshd = 0;
 #endif
+#if defined(APP_SCUT)
+	int found_app_scutclient = 1;
+#else
+	int found_app_scutclient = 0;
+#endif
+#if defined(APP_TTYD)
+	int found_app_ttyd = 1;
+#else
+	int found_app_ttyd = 0;
+#endif
 #if defined(APP_XUPNPD)
 	int found_app_xupnpd = 1;
 #else
@@ -2188,6 +2220,8 @@ ej_firmware_caps_hook(int eid, webs_t wp, int argc, char **argv)
 		"function found_srv_u2ec() { return %d;}\n"
 		"function found_srv_lprd() { return %d;}\n"
 		"function found_app_sshd() { return %d;}\n"
+		"function found_app_scutclient() { return %d;}\n"
+		"function found_app_ttyd() { return %d;}\n"
 		"function found_app_xupnpd() { return %d;}\n",
 		found_utl_hdparm,
 		found_app_ovpn,
@@ -2203,6 +2237,8 @@ ej_firmware_caps_hook(int eid, webs_t wp, int argc, char **argv)
 		found_srv_u2ec,
 		found_srv_lprd,
 		found_app_sshd,
+		found_app_scutclient,
+		found_app_ttyd,
 		found_app_xupnpd
 	);
 
@@ -3513,6 +3549,9 @@ struct mime_handler mime_handlers[] = {
 #if defined(APP_ARIA)
 	/* cached font */
 	{ "**.woff", "application/font-woff", NULL, NULL, do_file, 0 }, // 2016.01 Volt1
+	{ "**.woff2", "application/font-woff", NULL, NULL, do_file, 0 },
+	{ "**.txt", "text/plain", NULL, NULL, do_file, 0 },
+	{ "**.manifest", "text/plain", NULL, NULL, do_file, 0 },
 #endif
 
 	/* cached images */
@@ -3820,6 +3859,9 @@ struct ej_handler ej_handlers[] =
 	{ "delete_sharedfolder", ej_delete_sharedfolder},
 	{ "modify_sharedfolder", ej_modify_sharedfolder},
 	{ "set_share_mode", ej_set_share_mode},
+#endif
+#if defined (APP_SCUT)
+	{ "scutclient_action", scutclient_action_hook},
 #endif
 	{ "openssl_util_hook", openssl_util_hook},
 	{ "openvpn_srv_cert_hook", openvpn_srv_cert_hook},

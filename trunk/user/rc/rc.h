@@ -512,6 +512,17 @@ int start_services_once(int is_ap_mode);
 void stop_services(int stopall);
 void stop_services_lan_wan(void);
 void stop_misc(void);
+#if defined(APP_SCUT)
+int is_scutclient_run(void);
+void stop_scutclient(void);
+void start_scutclient(void);
+void restart_scutclient(void);
+#endif
+#if defined(APP_TTYD)
+void stop_ttyd(void);
+void start_ttyd(void);
+void restart_ttyd(void);
+#endif
 
 /* services_ex.c */
 int fill_dnsmasq_servers(void);

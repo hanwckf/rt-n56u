@@ -60,6 +60,7 @@ ifdef CONFIG_NETFILTER_XT_MATCH_STRING
 else
 	rm -f $(THISDIR)/$(SRC_NAME)/extensions/libxt_string.*
 endif
+	cp -f $(THISDIR)/$(SRC_NAME)/extensions/disabled/*.* $(THISDIR)/$(SRC_NAME)/extensions
 	( cd $(SRC_NAME) ; \
 	./configure \
 		--prefix= \

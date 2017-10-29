@@ -7,13 +7,11 @@ sleep 2
 while true ;do
 
 tail_latest=$(tail -1 nohup.out)
-
+echo "================================================"
 tail -3 nohup.out
 
 if [ "$tail_latest" = "======================All IS DONE!=========================" ];then 
 	exit 0
-#elif [ "$tail_latest" = "$tail_last" ];then
-#	exit 1
 fi
 tail_last=$(tail -1 nohup.out)
 sleep 60

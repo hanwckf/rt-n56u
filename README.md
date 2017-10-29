@@ -1,3 +1,5 @@
+[![Build Status](https://travis-ci.org/hanwckf/rt-n56u.svg?branch=master)](https://travis-ci.org/hanwckf/rt-n56u)
+
 # README #
 
 Welcome to the rt-n56u project

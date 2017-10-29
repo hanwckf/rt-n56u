@@ -8,7 +8,7 @@ sleep 2
 while true ;do
 
 tail -20 nohup.out
-
+echo "================================================"
 tail_latest=$(tail -1 nohup.out)
 
 if [ "$tail_latest" = "make[1]: Leaving directory \`/opt/rt-n56u/trunk/vendors'" ];then 

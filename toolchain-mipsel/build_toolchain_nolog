@@ -7,7 +7,7 @@ sleep 2
 while true ;do
 
 tail_latest=$(tail -1 nohup.out)
-echo "================================================"
+echo -e "\n==================================================="
 tail -3 nohup.out
 
 if [ "$tail_latest" = "======================All IS DONE!=========================" ];then 

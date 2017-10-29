@@ -1,0 +1,21 @@
+#!/bin/sh
+
+nohup ./build_firmware_k2_nousb &
+
+tail_last=test
+sleep 2
+
+while true ;do
+
+tail -20 nohup.out
+
+tail_latest=$(tail -1 nohup.out)
+
+if [ "$tail_latest" = "make[1]: Leaving directory \`/opt/rt-n56u/trunk/vendors'" ];then 
+	exit 0
+elif [ "$tail_latest" = "$tail_last" ];then
+	exit 1
+fi
+tail_last=$(tail -1 nohup.out)
+sleep 60
+done

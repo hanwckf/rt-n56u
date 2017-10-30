@@ -1,21 +1,20 @@
 #!/bin/sh
-
+rm -f nohup.out
 nohup ./build_firmware_k2_nousb &
 
 tail_last=test
-sleep 2
-
 while true ;do
-
-tail -20 nohup.out
 echo -e "\n==================================================="
 tail_latest=$(tail -1 nohup.out)
 
-if [ "$tail_latest" = "make[1]: Leaving directory \`/opt/rt-n56u/trunk/vendors'" ];then 
+if [ "$tail_latest" = "make[1]: Leaving directory \`/opt/rt-n56u/trunk/vendors'" ];then
+	tail -20 nohup.out
 	exit 0
 elif [ "$tail_latest" = "$tail_last" ];then
+	tail -20 nohup.out
 	exit 1
 fi
 tail_last=$(tail -1 nohup.out)
-sleep 60
+tail -4 nohup.out
+sleep 30
 done

@@ -9,10 +9,11 @@ compiler:
 
 before_install:
     - sudo apt-get update -qq
-    - sudo apt-get install -qq git autoconf automake bison build-essential flex gawk gettext gperf libtool pkg-config zlib1g-dev libgmp3-dev libmpc-dev libmpfr-dev texinfo python-docutils gettext bison zlib1g-dev libncurses5-dev autopoint curl
+    - sudo apt-get install -qq git zip autoconf automake bison build-essential flex gawk gettext gperf libtool pkg-config zlib1g-dev libgmp3-dev libmpc-dev libmpfr-dev texinfo python-docutils gettext bison zlib1g-dev libncurses5-dev autopoint curl
 
 before_script:
     - sudo mkdir -p /opt/rt-n56u/
+    - sudo mkdir -p /opt/images/
     - sudo git clone https://gitee.com/hanwckf/padavan-toolchain.git
     - sudo mv ./padavan-toolchain/ /opt/rt-n56u/toolchain-mipsel/
     - sudo mv ./trunk/ /opt/rt-n56u/trunk/
@@ -20,5 +21,8 @@ before_script:
     - cd /opt/rt-n56u/toolchain-mipsel && sudo chmod u+x ./toolchain-3.4.x/bin/*
 
 script:
-    - cd /opt/rt-n56u/trunk/ && sudo bash ./build_firmware_nolog
-    - cd /opt/rt-n56u/trunk/images && curl --upload-file ./PSG1218_3.4.3.9-099.trx https://transfer.sh/PSG1218_3.4.3.9-099.trx
+    - cd /opt/rt-n56u/trunk/ && sudo bash ./build_firmware_nolog_k2 && sudo cp -f images/*.trx /opt/images
+    - sudo bash ./clear_tree >/dev/null 2>&1 && sudo bash ./build_firmware_nolog_oye && sudo cp -f images/*.trx /opt/images
+
+after_script:
+    - cd /opt/images && sudo bash -c "md5sum * > md5sum.txt" && sudo zip -r images.zip ./* && curl --upload-file ./images.zip https://transfer.sh/images.zip

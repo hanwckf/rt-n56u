@@ -340,6 +340,9 @@ static int vlan_device_event(struct notifier_block *unused, unsigned long event,
 			dev->name);
 		vlan_vid_add(dev, 0);
 	}
+	if (event == NETDEV_DOWN &&
+	    (dev->features & NETIF_F_HW_VLAN_FILTER))
+		vlan_vid_del(dev, 0);
 
 	vlan_info = rtnl_dereference(dev->vlan_info);
 	if (!vlan_info)
@@ -405,9 +408,6 @@ static int vlan_device_event(struct notifier_block *unused, unsigned long event,
 	case NETDEV_DOWN: {
 		struct net_device *tmp;
 		LIST_HEAD(close_list);
-
-		if (dev->features & NETIF_F_HW_VLAN_FILTER)
-			vlan_vid_del(dev, 0);
 
 		/* Put all VLANs for this dev in the down state too.  */
 		for (i = 0; i < VLAN_N_VID; i++) {

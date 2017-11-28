@@ -2,8 +2,10 @@
 
 cd /etc/storage/
 
-if [ ! -f "cron/crontabs/admin" ] || [ -z "$(cat cron/crontabs/admin |grep "watchcat.sh")" ]; then
-	echo "*/1 * * * * /bin/watchcat.sh > /dev/null 2>&1" >> cron/crontabs/admin
+if [ ! -f "cron/crontabs/admin" ] || [ -z "$(cat cron/crontabs/admin |grep "scutclient_watchcat.sh")" ]; then
+	echo "*/1 * * * * /bin/scutclient_watchcat.sh > /dev/null 2>&1" >> cron/crontabs/admin
+else
+	exit 0
 fi
 
 

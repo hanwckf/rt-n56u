@@ -1930,6 +1930,24 @@ static int scutclient_action_hook(int eid, webs_t wp, int argc, char **argv)
 }
 #endif
 
+#if defined (APP_SHADOWSOCKS)
+static int shadowsocks_action_hook(int eid, webs_t wp, int argc, char **argv)
+{
+	int unit, needed_seconds = 1;
+	char *ss_action = websGetVar(wp, "connect_action", "");
+
+	unit = 0;
+
+	if (!strcmp(ss_action, "Reconnect")) {
+		needed_seconds = 1;
+		notify_rc(RCN_RESTART_SHADOWSOCKS);
+	}
+
+	websWrite(wp, "<script>restart_needed_time(%d);</script>\n", needed_seconds);
+	return 0;
+}
+#endif
+
 static int
 ej_detect_internet_hook(int eid, webs_t wp, int argc, char **argv)
 {
@@ -2094,6 +2112,31 @@ ej_firmware_caps_hook(int eid, webs_t wp, int argc, char **argv)
 #else
 	int found_app_ttyd = 0;
 #endif
+#if defined(APP_VLMCSD)
+	int found_app_vlmcsd = 1;
+#else
+	int found_app_vlmcsd = 0;
+#endif
+#if defined(APP_NAPT66)
+	int found_app_napt66 = 1;
+#else
+	int found_app_napt66 = 0;
+#endif
+#if defined(APP_CHINADNS)
+	int found_app_chinadns = 1;
+#else
+	int found_app_chinadns = 0;
+#endif
+#if defined(APP_SHADOWSOCKS)
+	int found_app_shadowsocks = 1;
+#else
+	int found_app_shadowsocks = 0;
+#endif
+#if defined(APP_DNSFORWARDER)
+	int found_app_dnsforwarder = 1;
+#else
+	int found_app_dnsforwarder = 0;
+#endif
 #if defined(APP_XUPNPD)
 	int found_app_xupnpd = 1;
 #else
@@ -2222,6 +2265,11 @@ ej_firmware_caps_hook(int eid, webs_t wp, int argc, char **argv)
 		"function found_app_sshd() { return %d;}\n"
 		"function found_app_scutclient() { return %d;}\n"
 		"function found_app_ttyd() { return %d;}\n"
+		"function found_app_vlmcsd() { return %d;}\n"
+		"function found_app_napt66() { return %d;}\n"
+		"function found_app_dnsforwarder() { return %d;}\n"
+		"function found_app_chinadns() { return %d;}\n"
+		"function found_app_shadowsocks() { return %d;}\n"
 		"function found_app_xupnpd() { return %d;}\n",
 		found_utl_hdparm,
 		found_app_ovpn,
@@ -2239,6 +2287,11 @@ ej_firmware_caps_hook(int eid, webs_t wp, int argc, char **argv)
 		found_app_sshd,
 		found_app_scutclient,
 		found_app_ttyd,
+		found_app_vlmcsd,
+		found_app_napt66,
+		found_app_dnsforwarder,
+		found_app_chinadns,
+		found_app_shadowsocks,
 		found_app_xupnpd
 	);
 
@@ -3862,6 +3915,9 @@ struct ej_handler ej_handlers[] =
 #endif
 #if defined (APP_SCUT)
 	{ "scutclient_action", scutclient_action_hook},
+#endif
+#if defined (APP_SHADOWSOCKS)
+	{ "shadowsocks_action", shadowsocks_action_hook},
 #endif
 	{ "openssl_util_hook", openssl_util_hook},
 	{ "openvpn_srv_cert_hook", openvpn_srv_cert_hook},

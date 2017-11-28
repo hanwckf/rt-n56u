@@ -193,6 +193,7 @@ func_fill()
 	dir_inadyn="$dir_storage/inadyn"
 	dir_crond="$dir_storage/cron/crontabs"
 	dir_wlan="$dir_storage/wlan"
+	dir_chnroute="$dir_storage/chinadns"
 
 	script_start="$dir_storage/start_script.sh"
 	script_started="$dir_storage/started_script.sh"
@@ -213,12 +214,19 @@ func_fill()
 	user_sswan_conf="$dir_sswan/strongswan.conf"
 	user_sswan_ipsec_conf="$dir_sswan/ipsec.conf"
 	user_sswan_secrets="$dir_sswan/ipsec.secrets"
-
+	
+	chnroute_file="/etc_ro/chnroute.txt"
+	
 	# create crond dir
 	[ ! -d "$dir_crond" ] && mkdir -p -m 730 "$dir_crond"
 
 	# create https dir
 	[ ! -d "$dir_httpssl" ] && mkdir -p -m 700 "$dir_httpssl"
+
+	# create chnroute.txt
+	if [ -f "$chnroute_file" ] ; then
+		mkdir -p "$dir_chnroute" && cp -f $chnroute_file $dir_chnroute
+	fi
 
 	# create start script
 	if [ ! -f "$script_start" ] ; then
@@ -240,8 +248,6 @@ export PATH='/opt/sbin:/opt/bin:/usr/sbin:/usr/bin:/sbin:/bin'
 #modprobe ip_set_bitmap_ip
 #modprobe ip_set_list_set
 #modprobe xt_set
-#vlmcsd
-#start_napt66
 
 EOF
 		chmod 755 "$script_started"
@@ -268,6 +274,10 @@ EOF
 export PATH='/opt/sbin:/opt/bin:/usr/sbin:/usr/bin:/sbin:/bin'
 ### Custom user script
 ### Called after internal iptables reconfig (firewall update)
+
+if [ -f "/tmp/shadowsocks_iptables.save" ]; then
+	sh /tmp/shadowsocks_iptables.save
+fi
 
 EOF
 		chmod 755 "$script_postf"
@@ -455,7 +465,12 @@ dhcp-option=252,"\n"
 ### Set the boot filename for netboot/PXE
 #dhcp-boot=pxelinux.0
 
+### vlmcsd related
 srv-host=_vlmcs._tcp,my.router,1688,0,100
+
+### ChinaDNS related
+#no-resolv
+#server=127.0.0.1#5302
 
 EOF
 		chmod 644 "$user_dnsmasq_conf"
@@ -642,7 +657,6 @@ reset)
 	func_reset
 	func_fill
 	func_start_apps
-	/usr/bin/sshd.sh start
 	;;
 fill)
 	func_mdir

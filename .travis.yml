@@ -14,7 +14,7 @@ before_install:
 before_script:
     - sudo mkdir -p /opt/rt-n56u/
     - sudo mkdir -p /opt/images/
-    - sudo git clone https://gitee.com/hanwckf/padavan-toolchain.git
+    - sudo git clone https://github.com/hanwckf/padavan-toolchain.git
     - sudo mv ./padavan-toolchain/ /opt/rt-n56u/toolchain-mipsel/
     - sudo mv ./trunk/ /opt/rt-n56u/trunk/
     - ls /opt/rt-n56u

@@ -13,6 +13,7 @@ download_test:
 	fi )
 romfs:
 	$(ROMFSINST) -d $(THISDIR)/$(SRC_NAME)/bin/vlmcsd /usr/bin/vlmcsd
+	$(ROMFSINST) $(THISDIR)/vlmcsd.sh /usr/bin/vlmcsd.sh
 clean:
 	if [ -f $(SRC_NAME)/Makefile ] ; then \
 		$(MAKE) -C $(SRC_NAME) clean ; \

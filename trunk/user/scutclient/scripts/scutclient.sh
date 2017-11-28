@@ -1,7 +1,8 @@
 #!/bin/sh
 export PATH='/opt/sbin:/opt/bin:/usr/sbin:/usr/bin:/sbin:/bin'
 echo "scutclient for Padavan V2.2"
-scutclient_enable=1
+username=$2
+password=$3
 debug=0
 hostname=Lenovo-PC
 auth_ip=202.38.210.131
@@ -10,14 +11,12 @@ hash=2ec15ad258aee9604b18f2f8114da38db16efd00
 scutclient_exec=bin_scutclient
 
 func_log(){
-	logger -t "Scutclient" "$1"
-	echo "$1"
+	logger -st "Scutclient" "$1"
 }
 
 func_load(){
 	nvram set scutclient_username=$username
 	nvram set scutclient_password=$password
-	nvram set scutclient_enable=$scutclient_enable
 	nvram set scutclient_debug=$debug
 	nvram set scutclient_hostname=$hostname
 	nvram set scutclient_server_auth_ip=$auth_ip
@@ -33,7 +32,7 @@ func_start(){
 		func_log "Please run 'scutclient.sh load <username> <password>' !"
 		exit 1
 	fi
-
+	/bin/enable_scutclient_watchcat
 	if [ "$(mtk_esw 11)" = "WAN ports link state: 0" ]; then
 		func_log "WAN has no link!"
 		exit 1
@@ -57,14 +56,11 @@ func_start(){
 
 func_stop(){
 	echo -n "Stopping scutclient:..."
-	killall $scutclient_exec > /dev/null 2>&1
+	killall -q $scutclient_exec
 	$scutclient_exec logoff > /dev/null 2>&1
 	echo "[  OK  ]"
 	func_log "Stopped"
 }
-
-username=$2
-password=$3
 
 case "$1" in
 load)

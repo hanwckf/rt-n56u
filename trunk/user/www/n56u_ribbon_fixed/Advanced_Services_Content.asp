@@ -30,6 +30,8 @@ $j(document).ready(function() {
 	init_itoggle('adsc_enable');
 	init_itoggle('crond_enable', change_crond_enabled);
 	init_itoggle('ttyd_enable', change_ttyd_enabled);
+	init_itoggle('vlmcsd_enable');
+	init_itoggle('napt66_enable');
 	init_itoggle('watchdog_cpu');
 });
 
@@ -78,6 +80,14 @@ function initial(){
 		showhide_div('ttyd_webui', 0);
 	} else {
 		change_ttyd_enabled();
+	}
+	
+	if(!found_app_vlmcsd()){
+		showhide_div('div_vlmcsd', 0);
+	}
+	
+	if(!found_app_napt66()){
+		showhide_div('div_napt66', 0);
 	}
 }
 
@@ -498,6 +508,36 @@ function on_ttyd_link(){
                                     <table width="100%" cellpadding="4" cellspacing="0" class="table">
                                         <tr>
                                             <th colspan="2" style="background-color: #E3E3E3;"><#Adm_System_misc#></th>
+                                        </tr>
+										
+										<tr id="div_vlmcsd">
+											<th>启用vlmcsd(KMS激活服务)</th>
+											<td>
+												<div class="main_itoggle">
+                                                    <div id="vlmcsd_enable_on_of">
+                                                        <input type="checkbox" id="vlmcsd_enable_fake" <% nvram_match_x("", "vlmcsd_enable", "1", "value=1 checked"); %><% nvram_match_x("", "vlmcsd_enable", "0", "value=0"); %>>
+                                                    </div>
+                                                </div>
+												<div style="position: absolute; margin-left: -10000px;">
+                                                    <input type="radio" name="vlmcsd_enable" id="vlmcsd_enable_1" class="input" value="1" <% nvram_match_x("", "vlmcsd_enable", "1", "checked"); %>/><#checkbox_Yes#>
+                                                    <input type="radio" name="vlmcsd_enable" id="vlmcsd_enable_0" class="input" value="0" <% nvram_match_x("", "vlmcsd_enable", "0", "checked"); %>/><#checkbox_No#>
+                                                </div>
+                                            </td>
+                                        </tr>
+										
+										<tr id="div_napt66">
+											<th>启用napt66(重启后生效)</th>
+											<td>
+												<div class="main_itoggle">
+                                                    <div id="napt66_enable_on_of">
+                                                        <input type="checkbox" id="napt66_enable_fake" <% nvram_match_x("", "napt66_enable", "1", "value=1 checked"); %><% nvram_match_x("", "napt66_enable", "0", "value=0"); %>>
+                                                    </div>
+                                                </div>
+												<div style="position: absolute; margin-left: -10000px;">
+                                                    <input type="radio" name="napt66_enable" id="napt66_enable_1" class="input" value="1" <% nvram_match_x("", "napt66_enable", "1", "checked"); %>/><#checkbox_Yes#>
+                                                    <input type="radio" name="napt66_enable" id="napt66_enable_0" class="input" value="0" <% nvram_match_x("", "napt66_enable", "0", "checked"); %>/><#checkbox_No#>
+                                                </div>
+                                            </td>
                                         </tr>
 										
                                         <tr id="div_ttyd">

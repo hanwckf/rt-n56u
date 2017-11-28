@@ -523,6 +523,32 @@ void stop_ttyd(void);
 void start_ttyd(void);
 void restart_ttyd(void);
 #endif
+#if defined(APP_SHADOWSOCKS)
+void stop_ss(void);
+void start_ss(void);
+void restart_ss(void);
+void stop_ss_tunnel(void);
+void start_ss_tunnel(void);
+void restart_ss_tunnel(void);
+#endif
+#if defined(APP_VLMCSD)
+void stop_vlmcsd(void);
+void start_vlmcsd(void);
+void restart_vlmcsd(void);
+#endif
+#if defined(APP_NAPT66)
+void start_napt66(void);
+#endif
+#if defined(APP_CHINADNS)
+void stop_chinadns(void);
+void start_chinadns(void);
+void restart_chinadns(void);
+#endif
+#if defined(APP_DNSFORWARDER)
+void stop_dnsforwarder(void);
+void start_dnsforwarder(void);
+void restart_dnsforwarder(void);
+#endif
 
 /* services_ex.c */
 int fill_dnsmasq_servers(void);

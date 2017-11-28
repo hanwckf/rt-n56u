@@ -1,0 +1,1 @@
+../../chinadns/scripts/update_chnroute.sh

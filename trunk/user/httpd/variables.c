@@ -129,6 +129,12 @@
 #if defined (APP_TTYD)
 			{"ttyd_enable", "", NULL, EVM_RESTART_TTYD},
 #endif
+#if defined (APP_VLMCSD)
+			{"vlmcsd_enable", "", NULL, EVM_RESTART_VLMCSD},
+#endif
+#if defined (APP_NAPT66)
+			{"napt66_enable", "", NULL, FALSE},
+#endif
 			{"http_username", "", NULL, EVM_RESTART_CROND|EVM_BLOCK_UNSAFE},
 			{"http_passwd", "", NULL, EVM_BLOCK_UNSAFE},
 			{"modem_rule", "", NULL, EVM_RESTART_MODEM},
@@ -771,7 +777,53 @@
 			{"scutclient_version","",NULL,EVM_RESTART_SCUT },
 			{"scutclient_hash","",NULL,EVM_RESTART_SCUT },
 			{"scutclient_hostname","",NULL,EVM_RESTART_SCUT },
-			{"scutclient_done","",NULL,EVM_RESTART_SCUT }
+			{"scutclient_done","",NULL,EVM_RESTART_SCUT },
+			{"scutclient_watchcat","",NULL,FALSE},
+			{0,0,0,0}
+	};
+#endif
+
+#if defined(APP_CHINADNS)
+	struct variable variables_ChinadnsConf[] = {
+			{"chinadns_enable", "", NULL, EVM_RESTART_CHINADNS},
+			{"chinadns_bind", "", NULL, EVM_RESTART_CHINADNS},
+			{"chinadns_port", "", NULL, EVM_RESTART_CHINADNS},			
+			{"chinadns_server", "", NULL, EVM_RESTART_CHINADNS},			
+			{"chinadns_bi_filter", "", NULL, EVM_RESTART_CHINADNS},
+			{0,0,0,0}
+	};
+#endif
+
+#if defined(APP_DNSFORWARDER)
+	struct variable variables_dnsforwarderConf[] = {
+			{"dns_forwarder_enable", "", NULL, EVM_RESTART_DNSFORWARDER},
+			{"dns_forwarder_bind", "", NULL, EVM_RESTART_DNSFORWARDER},
+			{"dns_forwarder_port", "", NULL, EVM_RESTART_DNSFORWARDER},
+			{"dns_forwarder_server", "", NULL, EVM_RESTART_DNSFORWARDER},
+			{0,0,0,0}
+	};
+#endif
+
+#if defined(APP_SHADOWSOCKS)
+	struct variable variables_ShadowsocksConf[] = {
+			{"ss_enable","",NULL, EVM_RESTART_SHADOWSOCKS},
+			{"ss_mode","",NULL, EVM_RESTART_SHADOWSOCKS},
+			{"ss_server","",NULL, EVM_RESTART_SHADOWSOCKS},
+			{"ss_server_port","",NULL, EVM_RESTART_SHADOWSOCKS},
+			{"ss_key","",NULL, EVM_RESTART_SHADOWSOCKS},
+			{"ss_method","",NULL, EVM_RESTART_SHADOWSOCKS},
+			{"ss_udp","",NULL, EVM_RESTART_SHADOWSOCKS},
+			{"ss_local_port","",NULL, EVM_RESTART_SHADOWSOCKS},
+			{"ss_mtu","",NULL, EVM_RESTART_SHADOWSOCKS},
+			{"ss_router_proxy","",NULL, EVM_RESTART_SHADOWSOCKS},
+			{"ss_lower_port_only","",NULL, EVM_RESTART_SHADOWSOCKS},
+			{"ss_watchcat","",NULL, FALSE},
+			{"ss_update_chnroute","",NULL, FALSE},
+			{"ss-tunnel_enable","",NULL, EVM_RESTART_SS_TUNNEL},
+			{"ss-tunnel_local_port","",NULL, EVM_RESTART_SS_TUNNEL},
+			{"ss-tunnel_remote","",NULL, EVM_RESTART_SS_TUNNEL},
+			{"ss-tunnel_mtu","",NULL, EVM_RESTART_SS_TUNNEL},
+			{0,0,0,0}
 	};
 #endif
 
@@ -878,8 +930,17 @@
 		{"DeviceSecurity11b",		variables_DeviceSecurity11b},
 		{"WLANAuthentication11a",	variables_WLANAuthentication11a},
 		{"WLANAuthentication11b",	variables_WLANAuthentication11b},
+#if defined(APP_DNSFORWARDER)
+		{"dnsforwarderConf",		variables_dnsforwarderConf},
+#endif
 #if defined(APP_SCUT)
 		{"ScutclientConf",		variables_ScutclientConf},
+#endif
+#if defined(APP_SHADOWSOCKS)
+		{"ShadowsocksConf",		variables_ShadowsocksConf},
+#endif
+#if defined(APP_CHINADNS)
+		{"ChinadnsConf",		variables_ChinadnsConf},
 #endif
 		{"LANGUAGE",			variables_Language},
 		{0,0}
@@ -950,6 +1011,19 @@
 #endif
 #if defined(APP_TTYD)
 		{EVM_RESTART_TTYD,		EVT_RESTART_TTYD,		RCN_RESTART_TTYD,	0},
+#endif
+#if defined(APP_VLMCSD)
+		{EVM_RESTART_VLMCSD,	EVT_RESTART_VLMCSD,		RCN_RESTART_VLMCSD,	0},
+#endif
+#if defined(APP_CHINADNS)
+		{EVM_RESTART_CHINADNS,	EVT_RESTART_CHINADNS,	RCN_RESTART_CHINADNS, 0},
+#endif
+#if defined(APP_DNSFORWARDER)
+		{EVM_RESTART_DNSFORWARDER,	EVT_RESTART_DNSFORWARDER,	RCN_RESTART_DNSFORWARDER, 0},
+#endif
+#if defined(APP_SHADOWSOCKS)
+		{EVM_RESTART_SHADOWSOCKS,	EVT_RESTART_SHADOWSOCKS,	RCN_RESTART_SHADOWSOCKS,  0},
+		{EVM_RESTART_SS_TUNNEL,		EVT_RESTART_SS_TUNNEL,		RCN_RESTART_SS_TUNNEL,	  0},
 #endif
 #if defined(APP_SMBD) || defined(APP_NMBD)
 		{EVM_RESTART_NMBD,		EVT_RESTART_NMBD,		RCN_RESTART_NMBD,	0},

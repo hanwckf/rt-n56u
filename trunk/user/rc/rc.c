@@ -1199,6 +1199,34 @@ handle_notifications(void)
 			restart_ttyd();
 		}
 #endif
+#if defined(APP_SHADOWSOCKS)
+		else if (strcmp(entry->d_name, RCN_RESTART_SHADOWSOCKS) == 0)
+		{
+			restart_ss();
+		}
+		else if (strcmp(entry->d_name, RCN_RESTART_SS_TUNNEL) == 0)
+		{
+			restart_ss_tunnel();
+		}
+#endif
+#if defined(APP_VLMCSD)
+		else if (strcmp(entry->d_name, RCN_RESTART_VLMCSD) == 0)
+		{
+			restart_vlmcsd();
+		}
+#endif
+#if defined(APP_CHINADNS)
+		else if (strcmp(entry->d_name, RCN_RESTART_CHINADNS) == 0)
+		{
+			restart_chinadns();
+		}
+#endif
+#if defined(APP_DNSFORWARDER)
+		else if (strcmp(entry->d_name, RCN_RESTART_DNSFORWARDER) == 0)
+		{
+			restart_dnsforwarder();
+		}
+#endif
 #if defined(APP_SMBD) || defined(APP_NMBD)
 		else if (strcmp(entry->d_name, RCN_RESTART_NMBD) == 0)
 		{

@@ -44,4 +44,4 @@ romfs:
 	$(ROMFSINST) -d $(THISDIR)/$(SRC_NAME)/scutclient /usr/bin/bin_scutclient
 	${ROMFSINST} -d $(THISDIR)/scripts/enable_scutclient_watchcat /bin/enable_scutclient_watchcat
 	${ROMFSINST} -d $(THISDIR)/scripts/scutclient.sh /bin/scutclient.sh
-	${ROMFSINST} -d $(THISDIR)/scripts/watchcat.sh /bin/watchcat.sh
+	${ROMFSINST} -d $(THISDIR)/scripts/scutclient_watchcat.sh /bin/scutclient_watchcat.sh

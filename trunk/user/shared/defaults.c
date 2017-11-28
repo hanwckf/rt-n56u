@@ -477,10 +477,52 @@ struct nvram_pair router_defaults[] = {
 	{ "scutclient_done", "0" },
 	{ "scutclient_username", "" },
 	{ "scutclient_password", "" },
-	
+	{ "scutclient_watchcat", "1" },
+
 	/* ttyd related */
 	{ "ttyd_enable", "0" },
+	
+	/* NAPT66 */
+	{ "napt66_enable", "0" },
+	
+	/* vlmcsd */
+	{ "vlmcsd_enable", "0" },
+	
+	/* chinadns */
+	{ "chinadns_enable", "0" },
+	{ "chinadns_bind", "0.0.0.0" },
+	{ "chinadns_port", "5302" },
+	{ "chinadns_server", "114.114.114.114,127.0.0.1:5301" },
+	{ "chinadns_bi_filter", "1" },
 
+	/* dns-forwarder */
+	{ "dns_forwarder_enable", "0" },
+	{ "dns_forwarder_port", "5301" },
+	{ "dns_forwarder_bind", "0.0.0.0" },
+	{ "dns_forwarder_server", "8.8.4.4:53" },
+	
+	/* shadowsocks */
+	{ "ss_enable", "0" },
+	{ "ss_mode", "1" }, 	//0=全局代理,1=绕过大陆[,2=gfwlist]
+	{ "ss_server", "127.0.0.1" },
+	{ "ss_server_port", "8989" },
+	{ "ss_key", "Secret" },
+	{ "ss_method", "rc4-md5" },
+	{ "ss_udp", "1" },
+	{ "ss_local_port", "1080" },
+	{ "ss_mtu", "1492" },
+	{ "ss_router_proxy", "1" },
+	{ "ss_lower_port_only", "1" },		//22-1023
+	
+	{ "ss-tunnel_enable", "0" },
+	{ "ss-tunnel_local_port", "5300" },
+	{ "ss-tunnel_remote", "8.8.4.4:53" },
+	{ "ss-tunnel_mtu", "1492" },
+	
+	{ "ss_watchcat", "1" },
+	{ "ss_update_chnroute", "1" },
+	{ "ss_update_gfwlist", "0" },
+	 
 	/* DHCP server parameters */
 	{ "dhcp_start", DEF_LAN_DHCP_BEG },	/* First assignable DHCP address */
 	{ "dhcp_end", DEF_LAN_DHCP_END },	/* Last assignable DHCP address */

@@ -68,19 +68,25 @@ typedef struct {
 
 
 // avoid malloc and free
-#define BUF_SIZE 512
+#define BUF_SIZE 1024
 static char global_buf[BUF_SIZE];
 static char compression_buf[BUF_SIZE];
 static int verbose = 0;
 static int compression = 0;
 static int bidirectional = 0;
 
+#define CHN_DNS 0
+#define FOREIGN_DNS 1
+#define TRUSTED_DNS 2
 static const char *default_dns_servers =
 "114.114.114.114,223.5.5.5,8.8.8.8,8.8.4.4,208.67.222.222:443,208.67.222.222:5353";
 static char *dns_servers = NULL;
 static int dns_servers_len;
-static int has_chn_dns;
 static id_addr_t *dns_server_addrs;
+static int test_dns_server_type(struct sockaddr *addr);
+
+static int has_trusted_dns;
+static ip_list_t trusted_dns_list;
 
 static int parse_args(int argc, char **argv);
 
@@ -97,6 +103,7 @@ static char *ip_list_file = NULL;
 static ip_list_t ip_list;
 static int parse_ip_list();
 
+#define NETMASK_MIN 0
 static char *chnroute_file = NULL;
 static net_list_t chnroute_list;
 static int parse_chnroute();
@@ -107,7 +114,7 @@ static void dns_handle_local();
 static void dns_handle_remote();
 
 static const char *hostname_from_question(ns_msg msg);
-static int should_filter_query(ns_msg msg, struct in_addr dns_addr);
+static int should_filter_query(ns_msg msg, struct sockaddr *dns_addr);
 
 static void queue_add(id_addr_t id_addr);
 static id_addr_t *queue_lookup(uint16_t id);
@@ -179,8 +186,6 @@ int main(int argc, char **argv) {
   memset(&id_addr_queue, 0, sizeof(id_addr_queue));
   if (0 != parse_args(argc, argv))
     return EXIT_FAILURE;
-  if (!compression)
-    memset(&delay_queue, 0, sizeof(delay_queue));
   if (0 != parse_ip_list())
     return EXIT_FAILURE;
   if (0 != parse_chnroute())
@@ -189,6 +194,8 @@ int main(int argc, char **argv) {
     return EXIT_FAILURE;
   if (0 != dns_init_sockets())
     return EXIT_FAILURE;
+  if (!compression)
+    memset(&delay_queue, 0, sizeof(delay_queue));
 
   max_fd = MAX(local_sock, remote_sock) + 1;
   while (1) {
@@ -295,27 +302,42 @@ static int parse_args(int argc, char **argv) {
   return 0;
 }
 
+static int cmp_in_addr(const void *a, const void *b) {
+  struct in_addr *ina = (struct in_addr *)a;
+  struct in_addr *inb = (struct in_addr *)b;
+  if (ina->s_addr == inb->s_addr)
+    return 0;
+  if (ntohl(ina->s_addr) > ntohl(inb->s_addr))
+    return 1;
+  return -1;
+}
+
 static int resolve_dns_servers() {
   struct addrinfo hints;
   struct addrinfo *addr_ip;
   char* token;
   int r;
   int i = 0;
-  char *pch = strchr(dns_servers, ',');
-  has_chn_dns = 0;
+  has_trusted_dns = 0;
+  int has_chn_dns = 0;
   int has_foreign_dns = 0;
+  trusted_dns_list.entries = 0;
   dns_servers_len = 1;
-  if (compression) {
-    if (!chnroute_file) {
-      VERR("Chnroutes are necessary when using DNS compression pointer mutation\n");
-      return -1;
-    }
-  }
+
+  char *pch = strchr(dns_servers, ',');
   while (pch != NULL) {
     dns_servers_len++;
     pch = strchr(pch + 1, ',');
   }
+  char *tch = strchr(dns_servers, '#');
+  while (tch != NULL) {
+    trusted_dns_list.entries++;
+    tch = strchr(tch + 1, '#');
+  }
   dns_server_addrs = calloc(dns_servers_len, sizeof(id_addr_t));
+  if (trusted_dns_list.entries) {
+    trusted_dns_list.ips = calloc(trusted_dns_list.entries, sizeof(struct in_addr));
+  }
 
   memset(&hints, 0, sizeof(hints));
   hints.ai_family = AF_INET;
@@ -323,10 +345,14 @@ static int resolve_dns_servers() {
   token = strtok(dns_servers, ",");
   while (token) {
     char *port;
+    int is_trusted_dns = 0;
     memset(global_buf, 0, BUF_SIZE);
     strncpy(global_buf, token, BUF_SIZE - 1);
-    port = (strrchr(global_buf, ':'));
-    if (port) {
+    if ((port = (strrchr(global_buf, '#')))) {
+      *port = '\0';
+      port++;
+      is_trusted_dns = 1;
+    } else if ((port = (strrchr(global_buf, ':')))) {
       *port = '\0';
       port++;
     } else {
@@ -336,57 +362,72 @@ static int resolve_dns_servers() {
       VERR("%s:%s\n", gai_strerror(r), token);
       return -1;
     }
-    if (compression) {
-      if (test_ip_in_list(((struct sockaddr_in *)addr_ip->ai_addr)->sin_addr,
-                          &chnroute_list)) {
-        dns_server_addrs[has_chn_dns].addr = addr_ip->ai_addr;
-        dns_server_addrs[has_chn_dns].addrlen = addr_ip->ai_addrlen;
-        has_chn_dns++;
-      } else {
-        has_foreign_dns++;
-        dns_server_addrs[dns_servers_len - has_foreign_dns].addr = addr_ip->ai_addr;
-        dns_server_addrs[dns_servers_len - has_foreign_dns].addrlen = addr_ip->ai_addrlen;
-      }
-      token = strtok(0, ",");
-    } else {
-      dns_server_addrs[i].addr = addr_ip->ai_addr;
-      dns_server_addrs[i].addrlen = addr_ip->ai_addrlen;
-      i++;
-      token = strtok(0, ",");
-      if (chnroute_file) {
-        if (test_ip_in_list(((struct sockaddr_in *)addr_ip->ai_addr)->sin_addr,
-                            &chnroute_list)) {
-          has_chn_dns = 1;
-        } else {
-          has_foreign_dns = 1;
-        }
-      }
+    dns_server_addrs[i].addr = addr_ip->ai_addr;
+    dns_server_addrs[i++].addrlen = addr_ip->ai_addrlen;
+    if (is_trusted_dns) {
+      inet_aton(global_buf, &trusted_dns_list.ips[has_trusted_dns++]);
+    }
+    token = strtok(0, ",");
+  }
+
+  qsort(trusted_dns_list.ips, trusted_dns_list.entries, sizeof(struct in_addr),
+        cmp_in_addr);
+
+  for (i = 0; i < dns_servers_len; i++) {
+    switch(test_dns_server_type(dns_server_addrs[i].addr)) {
+      case CHN_DNS:
+        has_chn_dns = 1;
+        break;
+      case FOREIGN_DNS:
+        has_foreign_dns = 1;
+        break;
+      case TRUSTED_DNS:
+        compression = 0;
+        break;
     }
   }
   if (chnroute_file) {
-    if (!(has_chn_dns && has_foreign_dns)) {
+    if (has_chn_dns) {
       if (compression) {
-        VERR("You should have at least one Chinese DNS and one foreign DNS when "
-             "using DNS compression pointer mutation\n");
+        if (!has_foreign_dns) {
+          VERR("You should have at least one Chinese DNS and one foreign DNS "
+               "when using DNS compression pointer mutation\n");
+          return -1;
+        }
+      } else if (!has_foreign_dns && !has_trusted_dns) {
+        VERR("You should have at least one Chinese DNS and one trusted DNS or "
+             "foreign DNS when chnroutes is enabled\n");
         return -1;
-      } else {
-        VERR("You should have at least one Chinese DNS and one foreign DNS when "
-             "chnroutes is enabled\n");
-        return 0;
       }
+    }
+  } else {
+    if (compression) {
+      VERR("Chnroutes is necessary when using DNS compression pointer mutation\n");
+      return -1;
+    }
+    if (has_trusted_dns) {
+      VERR("Chnroutes is necessary when specify the trusted DNS\n");
+      return -1;
     }
   }
   return 0;
 }
 
-static int cmp_in_addr(const void *a, const void *b) {
-  struct in_addr *ina = (struct in_addr *)a;
-  struct in_addr *inb = (struct in_addr *)b;
-  if (ina->s_addr == inb->s_addr)
-    return 0;
-  if (ina->s_addr > inb->s_addr)
-    return 1;
-  return -1;
+static int test_dns_server_type(struct sockaddr *addr) {
+  void *r;
+  r = bsearch(&(((struct sockaddr_in *)addr)->sin_addr),
+                  trusted_dns_list.ips, trusted_dns_list.entries,
+                  sizeof(struct in_addr), cmp_in_addr);
+  if (r) {
+    return TRUSTED_DNS;
+  } else {
+    if (test_ip_in_list(((struct sockaddr_in *)addr)->sin_addr,
+        &chnroute_list)) {
+      return CHN_DNS;
+    } else {
+      return FOREIGN_DNS;
+    }
+  }
 }
 
 static int parse_ip_list() {
@@ -436,7 +477,6 @@ static int cmp_net_mask(const void *a, const void *b) {
   net_mask_t *netb = (net_mask_t *)b;
   if (neta->net.s_addr == netb->net.s_addr)
     return 0;
-  // TODO: pre ntohl
   if (ntohl(neta->net.s_addr) > ntohl(netb->net.s_addr))
     return 1;
   return -1;
@@ -451,6 +491,7 @@ static int parse_chnroute() {
   char net[32];
   chnroute_list.entries = 0;
   int i = 0;
+  int cidr;
 
   if (chnroute_file == NULL) {
     VERR("CHNROUTE_FILE not specified, CHNRoute is disabled\n");
@@ -481,9 +522,14 @@ static int parse_chnroute() {
     sp_pos = strchr(line, '/');
     if (sp_pos) {
       *sp_pos = 0;
-      chnroute_list.nets[i].mask = (1 << (32 - atoi(sp_pos + 1))) - 1;
+      cidr = atoi(sp_pos + 1);
+      if (cidr > 0) {
+        chnroute_list.nets[i].mask = (1 << (32 - cidr)) - 1;
+      } else {
+        chnroute_list.nets[i].mask = UINT32_MAX;
+      }
     } else {
-      chnroute_list.nets[i].mask = UINT32_MAX;
+      chnroute_list.nets[i].mask = NETMASK_MIN;
     }
     if (0 == inet_aton(line, &chnroute_list.nets[i].net)) {
       VERR("invalid addr %s in %s:%d\n", line, chnroute_file, i + 1);
@@ -507,29 +553,26 @@ static int test_ip_in_list(struct in_addr ip, const net_list_t *netlist) {
     return 0;
   net_mask_t ip_net;
   ip_net.net = ip;
-  while (l != r) {
-    m = (l + r) / 2;
-    cmp = cmp_net_mask(&ip_net, &netlist->nets[m]);
-    if (cmp == -1) {
-      if (r != m)
-        r = m;
-      else
-        break;
-    } else {
-      if (l != m)
-        l = m;
-      else
-        break;
-    }
+  while (l <= r) {
+    m = (l + r) >> 1;
+    cmp = cmp_net_mask(&netlist->nets[m], &ip_net);
+    if (cmp < 0)
+      l = m + 1;
+    else if (cmp > 0)
+      r = m - 1;
+    else
+      return 1;
+#ifdef DEBUG
     DLOG("l=%d, r=%d\n", l, r);
-    DLOG("%s, %d\n", inet_ntoa(netlist->nets[m].net),
-         netlist->nets[m].mask);
+    DLOG("%s, %d\n", inet_ntoa(netlist->nets[m].net), netlist->nets[m].mask);
+#endif
   }
-  DLOG("result: %x\n",
-       (ntohl(netlist->nets[l].net.s_addr) ^ ntohl(ip.s_addr)));
-  DLOG("mask: %x\n", (UINT32_MAX - netlist->nets[l].mask));
-  if ((ntohl(netlist->nets[l].net.s_addr) ^ ntohl(ip.s_addr)) &
-      (UINT32_MAX ^ netlist->nets[l].mask)) {
+#ifdef DEBUG
+  DLOG("nets: %x <-> %x\n", ntohl(netlist->nets[l - 1].net.s_addr, ntohl(ip.s_addr));
+  DLOG("mask: %x\n", netlist->nets[l - 1].mask);
+#endif
+  if (0 == l || (ntohl(ip.s_addr) > (ntohl(netlist->nets[l - 1].net.s_addr)
+      | netlist->nets[l - 1].mask))) {
     return 0;
   }
   return 1;
@@ -562,13 +605,21 @@ static int dns_init_sockets() {
   return 0;
 }
 
+static int send_request(id_addr_t id_addr, char *buf, ssize_t len) {
+  if (verbose)
+    printf(" %s:%d", inet_ntoa(((struct sockaddr_in *)id_addr.addr)->sin_addr),
+                         htons(((struct sockaddr_in *)id_addr.addr)->sin_port));
+  if (-1 == sendto(remote_sock, buf, len, 0, id_addr.addr, id_addr.addrlen))
+    ERR("sendto");
+}
+
 static void dns_handle_local() {
   struct sockaddr *src_addr = malloc(sizeof(struct sockaddr));
   socklen_t src_addrlen = sizeof(struct sockaddr);
   uint16_t query_id;
   ssize_t len;
   int i;
-  int sended = 0;
+  int ended = 0;
   const char *question_hostname;
   ns_msg msg;
   len = recvfrom(local_sock, global_buf, BUF_SIZE, 0, src_addr, &src_addrlen);
@@ -582,7 +633,7 @@ static void dns_handle_local() {
     // TODO generate id for each request to avoid conflicts
     query_id = ns_msg_id(msg);
     question_hostname = hostname_from_question(msg);
-    LOG("request %s\n", question_hostname);
+    LOG("request %s from", question_hostname);
 
     // assign a new id
     uint16_t new_id;
@@ -599,53 +650,45 @@ static void dns_handle_local() {
     id_addr_t id_addr;
     id_addr.id = new_id;
     id_addr.old_id = query_id;
-
     id_addr.addr = src_addr;
     id_addr.addrlen = src_addrlen;
     queue_add(id_addr);
-    if (compression) {
-      if (len > 16) {
-        size_t off = 12;
-        int ended = 0;
-        while (off < len - 4) {
-          if (global_buf[off] & 0xc0)
-            break;
-          if (global_buf[off] == 0) {
-            ended = 1;
-            off ++;
-            break;
-          }
-          off += 1 + global_buf[off];
+
+    if (compression && len > 16) {
+      size_t off = 12;
+      while (off < len - 4) {
+        if (global_buf[off] & 0xc0)
+          break;
+        if (global_buf[off] == 0) {
+          ended = 1;
+          off ++;
+          break;
         }
-        if (ended) {
-          memcpy(compression_buf, global_buf, off-1);
-          memcpy(compression_buf + off + 1, global_buf + off, len - off);
-          compression_buf[off-1] = '\xc0';
-          compression_buf[off] = '\x04';
-          for (i = 0; i < has_chn_dns; i++) {
-            if (-1 == sendto(remote_sock, global_buf, len, 0,
-                             dns_server_addrs[i].addr,
-                             dns_server_addrs[i].addrlen))
-              ERR("sendto");
-          }
-          for (i =  has_chn_dns; i < dns_servers_len; i++) {
-            if (-1 == sendto(remote_sock, compression_buf, len + 1, 0,
-                             dns_server_addrs[i].addr,
-                             dns_server_addrs[i].addrlen))
-              ERR("sendto");
-            sended = 1;
-          }
-        }
+        off += 1 + global_buf[off];
+      }
+      if (ended) {
+        memcpy(compression_buf, global_buf, off-1);
+        memcpy(compression_buf + off + 1, global_buf + off, len - off);
+        compression_buf[off-1] = '\xc0';
+        compression_buf[off] = '\x04';
       }
     }
-    if (!sended) {
-      for (i = 0; i < dns_servers_len; i++) {
-        if (-1 == sendto(remote_sock, global_buf, len, 0,
-                         dns_server_addrs[i].addr,
-                         dns_server_addrs[i].addrlen))
-          ERR("sendto");
+    for (i = 0; i < dns_servers_len; i++) {
+      switch(test_dns_server_type(dns_server_addrs[i].addr)) {
+        case CHN_DNS:
+        case TRUSTED_DNS:
+          send_request(dns_server_addrs[i], global_buf, len);
+          break;
+        case FOREIGN_DNS:
+          if (ended)
+            send_request(dns_server_addrs[i], compression_buf, len + 1);
+          else if (!has_trusted_dns)
+            send_request(dns_server_addrs[i], global_buf, len);
+          break;
       }
     }
+    if (verbose)
+      printf("\n");
   }
   else
     ERR("recvfrom");
@@ -679,7 +722,7 @@ static void dns_handle_remote() {
       id_addr->addr->sa_family = AF_INET;
       uint16_t ns_old_id = htons(id_addr->old_id);
       memcpy(global_buf, &ns_old_id, 2);
-      r = should_filter_query(msg, ((struct sockaddr_in *)src_addr)->sin_addr);
+      r = should_filter_query(msg, src_addr);
       if (r == 0) {
         if (verbose)
           printf("pass\n");
@@ -749,7 +792,7 @@ static const char *hostname_from_question(ns_msg msg) {
   return NULL;
 }
 
-static int should_filter_query(ns_msg msg, struct in_addr dns_addr) {
+static int should_filter_query(ns_msg msg, struct sockaddr *dns_addr) {
   ns_rr rr;
   int rrnum, rrmax;
   void *r;
@@ -757,12 +800,12 @@ static int should_filter_query(ns_msg msg, struct in_addr dns_addr) {
   int dns_is_chn = 0;
   int dns_is_foreign = 0;
   if (chnroute_file && (dns_servers_len > 1)) {
-    dns_is_chn = test_ip_in_list(dns_addr, &chnroute_list);
+    dns_is_chn = (CHN_DNS == test_dns_server_type(dns_addr));
     dns_is_foreign = !dns_is_chn;
   }
   rrmax = ns_msg_count(msg, ns_s_an);
   if (rrmax == 0) {
-    if (compression) {
+    if (compression || has_trusted_dns) {
       // Wait for foreign dns
       if (dns_is_chn) {
         return 1;
@@ -784,7 +827,7 @@ static int should_filter_query(ns_msg msg, struct in_addr dns_addr) {
     if (type == ns_t_a) {
       if (verbose)
         printf("%s, ", inet_ntoa(*(struct in_addr *)rd));
-      if (!compression) {
+      if (!compression && !has_trusted_dns) {
         r = bsearch(rd, ip_list.ips, ip_list.entries, sizeof(struct in_addr),
                     cmp_in_addr);
         if (r) {
@@ -812,7 +855,7 @@ static int should_filter_query(ns_msg msg, struct in_addr dns_addr) {
     }
   }
   if (rrmax == 1) {
-    if (compression) {
+    if (compression || has_trusted_dns) {
       return 0;
     } else {
       return -1;

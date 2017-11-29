@@ -945,12 +945,14 @@ handle_request(FILE *conn_fp, const conn_item_t *item)
 	usockaddr_to_uaddr(&item->usa, &conn_ip);
 
 	login_state = http_login_check(&conn_ip);
+	/*
 	if (login_state == 0) {
 		if (strstr(file, ".htm") != NULL || strstr(file, ".asp") != NULL) {
 			file = "Nologin.asp";
 			query = NULL;
 		}
 	}
+	*/
 
 	/* special case for reset browser credentials */
 	if (strcmp(file, "logout") == 0) {

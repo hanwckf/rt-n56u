@@ -40,8 +40,12 @@ function initial(){
 	show_footer();
 	var o1 = document.form.ss_method;
 	var o2 = document.form.ss_mode;
+	var o3 = document.form.ss_protocol;
+	var o4 = document.form.ss_obfs;
 	o1.value = '<% nvram_get_x("","ss_method"); %>';
 	o2.value = '<% nvram_get_x("","ss_mode"); %>';
+	o3.value = '<% nvram_get_x("","ss_protocol"); %>';
+	o4.value = '<% nvram_get_x("","ss_obfs"); %>';
 	change_ss_watchcat_display();
 }
 
@@ -178,7 +182,8 @@ function change_ss_watchcat_display(){
 										<tr>
                                             <th width="50%"><#menu5_16_7#></th>
                                             <td>
-												<select name="ss_method" class="input" style="width: 200px;">   
+												<select name="ss_method" class="input" style="width: 200px;">
+													<option value="none" >none</option>
                                                     <option value="rc4-md5" >rc4-md5</option>
 													<option value="aes-128-gcm" >aes-128-gcm</option>
 													<option value="aes-192-gcm" >aes-192-gcm</option>
@@ -201,6 +206,53 @@ function change_ss_watchcat_display(){
                                                 </select>
                                             </td>
                                         </tr>
+                                        
+                                        <tr>
+                                            <th width="50%"><#menu5_16_21#></th>
+                                            <td>
+                                                <input type="text" maxlength="6" class="input" size="15" name="ss_timeout" style="width: 145px" value="<% nvram_get_x("","ss_timeout"); %>" />
+                                            </td>
+                                        </tr>
+                                        
+                                        <tr>
+                                            <th width="50%"><#menu5_16_22#></th>
+                                            <td>
+												<select name="ss_protocol" class="input" style="width: 200px;">   
+                                                    <option value="origin" >origin</option>
+													<option value="auth_aes128_md5" >auth_aes128_md5</option>
+													<option value="auth_aes128_sha1" >auth_aes128_sha1</option>
+													<option value="auth_chain_a" >auth_chain_a</option>
+													<option value="auth_chain_b" >auth_chain_b</option>
+                                                </select>
+                                            </td>
+                                        </tr>
+                                        
+                                        <tr>
+                                            <th width="50%"><#menu5_16_23#></th>
+                                            <td>
+                                                <input type="text" maxlength="72" class="input" size="64" name="ss_proto_param" value="<% nvram_get_x("","ss_proto_param"); %>" />
+                                            </td>
+                                        </tr>
+                                        
+                                        <tr>
+                                            <th width="50%"><#menu5_16_24#></th>
+                                            <td>
+												<select name="ss_obfs" class="input" style="width: 200px;">   
+                                                    <option value="plain" >plain</option>
+													<option value="http_simple" >http_simple</option>
+													<option value="http_post" >http_post</option>
+													<option value="tls1.2_ticket_auth" >tls1.2_ticket_auth</option>
+                                                </select>
+                                            </td>
+                                        </tr>
+                                        
+                                        <tr>
+                                            <th width="50%"><#menu5_16_25#></th>
+                                            <td>
+                                                <input type="text" maxlength="72" class="input" size="64" name="ss_obfs_param" value="<% nvram_get_x("","ss_obfs_param"); %>" />
+                                            </td>
+                                        </tr>
+                                        
 										<tr>
 											<th colspan="2" style="background-color: #E3E3E3;"><#menu5_16_8#></th>
 										</tr>

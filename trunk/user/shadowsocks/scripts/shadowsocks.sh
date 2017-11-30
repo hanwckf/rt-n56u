@@ -11,6 +11,11 @@ ss_server_port=$(nvram get ss_server_port)
 ss_method=$(nvram get ss_method)
 ss_password=$(nvram get ss_key)
 ss_mtu=$(nvram get ss_mtu)
+ss_timeout=$(nvram get ss_timeout)
+ss_protocol=$(nvram get ss_protocol)
+ss_proto_param=$(nvram get ss_proto_param)
+ss_obfs=$(nvram get ss_obfs)
+ss_obfs_param=$(nvram get ss_obfs_param)
 
 ss_mode=$(nvram get ss_mode)
 ss_router_proxy=$(nvram get ss_router_proxy)
@@ -67,7 +72,12 @@ cat > "$ss_json_file" <<EOF
     "server": "$ss_server",
     "server_port": "$ss_server_port",
     "password": "$ss_password",
-    "method": "$ss_method"
+    "method": "$ss_method",
+    "timeout": $ss_timeout,
+    "protocol": "$ss_protocol",
+    "protocol_param": "$ss_proto_param",
+    "obfs": "$ss_obfs",
+    "obfs_param": "$ss_obfs_param"
 }
 
 EOF

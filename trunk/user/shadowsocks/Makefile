@@ -1,4 +1,4 @@
-SHADOWSOCKS_BIN=ss-redir
+SHADOWSOCKS_BIN=ssr-redir
 THISDIR = $(shell pwd)
 
 all:

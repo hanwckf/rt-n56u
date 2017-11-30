@@ -492,7 +492,7 @@ struct nvram_pair router_defaults[] = {
 	{ "chinadns_enable", "0" },
 	{ "chinadns_bind", "0.0.0.0" },
 	{ "chinadns_port", "5302" },
-	{ "chinadns_server", "114.114.114.114,127.0.0.1:5301" },
+	{ "chinadns_server", "114.114.114.114,127.0.0.1#5301" },
 	{ "chinadns_bi_filter", "1" },
 
 	/* dns-forwarder */
@@ -513,7 +513,12 @@ struct nvram_pair router_defaults[] = {
 	{ "ss_mtu", "1492" },
 	{ "ss_router_proxy", "1" },
 	{ "ss_lower_port_only", "1" },		//22-1023
-	
+	{ "ss_timeout", "60"},
+	{ "ss_protocol", "origin"},
+	{ "ss_proto_param", ""},
+	{ "ss_obfs", "plain"},
+	{ "ss_obfs_param", ""},
+
 	{ "ss-tunnel_enable", "0" },
 	{ "ss-tunnel_local_port", "5300" },
 	{ "ss-tunnel_remote", "8.8.4.4:53" },

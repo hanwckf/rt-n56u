@@ -22,6 +22,7 @@
 <script type="text/javascript" src="/help.js"></script>
 
 <script>
+<% shadowsocks_status(); %>
 var $j = jQuery.noConflict();
 
 $j(document).ready(function(){
@@ -47,6 +48,7 @@ function initial(){
 	o3.value = '<% nvram_get_x("","ss_protocol"); %>';
 	o4.value = '<% nvram_get_x("","ss_obfs"); %>';
 	change_ss_watchcat_display();
+	fill_status(shadowsocks_status());
 }
 
 function applyRule(){
@@ -69,6 +71,14 @@ function change_ss_watchcat_display(){
 	showhide_div('ss_wathcat_option', v);
 }
 
+function fill_status(status_code){
+	var stext = "Unknown";
+	if (status_code == 0)
+		stext = "<#Stopped#>";
+	else if (status_code == 1)
+		stext = "<#Running#>";
+	$("ss_status").innerHTML = '<span class="label label-' + (status_code != 0 ? 'success' : 'warning') + '">' + stext + '</span>';
+}
 </script>
 
 <style>
@@ -137,6 +147,10 @@ function change_ss_watchcat_display(){
 											<td style="border-top: 0 none;" colspan="2">
 											  <input type="button" id="btn_connect_1" class="btn btn-info" value=<#Connect#> onclick="submitInternet('Reconnect');">
 											</td>
+										</tr>
+										<tr>
+											<th><#running_status#></th>
+											<td id="ss_status" colspan="3"></td>
 										</tr>
 										<tr>
                                             <th><#menu5_16_2#></th>

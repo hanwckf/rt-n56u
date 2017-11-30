@@ -23,6 +23,7 @@
 
 <script>
 var $j = jQuery.noConflict();
+<% scutclient_status(); %>
 
 $j(document).ready(function(){
 	//var textArea = E('textarea');
@@ -30,6 +31,7 @@ $j(document).ready(function(){
 	init_itoggle('scutclient_enable');
 	init_itoggle('scutclient_debug');
 	init_itoggle('scutclient_watchcat');
+	fill_status(scutclient_status());
 });
 
 function initial(){
@@ -62,6 +64,15 @@ function submitInternet(v){
 	document.scutclient_action.action = "scutclient_action.asp";
 	document.scutclient_action.connect_action.value = v;
 	document.scutclient_action.submit();
+}
+
+function fill_status(status_code){
+	var stext = "Unknown";
+	if (status_code == 0)
+		stext = "<#Stopped#>";
+	else if (status_code == 1)
+		stext = "<#Running#>";
+	$("scutclient_status").innerHTML = '<span class="label label-' + (status_code != 0 ? 'success' : 'warning') + '">' + stext + '</span>';
 }
 
 </script>
@@ -136,6 +147,10 @@ function submitInternet(v){
 											  <input type="button" id="btn_connect_1" class="btn btn-info" value=<#Connect#> onclick="submitInternet('Reconnect');">
 											  <input type="button" id="btn_connect_0" class="btn btn-danger" value=<#Disconnect#> onclick="submitInternet('Disconnect');">
 											</td>
+										</tr>
+										<tr>
+											<th><#running_status#></th>
+											<td id="scutclient_status" colspan="3"></td>
 										</tr>
 										<tr>
                                             <th><#menu5_13_enable#></th>

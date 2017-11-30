@@ -1928,6 +1928,12 @@ static int scutclient_action_hook(int eid, webs_t wp, int argc, char **argv)
 	websWrite(wp, "<script>restart_needed_time(%d);</script>\n", needed_seconds);
 	return 0;
 }
+
+static int scutclient_status_hook(int eid, webs_t wp, int argc, char **argv)
+{
+	int status_code = pids("bin_scutclient");
+	websWrite(wp, "function scutclient_status() { return %d;}\n", status_code);
+}
 #endif
 
 #if defined (APP_SHADOWSOCKS)
@@ -1945,6 +1951,29 @@ static int shadowsocks_action_hook(int eid, webs_t wp, int argc, char **argv)
 
 	websWrite(wp, "<script>restart_needed_time(%d);</script>\n", needed_seconds);
 	return 0;
+}
+
+static int shadowsocks_status_hook(int eid, webs_t wp, int argc, char **argv)
+{
+	int status_code = pids("ss-redir");
+	websWrite(wp, "function shadowsocks_status() { return %d;}\n", status_code);
+}
+
+#endif
+
+#if defined(APP_CHINADNS)
+static int chinadns_status_hook(int eid, webs_t wp, int argc, char **argv)
+{
+	int status_code = pids("chinadns");
+	websWrite(wp, "function chinadns_status() { return %d;}\n", status_code);
+}
+#endif
+
+#if defined(APP_DNSFORWARDER)
+static int dnsforwarder_status_hook(int eid, webs_t wp, int argc, char **argv)
+{
+	int status_code = pids("dns-forwarder");
+	websWrite(wp, "function dnsforwarder_status() { return %d;}\n", status_code);
 }
 #endif
 
@@ -3915,9 +3944,17 @@ struct ej_handler ej_handlers[] =
 #endif
 #if defined (APP_SCUT)
 	{ "scutclient_action", scutclient_action_hook},
+	{ "scutclient_status", scutclient_status_hook},
 #endif
 #if defined (APP_SHADOWSOCKS)
 	{ "shadowsocks_action", shadowsocks_action_hook},
+	{ "shadowsocks_status", shadowsocks_status_hook},
+#endif
+#if defined (APP_CHINADNS)
+	{ "chinadns_status", chinadns_status_hook},
+#endif
+#if defined (APP_DNSFORWARDER)
+	{ "dnsforwarder_status", dnsforwarder_status_hook},
 #endif
 	{ "openssl_util_hook", openssl_util_hook},
 	{ "openvpn_srv_cert_hook", openvpn_srv_cert_hook},

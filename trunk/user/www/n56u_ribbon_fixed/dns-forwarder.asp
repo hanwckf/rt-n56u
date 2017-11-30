@@ -23,6 +23,7 @@
 
 <script>
 var $j = jQuery.noConflict();
+<% dnsforwarder_status(); %>
 
 $j(document).ready(function(){
 	init_itoggle('dns_forwarder_enable');
@@ -32,6 +33,7 @@ function initial(){
 	show_banner(2);
 	show_menu(5,13,1);
 	show_footer();
+	fill_status(dnsforwarder_status());
 }
 
 function applyRule(){
@@ -49,6 +51,15 @@ function validForm(){
 	if(!validate_ipaddr_final(addr_obj, ''))
 		return false;
 	return true;
+}
+
+function fill_status(status_code){
+	var stext = "Unknown";
+	if (status_code == 0)
+		stext = "<#Stopped#>";
+	else if (status_code == 1)
+		stext = "<#Running#>";
+	$("dnsforwarder_status").innerHTML = '<span class="label label-' + (status_code != 0 ? 'success' : 'warning') + '">' + stext + '</span>';
 }
 
 </script>
@@ -111,6 +122,10 @@ function validForm(){
                                 <div class="row-fluid">
                                     <div id="tabMenu" class="submenuBlock"></div>
                                     <table width="100%" cellpadding="4" cellspacing="0" class="table">
+                                    	<tr>
+											<th><#running_status#></th>
+											<td id="dnsforwarder_status" colspan="3"></td>
+										</tr>
 										<tr>
                                             <th><#menu5_15_1#></th>
                                             <td>

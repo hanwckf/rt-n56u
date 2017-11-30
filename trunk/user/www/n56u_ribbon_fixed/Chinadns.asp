@@ -22,6 +22,7 @@
 <script type="text/javascript" src="/help.js"></script>
 
 <script>
+<% chinadns_status(); %>
 var $j = jQuery.noConflict();
 
 $j(document).ready(function(){
@@ -33,6 +34,7 @@ function initial(){
 	show_banner(2);
 	show_menu(5,12,1);
 	show_footer();
+	fill_status(chinadns_status());
 }
 
 function applyRule(){
@@ -50,6 +52,15 @@ function validForm(){
 	if(!validate_ipaddr_final(addr_obj, ''))
 		return false;
 	return true;
+}
+
+function fill_status(status_code){
+	var stext = "Unknown";
+	if (status_code == 0)
+		stext = "<#Stopped#>";
+	else if (status_code == 1)
+		stext = "<#Running#>";
+	$("chinadns_status").innerHTML = '<span class="label label-' + (status_code != 0 ? 'success' : 'warning') + '">' + stext + '</span>';
 }
 
 </script>
@@ -112,6 +123,10 @@ function validForm(){
                                 <div class="row-fluid">
                                     <div id="tabMenu" class="submenuBlock"></div>
                                     <table width="100%" cellpadding="4" cellspacing="0" class="table">
+										<tr>
+											<th><#running_status#></th>
+											<td id="chinadns_status" colspan="3"></td>
+										</tr>
 										<tr>
                                             <th><#menu5_14_1#></th>
                                             <td>

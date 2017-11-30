@@ -134,6 +134,7 @@ static long madvise_willneed(struct vm_area_struct * vma,
 {
 	struct file *file = vma->vm_file;
 
+	*prev = vma;
 	if (!file)
 		return -EBADF;
 
@@ -142,7 +143,6 @@ static long madvise_willneed(struct vm_area_struct * vma,
 		return 0;
 	}
 
-	*prev = vma;
 	start = ((start - vma->vm_start) >> PAGE_SHIFT) + vma->vm_pgoff;
 	if (end > vma->vm_end)
 		end = vma->vm_end;

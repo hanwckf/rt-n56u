@@ -1,20 +1,27 @@
 #!/bin/sh
 
+func_start(){
+	vlmcsd
+	logger -st "vlmcsd" "start"
+}
+
+func_stop(){
+	killall -q vlmcsd
+}
+
 case "$1" in
 start)
-        vlmcsd
-        logger -st "vlmcsd" "start"
-        ;;
+	func_start
+	;;
 stop)
-        killall -q vlmcsd
-        ;;
+	func_stop
+	;;
 restart)
-        killall -q vlmcsd
-        vlmcsd
-        logger -st "vlmcsd" "start"
-        ;;
+	func_stop
+	func_start
+	;;
 *)
-        echo "Usage: $0 { start | stop | restart }"
-        exit 1
-        ;;
+	echo "Usage: $0 { start | stop | restart }"
+	exit 1
+	;;
 esac

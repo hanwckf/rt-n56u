@@ -174,7 +174,7 @@ function fill_status(status_code){
 										<tr>
                                             <th width="50%"><#menu5_16_4#></th>
                                             <td>
-                                                <input type="text" maxlength="32" class="input" size="64" name="ss_server" value="<% nvram_get_x("","ss_server"); %>" />
+                                                <input type="text" maxlength="64" class="input" size="64" name="ss_server" value="<% nvram_get_x("","ss_server"); %>" />
                                             </td>
                                         </tr>
 										

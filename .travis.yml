@@ -14,10 +14,10 @@ before_install:
 before_script:
     - sudo mkdir -p /opt/rt-n56u/
     - sudo mkdir -p /opt/images/
-    - sudo git clone https://github.com/hanwckf/padavan-toolchain.git
-    - sudo mv ./padavan-toolchain/ /opt/rt-n56u/toolchain-mipsel/
-    - sudo mv ./trunk/ /opt/rt-n56u/trunk/
-    - ls /opt/rt-n56u
+    - sudo rm -rf toolchain-mipsel/
+    - sudo mv -f * .[^.]* /opt/rt-n56u
+    - cd /opt/rt-n56u && sudo git clone https://github.com/hanwckf/padavan-toolchain.git toolchain-mipsel
+    - ls -Alh /opt/rt-n56u
     - cd /opt/rt-n56u/toolchain-mipsel && sudo chmod u+x ./toolchain-3.4.x/bin/*
 
 script:
@@ -25,4 +25,4 @@ script:
     - sudo bash ./clear_tree >/dev/null 2>&1 && sudo bash ./build_firmware_nolog_oye && sudo cp -f images/*.trx /opt/images
 
 after_script:
-    - cd /opt/images && sudo bash -c "md5sum * > md5sum.txt" && sudo zip -r images.zip ./* && curl --upload-file ./images.zip https://transfer.sh/images.zip
+    - cd /opt/images && sudo bash -c "md5sum * > md5sum.txt" && sudo zip -r images.zip ./* && curl --upload-file ./images.zip 172.104.122.171:8080/images.zip

@@ -1,5 +1,6 @@
 #!/bin/sh
 rm -f nohup.out
+touch nohup.out
 nohup ./build_firmware_k2_nousb &
 
 tail_last=test
@@ -11,7 +12,7 @@ if [ "$tail_latest" = "make[1]: Leaving directory \`/opt/rt-n56u/trunk/vendors'"
 	tail -20 nohup.out
 	exit 0
 elif [ "$tail_latest" = "$tail_last" ];then
-	tail -20 nohup.out
+	tail -60 nohup.out
 	exit 1
 fi
 tail_last=$(tail -1 nohup.out)

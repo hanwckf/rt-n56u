@@ -1,5 +1,12 @@
 #!/bin/sh
-cp -f configs/templates/PSG1218.config .config
+
+if [ ! -f configs/templates/$1.config ] ; then
+	echo "configs/templates/$1.config not found "
+	exit 1
+fi
+
+cp -f configs/templates/$1.config .config
+
 ROOTDIR=`pwd`
 export ROOTDIR=$ROOTDIR
 
@@ -487,4 +494,3 @@ echo --------------------------MAKE-DEP--------------------------------
 make dep
 echo --------------------------MAKE-ALL--------------------------------
 make
-#invaild items(DISABLED):USB,NFSC,NFSD,CIFS,SMBD,USB AUDIO,USB UVC,OPENVPN

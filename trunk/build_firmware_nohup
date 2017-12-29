@@ -1,7 +1,12 @@
 #!/bin/sh
+if [ ! -f configs/templates/$1.config ] ; then
+	echo "configs/templates/$1.config not found "
+	exit 1
+fi
+
 rm -f nohup.out
 touch nohup.out
-nohup ./build_firmware_k2_nousb &
+nohup ./build_firmware_modify $1 &
 
 tail_last=test
 while true ;do
@@ -19,3 +24,4 @@ tail_last=$(tail -1 nohup.out)
 tail -4 nohup.out
 sleep 30
 done
+

@@ -29,13 +29,13 @@ loger() {
 }
 
 get_arg_udp() {
-	if [ "$ss_udp" = "1" ]; then	
+	if [ "$ss_udp" = "1" ]; then
 		echo "-u"
 	fi
 }
 
 get_arg_out(){
-	if [ "$ss_router_proxy" = "1" ]; then 
+	if [ "$ss_router_proxy" = "1" ]; then
 		echo "-o"
 	fi
 }
@@ -73,7 +73,7 @@ cat > "$ss_json_file" <<EOF
     "server_port": "$ss_server_port",
     "password": "$ss_password",
     "method": "$ss_method",
-    "timeout": $ss_timeout,
+    "timeout": "$ss_timeout",
     "protocol": "$ss_protocol",
     "protocol_param": "$ss_proto_param",
     "obfs": "$ss_obfs",

@@ -6,21 +6,21 @@ net_domain="www.qq.com"
 log_file="/tmp/ss-watchcat.log"
 
 loger(){
-	echo -n "$LOGTIME " >> /tmp/ss-watchcat.log
+	echo -n "$LOGTIME " >> $log_file
 	logger -st "ss-watchcat" "$1" 2>>$log_file
 }
 
 detect_shadowsocks(){
-wget --spider --quiet --timeout=3 http://www.google.com/ > /dev/null 2>&1
-if [ "$?" = "0" ]; then
-	echo "$LOGTIME ss-watchcat: No Problem." >> $log_file
-	exit 0
-else
-	loger "Problem decteted, restarting shadowsocks."
-	/usr/bin/shadowsocks.sh restart >/dev/null 2>&1
-	#/usr/bin/dns-forwarder.sh restart >/dev/null 2>&1
-	#/usr/bin/chinadns.sh restart >/dev/null 2&1
-fi
+	wget --spider --quiet --timeout=3 http://www.google.com/ > /dev/null 2>&1
+	if [ "$?" = "0" ]; then
+		loger "No Problem."
+		exit 0
+	else
+		loger "Problem decteted, restarting shadowsocks."
+		/usr/bin/shadowsocks.sh restart >/dev/null 2>&1
+		#/usr/bin/dns-forwarder.sh restart >/dev/null 2>&1
+		#/usr/bin/chinadns.sh restart >/dev/null 2&1
+	fi
 }
 
 if [ "$(nvram get ss_watchcat)" != "1" ] || [ "$(nvram get ss_router_proxy)" != "1" ] || [ "$(nvram get ss_enable)" != "1" ]; then

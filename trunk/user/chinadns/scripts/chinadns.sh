@@ -6,7 +6,7 @@ server=$(nvram get chinadns_server)
 filter=$(nvram get chinadns_bi_filter)
 
 get_arg_filter(){
-	if [ "$filter" = "1" ]; then	
+	if [ "$filter" = "1" ]; then
 		echo "-d"
 	fi
 }

@@ -266,8 +266,9 @@ int usbnet_generic_cdc_bind(struct usbnet *dev, struct usb_interface *intf)
 					info->ether->bLength);
 				goto bad_desc;
 			}
-			dev->hard_mtu = le16_to_cpu(
-						info->ether->wMaxSegmentSize);
+			if (info->ether->wMaxSegmentSize)
+				dev->hard_mtu = le16_to_cpu(
+					info->ether->wMaxSegmentSize);
 			/* because of Zaurus, we may be ignoring the host
 			 * side link address we were given.
 			 */
@@ -840,6 +841,12 @@ static const struct usb_device_id	products[] = {
 	USB_DEVICE_AND_INTERFACE_INFO(DELL_VENDOR_ID, 0x81ba, USB_CLASS_COMM,
 			USB_CDC_SUBCLASS_ETHERNET, USB_CDC_PROTO_NONE),
 	.driver_info = (kernel_ulong_t)&wwan_info,
+}, {
+	/* Huawei ME906 and ME909 */
+	USB_DEVICE_AND_INTERFACE_INFO(HUAWEI_VENDOR_ID, 0x15c1, USB_CLASS_COMM,
+				      USB_CDC_SUBCLASS_ETHERNET,
+				      USB_CDC_PROTO_NONE),
+	.driver_info = (unsigned long)&wwan_info,
 }, {
 	/* ZTE modules */
 	USB_VENDOR_AND_INTERFACE_INFO(ZTE_VENDOR_ID, USB_CLASS_COMM,

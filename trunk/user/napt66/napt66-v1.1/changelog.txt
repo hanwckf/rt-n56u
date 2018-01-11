@@ -1,0 +1,5 @@
+2011.4.10
+	fix a bug about TCP checksum 
+
+NAPT66_v1.1
+	fix some bugs about FTP-ALG

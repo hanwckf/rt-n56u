@@ -1,0 +1,28 @@
+Introduction
+IPv6-IPv6 Network Address Port Translation (NAPT66) is a stateful IPv6 NAT mechanism. Like IPv4 NAT, NAPT66 technique makes several hosts share a public IPv6 address. As a result, NAPT66 helps to hide the private network topology and promote network security. 
+
+NAPT66 based on GNU/Linux is implemented in kernel space, which provides satisfied performance and portability. It has been ported to several open-source router firmware (e.g. OpenWrt) so that it can be run on low-end, commodity hardware (e.g. BCM63xx platform).
+
+NAPT66 should be installed on a boundary router situated between two IPv6 networks. It performs stateful packet translation between internal IPv6 hosts and external IPv6 hosts. 
+NAPT66 uses Application Level Gateways (ALGs) and DNS Proxy to deal with complex applications (like active FTP and DNS). More applications can travels NAPT66 in the future.
+
+Tested Protocols
+·HTTP 
+·MMS 
+·FTP - active and passive
+·Telnet 
+·ICMPv6 - echo request, echo reply，error messages(Destination Unreachable、Packet Too Big、Time Exceeded、Parameter Problem)
+
+Limitations
+In some certain scenarios, NAPT66 is unacceptable for these limitations.
+·Breaking the end-to-end model
+Several traditional NAT traversal techniques (e.g. ALGs, UPnP) may helps to solve the problem.
+·No fragmentation
+Avoiding fragmentation is one of the principles of IPv6. NAPT66 don’t support IPv6 fragmentation for the moment.
+
+Members
+Weilin Xu, Yigang Yang, Huiting Liu
+They are from Grade 2008, School of Computer, Beijing Univ. of Posts & Telecom.
+
+Acknowledgements
+This work is supported by the Research Innovation Fund for College Students of Beijing University of Posts and Telecommunications (Grant No. 101104537) and guided by Lecturer Hua Zhang from Institute of Network Technology, BUPT.

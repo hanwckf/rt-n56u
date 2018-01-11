@@ -1,11 +1,12 @@
-THISDIR = $(shell pwd)
+SRC_NAME = napt66-v1.1
+
 all:
-	@echo "napt66 build done"
+	$(MAKE) -C $(SRC_NAME)
 
 romfs:
-	${ROMFSINST} -d $(THISDIR)/scripts/start_napt66 /bin/start_napt66
-	${ROMFSINST} -d $(THISDIR)/scripts/disable_ip6tables /bin/disable_ip6tables
-	${ROMFSINST} -S -d $(THISDIR)/mt7620/napt66.ko /etc_ro/napt66.ko
+	${ROMFSINST} -d ./scripts/start_napt66 /bin/start_napt66
+	${ROMFSINST} -d ./scripts/disable_ip6tables /bin/disable_ip6tables
+	${ROMFSINST} -S -d ./$(SRC_NAME)/napt66.ko /etc_ro/napt66.ko
 
 clean:
-	@echo "napt66 clean done"
+	$(MAKE) -C $(SRC_NAME) clean

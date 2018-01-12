@@ -27,4 +27,6 @@ script:
     - sudo bash ./clear_tree_simple >/dev/null 2>&1 && sudo bash ./build_firmware_nohup OYE-001 && sudo cp -f images/*.trx /opt/images
 
 after_script:
-    - cd /opt/images && sudo bash -c "md5sum * > md5sum.txt" && sudo zip -r images.zip ./* && curl --upload-file ./images.zip https://transfer.sh/images.zip
+    - GIT_VERSION=`git rev-parse --short=7 HEAD 2>/dev/null` && [ -n "$GIT_VERSION" ] && image_name=images_$GIT_VERSION || image_name=images
+    - cd /opt/images && sudo bash -c "md5sum * > md5sum.txt" && sudo zip -r ${image_name}.zip ./*
+    - curl --upload-file ./${image_name}.zip https://transfer.sh/${image_name}.zip

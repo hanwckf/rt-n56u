@@ -1549,12 +1549,21 @@ compat_copy_entry_to_user(struct ipt_entry *e, void __user **dstptr,
 	compat_uint_t origsize;
 	const struct xt_entry_match *ematch;
 	int ret = 0;
+#ifdef CONFIG_IP_NF_IPTABLES_SPEEDUP
+	u8 flags = e->ip.flags & IPT_F_MASK;
+#endif
 
 	origsize = *size;
 	ce = (struct compat_ipt_entry __user *)*dstptr;
 	if (copy_to_user(ce, e, sizeof(struct ipt_entry)) != 0 ||
 	    copy_to_user(&ce->counters, &counters[i],
+#ifdef CONFIG_IP_NF_IPTABLES_SPEEDUP
+	    sizeof(counters[i])) != 0 ||
+	    copy_to_user(&ce->ip.flags, &flags,
+	    sizeof(flags)) != 0)
+#else
 	    sizeof(counters[i])) != 0)
+#endif
 		return -EFAULT;
 
 	*dstptr += sizeof(struct compat_ipt_entry);

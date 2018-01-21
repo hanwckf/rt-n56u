@@ -15,7 +15,7 @@ configure:
 	./configure \
 		--prefix=$(STAGEDIR) \
 		--enable-static \
-		--disable-shared \
+		--enable-shared \
 		$(if $(CONFIG_IPV6),--enable-ipv6,--disable-ipv6) \
 		--disable-gopher \
 		--disable-ldap \
@@ -59,4 +59,7 @@ install:
 	$(MAKE) -C $(SRC_NAME) install DESTDIR=""
 
 romfs:
-
+ifeq ($(CONFIG_FIRMWARE_INCLUDE_CURL),y)
+	$(ROMFSINST) -d $(DESTDIR)/bin/curl /usr/bin/curl
+	cp -fP $(DESTDIR)/lib/libcurl.so* $(ROMFSDIR)/lib
+endif

@@ -1,19 +1,24 @@
 THISDIR = $(shell pwd)
-SRC_NAME = vlmcsd
-git_commit_id = 8f85825cf108e1ac52c164bc20f9c8f537e4810c
+SRC_NAME = vlmcsd-master
+SRC_URL = https://github.com/hanwckf/vlmcsd/archive/master.zip
 
-all: download_test
+all: download_test extract_test
 	$(MAKE) -C $(SRC_NAME) -B CC=$(ROOTDIR)/../toolchain-mipsel/toolchain-3.4.x/bin/mipsel-linux-uclibc-gcc
 	
 download_test: 
-	( if [ ! -d $(THISDIR)/$(SRC_NAME)/ ]; then \
-		git clone https://github.com/hanwckf/vlmcsd.git $(SRC_NAME); \
-		cd $(SRC_NAME); \
-		git reset --hard $(git_commit_id);\
+	( if [ ! -f $(THISDIR)/$(SRC_NAME).zip ]; then \
+		wget -t5 --timeout=20 --no-check-certificate -O $(SRC_NAME).zip $(SRC_URL); \
 	fi )
+
+extract_test:
+	( if [ ! -d $(THISDIR)/$(SRC_NAME) ]; then \
+		unzip -qq $(SRC_NAME).zip; \
+	fi )
+
 romfs:
 	$(ROMFSINST) -d $(THISDIR)/$(SRC_NAME)/bin/vlmcsd /usr/bin/vlmcsd
 	$(ROMFSINST) $(THISDIR)/vlmcsd.sh /usr/bin/vlmcsd.sh
+
 clean:
 	if [ -f $(SRC_NAME)/Makefile ] ; then \
 		$(MAKE) -C $(SRC_NAME) clean ; \

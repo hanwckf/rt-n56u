@@ -49,7 +49,7 @@ ifeq ($(CONFIG_FIRMWARE_INCLUDE_ARIA_WEB_CONTROL),y)
 		wget -t5 --timeout=20 --no-check-certificate -O $(SRC_ARIA_NG_NAME).zip $(SRC_ARIA_NG_URL); \
 	fi )
 	( if [ ! -d $(THISDIR)/ariaweb ]; then \
-		unzip $(SRC_ARIA_NG_NAME).zip -d ariaweb; \
+		unzip -qq $(SRC_ARIA_NG_NAME).zip -d ariaweb; \
 	fi )
 endif
 

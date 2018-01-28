@@ -1,5 +1,5 @@
 SRC_NAME = lrzsz-0.12.20
-SRC_URL =https://ohse.de/uwe/releases/lrzsz-0.12.20.tar.gz
+SRC_URL = https://ohse.de/uwe/releases/lrzsz-0.12.20.tar.gz
 THISDIR = $(shell pwd)
 
 all: download_test extract_test config_test

@@ -2,6 +2,18 @@
 History of USB_ModeSwitch
 =========================
 
+Version 2.5.2, 2017/12/31
+    Bugfix release: fixed additional MessageContent parameters not working,
+    reported by Frank Schmirler (see
+    http://draisberghof.de/usb_modeswitch/bb/viewtopic.php?p=18369 );
+    fixed "early crash" when killed before libusb context initialization
+    (see https://bugzilla.redhat.com/show_bug.cgi?id=1358472 ), reported
+    by Lubomir Rintel;
+    fixed bad string reference, reported by Lubomir Rintel, (see
+    http://draisberghof.de/usb_modeswitch/bb/viewtopic.php?p=18238 );
+    fixed detection of systemd if /sbin/init is a cascaded symlink
+    (see http://draisberghof.de/usb_modeswitch/bb/viewtopic.php?p=18218 );
+    fixed quirk in help message from usb_modeswitch binary
 Version 2.5.1, 2017/08/06
     New parameter "HuaweiAltMode", uses an alternative Huawei standard bulk
     message which will either provide NCM (newer modems) or plain PPP ports

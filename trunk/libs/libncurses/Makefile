@@ -6,12 +6,12 @@ all: download_test extract_test config_test
 
 download_test:
 	( if [ ! -f $(SRC_NAME).zip ]; then \
-		wget -t5 --timeout=20 --no-check-certificate $(SRC_URL); \
+		wget -t5 --timeout=20 --no-check-certificate -O $(SRC_NAME).zip $(SRC_URL); \
 	fi )
 
 extract_test:
 	( if [ ! -d $(SRC_NAME) ]; then \
-		unzip -qq $(ARCHIVE_NAME).zip ; \
+		unzip -qq $(SRC_NAME).zip ; \
 	fi )
 
 config_test:

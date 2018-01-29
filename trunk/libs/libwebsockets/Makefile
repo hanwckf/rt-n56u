@@ -26,11 +26,23 @@ configure:
 	cmake \
 	-DCMAKE_INSTALL_PREFIX=$(STAGEDIR) \
 	-DCMAKE_TOOLCHAIN_FILE=../cross-mipsel-linux.cmake \
+	-DLWS_WITHOUT_TEST_ECHO=ON \
+	-DLWS_WITHOUT_TEST_SERVER=ON \
+	-DLWS_WITHOUT_TEST_PING=ON \
+	-DLWS_WITHOUT_CLIENT=ON \
+	-DLWS_WITHOUT_TEST_FRAGGLE=ON \
+	-DLWS_WITHOUT_TEST_SERVER_EXTPOLL=ON \
 	. \
 	)
 
-clean: download_test
-	rm -rf $(SRC_NAME)
+clean:
+	if [ -f $(SRC_NAME)/Makefile ] ; then \
+		$(MAKE) -C $(SRC_NAME) clean ; \
+	fi ; \
+	rm -rf $(SRC_NAME)/CMakeFiles
+	rm -f $(SRC_NAME)/cmake_install.cmake
+	rm -f $(SRC_NAME)/Makefile
+	rm -f $(SRC_NAME)/CMakeCache.txt
 	rm -f config_done
 
 install:

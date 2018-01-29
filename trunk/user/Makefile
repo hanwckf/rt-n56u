@@ -23,6 +23,7 @@ STORAGE_ENABLED=n
 OPENSSH_ENABLED=n
 DROPBEAR_ENABLED=n
 TTYD_ENABLED=n
+HTOP_ENABLE=n
 SAMBA_ENABLED=n
 ifneq ($(CONFIG_FIRMWARE_INCLUDE_OPENSSH),y)
 ifeq ($(CONFIG_FIRMWARE_INCLUDE_DROPBEAR),y)
@@ -37,6 +38,10 @@ endif
 
 ifeq ($(CONFIG_FIRMWARE_INCLUDE_TTYD),y)
 TTYD_ENABLED=y
+endif
+
+ifeq ($(CONFIG_FIRMWARE_INCLUDE_HTOP),y)
+HTOP_ENABLE=y
 endif
 
 ifeq ($(CONFIG_FIRMWARE_INCLUDE_WINS),y)
@@ -111,6 +116,7 @@ dir_y						+= lldt
 dir_y						+= scripts
 dir_$(OPENSSH_ENABLED)				+= openssh
 dir_$(DROPBEAR_ENABLED)				+= dropbear
+dir_$(HTOP_ENABLE)					+= htop
 dir_$(CONFIG_FIRMWARE_INCLUDE_OPENVPN)		+= openvpn
 dir_$(CONFIG_FIRMWARE_INCLUDE_SSWAN)		+= strongswan
 dir_$(CONFIG_FIRMWARE_INCLUDE_XUPNPD)		+= xupnpd

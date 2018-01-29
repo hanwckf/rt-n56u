@@ -1,0 +1,48 @@
+SRC_NAME=ncurses-6.0
+SRC_URL=https://github.com/mirror/ncurses/archive/v6.0.zip
+
+all: download_test extract_test config_test
+	$(MAKE) -C $(SRC_NAME)
+
+download_test:
+	( if [ ! -f $(SRC_NAME).zip ]; then \
+		wget -t5 --timeout=20 --no-check-certificate $(SRC_URL); \
+	fi )
+
+extract_test:
+	( if [ ! -d $(SRC_NAME) ]; then \
+		unzip -qq $(ARCHIVE_NAME).zip ; \
+	fi )
+
+config_test:
+	( if [ -f ./config_done ]; then \
+		echo "the same configuration"; \
+	else \
+		make configure && touch config_done; \
+	fi )
+
+configure:
+	( cd $(SRC_NAME) ; \
+	./configure \
+		--prefix=$(STAGEDIR) \
+		--without-ada \
+		--with-shared \
+		--without-debug \
+		--with-normal \
+		--without-profile \
+		--enable-overwrite \
+		--host=$(HOST_TARGET) \
+		--build=$(HOST_BUILD) ; \
+	)
+
+clean:
+	if [ -f $(SRC_NAME)/Makefile ] ; then \
+		$(MAKE) -C $(SRC_NAME) distclean ; \
+	fi ; \
+	rm -f config_done
+
+install:
+	$(MAKE) -C $(SRC_NAME) install DESTDIR=""
+
+romfs:
+	cp -fP $(DESTDIR)/lib/libncurses.so* $(ROMFSDIR)/lib

@@ -117,6 +117,10 @@ ifeq ($(CONFIG_FIRMWARE_INCLUDE_HTOP),y)
 LIBS_INCLUDE_NCURSES=y
 endif
 
+ifeq ($(CONFIG_FIRMWARE_INCLUDE_NANO),y)
+LIBS_INCLUDE_NCURSES=y
+endif
+
 dir_y						+= libz
 dir_$(LIBS_INCLUDE_NCURSES)			+= libncurses
 dir_$(LIBS_INCLUDE_CURL)			+= libcurl

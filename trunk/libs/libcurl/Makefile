@@ -1,7 +1,18 @@
-SRC_NAME=curl-7.37.x
+SRC_NAME=curl-7.58.0
+SRC_URL=https://github.com/curl/curl/releases/download/curl-7_58_0/curl-7.58.0.tar.gz
 
-all: config_test
+all: download_test extract_test config_test
 	$(MAKE) -C $(SRC_NAME)
+	
+download_test:
+	( if [ ! -f $(SRC_NAME).tar.gz ]; then \
+		wget -t5 --timeout=20 --no-check-certificate -O $(SRC_NAME).tar.gz $(SRC_URL); \
+	fi )
+
+extract_test:
+	( if [ ! -d $(SRC_NAME) ]; then \
+		tar zxf $(SRC_NAME).tar.gz; \
+	fi )
 
 config_test:
 	( if [ -f ./config_done ]; then \

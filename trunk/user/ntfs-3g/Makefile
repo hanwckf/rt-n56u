@@ -1,10 +1,21 @@
-SRC_NAME=ntfsprogs-2014.2.15
+SRC_NAME=ntfs-3g_ntfsprogs-2017.3.23
+SRC_URL=https://tuxera.com/opensource/ntfs-3g_ntfsprogs-2017.3.23.tgz
 
 CFLAGS += -O2 -ffunction-sections -fdata-sections
 LDFLAGS += -Wl,--gc-sections
 
-all: config_test
+all: download_test extract_test config_test
 	$(MAKE) -C $(SRC_NAME)
+
+download_test:
+	( if [ ! -f $(SRC_NAME).tgz ]; then \
+		wget -t5 --timeout=20 --no-check-certificate -O $(SRC_NAME).tgz $(SRC_URL); \
+	fi )
+
+extract_test:
+	( if [ ! -d $(SRC_NAME) ]; then \
+		tar zxf $(SRC_NAME).tgz; \
+	fi )
 
 config_test:
 	( if [ -f ./config_done ]; then \

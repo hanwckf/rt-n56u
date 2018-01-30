@@ -123,7 +123,6 @@ endif
 
 dir_y						+= libz
 dir_$(LIBS_INCLUDE_NCURSES)			+= libncurses
-dir_$(LIBS_INCLUDE_CURL)			+= libcurl
 dir_$(LIBS_INCLUDE_LIBLZO)			+= liblzo
 dir_$(LIBS_INCLUDE_LIBICONV)			+= libiconv
 dir_$(LIBS_INCLUDE_LIBSSL)			+= libssl
@@ -132,6 +131,7 @@ dir_$(LIBS_INCLUDE_LIBUSB_1)			+= libusb-1.0
 dir_$(LIBS_INCLUDE_LIBJSON_C)			+= libjson-c
 dir_$(LIBS_INCLUDE_LIBWEBSOCKETS)		+= libwebsockets
 dir_$(LIBS_INCLUDE_LIBSHADOWSOCKS)		+= libshadowsocks
+dir_$(LIBS_INCLUDE_CURL)			+= libcurl
 dir_y						+= libnfnetlink
 
 # ipset shared libs

@@ -291,10 +291,26 @@ begin:
 
 static void fq_codel_reset(struct Qdisc *sch)
 {
-	struct sk_buff *skb;
+	struct fq_codel_sched_data *q = qdisc_priv(sch);
+	int i;
 
-	while ((skb = fq_codel_dequeue(sch)) != NULL)
-		kfree_skb(skb);
+	INIT_LIST_HEAD(&q->new_flows);
+	INIT_LIST_HEAD(&q->old_flows);
+	for (i = 0; i < q->flows_cnt; i++) {
+		struct fq_codel_flow *flow = q->flows + i;
+
+		while (flow->head) {
+			struct sk_buff *skb = dequeue_head(flow);
+
+			sch->qstats.backlog -= qdisc_pkt_len(skb);
+			kfree_skb(skb);
+		}
+
+		INIT_LIST_HEAD(&flow->flowchain);
+		codel_vars_init(&flow->cvars);
+	}
+	memset(q->backlogs, 0, q->flows_cnt * sizeof(u32));
+	sch->q.qlen = 0;
 }
 
 static const struct nla_policy fq_codel_policy[TCA_FQ_CODEL_MAX + 1] = {
@@ -425,10 +441,8 @@ static int fq_codel_init(struct Qdisc *sch, struct nlattr *opt)
 		if (!q->flows)
 			return -ENOMEM;
 		q->backlogs = fq_codel_zalloc(q->flows_cnt * sizeof(u32));
-		if (!q->backlogs) {
-			fq_codel_free(q->flows);
+		if (!q->backlogs)
 			return -ENOMEM;
-		}
 		for (i = 0; i < q->flows_cnt; i++) {
 			struct fq_codel_flow *flow = q->flows + i;
 

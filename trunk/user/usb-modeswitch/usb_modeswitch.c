@@ -1,6 +1,6 @@
 /*
   Mode switching tool for controlling mode of 'multi-state' USB devices
-  Version 2.5.1, 2017/08/06
+  Version 2.5.2, 2017/12/31
 
   Copyright (C) 2007 - 2017 Josua Dietze (mail to "usb_admin" at the domain
   of the home page; or write a personal message through the forum to "Josh".
@@ -45,7 +45,7 @@
 
 /* Recommended tab size: 4 */
 
-#define VERSION "2.5.1"
+#define VERSION "2.5.2"
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -778,6 +778,10 @@ int main(int argc, char **argv)
 	} else if (strlen(MessageContent)) {
 		detachDrivers();
 		strcpy(Messages[0],MessageContent);
+		if (MessageContent2[0] != '\0')
+			strcpy(Messages[1], MessageContent2);
+		if (MessageContent3[0] != '\0')
+			strcpy(Messages[2], MessageContent3);
 		switchSendMessage();
 	}
 
@@ -1333,7 +1337,7 @@ void switchPantechMode()
 #define MOBILE_ACTION_READLOOP2 73
 
 /* The code here is statically derived from sniffing (and confirmed working).
- * However I bet it could be simplified significantly.
+ * However, I bet it could be simplified significantly.
  */
 
 void switchActionMode ()
@@ -1432,7 +1436,6 @@ void switchCiscoMode()
 		SHOW_PROGRESS(output," Could not claim interface (error %d). Abort\n", ret);
 		abortExit();
 	}
-//	libusb_clear_halt(devh, MessageEndpoint);
 	if (show_progress)
 		fflush(output);
 
@@ -1546,7 +1549,6 @@ int switchSonyMode ()
  */
 int detachDrivers()
 {
-
 	int i, ret;
 
 	// Driver already detached during SCSI inquiry ?
@@ -1669,6 +1671,7 @@ int checkSuccess()
 		 * Target device on the same bus with higher device number is returned,
 		 * description is read for syslog message
 		 */
+		// Wait counter passed on from previous loop
 		for (i=i; i < CheckSuccess; i++) {
 			SHOW_PROGRESS(output," Search for target devices ...\n");
 			dev = search_devices(&newTargetCount, TargetVendor, TargetProductList,
@@ -1707,12 +1710,6 @@ int checkSuccess()
 		}
 
 	switch (success) {
-		case 3: 
-			if (sysmode)
-				syslog(LOG_NOTICE, "switched to new device, but hit libusb1 bug");
-			TargetProduct = -1;
-			success = 1;
-			break;
 		case 2: 
 			if (sysmode)
 				syslog(LOG_NOTICE, "switched to %04x:%04x on %03d/%03d", TargetVendor,
@@ -1745,7 +1742,6 @@ int write_bulk(int endpoint, unsigned char *message, int length)
 		} else
 			SHOW_PROGRESS(output," Sending the message returned error %d. Try to continue\n", ret);
 	return ret;
-
 }
 
 
@@ -1760,7 +1756,6 @@ int read_bulk(int endpoint, unsigned char *buffer, int length)
 		} else
 			SHOW_PROGRESS(output," Response reading failed (error %d)", ret);
 	return ret;
-
 }
 
 
@@ -1771,7 +1766,6 @@ void release_usb_device(int __attribute__((unused)) dummy)
 		libusb_release_interface(devh, Interface);
 	close_all();
 	exit(0);
-
 }
 
 
@@ -1785,7 +1779,6 @@ struct libusb_device* search_devices( int *numFound, int vendor, char* productLi
 	unsigned char buffer[2];
 	int devClass, product;
 	struct libusb_device* right_dev = NULL;
-//	struct libusb_device_handle *testdevh;
 	struct libusb_device **devs;
 	int i=0;
 
@@ -1797,7 +1790,7 @@ struct libusb_device* search_devices( int *numFound, int vendor, char* productLi
 	*numFound = 0;
 
 	/* Sanity check */
-	if (!vendor || productList == '\0')
+	if (!vendor || *productList == '\0')
 		return NULL;
 
 	listcopy = malloc(strlen(productList)+1);
@@ -1851,7 +1844,7 @@ struct libusb_device* search_devices( int *numFound, int vendor, char* productLi
 					fprintf(output,"   product ID matched\n");
 
 				if (targetClass != 0) {
-					// TargetClass is set, check class of first interface
+					/* TargetClass is set, check class of first interface */
 					struct libusb_device_descriptor descriptor;
 					libusb_get_device_descriptor(dev, &descriptor);
 					devClass = descriptor.bDeviceClass;
@@ -1886,24 +1879,8 @@ struct libusb_device* search_devices( int *numFound, int vendor, char* productLi
 								fprintf (output,"   count device\n");
 						}
 					}
-/*				} else if (configuration > 0) {
-					// Configuration parameter is set, check device configuration
-					int testconfig = get_current_config_value(dev);
-					if (testconfig != configuration) {
-						if (verbose)
-							fprintf (output,"   device configuration %d not matching target\n",
-									testconfig);
-
-						(*numFound)++;
-						right_dev = dev;
-						if (verbose)
-							fprintf (output,"   count device\n");
-					} else
-						if (verbose)
-							fprintf (output,"   device not counted, target configuration reached\n");
-*/
 				} else {
-					// Neither TargetClass nor Configuration are set
+					/* Neither TargetClass nor Configuration are set */
 					(*numFound)++;
 					right_dev = dev;
 					if (mode == SEARCH_BUSDEV)
@@ -2011,7 +1988,6 @@ char* ReadParseParam(const char* FileName, char *VariableName)
 			}
 		}
 		while (token != NULL && numLines < MAXLINES) {
-//			Line++;
 			Len=strlen(Str);
 			if (Len==0)
 				goto NextLine;
@@ -2149,7 +2125,8 @@ void close_all()
 		libusb_free_config_descriptor(active_config);
 	if (devh)
 		libusb_close(devh);
-	libusb_exit(ctx);
+	if (ctx)
+		libusb_exit(ctx);
 	if (sysmode)
 		closelog();
 }
@@ -2189,7 +2166,8 @@ void printHelp()
 	" -g, --device-num NUM          system device number (for hard ID)\n"
 	" -m, --message-endpoint NUM    direct the message transfer there (optional)\n"
 	" -M, --message-content <msg>   message to send (hex number as string)\n"
-	" -2 <msg>, -3 <msg>            additional messages to send (-n recommended)\n"
+	" -2, --message-content2 <msg>  additional messages to send (-n recommended)\n"
+	" -3, --message-content3 <msg>  additional messages to send (-n recommended)\n"
 	" -w, --release-delay NUM       wait NUM ms before releasing the interface\n"
 	" -n, --need-response           obsolete, no effect (always on)\n"
 	" -r, --response-endpoint NUM   read response from there (optional)\n"
@@ -2214,7 +2192,7 @@ void printHelp()
 	" -Q, --quiet                   don't show progress or error messages\n"
 	" -W, --verbose                 print all settings and debug output\n"
 	" -D, --sysmode                 specific result and syslog message\n"
-	" -s, --success <seconds>       switching result check with timeout\n"
+	" -s, --check-success <seconds> switching result check with timeout\n"
 	" -I, --inquire                 retrieve SCSI attributes initially\n\n"
 	" -c, --config-file <filename>  load long configuration from file\n\n"
 	" -t, --stdinput                read long configuration from stdin\n\n"

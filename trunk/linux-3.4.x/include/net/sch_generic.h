@@ -314,6 +314,13 @@ extern struct Qdisc noop_qdisc;
 extern struct Qdisc_ops noop_qdisc_ops;
 extern struct Qdisc_ops pfifo_fast_ops;
 extern struct Qdisc_ops mq_qdisc_ops;
+extern const struct Qdisc_ops *default_qdisc_ops;
+static inline const struct Qdisc_ops *
+get_default_qdisc_ops(const struct net_device *dev, int ntx)
+{
+	return ntx < dev->real_num_tx_queues ?
+			default_qdisc_ops : &pfifo_fast_ops;
+}
 
 struct Qdisc_class_common {
 	u32			classid;
@@ -366,9 +373,9 @@ extern void qdisc_reset(struct Qdisc *qdisc);
 extern void qdisc_destroy(struct Qdisc *qdisc);
 extern void qdisc_tree_decrease_qlen(struct Qdisc *qdisc, unsigned int n);
 extern struct Qdisc *qdisc_alloc(struct netdev_queue *dev_queue,
-				 struct Qdisc_ops *ops);
+				 const struct Qdisc_ops *ops);
 extern struct Qdisc *qdisc_create_dflt(struct netdev_queue *dev_queue,
-				       struct Qdisc_ops *ops, u32 parentid);
+				       const struct Qdisc_ops *ops, u32 parentid);
 extern void __qdisc_calculate_pkt_len(struct sk_buff *skb,
 				      const struct qdisc_size_table *stab);
 extern void tcf_destroy(struct tcf_proto *tp);

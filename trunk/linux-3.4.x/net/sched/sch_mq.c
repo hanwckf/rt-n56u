@@ -52,26 +52,22 @@ static int mq_init(struct Qdisc *sch, struct nlattr *opt)
 	/* pre-allocate qdiscs, attachment can't fail */
 	priv->qdiscs = kcalloc(dev->num_tx_queues, sizeof(priv->qdiscs[0]),
 			       GFP_KERNEL);
-	if (priv->qdiscs == NULL)
+	if (!priv->qdiscs)
 		return -ENOMEM;
 
 	for (ntx = 0; ntx < dev->num_tx_queues; ntx++) {
 		dev_queue = netdev_get_tx_queue(dev, ntx);
-		qdisc = qdisc_create_dflt(dev_queue, &pfifo_fast_ops,
+		qdisc = qdisc_create_dflt(dev_queue, get_default_qdisc_ops(dev, ntx),
 					  TC_H_MAKE(TC_H_MAJ(sch->handle),
 						    TC_H_MIN(ntx + 1)));
-		if (qdisc == NULL)
-			goto err;
+		if (!qdisc)
+			return -ENOMEM;
 		priv->qdiscs[ntx] = qdisc;
 		qdisc->flags |= TCQ_F_ONETXQUEUE;
 	}
 
 	sch->flags |= TCQ_F_MQROOT;
 	return 0;
-
-err:
-	mq_destroy(sch);
-	return -ENOMEM;
 }
 
 static void mq_attach(struct Qdisc *sch)

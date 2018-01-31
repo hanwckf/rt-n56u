@@ -132,6 +132,7 @@ dir_$(CONFIG_FIRMWARE_INCLUDE_SSWAN)		+= strongswan
 dir_$(CONFIG_FIRMWARE_INCLUDE_XUPNPD)		+= xupnpd
 dir_$(CONFIG_FIRMWARE_INCLUDE_TCPDUMP)		+= tcpdump
 dir_$(SAMBA_ENABLED)				+= samba3
+dir_$(SAMBA36_ENABLED)				+= samba36
 dir_$(TTYD_ENABLED)					+= ttyd
 dir_$(CONFIG_FIRMWARE_INCLUDE_SCUT_MOD)         += scutclient
 dir_$(CONFIG_FIRMWARE_INCLUDE_VLMCSD)			+= vlmcsd

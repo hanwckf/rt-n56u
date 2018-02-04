@@ -27,11 +27,6 @@ if [ "$(nvram get ss_watchcat)" != "1" ] || [ "$(nvram get ss_router_proxy)" != 
 	exit 0
 fi
 
-if [ "$(mtk_esw 11)" = "WAN ports link state: 0" ]; then
-	loger "WAN has no link!"
-	exit 1
-fi
-
 tries=0
 while [[ $tries -lt 3 ]]
 do

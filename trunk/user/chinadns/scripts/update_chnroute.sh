@@ -10,11 +10,6 @@ if [ "$(nvram get ss_update_chnroute)" != "1" ]; then
 	exit 0
 fi
 
-if [ "$(mtk_esw 11)" = "WAN ports link state: 0" ]; then
-	loger "WAN has no link!"
-	exit 1
-fi
-
 wget -O- 'http://ftp.apnic.net/apnic/stats/apnic/delegated-apnic-latest' | \
     awk -F\| '/CN\|ipv4/ { printf("%s/%d\n", $4, 32-log($5)/log(2)) }' > \
     /tmp/chinadns_chnroute.txt

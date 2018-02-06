@@ -28,6 +28,7 @@ LIBS_INCLUDE_LIBICONV=n
 LIBS_INCLUDE_LIBUSB_0=n
 LIBS_INCLUDE_LIBUSB_1=n
 LIBS_INCLUDE_LIBJSON_C=n
+LIBS_INCLUDE_LIBPCAP=n
 LIBS_INCLUDE_LIBWEBSOCKETS=n
 LIBS_INCLUDE_LIBSHADOWSOCKS=n
 LIBS_INCLUDE_MEDIA=n
@@ -121,6 +122,10 @@ ifeq ($(CONFIG_FIRMWARE_INCLUDE_NANO),y)
 LIBS_INCLUDE_NCURSES=y
 endif
 
+ifeq ($(CONFIG_FIRMWARE_INCLUDE_TCPDUMP),y)
+LIBS_INCLUDE_LIBPCAP=y
+endif
+
 dir_y						+= libz
 dir_$(LIBS_INCLUDE_NCURSES)			+= libncurses
 dir_$(LIBS_INCLUDE_LIBLZO)			+= liblzo
@@ -137,8 +142,7 @@ dir_y						+= libnfnetlink
 # ipset shared libs
 dir_$(CONFIG_FIRMWARE_INCLUDE_IPSET)		+= libmnl
 
-# tcpdump shared libs
-dir_$(CONFIG_FIRMWARE_INCLUDE_TCPDUMP)		+= libpcap
+dir_$(LIBS_INCLUDE_LIBPCAP)		+= libpcap
 
 # minidlna and firefly shared libs
 dir_$(LIBS_INCLUDE_MEDIA)			+= libid3tag

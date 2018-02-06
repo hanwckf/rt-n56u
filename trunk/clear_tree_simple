@@ -14,7 +14,10 @@ fi
 
 echo "-------------CLEAN-ALL---------------"
 rm -rf $ROOTDIR/stage
-make -C user/rc clean && make -C user/httpd clean && make -C user/wpa_supplicant clean
+DIRS="user/rc user/httpd user/wpa_supplicant user/shared"
+for dir in ${DIRS} ; do
+	make -C $dir clean
+done
 
 rm -rfv $ROOTDIR/romfs
 rm -rfv $ROOTDIR/images

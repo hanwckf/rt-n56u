@@ -191,15 +191,15 @@ HDR = \
 	udp.h
 
 TAGHDR = \
-	/usr/include/arpa/tftp.h \
-	/usr/include/net/if_arp.h \
-	/usr/include/net/slip.h \
-	/usr/include/netinet/if_ether.h \
-	/usr/include/netinet/in.h \
-	/usr/include/netinet/ip_icmp.h \
-	/usr/include/netinet/tcp.h \
-	/usr/include/netinet/udp.h \
-	/usr/include/protocols/routed.h
+	$(CONFIG_CROSS_COMPILER_ROOT)/include/arpa/tftp.h \
+	$(CONFIG_CROSS_COMPILER_ROOT)/include/net/if_arp.h \
+	$(CONFIG_CROSS_COMPILER_ROOT)/include/net/slip.h \
+	$(CONFIG_CROSS_COMPILER_ROOT)/include/netinet/if_ether.h \
+	$(CONFIG_CROSS_COMPILER_ROOT)/include/netinet/in.h \
+	$(CONFIG_CROSS_COMPILER_ROOT)/include/netinet/ip_icmp.h \
+	$(CONFIG_CROSS_COMPILER_ROOT)/include/netinet/tcp.h \
+	$(CONFIG_CROSS_COMPILER_ROOT)/include/netinet/udp.h \
+	$(CONFIG_CROSS_COMPILER_ROOT)/include/protocols/routed.h
 
 TAGFILES = $(SRC) $(HDR) $(TAGHDR)
 

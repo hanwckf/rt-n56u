@@ -16,7 +16,7 @@ configure:
 	( cd $(SRC_NAME) ; \
 	ac_cv_linux_vers=3 \
 	ac_cv_lib_rpc_main=no \
-	ac_cv_path_PCAP_CONFIG="" \
+	ac_cv_path_PCAP_CONFIG="$(STAGEDIR)/bin/pcap-config" \
 	td_cv_buggygetaddrinfo=no \
 	./configure \
 		--prefix=/usr \
@@ -27,7 +27,6 @@ configure:
 		--host=$(HOST_TARGET) \
 		--build=$(HOST_BUILD) ; \
 	)
-	cp -f $(THISDIR)/makefile_worked/Makefile $(THISDIR)/$(SRC_NAME)/Makefile
 
 build:
 	$(MAKE) -C $(SRC_NAME) TCPDUMP_MINI=1

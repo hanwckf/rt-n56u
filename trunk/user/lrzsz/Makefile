@@ -27,9 +27,6 @@ configure:
 	./configure \
 		--prefix=/usr \
 		--with-libiconv-prefix=$(STAGEDIR) \
-		--with-os-name="Linux" \
-		--with-os-version="Linux/Cross_compiled" \
-		--with-os-url="http://www.kernel.org/" \
 		--host=$(HOST_TARGET) \
 		--build=$(HOST_BUILD) ; \
 	)

@@ -3,7 +3,7 @@ SRC_NAME = vlmcsd-master
 SRC_URL = https://github.com/hanwckf/vlmcsd/archive/master.zip
 
 all: download_test extract_test
-	$(MAKE) -C $(SRC_NAME) CC=$(ROOTDIR)/../toolchain-mipsel/toolchain-3.4.x/bin/mipsel-linux-uclibc-gcc
+	$(MAKE) -C $(SRC_NAME) CC=$(CONFIG_CROSS_COMPILER_ROOT)/bin/mipsel-linux-uclibc-gcc
 	
 download_test: 
 	( if [ ! -f $(THISDIR)/$(SRC_NAME).zip ]; then \

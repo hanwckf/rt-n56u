@@ -1,5 +1,5 @@
 PWD  := $(shell pwd)
-KDIR := ../../../linux-3.4.x
+KDIR := ../../../$(CONFIG_LINUXDIR)
 
 obj-m := napt66.o
 napt66-objs := napt66_main.o napt66_conntrack.o napt66_nat.o napt66_hash_table.o napt66_ftp_alg.o

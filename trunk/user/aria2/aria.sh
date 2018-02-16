@@ -63,7 +63,7 @@ rpc-allow-origin-all=true
 ### Common
 dir=$DIR_DL1
 max-download-limit=0
-max-overall-download-limit=6M
+max-overall-download-limit=0
 disable-ipv6=false
 
 ### File
@@ -87,17 +87,17 @@ enable-peer-exchange=true
 seed-ratio=1.5
 #seed-time=60
 max-upload-limit=0
-max-overall-upload-limit=5M
+max-overall-upload-limit=0
 
 ### FTP/HTTP
 ftp-pasv=true
 ftp-type=binary
 timeout=120
 connect-timeout=60
-split=5
+split=8
 max-concurrent-downloads=3
-max-connection-per-server=8
-min-split-size=5M
+max-connection-per-server=5
+min-split-size=2M
 
 ### Log
 log=$DIR_CFG/aria2.log

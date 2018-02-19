@@ -26,11 +26,14 @@ configure:
 	./configure \
 		--prefix=$(STAGEDIR) \
 		--without-ada \
+		--enable-widec \
 		--with-shared \
 		--without-debug \
 		--with-normal \
 		--without-profile \
 		--enable-overwrite \
+		--enable-pc-files \
+		--with-pkg-config-libdir="$(STAGEDIR)/lib/pkgconfig/" \
 		--host=$(HOST_TARGET) \
 		--build=$(HOST_BUILD) ; \
 	)
@@ -45,4 +48,4 @@ install:
 	$(MAKE) -C $(SRC_NAME) install DESTDIR=""
 
 romfs:
-	cp -fP $(DESTDIR)/lib/libncurses.so* $(ROMFSDIR)/lib
+	cp -fP $(DESTDIR)/lib/libncursesw.so* $(ROMFSDIR)/lib

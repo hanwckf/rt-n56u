@@ -26,8 +26,8 @@ configure:
 	( cd $(SRC_NAME) ; \
 	./configure \
 		--prefix=/usr \
-		--disable-unicode \
-		HTOP_NCURSES_CONFIG_SCRIPT="$(STAGEDIR)/bin/ncurses6-config" \
+		--enable-unicode \
+		HTOP_NCURSESW_CONFIG_SCRIPT="$(STAGEDIR)/bin/ncursesw6-config" \
 		--host=$(HOST_TARGET) \
 		--build=$(HOST_BUILD) ; \
 	)

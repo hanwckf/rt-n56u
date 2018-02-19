@@ -26,14 +26,10 @@ configure:
 	( cd $(SRC_NAME) ; \
 	./configure \
 		--prefix=/usr \
-		--disable-browser \
 		--enable-tiny \
-		--disable-utf8 \
-		--without-slang \
-		LDFLAGS="-L$(STAGEDIR)/lib" \
-		CFLAGS="-I$(STAGEDIR)/include" \
-		NCURSES_CFLAGS="-D_GNU_SOURCE -I$(STAGEDIR)/include" \
-		NCURSES_LIBS="-L$(STAGEDIR)/lib -Wl,-rpath,$(STAGEDIR)/lib -lncurses" \
+		--enable-utf8 \
+		--disable-nls \
+		PKG_CONFIG_LIBDIR="$(STAGEDIR)/lib/pkgconfig/" \
 		--host=$(HOST_TARGET) \
 		--build=$(HOST_BUILD) ; \
 	)

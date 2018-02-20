@@ -11,7 +11,7 @@ nohup ./build_firmware_modify $1 &
 
 tail_last=test
 while true ;do
-echo -e "\n==================================================="
+echo "===================================================================================================="
 tail_latest=$(tail -1 nohup.out)
 
 if [ "$tail_latest" = "make[1]: Leaving directory \`/opt/rt-n56u/trunk/vendors'" ];then

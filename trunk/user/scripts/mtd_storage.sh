@@ -465,14 +465,31 @@ dhcp-option=252,"\n"
 ### Set the boot filename for netboot/PXE
 #dhcp-boot=pxelinux.0
 
+EOF
+	if [ -f /usr/bin/vlmcsd ]; then
+		cat >> "$user_dnsmasq_conf" <<EOF
 ### vlmcsd related
 srv-host=_vlmcs._tcp,my.router,1688,0,100
 
+EOF
+	fi
+	if [ -f /usr/bin/chinadns ]; then
+		cat >> "$user_dnsmasq_conf" <<EOF
 ### ChinaDNS related
 #no-resolv
 #server=127.0.0.1#5302
 
 EOF
+	fi
+	if [ -d /etc_ro/dnsmasq-china-conf ]; then
+		cat >> "$user_dnsmasq_conf" <<EOF
+### dnsmasq-china-list related
+#no-resolv
+#conf-dir=/etc_ro/dnsmasq-china-conf
+#server=127.0.0.1#5301
+
+EOF
+	fi
 		chmod 644 "$user_dnsmasq_conf"
 	fi
 

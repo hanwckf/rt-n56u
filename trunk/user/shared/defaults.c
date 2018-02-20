@@ -525,7 +525,7 @@ struct nvram_pair router_defaults[] = {
 	{ "ss-tunnel_mtu", "1492" },
 	
 	{ "ss_watchcat", "1" },
-	{ "ss_update_chnroute", "1" },
+	{ "ss_update_chnroute", "0" },
 	{ "ss_update_gfwlist", "0" },
 	 
 	/* DHCP server parameters */

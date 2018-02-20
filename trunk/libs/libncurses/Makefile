@@ -26,6 +26,9 @@ configure:
 	./configure \
 		--prefix=$(STAGEDIR) \
 		--without-ada \
+		--without-progs \
+		--without-tests \
+		--without-manpages \
 		--enable-widec \
 		--with-shared \
 		--without-debug \

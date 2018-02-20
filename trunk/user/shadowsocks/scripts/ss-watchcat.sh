@@ -16,10 +16,9 @@ detect_shadowsocks(){
 		loger "No Problem."
 		exit 0
 	else
-		loger "Problem decteted, restarting shadowsocks."
-		/usr/bin/shadowsocks.sh restart >/dev/null 2>&1
-		#/usr/bin/dns-forwarder.sh restart >/dev/null 2>&1
-		#/usr/bin/chinadns.sh restart >/dev/null 2&1
+		/usr/bin/shadowsocks.sh restart >/dev/null 2>&1 && loger "Problem decteted, restart shadowsocks."
+		[ -f /usr/bin/dns-forwarder.sh ] && /usr/bin/dns-forwarder.sh restart >/dev/null 2>&1 && loger "Problem decteted, restart dns-forwarder."
+		[ -f /usr/bin/chinadns.sh ] && /usr/bin/chinadns.sh restart >/dev/null 2>&1 && loger "Problem decteted, restart chinadns."
 	fi
 }
 
@@ -28,7 +27,7 @@ if [ "$(nvram get ss_watchcat)" != "1" ] || [ "$(nvram get ss_router_proxy)" != 
 fi
 
 tries=0
-while [[ $tries -lt 3 ]]
+while [ $tries -lt 3 ]
 do
 	if /bin/ping -c 1  $net_domain -W 1 >/dev/null
 	then

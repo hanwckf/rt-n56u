@@ -12,7 +12,7 @@ if [ "$(mtk_esw 11)" = "WAN ports link state: 0" ]; then
 fi
 
 tries=0
-while [[ $tries -lt 3 ]]
+while [ $tries -lt 3 ]
 do
     if /bin/ping -c 1 $net_ip -W 1 >/dev/null
     then

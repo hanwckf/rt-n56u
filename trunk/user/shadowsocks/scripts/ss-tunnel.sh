@@ -1,7 +1,7 @@
 #!/bin/sh
 
-ss_bin=ss-tunnel
-ss_json_file="/tmp/ss.json"
+ss_bin=ss-local
+ss_json_file="/tmp/ss-local.json"
 
 ss_server=$(nvram get ss_server)
 ss_server_port=$(nvram get ss_server_port)
@@ -11,6 +11,12 @@ ss_password=$(nvram get ss_key)
 ss_tunnel_remote=$(nvram get ss-tunnel_remote)
 ss_tunnel_mtu=$(nvram get ss-tunnel_mtu)
 ss_tunnel_local_port=$(nvram get ss-tunnel_local_port)
+
+ss_timeout=$(nvram get ss_timeout)
+ss_protocol=$(nvram get ss_protocol)
+ss_proto_param=$(nvram get ss_proto_param)
+ss_obfs=$(nvram get ss_obfs)
+ss_obfs_param=$(nvram get ss_obfs_param)
 
 loger() {
 	logger -st $1 $2
@@ -22,7 +28,12 @@ cat > "$ss_json_file" <<EOF
     "server": "$ss_server",
     "server_port": "$ss_server_port",
     "password": "$ss_password",
-    "method": "$ss_method"
+    "method": "$ss_method",
+    "timeout": "$ss_timeout",
+    "protocol": "$ss_protocol",
+    "protocol_param": "$ss_proto_param",
+    "obfs": "$ss_obfs",
+    "obfs_param": "$ss_obfs_param"
 }
 
 EOF

@@ -1,7 +1,7 @@
 #!/bin/sh
 
 ss_bin="ss-redir"
-ss_json_file="/tmp/ss.json"
+ss_json_file="/tmp/ss-redir.json"
 
 ss_local_port=$(nvram get ss_local_port)
 ss_udp=$(nvram get ss_udp)

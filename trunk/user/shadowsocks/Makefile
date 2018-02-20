@@ -1,16 +1,43 @@
-SHADOWSOCKS_BIN=ssr-redir
+SRC_NAME=shadowsocksr-libev-master
+ARCHIVE_NAME=shadowsocksr-libev-master-e2373d7
+#https://github.com/shadowsocksr-backup/shadowsocksr-libev.git
 THISDIR = $(shell pwd)
 
-all:
-	chmod -R +x scripts/
-	@echo "shadowsocks done"
+all: extract_test config_test
+	$(MAKE) -C $(SRC_NAME)
+
+extract_test:
+	( if [ ! -d $(SRC_NAME) ]; then \
+		unzip -qq $(ARCHIVE_NAME).zip ; \
+	fi )
+
+config_test:
+	( if [ -f ./config_done ]; then \
+		echo "the same configuration"; \
+	else \
+		make configure && touch config_done; \
+	fi )
+
+configure:
+	( cd $(SRC_NAME) ; \
+	./configure \
+		--prefix=/usr \
+		--disable-documentation \
+		--disable-ssp \
+		--disable-assert \
+		--host=$(HOST_TARGET) \
+		--build=$(HOST_BUILD) ; \
+	)
 
 clean:
-	@echo "shadowsocks done"
+	if [ -f $(SRC_NAME)/Makefile ] ; then \
+		$(MAKE) -C $(SRC_NAME) distclean ; \
+	fi ; \
+	rm -f config_done
 
 romfs:
-	$(ROMFSINST) -d -S $(THISDIR)/bin/$(SHADOWSOCKS_BIN) /usr/bin/ss-redir
-	$(ROMFSINST) -d $(THISDIR)/bin/ss-tunnel /usr/bin/ss-tunnel
-	$(ROMFSINST) -d $(THISDIR)/bin/ss-rules /usr/bin/ss-rules
-	$(ROMFSINST) -d $(THISDIR)/scripts/ /usr/bin/
+	chmod -R +x scripts/
+	$(ROMFSINST) $(THISDIR)/$(SRC_NAME)/src/ss-redir /usr/bin/ss-redir
+	$(ROMFSINST) $(THISDIR)/$(SRC_NAME)/src/ss-local /usr/bin/ss-local
+	$(ROMFSINST) -d -p +x $(THISDIR)/scripts/ /usr/bin/
 	$(ROMFSINST) -d $(THISDIR)/chnroute.txt /etc_ro/chnroute.txt

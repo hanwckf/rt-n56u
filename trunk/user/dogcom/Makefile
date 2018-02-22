@@ -22,6 +22,6 @@ clean:
 	fi )
 
 romfs:
-	$(ROMFSINST) -d $(THISDIR)/$(SRC_NAME)/dogcom /usr/bin/dogcom
+	$(ROMFSINST) -p +x $(THISDIR)/$(SRC_NAME)/dogcom /usr/bin/dogcom
 	$(ROMFSINST) -d $(THISDIR)/$(SRC_NAME)/sample-p.conf /etc_ro/dogcom/sample-p.conf
 	$(ROMFSINST) -d $(THISDIR)/$(SRC_NAME)/sample-d.conf /etc_ro/dogcom/sample-d.conf

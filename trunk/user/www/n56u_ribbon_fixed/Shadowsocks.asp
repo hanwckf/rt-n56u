@@ -23,6 +23,8 @@
 
 <script>
 <% shadowsocks_status(); %>
+<% rules_count(); %>
+
 var $j = jQuery.noConflict();
 
 $j(document).ready(function(){
@@ -33,6 +35,9 @@ $j(document).ready(function(){
 	init_itoggle('ss_watchcat');
 	init_itoggle('ss_update_chnroute');
 	init_itoggle('ss-tunnel_enable');
+	if(found_app_dnsmasq_china_conf()){
+		init_itoggle('dnsmasq_china_conf_update');
+	}
 });
 
 function initial(){
@@ -48,7 +53,16 @@ function initial(){
 	o3.value = '<% nvram_get_x("","ss_protocol"); %>';
 	o4.value = '<% nvram_get_x("","ss_obfs"); %>';
 	change_ss_watchcat_display();
-	fill_status(shadowsocks_status());
+	fill_ss_status(shadowsocks_status());
+	fill_ss_tunnel_status(shadowsocks_tunnel_status());
+	$("chnroute_count").innerHTML = '<#menu5_17_3#>' + chnroute_count() ;
+	if(found_app_dnsmasq_china_conf()){
+		$("dnsmasq_china_conf_count").innerHTML = '<#menu5_17_3#>' + dnsmasq_china_conf_count() ;
+	} else {
+		showhide_div('div_dnsmasq_china_conf_0', 0);
+		showhide_div('div_dnsmasq_china_conf_1', 0);
+		showhide_div('div_dnsmasq_china_conf_2', 0);
+	}
 }
 
 function applyRule(){
@@ -71,7 +85,7 @@ function change_ss_watchcat_display(){
 	showhide_div('ss_wathcat_option', v);
 }
 
-function fill_status(status_code){
+function fill_ss_status(status_code){
 	var stext = "Unknown";
 	if (status_code == 0)
 		stext = "<#Stopped#>";
@@ -79,6 +93,16 @@ function fill_status(status_code){
 		stext = "<#Running#>";
 	$("ss_status").innerHTML = '<span class="label label-' + (status_code != 0 ? 'success' : 'warning') + '">' + stext + '</span>';
 }
+
+function fill_ss_tunnel_status(status_code){
+	var stext = "Unknown";
+	if (status_code == 0)
+		stext = "<#Stopped#>";
+	else if (status_code == 1)
+		stext = "<#Running#>";
+	$("ss_tunnel_status").innerHTML = '<span class="label label-' + (status_code != 0 ? 'success' : 'warning') + '">' + stext + '</span>';
+}
+
 </script>
 
 <style>
@@ -288,7 +312,12 @@ function fill_status(status_code){
 										<tr>
 											<th colspan="2" style="background-color: #E3E3E3;"><#menu5_16_12#></th>
 										</tr>
-										
+										<tr>
+											<th width="50%"><#InetControl#></th>
+											<td style="border-top: 0 none;" colspan="2">
+												<input type="button" id="btn_connect_2" class="btn btn-info" value=<#Connect#> onclick="submitInternet('Reconnect_ss_tunnel');">
+											</td>
+										</tr>
 										<tr> <th><#menu5_16_13#></th>
                                             <td>
                                                 <div class="main_itoggle">
@@ -303,7 +332,10 @@ function fill_status(status_code){
                                                 </div>
                                             </td>
                                         </tr>
-										
+                                        <tr>
+											<th><#running_status#></th>
+											<td id="ss_tunnel_status" colspan="3"></td>
+										</tr>
 										<tr> <th width="50%"><#menu5_16_14#></th>
                                             <td>
                                                 <input type="text" maxlength="32" class="input" size="64" name="ss-tunnel_remote" value="<% nvram_get_x("","ss-tunnel_remote"); %>" />
@@ -386,6 +418,22 @@ function fill_status(status_code){
                                                 </div>
                                             </td>
                                         </tr>
+                                        
+                                        <tr> <th width="50%">MTU:</th>
+                                            <td>
+                                                <input type="text" maxlength="6" class="input" size="15" name="ss_mtu" style="width: 145px" value="<% nvram_get_x("", "ss_mtu"); %>">
+                                            </td>
+                                        </tr>
+
+                                        <tr>
+											<th colspan="2" style="background-color: #E3E3E3;">Chnroute</th>
+										</tr>
+                                        <tr>
+											<th width="50%"><#menu5_17_1#>&nbsp;&nbsp;&nbsp;&nbsp;<span class="label label-info" style="padding: 5px 5px 5px 5px;" id="chnroute_count"></span></th>
+											<td style="border-top: 0 none;" colspan="2">
+												<input type="button" id="btn_connect_3" class="btn btn-info" value=<#menu5_17_2#> onclick="submitInternet('Update_chnroute');">
+											</td>
+										</tr>
 										
 										<tr>
 											<th><#menu5_16_19#></th>
@@ -402,13 +450,31 @@ function fill_status(status_code){
                                                 </div>
                                             </td>
                                         </tr>
-                                        
-                                        <tr><th width="50%">MTU:</th>
+
+                                        <tr id="div_dnsmasq_china_conf_0">
+											<th colspan="2" style="background-color: #E3E3E3;"><#menu5_17#></th>
+										</tr>
+										
+										<tr id="div_dnsmasq_china_conf_1">
+										<th width="50%"><#menu5_17_1#>&nbsp;&nbsp;&nbsp;&nbsp;<span class="label label-info" style="padding: 5px 5px 5px 5px;" id="dnsmasq_china_conf_count"></span></th>
+										<td style="border-top: 0 none;" colspan="2">
+											<input type="button" id="btn_connect_4" class="btn btn-info" value=<#menu5_17_2#> onclick="submitInternet('Update_dnsmasq_china_conf');">
+										</td>
+										</tr>
+										<tr id="div_dnsmasq_china_conf_2">
+                                            <th width="50%"><#menu5_16_19#></th>
                                             <td>
-                                                <input type="text" maxlength="6" class="input" size="15" name="ss_mtu" style="width: 145px" value="<% nvram_get_x("", "ss_mtu"); %>">
+                                                <div class="main_itoggle">
+                                                    <div id="dnsmasq_china_conf_update_on_of">
+                                                        <input type="checkbox" id="dnsmasq_china_conf_update_fake" <% nvram_match_x("", "dnsmasq_china_conf_update", "1", "value=1 checked"); %><% nvram_match_x("", "dnsmasq_china_conf_update", "0", "value=0"); %>>
+                                                    </div>
+                                                </div>
+                                                <div style="position: absolute; margin-left: -10000px;">
+                                                    <input type="radio" value="1" name="dnsmasq_china_conf_update" id="dnsmasq_china_conf_update_1" <% nvram_match_x("", "dnsmasq_china_conf_update", "1", "checked"); %>><#checkbox_Yes#>
+                                                    <input type="radio" value="0" name="dnsmasq_china_conf_update" id="dnsmasq_china_conf_update_0" <% nvram_match_x("", "dnsmasq_china_conf_update", "0", "checked"); %>><#checkbox_No#>
+                                                </div>
                                             </td>
                                         </tr>
-										
                                         <tr>
 											<td colspan="2">
                                                 	<center><input class="btn btn-primary" style="width: 219px" type="button" value="<#CTL_apply#>" onclick="applyRule()" /></center>

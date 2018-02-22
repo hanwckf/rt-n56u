@@ -30,5 +30,5 @@ clean:
 	rm -f config_done
 
 romfs:
-	$(ROMFSINST) -d $(THISDIR)/$(SRC_NAME)/dns-forwarder /usr/bin/dns-forwarder
-	$(ROMFSINST) -d $(THISDIR)/dns-forwarder.sh /usr/bin/dns-forwarder.sh
+	$(ROMFSINST) -p +x $(THISDIR)/$(SRC_NAME)/dns-forwarder /usr/bin/dns-forwarder
+	$(ROMFSINST) -p +x $(THISDIR)/dns-forwarder.sh /usr/bin/dns-forwarder.sh

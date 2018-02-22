@@ -194,6 +194,7 @@ func_fill()
 	dir_crond="$dir_storage/cron/crontabs"
 	dir_wlan="$dir_storage/wlan"
 	dir_chnroute="$dir_storage/chinadns"
+	dir_dnsmasq_china_conf="$dir_storage/dnsmasq-china-conf"
 
 	script_start="$dir_storage/start_script.sh"
 	script_started="$dir_storage/started_script.sh"
@@ -216,7 +217,8 @@ func_fill()
 	user_sswan_secrets="$dir_sswan/ipsec.secrets"
 	
 	chnroute_file="/etc_ro/chnroute.txt"
-	
+	dnsmasq_china_conf_dir="/etc_ro/dnsmasq-china-conf"
+
 	# create crond dir
 	[ ! -d "$dir_crond" ] && mkdir -p -m 730 "$dir_crond"
 
@@ -226,6 +228,11 @@ func_fill()
 	# create chnroute.txt
 	if [ -f "$chnroute_file" ] ; then
 		mkdir -p "$dir_chnroute" && cp -f $chnroute_file $dir_chnroute
+	fi
+	
+	# create dnsmasq-china-conf
+	if [ -d "$dnsmasq_china_conf_dir" ] ; then
+		mkdir -p "$dir_dnsmasq_china_conf" && cp -rf $dnsmasq_china_conf_dir/* $dir_dnsmasq_china_conf
 	fi
 
 	# create start script
@@ -485,7 +492,7 @@ EOF
 		cat >> "$user_dnsmasq_conf" <<EOF
 ### dnsmasq-china-list related
 #no-resolv
-#conf-dir=/etc_ro/dnsmasq-china-conf
+#conf-dir=/etc/storage/dnsmasq-china-conf
 #server=127.0.0.1#5301
 
 EOF

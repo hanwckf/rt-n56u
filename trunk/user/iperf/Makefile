@@ -41,4 +41,4 @@ clean:
 	rm -f config_done
 
 romfs:
-	$(ROMFSINST) $(THISDIR)/$(SRC_NAME)/src/iperf /usr/bin/iperf
+	$(ROMFSINST) -p +x $(THISDIR)/$(SRC_NAME)/src/iperf /usr/bin/iperf

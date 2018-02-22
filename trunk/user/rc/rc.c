@@ -1208,6 +1208,10 @@ handle_notifications(void)
 		{
 			restart_ss_tunnel();
 		}
+		else if (strcmp(entry->d_name, RCN_RESTART_CHNROUTE_UPD) == 0)
+		{
+			update_chnroute();
+		}
 #endif
 #if defined(APP_VLMCSD)
 		else if (strcmp(entry->d_name, RCN_RESTART_VLMCSD) == 0)
@@ -1225,6 +1229,12 @@ handle_notifications(void)
 		else if (strcmp(entry->d_name, RCN_RESTART_DNSFORWARDER) == 0)
 		{
 			restart_dnsforwarder();
+		}
+#endif
+#if defined(APP_DNSMASQ_CHINA_CONF)
+		else if (strcmp(entry->d_name, RCN_RESTART_DNSMASQ_CHINA_CONF_UPD) == 0)
+		{
+			update_dnsmasq_china_conf();
 		}
 #endif
 #if defined(APP_SMBD) || defined(APP_NMBD)

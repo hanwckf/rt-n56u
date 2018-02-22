@@ -38,6 +38,6 @@ clean:
 	rm -f config_done
 
 romfs:
-	$(ROMFSINST) $(THISDIR)/$(SRC_NAME)/src/lrz /usr/bin/lrz
-	$(ROMFSINST) $(THISDIR)/$(SRC_NAME)/src/lsz /usr/bin/lsz
+	$(ROMFSINST) -p +x $(THISDIR)/$(SRC_NAME)/src/lrz /usr/bin/lrz
+	$(ROMFSINST) -p +x $(THISDIR)/$(SRC_NAME)/src/lsz /usr/bin/lsz
 

@@ -20,4 +20,6 @@ clean:
 	rm -rf $(dir)
 
 romfs:
+	chmod -R +x ./scripts
+	$(ROMFSINST) $(THISDIR)/scripts /usr/bin/
 	$(ROMFSINST) -d $(THISDIR)/$(dir)/$(acc_china_file) /etc_ro/$(dir)/$(acc_china_file)

@@ -37,7 +37,6 @@ clean:
 
 romfs:
 	chmod -R +x scripts/
-	$(ROMFSINST) $(THISDIR)/$(SRC_NAME)/src/ss-redir /usr/bin/ss-redir
-	$(ROMFSINST) $(THISDIR)/$(SRC_NAME)/src/ss-local /usr/bin/ss-local
-	$(ROMFSINST) -d -p +x $(THISDIR)/scripts/ /usr/bin/
-	$(ROMFSINST) -d $(THISDIR)/chnroute.txt /etc_ro/chnroute.txt
+	$(ROMFSINST) $(THISDIR)/scripts/ /usr/bin/
+	$(ROMFSINST) -p +x $(THISDIR)/$(SRC_NAME)/src/ss-redir /usr/bin/ss-redir
+	$(ROMFSINST) -p +x $(THISDIR)/$(SRC_NAME)/src/ss-local /usr/bin/ss-local

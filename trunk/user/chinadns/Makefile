@@ -31,6 +31,6 @@ clean:
 	rm -f config_done
 
 romfs:
-	$(ROMFSINST) -d $(THISDIR)/$(SRC_NAME)/chinadns /usr/bin/chinadns
-	$(ROMFSINST) -d $(THISDIR)/chnroute.txt /etc_ro/chnroute.txt
-	$(ROMFSINST) -d $(THISDIR)/scripts /usr/bin/
+	chmod -R +x ./scripts
+	$(ROMFSINST) $(THISDIR)/scripts /usr/bin/
+	$(ROMFSINST) -p +x $(THISDIR)/$(SRC_NAME)/chinadns /usr/bin/chinadns

@@ -12,6 +12,7 @@ get_arg_filter(){
 }
 
 func_start(){
+	/usr/bin/check_chnroute
 	/usr/bin/enable_update_chnroute
 	start-stop-daemon -S -b -x chinadns -- -m -c $chnroute_file -b $bind_address -p $bind_port -s $server $(get_arg_filter)
 }

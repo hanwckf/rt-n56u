@@ -828,6 +828,9 @@
 			{"ss-tunnel_local_port","",NULL, EVM_RESTART_SS_TUNNEL},
 			{"ss-tunnel_remote","",NULL, EVM_RESTART_SS_TUNNEL},
 			{"ss-tunnel_mtu","",NULL, EVM_RESTART_SS_TUNNEL},
+#if defined(APP_DNSMASQ_CHINA_CONF)
+			{"dnsmasq_china_conf_update","",NULL,FALSE},
+#endif
 			{0,0,0,0}
 	};
 #endif

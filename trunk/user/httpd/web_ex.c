@@ -1911,17 +1911,13 @@ wan_action_hook(int eid, webs_t wp, int argc, char **argv)
 #if defined (APP_SCUT)
 static int scutclient_action_hook(int eid, webs_t wp, int argc, char **argv)
 {
-	int unit, needed_seconds = 1;
+	int needed_seconds = 2;
 	char *scut_action = websGetVar(wp, "connect_action", "");
 
-	unit = 0;
-
 	if (!strcmp(scut_action, "Reconnect")) {
-		needed_seconds = 1;
 		notify_rc(RCN_RESTART_SCUT);
 	}
 	else if (!strcmp(scut_action, "Disconnect")) {
-		needed_seconds = 1;
 		notify_rc("stop_scutclient");
 	}
 
@@ -1933,30 +1929,71 @@ static int scutclient_status_hook(int eid, webs_t wp, int argc, char **argv)
 {
 	int status_code = pids("bin_scutclient");
 	websWrite(wp, "function scutclient_status() { return %d;}\n", status_code);
+	return 0;
 }
 #endif
 
 #if defined (APP_SHADOWSOCKS)
 static int shadowsocks_action_hook(int eid, webs_t wp, int argc, char **argv)
 {
-	int unit, needed_seconds = 1;
+	int needed_seconds = 3;
 	char *ss_action = websGetVar(wp, "connect_action", "");
 
-	unit = 0;
-
 	if (!strcmp(ss_action, "Reconnect")) {
-		needed_seconds = 1;
 		notify_rc(RCN_RESTART_SHADOWSOCKS);
+	} else if (!strcmp(ss_action, "Update_chnroute")) {
+		notify_rc(RCN_RESTART_CHNROUTE_UPD);
+		needed_seconds = 1;
+	} else if (!strcmp(ss_action, "Reconnect_ss_tunnel")) {
+		notify_rc(RCN_RESTART_SS_TUNNEL);
+	} 
+#if defined(APP_DNSMASQ_CHINA_CONF)
+	else if (!strcmp(ss_action, "Update_dnsmasq_china_conf")) {
+		notify_rc(RCN_RESTART_DNSMASQ_CHINA_CONF_UPD);
 	}
-
+#endif
 	websWrite(wp, "<script>restart_needed_time(%d);</script>\n", needed_seconds);
 	return 0;
 }
 
 static int shadowsocks_status_hook(int eid, webs_t wp, int argc, char **argv)
 {
-	int status_code = pids("ss-redir");
-	websWrite(wp, "function shadowsocks_status() { return %d;}\n", status_code);
+	int ss_status_code = pids("ss-redir");
+	websWrite(wp, "function shadowsocks_status() { return %d;}\n", ss_status_code);
+	int ss_tunnel_status_code = pids("ss-local");
+	websWrite(wp, "function shadowsocks_tunnel_status() { return %d;}\n", ss_tunnel_status_code);
+	return 0;
+}
+
+static int rules_count_hook(int eid, webs_t wp, int argc, char **argv) 
+{
+	FILE *fstream = NULL;
+	char count[8];
+	memset(count, 0, sizeof(count));
+	fstream = popen("cat /etc/storage/chinadns/chnroute.txt |wc -l","r");
+	if(fstream) {
+		fgets(count, sizeof(count), fstream);
+	} else {
+		sprintf(count, "%d", 0);
+	}
+	pclose(fstream);
+	if (strlen(count) > 0)
+		count[strlen(count) - 1] = 0;
+	websWrite(wp, "function chnroute_count() { return '%s';}\n", count);
+#if defined(APP_DNSMASQ_CHINA_CONF)	
+	memset(count, 0, sizeof(count));
+	fstream = popen("cat /etc/storage/dnsmasq-china-conf/accelerated-domains.china.conf |wc -l","r");
+	if(fstream) {
+		fgets(count, sizeof(count), fstream);
+	} else {
+		sprintf(count, "%d", 0);
+	}
+	pclose(fstream);
+	if (strlen(count) > 0)
+		count[strlen(count) - 1] = 0;
+	websWrite(wp, "function dnsmasq_china_conf_count() { return '%s';}\n", count);	
+#endif
+	return 0;
 }
 
 #endif
@@ -1966,6 +2003,7 @@ static int chinadns_status_hook(int eid, webs_t wp, int argc, char **argv)
 {
 	int status_code = pids("chinadns");
 	websWrite(wp, "function chinadns_status() { return %d;}\n", status_code);
+	return 0;
 }
 #endif
 
@@ -1974,6 +2012,7 @@ static int dnsforwarder_status_hook(int eid, webs_t wp, int argc, char **argv)
 {
 	int status_code = pids("dns-forwarder");
 	websWrite(wp, "function dnsforwarder_status() { return %d;}\n", status_code);
+	return 0;
 }
 #endif
 
@@ -2166,6 +2205,11 @@ ej_firmware_caps_hook(int eid, webs_t wp, int argc, char **argv)
 #else
 	int found_app_dnsforwarder = 0;
 #endif
+#if defined(APP_DNSMASQ_CHINA_CONF)
+	int found_app_dnsmasq_china_conf = 1;
+#else
+	int found_app_dnsmasq_china_conf = 0;
+#endif
 #if defined(APP_XUPNPD)
 	int found_app_xupnpd = 1;
 #else
@@ -2299,6 +2343,7 @@ ej_firmware_caps_hook(int eid, webs_t wp, int argc, char **argv)
 		"function found_app_dnsforwarder() { return %d;}\n"
 		"function found_app_chinadns() { return %d;}\n"
 		"function found_app_shadowsocks() { return %d;}\n"
+		"function found_app_dnsmasq_china_conf() { return %d;}\n"
 		"function found_app_xupnpd() { return %d;}\n",
 		found_utl_hdparm,
 		found_app_ovpn,
@@ -2321,6 +2366,7 @@ ej_firmware_caps_hook(int eid, webs_t wp, int argc, char **argv)
 		found_app_dnsforwarder,
 		found_app_chinadns,
 		found_app_shadowsocks,
+		found_app_dnsmasq_china_conf,
 		found_app_xupnpd
 	);
 
@@ -3949,6 +3995,7 @@ struct ej_handler ej_handlers[] =
 #if defined (APP_SHADOWSOCKS)
 	{ "shadowsocks_action", shadowsocks_action_hook},
 	{ "shadowsocks_status", shadowsocks_status_hook},
+	{ "rules_count", rules_count_hook},
 #endif
 #if defined (APP_CHINADNS)
 	{ "chinadns_status", chinadns_status_hook},

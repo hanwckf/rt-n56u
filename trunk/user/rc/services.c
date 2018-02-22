@@ -309,6 +309,11 @@ void restart_ss_tunnel(void){
 	stop_ss_tunnel();
 	start_ss_tunnel();
 }
+
+void update_chnroute(void){
+	eval("/usr/bin/update_chnroute.sh","force");
+}
+
 #endif
 
 #if defined(APP_VLMCSD)
@@ -367,6 +372,12 @@ void start_napt66(void){
 	int napt66_mode = nvram_get_int("napt66_enable");
 	if ( napt66_mode == 1)
 		eval("/bin/start_napt66");
+}
+#endif
+
+#if defined(APP_DNSMASQ_CHINA_CONF)
+void update_dnsmasq_china_conf(void){
+	eval("/usr/bin/update_dnsmasq_china_conf.sh","force");
 }
 #endif
 

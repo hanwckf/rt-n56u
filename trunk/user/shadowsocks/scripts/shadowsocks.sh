@@ -86,6 +86,9 @@ EOF
 func_start(){
 	/usr/bin/enable_ss_watchcat
 	/usr/bin/enable_update_chnroute
+	/usr/bin/check_chnroute
+	[ -f /usr/bin/check_dnsmasq_china_conf ] && /usr/bin/check_dnsmasq_china_conf
+	[ -f /usr/bin/enable_dnsmasq_china_conf_update ] && /usr/bin/enable_dnsmasq_china_conf_update
 	func_gen_ss_json && func_start_ss_redir && func_start_ss_rules || ss-rules -f
 }
 

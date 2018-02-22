@@ -14,6 +14,7 @@ all:
 		wget -q -t5 --timeout=20 --no-check-certificate -P $(dir) $(url)/$(acc_apple_file); \
 	fi )
 	cat $(dir)/$(acc_apple_file) >> $(dir)/$(acc_china_file)
+	rm -f $(dir)/$(acc_apple_file)
 	sed -i "s|^\(server.*\)/[^/]*$$|\1/$(dns_server)|" $(dir)/$(acc_china_file)
 
 clean:

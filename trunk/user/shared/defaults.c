@@ -530,6 +530,7 @@ struct nvram_pair router_defaults[] = {
 	
 	/* dnsmasq-china-conf */
 	{ "dnsmasq_china_conf_update", "0" },
+	{ "dnsmasq_china_conf_dns_server", "114.114.114.114" },
 	
 	/* DHCP server parameters */
 	{ "dhcp_start", DEF_LAN_DHCP_BEG },	/* First assignable DHCP address */

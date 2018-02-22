@@ -1,6 +1,6 @@
 #!/bin/sh
 set -e -o pipefail
-[ "$1" != "force" ] && [ "$(nvram get dnsmasq_china_conf_update)" != "1" ] && exit 0
+[ "$1" != "force" ] && [ "$(nvram get dnsmasq_china_conf_update)" != "1" ] && exit 1
 
 url="https://coding.net/u/felixonmars/p/dnsmasq-china-list/git/raw/master"
 acc_china_file="accelerated-domains.china.conf"
@@ -10,8 +10,8 @@ rm -f $dir/$acc_china_file
 rm -f $dir/$acc_apple_file
 
 if [ -f /usr/bin/openssl ]; then
-	wget -q -T 5 -P $dir $url/$acc_china_file
-	wget -q -T 5 -P $dir $url/$acc_apple_file
+	wget -q -T 5 -O $dir/$acc_china_file $url/$acc_china_file
+	wget -q -T 5 -O $dir/$acc_apple_file $url/$acc_apple_file
 else
 	curl -k -s -o $dir/$acc_china_file --connect-timeout 5 --retry 3 $url/$acc_china_file
 	curl -k -s -o $dir/$acc_apple_file --connect-timeout 5 --retry 3 $url/$acc_apple_file

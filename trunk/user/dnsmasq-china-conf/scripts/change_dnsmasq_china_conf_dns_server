@@ -9,7 +9,7 @@ if [ -z "$1" ] || [ ! -f $dir/$acc_china_file ]; then
 	exit 1
 else
 	rm -f /tmp/$acc_china_file
-	current_dns=`head -n1 $dir/$acc_china_file  |cut -d '/' -f3`
+	current_dns=`head -n1 $dir/$acc_china_file |cut -d '/' -f3`
 	set_dns=$1
 	if [ "$current_dns" != "$set_dns" ]; then
 		sed "s|^\(server.*\)/[^/]*$|\1/${set_dns}|" $dir/$acc_china_file > /tmp/$acc_china_file
@@ -19,5 +19,4 @@ else
 	restart_dns
 	nvram set dnsmasq_china_conf_dns_server=$set_dns
 	nvram commit
-	rm -f /tmp/$acc_china_file
 fi

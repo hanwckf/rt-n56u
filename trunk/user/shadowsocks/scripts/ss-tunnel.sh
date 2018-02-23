@@ -26,14 +26,17 @@ func_gen_ss_json(){
 cat > "$ss_json_file" <<EOF
 {
     "server": "$ss_server",
-    "server_port": "$ss_server_port",
+    "server_port": $ss_server_port,
     "password": "$ss_password",
     "method": "$ss_method",
-    "timeout": "$ss_timeout",
+    "timeout": $ss_timeout,
     "protocol": "$ss_protocol",
     "protocol_param": "$ss_proto_param",
     "obfs": "$ss_obfs",
-    "obfs_param": "$ss_obfs_param"
+    "obfs_param": "$ss_obfs_param",
+    "local_address": "0.0.0.0",
+    "local_port": $ss_tunnel_local_port,
+    "mtu": $ss_tunnel_mtu
 }
 
 EOF
@@ -41,12 +44,8 @@ EOF
 
 func_start_ss_tunnel(){
 	func_gen_ss_json
-	sh -c "$ss_bin -b 0.0.0.0 -u -c $ss_json_file -l $ss_tunnel_local_port --mtu $ss_tunnel_mtu -L $ss_tunnel_remote & > /dev/null 2>&1"
-	if [ $? -eq 0 ]; then
-		loger $ss_bin "start done"
-	else
-		loger $ss_bin "start failed"
-	fi
+	sh -c "$ss_bin -u -c $ss_json_file -L $ss_tunnel_remote & > /dev/null 2>&1"
+	return $?
 }
 
 func_stop(){
@@ -55,7 +54,7 @@ func_stop(){
 
 case "$1" in
 start)
-	func_start_ss_tunnel
+	func_start_ss_tunnel && loger $ss_bin "start done" || loger $ss_bin "start failed"
 	;;
 stop)
 	func_stop

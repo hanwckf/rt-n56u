@@ -53,31 +53,31 @@ get_ipt_ext(){
 }
 
 func_start_ss_redir(){
-	sh -c "$ss_bin -b 0.0.0.0 -c $ss_json_file -l $ss_local_port --mtu $ss_mtu $(get_arg_udp) & > /dev/null 2>&1"
-	if [ $? -eq 0 ]; then
-		loger $ss_bin "start done"
-	else
-		loger $ss_bin "start failed"
-	fi
+	sh -c "$ss_bin -c $ss_json_file $(get_arg_udp) & > /dev/null 2>&1"
+	return $?
 }
 
 func_start_ss_rules(){
 	ss-rules -f
 	sh -c "ss-rules -s $ss_server -l $ss_local_port $(get_wan_bp_list) -W $wan_fw_list -w $wan_fw_ips -d SS_SPEC_WAN_AC $(get_ipt_ext) $(get_arg_out) $(get_arg_udp)"
+	return $?
 }
 
 func_gen_ss_json(){
 cat > "$ss_json_file" <<EOF
 {
     "server": "$ss_server",
-    "server_port": "$ss_server_port",
+    "server_port": $ss_server_port,
     "password": "$ss_password",
     "method": "$ss_method",
-    "timeout": "$ss_timeout",
+    "timeout": $ss_timeout,
     "protocol": "$ss_protocol",
     "protocol_param": "$ss_proto_param",
     "obfs": "$ss_obfs",
-    "obfs_param": "$ss_obfs_param"
+    "obfs_param": "$ss_obfs_param",
+    "local_address": "0.0.0.0",
+    "local_port": $ss_local_port,
+    "mtu": $ss_tunnel_mtu
 }
 
 EOF
@@ -89,12 +89,12 @@ func_start(){
 	/usr/bin/check_chnroute
 	[ -f /usr/bin/check_dnsmasq_china_conf ] && /usr/bin/check_dnsmasq_china_conf
 	[ -f /usr/bin/enable_dnsmasq_china_conf_update ] && /usr/bin/enable_dnsmasq_china_conf_update
-	func_gen_ss_json && func_start_ss_redir && func_start_ss_rules || ss-rules -f
+	func_gen_ss_json && func_start_ss_redir && func_start_ss_rules && loger $ss_bin "start done" || ss-rules -f
 }
 
 func_stop(){
 	killall -q $ss_bin
-	ss-rules -f
+	ss-rules -f && loger $ss_bin "stop"
 }
 
 case "$1" in

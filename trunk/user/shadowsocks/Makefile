@@ -25,6 +25,7 @@ configure:
 		--disable-documentation \
 		--disable-ssp \
 		--disable-assert \
+		ac_cv_prog_PCRE_CONFIG="$(STAGEDIR)/bin/pcre-config" \
 		--host=$(HOST_TARGET) \
 		--build=$(HOST_BUILD) ; \
 	)

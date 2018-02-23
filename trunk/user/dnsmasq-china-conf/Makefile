@@ -1,7 +1,8 @@
 dns_server=114.114.114.114
 acc_china_file=accelerated-domains.china.conf
 acc_apple_file=apple.china.conf
-url=https://coding.net/u/felixonmars/p/dnsmasq-china-list/git/raw/master
+url=https://raw.githubusercontent.com/felixonmars/dnsmasq-china-list/master
+#url=https://coding.net/u/felixonmars/p/dnsmasq-china-list/git/raw/master
 dir=dnsmasq-china-conf
 
 THISDIR = $(shell pwd)

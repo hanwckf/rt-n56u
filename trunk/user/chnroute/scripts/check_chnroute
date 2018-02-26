@@ -4,4 +4,4 @@ origin_dir="/etc_ro"
 filename="chnroute.txt"
 
 [ ! -d $storage_dir ] && mkdir -p $storage_dir
-[ ! -f $storage_dir/$filename ] && [ -f $origin_dir/$filename ] && cp -f $origin_dir/$filename $storage_dir/$filename && mtd_storage.sh save > /dev/null 2>&1
+[ ! -f $storage_dir/$filename ] && [ -f $origin_dir/$filename ] && cp -f $origin_dir/$filename $storage_dir/$filename && touch /tmp/.modify_etc_storage

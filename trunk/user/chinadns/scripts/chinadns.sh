@@ -11,9 +11,14 @@ get_arg_filter(){
 	fi
 }
 
-func_start(){
+func_check_conf(){
+	rm -f /tmp/.modify_etc_storage
 	/usr/bin/check_chnroute
 	/usr/bin/enable_update_chnroute
+	[ -f /tmp/.modify_etc_storage ] && rm -f /tmp/.modify_etc_storage && mtd_storage.sh save > /dev/null 2>&1
+}
+
+func_start(){
 	start-stop-daemon -S -b -x chinadns -- -m -c $chnroute_file -b $bind_address -p $bind_port -s $server $(get_arg_filter)
 }
 

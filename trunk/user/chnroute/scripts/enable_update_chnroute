@@ -14,11 +14,4 @@ if [ "$(nvram get crond_log)" = "1" ]; then
 else
 	crond -d8
 fi
-
-mtd_storage.sh save > /dev/null 2>&1
-
-if [ $? -eq 0 ]; then
-	echo "[ DONE! ]"
-else
-	echo "[ ERROR! ]"
-fi
+touch /tmp/.modify_etc_storage

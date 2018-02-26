@@ -44,7 +44,7 @@ EOF
 
 func_start_ss_tunnel(){
 	func_gen_ss_json
-	sh -c "$ss_bin -u -c $ss_json_file -L $ss_tunnel_remote & > /dev/null 2>&1"
+	sh -c "$ss_bin -u -c $ss_json_file -L $ss_tunnel_remote & "
 	return $?
 }
 

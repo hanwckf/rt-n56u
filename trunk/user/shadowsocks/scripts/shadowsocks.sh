@@ -53,7 +53,7 @@ get_ipt_ext(){
 }
 
 func_start_ss_redir(){
-	sh -c "$ss_bin -c $ss_json_file $(get_arg_udp) & > /dev/null 2>&1"
+	sh -c "$ss_bin -c $ss_json_file $(get_arg_udp) & "
 	return $?
 }
 

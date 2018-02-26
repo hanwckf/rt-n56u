@@ -77,7 +77,7 @@ cat > "$ss_json_file" <<EOF
     "obfs_param": "$ss_obfs_param",
     "local_address": "0.0.0.0",
     "local_port": $ss_local_port,
-    "mtu": $ss_tunnel_mtu
+    "mtu": $ss_mtu
 }
 
 EOF

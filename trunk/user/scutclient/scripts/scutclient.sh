@@ -26,6 +26,7 @@ func_load(){
 	nvram commit
 	func_log "Configuration was successful!"
 }
+
 func_check_conf(){
 	rm -f /tmp/.modify_etc_storage
 	/bin/enable_scutclient_watchcat

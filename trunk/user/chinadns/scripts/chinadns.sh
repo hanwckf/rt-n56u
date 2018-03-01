@@ -28,6 +28,7 @@ func_stop(){
 
 case "$1" in
 start)
+	func_check_conf
 	func_start
 	;;
 stop)

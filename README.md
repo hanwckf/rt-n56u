@@ -18,3 +18,36 @@ Contributors of this project are not responsible for what happens next.
 ### Contribution guidelines ###
 
 * To be completed
+
+***
+
+### 编译说明 ###
+* 安装依赖包
+```shell
+sudo apt-get update
+sudo apt-get install libtool curl cmake gperf gawk flex bison nano \
+git python-docutils gettext automake autopoint texinfo build-essential \
+pkg-config zlib1g-dev libgmp3-dev libmpc-dev libmpfr-dev libncurses5-dev
+```
+* 克隆源码
+```shell
+git clone --depth=1 https://gitee.com/hanwckf/rt-n56u.git /opt/rt-n56u
+#git clone --depth=1 https://github.com/hanwckf/rt-n56u.git /opt/rt-n56u
+```
+* 编译工具链
+```shell
+cd /opt/rt-n56u/toolchain-mipsel
+./clean_sources
+./build_toolchain_3.4.x
+```
+* (可选)修改机型配置文件
+```shell
+vi /opt/rt-n56u/trunk/configs/templates/PSG1218.config
+```
+* 清理代码树并开始编译
+```shell
+cd /opt/rt-n56u/trunk
+sudo ./clear_tree
+sudo ./build_firmware_modify PSG1218
+#编译好的固件在trunk/images里
+```

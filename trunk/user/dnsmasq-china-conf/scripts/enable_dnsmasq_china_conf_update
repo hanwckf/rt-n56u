@@ -3,7 +3,7 @@
 cd /etc/storage/
 
 if [ ! -f "cron/crontabs/admin" ] || [ -z "$(cat cron/crontabs/admin |grep "update_dnsmasq_china_conf.sh")" ]; then
-	echo "0 9 */4 * * /usr/bin/update_dnsmasq_china_conf.sh > /dev/null 2>&1" >> cron/crontabs/admin
+	echo "0 9 */10 * * /usr/bin/update_dnsmasq_china_conf.sh > /dev/null 2>&1" >> cron/crontabs/admin
 else
 	exit 0
 fi

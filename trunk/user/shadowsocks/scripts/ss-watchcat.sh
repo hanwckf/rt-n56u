@@ -29,10 +29,11 @@ fi
 tries=0
 while [ $tries -lt 3 ]
 do
-	if /bin/ping -c 1  $net_domain -W 1 >/dev/null
+	if /bin/ping -c 1  $net_domain -W 1 >/dev/null 2>&1
 	then
 		detect_shadowsocks
 		exit 0
 	fi
 tries=$((tries+1))
 done
+loger "Network Error."

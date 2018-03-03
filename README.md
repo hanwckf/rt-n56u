@@ -51,3 +51,6 @@ sudo ./clear_tree
 sudo ./build_firmware_modify PSG1218
 #编译好的固件在trunk/images里
 ```
+
+### 特别说明 ###
+* 汉化字典来自 https://github.com/gorden5566/padavan

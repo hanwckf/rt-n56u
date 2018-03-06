@@ -25,14 +25,14 @@ ifeq ($(CONFIG_FIRMWARE_INCLUDE_ARIA_WEB_CONTROL),y)
 		unzip -qq $(SRC_ARIA_NG_NAME).zip -d ariaweb; \
 	fi )
 endif
-	
+
 extract_test:
 ifneq ($(CONFIG_FIRMWARE_INCLUDE_ARIA2_NEW_PREBUILD_BIN),y)
 	( if [ ! -d $(SRC_NAME) ]; then \
 		tar zxf $(SRC_NAME).tar.gz; \
 	fi )
 endif
-	
+
 config_test:
 ifneq ($(CONFIG_FIRMWARE_INCLUDE_ARIA2_NEW_PREBUILD_BIN),y)
 	( if [ -f ./config_done ]; then \

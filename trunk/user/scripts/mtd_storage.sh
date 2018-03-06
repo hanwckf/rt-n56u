@@ -226,13 +226,17 @@ func_fill()
 	[ ! -d "$dir_httpssl" ] && mkdir -p -m 700 "$dir_httpssl"
 
 	# create chnroute.txt
-	if [ -f "$chnroute_file" ] ; then
-		mkdir -p "$dir_chnroute" && cp -f $chnroute_file $dir_chnroute
+	if [ -f "$chnroute_file" ]; then
+		if [ ! -d "$dir_chnroute" ] ; then
+			mkdir -p "$dir_chnroute" && cp -f $chnroute_file $dir_chnroute
+		fi
 	fi
-	
+
 	# create dnsmasq-china-conf
-	if [ -d "$dnsmasq_china_conf_dir" ] ; then
-		mkdir -p "$dir_dnsmasq_china_conf" && cp -rf $dnsmasq_china_conf_dir/* $dir_dnsmasq_china_conf
+	if [ -d "$dnsmasq_china_conf_dir" ]; then
+		if [ ! -d "$dir_dnsmasq_china_conf" ] ; then
+			mkdir -p "$dir_dnsmasq_china_conf" && cp -rf $dnsmasq_china_conf_dir/* $dir_dnsmasq_china_conf
+		fi
 	fi
 
 	# create start script

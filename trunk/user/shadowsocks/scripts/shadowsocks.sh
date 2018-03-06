@@ -94,7 +94,7 @@ func_check_conf(){
 }
 
 func_start(){
-	func_gen_ss_json && func_start_ss_redir && func_start_ss_rules && loger $ss_bin "start done" || ss-rules -f
+	func_check_conf && func_gen_ss_json && func_start_ss_redir && func_start_ss_rules && loger $ss_bin "start done" || ss-rules -f
 }
 
 func_stop(){
@@ -104,7 +104,6 @@ func_stop(){
 
 case "$1" in
 start)
-	func_check_conf
 	func_start
 	;;
 stop)

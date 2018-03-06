@@ -16,6 +16,7 @@ else
 	fi
 	mv -f /tmp/$acc_china_file $dir/$acc_china_file
 	mtd_storage.sh save >/dev/null 2>&1
+	restart_dhcpd
 	restart_dns
 	nvram set dnsmasq_china_conf_dns_server=$set_dns
 	nvram commit

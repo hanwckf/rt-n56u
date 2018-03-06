@@ -96,8 +96,9 @@ timeout=120
 connect-timeout=60
 split=8
 max-concurrent-downloads=3
-max-connection-per-server=5
-min-split-size=2M
+max-connection-per-server=8
+min-split-size=1M
+check-certificate=false
 
 ### Log
 log=$DIR_CFG/aria2.log

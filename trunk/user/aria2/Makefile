@@ -1,7 +1,7 @@
-SRC_NAME=aria2-1.15.2
+SRC_NAME=aria2-1.17.1
 
-SRC_ARIA_NG_NAME=aria-ng-0.3.0
-SRC_ARIA_NG_URL=https://github.com/mayswind/AriaNg/releases/download/0.3.0/aria-ng-0.3.0.zip
+SRC_ARIA_NG_NAME=aria-ng-0.4.0
+SRC_ARIA_NG_URL=https://github.com/mayswind/AriaNg/releases/download/0.4.0/aria-ng-0.4.0.zip
 
 CFLAGS  += -ffunction-sections -fdata-sections
 CXXFLAGS += -ffunction-sections -fdata-sections
@@ -9,9 +9,22 @@ LDFLAGS += -Wl,--gc-sections
 
 THISDIR = $(shell pwd)
 
-all: config_test
+all: extract_test config_test
 	$(MAKE) -C $(SRC_NAME)
+ifeq ($(CONFIG_FIRMWARE_INCLUDE_ARIA_WEB_CONTROL),y)
+	( if [ ! -f $(THISDIR)/$(SRC_ARIA_NG_NAME).zip ]; then \
+		wget -t5 --timeout=20 --no-check-certificate -O $(SRC_ARIA_NG_NAME).zip $(SRC_ARIA_NG_URL); \
+	fi )
+	( if [ ! -d $(THISDIR)/ariaweb ]; then \
+		unzip -qq $(SRC_ARIA_NG_NAME).zip -d ariaweb; \
+	fi )
+endif
 
+extract_test:
+	( if [ ! -d $(SRC_NAME) ]; then \
+		tar zxf $(SRC_NAME).tar.gz; \
+	fi )
+	
 config_test:
 	( if [ -f ./config_done ]; then \
 		echo "the same configuration"; \
@@ -44,14 +57,6 @@ configure:
 		--host=$(HOST_TARGET) \
 		--build=$(HOST_BUILD) ; \
 	)
-ifeq ($(CONFIG_FIRMWARE_INCLUDE_ARIA_WEB_CONTROL),y)
-	( if [ ! -f $(THISDIR)/$(SRC_ARIA_NG_NAME).zip ]; then \
-		wget -t5 --timeout=20 --no-check-certificate -O $(SRC_ARIA_NG_NAME).zip $(SRC_ARIA_NG_URL); \
-	fi )
-	( if [ ! -d $(THISDIR)/ariaweb ]; then \
-		unzip -qq $(SRC_ARIA_NG_NAME).zip -d ariaweb; \
-	fi )
-endif
 
 clean:
 	if [ -f $(SRC_NAME)/Makefile ] ; then \

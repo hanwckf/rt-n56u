@@ -22,6 +22,7 @@ rm -f $dir/$acc_apple_file
 [ ! -d /etc/storage/dnsmasq-china-conf ] && mkdir /etc/storage/dnsmasq-china-conf
 mv -f $dir/$acc_china_file /etc/storage/dnsmasq-china-conf/$acc_china_file
 mtd_storage.sh save >/dev/null 2>&1
+restart_dhcpd
 restart_dns
 
 logger -st "dnsmasq-china-conf" "Update done"

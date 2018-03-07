@@ -466,9 +466,11 @@ openvpn_create_server_conf(const char *conf_file, int is_tun)
 	fprintf(fp, "cert %s/%s\n", SERVER_CERT_DIR, openvpn_server_keys[2]);
 	fprintf(fp, "key %s/%s\n", SERVER_CERT_DIR, openvpn_server_keys[3]);
 
-	if (i_atls)
+	if (i_atls == 1) {
 		fprintf(fp, "tls-auth %s/%s %d\n", SERVER_CERT_DIR, openvpn_server_keys[4], 0);
-
+	} else if (i_atls == 2) {
+		fprintf(fp, "tls-crypt %s/%s\n", SERVER_CERT_DIR, openvpn_server_keys[4]);
+	}
 	fprintf(fp, "persist-key\n");
 	fprintf(fp, "persist-tun\n");
 	fprintf(fp, "user %s\n", SYS_USER_NOBODY);
@@ -559,9 +561,11 @@ openvpn_create_client_conf(const char *conf_file, int is_tun)
 		fprintf(fp, "key %s/%s\n", CLIENT_CERT_DIR, openvpn_client_keys[2]);
 	}
 
-	if (i_atls)
+	if (i_atls == 1) {
 		fprintf(fp, "tls-auth %s/%s %d\n", CLIENT_CERT_DIR, openvpn_client_keys[3], 1);
-
+	} else if (i_atls == 2) {
+		fprintf(fp, "tls-crypt %s/%s\n", CLIENT_CERT_DIR, openvpn_client_keys[3]);
+	}
 	openvpn_add_auth(fp, nvram_get_int("vpnc_ov_mdig"));
 	openvpn_add_cipher(fp, nvram_get_int("vpnc_ov_ciph"));
 	openvpn_add_lzo(fp, nvram_get_int("vpnc_ov_clzo"), 0);
@@ -1075,9 +1079,11 @@ ovpn_server_expcli_main(int argc, char **argv)
 	openvpn_add_key(fp, SERVER_CERT_DIR, openvpn_server_keys[0], "ca");
 	openvpn_add_key(fp, tmp_ovpn_path, openvpn_client_keys[1], "cert");
 	openvpn_add_key(fp, tmp_ovpn_path, openvpn_client_keys[2], "key");
-	if (i_atls) {
+	if (i_atls == 1) {
 		openvpn_add_key(fp, SERVER_CERT_DIR, openvpn_server_keys[4], "tls-auth");
 		fprintf(fp, "key-direction %d\n", 1);
+	} else if (i_atls == 2) {
+		openvpn_add_key(fp, SERVER_CERT_DIR, openvpn_server_keys[4], "tls-crypt");
 	}
 	fclose(fp);
 

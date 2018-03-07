@@ -227,7 +227,7 @@ function change_vpnc_ov_auth() {
 }
 
 function change_vpnc_ov_atls() {
-	var v = (document.form.vpnc_ov_atls.value == "1") ? 1 : 0;
+	var v = (document.form.vpnc_ov_atls.value != "0") ? 1 : 0;
 
 	showhide_div('row_ta_key', v);
 	inputCtrl(document.form['ovpncli.ta.key'], v);
@@ -526,6 +526,7 @@ function getHash(){
                                         <select name="vpnc_ov_atls" class="input" onchange="change_vpnc_ov_atls();">
                                             <option value="0" <% nvram_match_x("", "vpnc_ov_atls", "0","selected"); %>><#checkbox_No#></option>
                                             <option value="1" <% nvram_match_x("", "vpnc_ov_atls", "1","selected"); %>><#OVPN_HMAC_Item1#></option>
+                                            <option value="2" <% nvram_match_x("", "vpnc_ov_atls", "2","selected"); %>><#OVPN_HMAC_Item2#></option>
                                         </select>
                                     </td>
                                 </tr>
@@ -631,7 +632,7 @@ function getHash(){
                                 </tr>
                                 <tr id="row_ta_key">
                                     <td style="padding-bottom: 0px; border-top: 0 none;">
-                                        <span class="caption-bold">ta.key (TLS Auth Key) - secret:</span>
+                                        <span class="caption-bold">ta.key (TLS Auth/Crypt Key) - secret:</span>
                                         <textarea rows="4" wrap="off" spellcheck="false" maxlength="8192" class="span12" name="ovpncli.ta.key" style="font-family:'Courier New'; font-size:12px;"><% nvram_dump("ovpncli.ta.key",""); %></textarea>
                                     </td>
                                 </tr>

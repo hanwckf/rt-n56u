@@ -398,7 +398,7 @@ function change_vpns_vnet_enable(){
 }
 
 function change_vpns_ov_atls() {
-	var v = (document.form.vpns_ov_atls.value == "1") ? 1 : 0;
+	var v = (document.form.vpns_ov_atls.value != "0") ? 1 : 0;
 
 	showhide_div('row_ta_key', v);
 	if (!login_safe())
@@ -910,6 +910,7 @@ function getHash(){
                                         <select name="vpns_ov_atls" class="input">
                                             <option value="0" <% nvram_match_x("", "vpns_ov_atls", "0","selected"); %>><#checkbox_No#></option>
                                             <option value="1" <% nvram_match_x("", "vpns_ov_atls", "1","selected"); %>><#OVPN_HMAC_Item1#></option>
+                                            <option value="2" <% nvram_match_x("", "vpns_ov_atls", "2","selected"); %>><#OVPN_HMAC_Item2#></option>
                                         </select>
                                     </td>
                                 </tr>
@@ -1104,7 +1105,7 @@ function getHash(){
                                 </tr>
                                 <tr id="row_ta_key">
                                     <td style="padding-bottom: 0px; border-top: 0 none;">
-                                        <span class="caption-bold">TLS Auth Key (ta.key) - secret:</span>
+                                        <span class="caption-bold">TLS Auth/Crypt Key (ta.key) - secret:</span>
                                         <textarea rows="4" wrap="off" spellcheck="false" maxlength="8192" class="span12" name="ovpnsvr.ta.key" style="font-family:'Courier New'; font-size:12px;"><% nvram_dump("ovpnsvr.ta.key",""); %></textarea>
                                     </td>
                                 </tr>

@@ -56,7 +56,7 @@ func_help() {
   echo "           - server key and certificate" >&2
   echo "           - Diffie-Hellman parameters key" >&2
   echo "           - TLS-Auth HMAC signature key" >&2
-  echo "           `$BOLD`Note:`$NORM` $CA_CRT and ${TA_KEY}(if TLS-Auth is used) should be sent to clients." >&2
+  echo "           `$BOLD`Note:`$NORM` $CA_CRT and ${TA_KEY}(if TLS-Auth or TLS-Crypt is used) should be sent to clients." >&2
   echo >&2
   echo "    `$BOLD`client`$NORM` -n `$BOLD`common_name`$NORM` [ -b `$BOLD`rsa_bits/ec_name`$NORM` ] [ -d `$BOLD`days_valid`$NORM` ]" >&2
   echo "           Create both client key and sign it on server side. It is not quite correct," >&2
@@ -202,16 +202,16 @@ make_ta() {
   # $1 --> ta key name
   #
   if [ ! -x $OPENVPN ] ; then
-    echo_process "Skipping TLS Auth key. $OPENVPN not found."
+    echo_process "Skipping TLS Auth/Crypt key. $OPENVPN not found."
     echo_done
     return 1
   fi
   if [ -f $1 ] ; then
-    echo_process "Skipping TLS Auth key. File exists"
+    echo_process "Skipping TLS Auth/Crypt key. File exists"
     echo_done
     return 0
   fi
-  echo_process "Creating TLS Auth key"
+  echo_process "Creating TLS Auth/Crypt key"
   $OPENVPN --genkey --secret $1 &>/dev/null
   [ -s $1 ] && chmod 600 $1
   echo_done

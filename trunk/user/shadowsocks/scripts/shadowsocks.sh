@@ -95,7 +95,7 @@ func_check_conf(){
 
 func_start(){
 	func_check_conf
-	func_gen_ss_json && func_start_ss_redir && func_start_ss_rules && loger $ss_bin "start done" || ss-rules -f
+	func_gen_ss_json && func_start_ss_redir && func_start_ss_rules && loger $ss_bin "start done" || { ss-rules -f && loger $ss_bin "start fail!";}
 }
 
 func_stop(){

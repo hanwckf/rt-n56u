@@ -11,6 +11,7 @@ RUN apt-get update && apt-get install -y \
 	gettext \
 	automake \
 	autoconf \
+	autopoint \
 	libtool \
 	bison \
 	flex \

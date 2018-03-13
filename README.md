@@ -32,9 +32,9 @@ Contributors of this project are not responsible for what happens next.
 - aria2源码更新到1.17.1,预编译二进制文件为1.33.1 ```(CONFIG_FIRMWARE_INCLUDE_ARIA2_NEW_PREBUILD_BIN)```
 - aria2前端更换为[aria-ng](https://github.com/mayswind/AriaNg.git) (0.4.0)
 - 集成以下软件
->- [scutclient](git@github.com:hanwckf/scutclient-cmake.git)(含webui) ```CONFIG_FIRMWARE_INCLUDE_SCUT_MOD```
+>- [scutclient](https://github.com/hanwckf/scutclient-cmake.git)(含webui) ```CONFIG_FIRMWARE_INCLUDE_SCUT_MOD```
 >- [ttyd](https://github.com/tsl0922/ttyd.git)(含webui) ```CONFIG_FIRMWARE_INCLUDE_TTYD```
->- [vlmcsd](git@github.com:hanwckf/vlmcsd.git)(含webui) ```CONFIG_FIRMWARE_INCLUDE_VLMCSD```
+>- [vlmcsd](https://github.com/hanwckf/vlmcsd.git)(含webui) ```CONFIG_FIRMWARE_INCLUDE_VLMCSD```
 >- [napt66](https://github.com/mzweilin/napt66.git)(含webui) ```CONFIG_FIRMWARE_INCLUDE_NAPT66```
 >- [dns-forwarder](https://github.com/aa65535/hev-dns-forwarder.git)(含webui) ```CONFIG_FIRMWARE_INCLUDE_DNSFORWARDER```
 >- [ChinaDNS](https://github.com/aa65535/ChinaDNS.git)(含webui) ```CONFIG_FIRMWARE_INCLUDE_CHINADNS```
@@ -90,4 +90,4 @@ sudo ./build_firmware_modify PSG1218
 
 ### 请参阅 ###
 - https://www.jianshu.com/p/cb51fb0fb2ac
-- https://www.jianshu.com/p/cb51fb0fb2ac
+- https://www.jianshu.com/p/52282cd07284

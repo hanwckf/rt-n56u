@@ -1,5 +1,5 @@
-SRC_NAME=libwebsockets-2.1.0
-SRC_URL=https://github.com/warmcat/libwebsockets/archive/v2.1.0.tar.gz
+SRC_NAME=libwebsockets-2.4.2
+SRC_URL=https://github.com/warmcat/libwebsockets/archive/v2.4.2.tar.gz
 
 all: download_test extract_test config_test
 	$(MAKE) -C $(SRC_NAME)

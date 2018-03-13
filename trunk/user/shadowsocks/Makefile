@@ -3,6 +3,12 @@ ARCHIVE_NAME=shadowsocksr-libev-master-e2373d7
 #https://github.com/shadowsocksr-backup/shadowsocksr-libev.git
 THISDIR = $(shell pwd)
 
+ifeq ($(CONFIG_FIRMWARE_INCLUDE_SHADOWSOCKS_MBEDTLS),y)
+	ss_crypto_lib=mbedtls
+else
+	ss_crypto_lib=openssl
+endif
+
 all: extract_test config_test
 	$(MAKE) -C $(SRC_NAME)
 
@@ -26,6 +32,7 @@ configure:
 		--disable-ssp \
 		--disable-assert \
 		ac_cv_prog_PCRE_CONFIG="$(STAGEDIR)/bin/pcre-config" \
+		--with-crypto-library=$(ss_crypto_lib) \
 		--host=$(HOST_TARGET) \
 		--build=$(HOST_BUILD) ; \
 	)

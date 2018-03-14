@@ -12,8 +12,7 @@ fi;
 
 [ -r /opt/etc/profile ] && . /opt/etc/profile
 
-alias df='df -h'
-alias ps='ps -ww'
-alias free='free -m'
+alias df='df -Th'
+alias ps='ps -w'
 alias ls='ls -hF --color=auto'
 alias ll='ls -AlhF --color=auto'

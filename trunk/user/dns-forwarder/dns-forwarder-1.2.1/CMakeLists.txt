@@ -7,4 +7,3 @@ set(SOURCE_FILES hev-dns-forwarder.c hev-event-source.c hev-event-source-timeout
 
 add_executable(${PROJECT_NAME} ${SOURCE_FILES})
 
-target_compile_definitions(${PROJECT_NAME} PRIVATE SCUT_VERSION="${PROJECT_VERSION}")

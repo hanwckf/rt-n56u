@@ -1,5 +1,5 @@
-SRC_NAME = scutclient-cmake-2.4
-SRC_URL = https://github.com/hanwckf/scutclient-cmake/archive/v2.4.tar.gz
+SRC_NAME = scutclient-cmake-2.4.1
+SRC_URL = https://github.com/hanwckf/scutclient-cmake/archive/v2.4.1.tar.gz
 THISDIR = $(shell pwd)
 
 all: download_test extract_test config_test

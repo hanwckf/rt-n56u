@@ -7,4 +7,3 @@ set(SOURCE_FILES chinadns.c local_ns_parser.c local_ns_parser.h)
 
 add_executable(${PROJECT_NAME} ${SOURCE_FILES})
 
-target_compile_definitions(${PROJECT_NAME} PRIVATE SCUT_VERSION="${PROJECT_VERSION}")

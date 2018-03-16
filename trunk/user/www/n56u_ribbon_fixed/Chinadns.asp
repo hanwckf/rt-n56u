@@ -123,12 +123,11 @@ function fill_status(status_code){
                                 <div class="row-fluid">
                                     <div id="tabMenu" class="submenuBlock"></div>
                                     <table width="100%" cellpadding="4" cellspacing="0" class="table">
-										<tr>
-											<th><#running_status#></th>
-											<td id="chinadns_status" colspan="3"></td>
-										</tr>
-										<tr>
-                                            <th><#menu5_14_1#></th>
+                                        <tr> <th><#running_status#></th>
+                                            <td id="chinadns_status" colspan="3"></td>
+                                        </tr>
+
+                                        <tr> <th><#menu5_14_1#></th>
                                             <td>
                                                 <div class="main_itoggle">
                                                     <div id="chinadns_enable_on_of">
@@ -142,29 +141,26 @@ function fill_status(status_code){
                                                 </div>
                                             </td>
                                         </tr>
-										<tr>
-                                            <th width="50%"><#menu5_14_2#></th>
+
+                                        <tr> <th width="50%"><#menu5_14_2#></th>
                                             <td>
                                                 <input type="text" maxlength="15" class="input" size="15" name="chinadns_bind" style="width: 145px" value="<% nvram_get_x("","chinadns_bind"); %>" onkeypress="return is_ipaddr(this,event);"/>
                                             </td>
                                         </tr>
-										
-										<tr>
-                                            <th width="50%"><#menu5_14_3#></th>
+
+                                        <tr> <th width="50%"><#menu5_14_3#></th>
                                             <td>
                                                 <input type="text" maxlength="5" class="input" size="15" name="chinadns_port" style="width: 145px" value="<% nvram_get_x("", "chinadns_port"); %>">
                                             </td>
                                         </tr>
-										<tr>
-                                            <th width="50%"><#menu5_14_4#></th>
+
+                                        <tr> <th width="50%"><#menu5_14_4#></th>
                                             <td>
                                                 <input type="text" maxlength="64" class="input" size="64" name="chinadns_server" value="<% nvram_get_x("", "chinadns_server"); %>">
                                             </td>
-                                        </tr>										
-										<tr>
-										
-                                        <tr>
-                                            <th><#menu5_14_5#></th>
+                                        </tr>
+
+                                        <tr> <th><#menu5_14_5#></th>
                                             <td>
                                                 <div class="main_itoggle">
                                                     <div id="chinadns_bi_filter_on_of">
@@ -177,11 +173,13 @@ function fill_status(status_code){
                                                 </div>
                                             </td>
                                         </tr>
+
                                         <tr>
-											<td colspan="2">
+                                            <td colspan="2">
                                                 <center><input class="btn btn-primary" style="width: 219px" type="button" value="<#CTL_apply#>" onclick="applyRule()" /></center>
-                                        	</td>
+                                            </td>
                                         </tr>
+
                                     </table>
                                 </div>
                             </div>

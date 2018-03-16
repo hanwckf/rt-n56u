@@ -26,8 +26,6 @@ var $j = jQuery.noConflict();
 <% scutclient_status(); %>
 
 $j(document).ready(function(){
-	//var textArea = E('textarea');
-	//textArea.scrollTop = textArea.scrollHeight;
 	init_itoggle('scutclient_enable');
 	init_itoggle('scutclient_debug');
 	init_itoggle('scutclient_watchcat');
@@ -134,26 +132,21 @@ function fill_status(status_code){
                             <div class="round_bottom">
                                 <div class="row-fluid">
                                     <div id="tabMenu" class="submenuBlock"></div>
-
                                     <table width="100%" cellpadding="4" cellspacing="0" class="table">
-										<!-- <div class="alert alert-info" style="margin: 10px;">scutclient相关配置</div> -->
-										
-										<tr>
-											<th colspan="2" style="background-color: #E3E3E3;"><#menu5_1_1#></th>
-										</tr>
-											<tr>
-											<th width="50%"><#InetControl#></th>
-											<td style="border-top: 0 none;" colspan="2">
-											  <input type="button" id="btn_connect_1" class="btn btn-info" value=<#Connect#> onclick="submitInternet('Reconnect');">
-											  <input type="button" id="btn_connect_0" class="btn btn-danger" value=<#Disconnect#> onclick="submitInternet('Disconnect');">
-											</td>
-										</tr>
-										<tr>
-											<th><#running_status#></th>
-											<td id="scutclient_status" colspan="3"></td>
-										</tr>
-										<tr>
-                                            <th><#menu5_13_enable#></th>
+                                        <tr> <th colspan="2" style="background-color: #E3E3E3;"><#menu5_1_1#></th> </tr>
+
+                                        <tr> <th width="50%"><#InetControl#></th>
+                                            <td style="border-top: 0 none;" colspan="2">
+                                                <input type="button" id="btn_connect_1" class="btn btn-info" value=<#Connect#> onclick="submitInternet('Reconnect');">
+                                                <input type="button" id="btn_connect_0" class="btn btn-danger" value=<#Disconnect#> onclick="submitInternet('Disconnect');">
+                                            </td>
+                                        </tr>
+
+                                        <tr> <th><#running_status#></th>
+                                            <td id="scutclient_status" colspan="3"></td>
+                                        </tr>
+
+                                        <tr> <th><#menu5_13_enable#></th>
                                             <td>
                                                 <div class="main_itoggle">
                                                     <div id="scutclient_enable_on_of">
@@ -167,64 +160,51 @@ function fill_status(status_code){
                                                 </div>
                                             </td>
                                         </tr>
-										
 
-										
-										<tr>
-										
-                                            <th width="50%"><#menu5_13_username#></th>
+                                        <tr> <th width="50%"><#menu5_13_username#></th>
                                             <td>
                                                 <input type="text" maxlength="32" class="input" size="32" name="scutclient_username" style="width: 145px" value="<% nvram_get_x("","scutclient_username"); %>" />
                                             </td>
                                         </tr>
-										
-										<tr>
-                                            <th width="50%"><#menu5_13_password#></th>
+
+                                        <tr> <th width="50%"><#menu5_13_password#></th>
                                             <td>
                                                 <input type="password" maxlength="32" class="input" size="32" name="scutclient_password" id="scutclient_password" style="width: 145px" value="<% nvram_get_x("","scutclient_password"); %>" />
-												<button style="margin-left: -5px;" class="btn" type="button" onclick="passwordShowHide('scutclient_password')"><i class="icon-eye-close"></i></button>
+                                                <button style="margin-left: -5px;" class="btn" type="button" onclick="passwordShowHide('scutclient_password')"><i class="icon-eye-close"></i></button>
                                             </td>
                                         </tr>	
-										
-										<tr>
-                                            <th width="50%"><#menu5_13_authip#></th>
+
+                                        <tr> <th width="50%"><#menu5_13_authip#></th>
                                             <td>
                                                 <input type="text" maxlength="15" class="input" size="15" name="scutclient_server_auth_ip" style="width: 145px" value="<% nvram_get_x("","scutclient_server_auth_ip"); %>" onkeypress="return is_ipaddr(this,event);"/>
                                             </td>
                                         </tr>
-										
-										<tr>
-                                            <th width="50%"><#menu5_13_hostname#></th>
+
+                                        <tr> <th width="50%"><#menu5_13_hostname#></th>
                                             <td>
                                                 <input type="text" maxlength="32" class="input" size="32" name="scutclient_hostname" value="<% nvram_get_x("", "scutclient_hostname"); %>">
                                             </td>
                                         </tr>
-										
-										<tr>
-                                            <th width="50%"><#menu5_13_version#></th>
+
+                                        <tr> <th width="50%"><#menu5_13_version#></th>
                                             <td>
                                                 <input type="text" maxlength="32" class="input" size="32" name="scutclient_version" value="<% nvram_get_x("", "scutclient_version"); %>">
                                             </td>
                                         </tr>
-										
-										<tr>
-                                            <th width="50%"><#menu5_13_hash#></th>
+
+                                        <tr> <th width="50%"><#menu5_13_hash#></th>
                                             <td>
                                                 <input type="text" maxlength="64" class="input" size="64" name="scutclient_hash" value="<% nvram_get_x("", "scutclient_hash"); %>">
                                             </td>
-                                        </tr>										
-										<tr>
-										
-										
-                                        <tr>
-                                            <th><#menu5_13_debug#></th>
+                                        </tr>
+
+                                        <tr> <th><#menu5_13_debug#></th>
                                             <td>
                                                 <div class="main_itoggle">
                                                     <div id="scutclient_debug_on_of">
                                                         <input type="checkbox" id="scutclient_debug_fake" <% nvram_match_x("", "scutclient_debug", "1", "value=1 checked"); %><% nvram_match_x("", "scutclient_debug", "0", "value=0"); %>>
                                                     </div>
                                                 </div>
-
                                                 <div style="position: absolute; margin-left: -10000px;">
                                                     <input type="radio" value="1" name="scutclient_debug" id="scutclient_debug_1" <% nvram_match_x("", "scutclient_debug", "1", "checked"); %>><#checkbox_Yes#>
                                                     <input type="radio" value="0" name="scutclient_debug" id="scutclient_debug_0" <% nvram_match_x("", "scutclient_debug", "0", "checked"); %>><#checkbox_No#>
@@ -232,8 +212,7 @@ function fill_status(status_code){
                                             </td>
                                         </tr>
                                         
-                                        <tr>
-                                            <th><#menu5_13_watchcat#></th>
+                                        <tr> <th><#menu5_13_watchcat#></th>
                                             <td>
                                                 <div class="main_itoggle">
                                                     <div id="scutclient_watchcat_on_of">
@@ -246,16 +225,15 @@ function fill_status(status_code){
                                                     <input type="radio" value="0" name="scutclient_watchcat" id="scutclient_watchcat_0" <% nvram_match_x("", "scutclient_watchcat", "0", "checked"); %>><#checkbox_No#>
                                                 </div>
                                             </td>
-                                        </tr>                                        
-                                        
-                                        
-										<input type="hidden" value="1" name="scutclient_done" id="scutclient_done_1">
-                                        <tr>
-											<td colspan="2">
-                                                	<center><input class="btn btn-primary" style="width: 219px" type="button" value="<#CTL_apply#>" onclick="applyRule()" /></center>
-                                        	</td>
                                         </tr>
 
+                                        <input type="hidden" value="1" name="scutclient_done" id="scutclient_done_1">
+
+                                        <tr>
+                                            <td colspan="2">
+                                                <center><input class="btn btn-primary" style="width: 219px" type="button" value="<#CTL_apply#>" onclick="applyRule()" /></center>
+                                            </td>
+                                        </tr>
                                     </table>
                                 </div>
                             </div>
@@ -265,9 +243,7 @@ function fill_status(status_code){
             </div>
         </div>
     </div>
-
     </form>
-
     <div id="footer"></div>
 </div>
 

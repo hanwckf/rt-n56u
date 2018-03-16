@@ -122,50 +122,46 @@ function fill_status(status_code){
                                 <div class="row-fluid">
                                     <div id="tabMenu" class="submenuBlock"></div>
                                     <table width="100%" cellpadding="4" cellspacing="0" class="table">
-                                    	<tr>
-											<th><#running_status#></th>
-											<td id="dnsforwarder_status" colspan="3"></td>
-										</tr>
-										<tr>
-                                            <th><#menu5_15_1#></th>
+                                        <tr> <th><#running_status#></th>
+                                            <td id="dnsforwarder_status" colspan="3"></td>
+                                        </tr>
+
+                                        <tr> <th><#menu5_15_1#></th>
                                             <td>
                                                 <div class="main_itoggle">
-                                                    <div id="dns_forwarder_enable_on_of">
-                                                        <input type="checkbox" id="dns_forwarder_enable_fake" <% nvram_match_x("", "dns_forwarder_enable", "1", "value=1 checked"); %><% nvram_match_x("", "dns_forwarder_enable", "0", "value=0"); %>>
-                                                    </div>
+                                                <div id="dns_forwarder_enable_on_of">
+                                                    <input type="checkbox" id="dns_forwarder_enable_fake" <% nvram_match_x("", "dns_forwarder_enable", "1", "value=1 checked"); %><% nvram_match_x("", "dns_forwarder_enable", "0", "value=0"); %>>
                                                 </div>
-
+                                                </div>
                                                 <div style="position: absolute; margin-left: -10000px;">
                                                     <input type="radio" value="1" name="dns_forwarder_enable" id="dns_forwarder_enable_1" <% nvram_match_x("", "dns_forwarder_enable", "1", "checked"); %>><#checkbox_Yes#>
                                                     <input type="radio" value="0" name="dns_forwarder_enable" id="dns_forwarder_enable_0" <% nvram_match_x("", "dns_forwarder_enable", "0", "checked"); %>><#checkbox_No#>
                                                 </div>
                                             </td>
                                         </tr>
-										<tr>
-                                            <th width="50%"><#menu5_14_2#></th>
+
+                                        <tr> <th width="50%"><#menu5_14_2#></th>
                                             <td>
                                                 <input type="text" maxlength="15" class="input" size="15" name="dns_forwarder_bind" style="width: 145px" value="<% nvram_get_x("","dns_forwarder_bind"); %>" onkeypress="return is_ipaddr(this,event);"/>
                                             </td>
                                         </tr>
-										
-										<tr>
-                                            <th width="50%"><#menu5_14_3#></th>
+
+                                        <tr> <th width="50%"><#menu5_14_3#></th>
                                             <td>
                                                 <input type="text" maxlength="5" class="input" size="15" name="dns_forwarder_port" style="width: 145px" value="<% nvram_get_x("", "dns_forwarder_port"); %>">
                                             </td>
                                         </tr>
-										<tr>
-                                            <th width="50%"><#menu5_14_4#></th>
+
+                                        <tr> <th width="50%"><#menu5_14_4#></th>
                                             <td>
                                                 <input type="text" maxlength="64" class="input" size="64" name="dns_forwarder_server" style="width: 145px" value="<% nvram_get_x("", "dns_forwarder_server"); %>">
                                             </td>
-                                        </tr>										
-										<tr>
+                                        </tr>
 
                                         <tr>
-											<td colspan="2">
+                                            <td colspan="2">
                                                 <center><input class="btn btn-primary" style="width: 219px" type="button" value="<#CTL_apply#>" onclick="applyRule()" /></center>
-                                        	</td>
+                                            </td>
                                         </tr>
                                     </table>
                                 </div>

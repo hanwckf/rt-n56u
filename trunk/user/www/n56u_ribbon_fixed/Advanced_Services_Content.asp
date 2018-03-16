@@ -510,30 +510,30 @@ function on_ttyd_link(){
                                             <th colspan="2" style="background-color: #E3E3E3;"><#Adm_System_misc#></th>
                                         </tr>
 										
-										<tr id="div_vlmcsd">
-											<th>启用vlmcsd(KMS激活服务)</th>
-											<td>
-												<div class="main_itoggle">
+                                        <tr id="div_vlmcsd">
+                                            <th><#Adm_Svc_vlmcsd#></th>
+                                            <td>
+                                                <div class="main_itoggle">
                                                     <div id="vlmcsd_enable_on_of">
                                                         <input type="checkbox" id="vlmcsd_enable_fake" <% nvram_match_x("", "vlmcsd_enable", "1", "value=1 checked"); %><% nvram_match_x("", "vlmcsd_enable", "0", "value=0"); %>>
                                                     </div>
                                                 </div>
-												<div style="position: absolute; margin-left: -10000px;">
+                                                <div style="position: absolute; margin-left: -10000px;">
                                                     <input type="radio" name="vlmcsd_enable" id="vlmcsd_enable_1" class="input" value="1" <% nvram_match_x("", "vlmcsd_enable", "1", "checked"); %>/><#checkbox_Yes#>
                                                     <input type="radio" name="vlmcsd_enable" id="vlmcsd_enable_0" class="input" value="0" <% nvram_match_x("", "vlmcsd_enable", "0", "checked"); %>/><#checkbox_No#>
                                                 </div>
                                             </td>
                                         </tr>
-										
-										<tr id="div_napt66">
-											<th>启用napt66(重启后生效)</th>
-											<td>
-												<div class="main_itoggle">
+
+                                        <tr id="div_napt66">
+                                            <th><#Adm_Svc_napt66#></th>
+                                            <td>
+                                                <div class="main_itoggle">
                                                     <div id="napt66_enable_on_of">
                                                         <input type="checkbox" id="napt66_enable_fake" <% nvram_match_x("", "napt66_enable", "1", "value=1 checked"); %><% nvram_match_x("", "napt66_enable", "0", "value=0"); %>>
                                                     </div>
                                                 </div>
-												<div style="position: absolute; margin-left: -10000px;">
+                                                <div style="position: absolute; margin-left: -10000px;">
                                                     <input type="radio" name="napt66_enable" id="napt66_enable_1" class="input" value="1" <% nvram_match_x("", "napt66_enable", "1", "checked"); %>/><#checkbox_Yes#>
                                                     <input type="radio" name="napt66_enable" id="napt66_enable_0" class="input" value="0" <% nvram_match_x("", "napt66_enable", "0", "checked"); %>/><#checkbox_No#>
                                                 </div>
@@ -554,12 +554,12 @@ function on_ttyd_link(){
                                                 </div>
                                             </td>
                                         </tr>
-										
-										<tr id="ttyd_webui">
-										<td>
-                                            <a href="javascript:on_ttyd_link();" id="web_ttyd_link">ttyd Web Shell</a>
-                                        </td>										
-										</tr>
+
+                                        <tr id="ttyd_webui">
+                                            <td>
+                                                <a href="javascript:on_ttyd_link();" id="web_ttyd_link">ttyd Web Shell</a>
+                                            </td>										
+                                        </tr>
 										
                                         <tr>
                                             <th><#Adm_Svc_lltd#></th>

@@ -85,23 +85,17 @@ function initial(){
                                 <div class="row-fluid">
                                     <div id="tabMenu" class="submenuBlock"></div>
                                     <table width="100%" cellpadding="4" cellspacing="0" class="table">
-
-									<tr>
-										<th colspan="2" style="background-color: #E3E3E3;"><#menu5_13_log#></th>
-									</tr>
-				
-									<tr>
-										<td colspan="3" style="border-top: 0 none; padding-bottom: 0px;">
-                                            <textarea rows="21" class="span12" style="height:377px; font-family:'Courier New', Courier, mono; font-size:13px;" readonly="readonly" wrap="off" id="textarea"><% nvram_dump("scutclient.log",""); %></textarea>
-                                        </td>
-                                    </tr>
-										
-                                    <tr>
-										<td width="15%" style="text-align: left; padding-bottom: 0px;">
-                                        	<input type="button" onClick="location.href=location.href" value="<#CTL_refresh#>" class="btn btn-primary" style="width: 219px">
-										</td>
-                                    </tr>
-
+                                        <tr> <th colspan="2" style="background-color: #E3E3E3;"><#menu5_13_log#></th> </tr>
+                                        <tr>
+                                            <td colspan="3" style="border-top: 0 none; padding-bottom: 0px;">
+                                                <textarea rows="21" class="span12" style="height:377px; font-family:'Courier New', Courier, mono; font-size:13px;" readonly="readonly" wrap="off" id="textarea"><% nvram_dump("scutclient.log",""); %></textarea>
+                                            </td>
+                                        </tr>
+                                        <tr>
+                                            <td width="15%" style="text-align: left; padding-bottom: 0px;">
+                                                <input type="button" onClick="location.href=location.href" value="<#CTL_refresh#>" class="btn btn-primary" style="width: 219px">
+                                            </td>
+                                        </tr>
                                     </table>
                                 </div>
                             </div>

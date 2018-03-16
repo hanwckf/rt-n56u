@@ -164,21 +164,19 @@ function fill_ss_tunnel_status(status_code){
                                 <div class="row-fluid">
                                     <div id="tabMenu" class="submenuBlock"></div>
                                     <table width="100%" cellpadding="4" cellspacing="0" class="table">
-										<tr>
-											<th colspan="2" style="background-color: #E3E3E3;"><#menu5_16_1#></th>
-										</tr>									
-										<tr>
-											<th width="50%"><#InetControl#></th>
-											<td style="border-top: 0 none;" colspan="2">
-											  <input type="button" id="btn_connect_1" class="btn btn-info" value=<#Connect#> onclick="submitInternet('Reconnect');">
-											</td>
-										</tr>
-										<tr>
-											<th><#running_status#></th>
-											<td id="ss_status" colspan="3"></td>
-										</tr>
-										<tr>
-                                            <th><#menu5_16_2#></th>
+                                        <tr> <th colspan="2" style="background-color: #E3E3E3;"><#menu5_16_1#></th> </tr>
+
+                                        <tr> <th width="50%"><#InetControl#></th>
+                                            <td style="border-top: 0 none;" colspan="2">
+                                                <input type="button" id="btn_connect_1" class="btn btn-info" value=<#Connect#> onclick="submitInternet('Reconnect');">
+                                            </td>
+                                        </tr>
+
+                                        <tr> <th><#running_status#></th>
+                                            <td id="ss_status" colspan="3"></td>
+                                        </tr>
+
+                                        <tr> <th><#menu5_16_2#></th>
                                             <td>
                                                 <div class="main_itoggle">
                                                     <div id="ss_enable_on_of">
@@ -192,134 +190,122 @@ function fill_ss_tunnel_status(status_code){
                                                 </div>
                                             </td>
                                         </tr>
-										<tr>
-											<th colspan="2" style="background-color: #E3E3E3;"><#menu5_16_3#></th>
-										</tr>
+
+                                        <tr> <th colspan="2" style="background-color: #E3E3E3;"><#menu5_16_3#></th> </tr>
 										
-										<tr>
-                                            <th width="50%"><#menu5_16_4#></th>
+                                        <tr> <th width="50%"><#menu5_16_4#></th>
                                             <td>
                                                 <input type="text" maxlength="64" class="input" size="64" name="ss_server" value="<% nvram_get_x("","ss_server"); %>" />
                                             </td>
                                         </tr>
-										
-										<tr>
-                                            <th width="50%"><#menu5_16_5#></th>
+
+                                        <tr> <th width="50%"><#menu5_16_5#></th>
                                             <td>
                                                 <input type="password" maxlength="32" class="input" size="32" name="ss_key" id="ss_key" value="<% nvram_get_x("","ss_key"); %>" />
-												<button style="margin-left: -5px;" class="btn" type="button" onclick="passwordShowHide('ss_key')"><i class="icon-eye-close"></i></button>
+                                                <button style="margin-left: -5px;" class="btn" type="button" onclick="passwordShowHide('ss_key')"><i class="icon-eye-close"></i></button>
                                             </td>
                                         </tr>	
 										
-										<tr>
-                                            <th width="50%"><#menu5_16_6#></th>
+                                        <tr> <th width="50%"><#menu5_16_6#></th>
                                             <td>
                                                 <input type="text" maxlength="6" class="input" size="15" name="ss_server_port" style="width: 145px" value="<% nvram_get_x("","ss_server_port"); %>" />
                                             </td>
                                         </tr>
 										
-										<tr>
-                                            <th width="50%"><#menu5_16_7#></th>
+                                        <tr> <th width="50%"><#menu5_16_7#></th>
                                             <td>
-												<select name="ss_method" class="input" style="width: 200px;">
-													<option value="none" >none</option>
+                                                <select name="ss_method" class="input" style="width: 200px;">
+                                                    <option value="none" >none</option>
                                                     <option value="rc4-md5" >rc4-md5</option>
-													<option value="aes-128-gcm" >aes-128-gcm</option>
-													<option value="aes-192-gcm" >aes-192-gcm</option>
-													<option value="aes-256-gcm" >aes-256-gcm</option>
-													<option value="aes-128-cfb" >aes-128-cfb</option>
-													<option value="aes-192-cfb" >aes-192-cfb</option>
-													<option value="aes-256-cfb" >aes-256-cfb</option>
-													<option value="aes-128-ctr" >aes-128-ctr</option>
-													<option value="aes-192-ctr" >aes-192-ctr</option>
-													<option value="aes-256-ctr" >aes-256-ctr</option>
-													<option value="camellia-128-cfb" >camellia-128-cfb</option>
-													<option value="camellia-192-cfb" >camellia-192-cfb</option>
-													<option value="camellia-256-cfb" >camellia-256-cfb</option>
-													<option value="bf-cfb" >bf-cfb</option>
-													<option value="chacha20-ietf-poly1305" >chacha20-ietf-poly1305</option>
-													<option value="xchacha20-ietf-poly1305" >xchacha20-ietf-poly1305</option>
-													<option value="salsa20" >salsa20</option>
-													<option value="chacha20" >chacha20</option>
-													<option value="chacha20-ietf" >chacha20-ietf</option>
+                                                    <option value="aes-128-gcm" >aes-128-gcm</option>
+                                                    <option value="aes-192-gcm" >aes-192-gcm</option>
+                                                    <option value="aes-256-gcm" >aes-256-gcm</option>
+                                                    <option value="aes-128-cfb" >aes-128-cfb</option>
+                                                    <option value="aes-192-cfb" >aes-192-cfb</option>
+                                                    <option value="aes-256-cfb" >aes-256-cfb</option>
+                                                    <option value="aes-128-ctr" >aes-128-ctr</option>
+                                                    <option value="aes-192-ctr" >aes-192-ctr</option>
+                                                    <option value="aes-256-ctr" >aes-256-ctr</option>
+                                                    <option value="camellia-128-cfb" >camellia-128-cfb</option>
+                                                    <option value="camellia-192-cfb" >camellia-192-cfb</option>
+                                                    <option value="camellia-256-cfb" >camellia-256-cfb</option>
+                                                    <option value="bf-cfb" >bf-cfb</option>
+                                                    <option value="chacha20-ietf-poly1305" >chacha20-ietf-poly1305</option>
+                                                    <option value="xchacha20-ietf-poly1305" >xchacha20-ietf-poly1305</option>
+                                                    <option value="salsa20" >salsa20</option>
+                                                    <option value="chacha20" >chacha20</option>
+                                                    <option value="chacha20-ietf" >chacha20-ietf</option>
                                                 </select>
                                             </td>
                                         </tr>
                                         
-                                        <tr>
-                                            <th width="50%"><#menu5_16_21#></th>
+                                        <tr> <th width="50%"><#menu5_16_21#></th>
                                             <td>
                                                 <input type="text" maxlength="6" class="input" size="15" name="ss_timeout" style="width: 145px" value="<% nvram_get_x("","ss_timeout"); %>" />
                                             </td>
                                         </tr>
                                         
-                                        <tr>
-                                            <th width="50%"><#menu5_16_22#></th>
+                                        <tr> <th width="50%"><#menu5_16_22#></th>
                                             <td>
-												<select name="ss_protocol" class="input" style="width: 200px;">   
+                                                <select name="ss_protocol" class="input" style="width: 200px;">   
                                                     <option value="origin" >origin</option>
-													<option value="auth_aes128_md5" >auth_aes128_md5</option>
-													<option value="auth_aes128_sha1" >auth_aes128_sha1</option>
-													<option value="auth_chain_a" >auth_chain_a</option>
-													<option value="auth_chain_b" >auth_chain_b</option>
+                                                    <option value="auth_aes128_md5" >auth_aes128_md5</option>
+                                                    <option value="auth_aes128_sha1" >auth_aes128_sha1</option>
+                                                    <option value="auth_chain_a" >auth_chain_a</option>
+                                                    <option value="auth_chain_b" >auth_chain_b</option>
                                                 </select>
                                             </td>
                                         </tr>
                                         
-                                        <tr>
-                                            <th width="50%"><#menu5_16_23#></th>
+                                        <tr> <th width="50%"><#menu5_16_23#></th>
                                             <td>
                                                 <input type="text" maxlength="72" class="input" size="64" name="ss_proto_param" value="<% nvram_get_x("","ss_proto_param"); %>" />
                                             </td>
                                         </tr>
                                         
-                                        <tr>
-                                            <th width="50%"><#menu5_16_24#></th>
+                                        <tr> <th width="50%"><#menu5_16_24#></th>
                                             <td>
-												<select name="ss_obfs" class="input" style="width: 200px;">   
+                                                <select name="ss_obfs" class="input" style="width: 200px;">   
                                                     <option value="plain" >plain</option>
-													<option value="http_simple" >http_simple</option>
-													<option value="http_post" >http_post</option>
-													<option value="tls1.2_ticket_auth" >tls1.2_ticket_auth</option>
+                                                    <option value="http_simple" >http_simple</option>
+                                                    <option value="http_post" >http_post</option>
+                                                    <option value="tls1.2_ticket_auth" >tls1.2_ticket_auth</option>
                                                 </select>
                                             </td>
                                         </tr>
                                         
-                                        <tr>
-                                            <th width="50%"><#menu5_16_25#></th>
+                                        <tr> <th width="50%"><#menu5_16_25#></th>
                                             <td>
                                                 <input type="text" maxlength="72" class="input" size="64" name="ss_obfs_param" value="<% nvram_get_x("","ss_obfs_param"); %>" />
                                             </td>
                                         </tr>
-                                        
-										<tr>
-											<th colspan="2" style="background-color: #E3E3E3;"><#menu5_16_8#></th>
-										</tr>
-										<tr> <th width="50%"><#menu5_16_9#></th>
+
+                                        <tr> <th colspan="2" style="background-color: #E3E3E3;"><#menu5_16_8#></th> </tr>
+
+                                        <tr> <th width="50%"><#menu5_16_9#></th>
                                             <td>
                                                 <input type="text" maxlength="6" class="input" size="15" name="ss_local_port" style="width: 145px" value="<% nvram_get_x("", "ss_local_port"); %>">
                                             </td>
                                         </tr>
-										
-										<tr> <th width="50%"><#menu5_16_10#></th>
+
+                                        <tr> <th width="50%"><#menu5_16_10#></th>
                                             <td>
-												<select name="ss_mode" class="input" style="width: 145px;">   
+                                                <select name="ss_mode" class="input" style="width: 145px;">   
                                                     <option value="0" ><#menu5_16_11#></option>
-													<option value="1" >Chnroute</option>
+                                                    <option value="1" >Chnroute</option>
                                                 </select>
                                             </td>
                                         </tr>
-										
-										<tr>
-											<th colspan="2" style="background-color: #E3E3E3;"><#menu5_16_12#></th>
-										</tr>
-										<tr>
-											<th width="50%"><#InetControl#></th>
-											<td style="border-top: 0 none;" colspan="2">
-												<input type="button" id="btn_connect_2" class="btn btn-info" value=<#Connect#> onclick="submitInternet('Reconnect_ss_tunnel');">
-											</td>
-										</tr>
-										<tr> <th><#menu5_16_13#></th>
+
+                                        <tr> <th colspan="2" style="background-color: #E3E3E3;"><#menu5_16_12#></th> </tr>
+
+                                        <tr> <th width="50%"><#InetControl#></th>
+                                            <td style="border-top: 0 none;" colspan="2">
+                                                <input type="button" id="btn_connect_2" class="btn btn-info" value=<#Connect#> onclick="submitInternet('Reconnect_ss_tunnel');">
+                                            </td>
+                                        </tr>
+
+                                        <tr> <th><#menu5_16_13#></th>
                                             <td>
                                                 <div class="main_itoggle">
                                                     <div id="ss-tunnel_enable_on_of">
@@ -333,32 +319,31 @@ function fill_ss_tunnel_status(status_code){
                                                 </div>
                                             </td>
                                         </tr>
-                                        <tr>
-											<th><#running_status#></th>
-											<td id="ss_tunnel_status" colspan="3"></td>
-										</tr>
-										<tr> <th width="50%"><#menu5_16_14#></th>
+
+                                        <tr> <th><#running_status#></th>
+                                            <td id="ss_tunnel_status" colspan="3"></td>
+                                        </tr>
+
+                                        <tr> <th width="50%"><#menu5_16_14#></th>
                                             <td>
                                                 <input type="text" maxlength="32" class="input" size="64" name="ss-tunnel_remote" value="<% nvram_get_x("","ss-tunnel_remote"); %>" />
                                             </td>
                                         </tr>
-										
-										<tr> <th width="50%"><#menu5_16_15#></th>
+
+                                        <tr> <th width="50%"><#menu5_16_15#></th>
                                             <td>
                                                 <input type="text" maxlength="6" class="input" size="15" name="ss-tunnel_local_port" style="width: 145px" value="<% nvram_get_x("", "ss-tunnel_local_port"); %>">
                                             </td>
                                         </tr>
-										
-										<tr><th width="50%">MTU:</th>
+
+                                        <tr> <th width="50%">MTU:</th>
                                             <td>
                                                 <input type="text" maxlength="6" class="input" size="15" name="ss-tunnel_mtu" style="width: 145px" value="<% nvram_get_x("", "ss-tunnel_mtu"); %>">
                                             </td>
                                         </tr>
-										
-										<tr>
-											<th colspan="2" style="background-color: #E3E3E3;"><#menu5_1_6#></th>
-										</tr>										
-										
+
+                                        <tr> <th colspan="2" style="background-color: #E3E3E3;"><#menu5_1_6#></th> </tr>										
+
                                         <tr> <th><#menu5_16_16#></th>
                                             <td>
                                                 <div class="main_itoggle">
@@ -373,9 +358,8 @@ function fill_ss_tunnel_status(status_code){
                                                 </div>
                                             </td>
                                         </tr>
-										
-										<tr id="ss_wathcat_option">
-											<th><#menu5_13_watchcat#></th>
+
+                                        <tr id="ss_wathcat_option"> <th><#menu5_13_watchcat#></th>
                                             <td>
                                                 <div class="main_itoggle">
                                                     <div id="ss_watchcat_on_of">
@@ -389,7 +373,7 @@ function fill_ss_tunnel_status(status_code){
                                                 </div>
                                             </td>
                                         </tr>
-										
+
                                         <tr> <th><#menu5_16_17#></th>
                                             <td>
                                                 <div class="main_itoggle">
@@ -421,18 +405,16 @@ function fill_ss_tunnel_status(status_code){
                                             </td>
                                         </tr>
 
+                                        <tr> <th colspan="2" style="background-color: #E3E3E3;">Chnroute</th> </tr>
+
                                         <tr>
-											<th colspan="2" style="background-color: #E3E3E3;">Chnroute</th>
-										</tr>
-                                        <tr>
-											<th width="50%"><#menu5_17_1#>&nbsp;&nbsp;&nbsp;&nbsp;<span class="label label-info" style="padding: 5px 5px 5px 5px;" id="chnroute_count"></span></th>
-											<td style="border-top: 0 none;" colspan="2">
-												<input type="button" id="btn_connect_3" class="btn btn-info" value=<#menu5_17_2#> onclick="submitInternet('Update_chnroute');">
-											</td>
-										</tr>
-										
-										<tr>
-											<th><#menu5_16_19#></th>
+                                            <th width="50%"><#menu5_17_1#>&nbsp;&nbsp;&nbsp;&nbsp;<span class="label label-info" style="padding: 5px 5px 5px 5px;" id="chnroute_count"></span></th>
+                                            <td style="border-top: 0 none;" colspan="2">
+                                                <input type="button" id="btn_connect_3" class="btn btn-info" value=<#menu5_17_2#> onclick="submitInternet('Update_chnroute');">
+                                            </td>
+                                        </tr>
+
+                                        <tr> <th><#menu5_16_19#></th>
                                             <td>
                                                 <div class="main_itoggle">
                                                     <div id="ss_update_chnroute_on_of">
@@ -447,18 +429,16 @@ function fill_ss_tunnel_status(status_code){
                                             </td>
                                         </tr>
 
-                                        <tr id="div_dnsmasq_china_conf_0">
-											<th colspan="2" style="background-color: #E3E3E3;"><#menu5_17#></th>
-										</tr>
-										
-										<tr id="div_dnsmasq_china_conf_1">
-										<th width="50%"><#menu5_17_1#>&nbsp;&nbsp;&nbsp;&nbsp;<span class="label label-info" style="padding: 5px 5px 5px 5px;" id="dnsmasq_china_conf_count"></span></th>
-										<td style="border-top: 0 none;" colspan="2">
-											<input type="button" id="btn_connect_4" class="btn btn-info" value=<#menu5_17_2#> onclick="submitInternet('Update_dnsmasq_china_conf');">
-										</td>
-										</tr>
-										<tr id="div_dnsmasq_china_conf_2">
-                                            <th width="50%"><#menu5_16_19#></th>
+                                        <tr id="div_dnsmasq_china_conf_0"> <th colspan="2" style="background-color: #E3E3E3;"><#menu5_17#></th> </tr>
+
+                                        <tr id="div_dnsmasq_china_conf_1">
+                                            <th width="50%"><#menu5_17_1#>&nbsp;&nbsp;&nbsp;&nbsp;<span class="label label-info" style="padding: 5px 5px 5px 5px;" id="dnsmasq_china_conf_count"></span></th>
+                                            <td style="border-top: 0 none;" colspan="2">
+                                                <input type="button" id="btn_connect_4" class="btn btn-info" value=<#menu5_17_2#> onclick="submitInternet('Update_dnsmasq_china_conf');">
+                                            </td>
+                                        </tr>
+
+                                        <tr id="div_dnsmasq_china_conf_2"> <th width="50%"><#menu5_16_19#></th>
                                             <td>
                                                 <div class="main_itoggle">
                                                     <div id="dnsmasq_china_conf_update_on_of">
@@ -471,10 +451,11 @@ function fill_ss_tunnel_status(status_code){
                                                 </div>
                                             </td>
                                         </tr>
+
                                         <tr>
-											<td colspan="2">
-                                                	<center><input class="btn btn-primary" style="width: 219px" type="button" value="<#CTL_apply#>" onclick="applyRule()" /></center>
-                                        	</td>
+                                            <td colspan="2">
+                                                <center><input class="btn btn-primary" style="width: 219px" type="button" value="<#CTL_apply#>" onclick="applyRule()" /></center>
+                                            </td>
                                         </tr>
 
                                     </table>
@@ -491,7 +472,7 @@ function fill_ss_tunnel_status(status_code){
 </div>
 
 <form method="post" name="Shadowsocks_action" action="">
-	<input type="hidden" name="connect_action" value="">
+    <input type="hidden" name="connect_action" value="">
 </form>
 
 

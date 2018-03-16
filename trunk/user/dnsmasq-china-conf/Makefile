@@ -1,6 +1,7 @@
 dns_server=114.114.114.114
 acc_china_file=accelerated-domains.china.conf
 acc_apple_file=apple.china.conf
+archive_file=dnsmasq-china-conf.bz2
 url=https://raw.githubusercontent.com/felixonmars/dnsmasq-china-list/master
 #url=https://coding.net/u/felixonmars/p/dnsmasq-china-list/git/raw/master
 dir=dnsmasq-china-conf
@@ -15,6 +16,7 @@ all:
 		rm -f $(dir)/$(acc_apple_file); \
 	fi )
 	sed -i "s|^\(server.*\)/[^/]*$$|\1/$(dns_server)|" $(dir)/$(acc_china_file)
+	cd $(dir) && tar jcf $(archive_file) $(acc_china_file)
 
 clean:
 	rm -rf $(dir)
@@ -22,4 +24,4 @@ clean:
 romfs:
 	chmod -R +x ./scripts
 	$(ROMFSINST) $(THISDIR)/scripts /usr/bin/
-	$(ROMFSINST) -d $(THISDIR)/$(dir)/$(acc_china_file) /etc_ro/$(dir)/$(acc_china_file)
+	$(ROMFSINST) -d $(THISDIR)/$(dir)/$(archive_file) /etc_ro/$(dir)/$(archive_file)

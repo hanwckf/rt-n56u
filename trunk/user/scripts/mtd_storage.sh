@@ -216,8 +216,8 @@ func_fill()
 	user_sswan_ipsec_conf="$dir_sswan/ipsec.conf"
 	user_sswan_secrets="$dir_sswan/ipsec.secrets"
 	
-	chnroute_file="/etc_ro/chnroute.txt"
-	dnsmasq_china_conf_dir="/etc_ro/dnsmasq-china-conf"
+	chnroute_file="/etc_ro/chnroute.bz2"
+	dnsmasq_china_conf_file="/etc_ro/dnsmasq-china-conf/dnsmasq-china-conf.bz2"
 
 	# create crond dir
 	[ ! -d "$dir_crond" ] && mkdir -p -m 730 "$dir_crond"
@@ -226,16 +226,16 @@ func_fill()
 	[ ! -d "$dir_httpssl" ] && mkdir -p -m 700 "$dir_httpssl"
 
 	# create chnroute.txt
-	if [ -f "$chnroute_file" ]; then
-		if [ ! -d "$dir_chnroute" ] ; then
-			mkdir -p "$dir_chnroute" && cp -f $chnroute_file $dir_chnroute
+	if [ ! -d "$dir_chnroute" ] ; then
+		if [ -f "$chnroute_file" ]; then
+			mkdir -p "$dir_chnroute" && tar jxf "$chnroute_file" -C "$dir_chnroute"
 		fi
 	fi
 
 	# create dnsmasq-china-conf
-	if [ -d "$dnsmasq_china_conf_dir" ]; then
-		if [ ! -d "$dir_dnsmasq_china_conf" ] ; then
-			mkdir -p "$dir_dnsmasq_china_conf" && cp -rf $dnsmasq_china_conf_dir/* $dir_dnsmasq_china_conf
+	if [ ! -d "$dir_dnsmasq_china_conf" ] ; then
+		if [ -f "$dnsmasq_china_conf_file" ]; then	
+			mkdir -p "$dir_dnsmasq_china_conf" && tar jxf "$dnsmasq_china_conf_file" -C "$dir_dnsmasq_china_conf"
 		fi
 	fi
 

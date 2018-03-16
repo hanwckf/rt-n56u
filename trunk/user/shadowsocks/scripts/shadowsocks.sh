@@ -49,6 +49,8 @@ get_wan_bp_list(){
 get_ipt_ext(){
 	if [ "$ss_lower_port_only" = "1" ]; then
 		echo '-e "--dport 22:1023"'
+	elif [ "$ss_lower_port_only" = "2" ]; then
+		echo '-e "-m multiport --dports 53,80,443"'
 	fi
 }
 

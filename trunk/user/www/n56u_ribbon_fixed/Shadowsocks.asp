@@ -31,7 +31,6 @@ $j(document).ready(function(){
 	init_itoggle('ss_enable');
 	init_itoggle('ss_router_proxy',change_ss_watchcat_display);
 	init_itoggle('ss_udp');
-	init_itoggle('ss_lower_port_only');
 	init_itoggle('ss_watchcat');
 	init_itoggle('ss_update_chnroute');
 	init_itoggle('ss-tunnel_enable');
@@ -48,10 +47,12 @@ function initial(){
 	var o2 = document.form.ss_mode;
 	var o3 = document.form.ss_protocol;
 	var o4 = document.form.ss_obfs;
+	var o5 = document.form.ss_lower_port_only;
 	o1.value = '<% nvram_get_x("","ss_method"); %>';
 	o2.value = '<% nvram_get_x("","ss_mode"); %>';
 	o3.value = '<% nvram_get_x("","ss_protocol"); %>';
 	o4.value = '<% nvram_get_x("","ss_obfs"); %>';
+	o5.value = '<% nvram_get_x("","ss_lower_port_only"); %>';
 	change_ss_watchcat_display();
 	fill_ss_status(shadowsocks_status());
 	fill_ss_tunnel_status(shadowsocks_tunnel_status());
@@ -403,22 +404,17 @@ function fill_ss_tunnel_status(status_code){
                                                 </div>
                                             </td>
                                         </tr>
-										
-										<tr> <th><#menu5_16_18#></th>
-                                            <td>
-                                                <div class="main_itoggle">
-                                                    <div id="ss_lower_port_only_on_of">
-                                                        <input type="checkbox" id="ss_lower_port_only_fake" <% nvram_match_x("", "ss_lower_port_only", "1", "value=1 checked"); %><% nvram_match_x("", "ss_lower_port_only", "0", "value=0"); %>>
-                                                    </div>
-                                                </div>
 
-                                                <div style="position: absolute; margin-left: -10000px;">
-                                                    <input type="radio" value="1" name="ss_lower_port_only" id="ss_lower_port_only_1" <% nvram_match_x("", "ss_lower_port_only", "1", "checked"); %>><#checkbox_Yes#>
-                                                    <input type="radio" value="0" name="ss_lower_port_only" id="ss_lower_port_only_0" <% nvram_match_x("", "ss_lower_port_only", "0", "checked"); %>><#checkbox_No#>
-                                                </div>
+                                        <tr> <th width="50%"><#menu5_16_18#></th>
+                                            <td>
+                                                <select name="ss_lower_port_only" class="input" style="width: 200px;">
+                                                    <option value="0" ><#menu5_16_18_0#></option>
+                                                    <option value="1" ><#menu5_16_18_1#></option>
+                                                    <option value="2" ><#menu5_16_18_2#></option>
+                                                </select>
                                             </td>
                                         </tr>
-                                        
+
                                         <tr> <th width="50%">MTU:</th>
                                             <td>
                                                 <input type="text" maxlength="6" class="input" size="15" name="ss_mtu" style="width: 145px" value="<% nvram_get_x("", "ss_mtu"); %>">

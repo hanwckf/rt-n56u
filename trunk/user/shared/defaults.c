@@ -512,7 +512,7 @@ struct nvram_pair router_defaults[] = {
 	{ "ss_local_port", "1080" },
 	{ "ss_mtu", "1492" },
 	{ "ss_router_proxy", "1" },
-	{ "ss_lower_port_only", "1" },		//22-1023
+	{ "ss_lower_port_only", "1" },		//1:22-1023;2:53,80,443
 	{ "ss_timeout", "60"},
 	{ "ss_protocol", "origin"},
 	{ "ss_proto_param", ""},

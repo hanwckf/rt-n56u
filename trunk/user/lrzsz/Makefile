@@ -26,7 +26,7 @@ configure:
 	( cd $(SRC_NAME) ; \
 	./configure \
 		--prefix=/usr \
-		--with-libiconv-prefix=$(STAGEDIR) \
+		--disable-nls \
 		--host=$(HOST_TARGET) \
 		--build=$(HOST_BUILD) ; \
 	)

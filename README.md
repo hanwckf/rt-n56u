@@ -28,8 +28,8 @@ Contributors of this project are not responsible for what happens next.
 
 ### 固件特点 ###
 - 使用[gorden5566](https://github.com/gorden5566/padavan)的汉化字典
-- [curl](https://github.com/curl/curl.git)更新到7.58.0,可选编译可执行文件```(CONFIG_FIRMWARE_INCLUDE_CURL)```
-- aria2源码更新到1.17.1,预编译二进制文件为1.33.1 ```(CONFIG_FIRMWARE_INCLUDE_ARIA2_NEW_PREBUILD_BIN)```
+- [curl](https://github.com/curl/curl.git)更新到7.58.0,可选编译可执行文件```CONFIG_FIRMWARE_INCLUDE_CURL```
+- aria2源码更新到1.17.1,预编译二进制文件为1.33.1 ```CONFIG_FIRMWARE_INCLUDE_ARIA2_NEW_PREBUILD_BIN```
 - aria2前端更换为[aria-ng](https://github.com/mayswind/AriaNg.git) (0.4.0)
 - 集成以下软件
 >- [scutclient](https://github.com/hanwckf/scutclient-cmake.git)(含webui) ```CONFIG_FIRMWARE_INCLUDE_SCUT_MOD```
@@ -45,6 +45,8 @@ Contributors of this project are not responsible for what happens next.
 >- [nano](https://www.nano-editor.org/dist/) ```CONFIG_FIRMWARE_INCLUDE_NANO```
 >- [gdut-drcom](https://github.com/chenhaowen01/gdut-drcom.git) ```CONFIG_FIRMWARE_INCLUDE_GDUT_DRCOM```
 >- [dogcom](https://github.com/mchome/dogcom.git) ```CONFIG_FIRMWARE_INCLUDE_DOGCOM```
+>- [minieap](https://github.com/hanwckf/minieap.git) ```CONFIG_FIRMWARE_INCLUDE_MINIEAP```
+>- [njit-client](https://github.com/hanwckf/njit8021xclient.git) ```CONFIG_FIRMWARE_INCLUDE_NJIT_CLIENT```
 - 已适配除官方适配外的以下机型
 >- K2 / PSG1218 (64M)
 >- OYE-001 (128M,USB)
@@ -75,7 +77,7 @@ cd /opt/rt-n56u/toolchain-mipsel
 ```
 * (可选)修改机型配置文件
 ```shell
-vi /opt/rt-n56u/trunk/configs/templates/PSG1218.config
+nano /opt/rt-n56u/trunk/configs/templates/PSG1218.config
 ```
 * 清理代码树并开始编译
 ```shell

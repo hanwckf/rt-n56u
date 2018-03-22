@@ -136,7 +136,7 @@ function validate_ip6addr(o){
 
 	if (!regex.test(o.value)){
 		alert(o.value + " - " + "<#IP6_hint_addr#>");
-		o.focus();
+		//o.focus();
 		return false;
 	}
 
@@ -151,7 +151,7 @@ function validate_ip6_part(o){
 
 	if (!regex.test(o.value)){
 		alert(o.value + " - " + "<#IP6_hint_addr#>");
-		o.focus();
+		//o.focus();
 		return false;
 	}
 

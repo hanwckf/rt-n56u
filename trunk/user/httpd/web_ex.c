@@ -1931,6 +1931,21 @@ static int scutclient_status_hook(int eid, webs_t wp, int argc, char **argv)
 	websWrite(wp, "function scutclient_status() { return %d;}\n", status_code);
 	return 0;
 }
+
+static int scutclient_version_hook(int eid, webs_t wp, int argc, char **argv)
+{
+	FILE *fstream = NULL;
+	char ver[8];
+	memset(ver, 0, sizeof(ver));
+	fstream = popen("/usr/bin/bin_scutclient -V","r");
+	if(fstream) {
+		fgets(ver, sizeof(ver), fstream);
+		if (strlen(ver) > 0)
+			ver[strlen(ver) - 1] = 0;
+	}
+	pclose(fstream);
+	websWrite(wp, "function scutclient_version() { return '%s';}\n", ver);
+}
 #endif
 
 #if defined (APP_SHADOWSOCKS)
@@ -3991,6 +4006,7 @@ struct ej_handler ej_handlers[] =
 #if defined (APP_SCUT)
 	{ "scutclient_action", scutclient_action_hook},
 	{ "scutclient_status", scutclient_status_hook},
+	{ "scutclient_version", scutclient_version_hook},
 #endif
 #if defined (APP_SHADOWSOCKS)
 	{ "shadowsocks_action", shadowsocks_action_hook},

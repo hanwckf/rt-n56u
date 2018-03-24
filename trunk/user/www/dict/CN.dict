@@ -760,6 +760,7 @@ menu5_7=系统日志
 menu5_8=系统信息
 menu5_9=网络信息
 menu5_10=自定义设置
+version=版本:
 Stopped=已停止
 Running=运行中
 running_status=运行状态

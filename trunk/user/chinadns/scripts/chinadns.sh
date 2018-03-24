@@ -19,7 +19,7 @@ func_check_conf(){
 }
 
 func_start(){
-	start-stop-daemon -S -b -x chinadns -- -m -c $chnroute_file -b $bind_address -p $bind_port -s $server $(get_arg_filter)
+	start-stop-daemon -S -b -x chinadns -- -m -c "$chnroute_file" -b "$bind_address" -p "$bind_port" -s "$server" "$(get_arg_filter)"
 }
 
 func_stop(){

@@ -1,5 +1,5 @@
-SRC_NAME = scutclient-cmake-2.4.1
-SRC_URL = https://github.com/hanwckf/scutclient-cmake/archive/v2.4.1.tar.gz
+SRC_NAME = scutclient-3.0
+SRC_URL = https://github.com/hanwckf/scutclient/archive/v3.0.tar.gz
 THISDIR = $(shell pwd)
 
 all: download_test extract_test config_test
@@ -24,20 +24,17 @@ extract_test:
 
 configure:
 	( cd $(SRC_NAME) ; \
-	cmake \
-	-DCMAKE_INSTALL_PREFIX=$(STAGEDIR) \
-	-DCMAKE_TOOLCHAIN_FILE=../cross-mipsel-linux.cmake \
-	. \
+	autoreconf -fi ; \
+	./configure \
+		--prefix=/usr \
+		--host=$(HOST_TARGET) \
+		--build=$(HOST_BUILD) ; \
 	)
 
 clean:
 	if [ -f $(SRC_NAME)/Makefile ] ; then \
-		$(MAKE) -C $(SRC_NAME) clean ; \
+		$(MAKE) -C $(SRC_NAME) distclean ; \
 	fi ; \
-	rm -f $(SRC_NAME)/cmake_install.cmake
-	rm -rf $(SRC_NAME)/CMakeFiles
-	rm -f $(SRC_NAME)/Makefile
-	rm -f $(SRC_NAME)/CMakeCache.txt
 	rm -f config_done
 
 romfs:

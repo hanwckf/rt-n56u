@@ -24,6 +24,7 @@
 <script>
 var $j = jQuery.noConflict();
 <% scutclient_status(); %>
+<% scutclient_version(); %>
 
 $j(document).ready(function(){
 	init_itoggle('scutclient_enable');
@@ -36,6 +37,7 @@ function initial(){
 	show_banner(2);
 	show_menu(5,11,1);
 	show_footer();
+	$("scutclient_version").innerHTML = '<#version#>' + scutclient_version() ;
 }
 
 function applyRule(){
@@ -142,7 +144,7 @@ function fill_status(status_code){
                                             </td>
                                         </tr>
 
-                                        <tr> <th><#running_status#></th>
+                                        <tr> <th><#running_status#>&nbsp;&nbsp;&nbsp;&nbsp;<span class="label label-info" style="padding: 5px 5px 5px 5px;" id="scutclient_version"></span> </th>
                                             <td id="scutclient_status" colspan="3"></td>
                                         </tr>
 

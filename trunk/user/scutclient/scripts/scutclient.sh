@@ -59,6 +59,7 @@ func_start(){
 func_stop(){
 	echo -n "Stopping scutclient:..."
 	killall -q -9 $scutclient_exec
+	$scutclient_exec -o -f "$(nvram get wan_ifname)" >/dev/null 2>&1
 	echo "[  OK  ]"
 	func_log "Stopped"
 }

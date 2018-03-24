@@ -1940,11 +1940,16 @@ static int scutclient_version_hook(int eid, webs_t wp, int argc, char **argv)
 	fstream = popen("/usr/bin/bin_scutclient -V","r");
 	if(fstream) {
 		fgets(ver, sizeof(ver), fstream);
+		pclose(fstream);
 		if (strlen(ver) > 0)
 			ver[strlen(ver) - 1] = 0;
+		if (!(ver[0]>='0' && ver[0]<='9'))
+			sprintf(ver, "%s", "unknown");
+	} else {
+		sprintf(ver, "%s", "unknown");
 	}
-	pclose(fstream);
 	websWrite(wp, "function scutclient_version() { return '%s';}\n", ver);
+	return 0;
 }
 #endif
 
@@ -1980,7 +1985,7 @@ static int shadowsocks_status_hook(int eid, webs_t wp, int argc, char **argv)
 	return 0;
 }
 
-static int rules_count_hook(int eid, webs_t wp, int argc, char **argv) 
+static int rules_count_hook(int eid, webs_t wp, int argc, char **argv)
 {
 	FILE *fstream = NULL;
 	char count[8];
@@ -1988,22 +1993,22 @@ static int rules_count_hook(int eid, webs_t wp, int argc, char **argv)
 	fstream = popen("cat /etc/storage/chinadns/chnroute.txt |wc -l","r");
 	if(fstream) {
 		fgets(count, sizeof(count), fstream);
+		pclose(fstream);
 	} else {
 		sprintf(count, "%d", 0);
 	}
-	pclose(fstream);
 	if (strlen(count) > 0)
 		count[strlen(count) - 1] = 0;
 	websWrite(wp, "function chnroute_count() { return '%s';}\n", count);
-#if defined(APP_DNSMASQ_CHINA_CONF)	
+#if defined(APP_DNSMASQ_CHINA_CONF)
 	memset(count, 0, sizeof(count));
 	fstream = popen("cat /etc/storage/dnsmasq-china-conf/accelerated-domains.china.conf |wc -l","r");
 	if(fstream) {
 		fgets(count, sizeof(count), fstream);
+		pclose(fstream);
 	} else {
 		sprintf(count, "%d", 0);
 	}
-	pclose(fstream);
 	if (strlen(count) > 0)
 		count[strlen(count) - 1] = 0;
 	websWrite(wp, "function dnsmasq_china_conf_count() { return '%s';}\n", count);	

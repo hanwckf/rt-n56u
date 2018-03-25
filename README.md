@@ -32,7 +32,7 @@ Contributors of this project are not responsible for what happens next.
 - aria2源码更新到1.17.1,预编译二进制文件为1.33.1 ```CONFIG_FIRMWARE_INCLUDE_ARIA2_NEW_PREBUILD_BIN```
 - aria2前端更换为[aria-ng](https://github.com/mayswind/AriaNg.git) (0.4.0)
 - 集成以下软件
->- [scutclient](https://github.com/hanwckf/scutclient-cmake.git)(含webui) ```CONFIG_FIRMWARE_INCLUDE_SCUT_MOD```
+>- [scutclient](https://github.com/hanwckf/scutclient.git)(含webui) ```CONFIG_FIRMWARE_INCLUDE_SCUT_MOD```
 >- [ttyd](https://github.com/tsl0922/ttyd.git)(含webui) ```CONFIG_FIRMWARE_INCLUDE_TTYD```
 >- [vlmcsd](https://github.com/hanwckf/vlmcsd.git)(含webui) ```CONFIG_FIRMWARE_INCLUDE_VLMCSD```
 >- [napt66](https://github.com/mzweilin/napt66.git)(含webui) ```CONFIG_FIRMWARE_INCLUDE_NAPT66```

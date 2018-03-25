@@ -394,7 +394,7 @@ if (found_app_dnsforwarder()){
 	tabtitle[12] = new Array("", "<#menu5_1_1#>");
 }
 if (found_app_shadowsocks()){
-	tabtitle[13] = new Array("", "<#menu5_1_1#>","<#menu5_13_log#>");
+	tabtitle[13] = new Array("", "<#menu5_1_1#>","<#menu5_16_20#>");
 }
 
 //Level 3 Tab title

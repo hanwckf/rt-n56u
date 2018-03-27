@@ -56,7 +56,7 @@ Contributors of this project are not responsible for what happens next.
 ***
 
 ### 编译说明 ###
-**请勿使用gcc-7. 否则可能导致busybox编译失败**
+
 * 安装依赖包
 ```shell
 sudo apt-get update

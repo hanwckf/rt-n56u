@@ -478,6 +478,8 @@ struct nvram_pair router_defaults[] = {
 	{ "scutclient_username", "" },
 	{ "scutclient_password", "" },
 	{ "scutclient_watchcat", "1" },
+	{ "scutclient_auth_exec", "echo 0 > /tmp/scutclient_status" },
+	{ "scutclient_fail_exec", "echo 1 > /tmp/scutclient_status" },
 
 	/* ttyd related */
 	{ "ttyd_enable", "0" },

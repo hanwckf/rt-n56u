@@ -1,6 +1,8 @@
 #!/bin/sh
 scutclient_exec="bin_scutclient"
 dns=$(nvram get wan_dns1_x | cut -d ' ' -f 1)
+[ -z "$(nvram get scutclient_auth_exec)" ] && nvram set scutclient_auth_exec="echo 0 > /tmp/scutclient_status"
+[ -z "$(nvram get scutclient_fail_exec)" ] && nvram set scutclient_fail_exec="echo 1 > /tmp/scutclient_status"
 
 func_log(){
 	logger -st "Scutclient" "$1"
@@ -46,6 +48,8 @@ func_start(){
 	-s "$(nvram get scutclient_server_auth_ip)" \
 	-c "$(nvram get scutclient_version)" \
 	-h "$(nvram get scutclient_hash)" \
+	-E "$(nvram get scutclient_auth_exec)" \
+	-F "$(nvram get scutclient_fail_exec)" \
 	"$(get_arg_debug)"
 
 	if [ $? -eq 0 ] ; then

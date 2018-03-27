@@ -1,25 +1,21 @@
-SRC_NAME = scutclient-3.0
-SRC_URL = https://github.com/hanwckf/scutclient/archive/v3.0.tar.gz
+SRC_NAME = scutclient-upstream
+ARCHIVE_NAME = scutclient-upstream-2b45c37
+#https://github.com/hanwckf/scutclient.git
 THISDIR = $(shell pwd)
 
-all: download_test extract_test config_test
+all: extract_test config_test
 	$(MAKE) -C $(SRC_NAME)
+
+extract_test:
+	( if [ ! -d $(THISDIR)/$(SRC_NAME) ]; then \
+		unzip -qq $(ARCHIVE_NAME).zip; \
+	fi )
 
 config_test:
 	( if [ -f ./config_done ]; then \
 		echo "the same configuration"; \
 	else \
 		make configure && touch config_done; \
-	fi )
-	
-download_test:
-	( if [ ! -f $(THISDIR)/$(SRC_NAME).tar.gz ]; then \
-		wget -t5 --timeout=20 --no-check-certificate -O $(SRC_NAME).tar.gz $(SRC_URL); \
-	fi )
-
-extract_test:
-	( if [ ! -d $(THISDIR)/$(SRC_NAME) ]; then \
-		tar zxf $(SRC_NAME).tar.gz; \
 	fi )
 
 configure:

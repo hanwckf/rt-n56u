@@ -217,9 +217,6 @@ function fill_ss_tunnel_status(status_code){
                                                 <select name="ss_method" class="input" style="width: 200px;">
                                                     <option value="none" >none</option>
                                                     <option value="rc4-md5" >rc4-md5</option>
-                                                    <option value="aes-128-gcm" >aes-128-gcm</option>
-                                                    <option value="aes-192-gcm" >aes-192-gcm</option>
-                                                    <option value="aes-256-gcm" >aes-256-gcm</option>
                                                     <option value="aes-128-cfb" >aes-128-cfb</option>
                                                     <option value="aes-192-cfb" >aes-192-cfb</option>
                                                     <option value="aes-256-cfb" >aes-256-cfb</option>
@@ -230,8 +227,6 @@ function fill_ss_tunnel_status(status_code){
                                                     <option value="camellia-192-cfb" >camellia-192-cfb</option>
                                                     <option value="camellia-256-cfb" >camellia-256-cfb</option>
                                                     <option value="bf-cfb" >bf-cfb</option>
-                                                    <option value="chacha20-ietf-poly1305" >chacha20-ietf-poly1305</option>
-                                                    <option value="xchacha20-ietf-poly1305" >xchacha20-ietf-poly1305</option>
                                                     <option value="salsa20" >salsa20</option>
                                                     <option value="chacha20" >chacha20</option>
                                                     <option value="chacha20-ietf" >chacha20-ietf</option>

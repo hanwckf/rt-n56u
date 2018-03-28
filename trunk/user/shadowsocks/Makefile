@@ -31,6 +31,7 @@ configure:
 		--disable-documentation \
 		--disable-ssp \
 		--disable-assert \
+		--enable-system-shared-lib \
 		ac_cv_prog_PCRE_CONFIG="$(STAGEDIR)/bin/pcre-config" \
 		--with-crypto-library=$(ss_crypto_lib) \
 		--host=$(HOST_TARGET) \

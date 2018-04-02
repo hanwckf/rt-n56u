@@ -91,8 +91,6 @@ struct pnp_dev_node_info node_info;
  *
  */
 
-#ifdef CONFIG_HOTPLUG
-
 static struct completion unload_sem;
 
 /*
@@ -198,8 +196,6 @@ static int pnp_dock_thread(void *unused)
 	}
 	complete_and_exit(&unload_sem, 0);
 }
-
-#endif				/* CONFIG_HOTPLUG */
 
 static int pnpbios_get_resources(struct pnp_dev *dev)
 {
@@ -579,7 +575,6 @@ static int __init pnpbios_thread_init(void)
 #endif
 	if (pnpbios_disabled)
 		return 0;
-#ifdef CONFIG_HOTPLUG
 	{
 		struct task_struct *task;
 		init_completion(&unload_sem);
@@ -587,7 +582,6 @@ static int __init pnpbios_thread_init(void)
 		if (IS_ERR(task))
 			return PTR_ERR(task);
 	}
-#endif
 	return 0;
 }
 

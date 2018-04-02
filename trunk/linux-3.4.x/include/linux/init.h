@@ -335,11 +335,7 @@ void __init parse_early_options(char *cmdline);
    __devexit functions must use __devexit_p(function_name), the wrapper will
    insert either the function_name or NULL, depending on the config options.
  */
-#if defined(MODULE) || defined(CONFIG_HOTPLUG)
 #define __devexit_p(x) x
-#else
-#define __devexit_p(x) NULL
-#endif
 
 #ifdef MODULE
 #define __exit_p(x) x

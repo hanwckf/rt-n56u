@@ -89,11 +89,7 @@ static inline void iosapic_eoi(char __iomem *iosapic, u32 vector)
 extern void __init iosapic_system_init (int pcat_compat);
 extern int __devinit iosapic_init (unsigned long address,
 				    unsigned int gsi_base);
-#ifdef CONFIG_HOTPLUG
 extern int iosapic_remove (unsigned int gsi_base);
-#else
-#define iosapic_remove(gsi_base)				(-EINVAL)
-#endif /* CONFIG_HOTPLUG */
 extern int gsi_to_irq (unsigned int gsi);
 extern int iosapic_register_intr (unsigned int gsi, unsigned long polarity,
 				  unsigned long trigger);

@@ -282,7 +282,6 @@ msi_bus_store(struct device *dev, struct device_attribute *attr,
 	return count;
 }
 
-#ifdef CONFIG_HOTPLUG
 static DEFINE_MUTEX(pci_remove_rescan_mutex);
 static ssize_t bus_rescan_store(struct bus_type *bus, const char *buf,
 				size_t count)
@@ -375,8 +374,6 @@ dev_bus_rescan_store(struct device *dev, struct device_attribute *attr,
 	return count;
 }
 
-#endif
-
 struct device_attribute pci_dev_attrs[] = {
 	__ATTR_RO(resource),
 	__ATTR_RO(vendor),
@@ -397,17 +394,13 @@ struct device_attribute pci_dev_attrs[] = {
 	__ATTR(broken_parity_status,(S_IRUGO|S_IWUSR),
 		broken_parity_status_show,broken_parity_status_store),
 	__ATTR(msi_bus, 0644, msi_bus_show, msi_bus_store),
-#ifdef CONFIG_HOTPLUG
 	__ATTR(remove, (S_IWUSR|S_IWGRP), NULL, remove_store),
 	__ATTR(rescan, (S_IWUSR|S_IWGRP), NULL, dev_rescan_store),
-#endif
 	__ATTR_NULL,
 };
 
 struct device_attribute pcibus_dev_attrs[] = {
-#ifdef CONFIG_HOTPLUG
 	__ATTR(rescan, (S_IWUSR|S_IWGRP), NULL, dev_bus_rescan_store),
-#endif
 	__ATTR(cpuaffinity, S_IRUGO, pci_bus_show_cpumaskaffinity, NULL),
 	__ATTR(cpulistaffinity, S_IRUGO, pci_bus_show_cpulistaffinity, NULL),
 	__ATTR_NULL,

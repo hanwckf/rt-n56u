@@ -27,7 +27,6 @@ static struct kobj_attribute _name##_attr = __ATTR_RO(_name)
 static struct kobj_attribute _name##_attr = \
 	__ATTR(_name, 0644, _name##_show, _name##_store)
 
-#if defined(CONFIG_HOTPLUG)
 /* current uevent sequence number */
 static ssize_t uevent_seqnum_show(struct kobject *kobj,
 				  struct kobj_attribute *attr, char *buf)
@@ -55,7 +54,6 @@ static ssize_t uevent_helper_store(struct kobject *kobj,
 	return count;
 }
 KERNEL_ATTR_RW(uevent_helper);
-#endif
 
 #ifdef CONFIG_PROFILING
 static ssize_t profiling_show(struct kobject *kobj,

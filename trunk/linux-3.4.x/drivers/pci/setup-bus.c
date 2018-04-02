@@ -1488,7 +1488,6 @@ enable_all:
 }
 EXPORT_SYMBOL_GPL(pci_assign_unassigned_bridge_resources);
 
-#ifdef CONFIG_HOTPLUG
 /**
  * pci_rescan_bus - scan a PCI bus for devices.
  * @bus: PCI bus to scan
@@ -1524,4 +1523,3 @@ unsigned int __ref pci_rescan_bus(struct pci_bus *bus)
 	return max;
 }
 EXPORT_SYMBOL_GPL(pci_rescan_bus);
-#endif

@@ -90,9 +90,8 @@ static void pci_free_dynids(struct pci_driver *drv)
 }
 
 /*
- * Dynamic device ID manipulation via sysfs is disabled for !CONFIG_HOTPLUG
+ * Dynamic device ID manipulation via sysfs
  */
-#ifdef CONFIG_HOTPLUG
 /**
  * store_new_id - sysfs frontend to pci_add_dynid()
  * @driver: target device driver
@@ -210,13 +209,6 @@ static void pci_remove_newid_files(struct pci_driver *drv)
 	driver_remove_file(&drv->driver, &driver_attr_remove_id);
 	driver_remove_file(&drv->driver, &driver_attr_new_id);
 }
-#else /* !CONFIG_HOTPLUG */
-static inline int pci_create_newid_files(struct pci_driver *drv)
-{
-	return 0;
-}
-static inline void pci_remove_newid_files(struct pci_driver *drv) {}
-#endif
 
 /**
  * pci_match_id - See if a pci device matches a given pci_id table
@@ -1267,13 +1259,6 @@ void pci_dev_put(struct pci_dev *dev)
 	if (dev)
 		put_device(&dev->dev);
 }
-
-#ifndef CONFIG_HOTPLUG
-int pci_uevent(struct device *dev, struct kobj_uevent_env *env)
-{
-	return -ENODEV;
-}
-#endif
 
 struct bus_type pci_bus_type = {
 	.name		= "pci",

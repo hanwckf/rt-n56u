@@ -1070,7 +1070,6 @@ iosapic_init (unsigned long phys_addr, unsigned int gsi_base)
 	return 0;
 }
 
-#ifdef CONFIG_HOTPLUG
 int
 iosapic_remove (unsigned int gsi_base)
 {
@@ -1098,7 +1097,6 @@ iosapic_remove (unsigned int gsi_base)
 	spin_unlock_irqrestore(&iosapic_lock, flags);
 	return err;
 }
-#endif /* CONFIG_HOTPLUG */
 
 #ifdef CONFIG_NUMA
 void __devinit

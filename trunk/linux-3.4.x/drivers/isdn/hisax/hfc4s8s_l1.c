@@ -1688,14 +1688,6 @@ hfc4s8s_module_init(void)
 	}
 	printk(KERN_INFO "HFC-4S/8S: found %d cards\n", card_cnt);
 
-#if !defined(CONFIG_HOTPLUG)
-	if (err == 0) {
-		err = -ENODEV;
-		pci_unregister_driver(&hfc4s8s_driver);
-		goto out;
-	}
-#endif
-
 	return 0;
 out:
 	return (err);

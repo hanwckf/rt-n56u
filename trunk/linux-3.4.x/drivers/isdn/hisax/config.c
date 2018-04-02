@@ -1547,8 +1547,6 @@ static void __exit HiSax_exit(void)
 	printk(KERN_INFO "HiSax module removed\n");
 }
 
-#ifdef CONFIG_HOTPLUG
-
 int __devinit hisax_init_pcmcia(void *pcm_iob, int *busy_flag, struct IsdnCard *card)
 {
 	u_char ids[16];
@@ -1570,7 +1568,6 @@ error:
 }
 
 EXPORT_SYMBOL(hisax_init_pcmcia);
-#endif
 
 EXPORT_SYMBOL(HiSax_closecard);
 

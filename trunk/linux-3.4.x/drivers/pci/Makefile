@@ -15,7 +15,7 @@ obj-$(CONFIG_PCIEPORTBUS) += pcie/
 
 obj-$(CONFIG_PCI_IOAPIC) += ioapic.o
 
-obj-$(CONFIG_HOTPLUG) += hotplug.o
+obj-y += hotplug.o
 
 # Build the PCI Hotplug drivers if we were asked to
 obj-$(CONFIG_HOTPLUG_PCI) += hotplug/
@@ -60,7 +60,7 @@ obj-$(CONFIG_ACPI)    += pci-acpi.o
 obj-$(CONFIG_PCI_LABEL) += pci-label.o
 
 # Cardbus & CompactPCI use setup-bus
-obj-$(CONFIG_HOTPLUG) += setup-bus.o
+obj-y += setup-bus.o
 
 obj-$(CONFIG_PCI_SYSCALL) += syscall.o
 

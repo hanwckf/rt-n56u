@@ -50,8 +50,9 @@ Contributors of this project are not responsible for what happens next.
 - 已适配除官方适配外的以下机型
 >- K2 / PSG1218 (64M)
 >- OYE-001 (128M,USB)
->- MI-MINI (128M,USB)
->- 5K-W20 (64M,USB)
+>- MI-MINI (未测试,128M,USB)
+>- 5K-W20 (未测试,64M,USB)
+>- WR1200JS (未测试,128M,USB)
 
 ***
 

@@ -17,7 +17,7 @@ before_script:
     - sudo mkdir -p /opt/rt-n56u/ && sudo mkdir -p /opt/images/
     - sudo rm -rf toolchain-mipsel/
     - sudo mv -f * .[^.]* /opt/rt-n56u
-    - cd /opt/rt-n56u && sudo git clone https://github.com/hanwckf/padavan-toolchain.git toolchain-mipsel && sudo chmod u+x ./toolchain-mipsel/toolchain-3.4.x/bin/*
+    - cd /opt/rt-n56u && sudo git clone --depth=1 https://github.com/hanwckf/padavan-toolchain.git toolchain-mipsel && sudo chmod u+x ./toolchain-mipsel/toolchain-3.4.x/bin/*
     - ls -Alh /opt/rt-n56u
     - cd /opt/rt-n56u/trunk/
 
@@ -26,6 +26,7 @@ script:
     - sudo bash ./clear_tree_simple >/dev/null 2>&1 && sudo bash ./build_firmware_nohup PSG1218 && sudo cp -f images/*.trx /opt/images
     - sudo bash ./clear_tree_simple >/dev/null 2>&1 && sudo bash ./build_firmware_nohup OYE-001 && sudo cp -f images/*.trx /opt/images
     - sudo bash ./clear_tree_simple >/dev/null 2>&1 && sudo bash ./build_firmware_nohup 5K-W20 && sudo cp -f images/*.trx /opt/images
+    - sudo bash ./clear_tree_simple >/dev/null 2>&1 && sudo bash ./build_firmware_nohup WR1200JS && sudo cp -f images/*.trx /opt/images
 
 after_script:
     - GIT_VERSION=`git rev-parse --short=7 HEAD 2>/dev/null` && [ -n "$GIT_VERSION" ] && image_name=images_$GIT_VERSION || image_name=images

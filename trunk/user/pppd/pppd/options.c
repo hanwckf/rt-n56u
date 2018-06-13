@@ -983,7 +983,7 @@ print_option(opt, mainopt, printer, arg)
 			p = (char *) opt->addr2;
 			if ((opt->flags & OPT_STATIC) == 0)
 				p = *(char **)p;
-			printer("%q", p);
+			printer(arg, "%q", p);
 		} else if (opt->flags & OPT_A2LIST) {
 			struct option_value *ovp;
 

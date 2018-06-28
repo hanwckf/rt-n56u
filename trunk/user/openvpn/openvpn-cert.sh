@@ -117,7 +117,6 @@ write_ext_cfs() {
   rm -f $SSL_EXT_FILE
   cat > $SSL_EXT_FILE << EOF
 [ server ]
-nsCertType=server
 extendedKeyUsage=serverAuth
 keyUsage=critical,digitalSignature,keyEncipherment
 [ client ]

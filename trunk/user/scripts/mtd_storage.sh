@@ -631,7 +631,7 @@ EOF
 # Please add needed params only!
 
 ### If your server certificates with the nsCertType field set to "server"
-ns-cert-type server
+remote-cert-tls server
 
 ### Process priority level (0..19)
 nice 0

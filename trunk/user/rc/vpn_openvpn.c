@@ -1094,7 +1094,7 @@ ovpn_server_expcli_main(int argc, char **argv)
 	fprintf(fp, "nice %d\n", 0);
 	fprintf(fp, "verb %d\n", 3);
 	fprintf(fp, "mute %d\n", 10);
-	fprintf(fp, ";ns-cert-type %s\n", "server");
+	fprintf(fp, ";remote-cert-tls %s\n", "server");
 	openvpn_add_key(fp, SERVER_CERT_DIR, openvpn_server_keys[0], "ca");
 	openvpn_add_key(fp, tmp_ovpn_path, openvpn_client_keys[1], "cert");
 	openvpn_add_key(fp, tmp_ovpn_path, openvpn_client_keys[2], "key");

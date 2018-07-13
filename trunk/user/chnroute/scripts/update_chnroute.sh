@@ -14,7 +14,7 @@ mv -f /tmp/chinadns_chnroute.txt /etc/storage/chinadns/chnroute.txt
 
 mtd_storage.sh save >/dev/null 2>&1
 
-[ -f /usr/bin/chinadns.sh ] && /usr/bin/chinadns.sh restart >/dev/null 2>&1
-[ -f /usr/bin/shadowsocks.sh ] && /usr/bin/shadowsocks.sh restart >/dev/null 2>&1
+[ -f /usr/bin/chinadns.sh ] && [ "$(nvram get chinadns_enable)" = "1" ] && /usr/bin/chinadns.sh restart >/dev/null 2>&1
+[ -f /usr/bin/shadowsocks.sh ] && [ "$(nvram get ss_enable)" = "1" ] && /usr/bin/shadowsocks.sh restart >/dev/null 2>&1
 
 logger -st "chnroute" "Update done"

@@ -44,9 +44,13 @@ Contributors of this project are not responsible for what happens next.
 >- [htop](https://hisham.hm/htop/releases/) ```CONFIG_FIRMWARE_INCLUDE_HTOP```
 >- [nano](https://www.nano-editor.org/dist/) ```CONFIG_FIRMWARE_INCLUDE_NANO```
 >- [gdut-drcom](https://github.com/chenhaowen01/gdut-drcom.git) ```CONFIG_FIRMWARE_INCLUDE_GDUT_DRCOM```
->- [dogcom](https://github.com/mchome/dogcom.git) ```CONFIG_FIRMWARE_INCLUDE_DOGCOM```
+>- [dogcom](https://github.com/hanwckf/dogcom.git) ```CONFIG_FIRMWARE_INCLUDE_DOGCOM```
 >- [minieap](https://github.com/hanwckf/minieap.git) ```CONFIG_FIRMWARE_INCLUDE_MINIEAP```
 >- [njit-client](https://github.com/hanwckf/njit8021xclient.git) ```CONFIG_FIRMWARE_INCLUDE_NJIT_CLIENT```
+>- [softether-vpnclient](https://github.com/SoftEtherVPN/SoftEtherVPN_Stable.git) ```CONFIG_FIRMWARE_INCLUDE_SOFTETHERVPN_CLIENT```
+>- [softether-vpncmd](https://github.com/SoftEtherVPN/SoftEtherVPN_Stable.git) ```CONFIG_FIRMWARE_INCLUDE_SOFTETHERVPN_CMD```
+>- [dump1090](https://github.com/hanwckf/dump1090.git) ```CONFIG_FIRMWARE_INCLUDE_DUMP1090```
+>- [rtl-sdr](https://github.com/osmocom/rtl-sdr.git) ```CONFIG_FIRMWARE_INCLUDE_RTL_SDR```
 - 已适配除官方适配外的以下机型
 >- K2 / PSG1218 (64M)
 >- OYE-001 (128M,USB)

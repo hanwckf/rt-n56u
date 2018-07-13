@@ -24,7 +24,7 @@ config_test:
 configure:
 	( cd $(SRC_NAME) ; \
 	autoreconf -fi ; \
-	./configure \
+	PKG_CONFIG_LIBDIR="$(STAGEDIR)/lib/pkgconfig/" ./configure \
 		--prefix=$(STAGEDIR) \
 		--host=$(HOST_TARGET) \
 		--build=$(HOST_BUILD) ; \

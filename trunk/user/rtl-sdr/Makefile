@@ -25,7 +25,7 @@ config_test:
 configure:
 	( cd $(SRC_NAME) ; \
 	autoreconf -fi ; \
-	./configure \
+	PKG_CONFIG_LIBDIR="$(STAGEDIR)/lib/pkgconfig/" ./configure \
 		--disable-shared \
 		--enable-static \
 		--prefix=/usr \

@@ -3,12 +3,15 @@ kmod_napt66="/etc_ro/napt66.ko"
 script_iptables="/etc/storage/post_iptables_script.sh"
 
 if [ -f "$kmod_napt66" ]; then
+	if [ -z "$(nvram get wan0_ifname6)" ]; then
+		logger -st "napt66" "invaild config of WAN ipv6" && exit 1
+	fi
 	if [ -z "$(cat $script_iptables |grep -x "disable_ip6tables")" ]; then
 		echo "disable_ip6tables" >> $script_iptables
 		mtd_storage.sh save > /dev/null 2>&1
 		restart_firewall
 	fi
-	insmod $kmod_napt66 wan_if=$(nvram get wan_ifname) || echo "napt66 load fail!"
+	insmod $kmod_napt66 wan_if=$(nvram get wan0_ifname6) || logger -st "napt66" "load fail!"
 else
-	echo "$kmod_napt66 not found"
+	logger -st "napt66" "$kmod_napt66 not found" && exit 1
 fi

@@ -28,30 +28,30 @@ Contributors of this project are not responsible for what happens next.
 
 ### 固件特点 ###
 - 使用[gorden5566](https://github.com/gorden5566/padavan)的汉化字典
-- [curl](https://github.com/curl/curl)更新到7.58.0,可选编译可执行文件```CONFIG_FIRMWARE_INCLUDE_CURL```
 - [aria2](https://github.com/aria2/aria2)源码更新到1.17.1,预编译二进制文件为1.33.1 ```CONFIG_FIRMWARE_INCLUDE_ARIA2_NEW_PREBUILD_BIN```
 - aria2前端更换为[aria-ng](https://github.com/mayswind/AriaNg)
+- [curl](https://github.com/curl/curl)更新到7.58.0,可选编译可执行文件```CONFIG_FIRMWARE_INCLUDE_CURL```
 - 集成以下软件
->- [scutclient](https://github.com/hanwckf/scutclient) ```CONFIG_FIRMWARE_INCLUDE_SCUT_MOD```
->- [ttyd](https://github.com/tsl0922/ttyd) ```CONFIG_FIRMWARE_INCLUDE_TTYD```
->- [vlmcsd](https://github.com/hanwckf/vlmcsd) ```CONFIG_FIRMWARE_INCLUDE_VLMCSD```
->- [napt66](https://github.com/mzweilin/napt66) ```CONFIG_FIRMWARE_INCLUDE_NAPT66```
->- [dns-forwarder](https://github.com/aa65535/hev-dns-forwarder) ```CONFIG_FIRMWARE_INCLUDE_DNSFORWARDER```
->- [ChinaDNS](https://github.com/aa65535/ChinaDNS) ```CONFIG_FIRMWARE_INCLUDE_CHINADNS```
->- [dnsmasq-china-list](https://github.com/felixonmars/dnsmasq-china-list) ```CONFIG_FIRMWARE_INCLUDE_DNSMASQ_CHINA_CONF```
->- [ssr](https://github.com/shadowsocksr-backup/shadowsocksr-libev) ```CONFIG_FIRMWARE_INCLUDE_SHADOWSOCKS```
->- [lrzsz](https://ohse.de/uwe/software/lrzsz.html) ```CONFIG_FIRMWARE_INCLUDE_LRZSZ```
->- [htop](https://hisham.hm/htop/releases/) ```CONFIG_FIRMWARE_INCLUDE_HTOP```
->- [nano](https://www.nano-editor.org/dist/) ```CONFIG_FIRMWARE_INCLUDE_NANO```
+>- [scutclient](https://github.com/hanwckf/scutclient) ```CONFIG_FIRMWARE_INCLUDE_SCUTCLIENT```
 >- [gdut-drcom](https://github.com/chenhaowen01/gdut-drcom) ```CONFIG_FIRMWARE_INCLUDE_GDUT_DRCOM```
 >- [dogcom](https://github.com/hanwckf/dogcom) ```CONFIG_FIRMWARE_INCLUDE_DOGCOM```
 >- [minieap](https://github.com/hanwckf/minieap) ```CONFIG_FIRMWARE_INCLUDE_MINIEAP```
 >- [njit-client](https://github.com/hanwckf/njit8021xclient) ```CONFIG_FIRMWARE_INCLUDE_NJIT_CLIENT```
+>- [napt66](https://github.com/mzweilin/napt66) ```CONFIG_FIRMWARE_INCLUDE_NAPT66```
+>- [ssr](https://github.com/shadowsocksr-backup/shadowsocksr-libev) ```CONFIG_FIRMWARE_INCLUDE_SHADOWSOCKS```
 >- [softether-vpnclient](https://github.com/SoftEtherVPN/SoftEtherVPN_Stable) ```CONFIG_FIRMWARE_INCLUDE_SOFTETHERVPN_CLIENT```
 >- [softether-vpncmd](https://github.com/SoftEtherVPN/SoftEtherVPN_Stable) ```CONFIG_FIRMWARE_INCLUDE_SOFTETHERVPN_CMD```
+>- [dnsmasq-china-list](https://github.com/felixonmars/dnsmasq-china-list) ```CONFIG_FIRMWARE_INCLUDE_DNSMASQ_CHINA_CONF```
+>- [dns-forwarder](https://github.com/aa65535/hev-dns-forwarder) ```CONFIG_FIRMWARE_INCLUDE_DNSFORWARDER```
+>- [ChinaDNS](https://github.com/aa65535/ChinaDNS) ```CONFIG_FIRMWARE_INCLUDE_CHINADNS```
+>- [vlmcsd](https://github.com/hanwckf/vlmcsd) ```CONFIG_FIRMWARE_INCLUDE_VLMCSD```
+>- [ttyd](https://github.com/tsl0922/ttyd) ```CONFIG_FIRMWARE_INCLUDE_TTYD```
+>- [lrzsz](https://ohse.de/uwe/software/lrzsz.html) ```CONFIG_FIRMWARE_INCLUDE_LRZSZ```
+>- [htop](https://hisham.hm/htop/releases/) ```CONFIG_FIRMWARE_INCLUDE_HTOP```
+>- [nano](https://www.nano-editor.org/dist/) ```CONFIG_FIRMWARE_INCLUDE_NANO```
+>- [iperf](https://sourceforge.net/projects/iperf2) ```CONFIG_FIRMWARE_INCLUDE_IPERF```
 >- [dump1090](https://github.com/hanwckf/dump1090) ```CONFIG_FIRMWARE_INCLUDE_DUMP1090```
 >- [rtl-sdr](https://github.com/osmocom/rtl-sdr) ```CONFIG_FIRMWARE_INCLUDE_RTL_SDR```
->- [iperf](https://sourceforge.net/projects/iperf2) ```CONFIG_FIRMWARE_INCLUDE_IPERF```
 - 已适配除官方适配外的以下机型
 >- WR1200JS (128M,USB)
 >- K2 / PSG1218 (64M)

@@ -29,7 +29,7 @@ Contributors of this project are not responsible for what happens next.
 ### 固件特点 ###
 - 使用[gorden5566](https://github.com/gorden5566/padavan)的汉化字典
 - [curl](https://github.com/curl/curl)更新到7.58.0,可选编译可执行文件```CONFIG_FIRMWARE_INCLUDE_CURL```
-- aria2源码更新到1.17.1,预编译二进制文件为1.33.1 ```CONFIG_FIRMWARE_INCLUDE_ARIA2_NEW_PREBUILD_BIN```
+- [aria2](https://github.com/aria2/aria2)源码更新到1.17.1,预编译二进制文件为1.33.1 ```CONFIG_FIRMWARE_INCLUDE_ARIA2_NEW_PREBUILD_BIN```
 - aria2前端更换为[aria-ng](https://github.com/mayswind/AriaNg)
 - 集成以下软件
 >- [scutclient](https://github.com/hanwckf/scutclient) ```CONFIG_FIRMWARE_INCLUDE_SCUT_MOD```
@@ -51,6 +51,7 @@ Contributors of this project are not responsible for what happens next.
 >- [softether-vpncmd](https://github.com/SoftEtherVPN/SoftEtherVPN_Stable) ```CONFIG_FIRMWARE_INCLUDE_SOFTETHERVPN_CMD```
 >- [dump1090](https://github.com/hanwckf/dump1090) ```CONFIG_FIRMWARE_INCLUDE_DUMP1090```
 >- [rtl-sdr](https://github.com/osmocom/rtl-sdr) ```CONFIG_FIRMWARE_INCLUDE_RTL_SDR```
+>- [iperf](https://sourceforge.net/projects/iperf2) ```CONFIG_FIRMWARE_INCLUDE_IPERF```
 - 已适配除官方适配外的以下机型
 >- WR1200JS (128M,USB)
 >- K2 / PSG1218 (64M)

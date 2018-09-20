@@ -50,7 +50,7 @@ loger() {
 flush_rules() {
 	iptables-save -c | grep -v "SS_SPEC" | iptables-restore -c
 	#if command -v ip >/dev/null 2>&1; then
-		ip rule del fwmark 1 lookup 100 2>/dev/null
+		ip rule del fwmark 100 lookup 100 2>/dev/null
 		ip route del local default dev lo table 100 2>/dev/null
 	#fi
 	for setname in $(ipset -n list | grep "ss_spec"); do
@@ -100,11 +100,11 @@ ipt_mangle() {
 		loger 4 "TPROXY or ip not found."
 		return 0
 	fi
-	ip rule add fwmark 1 lookup 100
+	ip rule add fwmark 100 lookup 100
 	ip route add local default dev lo table 100
 	include_ac_rules mangle
 	iptables -t mangle -A SS_SPEC_WAN_FW -p udp \
-		-j TPROXY --on-port $LOCAL_PORT --tproxy-mark 0x01/0x01
+		-j TPROXY --on-port $LOCAL_PORT --tproxy-mark 100
 	return $?
 }
 

@@ -1,5 +1,5 @@
-SRC_NAME=ncurses-6.0
-SRC_URL=https://github.com/mirror/ncurses/archive/v6.0.zip
+SRC_NAME=ncurses-6.1
+SRC_URL=https://github.com/mirror/ncurses/archive/v6.1.zip
 
 all: download_test extract_test config_test
 	$(MAKE) -C $(SRC_NAME)

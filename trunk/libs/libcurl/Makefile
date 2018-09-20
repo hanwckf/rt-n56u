@@ -1,5 +1,5 @@
-SRC_NAME=curl-7.58.0
-SRC_URL=https://github.com/curl/curl/releases/download/curl-7_58_0/curl-7.58.0.tar.gz
+SRC_NAME=curl-7.61.0
+SRC_URL=https://github.com/curl/curl/releases/download/curl-7_61_0/curl-7.61.0.tar.gz
 
 all: download_test extract_test config_test
 	$(MAKE) -C $(SRC_NAME)

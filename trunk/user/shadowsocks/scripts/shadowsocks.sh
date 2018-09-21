@@ -38,9 +38,12 @@ get_arg_out(){
 }
 
 get_wan_bp_list(){
+	wanip="$(nvram get wan_ipaddr)"
+	[ -n "$wanip" ] && bp="-b $wanip" || bp=""
 	if [ "$ss_mode" = "1" ]; then
-		echo "-B /etc/storage/chinadns/chnroute.txt"
+		bp=${bp}" -B /etc/storage/chinadns/chnroute.txt"
 	fi
+	echo $bp
 }
 
 get_ipt_ext(){

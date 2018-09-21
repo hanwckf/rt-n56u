@@ -21,9 +21,6 @@ ss_mode=$(nvram get ss_mode)
 ss_router_proxy=$(nvram get ss_router_proxy)
 ss_lower_port_only=$(nvram get ss_lower_port_only)
 
-wan_fw_list=""
-wan_fw_ips=""
-
 loger() {
 	logger -st $1 $2
 }
@@ -61,7 +58,7 @@ func_start_ss_redir(){
 
 func_start_ss_rules(){
 	ss-rules -f
-	sh -c "ss-rules -s $ss_server -l $ss_local_port $(get_wan_bp_list) -W $wan_fw_list -w $wan_fw_ips -d SS_SPEC_WAN_AC $(get_ipt_ext) $(get_arg_out) $(get_arg_udp)"
+	sh -c "ss-rules -s $ss_server -l $ss_local_port $(get_wan_bp_list) -d SS_SPEC_WAN_AC $(get_ipt_ext) $(get_arg_out) $(get_arg_udp)"
 	return $?
 }
 

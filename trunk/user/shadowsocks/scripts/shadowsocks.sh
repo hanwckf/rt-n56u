@@ -22,7 +22,7 @@ ss_router_proxy=$(nvram get ss_router_proxy)
 ss_lower_port_only=$(nvram get ss_lower_port_only)
 
 loger() {
-	logger -st $1 $2
+	logger -st "$1" "$2"
 }
 
 get_arg_udp() {
@@ -39,11 +39,11 @@ get_arg_out(){
 
 get_wan_bp_list(){
 	wanip="$(nvram get wan_ipaddr)"
-	[ -n "$wanip" ] && bp="-b $wanip" || bp=""
+	[ -n "$wanip" ] && [ "$wanip" != "0.0.0.0" ] && bp="-b $wanip" || bp=""
 	if [ "$ss_mode" = "1" ]; then
 		bp=${bp}" -B /etc/storage/chinadns/chnroute.txt"
 	fi
-	echo $bp
+	echo "$bp"
 }
 
 get_ipt_ext(){

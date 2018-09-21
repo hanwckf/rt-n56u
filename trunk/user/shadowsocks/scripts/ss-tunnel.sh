@@ -19,7 +19,7 @@ ss_obfs=$(nvram get ss_obfs)
 ss_obfs_param=$(nvram get ss_obfs_param)
 
 loger() {
-	logger -st $1 $2
+	logger -st "$1" "$2"
 }
 
 func_gen_ss_json(){

@@ -1,8 +1,8 @@
-SRC_NAME=librtlsdr-0.5.4
-SRC_URL=https://github.com/steve-m/librtlsdr/archive/v0.5.4.zip
+SRC_NAME=librtlsdr-0.6.0
+SRC_URL=https://github.com/steve-m/librtlsdr/archive/v0.6.0.zip
 
 all: download_test extract_test config_test
-	$(MAKE) -C $(SRC_NAME)
+	$(MAKE) -C $(SRC_NAME)/build
 
 download_test:
 	( if [ ! -f $(SRC_NAME).zip ]; then \
@@ -11,7 +11,7 @@ download_test:
 
 extract_test:
 	( if [ ! -d $(SRC_NAME) ]; then \
-		unzip $(SRC_NAME).zip; \
+		unzip -qq $(SRC_NAME).zip; \
 	fi )
 
 config_test:
@@ -22,22 +22,28 @@ config_test:
 	fi )
 
 configure:
-	( cd $(SRC_NAME) ; \
-	autoreconf -fi ; \
-	PKG_CONFIG_LIBDIR="$(STAGEDIR)/lib/pkgconfig/" ./configure \
-		--prefix=$(STAGEDIR) \
-		--host=$(HOST_TARGET) \
-		--build=$(HOST_BUILD) ; \
+	( mkdir -p $(SRC_NAME)/build && cd $(SRC_NAME)/build ; \
+	cmake \
+	-DCMAKE_INSTALL_PREFIX=$(STAGEDIR) \
+	-DCMAKE_TOOLCHAIN_FILE=../../cross-mipsel-linux.cmake \
+	.. \
 	)
 
 clean:
-	if [ -f $(SRC_NAME)/Makefile ] ; then \
-		$(MAKE) -C $(SRC_NAME) distclean ; \
-	fi ; \
+	rm -rf $(SRC_NAME)/build
 	rm -f config_done
 
 install:
-	$(MAKE) -C $(SRC_NAME) install DESTDIR=""
+	$(MAKE) -C $(SRC_NAME)/build install DESTDIR=""
 
 romfs:
+ifeq ($(CONFIG_FIRMWARE_INCLUDE_RTL_SDR),y)
+	$(ROMFSINST) -d $(DESTDIR)/bin/rtl_adsb /usr/bin/rtl_adsb
+	$(ROMFSINST) -d $(DESTDIR)/bin/rtl_eeprom /usr/bin/rtl_eeprom
+	$(ROMFSINST) -d $(DESTDIR)/bin/rtl_fm /usr/bin/rtl_fm
+	$(ROMFSINST) -d $(DESTDIR)/bin/rtl_power /usr/bin/rtl_power
+	$(ROMFSINST) -d $(DESTDIR)/bin/rtl_sdr /usr/bin/rtl_sdr
+	$(ROMFSINST) -d $(DESTDIR)/bin/rtl_tcp /usr/bin/rtl_tcp
+	$(ROMFSINST) -d $(DESTDIR)/bin/rtl_test /usr/bin/rtl_test
+endif
 	cp -fP $(DESTDIR)/lib/librtlsdr.so* $(ROMFSDIR)/lib

@@ -178,7 +178,6 @@ dir_y						+= uqmi
 dir_$(CONFIG_FIRMWARE_INCLUDE_LPRD)		+= LPRng
 dir_$(CONFIG_FIRMWARE_INCLUDE_U2EC)		+= u2ec
 dir_$(CONFIG_FIRMWARE_INCLUDE_DUMP1090)	+= dump1090
-dir_$(CONFIG_FIRMWARE_INCLUDE_RTL_SDR)		+= rtl-sdr
 endif
 
 ifeq ($(STORAGE_ENABLED),y)

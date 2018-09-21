@@ -72,5 +72,5 @@ install:
 romfs:
 ifeq ($(CONFIG_FIRMWARE_INCLUDE_CURL),y)
 	$(ROMFSINST) -d $(DESTDIR)/bin/curl /usr/bin/curl
-	cp -fP $(DESTDIR)/lib/libcurl.so* $(ROMFSDIR)/lib
 endif
+	cp -fP $(DESTDIR)/lib/libcurl.so* $(ROMFSDIR)/lib

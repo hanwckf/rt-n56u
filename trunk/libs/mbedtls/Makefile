@@ -2,7 +2,7 @@ SRC_NAME=mbedtls-2.7.4
 SRC_URL=https://tls.mbed.org/download/mbedtls-2.7.4-apache.tgz
 
 all: download_test extract_test config_test
-	$(MAKE) -C $(SRC_NAME)
+	$(MAKE) -C $(SRC_NAME)/build
 
 download_test:
 	( if [ ! -f $(SRC_NAME).tgz ]; then \
@@ -22,29 +22,23 @@ config_test:
 	fi )
 
 configure:
-	( cd $(SRC_NAME) ; \
+	( mkdir -p $(SRC_NAME)/build && cd $(SRC_NAME)/build ; \
 	cmake \
 	-DCMAKE_INSTALL_PREFIX=$(STAGEDIR) \
-	-DCMAKE_TOOLCHAIN_FILE=../cross-mipsel-linux.cmake \
+	-DCMAKE_TOOLCHAIN_FILE=../../cross-mipsel-linux.cmake \
 	-DUSE_SHARED_MBEDTLS_LIBRARY=On \
 	-DUSE_STATIC_MBEDTLS_LIBRARY=Off \
 	-DENABLE_TESTING=Off \
 	-DENABLE_PROGRAMS=Off \
-	. \
+	.. \
 	)
 
 clean:
-	if [ -f $(SRC_NAME)/Makefile ] ; then \
-		$(MAKE) -C $(SRC_NAME) clean ; \
-	fi ; \
-	rm -rf $(SRC_NAME)/CMakeFiles
-	rm -f $(SRC_NAME)/cmake_install.cmake
-	rm -f $(SRC_NAME)/Makefile
-	rm -f $(SRC_NAME)/CMakeCache.txt
+	rm -rf $(SRC_NAME)/build
 	rm -f config_done
 
 install:
-	$(MAKE) -C $(SRC_NAME) install DESTDIR=""
+	$(MAKE) -C $(SRC_NAME)/build install DESTDIR=""
 
 romfs:
 	cp -fP $(DESTDIR)/lib/libmbedcrypto.so* $(ROMFSDIR)/lib

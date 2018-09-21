@@ -2,7 +2,7 @@ SRC_NAME=libwebsockets-2.4.2
 SRC_URL=https://github.com/warmcat/libwebsockets/archive/v2.4.2.tar.gz
 
 all: download_test extract_test config_test
-	$(MAKE) -C $(SRC_NAME)
+	$(MAKE) -C $(SRC_NAME)/build
 
 download_test:
 	( if [ ! -f $(SRC_NAME).tar.gz ]; then \
@@ -22,31 +22,25 @@ config_test:
 	fi )
 
 configure:
-	( cd $(SRC_NAME) ; \
+	( mkdir -p $(SRC_NAME)/build && cd $(SRC_NAME)/build ; \
 	cmake \
 	-DCMAKE_INSTALL_PREFIX=$(STAGEDIR) \
-	-DCMAKE_TOOLCHAIN_FILE=../cross-mipsel-linux.cmake \
+	-DCMAKE_TOOLCHAIN_FILE=../../cross-mipsel-linux.cmake \
 	-DLWS_WITHOUT_TEST_ECHO=ON \
 	-DLWS_WITHOUT_TEST_SERVER=ON \
 	-DLWS_WITHOUT_TEST_PING=ON \
 	-DLWS_WITHOUT_CLIENT=ON \
 	-DLWS_WITHOUT_TEST_FRAGGLE=ON \
 	-DLWS_WITHOUT_TEST_SERVER_EXTPOLL=ON \
-	. \
+	.. \
 	)
 
 clean:
-	if [ -f $(SRC_NAME)/Makefile ] ; then \
-		$(MAKE) -C $(SRC_NAME) clean ; \
-	fi ; \
-	rm -rf $(SRC_NAME)/CMakeFiles
-	rm -f $(SRC_NAME)/cmake_install.cmake
-	rm -f $(SRC_NAME)/Makefile
-	rm -f $(SRC_NAME)/CMakeCache.txt
+	rm -rf $(SRC_NAME)/build
 	rm -f config_done
 
 install:
-	$(MAKE) -C $(SRC_NAME) install DESTDIR=""
+	$(MAKE) -C $(SRC_NAME)/build install DESTDIR=""
 
 romfs:
 	cp -fP $(DESTDIR)/lib/libwebsockets.so* $(ROMFSDIR)/lib

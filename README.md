@@ -30,7 +30,7 @@ Contributors of this project are not responsible for what happens next.
 - 使用[gorden5566](https://github.com/gorden5566/padavan)的汉化字典
 - [aria2](https://github.com/aria2/aria2)源码更新到1.17.1,预编译二进制文件为1.33.1 ```CONFIG_FIRMWARE_INCLUDE_ARIA2_NEW_PREBUILD_BIN```
 - aria2前端更换为[aria-ng](https://github.com/mayswind/AriaNg)
-- [curl](https://github.com/curl/curl)更新到7.58.0,可选编译可执行文件```CONFIG_FIRMWARE_INCLUDE_CURL```
+- [curl](https://github.com/curl/curl)可选编译可执行程序```CONFIG_FIRMWARE_INCLUDE_CURL```
 - 集成以下软件
 >- [scutclient](https://github.com/hanwckf/scutclient) ```CONFIG_FIRMWARE_INCLUDE_SCUTCLIENT```
 >- [gdut-drcom](https://github.com/chenhaowen01/gdut-drcom) ```CONFIG_FIRMWARE_INCLUDE_GDUT_DRCOM```

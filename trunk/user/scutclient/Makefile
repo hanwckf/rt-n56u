@@ -1,10 +1,10 @@
 SRC_NAME = scutclient-upstream
-ARCHIVE_NAME = scutclient-upstream-2b45c37
+ARCHIVE_NAME = scutclient-upstream-ca26d9d
 #https://github.com/hanwckf/scutclient.git
 THISDIR = $(shell pwd)
 
 all: extract_test config_test
-	$(MAKE) -C $(SRC_NAME)
+	$(MAKE) -C $(SRC_NAME)/build
 
 extract_test:
 	( if [ ! -d $(THISDIR)/$(SRC_NAME) ]; then \
@@ -19,21 +19,15 @@ config_test:
 	fi )
 
 configure:
-	( cd $(SRC_NAME) ; \
-	autoreconf -fi ; \
-	./configure \
-		--prefix=/usr \
-		--host=$(HOST_TARGET) \
-		--build=$(HOST_BUILD) ; \
+	( mkdir -p $(SRC_NAME)/build && cd $(SRC_NAME)/build ; \
+	cmake -DCMAKE_TOOLCHAIN_FILE=../../cross-mipsel-linux.cmake .. \
 	)
 
 clean:
-	if [ -f $(SRC_NAME)/Makefile ] ; then \
-		$(MAKE) -C $(SRC_NAME) distclean ; \
-	fi ; \
+	rm -rf $(SRC_NAME)/build
 	rm -f config_done
 
 romfs:
 	chmod -R +x ./scripts
 	${ROMFSINST} $(THISDIR)/scripts/ /bin/
-	$(ROMFSINST) -p +x $(THISDIR)/$(SRC_NAME)/scutclient /usr/bin/bin_scutclient
+	$(ROMFSINST) -p +x $(THISDIR)/$(SRC_NAME)/build/scutclient /usr/bin/bin_scutclient

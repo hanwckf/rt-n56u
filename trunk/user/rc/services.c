@@ -260,6 +260,11 @@ void restart_scutclient(void)
 	if ( scutclient_mode == 1 )
 		eval("/bin/scutclient.sh","restart");
 }
+
+void start_scutclient_watchcat(void)
+{
+	eval("/bin/sh","-c","/bin/scutclient_watchcat.sh &");
+}
 #endif
 
 #if defined(APP_TTYD)
@@ -311,7 +316,11 @@ void restart_ss_tunnel(void){
 }
 
 void update_chnroute(void){
-	eval("/usr/bin/update_chnroute.sh","force");
+	eval("/bin/sh","-c","/usr/bin/update_chnroute.sh force &");
+}
+
+void start_ss_watchcat(void){
+	eval("/bin/sh","-c","/usr/bin/ss-watchcat.sh &");
 }
 
 #endif
@@ -377,7 +386,7 @@ void start_napt66(void){
 
 #if defined(APP_DNSMASQ_CHINA_CONF)
 void update_dnsmasq_china_conf(void){
-	eval("/usr/bin/update_dnsmasq_china_conf.sh","force");
+	eval("sh","-c","/usr/bin/update_dnsmasq_china_conf.sh force &");
 }
 #endif
 
@@ -581,6 +590,7 @@ start_services_once(int is_ap_mode)
 
 #if defined(APP_SCUT)
 	start_scutclient();
+	start_scutclient_watchcat();
 #endif
 #if defined(APP_NAPT66)
 	start_napt66();
@@ -594,6 +604,7 @@ start_services_once(int is_ap_mode)
 #if defined(APP_SHADOWSOCKS)
 	start_ss();
 	start_ss_tunnel();
+	start_ss_watchcat();
 #endif
 #if defined(APP_TTYD)
 	start_ttyd();

@@ -1,24 +1,27 @@
 #!/bin/sh
-export PATH='/opt/sbin:/opt/bin:/usr/sbin:/usr/bin:/sbin:/bin'
-net_ip="202.38.193.188"
 
-if [ "$(nvram get scutclient_watchcat)" != "1" ] || [ "$(nvram get scutclient_enable)" != "1" ]; then
-	exit 0
-fi
+[ "$(pidof scutclient_watchcat.sh)" != "$$" ] && exit 1
+net="www.qq.com www.baidu.com www.taobao.com"
+net_num=3
 
-if [ "$(mtk_esw 11)" = "WAN ports link state: 0" ]; then
-	logger -st "scutclient_watchcat" "WAN has no link!"
-	exit 1
-fi
+while true; do
+	sleep 30
+	if [ "$(nvram get scutclient_watchcat)" != "1" ] || [ "$(nvram get scutclient_enable)" != "1" ]; then
+		continue
+	fi
 
-tries=0
-while [ $tries -lt 3 ]
-do
-    if /bin/ping -c 1 $net_ip -W 1 >/dev/null
-    then
-        exit 0
-    fi
-    tries=$((tries+1))
+	if [ "$(mtk_esw 11)" = "WAN ports link state: 0" ]; then
+		logger -st "scutclient_watchcat" "WAN has no link!"
+		continue
+	fi
+
+	fails=0
+	for n in $net; do
+		if /bin/ping -c 1 "$n" -W 1 >/dev/null ; then
+		    break
+		else
+			fails=$((fails+1))
+		fi
+	done
+	[ $fails -eq $net_num ] && logger -st "scutclient_watchcat" "Connection failed, restart scutclient!" && /bin/scutclient.sh restart
 done
-logger -st "scutclient_watchcat" "Connection failed, restart scutclient!"
-/bin/scutclient.sh restart

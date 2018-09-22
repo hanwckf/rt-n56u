@@ -87,7 +87,6 @@ EOF
 
 func_check_conf(){
 	rm -f /tmp/.modify_etc_storage
-	/usr/bin/enable_ss_watchcat
 	/usr/bin/check_chnroute
 	/usr/bin/enable_update_chnroute
 	[ -f /usr/bin/check_dnsmasq_china_conf ] && /usr/bin/check_dnsmasq_china_conf
@@ -97,7 +96,10 @@ func_check_conf(){
 
 func_start(){
 	func_check_conf
-	func_gen_ss_json && func_start_ss_redir && func_start_ss_rules && loger $ss_bin "start done" || { ss-rules -f && loger $ss_bin "start fail!";}
+	func_gen_ss_json && \
+	func_start_ss_redir && \
+	func_start_ss_rules && \
+	loger $ss_bin "start done" || { ss-rules -f && loger $ss_bin "start fail!";}
 }
 
 func_stop(){

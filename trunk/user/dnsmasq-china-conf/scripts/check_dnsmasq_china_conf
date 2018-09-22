@@ -1,7 +1,12 @@
 #!/bin/sh
+
 storage_dir="/etc/storage/dnsmasq-china-conf"
-origin_dir="/etc_ro/dnsmasq-china-conf"
-filename="accelerated-domains.china.conf"
+storage_file="accelerated-domains.china.conf"
+origin_file="/etc_ro/dnsmasq-china-conf/dnsmasq-china-conf.bz2"
 
 [ ! -d $storage_dir ] && mkdir -p $storage_dir
-[ ! -f $storage_dir/$filename ] && [ -f $origin_dir/$filename ] && cp -f $origin_dir/$filename $storage_dir/$filename && touch /tmp/.modify_etc_storage
+
+[ -f $origin_file ] && \
+[ ! -f $storage_dir/$storage_file ] && \
+tar jxf $origin_file -C $storage_dir && \
+touch /tmp/.modify_etc_storage

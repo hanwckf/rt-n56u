@@ -1,7 +1,7 @@
 #!/bin/sh
 set -e -o pipefail
 [ "$1" != "force" ] && [ "$(nvram get dnsmasq_china_conf_update)" != "1" ] && exit 1
-
+logger -st "dnsmasq-china-conf" "Starting update..."
 url="https://coding.net/u/felixonmars/p/dnsmasq-china-list/git/raw/master"
 acc_china_file="accelerated-domains.china.conf"
 acc_apple_file="apple.china.conf"

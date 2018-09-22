@@ -1,7 +1,11 @@
 #!/bin/sh
 storage_dir="/etc/storage/chinadns"
-origin_dir="/etc_ro"
 filename="chnroute.txt"
+origin_file="/etc_ro/chnroute.bz2"
 
 [ ! -d $storage_dir ] && mkdir -p $storage_dir
-[ ! -f $storage_dir/$filename ] && [ -f $origin_dir/$filename ] && cp -f $origin_dir/$filename $storage_dir/$filename && touch /tmp/.modify_etc_storage
+
+[ -f $origin_file ] && \
+[ ! -f $storage_dir/$filename ] && \
+tar jxf $origin_file -C $storage_dir && \
+touch /tmp/.modify_etc_storage

@@ -4,11 +4,12 @@ China_ping_domain="www.qq.com"
 Foreign_wget_domain="http://www.google.com/"
 detect_period=300
 log_file="/tmp/ss-watchcat.log"
+max_log_bytes=100000
 
 loger(){
+	[ -f $log_file ] && [ $(stat -c %s $log_file) -gt $max_log_bytes ] && rm -f $log_file
 	time=$(date "+%H:%M:%S")
-	echo -n "$time " >> $log_file
-	logger -st "ss-watchcat" "$1" 2>>$log_file
+	echo "$time ss-watchcat $1" >> $log_file
 }
 
 detect_shadowsocks(){

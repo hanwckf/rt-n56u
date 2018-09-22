@@ -2,7 +2,7 @@
 
 China_ping_domain="www.qq.com"
 Foreign_wget_domain="http://www.google.com/"
-detect_period=60
+detect_period=300
 log_file="/tmp/ss-watchcat.log"
 
 loger(){

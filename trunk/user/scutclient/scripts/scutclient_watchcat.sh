@@ -18,7 +18,7 @@ while true; do
 	fails=0
 	for n in $net; do
 		if /bin/ping -c 1 "$n" -W 1 >/dev/null ; then
-		    break
+			break
 		else
 			fails=$((fails+1))
 		fi

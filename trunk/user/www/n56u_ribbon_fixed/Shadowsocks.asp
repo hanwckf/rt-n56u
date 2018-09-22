@@ -216,6 +216,7 @@ function fill_ss_tunnel_status(status_code){
                                             <td>
                                                 <select name="ss_method" class="input" style="width: 200px;">
                                                     <option value="none" >none</option>
+                                                    <option value="rc4" >rc4</option>
                                                     <option value="rc4-md5" >rc4-md5</option>
                                                     <option value="aes-128-cfb" >aes-128-cfb</option>
                                                     <option value="aes-192-cfb" >aes-192-cfb</option>
@@ -244,6 +245,9 @@ function fill_ss_tunnel_status(status_code){
                                             <td>
                                                 <select name="ss_protocol" class="input" style="width: 200px;">   
                                                     <option value="origin" >origin</option>
+                                                    <option value="auth_sha1" >auth_sha1</option>
+                                                    <option value="auth_sha1_v2" >auth_sha1_v2</option>
+                                                    <option value="auth_sha1_v4" >auth_sha1_v4</option>
                                                     <option value="auth_aes128_md5" >auth_aes128_md5</option>
                                                     <option value="auth_aes128_sha1" >auth_aes128_sha1</option>
                                                     <option value="auth_chain_a" >auth_chain_a</option>

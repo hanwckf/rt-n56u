@@ -22,7 +22,7 @@ elif [ "$tail_latest" = "$tail_last" ];then
 	exit 1
 fi
 tail_last=$(tail -1 nohup.out)
-tail -4 nohup.out
-sleep 30
+tail -2 nohup.out
+sleep 10
 done
 

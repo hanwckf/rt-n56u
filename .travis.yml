@@ -24,6 +24,7 @@ before_script:
 script:
     - sudo bash ./build_firmware_nohup PSG1218 && sudo cp -f images/*.trx /opt/images
     - sudo bash ./clear_tree_simple >/dev/null 2>&1 && sudo bash ./build_firmware_nohup MI-MINI && sudo cp -f images/*.trx /opt/images
+    - sudo bash ./clear_tree_simple >/dev/null 2>&1 && sudo bash ./build_firmware_nohup MI-3 && sudo cp -f images/*.trx /opt/images
     - sudo bash ./clear_tree_simple >/dev/null 2>&1 && sudo bash ./build_firmware_nohup OYE-001 && sudo cp -f images/*.trx /opt/images
     - sudo bash ./clear_tree_simple >/dev/null 2>&1 && sudo bash ./build_firmware_nohup 5K-W20 && sudo cp -f images/*.trx /opt/images
     - sudo bash ./clear_tree_simple >/dev/null 2>&1 && sudo bash ./build_firmware_nohup WR1200JS && sudo cp -f images/*.trx /opt/images

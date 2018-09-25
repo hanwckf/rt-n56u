@@ -1,7 +1,7 @@
 #!/bin/sh
 
 [ "$(pidof scutclient_watchcat.sh)" != "$$" ] && exit 1
-net="www.qq.com www.baidu.com www.taobao.com"
+net="114.114.114.114 119.29.29.29 202.38.193.188"
 net_num=3
 
 while true; do
@@ -23,5 +23,7 @@ while true; do
 			fails=$((fails+1))
 		fi
 	done
-	[ $fails -eq $net_num ] && logger -st "scutclient_watchcat" "Connection failed, restart scutclient!" && /bin/scutclient.sh restart
+	[ $fails -eq $net_num ] && \
+	logger -st "scutclient_watchcat" "Connection failed, restart scutclient!" && \
+	/bin/scutclient.sh restart
 done

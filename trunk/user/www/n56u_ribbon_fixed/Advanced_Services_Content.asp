@@ -506,10 +506,10 @@ function on_ttyd_link(){
 
                                     <table width="100%" id="tbl_ttyd" cellpadding="4" cellspacing="0" class="table" style="display:none;">
                                         <tr>
-                                            <th colspan="2" style="background-color: #E3E3E3;">ttyd设置</th>
+                                            <th colspan="2" style="background-color: #E3E3E3;"><#Adm_Svc_ttyd_setup#></th>
                                         </tr>
                                         <tr id="div_ttyd">
-                                            <th width="50%"><#Adm_Svc_ttyd#></th>
+                                            <th width="50%"><#Adm_Svc_ttyd_enable#></th>
                                             <td colspan="2">
                                                 <div class="main_itoggle">
                                                     <div id="ttyd_enable_on_of">
@@ -522,7 +522,7 @@ function on_ttyd_link(){
                                                 </div>
                                             </td>
                                         </tr>
-                                        <tr id="ttyd_port"> <th width="50%">ttyd监听端口</th>
+                                        <tr id="ttyd_port"> <th width="50%"><#Adm_Svc_ttyd_port#></th>
                                             <td>
                                                 <input type="text" maxlength="6" class="input" size="15" name="ttyd_port" style="width: 145px" value="<% nvram_get_x("","ttyd_port"); %>" />
                                             </td>

@@ -32,7 +32,7 @@ configure:
 		--disable-documentation \
 		--disable-ssp \
 		--disable-assert \
-		--enable-system-shared-lib \	
+		--enable-system-shared-lib \
 		--with-crypto-library=$(ss_crypto_lib) \
 		--host=$(HOST_TARGET) \
 		--build=$(HOST_BUILD) ; \

@@ -11,18 +11,20 @@ nohup ./build_firmware_modify $1 &
 
 tail_last=test
 while true ;do
+sleep 10
 echo "===================================================================================================="
 tail_latest=$(tail -1 nohup.out)
 
 if [ "$tail_latest" = "make[1]: Leaving directory \`/opt/rt-n56u/trunk/vendors'" ];then
 	tail -20 nohup.out
 	exit 0
+elif [ "$tail_latest" = '	mv -f $depbase.Tpo $depbase.Po' ]; then
+	continue
 elif [ "$tail_latest" = "$tail_last" ];then
 	tail -60 nohup.out
 	exit 1
 fi
 tail_last=$(tail -1 nohup.out)
 tail -2 nohup.out
-sleep 10
 done
 

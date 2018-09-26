@@ -5,7 +5,7 @@ THISDIR = $(shell pwd)
 
 all: download_test extract_test
 	$(MAKE) -C $(SRC_NAME)/src CC=$(CONFIG_CROSS_COMPILER_ROOT)/bin/mipsel-linux-uclibc-gcc
-	
+
 download_test:
 	( if [ ! -f $(SRC_NAME).tar.gz ]; then \
 		wget -t5 --timeout=20 --no-check-certificate -O $(SRC_NAME).tar.gz $(SRC_URL); \

@@ -25,10 +25,10 @@ config_test:
 configure:
 	( cd $(SRC_NAME)/src ; \
 	autoreconf -fi ; \
+	ac_cv_path_PCAP_CONFIG=$(STAGEDIR)/bin/pcap-config \
 	./configure \
 		--prefix=/usr \
 		PKG_CONFIG_LIBDIR=$(STAGEDIR)/lib/pkgconfig \
-		ac_cv_path_PCAP_CONFIG=$(STAGEDIR)/bin/pcap-config \
 		--host=$(HOST_TARGET) \
 		--build=$(HOST_BUILD) ; \
 	)

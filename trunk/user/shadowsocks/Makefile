@@ -26,13 +26,13 @@ config_test:
 
 configure:
 	( cd $(SRC_NAME) ; \
+	ac_cv_prog_PCRE_CONFIG="$(STAGEDIR)/bin/pcre-config" \
 	./configure \
 		--prefix=/usr \
 		--disable-documentation \
 		--disable-ssp \
 		--disable-assert \
-		--enable-system-shared-lib \
-		ac_cv_prog_PCRE_CONFIG="$(STAGEDIR)/bin/pcre-config" \
+		--enable-system-shared-lib \	
 		--with-crypto-library=$(ss_crypto_lib) \
 		--host=$(HOST_TARGET) \
 		--build=$(HOST_BUILD) ; \

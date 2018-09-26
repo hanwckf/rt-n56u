@@ -75,10 +75,8 @@ function initial(){
 	}
 	change_crond_enabled();
 	
-	if(!found_app_ttyd()){
-		showhide_div('div_ttyd', 0);
-		showhide_div('ttyd_webui', 0);
-	} else {
+	if(found_app_ttyd()){	
+		$("tbl_ttyd").style.display = "";
 		change_ttyd_enabled();
 	}
 	
@@ -249,6 +247,7 @@ function change_crond_enabled(){
 function change_ttyd_enabled(){
 	var v = document.form.ttyd_enable[0].checked;
 	showhide_div('ttyd_webui', v);
+	showhide_div('ttyd_port', v);
 }
 
 function on_ttyd_link(){
@@ -261,7 +260,7 @@ function on_ttyd_link(){
 	}else if (http_port!='80'){
 		http_url+=":"+http_port;
 	}
-	ttyd_url+="://"+http_url+":7681";
+	ttyd_url+="://"+http_url+":"+"<% nvram_get_x("","ttyd_port"); %>";
 	window_ttyd = window.open(ttyd_url, "ttyd");
 	window_ttyd.focus();
 }
@@ -505,6 +504,36 @@ function on_ttyd_link(){
                                         </tr>
                                     </table>
 
+                                    <table width="100%" id="tbl_ttyd" cellpadding="4" cellspacing="0" class="table" style="display:none;">
+                                        <tr>
+                                            <th colspan="2" style="background-color: #E3E3E3;">ttyd设置</th>
+                                        </tr>
+                                        <tr id="div_ttyd">
+                                            <th width="50%"><#Adm_Svc_ttyd#></th>
+                                            <td colspan="2">
+                                                <div class="main_itoggle">
+                                                    <div id="ttyd_enable_on_of">
+                                                        <input type="checkbox" id="ttyd_enable_fake" <% nvram_match_x("", "ttyd_enable", "1", "value=1 checked"); %><% nvram_match_x("", "ttyd_enable", "0", "value=0"); %>>
+                                                    </div>
+                                                </div>
+                                                <div style="position: absolute; margin-left: -10000px;">
+                                                    <input type="radio" name="ttyd_enable" id="ttyd_enable_1" class="input" value="1" onclick="change_ttyd_enabled();" <% nvram_match_x("", "ttyd_enable", "1", "checked"); %>/><#checkbox_Yes#>
+                                                    <input type="radio" name="ttyd_enable" id="ttyd_enable_0" class="input" value="0" onclick="change_ttyd_enabled();" <% nvram_match_x("", "ttyd_enable", "0", "checked"); %>/><#checkbox_No#>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                        <tr id="ttyd_port"> <th width="50%">ttyd监听端口</th>
+                                            <td>
+                                                <input type="text" maxlength="6" class="input" size="15" name="ttyd_port" style="width: 145px" value="<% nvram_get_x("","ttyd_port"); %>" />
+                                            </td>
+                                        </tr>
+                                        <tr id="ttyd_webui">
+                                            <td>
+                                                <a href="javascript:on_ttyd_link();" id="web_ttyd_link">ttyd Web Shell</a>
+                                            </td>
+                                        </tr>
+                                    </table>
+
                                     <table width="100%" cellpadding="4" cellspacing="0" class="table">
                                         <tr>
                                             <th colspan="2" style="background-color: #E3E3E3;"><#Adm_System_misc#></th>
@@ -539,28 +568,7 @@ function on_ttyd_link(){
                                                 </div>
                                             </td>
                                         </tr>
-										
-                                        <tr id="div_ttyd">
-                                            <th><#Adm_Svc_ttyd#></th>
-                                            <td>
-                                                <div class="main_itoggle">
-                                                    <div id="ttyd_enable_on_of">
-                                                        <input type="checkbox" id="ttyd_enable_fake" <% nvram_match_x("", "ttyd_enable", "1", "value=1 checked"); %><% nvram_match_x("", "ttyd_enable", "0", "value=0"); %>>
-                                                    </div>
-                                                </div>
-                                                <div style="position: absolute; margin-left: -10000px;">
-                                                    <input type="radio" name="ttyd_enable" id="ttyd_enable_1" class="input" value="1" onclick="change_ttyd_enabled();" <% nvram_match_x("", "ttyd_enable", "1", "checked"); %>/><#checkbox_Yes#>
-                                                    <input type="radio" name="ttyd_enable" id="ttyd_enable_0" class="input" value="0" onclick="change_ttyd_enabled();" <% nvram_match_x("", "ttyd_enable", "0", "checked"); %>/><#checkbox_No#>
-                                                </div>
-                                            </td>
-                                        </tr>
 
-                                        <tr id="ttyd_webui">
-                                            <td>
-                                                <a href="javascript:on_ttyd_link();" id="web_ttyd_link">ttyd Web Shell</a>
-                                            </td>										
-                                        </tr>
-										
                                         <tr>
                                             <th><#Adm_Svc_lltd#></th>
                                             <td>

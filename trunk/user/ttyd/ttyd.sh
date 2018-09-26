@@ -1,7 +1,10 @@
 #!/bin/sh
+nvram_ttyd_port="$(nvram get ttyd_port)"
+[ -z "$nvram_ttyd_port" ] && nvram set ttyd_port=7681 && nvram commit
+port=${nvram_ttyd_port:-"7681"}
 
 func_start(){
-	start-stop-daemon -S -b -x ttyd -- -r 3 -i br0 login
+	start-stop-daemon -S -b -x ttyd -- -r 3 -i br0 -p "$port" login
 }
 
 func_stop(){

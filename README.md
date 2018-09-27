@@ -31,7 +31,7 @@ Contributors of this project are not responsible for what happens next.
 - [aria2](https://github.com/aria2/aria2)源码更新到1.17.1,预编译二进制文件为1.33.1 ```CONFIG_FIRMWARE_INCLUDE_ARIA2_NEW_PREBUILD_BIN```
 - aria2前端更换为[aria-ng](https://github.com/mayswind/AriaNg)
 - [curl](https://github.com/curl/curl)可选编译可执行程序```CONFIG_FIRMWARE_INCLUDE_CURL```
-- 使用了[PROMETHEUS](http://pm.freize.net/index.html)提供的部分补丁，包括新版本的类库、软件包和WIFI驱动补丁```(CONFIG_APPLY_PROMETHEUS_WIFI_DRIVER_PATCH)```
+- 使用了[PROMETHEUS](http://pm.freize.net/index.html)提供的部分补丁，包括新版本的类库、软件包和WIFI驱动补丁```CONFIG_APPLY_PROMETHEUS_WIFI_DRIVER_PATCH```
 - 集成以下软件
 >- [scutclient](https://github.com/hanwckf/scutclient) ```CONFIG_FIRMWARE_INCLUDE_SCUTCLIENT```
 >- [gdut-drcom](https://github.com/chenhaowen01/gdut-drcom) ```CONFIG_FIRMWARE_INCLUDE_GDUT_DRCOM```

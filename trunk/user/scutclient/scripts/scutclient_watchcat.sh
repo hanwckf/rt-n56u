@@ -5,7 +5,7 @@ net="202.38.193.188 114.114.114.114 119.29.29.29"
 net_num=3
 
 while true; do
-	sleep 30
+	sleep 60
 	if [ "$(nvram get scutclient_watchcat)" != "1" ] || [ "$(nvram get scutclient_enable)" != "1" ]; then
 		continue
 	fi

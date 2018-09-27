@@ -1,0 +1,27 @@
+Только в libogg-1.3.3/doc/libogg: Makefile
+Только в libogg-1.3.3/doc: Makefile
+Только в libogg-1.3.3-ref: libogg.spec
+diff -urw libogg-1.3.3-ref/Makefile.am libogg-1.3.3/Makefile.am
+--- libogg-1.3.3-ref/Makefile.am	2017-06-12 20:14:31.000000000 +0300
++++ libogg-1.3.3/Makefile.am	2018-01-12 09:16:40.000000000 +0300
+@@ -4,7 +4,7 @@
+ #AUTOMAKE_OPTIONS = foreign 1.6 dist-zip
+ AUTOMAKE_OPTIONS = foreign 1.11 dist-zip dist-xz
+ 
+-SUBDIRS = src include doc
++SUBDIRS = src include
+ 
+ m4datadir = $(datadir)/aclocal
+ m4data_DATA = ogg.m4
+diff -urw libogg-1.3.3-ref/Makefile.in libogg-1.3.3/Makefile.in
+--- libogg-1.3.3-ref/Makefile.in	2017-11-07 23:38:55.000000000 +0300
++++ libogg-1.3.3/Makefile.in	2018-01-12 09:17:02.000000000 +0300
+@@ -367,7 +367,7 @@
+ 
+ #AUTOMAKE_OPTIONS = foreign 1.6 dist-zip
+ AUTOMAKE_OPTIONS = foreign 1.11 dist-zip dist-xz
+-SUBDIRS = src include doc
++SUBDIRS = src include
+ m4datadir = $(datadir)/aclocal
+ m4data_DATA = ogg.m4
+ pkgconfigdir = $(libdir)/pkgconfig

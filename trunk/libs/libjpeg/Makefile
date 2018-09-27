@@ -1,7 +1,18 @@
-SRC_NAME=jpeg-6b
+SRC_NAME=jpeg-9c
+SRC_URL=http://www.ijg.org/files/jpegsrc.v9c.tar.gz
 
-all: config_test
-	$(MAKE) -C $(SRC_NAME) LIBTOOL="" O=o A=a libjpeg.a
+all: download_test extract_test config_test
+	$(MAKE) -C $(SRC_NAME)
+
+download_test:
+	( if [ ! -f $(SRC_NAME).tar.gz ]; then \
+		wget -t5 --timeout=20 --no-check-certificate -O $(SRC_NAME).tar.gz $(SRC_URL); \
+	fi )
+
+extract_test:
+	( if [ ! -d $(SRC_NAME) ]; then \
+		tar xzf $(SRC_NAME).tar.gz; \
+	fi )
 
 config_test:
 	( if [ -f ./config_done ]; then \
@@ -27,7 +38,7 @@ clean:
 	rm -f config_done
 
 install:
-	$(MAKE) -C $(SRC_NAME) DESTDIR="" LIBTOOL="" O=o A=a install-lib
+	$(MAKE) -C $(SRC_NAME) install DESTDIR=""
 
 romfs:
 

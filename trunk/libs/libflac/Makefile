@@ -1,7 +1,19 @@
-SRC_NAME=flac-1.2.1
+SRC_NAME=flac-1.3.2
+SRC_URL=https://ftp.osuosl.org/pub/xiph/releases/flac/$(SRC_NAME).tar.xz
 
-all: config_test
+all: download_test extract_test config_test
 	$(MAKE) -C $(SRC_NAME)
+
+download_test:
+	( if [ ! -f $(SRC_NAME).tar.xz ]; then \
+		wget -t5 --timeout=20 --no-check-certificate -O $(SRC_NAME).tar.xz $(SRC_URL); \
+	fi )
+
+extract_test:
+	( if [ ! -d $(SRC_NAME) ]; then \
+		tar xJf  $(SRC_NAME).tar.xz; \
+		patch -d $(SRC_NAME) -p1 -i ../flac-orig.patch; \
+	fi )
 
 config_test:
 	( if [ -f ./config_done ]; then \
@@ -31,10 +43,8 @@ configure:
 	)
 
 clean:
-	if [ -f $(SRC_NAME)/Makefile ] ; then \
-		$(MAKE) -C $(SRC_NAME) distclean ; \
-	fi ; \
 	rm -f config_done
+	rm -rf $(SRC_NAME)
 
 install:
 	$(MAKE) -C $(SRC_NAME) install DESTDIR=""

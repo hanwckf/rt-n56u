@@ -1,0 +1,72 @@
+diff -urw flac-1.3.2-ref/Makefile.am flac-1.3.2/Makefile.am
+--- flac-1.3.2-ref/Makefile.am	2016-12-11 12:20:55.000000000 +0300
++++ flac-1.3.2/Makefile.am	2018-02-12 12:29:57.929536397 +0300
+@@ -31,7 +31,7 @@
+ 
+ ACLOCAL_AMFLAGS = -I m4
+ 
+-SUBDIRS = doc include m4 man src examples test build objs microbench
++SUBDIRS = include m4 src build objs
+ 
+ EXTRA_DIST = \
+ 	COPYING.FDL \
+diff -urw flac-1.3.2-ref/Makefile.in flac-1.3.2/Makefile.in
+--- flac-1.3.2-ref/Makefile.in	2017-01-01 06:46:48.000000000 +0300
++++ flac-1.3.2/Makefile.in	2018-02-12 12:30:05.541340477 +0300
+@@ -397,7 +397,7 @@
+ top_builddir = @top_builddir@
+ top_srcdir = @top_srcdir@
+ ACLOCAL_AMFLAGS = -I m4
+-SUBDIRS = doc include m4 man src examples test build objs microbench
++SUBDIRS = include m4 src build objs
+ EXTRA_DIST = \
+ 	COPYING.FDL \
+ 	COPYING.GPL \
+diff -urw flac-1.3.2-ref/src/Makefile.am flac-1.3.2/src/Makefile.am
+--- flac-1.3.2-ref/src/Makefile.am	2016-12-07 23:10:26.000000000 +0300
++++ flac-1.3.2/src/Makefile.am	2018-02-12 12:27:12.110668610 +0300
+@@ -27,15 +27,7 @@
+ SUBDIRS = \
+ 	libFLAC \
+ 	share \
+-	flac \
+-	metaflac \
+ 	$(XMMS_DIRS) \
+-	test_grabbag \
+-	test_libs_common \
+-	test_libFLAC \
+-	test_seeking \
+-	test_streams \
+-	utils \
+ 	$(CPPLIBS_DIRS)
+ 
+ EXTRA_DIST = \
+diff -urw flac-1.3.2-ref/src/Makefile.in flac-1.3.2/src/Makefile.in
+--- flac-1.3.2-ref/src/Makefile.in	2017-01-01 06:46:49.000000000 +0300
++++ flac-1.3.2/src/Makefile.in	2018-02-12 12:29:10.337752394 +0300
+@@ -180,8 +180,7 @@
+ ETAGS = etags
+ CTAGS = ctags
+ DIST_SUBDIRS = libFLAC share flac metaflac plugin_common plugin_xmms \
+-	test_grabbag test_libs_common test_libFLAC test_seeking \
+-	test_streams utils libFLAC++ test_libFLAC++
++		utils libFLAC++
+ am__DIST_COMMON = $(srcdir)/Makefile.in
+ DISTFILES = $(DIST_COMMON) $(DIST_SOURCES) $(TEXINFOS) $(EXTRA_DIST)
+ am__relativize = \
+@@ -367,15 +366,7 @@
+ SUBDIRS = \
+ 	libFLAC \
+ 	share \
+-	flac \
+-	metaflac \
+ 	$(XMMS_DIRS) \
+-	test_grabbag \
+-	test_libs_common \
+-	test_libFLAC \
+-	test_seeking \
+-	test_streams \
+-	utils \
+ 	$(CPPLIBS_DIRS)
+ 
+ EXTRA_DIST = \

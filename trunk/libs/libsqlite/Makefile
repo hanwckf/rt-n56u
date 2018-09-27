@@ -1,7 +1,18 @@
-SRC_NAME=sqlite-autoconf-3070701
+SRC_NAME=sqlite-autoconf-3250100
+SRC_URL=https://www.sqlite.org/2018/$(SRC_NAME).tar.gz
 
-all: config_test
+all: download_test extract_test config_test
 	$(MAKE) -C $(SRC_NAME)
+
+download_test:
+	( if [ ! -f $(SRC_NAME).tar.gz ]; then \
+		wget -t5 --timeout=20 --no-check-certificate -O $(SRC_NAME).tar.gz $(SRC_URL); \
+	fi )
+
+extract_test:
+	( if [ ! -d $(SRC_NAME) ]; then \
+		tar zxf $(SRC_NAME).tar.gz; \
+	fi )
 
 config_test:
 	( if [ -f ./config_done ]; then \
@@ -18,6 +29,8 @@ configure:
 		$(if $(LIBS_BUILD_SHARED),--enable-shared,--disable-shared) \
 		--disable-readline \
 		--disable-dynamic-extensions \
+		--disable-fts5 \
+		--disable-json1 \
 		--host=$(HOST_TARGET) \
 		--build=$(HOST_BUILD) ; \
 	)

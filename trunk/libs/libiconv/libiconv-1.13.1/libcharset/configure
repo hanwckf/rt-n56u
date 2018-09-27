@@ -12878,7 +12878,7 @@ macro_version=$macro_version
 macro_revision=$macro_revision
 
 # Assembler program.
-AS=$AS
+AS="$AS"
 
 # DLL creation program.
 DLLTOOL=$DLLTOOL

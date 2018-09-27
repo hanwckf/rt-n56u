@@ -1,0 +1,33 @@
+diff -urw libvorbis-1.3.6-ref/Makefile.am libvorbis-1.3.6/Makefile.am
+--- libvorbis-1.3.6-ref/Makefile.am	2015-09-26 03:13:05.000000000 +0300
++++ libvorbis-1.3.6/Makefile.am	2018-03-22 08:13:34.385494000 +0300
+@@ -4,7 +4,7 @@
+ 
+ ACLOCAL_AMFLAGS = -I m4
+ 
+-SUBDIRS = m4 include vq lib test doc
++SUBDIRS = m4 include vq lib
+ 
+ if BUILD_EXAMPLES 
+ SUBDIRS += examples 
+diff -urw libvorbis-1.3.6-ref/Makefile.in libvorbis-1.3.6/Makefile.in
+--- libvorbis-1.3.6-ref/Makefile.in	2018-03-16 06:36:56.000000000 +0300
++++ libvorbis-1.3.6/Makefile.in	2018-03-22 08:13:34.385494000 +0300
+@@ -194,7 +194,7 @@
+ ETAGS = etags
+ CTAGS = ctags
+ CSCOPE = cscope
+-DIST_SUBDIRS = m4 include vq lib test doc examples
++DIST_SUBDIRS = m4 include vq lib
+ am__DIST_COMMON = $(srcdir)/Makefile.in $(srcdir)/config.h.in \
+ 	$(srcdir)/libvorbis.spec.in $(srcdir)/vorbis-uninstalled.pc.in \
+ 	$(srcdir)/vorbis.pc.in $(srcdir)/vorbisenc-uninstalled.pc.in \
+@@ -388,7 +388,7 @@
+ top_builddir = @top_builddir@
+ top_srcdir = @top_srcdir@
+ AUTOMAKE_OPTIONS = foreign 1.11 dist-zip dist-xz
+-SUBDIRS = m4 include vq lib test doc $(am__append_1)
++SUBDIRS = m4 include vq lib $(am__append_1)
+ m4datadir = $(datadir)/aclocal
+ m4data_DATA = vorbis.m4
+ pkgconfigdir = $(libdir)/pkgconfig

@@ -27970,7 +27970,7 @@ macro_revision=$macro_revision
 build_old_libs=$enable_static
 
 # Assembler program.
-AS=$AS
+AS="$AS"
 
 # DLL creation program.
 DLLTOOL=$DLLTOOL

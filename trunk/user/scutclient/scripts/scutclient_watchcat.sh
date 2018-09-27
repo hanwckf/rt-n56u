@@ -20,7 +20,7 @@ while true; do
 		if /bin/ping -c 1 "$n" -W 1 >/dev/null ; then
 			break
 		else
-			fails=$((fails+1))
+			fails=$((fails+1)) && sleep 1
 		fi
 	done
 	[ $fails -eq $net_num ] && \

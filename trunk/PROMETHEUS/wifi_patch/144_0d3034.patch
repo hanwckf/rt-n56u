@@ -1,0 +1,444 @@
+--- rt-n56u/trunk/proprietary/rt_wifi/rtpci/4.1.X.X/mt76x3/ap/ap_assoc.c
++++ rt-n56u/trunk/proprietary/rt_wifi/rtpci/4.1.X.X/mt76x3/ap/ap_assoc.c
+@@ -121,6 +121,9 @@
+ {
+ 	struct wifi_dev *wdev;
+ 	STA_TR_ENTRY *tr_entry;
++#ifdef DOT11R_FT_SUPPORT
++	UCHAR zeroFT[LEN_TK];
++#endif
+ 
+ 	ASSERT((pEntry->func_tb_idx < pAd->ApCfg.BssidNum));
+ 	wdev = &pAd->ApCfg.MBSSID[pEntry->func_tb_idx].wdev;
+@@ -413,6 +416,9 @@
+ 
+ 	pEntry->freqOffsetValid = FALSE;
+ 
++#ifdef DOT11R_FT_SUPPORT
++	NdisZeroMemory(zeroFT, LEN_TK);
++#endif
+ 
+ 	// Initialize Rate Adaptation
+ 	MlmeRAInit(pAd, pEntry);
+@@ -469,7 +475,11 @@
+ 	}
+ 
+ #ifdef MT_MAC
+-	if (pAd->chipCap.hif_type == HIF_MT)
++	if (pAd->chipCap.hif_type == HIF_MT
++#ifdef DOT11R_FT_SUPPORT
++	    && (pEntry->AllowInsPTK == TRUE || !IS_FT_STA(pEntry) || (IS_FT_STA(pEntry) && (NdisEqualMemory(&pEntry->PTK[OFFSET_OF_PTK_TK], zeroFT, LEN_TK) || !NdisEqualMemory(&pEntry->PTK[OFFSET_OF_PTK_TK], pEntry->LastTK, LEN_TK))))
++#endif
++	)
+ 	{
+         AsicUpdateRxWCIDTable(pAd, pEntry->wcid, pEntry->Addr);
+ 		AsicRcpiReset(pAd, pEntry->wcid);
+@@ -1160,6 +1170,9 @@
+ 	BOOLEAN bAssocSkip = FALSE;
+ 	BOOLEAN bAssocNoRsp = FALSE;
+ 	CHAR rssi;
++#ifdef DOT11R_FT_SUPPORT
++	UCHAR zeroFT[LEN_TK];
++#endif
+ 	IE_LISTS *ie_list = NULL;
+ 	HEADER_802_11 AssocRspHdr;
+ 	USHORT CapabilityInfoForAssocResp;
+@@ -1274,11 +1287,16 @@
+         }
+ #endif /* DOT11W_PMF_SUPPORT */
+     
+-	/* clear the previous Pairwise key table */
++    /* clear the previous Pairwise key table */
++
++#ifdef DOT11R_FT_SUPPORT
++    NdisZeroMemory(zeroFT, LEN_TK);
++#endif
++
+     if(pEntry->Aid != 0 &&
+ #ifdef DOT11R_FT_SUPPORT
+-	(!IS_FT_STA(pEntry)) &&
+-#endif
++	(pEntry->AllowInsPTK == TRUE || !IS_FT_STA(pEntry) || (IS_FT_STA(pEntry) && (NdisEqualMemory(&pEntry->PTK[OFFSET_OF_PTK_TK], zeroFT, LEN_TK) || !NdisEqualMemory(&pEntry->PTK[OFFSET_OF_PTK_TK], pEntry->LastTK, LEN_TK)))) &&
++#endif	
+ 	(pEntry->WepStatus >= Ndis802_11TKIPEnable 
+ #ifdef DOT1X_SUPPORT
+ 	|| wdev->IEEE8021X
+@@ -1727,8 +1745,10 @@
+ 			NdisMoveMemory(pFtIe->MIC, ft_mic, FT_MIC_LEN);
+ 
+ 			/* Only first allow install from assoc, later or rekey or instal from auth (backward compatability with not patched clients) */
+-			if (pEntry->AllowInsPTK == TRUE) {
++			if(pEntry->AllowInsPTK == TRUE || !IS_FT_STA(pEntry) || (IS_FT_STA(pEntry) && (NdisEqualMemory(&pEntry->PTK[OFFSET_OF_PTK_TK], zeroFT, LEN_TK) || !NdisEqualMemory(&pEntry->PTK[OFFSET_OF_PTK_TK], pEntry->LastTK, LEN_TK))))
++			{
+ 			    WPAInstallPairwiseKey(pAd, pEntry->func_tb_idx, pEntry, TRUE);
++			    NdisMoveMemory(pEntry->LastTK, &pEntry->PTK[OFFSET_OF_PTK_TK], LEN_TK);
+ 			    pEntry->AllowInsPTK = FALSE;
+ 			}
+ 
+--- rt-n56u/trunk/proprietary/rt_wifi/rtpci/4.1.X.X/mt76x3/ap/ap_auth.c
++++ rt-n56u/trunk/proprietary/rt_wifi/rtpci/4.1.X.X/mt76x3/ap/ap_auth.c
+@@ -640,7 +640,7 @@
+ 				FT_EnqueueAuthReply(pAd, pRcvHdr, auth_info.auth_alg, 2, result,
+ 							&pFtInfoBuf->MdIeInfo, &pFtInfoBuf->FtIeInfo, NULL,
+ 							pFtInfoBuf->RSN_IE, pFtInfoBuf->RSNIE_Len);
+-
++				NdisZeroMemory(pEntry->LastTK, LEN_TK);
+ 				os_free_mem(NULL, pFtInfoBuf);
+ 				if (result == MLME_SUCCESS) {
+ 					/* Install pairwise key */
+--- rt-n56u/trunk/proprietary/rt_wifi/rtpci/4.1.X.X/mt76x3/common/cmm_data.c
++++ rt-n56u/trunk/proprietary/rt_wifi/rtpci/4.1.X.X/mt76x3/common/cmm_data.c
+@@ -352,7 +352,7 @@
+     INT32 RMACInfoLen;
+     struct rxd_base_struc *rx_base;
+ 	//RXD_GRP4_STRUCT *RxdGrp4 = NULL;
+-	//RXD_GRP1_STRUCT *RxdGrp1 = NULL;
++	RXD_GRP1_STRUCT *RxdGrp1 = NULL;
+ 	RXD_GRP2_STRUCT *RxdGrp2 = NULL;
+ 	RXD_GRP3_STRUCT *RxdGrp3 = NULL;
+ 
+@@ -372,7 +372,7 @@
+ 
+ 	if (rx_base->rxd_0.grp_vld & RXS_GROUP1)
+ 	{
+-		//RxdGrp1 = (RXD_GRP1_STRUCT *)Pos;
++		RxdGrp1 = (RXD_GRP1_STRUCT *)Pos;
+ 		Pos += RMAC_INFO_GRP_1_SIZE;
+ 	}
+ 
+@@ -405,6 +405,14 @@
+         pRxBlk->MPDUtotalByteCnt -= 2;
+         RMACInfoLen += 2;
+     }
++
++	if (RxdGrp1 != NULL)
++	{
++		UINT64 pn_low = RxdGrp1->sec_pn_32;
++		UINT64 pn_high = RxdGrp1->sec_pn_48;
++
++		pRxBlk->CCMP_PN = pn_low + (pn_high << 32);
++	}
+ 
+     pRxBlk->DataSize = pRxBlk->MPDUtotalByteCnt;
+     pRxBlk->wcid = rx_base->rxd_2.wlan_idx;
+--- rt-n56u/trunk/proprietary/rt_wifi/rtpci/4.1.X.X/mt76x3/common/cmm_wpa.c
++++ rt-n56u/trunk/proprietary/rt_wifi/rtpci/4.1.X.X/mt76x3/common/cmm_wpa.c
+@@ -1114,6 +1114,7 @@
+ 	/* Generate random SNonce*/
+ 	GenRandom(pAd, (UCHAR *)pCurrentAddr, pEntry->SNonce);
+ 	pEntry->AllowInsPTK = TRUE;
++	pEntry->AllowUpdateRSC = FALSE;
+ 	pEntry->LastGroupKeyId = 0;
+ 	NdisZeroMemory(pEntry->LastGTK, MAX_LEN_GTK);
+ 
+@@ -1651,6 +1652,13 @@
+ 	UCHAR CliIdx = 0xFF;
+ #endif /* MAC_REPEATER_SUPPORT */
+ 	STA_TR_ENTRY *tr_entry;
++	UCHAR idx = 0;
++	BOOLEAN bWPA2 = FALSE;
++
++	/* Choose WPA2 or not*/
++	if ((pEntry->AuthMode == Ndis802_11AuthModeWPA2) ||
++		(pEntry->AuthMode == Ndis802_11AuthModeWPA2PSK))
++		bWPA2 = TRUE;
+ 
+ 	DBGPRINT(RT_DEBUG_TRACE, ("===> PeerPairMsg3Action \n"));
+ 
+@@ -1701,6 +1709,23 @@
+ 	/* Sanity Check peer Pairwise message 3 - Replay Counter, MIC, RSNIE*/
+ 	if (PeerWpaMessageSanity(pAd, pMsg3, MsgLen, EAPOL_PAIR_MSG_3, pEntry) == FALSE)
+ 		return;
++
++	if ((pEntry->AllowInsPTK == TRUE) && bWPA2) {
++		UCHAR kid = pEntry->LastGroupKeyId;
++
++		if (unlikely(kid >= ARRAY_SIZE(pEntry->CCMP_BC_PN))) {
++			DBGPRINT(RT_DEBUG_TRACE, ("%s invalid key id %u\n", __func__, kid));
++			return;
++		}
++
++		pEntry->CCMP_BC_PN[kid] = 0;
++		for (idx = 0; idx < (LEN_KEY_DESC_RSC - 2); idx++)
++			pEntry->CCMP_BC_PN[kid] += ((UINT64)pMsg3->KeyDesc.KeyRsc[idx] << (idx*8));
++		pEntry->AllowUpdateRSC = FALSE;
++		pEntry->Init_CCMP_BC_PN_Passed[kid] = FALSE;
++		DBGPRINT(RT_DEBUG_OFF, ("%s(%d)-%d: update CCMP_BC_PN to %llu\n",
++			__FUNCTION__, pEntry->wcid, kid, pEntry->CCMP_BC_PN[kid]));
++	}
+ 
+ 	/* Save Replay counter, it will use construct message 4*/
+ 	NdisMoveMemory(pEntry->R_Counter, pMsg3->KeyDesc.ReplayCounter, LEN_KEY_DESC_REPLAY);
+@@ -1745,6 +1770,7 @@
+ 		if(pEntry->AllowInsPTK == TRUE) {
+ 				APCliInstallPairwiseKey(pAd, pEntry);
+ 				pEntry->AllowInsPTK = FALSE;
++			pEntry->AllowUpdateRSC = TRUE;
+ 			} else {
+ 				DBGPRINT(RT_DEBUG_ERROR, ("!!!%s : the M3 reinstall attack, skip install key\n",
+ 						__func__));
+@@ -2198,6 +2224,7 @@
+ 	UCHAR CliIdx = 0xFF;
+ #endif /* MAC_REPEATER_SUPPORT */
+ 	STA_TR_ENTRY *tr_entry;
++	UCHAR idx = 0;
+ 
+ 	DBGPRINT(RT_DEBUG_TRACE, ("===> PeerGroupMsg1Action \n"));
+ 
+@@ -2245,6 +2272,23 @@
+ 	/* Sanity Check peer group message 1 - Replay Counter, MIC, RSNIE*/
+ 	if (PeerWpaMessageSanity(pAd, pGroup, MsgLen, EAPOL_GROUP_MSG_1, pEntry) == FALSE)
+ 		return;
++
++	if (pEntry->AllowUpdateRSC == TRUE) {
++		UCHAR kid = pEntry->LastGroupKeyId;
++
++		if (unlikely(kid >= ARRAY_SIZE(pEntry->CCMP_BC_PN))) {
++			DBGPRINT(RT_DEBUG_TRACE, ("%s invalid key id %u\n", __func__, kid));
++			return;
++		}
++
++		pEntry->CCMP_BC_PN[kid] = 0;
++		for (idx = 0; idx < (LEN_KEY_DESC_RSC - 2); idx++)
++			pEntry->CCMP_BC_PN[kid] += ((UINT64)pGroup->KeyDesc.KeyRsc[idx] << (idx*8));
++		pEntry->AllowUpdateRSC = FALSE;
++		pEntry->Init_CCMP_BC_PN_Passed[kid] = FALSE;
++		DBGPRINT(RT_DEBUG_OFF, ("%s(%d)-%d: update CCMP_BC_PN to %llu\n",
++			__FUNCTION__, pEntry->wcid, kid, pEntry->CCMP_BC_PN[kid]));
++	}
+ 
+ 	/* delete retry timer*/
+ #ifdef CONFIG_AP_SUPPORT
+@@ -4243,13 +4243,14 @@
+ 			/* Prevent the GTK reinstall key attack */
+ 			if (pEntry->LastGroupKeyId != DefaultIdx ||
+ 					!NdisEqualMemory(pEntry->LastGTK, GTK, MAX_LEN_GTK)) {
+-				/* Set Group key material, TxMic and RxMic for AP-Client*/
+-				if (!APCliInstallSharedKey(pAd, GTK, GTKLEN, DefaultIdx, pEntry))
+-				{
+-					return FALSE;
+-				}
++				/* Set Group key material, TxMic and RxMic for AP-Client*/
++				if (!APCliInstallSharedKey(pAd, GTK, GTKLEN, DefaultIdx, pEntry))
++				{
++					return FALSE;
++				}
+ 				pEntry->LastGroupKeyId = DefaultIdx;
+ 				NdisMoveMemory(pEntry->LastGTK, GTK, MAX_LEN_GTK);
++				pEntry->AllowUpdateRSC = TRUE;
+ 			} else {
+ 				DBGPRINT(RT_DEBUG_ERROR, ("!!!%s : the Group reinstall attack, skip install key\n",
+ 						__func__));
+@@ -4267,23 +4267,34 @@
+ 
+             pApcli_entry = &pAd->ApCfg.ApCliTab[IfIdx];
+ 
+-            WPAInstallSharedKey(pAd,
+-                pApcli_entry->GroupCipher,
+-#if defined(MULTI_APCLI_SUPPORT) || defined(APCLI_CONNECTION_TRIAL)
+-		pEntry->func_tb_idx,
++			/* Prevent the GTK reinstall key attack */
++			if (pEntry->LastGroupKeyId != DefaultIdx ||
++				!NdisEqualMemory(pEntry->LastGTK, GTK, MAX_LEN_GTK)) {
++				/* Set Group key material, TxMic and RxMic for AP-Client*/
++				WPAInstallSharedKey(pAd,
++					pApcli_entry->GroupCipher,
++#ifdef MULTI_APCLI_SUPPORT
++					pEntry->func_tb_idx,
+ #else /* MULTI_APCLI_SUPPORT */
+-                BSS0,
++					BSS0,
+ #endif /* !MULTI_APCLI_SUPPORT */
+-                DefaultIdx,
+-#if defined(MULTI_APCLI_SUPPORT) || defined(APCLI_CONNECTION_TRIAL)
+-                APCLI_MCAST_WCID(IfIdx),
++					DefaultIdx,
++#ifdef MULTI_APCLI_SUPPORT
++					APCLI_MCAST_WCID(IfIdx),
+ #else /* MULTI_APCLI_SUPPORT */
+-                APCLI_MCAST_WCID,
++					APCLI_MCAST_WCID,
+ #endif /* !MULTI_APCLI_SUPPORT */
+-                FALSE,
+-                GTK,
+-                GTKLEN);
+-        }
++					FALSE,
++					GTK,
++					GTKLEN);
++				pEntry->LastGroupKeyId = DefaultIdx;
++				NdisMoveMemory(pEntry->LastGTK, GTK, MAX_LEN_GTK);
++				pEntry->AllowUpdateRSC = TRUE;
++			} else {
++				DBGPRINT(RT_DEBUG_ERROR, ("!!!%s : the Group reinstall attack, skip install key\n",
++					__func__));
++			}
++	}
+ #endif /* MT_MAC */
+ #endif /* APCLI_SUPPORT */
+ #endif /* CONFIG_AP_SUPPORT */
+--- rt-n56u/trunk/proprietary/rt_wifi/rtpci/4.1.X.X/mt76x3/include/rtmp.h
++++ rt-n56u/trunk/proprietary/rt_wifi/rtpci/4.1.X.X/mt76x3/include/rtmp.h
+@@ -2507,6 +2507,7 @@
+ 	BOOLEAN AllowInsPTK;
+ 	UCHAR LastGroupKeyId;
+ 	UCHAR LastGTK[MAX_LEN_GTK];
++	UCHAR LastTK[LEN_TK];
+ 	RALINK_TIMER_STRUCT RetryTimer;
+ 	NDIS_802_11_AUTHENTICATION_MODE AuthMode;	/* This should match to whatever microsoft defined */
+ 	NDIS_802_11_WEP_STATUS WepStatus;
+@@ -2821,7 +2822,9 @@
+     RALINK_TIMER_STRUCT	EapReqIdRetryTimer; /* Sometimes EapReqId cannot sendout successfully after associate completed, we need to re-send again. */
+ #endif /* WSC_INCLUDED */
+ #endif /* MT_MAC */
+-
++	UINT64 CCMP_BC_PN[SHARE_KEY_NUM];
++	BOOLEAN Init_CCMP_BC_PN_Passed[SHARE_KEY_NUM];
++	BOOLEAN AllowUpdateRSC;
+ } MAC_TABLE_ENTRY, *PMAC_TABLE_ENTRY;
+ 
+ 
+@@ -5054,6 +5057,7 @@
+ #ifdef RTMP_PCI_SUPPORT
+ 	UINT32 PDMALen;
+ #endif
++	UINT64 CCMP_PN;
+ 
+ #ifdef FORCE_ANNOUNCE_CRITICAL_AMPDU
+ 	UCHAR CriticalPkt;
+--- rt-n56u/trunk/proprietary/rt_wifi/rtpci/4.1.X.X/mt76x3/include/wpa.h
++++ rt-n56u/trunk/proprietary/rt_wifi/rtpci/4.1.X.X/mt76x3/include/wpa.h
+@@ -151,10 +151,10 @@
+ 		if ((_pAd)->OpMode == OPMODE_AP)								\
+ 		{																\
+ 		if (IS_ENTRY_APCLI(_pEntry) && 								\
+-			((_pEntry)->wdev_idx < MAX_APCLI_NUM))			\
+-			_cipher = (_pAd)->ApCfg.ApCliTab[(_pEntry)->wdev_idx].GroupCipher;	\
++			((_pEntry)->func_tb_idx < MAX_APCLI_NUM))			\
++			_cipher = (_pAd)->ApCfg.ApCliTab[(_pEntry)->func_tb_idx].GroupCipher;	\
+ 			else if ((_pEntry)->func_tb_idx < (_pAd)->ApCfg.BssidNum)			\
+-				_cipher = (_pAd)->ApCfg.MBSSID[_pEntry->func_tb_idx].GroupKeyWepStatus;\
++				_cipher = (_pAd)->ApCfg.MBSSID[_pEntry->func_tb_idx].wdev.GroupKeyWepStatus;\
+ 		}																\
+ 		else															\
+ 			_cipher = (_pAd)->StaCfg.GroupCipher;						\
+@@ -169,10 +169,10 @@
+ 	{																\
+ 	_cipher = Ndis802_11WEPDisabled;							\
+ 	if (IS_ENTRY_APCLI(_pEntry) && 								\
+-		((_pEntry)->wdev_idx < MAX_APCLI_NUM))			\
+-		_cipher = (_pAd)->ApCfg.ApCliTab[(_pEntry)->wdev_idx].GroupCipher;	\
++			((_pEntry)->func_tb_idx < MAX_APCLI_NUM))			\
++			_cipher = (_pAd)->ApCfg.ApCliTab[(_pEntry)->func_tb_idx].GroupCipher;	\
+ 		else if ((_pEntry)->func_tb_idx < (_pAd)->ApCfg.BssidNum)			\
+-			_cipher = (_pAd)->ApCfg.MBSSID[_pEntry->func_tb_idx].GroupKeyWepStatus;\
++			_cipher = (_pAd)->ApCfg.MBSSID[_pEntry->func_tb_idx].wdev.GroupKeyWepStatus;\
+ 	}
+ 
+ #define WPA_BSSID(_pAd, _apidx) 	(_pAd)->ApCfg.MBSSID[_apidx].Bssid
+--- rt-n56u/trunk/proprietary/rt_wifi/rtpci/4.1.X.X/mt76x3/tx_rx/wdev_rx.c
++++ rt-n56u/trunk/proprietary/rt_wifi/rtpci/4.1.X.X/mt76x3/tx_rx/wdev_rx.c
+@@ -126,6 +126,64 @@
+ 	}
+ }
+ 
++/* this function ONLY if not allow pn replay attack and drop packet */
++static BOOLEAN check_rx_pkt_pn_allowed(RTMP_ADAPTER *pAd, RX_BLK *rx_blk)
++{
++	MAC_TABLE_ENTRY *pEntry = NULL;
++	BOOLEAN isAllow = TRUE;
++	HEADER_802_11 *pHeader = rx_blk->pHeader;
++	FRAME_CONTROL *pFmeCtrl = &pHeader->FC;
++
++	if (pFmeCtrl->Wep == 0)
++		return TRUE;
++
++	if (rx_blk->wcid >= MAX_LEN_OF_MAC_TABLE)
++		return TRUE;
++
++	pEntry = &pAd->MacTab.Content[rx_blk->wcid];
++
++	if ((!pEntry) || (!pEntry->wdev) || (!IS_ENTRY_APCLI(pEntry)))
++		return TRUE;
++
++	if (rx_blk->pRxInfo->Mcast || rx_blk->pRxInfo->Bcast) {
++		NDIS_802_11_ENCRYPTION_STATUS GroupCipher;
++		UCHAR kid = rx_blk->key_idx;
++
++		WPA_GET_GROUP_CIPHER(pAd, pEntry, GroupCipher);
++
++		if (GroupCipher == Ndis802_11AESEnable) {
++			if (unlikely(kid >= ARRAY_SIZE(pEntry->CCMP_BC_PN))) {
++				DBGPRINT(RT_DEBUG_TRACE, ("BC, %s invalid key id %u\n", __func__, kid));
++				return TRUE;
++			}
++
++			if (unlikely(pEntry->Init_CCMP_BC_PN_Passed[kid] == FALSE)) {
++				if (rx_blk->CCMP_PN >= pEntry->CCMP_BC_PN[kid]) {
++					DBGPRINT(RT_DEBUG_TRACE, ("BC, %s (%d)-%d OK: come-in the %llu and now is %llu\n",
++						__FUNCTION__, pEntry->wcid, kid, rx_blk->CCMP_PN, pEntry->CCMP_BC_PN[kid]));
++					pEntry->CCMP_BC_PN[kid] = rx_blk->CCMP_PN;
++					pEntry->Init_CCMP_BC_PN_Passed[kid] = TRUE;
++				} else {
++					DBGPRINT(RT_DEBUG_ERROR, ("BC, %s (%d)-%d Reject: come-in the %llu and now is %llu\n",
++						__FUNCTION__, pEntry->wcid, kid, rx_blk->CCMP_PN, pEntry->CCMP_BC_PN[kid]));
++					isAllow = FALSE;
++				}
++			} else {
++				if (rx_blk->CCMP_PN > pEntry->CCMP_BC_PN[kid]) {
++					DBGPRINT(RT_DEBUG_TRACE, ("BC, %s (%d)-%d OK: come-in the %llu and now is %llu\n",
++						__FUNCTION__, pEntry->wcid, kid, rx_blk->CCMP_PN, pEntry->CCMP_BC_PN[kid]));
++					pEntry->CCMP_BC_PN[kid] = rx_blk->CCMP_PN;
++				} else {
++					DBGPRINT(RT_DEBUG_ERROR, ("BC, %s (%d)-%d Reject: come-in the %llu and now is %llu\n",
++						__FUNCTION__, pEntry->wcid, kid, rx_blk->CCMP_PN, pEntry->CCMP_BC_PN[kid]));
++					isAllow = FALSE;
++				}
++			}
++		}
++	}
++
++	return isAllow;
++}
+ 
+ #ifdef DOT11_N_SUPPORT
+ UINT deaggregate_AMSDU_announce(
+@@ -246,6 +304,12 @@
+ {
+ 	//UINT nMSDU;
+ 
++	if (check_rx_pkt_pn_allowed(pAd, pRxBlk) == FALSE) {
++		DBGPRINT(RT_DEBUG_WARN, ("%s:drop packet by PN mismatch!\n", __FUNCTION__));
++		RELEASE_NDIS_PACKET(pAd, pRxBlk->pRxPacket, NDIS_STATUS_FAILURE);
++		return;
++	}
++
+ 	RTMP_UPDATE_OS_PACKET_INFO(pAd, pRxBlk, wdev_idx);
+ 	RTMP_SET_PACKET_WDEV(pRxBlk->pRxPacket, wdev_idx);
+ #ifdef MT_MAC
+@@ -311,6 +375,12 @@
+ 		return;
+ 	}
+ 	wdev = pAd->wdev_list[wdev_idx];
++
++	if (check_rx_pkt_pn_allowed(pAd, pRxBlk) == FALSE) {
++		DBGPRINT(RT_DEBUG_WARN, ("%s:drop packet by PN mismatch!\n", __FUNCTION__));
++		RELEASE_NDIS_PACKET(pAd, pRxPacket, NDIS_STATUS_FAILURE);
++		return;
++	}
+ 
+ //+++Add by shiang for debug
+ #ifdef HDR_TRANS_SUPPORT
+@@ -894,6 +964,12 @@
+ 	if (pRxBlk->wcid >= MAX_LEN_OF_MAC_TABLE)
+ 	{
+ 		DBGPRINT(RT_DEBUG_WARN, ("Indicate_EAPOL_Packet: invalid wcid.\n"));
++		RELEASE_NDIS_PACKET(pAd, pRxBlk->pRxPacket, NDIS_STATUS_FAILURE);
++		return;
++	}
++
++	if (check_rx_pkt_pn_allowed(pAd, pRxBlk) == FALSE) {
++		DBGPRINT(RT_DEBUG_WARN, ("%s:drop packet by PN mismatch!\n", __FUNCTION__));
+ 		RELEASE_NDIS_PACKET(pAd, pRxBlk->pRxPacket, NDIS_STATUS_FAILURE);
+ 		return;
+ 	}

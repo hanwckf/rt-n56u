@@ -1,8 +1,8 @@
 #!/bin/sh
 
 [ "$(pidof scutclient_watchcat.sh)" != "$$" ] && exit 1
-net="202.38.193.188 114.114.114.114 119.29.29.29 202.38.193.33"
-net_num=4
+net="202.38.193.188 114.114.114.114 119.29.29.29"
+net_num=3
 
 while true; do
 	sleep 60

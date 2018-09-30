@@ -1,9 +1,8 @@
 SRC_NAME=aria2-1.17.1
+BIN_DIR_NAME=aria2-1.33.1
 
 SRC_ARIA_NG_NAME=AriaNg-0.5.0
 SRC_ARIA_NG_URL=https://github.com/mayswind/AriaNg/releases/download/0.5.0/AriaNg-0.5.0.zip
-
-BIN_DIR=aria2-bin
 
 CFLAGS  += -ffunction-sections -fdata-sections
 CXXFLAGS += -ffunction-sections -fdata-sections
@@ -13,7 +12,7 @@ THISDIR = $(shell pwd)
 
 all: extract_test config_test
 ifeq ($(CONFIG_FIRMWARE_INCLUDE_ARIA2_NEW_PREBUILD_BIN),y)
-	$(MAKE) -C $(BIN_DIR)
+	@echo $(BIN_DIR_NAME) done
 else
 	$(MAKE) -C $(SRC_NAME)
 endif
@@ -72,7 +71,6 @@ clean:
 	if [ -f $(SRC_NAME)/Makefile ] ; then \
 		$(MAKE) -C $(SRC_NAME) distclean ; \
 	fi ; \
-	$(MAKE) -C $(BIN_DIR) clean
 	rm -rf ariaweb
 	rm -f config_done
 	rm -rf install
@@ -82,7 +80,7 @@ ifeq ($(CONFIG_FIRMWARE_INCLUDE_ARIA_WEB_CONTROL),y)
 	cp -rf $(THISDIR)/ariaweb $(INSTALLDIR)/www
 endif
 ifeq ($(CONFIG_FIRMWARE_INCLUDE_ARIA2_NEW_PREBUILD_BIN),y)
-	$(ROMFSINST) $(THISDIR)/$(BIN_DIR)/aria2c /usr/bin/aria2c
+	$(ROMFSINST) $(THISDIR)/aria2-bin/$(BIN_DIR_NAME)/aria2c /usr/bin/aria2c
 else
 	$(ROMFSINST) $(THISDIR)/$(SRC_NAME)/src/aria2c /usr/bin/aria2c
 endif

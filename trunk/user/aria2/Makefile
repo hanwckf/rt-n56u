@@ -1,7 +1,7 @@
 SRC_NAME=aria2-1.17.1
 
-SRC_ARIA_NG_NAME=aria-ng-0.4.0
-SRC_ARIA_NG_URL=https://github.com/mayswind/AriaNg/releases/download/0.4.0/aria-ng-0.4.0.zip
+SRC_ARIA_NG_NAME=AriaNg-0.5.0
+SRC_ARIA_NG_URL=https://github.com/mayswind/AriaNg/releases/download/0.5.0/AriaNg-0.5.0.zip
 
 BIN_DIR=aria2-bin
 

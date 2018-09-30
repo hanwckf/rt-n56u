@@ -3698,6 +3698,8 @@ struct mime_handler mime_handlers[] = {
 	/* cached font */
 	{ "**.woff", "application/font-woff", NULL, NULL, do_file, 0 }, // 2016.01 Volt1
 	{ "**.woff2", "application/font-woff", NULL, NULL, do_file, 0 },
+	{ "**.eot", "application/vnd.ms-fontobject", NULL, NULL, do_file, 0 },
+	{ "**.ttf", "application/octet-stream", NULL, NULL, do_file, 0 },
 	{ "**.txt", "text/plain", NULL, NULL, do_file, 0 },
 	{ "**.manifest", "text/plain", NULL, NULL, do_file, 0 },
 #endif

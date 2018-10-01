@@ -170,7 +170,7 @@ struct nvram_pair router_defaults[] = {
 	{ "wl_closed", "0" },			/* Closed (hidden) network */
 	{ "wl_macmode", "disabled" },		/* "allow" only, "deny" only, or "disabled"(allow all) */
 	{ "wl_maclist", "" },			/* xx:xx:xx:xx:xx:xx ... */
-	{ "wl_wme", "1" },			/* WME mode (off|on) */
+	{ "wl_wme", "0" },			/* WME mode (off|on) */
 	{ "wl_wme_no_ack", "off" },		/* WME No-Acknowledgment mode */
 	{ "wl_auth_mode", "psk" },		/* Network authentication mode: WPAx Personal */
 	{ "wl_key", "1" },			/* Current WEP key */
@@ -191,7 +191,7 @@ struct nvram_pair router_defaults[] = {
 	{ "wl_TxPower", "100" },
 	{ "wl_TxBurst", "1" },
 	{ "wl_PktAggregate", "1" },
-	{ "wl_APSDCapable", "1" },
+	{ "wl_APSDCapable", "0" },
 	{ "wl_HT_OpMode", "0" },
 #if BOARD_HAS_5G_11AC
 	{ "wl_HT_BW", "2" },
@@ -269,13 +269,13 @@ struct nvram_pair router_defaults[] = {
 	{ "rt_HT_BW", "1" },
 	{ "rt_HT_EXTCHA", "1" },
 	{ "rt_HT_OpMode", "0" },
-	{ "rt_wme", "1" },
+	{ "rt_wme", "0" },
 	{ "rt_wme_no_ack", "off" },
 	{ "rt_IgmpSnEnable", "1" },
 	{ "rt_TxPower", "100" },
 	{ "rt_TxBurst", "1" },
 	{ "rt_PktAggregate", "1" },
-	{ "rt_APSDCapable", "1" },
+	{ "rt_APSDCapable", "0" },
 	{ "rt_auth_mode", "psk" },
 	{ "rt_crypto", "aes" },
 	{ "rt_wpa_psk", DEF_WLAN_2G_PSK },

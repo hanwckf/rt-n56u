@@ -9,11 +9,14 @@ dir=dnsmasq-china-conf
 THISDIR = $(shell pwd)
 
 all:
-	( if [ ! -f $(dir)/$(acc_china_file) ];then \
-		wget -q -t5 --timeout=20 --no-check-certificate -P $(dir) $(url)/$(acc_china_file); \
-		wget -q -t5 --timeout=20 --no-check-certificate -P $(dir) $(url)/$(acc_apple_file); \
-		cat $(dir)/$(acc_apple_file) >> $(dir)/$(acc_china_file); \
-		rm -f $(dir)/$(acc_apple_file); \
+	mkdir -p $(dir)
+	( if [ ! -f $(dir)/.finish ]; then \
+		rm -f $(dir)/* && \
+		wget -q -t5 --timeout=20 --no-check-certificate -P $(dir) $(url)/$(acc_china_file) && \
+		wget -q -t5 --timeout=20 --no-check-certificate -P $(dir) $(url)/$(acc_apple_file) && \
+		cat $(dir)/$(acc_apple_file) >> $(dir)/$(acc_china_file) && \
+		rm -f $(dir)/$(acc_apple_file) && \
+		touch $(dir)/.finish ; \
 	fi )
 	sed -i "s|^\(server.*\)/[^/]*$$|\1/$(dns_server)|" $(dir)/$(acc_china_file)
 	cd $(dir) && tar jcf $(archive_file) $(acc_china_file)

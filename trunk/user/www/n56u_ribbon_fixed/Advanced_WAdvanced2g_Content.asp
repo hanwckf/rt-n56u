@@ -64,6 +64,12 @@ function initial(){
 	if (!support_2g_inic_mii())
 		showhide_div('row_mrate', 0);
 
+	if (support_2g_turbo_qam())
+		showhide_div('row_turbo_qam', 1);
+
+	if (support_2g_airtimefairness())
+		showhide_div('row_airtimefairness', 1);
+
 	load_body();
 
 	change_wmm();
@@ -352,6 +358,24 @@ function done_validating(action){
                                                 <option value="0" <% nvram_match_x("","rt_APSDCapable", "0","selected"); %> ><#btn_Disable#></option>
                                                 <option value="1" <% nvram_match_x("","rt_APSDCapable", "1","selected"); %> ><#btn_Enable#> (*)</option>
                                               </select>
+                                            </td>
+                                        </tr>
+                                        <tr id="row_turbo_qam" style="display:none">
+                                            <th><#WLANConfig11b_x_turbo_qam#></th>
+                                            <td>
+                                                <select name="rt_turbo_qam" class="input">
+                                                    <option value="0" <% nvram_match_x("","rt_turbo_qam", "0","selected"); %>><#btn_Disable#></option>
+                                                    <option value="1" <% nvram_match_x("","rt_turbo_qam", "1","selected"); %>><#btn_Enable#> (*)</option>
+                                                </select>
+                                            </td>
+                                        </tr>
+                                        <tr id="row_airtimefairness" style="display:none">
+                                            <th><#WLANConfig11b_x_rt_airtimefairness#></th>
+                                            <td>
+                                                <select name="rt_airtimefairness" class="input">
+                                                    <option value="0" <% nvram_match_x("","rt_airtimefairness", "0","selected"); %>><#btn_Disable#> (*)</option>
+                                                    <option value="1" <% nvram_match_x("","rt_airtimefairness", "1","selected"); %>><#btn_Enable#></option>
+                                                </select>
                                             </td>
                                         </tr>
                                     </table>

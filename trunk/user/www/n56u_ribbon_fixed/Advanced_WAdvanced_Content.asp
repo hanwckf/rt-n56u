@@ -68,6 +68,15 @@ function initial(){
 	if (support_5g_stream_rx()<2)
 		document.form.wl_stream_rx.remove(1);
 
+	if (support_5g_txbf())
+		showhide_div("row_txbf", 1);
+
+	if (support_5g_band_steering())
+		showhide_div("row_band_steering", 1);
+
+	if (support_5g_mumimo())
+		showhide_div("row_mumimo", 1);
+
 	load_body();
 
 	change_wmm();
@@ -346,6 +355,33 @@ function done_validating(action){
                                                 <option value="0" <% nvram_match_x("","wl_APSDCapable", "0","selected"); %> ><#btn_Disable#></option>
                                                 <option value="1" <% nvram_match_x("","wl_APSDCapable", "1","selected"); %> ><#btn_Enable#> (*)</option>
                                               </select>
+                                            </td>
+                                        </tr>
+                                        <tr id="row_band_steering" style="display:none">
+                                            <th><#WLANConfig11n_band_steering#></th>
+                                            <td>
+                                                <select name="wl_band_steering" class="input">
+                                                    <option value="0" <% nvram_match_x("","wl_band_steering", "0","selected"); %>><#btn_Disable#> (*)</option>
+                                                    <option value="1" <% nvram_match_x("","wl_band_steering", "1","selected"); %>><#btn_Enable#></option>
+                                                </select>
+                                            </td>
+                                        </tr>
+                                        <tr id="row_mumimo" style="display:none">
+                                            <th><#WLANConfig11n_mumimo#></th>
+                                            <td>
+                                                <select name="wl_mumimo" class="input">
+                                                    <option value="0" <% nvram_match_x("","wl_mumimo", "0","selected"); %>><#btn_Disable#></option>
+                                                    <option value="1" <% nvram_match_x("","wl_mumimo", "1","selected"); %>><#btn_Enable#> (*)</option>
+                                                </select>
+                                            </td>
+                                        </tr>
+                                        <tr id="row_txbf" style="display:none">
+                                            <th><#WLANConfig11n_txbf#></th>
+                                            <td>
+                                                <select name="wl_txbf" class="input">
+                                                    <option value="0" <% nvram_match_x("","wl_txbf", "0","selected"); %>><#btn_Disable#></option>
+                                                    <option value="1" <% nvram_match_x("","wl_txbf", "1","selected"); %>><#btn_Enable#> (*)</option>
+                                                </select>
                                             </td>
                                         </tr>
                                     </table>

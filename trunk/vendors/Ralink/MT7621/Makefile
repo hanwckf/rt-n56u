@@ -62,14 +62,22 @@ endif
 ifdef CONFIG_MT76X3_AP
 	$(ROMFSINST) /etc_ro/Wireless/MT7603E_EEPROM.bin
 endif
-
+ifeq ($(CONFIG_RT_FIRST_CARD),7615)
+	$(ROMFSINST) /etc_ro/Wireless/mt7615e.eeprom.bin
+else
+ifeq ($(CONFIG_RT_SECOND_CARD),7615)
+	$(ROMFSINST) /etc_ro/Wireless/mt7615e.eeprom.bin
+endif
+endif
 romfs.post::
 	[ -d $(IMAGEDIR) ] || mkdir -p $(IMAGEDIR)
 	sudo /sbin/ldconfig -r $(ROMFSDIR) -C /etc_ro/ld.so.cache
 	rm -f $(RAMDISK)
 	rm -f $(KERNELZ).lzma
+ifneq ($(CONFIG_WITHOUT_KERNEL),y)
 ifeq ($(CONFIG_RT2880_ROOTFS_IN_FLASH),y)
 	$(ROOTDIR)/tools/bin/mksquashfs_xz-4.0 $(ROMFSDIR) $(RAMDISK) -all-root -no-exports -noappend -nopad -noI -no-xattrs
+endif
 endif
 
 image:

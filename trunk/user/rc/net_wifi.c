@@ -680,7 +680,10 @@ restart_wifi_wl(int radio_on, int need_reload_conf)
 	stop_8021x_wl();
 
 	stop_wifi_all_wl();
-
+#if defined (BOARD_K2P)
+	stop_8021x_rt();
+	stop_wifi_all_rt();
+#endif
 	if (need_reload_conf) {
 		gen_ralink_config_5g(0);
 		nvram_set_int_temp("reload_svc_wl", 1);
@@ -691,7 +694,16 @@ restart_wifi_wl(int radio_on, int need_reload_conf)
 	start_wifi_apcli_wl(radio_on);
 
 	start_8021x_wl();
+#if defined (BOARD_K2P)
+	int rt_radio_on = get_enabled_radio_rt();
+	if (rt_radio_on)
+		rt_radio_on = is_radio_allowed_rt();
+	start_wifi_ap_rt(rt_radio_on);
+	start_wifi_wds_rt(rt_radio_on);
+	start_wifi_apcli_rt(rt_radio_on);
 
+	start_8021x_rt();
+#endif
 	restart_guest_lan_isolation();
 
 	check_apcli_wan(1, radio_on);
@@ -712,7 +724,10 @@ restart_wifi_rt(int radio_on, int need_reload_conf)
 	stop_8021x_rt();
 
 	stop_wifi_all_rt();
-
+#if defined (BOARD_K2P)
+	stop_8021x_wl();
+	stop_wifi_all_wl();
+#endif
 	if (need_reload_conf) {
 		gen_ralink_config_2g(0);
 		nvram_set_int_temp("reload_svc_rt", 1);
@@ -723,7 +738,16 @@ restart_wifi_rt(int radio_on, int need_reload_conf)
 	start_wifi_apcli_rt(radio_on);
 
 	start_8021x_rt();
+#if defined (BOARD_K2P)
+	int wl_radio_on = get_enabled_radio_wl();
+	if (wl_radio_on)
+		wl_radio_on = is_radio_allowed_wl();
+	start_wifi_ap_wl(wl_radio_on);
+	start_wifi_wds_wl(wl_radio_on);
+	start_wifi_apcli_wl(wl_radio_on);
 
+	start_8021x_wl();
+#endif
 	restart_guest_lan_isolation();
 
 	check_apcli_wan(0, radio_on);

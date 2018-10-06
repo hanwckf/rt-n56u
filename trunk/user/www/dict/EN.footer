@@ -300,6 +300,7 @@ NFilterMaxConn=Maximum Connections:
 NFilterNatType=NAT Type (UDP only):
 NFilterALG=Application-Level Gateway (ALG)
 HardwareNAT=Hardware Offload NAT/Routing IPv4:
+WAN_SFE=shortcut-fe:
 VPNS_Desc=VPN Server
 VPNS_Info=VPN Server allows secure access from the Internet to the LAN subnet or extends a private LAN subnets across the Internet (Site-to-Site).
 VPNS_Enable=Enable VPN Server?
@@ -552,6 +553,9 @@ BasicConfig_HWNAT_itemname=Enable HW NAT?
 LANHostConfig_x_Password_itemdesc=Password cannot be greater than 32 characters.
 CableStatus=Cable Status
 HowToSharebyFTP5=Use an FTP Client application with UTF-8 support to display non-English characters such as Traditional or Simplified Chinese. Such FTP client application is <a href='http://filezilla-project.org/' target='_blank'>Filezilla</a>, in which you can modify character encoding in the Site Manager/Advanced option.
+WLANConfig11n_band_steering=Enable Band Steering?
+WLANConfig11n_mumimo=Enable MU-MIMO?
+WLANConfig11n_txbf=Enable Transmit Beamforming?
 WLANConfig11n_nmode_limition_hint=ZVMODELVZ will change WEP or TKIP encryption to AES in [n Only] mode to ensure that clients to get the proper connection.
 WLANConfig11n_automode_limition_hint=Under [Mixed] mode with WEP or TKIP encryption, ZVMODELVZ supports the maximum transmission rate of 54 Mbps.
 BM_desc_upload=EZQoS automatically detects your uplink speed to help you adjust your network bandwidth. If you can get the exact uplink speed through another way such as an online speed test, we recommend that you enter the speed value in <a href='Advanced_QOSUserSpec_Content.asp'>advanced settings page</a>
@@ -1532,6 +1536,8 @@ WLANConfig11b_WEPKey3_itemname=WEP Key 3:
 WLANConfig11b_WEPKey4_itemname=WEP Key 4:
 WLANConfig11b_WEPKey_itemtype1=5 ASCII digits or 10 hex digits
 WLANConfig11b_WEPKey_itemtype2=13 ASCII digits or 26 hex digits
+WLANConfig11b_x_turbo_qam=Enable 256QAM(Turbo QAM)?
+WLANConfig11b_x_rt_airtimefairness=Enable Airtime Fairness?
 WLANConfig11b_x_Rekey_itemname=Network Key Rotation Interval:
 WLANConfig11b_x_Rekey_itemdesc=This field specifies the interval (sec) after which a WPA group key is changed. Enter 0 (zero) to indicate that a periodic key-change is not required. 
 WLANConfig11b_x_BlockBCSSID_itemname=Hide SSID:

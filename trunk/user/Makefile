@@ -111,10 +111,16 @@ dir_  =
 
 dir_y						+= busybox
 dir_y						+= iptables
+ifneq ($(CONFIG_WITHOUT_KERNEL),y)
 dir_$(CONFIG_FIRMWARE_INCLUDE_IPSET)		+= ipset
+dir_$(CONFIG_FIRMWARE_INCLUDE_NAPT66)		+= napt66
+dir_y						+= accel-pptpd
+endif
 dir_y						+= ebtables
 dir_y						+= iproute2
+ifneq ($(CONFIG_WITHOUT_IW),y)
 dir_y						+= wireless_tools
+endif
 dir_y						+= shared
 dir_$(STORAGE_ENABLED)				+= libdisk
 dir_y						+= nvram
@@ -135,7 +141,6 @@ dir_y						+= 802.1x
 dir_y						+= wpa_supplicant
 dir_y						+= pppd
 dir_y						+= pppoe
-dir_y						+= accel-pptpd
 dir_y						+= xl2tpd
 dir_$(CONFIG_FIRMWARE_INCLUDE_RPL2TP)		+= rp-l2tp
 dir_y						+= lldt
@@ -154,7 +159,6 @@ dir_$(TTYD_ENABLED)					+= ttyd
 dir_$(SOFTETHERVPN_ENABLE)			+= softethervpn
 dir_$(CONFIG_FIRMWARE_INCLUDE_SCUTCLIENT)         += scutclient
 dir_$(CONFIG_FIRMWARE_INCLUDE_VLMCSD)			+= vlmcsd
-dir_$(CONFIG_FIRMWARE_INCLUDE_NAPT66)			+= napt66
 dir_$(CONFIG_FIRMWARE_INCLUDE_CHINADNS)		+= chinadns
 dir_$(CONFIG_FIRMWARE_INCLUDE_DNSFORWARDER)		+= dns-forwarder
 dir_$(CONFIG_FIRMWARE_INCLUDE_SHADOWSOCKS)		+= shadowsocks

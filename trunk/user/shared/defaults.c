@@ -240,6 +240,11 @@ struct nvram_pair router_defaults[] = {
 	{ "wl_guest_macrule", "0" },
 	{ "wl_guest_mcs_mode", "0" },
 
+#if defined(USE_MT7615_AP)
+	{ "wl_band_steering", "0" },
+	{ "wl_mumimo", "1" },
+#endif
+
 	// ApCli 5Ghz
 	{ "wl_sta_ssid", "" },
 	{ "wl_sta_auth_mode", "open" },
@@ -330,6 +335,11 @@ struct nvram_pair router_defaults[] = {
 	{ "rt_guest_wpa_psk", "" },
 	{ "rt_guest_macrule", "0" },
 	{ "rt_guest_mcs_mode", "0" },
+
+#if defined(USE_MT7615_AP)
+	{ "rt_turbo_qam", "1" },
+	{ "rt_airtimefairness", "0" },
+#endif
 
 	// ApCli 2.4Ghz
 	{ "rt_sta_ssid", "" },
@@ -723,6 +733,7 @@ struct nvram_pair router_defaults[] = {
 	{ "hw_nat_mode", "4" },
 #endif
 	{ "sw_nat_mode", "0" },
+	{ "sfe_enable", "0" },
 	{ "fw_syn_cook", "0" },
 	{ "fw_mac_drop", "0" },
 	{ "nf_nat_type", "2" },

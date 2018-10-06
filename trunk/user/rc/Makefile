@@ -10,14 +10,22 @@ include $(SHDIR)/boards.mk
 include $(SHDIR)/cflags.mk
 
 CFLAGS += -s -I. -I$(SHDIR) -I$(SHDIR)/include
+ifeq ($(CONFIG_WITHOUT_IW),y)
+CFLAGS += -I$(ROOTDIR)/libs/libiw/$(CONFIG_FIRMWARE_PRODUCT_ID)/include
+else
 CFLAGS += -I$(USERDIR)/wireless_tools
+endif
 CFLAGS += -I$(ROOTDIR)/$(LINUXDIR)/include/ralink
 
 # Disable/Enable ugly httpd_check
 #CFLAGS += -DHTTPD_CHECK
 
 LDFLAGS += -L. -lm
+ifeq ($(CONFIG_WITHOUT_IW),y)
+LDFLAGS += -L$(ROOTDIR)/libs/libiw/$(CONFIG_FIRMWARE_PRODUCT_ID) -liw
+else
 LDFLAGS += -L$(USERDIR)/wireless_tools -liw
+endif
 LDFLAGS += -L$(SHDIR) -lshared
 ifeq ($(STORAGE_ENABLED),y)
 CFLAGS += -I$(USERDIR)/libdisk

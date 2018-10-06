@@ -674,6 +674,30 @@ gen_ralink_config(int is_soc_ap, int is_aband, int disable_autoscan)
 	}
 	fprintf(fp, "Channel=%d\n", i_channel);
 
+#if defined (USE_MT7615_AP)
+	fprintf(fp, "EfuseBufferMode=%d\n", 0);
+	fprintf(fp, "E2pAccessMode=%d\n", 2);
+	fprintf(fp, "SKUenable=%d\n", 0); //TODO
+#endif
+#if defined (USE_WID_2G) && USE_WID_2G==7615
+	if (!is_aband) {
+		fprintf(fp, "G_BAND_256QAM=%d\n", nvram_wlan_get_int(0, "turbo_qam"));
+		fprintf(fp, "VOW_Airtime_Fairness_En=%d\n", nvram_wlan_get_int(0, "airtimefairness"));
+	}
+#endif
+#if defined (USE_WID_5G) && USE_WID_5G==7615
+	if (is_aband) {
+		fprintf(fp, "MUTxRxEnable=%d\n", nvram_wlan_get_int(1, "mumimo"));
+		fprintf(fp, "ITxBfTimeout=%d\n", 0);
+		fprintf(fp, "ETxBfTimeout=%d\n", 0);
+		fprintf(fp, "ETxBfNoncompress=%d\n", 0);
+		fprintf(fp, "ETxBfIncapable=%d\n", 0);
+		fprintf(fp, "BandSteering=%d\n", nvram_wlan_get_int(1, "band_steering"));
+	}
+#endif
+#if defined (BOARD_K2P)
+	fprintf(fp, "DBDC_MODE=%d\n", 1);
+#endif
 	//AutoChannelSelect
 	i_val = (i_channel == 0) ? 2 : 0;
 	fprintf(fp, "AutoChannelSelect=%d\n", i_val);

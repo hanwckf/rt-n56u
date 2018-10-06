@@ -183,6 +183,10 @@ LIBS_INCLUDE_LIBICONV=y
 LIBS_INCLUDE_NCURSES=y
 endif
 
+ifeq ($(CONFIG_FIRMWARE_ENABLE_FAT),y)
+LIBS_INCLUDE_LIBICONV=y
+endif
+
 dir_y						+= libz
 dir_$(LIBS_INCLUDE_NCURSES)			+= libncurses
 dir_$(LIBS_INCLUDE_LIBLZO)			+= liblzo
@@ -199,10 +203,13 @@ dir_$(LIBS_INCLUDE_LIBSODIUM)			+= libsodium
 dir_$(LIBS_INCLUDE_LIBUDNS)			+= libudns
 dir_$(LIBS_INCLUDE_CURL)			+= libcurl
 dir_y						+= libnfnetlink
-
+ifeq ($(CONFIG_WITHOUT_IW),y)
+dir_y						+= libiw
+endif
 # ipset shared libs
+ifneq ($(CONFIG_WITHOUT_KERNEL),y)
 dir_$(CONFIG_FIRMWARE_INCLUDE_IPSET)		+= libmnl
-
+endif
 dir_$(LIBS_INCLUDE_LIBPCAP)		+= libpcap
 
 # minidlna and firefly shared libs

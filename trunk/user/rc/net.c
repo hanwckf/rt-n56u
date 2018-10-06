@@ -772,7 +772,16 @@ reload_nat_modules(void)
 
 	hwnat_configure(hwnat_allow);
 #endif
+#if defined (USE_SFE)
+	int sfe_enable = nvram_get_int("sfe_enable");
+	int sfe_loaded = is_module_loaded("fast_classifier");
+
+	if (sfe_loaded && !sfe_enable)
+		module_smart_unload("fast_classifier", 1);
+	if (sfe_enable && !sfe_loaded)
+		module_smart_load("fast_classifier", NULL);	
 }
+#endif
 
 void
 restart_firewall(void)

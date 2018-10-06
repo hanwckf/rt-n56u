@@ -49,9 +49,15 @@
 #define BOARD_2G_AS_WSOC		(BOARD_2G_IN_SOC || !BOARD_5G_IN_SOC)
 
 #if BOARD_2G_AS_WSOC
+#if defined (BOARD_K2P)
+#define IFNAME_2G_MAIN			"rax0"
+#define IFNAME_2G_GUEST			"rax1"
+#define IFNAME_2G_APCLI			"apclix0"
+#else
 #define IFNAME_2G_MAIN			"ra0"
 #define IFNAME_2G_GUEST			"ra1"
 #define IFNAME_2G_APCLI			"apcli0"
+#endif
 #define IFNAME_2G_WDS0			"wds0"
 #define IFNAME_2G_WDS1			"wds1"
 #define IFNAME_2G_WDS2			"wds2"
@@ -76,9 +82,15 @@
 #define IFNAME_5G_WDS2			"wds2"
 #define IFNAME_5G_WDS3			"wds3"
 #else
+#if defined (BOARD_K2P)
+#define IFNAME_5G_MAIN			"ra0"
+#define IFNAME_5G_GUEST			"ra1"
+#define IFNAME_5G_APCLI			"apcli0"
+#else
 #define IFNAME_5G_MAIN			"rai0"
 #define IFNAME_5G_GUEST			"rai1"
 #define IFNAME_5G_APCLI			"apclii0"
+#endif
 #define IFNAME_5G_WDS0			"wdsi0"
 #define IFNAME_5G_WDS1			"wdsi1"
 #define IFNAME_5G_WDS2			"wdsi2"

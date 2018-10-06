@@ -16,12 +16,15 @@ VERSIONPKG = 1.1
 include .config
 include versions.inc
 
+ifeq ($(CONFIG_WITHOUT_KERNEL),y)
+all: tools libc_only libs_only user_only romfs
+else
 ifeq ($(CONFIG_FIRMWARE_TYPE_ROOTFS_IN_RAM),y)
 all: tools modules libc_only libs_only user_only romfs linux image
 else
 all: tools linux libc_only libs_only user_only romfs image
 endif
-
+endif
 ############################################################################
 #
 # Get the core stuff worked out
@@ -115,7 +118,11 @@ modules_install:
 #
 
 .PHONY: romfs
+ifeq ($(CONFIG_WITHOUT_KERNEL),y)
+romfs: romfs.subdirs romfs.post
+else
 romfs: romfs.subdirs modules_install romfs.post
+endif
 
 .PHONY: romfs.subdirs
 romfs.subdirs:

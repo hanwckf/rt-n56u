@@ -315,6 +315,7 @@ NFilterMaxConn=最大连接数:
 NFilterNatType=NAT 类型 (仅 UDP):
 NFilterALG=应用层网关 (ALG)
 HardwareNAT=硬件 NAT 加速:
+WAN_SFE=shortcut-fe 加速:
 VPNS_Desc=VPN 服务器
 VPNS_Info=VPN 服务器提供了从互联网安全访问局域网的功能，可用于在互联网上扩展局域网 (站点到站点)。
 VPNS_Enable=启用 VPN 服务器
@@ -567,6 +568,9 @@ BasicConfig_HWNAT_itemname=启用硬件 NAT ?
 LANHostConfig_x_Password_itemdesc=密码不能超过十六个字符。
 CableStatus=电缆状态
 HowToSharebyFTP5=使用支持 UTF-8 的 FTP 客户端应用可以显示非英文字符(如繁体或简体中文)。例如 FTP 客户端应用程序<a href='http://filezilla-project.org/' target='_blank'>Filezilla</a>可在[站点设置]-[高级选项]中修改字符编码。
+WLANConfig11n_band_steering=启用智能频段切换
+WLANConfig11n_mumimo=启用MU-MIMO
+WLANConfig11n_txbf=启用波束成形
 WLANConfig11n_nmode_limition_hint=[n Only]模式下，原 WEP 或 TKIP 加密设置将自动调整为 AES 加密。
 WLANConfig11n_automode_limition_hint=自动模式下使用 WEP 或 TKIP 加密时，无线网络最高支持 54Mbps 的传输速率。
 BM_desc_upload=EZQoS 会自动检测上行速度以便调整网络带宽。若已通过其他方式获取到准确的上行速度(如在线速度测试)，则建议打开<a href='Advanced_QOSUserSpec_Content.asp'>高级设置页面</a>手动修改上行速度值
@@ -1547,6 +1551,8 @@ WLANConfig11b_WEPKey3_itemname=WEP 密钥3
 WLANConfig11b_WEPKey4_itemname=WEP 密钥4
 WLANConfig11b_WEPKey_itemtype1=5 个 ASCII 字符或 10 个十六进制数
 WLANConfig11b_WEPKey_itemtype2=13 个 ASCII 字符或 26 个十六进制数
+WLANConfig11b_x_turbo_qam=启用256QAM(Turbo QAM)
+WLANConfig11b_x_rt_airtimefairness=启用发送时间公平性
 WLANConfig11b_x_Rekey_itemname=网络密钥轮换间隔:
 WLANConfig11b_x_Rekey_itemdesc=WPA 群组密钥变更的时间间隔 (以秒为单位)，0 表示无需周期性的密钥变更。
 WLANConfig11b_x_BlockBCSSID_itemname=隐藏 SSID:

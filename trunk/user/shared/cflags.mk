@@ -92,6 +92,13 @@ CFLAGS += -DUSE_WID_5G=$(CONFIG_RT_SECOND_CARD)
 endif
 endif
 
+ifdef CONFIG_RT_FIRST_IF_MT7615E
+CFLAGS += -DUSE_MT7615_AP
+endif
+
+ifdef CONFIG_RT_SECOND_IF_MT7615E
+CFLAGS += -DUSE_MT7615_AP
+endif
 ##################################################################
 # Project .config related params
 ##################################################################
@@ -219,4 +226,12 @@ CFLAGS += -DAPP_SHADOWSOCKS
 ifeq ($(CONFIG_FIRMWARE_INCLUDE_DNSMASQ_CHINA_CONF),y)
 CFLAGS += -DAPP_DNSMASQ_CHINA_CONF
 endif
+endif
+
+ifeq ($(CONFIG_WITHOUT_KERNEL),y)
+CFLAGS += -DWITHOUT_KERNEL
+endif
+
+ifeq ($(CONFIG_KERNEL_WITH_SFE),y)
+CFLAGS += -DUSE_SFE
 endif

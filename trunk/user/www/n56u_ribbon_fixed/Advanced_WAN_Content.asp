@@ -51,6 +51,10 @@ function initial(){
 		showhide_div('row_hwnat', 0);
 	}
 
+	if (support_sfe()){
+		showhide_div('row_sfe', 1);
+	}
+
 	var o1 = document.form.wan_auth_mode;
 	if (!support_peap_ssl()){
 		o1.remove(3);
@@ -714,6 +718,15 @@ function simplyMAC(fullMAC){
                                                     <option value="3" <% nvram_match_x("", "hw_nat_mode", "3", "selected"); %>>Offload TCP/UDP for LAN</option>
                                                     <option value="4" <% nvram_match_x("", "hw_nat_mode", "4", "selected"); %>>Offload TCP/UDP for LAN/WLAN</option>
                                                     <option value="2" <% nvram_match_x("", "hw_nat_mode", "2", "selected"); %>>Disable (Slow)</option>
+                                                </select>
+                                            </td>
+                                        </tr>
+                                        <tr id="row_sfe" style="display:none;">
+                                            <th><#WAN_SFE#></a></th>
+                                            <td>
+                                                <select name="sfe_enable" class="input">
+                                                    <option value="0" <% nvram_match_x("", "sfe_enable", "0", "selected"); %>>Disable</option>
+                                                    <option value="1" <% nvram_match_x("", "sfe_enable", "1", "selected"); %>>Enable for IPv4/IPv6</option>
                                                 </select>
                                             </td>
                                         </tr>

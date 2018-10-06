@@ -349,7 +349,7 @@ get_eeprom_params(void)
 #endif
 #endif
 
-#if 0
+#if defined (USE_MT7615_AP)
 	// TXBF, not used yet
 	{
 		int i, count_0xff = 0;

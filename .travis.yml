@@ -27,7 +27,7 @@ script:
     - sudo bash ./clear_tree_simple >/dev/null 2>&1 && sudo bash ./build_firmware_nohup MI-3 && sudo cp -f images/*.trx /opt/images
     - sudo bash ./clear_tree_simple >/dev/null 2>&1 && sudo bash ./build_firmware_nohup 5K-W20 && sudo cp -f images/*.trx /opt/images
     - sudo bash ./clear_tree_simple >/dev/null 2>&1 && sudo bash ./build_firmware_nohup WR1200JS && sudo cp -f images/*.trx /opt/images
-    - sudo bash ./clear_tree_simple >/dev/null 2>&1 && sudo wget -qq $K2P_TRX -O ./merge/K2P.trx && [ "$K2P_TRX_MD5" == "$(md5sum ./merge/K2P.trx |cut -f1 -d ' ')" ] && sudo bash ./build_firmware_nohup K2P && sudo cp -f images/*.trx /opt/images
+    - sudo bash ./clear_tree_simple >/dev/null 2>&1 && sudo bash ./build_firmware_nohup K2P && sudo cp -f images/*.trx /opt/images
 
 after_script:
     - GIT_VERSION=`git rev-parse --short=7 HEAD 2>/dev/null` && [ -n "$GIT_VERSION" ] && image_name=images_$GIT_VERSION || image_name=images

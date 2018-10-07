@@ -17,7 +17,7 @@ include .config
 include versions.inc
 
 ifeq ($(CONFIG_WITHOUT_KERNEL),y)
-all: tools libc_only libs_only user_only romfs
+all: tools unpack_trx libc_only libs_only user_only romfs image
 else
 ifeq ($(CONFIG_FIRMWARE_TYPE_ROOTFS_IN_RAM),y)
 all: tools modules libc_only libs_only user_only romfs linux image
@@ -47,6 +47,9 @@ SCRIPTSDIR     = $(ROOTDIR)/config/scripts
 LINUX_CONFIG   = $(ROOTDIR)/$(LINUXDIR)/.config
 PROJECT_CONFIG = $(ROOTDIR)/.config
 SSTRIP_TOOL    = $(if $(CONFIG_FIRMWARE_PERFORM_SSTRIP),$(ROOTDIR)/tools/sstrip/sstrip)
+UNSQSHFS_TOOL  = $(ROOTDIR)/tools/bin/unsquashfs_xz-4.0
+MERGE_DIR      = $(ROOTDIR)/merge
+MERGE_ROOTFS   = $(MERGE_DIR)/$(CONFIG_FIRMWARE_PRODUCT_ID)/rootfs
 
 #NUM MAKE PROCESS = CPU NUMBER IN THE SYSTEM * CPU_OVERLOAD
 CPU_OVERLOAD	= 1
@@ -95,6 +98,7 @@ export PROJECT_CONFIG LINUX_CONFIG ROOTDIR LINUXDIR ROMFSDIR SCRIPTSDIR
 export FIRMWARE_KERNEL_VER FIRMWARE_ROOTFS_VER FIRMWARE_BUILDS_VER FIRMWARE_BUILDS_REV
 export VERSIONPKG VERSIONSTR ROMFSINST PATH IMAGEDIR RELFILES TFTPDIR
 export KERNEL_HEADERS_PATH CONFIG_CROSS_COMPILER_ROOT CONFIG_CROSS_COMPILER_PATH
+export UNSQSHFS_TOOL CONFIG_WITHOUT_KERNEL
 
 ############################################################################
 
@@ -112,6 +116,15 @@ modules_install:
 		$(MAKEARCH_KERNEL) -C $(LINUXDIR) INSTALL_MOD_PATH=$(ROMFSDIR) DEPMOD=$(ROOTDIR)/tools/depmod.sh modules_install; \
 	fi
 
+.PHONY: modules_copy
+modules_copy:
+	[ -d $(ROMFSDIR)/lib/modules ] || mkdir -p $(ROMFSDIR)/lib/modules
+	cp -rfa $(MERGE_ROOTFS)/lib/modules $(ROMFSDIR)/lib
+
+.PHONY: bin_copy
+bin_copy:
+	for f in `cat $(MERGE_DIR)/file_list |grep -v "^#"`; do cp -fP $(MERGE_ROOTFS)/$$f $(ROMFSDIR)/$$f ; done
+
 ############################################################################
 #
 # normal make targets
@@ -119,7 +132,7 @@ modules_install:
 
 .PHONY: romfs
 ifeq ($(CONFIG_WITHOUT_KERNEL),y)
-romfs: romfs.subdirs romfs.post
+romfs: romfs.subdirs modules_copy bin_copy romfs.post
 else
 romfs: romfs.subdirs modules_install romfs.post
 endif
@@ -169,6 +182,10 @@ dep:
 .PHONY: tools
 tools:
 	make -C tools
+
+.PHONY: unpack_trx
+unpack_trx:
+	unpack-trx.sh
 
 clean:
 	make clean -C tools

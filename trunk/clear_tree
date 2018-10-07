@@ -19,3 +19,7 @@ make clean
 rm -rfv $ROOTDIR/romfs
 rm -rfv $ROOTDIR/images
 rm -rfv $ROOTDIR/stage
+. $ROOTDIR/.config
+if [ -d $ROOTDIR/merge/$CONFIG_FIRMWARE_PRODUCT_ID ]; then 
+	sudo rm -rf $ROOTDIR/merge/$CONFIG_FIRMWARE_PRODUCT_ID
+fi

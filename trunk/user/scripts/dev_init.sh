@@ -11,8 +11,14 @@ if [ "$1" == "-l" ] ; then
 	size_var="1M"
 fi
 
+if [ "$1" == "K2P" ] ; then
+	size_etc="8M"
+else
+	size_etc="5M"
+fi
+
 mount -t tmpfs tmpfs /dev   -o size=8K
-mount -t tmpfs tmpfs /etc   -o size=5M,noatime
+mount -t tmpfs tmpfs /etc   -o size=$size_etc,noatime
 mount -t tmpfs tmpfs /home  -o size=1M
 mount -t tmpfs tmpfs /media -o size=8K
 mount -t tmpfs tmpfs /mnt   -o size=8K

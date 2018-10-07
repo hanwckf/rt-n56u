@@ -10,7 +10,7 @@ include $(SHDIR)/cflags.mk
 
 CFLAGS += -Wall -I. -I$(SHDIR) -I$(SHDIR)/include
 ifeq ($(CONFIG_WITHOUT_IW),y)
-CFLAGS += -I$(ROOTDIR)/libs/libiw/$(CONFIG_FIRMWARE_PRODUCT_ID)/include
+CFLAGS += -I$(ROOTDIR)/libs/libiw/include
 else
 CFLAGS += -I$(USERDIR)/wireless_tools
 endif

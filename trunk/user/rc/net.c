@@ -776,12 +776,22 @@ reload_nat_modules(void)
 	int sfe_enable = nvram_get_int("sfe_enable");
 	int sfe_loaded = is_module_loaded("fast_classifier");
 
-	if (sfe_loaded && !sfe_enable)
+	if (sfe_loaded && !sfe_enable) {
 		module_smart_unload("fast_classifier", 1);
-	if (sfe_enable && !sfe_loaded)
-		module_smart_load("fast_classifier", NULL);	
-}
+		sfe_loaded = 0;
+	}
+	if (sfe_enable && !sfe_loaded) {
+		module_smart_load("fast_classifier", NULL);
+		sfe_loaded = 1;
+	}
+	if (sfe_loaded) {
+		if (sfe_enable == 1)
+			doSystem("echo 0 > /sys/fast_classifier/skip_to_bridge_ingress");
+		else if (sfe_enable == 2)
+			doSystem("echo 1 > /sys/fast_classifier/skip_to_bridge_ingress");
+	}
 #endif
+}
 
 void
 restart_firewall(void)

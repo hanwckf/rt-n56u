@@ -727,6 +727,7 @@ function simplyMAC(fullMAC){
                                                 <select name="sfe_enable" class="input">
                                                     <option value="0" <% nvram_match_x("", "sfe_enable", "0", "selected"); %>>Disable</option>
                                                     <option value="1" <% nvram_match_x("", "sfe_enable", "1", "selected"); %>>Enable for IPv4/IPv6</option>
+                                                    <option value="2" <% nvram_match_x("", "sfe_enable", "2", "selected"); %>>Enable for IPv4/IPv6 and WiFi</option>
                                                 </select>
                                             </td>
                                         </tr>

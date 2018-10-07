@@ -628,7 +628,7 @@ struct nvram_pair router_defaults[] = {
 	{ "di_poll_mode", "0" },
 	{ "di_timeout", "2" },
 	{ "di_time_done", "30" },
-	{ "di_time_fail", "2" },
+	{ "di_time_fail", "5" },
 	{ "di_lost_delay", "1" },
 	{ "di_lost_action", "0" },
 	{ "di_recon_pause", "0" },

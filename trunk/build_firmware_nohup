@@ -5,9 +5,7 @@ if [ ! -f configs/templates/$1.config ] ; then
 	exit 1
 fi
 
-rm -f nohup.out
-touch nohup.out
-nohup ./build_firmware_modify $1 &
+./build_firmware_modify $1 > build.log 2>&1 &
 
 while true ;do
 	sleep 10
@@ -16,12 +14,12 @@ while true ;do
 
 	if [ -z "$process_status" ] ;then
 		echo "Build script is exit"
-		if [ "$(tail -1 nohup.out)" = "make[1]: Leaving directory \`/opt/rt-n56u/trunk/vendors'" ]; then
-			tail -20 nohup.out && exit 0
+		if [ "$(tail -1 build.log)" = "make[1]: Leaving directory \`/opt/rt-n56u/trunk/vendors'" ]; then
+			tail -20 build.log && exit 0
 		else
-			tail -60 nohup.out && exit 1
+			tail -60 build.log && exit 1
 		fi
 	else
-		tail -2 nohup.out
+		tail -2 build.log
 	fi
 done

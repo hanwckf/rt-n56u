@@ -2361,6 +2361,11 @@ ej_firmware_caps_hook(int eid, webs_t wp, int argc, char **argv)
 #else
 	int has_sfe = 0;
 #endif
+#if defined (BOARD_K2P)
+	int has_lan_ap_isolate = 0;
+#else
+	int has_lan_ap_isolate = 1;
+#endif
 
 	websWrite(wp,
 		"function found_utl_hdparm() { return %d;}\n"
@@ -2444,7 +2449,8 @@ ej_firmware_caps_hook(int eid, webs_t wp, int argc, char **argv)
 		"function support_5g_txbf() { return %d;}\n"
 		"function support_5g_band_steering() { return %d;}\n"
 		"function support_5g_mumimo() { return %d;}\n"
-		"function support_sfe() { return %d;}\n",
+		"function support_sfe() { return %d;}\n"
+		"function support_lan_ap_isolate() { return %d;}\n",
 		has_ipv6,
 		has_ipv6_ppe,
 		has_ipv4_ppe,
@@ -2477,7 +2483,8 @@ ej_firmware_caps_hook(int eid, webs_t wp, int argc, char **argv)
 		has_5g_txbf,
 		has_5g_band_steering,
 		has_5g_mumimo,
-		has_sfe
+		has_sfe,
+		has_lan_ap_isolate
 	);
 
 	return 0;

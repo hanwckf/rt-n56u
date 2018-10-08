@@ -170,7 +170,9 @@ function change_guest_enabled(mflag) {
 	showhide_div('row_guest_4', v);
 	showhide_div('row_guest_5', v);
 	showhide_div('row_guest_6', v);
-	showhide_div('row_guest_7', v);
+	if (support_lan_ap_isolate()) {
+		showhide_div('row_guest_7', v);
+	}
 	showhide_div('row_guest_8', v);
 	showhide_div('row_guest_9', v);
 	showhide_div('row_guest_10', v);

@@ -1,6 +1,6 @@
 #!/bin/sh
 
-TRIGS="pdv-7621-ci"
+TRIGS="pdv-7621-ci pdv-7628-ci"
 
 git config --global user.name "hanwckf"
 git config --global user.email "my375229675@gmail.com"

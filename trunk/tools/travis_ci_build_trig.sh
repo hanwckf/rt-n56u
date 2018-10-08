@@ -1,12 +1,17 @@
 #!/bin/sh
 
-cd /opt
+TRIGS="pdv-7621-ci"
+
 git config --global user.name "hanwckf"
 git config --global user.email "my375229675@gmail.com"
 
-git clone --depth=1 https://github.com/hanwckf/pdv-7621-ci.git && cd pdv-7621-ci
-echo $(LANG=C date) >> Build.log
-git add .
-git commit -m "build trigger"
-git remote set-url origin https://hanwckf:$GITHUB_KEY@github.com/hanwckf/pdv-7621-ci.git
-git push
+for repo in $TRIGS ; do
+	cd /opt
+	git clone --depth=1 https://github.com/hanwckf/$repo.git && cd $repo
+	echo $(LANG=C date) >> Build.log
+	[ -f /opt/$repo.yml ] && cp -f /opt/$repo.yml .travis.yml
+	git add .
+	git commit -m "build trigger"
+	git remote set-url origin https://hanwckf:$GITHUB_KEY@github.com/hanwckf/$repo.git
+	git push
+done

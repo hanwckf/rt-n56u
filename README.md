@@ -56,6 +56,9 @@ Contributors of this project are not responsible for what happens next.
 - 已适配除官方适配外的以下机型
 >- WR1200JS (128M,USB)
 >- K2 / PSG1218 (64M)
+>- K2P (128M,杂交固件)
+>- MZ-R13 (64M)
+>- MZ-R13P (未测试,64M)
 >- OYE-001 (128M,USB)
 >- MI-MINI (未测试,128M,USB)
 >- 5K-W20 (未测试,64M,USB)

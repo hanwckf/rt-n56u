@@ -113,7 +113,6 @@ dir_y						+= busybox
 dir_y						+= iptables
 ifneq ($(CONFIG_WITHOUT_KERNEL),y)
 dir_$(CONFIG_FIRMWARE_INCLUDE_IPSET)		+= ipset
-dir_$(CONFIG_FIRMWARE_INCLUDE_NAPT66)		+= napt66
 dir_y						+= accel-pptpd
 endif
 dir_y						+= ebtables
@@ -129,6 +128,7 @@ dir_y						+= networkmap
 dir_y						+= httpd
 dir_y						+= www
 dir_y						+= rc
+dir_$(CONFIG_FIRMWARE_INCLUDE_NAPT66)		+= napt66
 dir_y						+= infosvr
 dir_y						+= inadyn
 dir_y						+= miniupnpd

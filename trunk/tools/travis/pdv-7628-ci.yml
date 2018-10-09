@@ -22,6 +22,7 @@ before_script:
 
 script:
     - sudo bash ./build_firmware_nohup MZ-R13 && sudo cp -f images/*.trx /opt/images
+    - sudo bash ./clear_tree_simple >/dev/null 2>&1 && sudo bash ./build_firmware_nohup MZ-R13P && sudo cp -f images/*.trx /opt/images
 
 after_script:
     - GIT_VERSION=`git rev-parse --short=7 HEAD 2>/dev/null` && [ -n "$GIT_VERSION" ] && image_name=images_mt7628_$GIT_VERSION || image_name=images_mt7628

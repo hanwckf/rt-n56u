@@ -1,4 +1,4 @@
-/* $Id: miniupnpdtypes.h,v 1.5 2012/09/27 15:47:15 nanard Exp $ */
+/* $Id: miniupnpdtypes.h,v 1.6 2017/05/24 22:28:40 nanard Exp $ */
 /* MiniUPnP project
  * http://miniupnp.free.fr/ or http://miniupnp.tuxfamily.org/
  * (c) 2006-2012 Thomas Bernard
@@ -16,9 +16,7 @@
  * with ascii representation and mask */
 struct lan_addr_s {
 	char ifname[IFNAMSIZ];	/* example: eth0 */
-#ifdef ENABLE_IPV6
 	unsigned int index;		/* use if_nametoindex() */
-#endif
 	char str[16];	/* example: 192.168.0.1 */
 	struct in_addr addr, mask;	/* ip/mask */
 #ifdef MULTIPLE_EXTERNAL_IP

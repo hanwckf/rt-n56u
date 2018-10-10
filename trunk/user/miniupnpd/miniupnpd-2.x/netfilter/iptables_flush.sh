@@ -1,10 +1,10 @@
 #! /bin/sh
-# $Id: iptables_flush.sh,v 1.6 2017/04/21 11:16:09 nanard Exp $
-IPTABLES=/sbin/iptables
+# $Id: iptables_flush.sh,v 1.7 2018/04/06 10:17:09 nanard Exp $
+
+. $(dirname "$0")/miniupnpd_functions.sh
 
 #flush all rules owned by miniupnpd
-$IPTABLES -t nat -F MINIUPNPD
-$IPTABLES -t nat -F MINIUPNPD-POSTROUTING
-$IPTABLES -t filter -F MINIUPNPD
-$IPTABLES -t mangle -F MINIUPNPD
-
+$IPTABLES -t nat -F $CHAIN
+$IPTABLES -t nat -F $CHAIN-POSTROUTING
+$IPTABLES -t filter -F $CHAIN
+$IPTABLES -t mangle -F $CHAIN

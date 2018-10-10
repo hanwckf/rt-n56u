@@ -1,4 +1,4 @@
-/* $Id: daemonize.c,v 1.13 2012/03/05 20:36:15 nanard Exp $ */
+/* $Id: daemonize.c,v 1.14 2018/04/22 19:36:58 nanard Exp $ */
 /* MiniUPnP project
  * http://miniupnp.free.fr/ or http://miniupnp.tuxfamily.org/
  * (c) 2006 Thomas Bernard
@@ -67,7 +67,7 @@ writepidfile(const char * fname, int pid)
 	int pidstringlen;
 	int pidfile;
 
-	if(!fname || (strlen(fname) == 0))
+	if(!fname || fname[0] == '\0')
 		return -1;
 
 	if( (pidfile = open(fname, O_WRONLY|O_CREAT, 0644)) < 0)
@@ -102,7 +102,7 @@ checkforrunning(const char * fname)
 	int pidfile;
 	pid_t pid;
 
-	if(!fname || (strlen(fname) == 0))
+	if(!fname || fname[0] == '\0')
 		return -1;
 
 	if( (pidfile = open(fname, O_RDONLY)) < 0)

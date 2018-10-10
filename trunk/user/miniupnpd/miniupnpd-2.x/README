@@ -1,6 +1,6 @@
 MiniUPnP project
-(c) 2006-2016 Thomas Bernard
-webpage: http://miniupnp.free.fr/ or http://miniupnp.tuxfamily.org/
+(c) 2006-2017 Thomas Bernard
+webpage: http://miniupnp.free.fr/ or https://miniupnp.tuxfamily.org/
 github: https://github.com/miniupnp/miniupnp
 freecode: http://freecode.com/projects/miniupnp
 contact: miniupnp@free.fr
@@ -31,7 +31,7 @@ Read the INSTALL file for instructions to compile, install and
 configure miniupnpd on your system.
 
 Report bugs to miniupnp@free.fr or on the web forum
-http://miniupnp.tuxfamily.org/forum/
+https://miniupnp.tuxfamily.org/forum/
 or using https://github.com/miniupnp/miniupnp/issues
 
 Thomas Bernard

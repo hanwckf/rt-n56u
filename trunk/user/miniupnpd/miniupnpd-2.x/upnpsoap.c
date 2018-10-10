@@ -1,7 +1,8 @@
-/* $Id: upnpsoap.c,v 1.148 2017/04/21 11:20:27 nanard Exp $ */
-/* MiniUPnP project
- * http://miniupnp.free.fr/ or http://miniupnp.tuxfamily.org/
- * (c) 2006-2017 Thomas Bernard
+/* $Id: upnpsoap.c,v 1.152 2018/07/06 12:05:48 nanard Exp $ */
+/* vim: tabstop=4 shiftwidth=4 noexpandtab
+ * MiniUPnP project
+ * http://miniupnp.free.fr/ or https://miniupnp.tuxfamily.org/
+ * (c) 2006-2018 Thomas Bernard
  * This software is subject to the conditions detailed
  * in the LICENCE file provided within the distribution */
 
@@ -31,6 +32,7 @@
 #include "getifstats.h"
 #include "getconnstatus.h"
 #include "upnpurns.h"
+#include "upnputils.h"
 
 /* utility function */
 static int is_numeric(const char * s)
@@ -273,7 +275,7 @@ GetStatusInfo(struct upnphttp * h, const char * action, const char * ns)
 	 * Disconnecting, Disconnected */
 
 	status = get_wan_connection_status_str(ext_if_name);
-	uptime = (time(NULL) - startup_time);
+	uptime = upnp_get_uptime();
 	bodylen = snprintf(body, sizeof(body), resp,
 		action, ns, /*SERVICE_TYPE_WANIPC,*/
 		status, (long)uptime, action);
@@ -330,17 +332,20 @@ GetExternalIPAddress(struct upnphttp * h, const char * action, const char * ns)
 	 * There is usually no NAT with IPv6 */
 
 #ifndef MULTIPLE_EXTERNAL_IP
+	struct in_addr addr;
 	if(use_ext_ip_addr)
 	{
 		strncpy(ext_ip_addr, use_ext_ip_addr, INET_ADDRSTRLEN);
 		ext_ip_addr[INET_ADDRSTRLEN - 1] = '\0';
 	}
-	else if(getifaddr(ext_if_name, ext_ip_addr, INET_ADDRSTRLEN, NULL, NULL) < 0)
+	else if(getifaddr(ext_if_name, ext_ip_addr, INET_ADDRSTRLEN, &addr, NULL) < 0)
 	{
 		syslog(LOG_DEBUG, "Failed to get ip address for interface %s",
 			ext_if_name);
 		strncpy(ext_ip_addr, "0.0.0.0", INET_ADDRSTRLEN);
 	}
+	if (addr_is_reserved(&addr))
+		strncpy(ext_ip_addr, "0.0.0.0", INET_ADDRSTRLEN);
 #else
 	struct lan_addr_s * lan_addr;
 	strncpy(ext_ip_addr, "0.0.0.0", INET_ADDRSTRLEN);
@@ -354,6 +359,11 @@ GetExternalIPAddress(struct upnphttp * h, const char * action, const char * ns)
 		}
 	}
 #endif
+	if (strcmp(ext_ip_addr, "0.0.0.0") == 0)
+	{
+		SoapError(h, 501, "Action Failed");
+		return;
+	}
 	bodylen = snprintf(body, sizeof(body), resp,
 	              action, ns, /*SERVICE_TYPE_WANIPC,*/
 				  ext_ip_addr, action);
@@ -408,7 +418,7 @@ AddPortMapping(struct upnphttp * h, const char * action, const char * ns)
 	r_host = GetValueFromNameValueList(&data, "NewRemoteHost");
 #ifndef SUPPORT_REMOTEHOST
 #ifdef UPNP_STRICT
-	if (r_host && (strlen(r_host) > 0) && (0 != strcmp(r_host, "*")))
+	if (r_host && (r_host[0] != '\0') && (0 != strcmp(r_host, "*")))
 	{
 		ClearNameValueList(&data);
 		SoapError(h, 726, "RemoteHostOnlySupportsWildcard");
@@ -604,7 +614,7 @@ AddAnyPortMapping(struct upnphttp * h, const char * action, const char * ns)
 	}
 #ifndef SUPPORT_REMOTEHOST
 #ifdef UPNP_STRICT
-	if (r_host && (strlen(r_host) > 0) && (0 != strcmp(r_host, "*")))
+	if (r_host && (r_host[0] != '\0') && (0 != strcmp(r_host, "*")))
 	{
 		ClearNameValueList(&data);
 		SoapError(h, 726, "RemoteHostOnlySupportsWildcard");
@@ -722,7 +732,7 @@ GetSpecificPortMappingEntry(struct upnphttp * h, const char * action, const char
 	}
 #ifndef SUPPORT_REMOTEHOST
 #ifdef UPNP_STRICT
-	if (r_host && (strlen(r_host) > 0) && (0 != strcmp(r_host, "*")))
+	if (r_host && (r_host[0] != '\0') && (0 != strcmp(r_host, "*")))
 	{
 		ClearNameValueList(&data);
 		SoapError(h, 726, "RemoteHostOnlySupportsWildcard");
@@ -811,7 +821,7 @@ DeletePortMapping(struct upnphttp * h, const char * action, const char * ns)
 	}
 #ifndef SUPPORT_REMOTEHOST
 #ifdef UPNP_STRICT
-	if (r_host && (strlen(r_host) > 0) && (0 != strcmp(r_host, "*")))
+	if (r_host && (r_host[0] != '\0') && (0 != strcmp(r_host, "*")))
 	{
 		ClearNameValueList(&data);
 		SoapError(h, 726, "RemoteHostOnlySupportsWildcard");
@@ -1370,7 +1380,7 @@ QueryStateVariable(struct upnphttp * h, const char * action, const char * ns)
 		BuildSendAndCloseSoapResp(h, body, bodylen);
 	}
 #if 0
-	/* not usefull */
+	/* not useful */
 	else if(strcmp(var_name, "ConnectionType") == 0)
 	{
 		bodylen = snprintf(body, sizeof(body), resp, "IP_Routed");
@@ -1616,7 +1626,7 @@ AddPinhole(struct upnphttp * h, const char * action, const char * ns)
 	 * - InternalClient value equals to the control point's IP address.
 	 * It is REQUIRED that InternalClient cannot be one of IPv6
 	 * addresses used by the gateway. */
-	if(!int_ip || 0 == strlen(int_ip) || 0 == strcmp(int_ip, "*"))
+	if(!int_ip || int_ip[0] == '\0' || 0 == strcmp(int_ip, "*"))
 	{
 		SoapError(h, 708, "WildCardNotPermittedInSrcIP");
 		goto clear_and_exit;

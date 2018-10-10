@@ -1,7 +1,8 @@
-/* $Id: upnpglobalvars.c,v 1.40 2016/02/09 09:37:44 nanard Exp $ */
-/* MiniUPnP project
+/* $Id: upnpglobalvars.c,v 1.43 2018/07/06 12:05:48 nanard Exp $ */
+/* vim: tabstop=4 shiftwidth=4 noexpandtab
+ * MiniUPnP project
  * http://miniupnp.free.fr/ or http://miniupnp.tuxfamily.org/
- * (c) 2006-2016 Thomas Bernard
+ * (c) 2006-2018 Thomas Bernard
  * This software is subject to the conditions detailed
  * in the LICENCE file provided within the distribution */
 
@@ -15,6 +16,10 @@
 /* network interface for internet */
 const char * ext_if_name = 0;
 
+/* stun host/port configuration */
+const char * ext_stun_host = 0;
+uint16_t ext_stun_port = 0;
+
 /* file to store leases */
 #ifdef ENABLE_LEASEFILE
 const char* lease_file = 0;
@@ -24,11 +29,20 @@ const char* lease_file = 0;
  * when NULL, getifaddr() is used */
 const char * use_ext_ip_addr = 0;
 
+/* disallow all port forwarding requests when
+ * we are behind restrictive nat */
+int disable_port_forwarding = 0;
+
 unsigned long downstream_bitrate = 0;
 unsigned long upstream_bitrate = 0;
 
 /* startup time */
 time_t startup_time = 0;
+
+#if defined(ENABLE_NATPMP) || defined(ENABLE_PCP)
+/* origin for "epoch time" sent into NATPMP and PCP responses */
+time_t epoch_origin = 0;
+#endif /*  defined(ENABLE_NATPMP) || defined(ENABLE_PCP) */
 
 #ifdef ENABLE_PCP
 /* for PCP */
@@ -158,3 +172,6 @@ unsigned int upnp_bootid = 1;      /* BOOTID.UPNP.ORG */
  * SCPD = Service Control Protocol Description */
 unsigned int upnp_configid = 1337; /* CONFIGID.UPNP.ORG */
 
+#ifdef RANDOMIZE_URLS
+char random_url[RANDOM_URL_MAX_LEN] = "random";
+#endif /* RANDOMIZE_URLS */

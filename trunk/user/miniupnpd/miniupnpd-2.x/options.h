@@ -1,8 +1,9 @@
-/* $Id: options.h,v 1.27 2016/02/09 09:37:44 nanard Exp $ */
-/* MiniUPnP project
+/* $Id: options.h,v 1.29 2018/07/06 12:05:48 nanard Exp $ */
+/* vim: tabstop=4 shiftwidth=4 noexpandtab
+ * MiniUPnP project
  * http://miniupnp.free.fr/ or http://miniupnp.tuxfamily.org/
  * author: Ryan Wagoner
- * (c) 2006-2014 Thomas Bernard
+ * (c) 2006-2018 Thomas Bernard
  * This software is subject to the conditions detailed
  * in the LICENCE file provided within the distribution */
 
@@ -17,6 +18,9 @@ enum upnpconfigoptions {
 	UPNP_INVALID = 0,
 	UPNPEXT_IFNAME = 1,		/* ext_ifname */
 	UPNPEXT_IP,				/* ext_ip */
+	UPNPEXT_PERFORM_STUN,		/* ext_perform_stun */
+	UPNPEXT_STUN_HOST,		/* ext_stun_host */
+	UPNPEXT_STUN_PORT,		/* ext_stun_port */
 	UPNPLISTENING_IP,		/* listening_ip */
 #ifdef ENABLE_IPV6
 	UPNPIPV6_LISTENING_IP,		/* listening address for IPv6 */
@@ -66,6 +70,9 @@ enum upnpconfigoptions {
 	UPNPLEASEFILE,			/* lease_file */
 #endif
 	UPNPMINISSDPDSOCKET,	/* minissdpdsocket */
+#ifdef IGD_V2
+	UPNPFORCEIGDDESCV1,
+#endif
 	UPNPENABLE				/* enable_upnp */
 };
 
@@ -92,4 +99,3 @@ extern unsigned int num_options;
 #endif /* DISABLE_CONFIG_FILE */
 
 #endif /* OPTIONS_H_INCLUDED */
-

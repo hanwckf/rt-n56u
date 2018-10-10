@@ -1,6 +1,7 @@
-/* $Id: portinuse.c,v 1.6 2016/08/16 09:25:35 nanard Exp $ */
-/* MiniUPnP project
- * (c) 2007-2014 Thomas Bernard
+/* $Id: portinuse.c,v 1.7 2017/11/02 15:48:29 nanard Exp $ */
+/* vim: tabstop=4 shiftwidth=4 noexpandtab
+ * MiniUPnP project
+ * (c) 2007-2017 Thomas Bernard
  * http://miniupnp.free.fr/ or http://miniupnp.tuxfamily.org/
  * This software is subject to the conditions detailed
  * in the LICENCE file provided within the distribution */
@@ -23,6 +24,7 @@
 
 #if defined(__OpenBSD__)
 #include <sys/queue.h>
+#include <sys/select.h>
 #include <kvm.h>
 #include <fcntl.h>
 #include <nlist.h>
@@ -55,7 +57,11 @@
 
 #if defined(USE_NETFILTER)
 /* Hardcoded for now.  Ideally would come from .conf file */
-char *chains_to_check[] = { "PREROUTING" , 0 };
+#	ifdef TOMATO
+		const char *chains_to_check[] = { "WANPREROUTING" , 0 };
+#	else
+		const char *chains_to_check[] = { "PREROUTING" , 0 };
+#	endif
 #endif
 
 int

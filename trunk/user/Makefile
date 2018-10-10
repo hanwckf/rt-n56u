@@ -153,7 +153,11 @@ dir_$(CONFIG_FIRMWARE_INCLUDE_OPENVPN)		+= openvpn
 dir_$(CONFIG_FIRMWARE_INCLUDE_SSWAN)		+= strongswan
 dir_$(CONFIG_FIRMWARE_INCLUDE_XUPNPD)		+= xupnpd
 dir_$(CONFIG_FIRMWARE_INCLUDE_TCPDUMP)		+= tcpdump
+ifeq ($(CONFIG_FIRMWARE_INCLUDE_SMBD36),y)
+dir_$(SAMBA_ENABLED)				+= samba36
+else
 dir_$(SAMBA_ENABLED)				+= samba3
+endif
 dir_$(CHNROUTE_ENABLED)				+= chnroute
 dir_$(TTYD_ENABLED)					+= ttyd
 dir_$(SOFTETHERVPN_ENABLE)			+= softethervpn

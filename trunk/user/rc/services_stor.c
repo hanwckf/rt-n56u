@@ -245,6 +245,7 @@ write_smb_conf(void)
 		goto confpage;
 	}
 
+	fprintf(fp, "max protocol = SMB2\n");
 	fprintf(fp, "writeable = yes\n");
 	fprintf(fp, "directory mode = 0777\n");
 	fprintf(fp, "create mask = 0777\n");

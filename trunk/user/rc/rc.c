@@ -42,6 +42,7 @@
 #include "rc.h"
 #include "gpio_pins.h"
 #include "switch.h"
+#include <ralink_priv.h>
 
 extern struct nvram_pair router_defaults[];
 
@@ -56,6 +57,14 @@ nvram_restore_defaults(void)
 {
 	struct nvram_pair *np;
 	int restore_defaults;
+	char tmp[32] = {0};
+	unsigned char buffer[2] = {0};
+	char lan_mac[] = "FFFF";
+
+	int i_offset = get_wired_mac_e2p_offset(0) + 4;
+	if (flash_mtd_read(MTD_PART_NAME_FACTORY, i_offset, buffer, 2) == 0) {
+		sprintf(lan_mac, "%02X%02X", buffer[0] & 0xff, buffer[1] & 0xff);
+	}
 
 	/* Restore defaults if told to or OS has changed */
 	restore_defaults = !nvram_match("restore_defaults", "0");
@@ -72,7 +81,12 @@ nvram_restore_defaults(void)
 	/* Restore defaults */
 	for (np = router_defaults; np->name; np++) {
 		if (restore_defaults || !nvram_get(np->name)) {
-			nvram_set(np->name, np->value);
+			if (strstr(np->name,"wl_ssid") || strstr(np->name,"rt_ssid") || !strcmp(np->name,"wl_guest_ssid") || !strcmp(np->name,"rt_guest_ssid")){
+				sprintf(tmp, np->value, lan_mac);
+				nvram_set(np->name, tmp);
+			} else {
+				nvram_set(np->name, np->value);
+			}
 		}
 	}
 

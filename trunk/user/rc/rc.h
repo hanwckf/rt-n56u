@@ -532,6 +532,7 @@ void stop_ss_tunnel(void);
 void start_ss_tunnel(void);
 void restart_ss_tunnel(void);
 void start_ss_watchcat(void);
+void update_chnroute(void);
 #endif
 #if defined(APP_VLMCSD)
 void stop_vlmcsd(void);
@@ -550,6 +551,9 @@ void restart_chinadns(void);
 void stop_dnsforwarder(void);
 void start_dnsforwarder(void);
 void restart_dnsforwarder(void);
+#endif
+#if defined(APP_DNSMASQ_CHINA_CONF)
+void update_dnsmasq_china_conf(void);
 #endif
 
 /* services_ex.c */

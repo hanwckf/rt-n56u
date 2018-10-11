@@ -248,17 +248,14 @@ void stop_scutclient(void)
 void start_scutclient(void)
 {
 	int scutclient_mode = nvram_get_int("scutclient_enable");
-	//logmessage(LOGNAME, "scutclient RC start!");
-	if ( scutclient_mode == 1 )
+	if (scutclient_mode == 1)
 		eval("/bin/scutclient.sh","start");
 }
 
 void restart_scutclient(void)
 {
-	int scutclient_mode = nvram_get_int("scutclient_enable");
-	//logmessage(LOGNAME, "scutclient RC restart!");
-	if ( scutclient_mode == 1 )
-		eval("/bin/scutclient.sh","restart");
+	stop_scutclient();
+	start_scutclient();
 }
 
 void start_scutclient_watchcat(void)

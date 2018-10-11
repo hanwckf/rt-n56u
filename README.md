@@ -54,7 +54,7 @@ Contributors of this project are not responsible for what happens next.
 >- [iperf](https://sourceforge.net/projects/iperf2) ```CONFIG_FIRMWARE_INCLUDE_IPERF```
 >- [dump1090](https://github.com/hanwckf/dump1090) ```CONFIG_FIRMWARE_INCLUDE_DUMP1090```
 >- [rtl-sdr](https://github.com/osmocom/rtl-sdr) ```CONFIG_FIRMWARE_INCLUDE_RTL_SDR```
->- [samba3.6]```CONFIG_FIRMWARE_INCLUDE_SMBD36```
+>- [samba3.6](https://github.com/Linaro1985/padavan-ng/tree/master/trunk/user/samba36) ```CONFIG_FIRMWARE_INCLUDE_SMBD36```
 - 已适配除官方适配外的以下机型
 >- WR1200JS (128M,USB)
 >- K2 / PSG1218 (64M)
@@ -63,6 +63,7 @@ Contributors of this project are not responsible for what happens next.
 >- MZ-R13P (未测试,64M)
 >- OYE-001 (128M,USB)
 >- MI-MINI (未测试,128M,USB)
+>- MI-3 (未测试,128M,USB)
 >- 5K-W20 (未测试,64M,USB)
 
 ***

@@ -286,10 +286,6 @@ export PATH='/opt/sbin:/opt/bin:/usr/sbin:/usr/bin:/sbin:/bin'
 ### Custom user script
 ### Called after internal iptables reconfig (firewall update)
 
-if [ -f "/tmp/shadowsocks_iptables.save" ]; then
-	sh /tmp/shadowsocks_iptables.save
-fi
-
 EOF
 		chmod 755 "$script_postf"
 	fi
@@ -320,10 +316,6 @@ export PATH='/opt/sbin:/opt/bin:/usr/sbin:/usr/bin:/sbin:/bin'
 ### \$2 - elapsed time (s) from previous state
 
 logger -t "di" "Internet state: \$1, elapsed time: \$2s."
-
-if [ -f "/bin/scutclient.sh" ]; then
-	scutclient.sh restart
-fi
 
 EOF
 		chmod 755 "$script_inets"

@@ -1,8 +1,0 @@
-#!/bin/sh
-
-if [ "$(nvram get napt66_enable)" = "1" ]; then
-	ip6tables -P INPUT ACCEPT
-	ip6tables -P FORWARD ACCEPT
-	ip6tables -P OUTPUT ACCEPT
-	ip6tables -F
-fi

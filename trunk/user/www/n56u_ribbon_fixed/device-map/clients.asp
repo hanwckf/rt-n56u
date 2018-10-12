@@ -178,8 +178,7 @@ function show_clients(){
 			clientType.innerHTML = "<img title='"+ DEVICE_TYPE[clients[j][5]]+"' src='/bootstrap/img/wl_device/" + clients[j][5] +".gif'>";
 			clientName.innerHTML = "<div class='"+(j == 0 ? 'popover_bottom' : 'popover_top' ) + "' data-original-title='<font size=-1><#MAC_Address#>: " + fMAC + isWL + "</font>' data-content='"+("<#Computer_Name#>: " + clients[j][0])+"'>" + clients[j][0] + "</div>";
 			clientIP.innerHTML = (clients[j][6] == "1") ? "<a href=http://" + clients[j][1] + " target='blank'>" + clients[j][1] + "</a>" : clients[j][1];
-			clientMAC.innerHTML = "<a target='_blank' href='http://standards.ieee.org/cgi-bin/ouisearch?" + clients[j][2].substr(0,6) + "'>" + clients[j][2] + "</a>";
-			
+			clientMAC.innerHTML = "<a target='_blank' href='http://apps.neu.edu.cn/macquery/?mac=" + clients[j][2].substr(0,2) + "%3A" + clients[j][2].substr(2,2) + "%3A" + clients[j][2].substr(4,2) + "'>" + clients[j][2] + "</a>";
 			if(list_type != "1" && sw_mode != "3"){
 				clientBlock.style.textAlign = "center";
 				clientBlock.innerHTML = "<div class='icon icon-remove' onClick='blockClient("+j+")' style='cursor:pointer;'></div>\n";

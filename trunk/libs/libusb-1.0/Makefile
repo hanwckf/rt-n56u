@@ -29,6 +29,8 @@ configure:
 		--disable-static \
 		--disable-log \
 		--disable-udev \
+		--disable-examples-build \
+		--disable-tests-build \
 		--host=$(HOST_TARGET) \
 		--build=$(HOST_BUILD) ; \
 	)

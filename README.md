@@ -58,6 +58,7 @@ Contributors of this project are not responsible for what happens next.
 >- [samba3.6](https://github.com/Linaro1985/padavan-ng/tree/master/trunk/user/samba36) ```CONFIG_FIRMWARE_INCLUDE_SMBD36```
 - 已适配除官方适配外的以下机型
 >- WR1200JS (128M,USB)
+>- NEWIFI3(D2) (512M,USB)
 >- K2 / PSG1218 (64M)
 >- K2P (128M,杂交固件)
 >- MZ-R13 (64M)

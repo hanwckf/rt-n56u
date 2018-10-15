@@ -22,6 +22,7 @@ before_script:
 
 script:
     - sudo bash ./build_firmware_nohup WR1200JS && sudo cp -f images/*.trx /opt/images
+    - sudo bash ./clear_tree_simple >/dev/null 2>&1 && sudo bash ./build_firmware_nohup NEWIFI3 && sudo cp -f images/*.trx /opt/images
     - sudo bash ./clear_tree_simple >/dev/null 2>&1 && sudo bash ./build_firmware_nohup K2P && sudo cp -f images/*.trx /opt/images
 
 after_script:

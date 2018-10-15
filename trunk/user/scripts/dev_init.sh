@@ -11,8 +11,8 @@ if [ "$1" == "-l" ] ; then
 	size_var="1M"
 fi
 
-if [ "$1" == "K2P" ] ; then
-	size_etc="8M"
+if [ "$1" == "-b" ] ; then
+	size_etc="10M"
 else
 	size_etc="5M"
 fi

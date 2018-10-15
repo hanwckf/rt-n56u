@@ -3,7 +3,7 @@ THISDIR = $(shell pwd)
 
 all :
 	( if [ ! -f chnroute.txt ];then \
-		wget -t3 --timeout=5 -O- '$(url)' | awk -F\| '/CN\|ipv4/ { printf("%s/%d\n", $$4, 32-log($$5)/log(2)) }' > ./chnroute.txt.tmp ;\
+		wget -t3 -4 --timeout=5 -O- '$(url)' | awk -F\| '/CN\|ipv4/ { printf("%s/%d\n", $$4, 32-log($$5)/log(2)) }' > ./chnroute.txt.tmp ;\
 		mv -f chnroute.txt.tmp chnroute.txt ;\
 	fi )
 	tar jcf chnroute.bz2 chnroute.txt

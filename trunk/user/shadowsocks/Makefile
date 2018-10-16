@@ -1,31 +1,56 @@
-SRC_NAME=shadowsocksr-libev-master
-ARCHIVE_NAME=shadowsocksr-libev-master-e2373d7
-#https://github.com/shadowsocksr-backup/shadowsocksr-libev.git
 THISDIR = $(shell pwd)
 
-ifeq ($(CONFIG_FIRMWARE_INCLUDE_SHADOWSOCKS_MBEDTLS),y)
-	ss_crypto_lib=mbedtls
-else
-	ss_crypto_lib=openssl
-endif
+SRC_SS_NAME=shadowsocks-libev-3.2.0
+#https://github.com/shadowsocks/shadowsocks-libev/releases/download/v3.2.0/shadowsocks-libev-3.2.0.tar.gz
+
+SRC_SSR_NAME=shadowsocksr-libev-master
+ARCHIVE_SSR_NAME=shadowsocksr-libev-master-e2373d7
+#https://github.com/shadowsocksr-backup/shadowsocksr-libev.git
 
 all: extract_test config_test
-	$(MAKE) -C $(SRC_NAME)
+ifeq ($(CONFIG_FIRMWARE_INCLUDE_SHADOWSOCKS),y)
+	$(MAKE) -C $(SRC_SSR_NAME)
+endif
+	$(MAKE) -C $(SRC_SS_NAME)
 
-extract_test:
-	( if [ ! -d $(SRC_NAME) ]; then \
-		unzip -qq $(ARCHIVE_NAME).zip ; \
+ifeq ($(CONFIG_FIRMWARE_INCLUDE_SHADOWSOCKS),y)
+extract_test: extract_ssr_test extract_ss_test
+else
+extract_test: extract_ss_test
+endif
+
+extract_ssr_test:
+	( if [ ! -d $(SRC_SSR_NAME) ]; then \
+		unzip -qq $(ARCHIVE_SSR_NAME).zip ; \
 	fi )
 
-config_test:
-	( if [ -f ./config_done ]; then \
+extract_ss_test:
+	( if [ ! -d $(SRC_SS_NAME) ]; then \
+		tar xf $(SRC_SS_NAME).tar.gz ; \
+	fi )
+
+ifeq ($(CONFIG_FIRMWARE_INCLUDE_SHADOWSOCKS),y)
+config_test: config_ssr config_ss
+else
+config_test: config_ss
+endif
+
+config_ss:
+	( if [ -f ./ss_config_done ]; then \
 		echo "the same configuration"; \
 	else \
-		make configure && touch config_done; \
+		make configure_ss && touch ss_config_done; \
 	fi )
 
-configure:
-	( cd $(SRC_NAME) ; \
+config_ssr:
+	( if [ -f ./ssr_config_done ]; then \
+		echo "the same configuration"; \
+	else \
+		make configure_ssr && touch ssr_config_done; \
+	fi )
+
+configure_ssr:
+	( cd $(SRC_SSR_NAME) ; \
 	ac_cv_prog_PCRE_CONFIG="$(STAGEDIR)/bin/pcre-config" \
 	./configure \
 		--prefix=/usr \
@@ -33,19 +58,47 @@ configure:
 		--disable-ssp \
 		--disable-assert \
 		--enable-system-shared-lib \
-		--with-crypto-library=$(ss_crypto_lib) \
+		--with-crypto-library=mbedtls \
 		--host=$(HOST_TARGET) \
 		--build=$(HOST_BUILD) ; \
 	)
 
-clean:
-	if [ -f $(SRC_NAME)/Makefile ] ; then \
-		$(MAKE) -C $(SRC_NAME) clean ; \
-	fi ; \
-	rm -f config_done
+configure_ss:
+	( cd $(SRC_SS_NAME) ; \
+	ac_cv_prog_PCRE_CONFIG="$(STAGEDIR)/bin/pcre-config" \
+	./configure \
+		--prefix=/usr \
+		--disable-documentation \
+		--disable-ssp \
+		--disable-assert \
+		--host=$(HOST_TARGET) \
+		--build=$(HOST_BUILD) ; \
+	)
+
+clean: clean_ssr clean_ss
+	rm -f ssr_config_done ss_config_done
+
+clean_ssr:
+	( if [ -f $(SRC_SSR_NAME)/Makefile ] ; then \
+		$(MAKE) -C $(SRC_SSR_NAME) clean ; \
+	fi )
+
+clean_ss:
+	( if [ -f $(SRC_SS_NAME)/Makefile ] ; then \
+		$(MAKE) -C $(SRC_SS_NAME) distclean ; \
+	fi )
 
 romfs:
+ifeq ($(CONFIG_FIRMWARE_INCLUDE_SHADOWSOCKS),y)
 	chmod -R +x scripts/
 	$(ROMFSINST) $(THISDIR)/scripts/ /usr/bin/
-	$(ROMFSINST) -p +x $(THISDIR)/$(SRC_NAME)/src/ss-redir /usr/bin/ss-redir
-	$(ROMFSINST) -p +x $(THISDIR)/$(SRC_NAME)/src/ss-local /usr/bin/ss-local
+	$(ROMFSINST) -p +x $(THISDIR)/$(SRC_SSR_NAME)/src/ss-redir /usr/bin/ssr-redir
+	$(ROMFSINST) -p +x $(THISDIR)/$(SRC_SSR_NAME)/src/ss-local /usr/bin/ssr-local
+	$(ROMFSINST) -p +x $(THISDIR)/$(SRC_SS_NAME)/src/ss-redir /usr/bin/ss-orig-redir
+	$(ROMFSINST) -p +x $(THISDIR)/$(SRC_SS_NAME)/src/ss-tunnel /usr/bin/ss-orig-tunnel
+	ln -sf /var/ss-redir $(ROMFSDIR)/usr/bin/ss-redir
+	ln -sf /var/ss-tunnel $(ROMFSDIR)/usr/bin/ss-local
+endif
+ifeq ($(CONFIG_FIRMWARE_INCLUDE_SSSERVER),y)
+	$(ROMFSINST) -p +x $(THISDIR)/$(SRC_SS_NAME)/src/ss-server /usr/bin/ss-server
+endif

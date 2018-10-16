@@ -515,6 +515,7 @@ struct nvram_pair router_defaults[] = {
 	{ "dns_forwarder_server", "8.8.4.4:53" },
 	
 	/* shadowsocks */
+	{ "ss_type", "0" }, //0=ss, 1=ssr
 	{ "ss_enable", "0" },
 	{ "ss_mode", "1" }, 	//0=全局代理,1=绕过大陆[,2=gfwlist]
 	{ "ss_server", "127.0.0.1" },

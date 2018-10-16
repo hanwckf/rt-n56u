@@ -48,11 +48,13 @@ function initial(){
 	var o3 = document.form.ss_protocol;
 	var o4 = document.form.ss_obfs;
 	var o5 = document.form.ss_lower_port_only;
+	var o6 = document.form.ss_type;
 	o1.value = '<% nvram_get_x("","ss_method"); %>';
 	o2.value = '<% nvram_get_x("","ss_mode"); %>';
 	o3.value = '<% nvram_get_x("","ss_protocol"); %>';
 	o4.value = '<% nvram_get_x("","ss_obfs"); %>';
 	o5.value = '<% nvram_get_x("","ss_lower_port_only"); %>';
+	o6.value = '<% nvram_get_x("","ss_type"); %>';
 	change_ss_watchcat_display();
 	fill_ss_status(shadowsocks_status());
 	fill_ss_tunnel_status(shadowsocks_tunnel_status());
@@ -64,6 +66,15 @@ function initial(){
 		showhide_div('div_dnsmasq_china_conf_1', 0);
 		showhide_div('div_dnsmasq_china_conf_2', 0);
 	}
+	switch_ss_type();
+}
+
+function switch_ss_type(){
+	var v = document.form.ss_type.value; //0:ss-orig;1:ssr
+	showhide_div('row_ss_protocol', v);
+	showhide_div('row_ss_protocol_para', v);
+	showhide_div('row_ss_obfs', v);
+	showhide_div('row_ss_obfs_para', v);
 }
 
 function applyRule(){
@@ -191,6 +202,15 @@ function fill_ss_tunnel_status(status_code){
                                             </td>
                                         </tr>
 
+                                        <tr> <th width="50%"><#menu5_16_30#></th>
+                                            <td>
+                                                <select name="ss_type" class="input" style="width: 200px;" onchange="switch_ss_type()">
+                                                    <option value="0" >SS</option>
+                                                    <option value="1" >SSR</option>
+                                                </select>
+                                            </td>
+                                        </tr>
+
                                         <tr> <th colspan="2" style="background-color: #E3E3E3;"><#menu5_16_3#></th> </tr>
 										
                                         <tr> <th width="50%"><#menu5_16_4#></th>
@@ -214,8 +234,8 @@ function fill_ss_tunnel_status(status_code){
 										
                                         <tr> <th width="50%"><#menu5_16_7#></th>
                                             <td>
-                                                <select name="ss_method" class="input" style="width: 200px;">
-                                                    <option value="none" >none</option>
+                                                <select name="ss_method" class="input" style="width: 250px;">
+                                                    <option value="none" >none (ssr only)</option>
                                                     <option value="rc4" >rc4</option>
                                                     <option value="rc4-md5" >rc4-md5</option>
                                                     <option value="aes-128-cfb" >aes-128-cfb</option>
@@ -231,6 +251,11 @@ function fill_ss_tunnel_status(status_code){
                                                     <option value="salsa20" >salsa20</option>
                                                     <option value="chacha20" >chacha20</option>
                                                     <option value="chacha20-ietf" >chacha20-ietf</option>
+                                                    <option value="aes-128-gcm" >aes-128-gcm (ss only)</option>
+                                                    <option value="aes-192-gcm" >aes-192-gcm (ss only)</option>
+                                                    <option value="aes-256-gcm" >aes-256-gcm (ss only)</option>
+                                                    <option value="chacha20-ietf-poly1305" >chacha20-ietf-poly1305 (ss only)</option>
+                                                    <option value="xchacha20-ietf-poly1305" >xchacha20-ietf-poly1305 (ss only)</option>
                                                 </select>
                                             </td>
                                         </tr>
@@ -241,7 +266,7 @@ function fill_ss_tunnel_status(status_code){
                                             </td>
                                         </tr>
                                         
-                                        <tr> <th width="50%"><#menu5_16_22#></th>
+                                        <tr id="row_ss_protocol" style="display:none;"> <th width="50%"><#menu5_16_22#></th>
                                             <td>
                                                 <select name="ss_protocol" class="input" style="width: 200px;">   
                                                     <option value="origin" >origin</option>
@@ -256,13 +281,13 @@ function fill_ss_tunnel_status(status_code){
                                             </td>
                                         </tr>
                                         
-                                        <tr> <th width="50%"><#menu5_16_23#></th>
+                                        <tr id="row_ss_protocol_para" style="display:none;"> <th width="50%"><#menu5_16_23#></th>
                                             <td>
                                                 <input type="text" maxlength="72" class="input" size="64" name="ss_proto_param" value="<% nvram_get_x("","ss_proto_param"); %>" />
                                             </td>
                                         </tr>
                                         
-                                        <tr> <th width="50%"><#menu5_16_24#></th>
+                                        <tr id="row_ss_obfs" style="display:none;"> <th width="50%"><#menu5_16_24#></th>
                                             <td>
                                                 <select name="ss_obfs" class="input" style="width: 200px;">   
                                                     <option value="plain" >plain</option>
@@ -273,7 +298,7 @@ function fill_ss_tunnel_status(status_code){
                                             </td>
                                         </tr>
                                         
-                                        <tr> <th width="50%"><#menu5_16_25#></th>
+                                        <tr id="row_ss_obfs_para" style="display:none;"> <th width="50%"><#menu5_16_25#></th>
                                             <td>
                                                 <input type="text" maxlength="72" class="input" size="64" name="ss_obfs_param" value="<% nvram_get_x("","ss_obfs_param"); %>" />
                                             </td>

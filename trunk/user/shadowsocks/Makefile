@@ -7,11 +7,25 @@ SRC_SSR_NAME=shadowsocksr-libev-master
 ARCHIVE_SSR_NAME=shadowsocksr-libev-master-e2373d7
 #https://github.com/shadowsocksr-backup/shadowsocksr-libev.git
 
-all: extract_test config_test
+GFWLIST_URL=https://cokebar.github.io/gfwlist2dnsmasq/dnsmasq_gfwlist_ipset.conf
+GFWLIST_DIR=gfwlist
+
+all: gfwlist extract_test config_test
 ifeq ($(CONFIG_FIRMWARE_INCLUDE_SHADOWSOCKS),y)
 	$(MAKE) -C $(SRC_SSR_NAME)
 endif
 	$(MAKE) -C $(SRC_SS_NAME)
+
+gfwlist:
+ifeq ($(CONFIG_FIRMWARE_INCLUDE_SHADOWSOCKS),y)
+	mkdir -p $(GFWLIST_DIR)
+	( if [ ! -f $(GFWLIST_DIR)/.finish ]; then \
+		cd $(GFWLIST_DIR) && rm -f * && \
+		wget -q -t5 --timeout=20 --no-check-certificate $(GFWLIST_URL) && \
+		tar jcf gfwlist.bz2 dnsmasq_gfwlist_ipset.conf && \
+		touch .finish ; \
+	fi )
+endif
 
 ifeq ($(CONFIG_FIRMWARE_INCLUDE_SHADOWSOCKS),y)
 extract_test: extract_ssr_test extract_ss_test
@@ -77,6 +91,7 @@ configure_ss:
 
 clean: clean_ssr clean_ss
 	rm -f ssr_config_done ss_config_done
+	rm -rf $(GFWLIST_DIR)
 
 clean_ssr:
 	( if [ -f $(SRC_SSR_NAME)/Makefile ] ; then \
@@ -92,6 +107,7 @@ romfs:
 ifeq ($(CONFIG_FIRMWARE_INCLUDE_SHADOWSOCKS),y)
 	chmod -R +x scripts/
 	$(ROMFSINST) $(THISDIR)/scripts/ /usr/bin/
+	$(ROMFSINST) $(THISDIR)/gfwlist/gfwlist.bz2 /etc_ro/gfwlist.bz2
 	$(ROMFSINST) -p +x $(THISDIR)/$(SRC_SSR_NAME)/src/ss-redir /usr/bin/ssr-redir
 	$(ROMFSINST) -p +x $(THISDIR)/$(SRC_SSR_NAME)/src/ss-local /usr/bin/ssr-local
 	$(ROMFSINST) -p +x $(THISDIR)/$(SRC_SS_NAME)/src/ss-redir /usr/bin/ss-orig-redir

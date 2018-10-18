@@ -533,6 +533,7 @@ void start_ss_tunnel(void);
 void restart_ss_tunnel(void);
 void start_ss_watchcat(void);
 void update_chnroute(void);
+void update_gfwlist(void);
 #endif
 #if defined(APP_VLMCSD)
 void stop_vlmcsd(void);

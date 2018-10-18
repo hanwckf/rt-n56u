@@ -1230,6 +1230,10 @@ handle_notifications(void)
 		{
 			update_chnroute();
 		}
+		else if (strcmp(entry->d_name, RCN_RESTART_GFWLIST_UPD) == 0)
+		{
+			update_gfwlist();
+		}
 #endif
 #if defined(APP_VLMCSD)
 		else if (strcmp(entry->d_name, RCN_RESTART_VLMCSD) == 0)

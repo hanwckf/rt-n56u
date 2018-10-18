@@ -287,8 +287,8 @@ void stop_ss(void){
 }
 
 void start_ss(void){
-	int ss_mode = nvram_get_int("ss_enable");
-	if ( ss_mode == 1)
+	int ss_enable = nvram_get_int("ss_enable");
+	if ( ss_enable == 1)
 		eval("/usr/bin/shadowsocks.sh","start");
 }
 
@@ -318,6 +318,10 @@ void update_chnroute(void){
 
 void start_ss_watchcat(void){
 	eval("/bin/sh","-c","/usr/bin/ss-watchcat.sh &");
+}
+
+void update_gfwlist(void){
+	eval("/bin/sh","-c","/usr/bin/update_gfwlist.sh force &");
 }
 
 #endif

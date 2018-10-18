@@ -1966,7 +1966,9 @@ static int shadowsocks_action_hook(int eid, webs_t wp, int argc, char **argv)
 		needed_seconds = 1;
 	} else if (!strcmp(ss_action, "Reconnect_ss_tunnel")) {
 		notify_rc(RCN_RESTART_SS_TUNNEL);
-	} 
+	} else if (!strcmp(ss_action, "Update_gfwlist")) {
+		notify_rc(RCN_RESTART_GFWLIST_UPD);
+	}
 #if defined(APP_DNSMASQ_CHINA_CONF)
 	else if (!strcmp(ss_action, "Update_dnsmasq_china_conf")) {
 		notify_rc(RCN_RESTART_DNSMASQ_CHINA_CONF_UPD);
@@ -2012,6 +2014,19 @@ static int rules_count_hook(int eid, webs_t wp, int argc, char **argv)
 	if (strlen(count) > 0)
 		count[strlen(count) - 1] = 0;
 	websWrite(wp, "function dnsmasq_china_conf_count() { return '%s';}\n", count);	
+#endif
+#if defined(APP_SHADOWSOCKS)
+	memset(count, 0, sizeof(count));
+	fstream = popen("cat /etc/storage/gfwlist/dnsmasq_gfwlist_ipset.conf |grep ^server |wc -l","r");
+	if(fstream) {
+		fgets(count, sizeof(count), fstream);
+		pclose(fstream);
+	} else {
+		sprintf(count, "%d", 0);
+	}
+	if (strlen(count) > 0)
+		count[strlen(count) - 1] = 0;
+	websWrite(wp, "function gfwlist_count() { return '%s';}\n", count);	
 #endif
 	return 0;
 }

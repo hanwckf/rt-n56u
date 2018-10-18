@@ -28,7 +28,7 @@ ss_password=$(nvram get ss_key)
 ss_mtu=$(nvram get ss_mtu)
 ss_timeout=$(nvram get ss_timeout)
 
-ss_mode=$(nvram get ss_mode)
+ss_mode=$(nvram get ss_mode) #0:global;1:chnroute;2:gfwlist
 ss_router_proxy=$(nvram get ss_router_proxy)
 ss_lower_port_only=$(nvram get ss_lower_port_only)
 
@@ -98,9 +98,8 @@ EOF
 
 func_check_conf(){
 	rm -f /tmp/.modify_etc_storage
-	/usr/bin/check_chnroute
 	/usr/bin/enable_update_chnroute
-	[ -f /usr/bin/check_dnsmasq_china_conf ] && /usr/bin/check_dnsmasq_china_conf
+	/usr/bin/enable_update_gfwlist
 	[ -f /usr/bin/enable_dnsmasq_china_conf_update ] && /usr/bin/enable_dnsmasq_china_conf_update
 	[ -f /tmp/.modify_etc_storage ] && rm -f /tmp/.modify_etc_storage && mtd_storage.sh save > /dev/null 2>&1
 }

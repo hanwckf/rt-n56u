@@ -477,6 +477,8 @@ dhcp-option=252,"\n"
 ### Set the boot filename for netboot/PXE
 #dhcp-boot=pxelinux.0
 
+### Log for all queries
+#log-queries
 EOF
 	if [ -f /usr/bin/vlmcsd ]; then
 		cat >> "$user_dnsmasq_conf" <<EOF
@@ -506,6 +508,7 @@ EOF
 	if [ -d $dir_gfwlist ]; then
 		cat >> "$user_dnsmasq_conf" <<EOF
 ### gfwlist related (resolve by port 5353)
+#min-cache-ttl=3600
 #conf-dir=/etc/storage/gfwlist
 
 EOF

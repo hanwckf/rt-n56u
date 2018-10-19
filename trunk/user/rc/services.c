@@ -258,10 +258,6 @@ void restart_scutclient(void)
 	start_scutclient();
 }
 
-void start_scutclient_watchcat(void)
-{
-	eval("/bin/sh","-c","/bin/scutclient_watchcat.sh &");
-}
 #endif
 
 #if defined(APP_TTYD)
@@ -314,10 +310,6 @@ void restart_ss_tunnel(void){
 
 void update_chnroute(void){
 	eval("/bin/sh","-c","/usr/bin/update_chnroute.sh force &");
-}
-
-void start_ss_watchcat(void){
-	eval("/bin/sh","-c","/usr/bin/ss-watchcat.sh &");
 }
 
 void update_gfwlist(void){
@@ -591,7 +583,6 @@ start_services_once(int is_ap_mode)
 
 #if defined(APP_SCUT)
 	start_scutclient();
-	start_scutclient_watchcat();
 #endif
 #if defined(APP_NAPT66)
 	start_napt66();
@@ -605,7 +596,6 @@ start_services_once(int is_ap_mode)
 #if defined(APP_SHADOWSOCKS)
 	start_ss();
 	start_ss_tunnel();
-	start_ss_watchcat();
 #endif
 #if defined(APP_TTYD)
 	start_ttyd();

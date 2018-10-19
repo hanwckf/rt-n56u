@@ -899,6 +899,13 @@ init_router(void)
 
 	start_rwfs_optware();
 
+#if defined(APP_SCUT)
+	system("/bin/scutclient_watchcat.sh &");
+#endif
+
+#if defined(APP_SHADOWSOCKS)
+	system("/usr/bin/ss-watchcat.sh &");
+#endif
 	// system ready
 	system("/etc/storage/started_script.sh &");
 }

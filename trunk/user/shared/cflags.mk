@@ -235,3 +235,7 @@ endif
 ifeq ($(CONFIG_KERNEL_WITH_SFE),y)
 CFLAGS += -DUSE_SFE
 endif
+
+ifeq ($(CONFIG_FIRMWARE_INCLUDE_IPSET),y)
+CFLAGS += -DUSE_IPSET
+endif

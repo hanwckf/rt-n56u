@@ -202,6 +202,17 @@ load_crypto_modules(void)
 }
 #endif
 
+#if defined (USE_IPSET)
+static void
+load_ipset_modules(void)
+{
+	module_smart_load("xt_set", NULL);
+	module_smart_load("ip_set_hash_ip", NULL);
+	module_smart_load("ip_set_hash_mac", NULL);
+	module_smart_load("ip_set_hash_net", NULL);
+}
+#endif
+
 static void
 set_timezone(void)
 {
@@ -836,6 +847,9 @@ init_router(void)
 #endif
 #if defined (USE_MTK_AES)
 	load_crypto_modules();
+#endif
+#if defined (USE_IPSET)
+	load_ipset_modules();
 #endif
 
 	recreate_passwd_unix(1);

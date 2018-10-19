@@ -257,7 +257,7 @@ func_fill()
 	if [ ! -f "$script_started" ] ; then
 		cat > "$script_started" <<EOF
 #!/bin/sh
-export PATH='/opt/sbin:/opt/bin:/usr/sbin:/usr/bin:/sbin:/bin'
+
 ### Custom user script
 ### Called after router started and network is ready
 
@@ -277,7 +277,7 @@ EOF
 	if [ ! -f "$script_shutd" ] ; then
 		cat > "$script_shutd" <<EOF
 #!/bin/sh
-export PATH='/opt/sbin:/opt/bin:/usr/sbin:/usr/bin:/sbin:/bin'
+
 ### Custom user script
 ### Called before router shutdown
 ### \$1 - action (0: reboot, 1: halt, 2: power-off)
@@ -291,7 +291,7 @@ EOF
 	if [ ! -f "$script_postf" ] ; then
 		cat > "$script_postf" <<EOF
 #!/bin/sh
-export PATH='/opt/sbin:/opt/bin:/usr/sbin:/usr/bin:/sbin:/bin'
+
 ### Custom user script
 ### Called after internal iptables reconfig (firewall update)
 
@@ -303,7 +303,7 @@ EOF
 	if [ ! -f "$script_postw" ] ; then
 		cat > "$script_postw" <<EOF
 #!/bin/sh
-export PATH='/opt/sbin:/opt/bin:/usr/sbin:/usr/bin:/sbin:/bin'
+
 ### Custom user script
 ### Called after internal WAN up/down action
 ### \$1 - WAN action (up/down)
@@ -318,7 +318,7 @@ EOF
 	if [ ! -f "$script_inets" ] ; then
 		cat > "$script_inets" <<EOF
 #!/bin/sh
-export PATH='/opt/sbin:/opt/bin:/usr/sbin:/usr/bin:/sbin:/bin'
+
 ### Custom user script
 ### Called on Internet status changed
 ### \$1 - Internet status (0/1)
@@ -433,7 +433,7 @@ EOF
 	if [ ! -f "$script_ezbtn" ] ; then
 		cat > "$script_ezbtn" <<EOF
 #!/bin/sh
-export PATH='/opt/sbin:/opt/bin:/usr/sbin:/usr/bin:/sbin:/bin'
+
 ### Custom user script
 ### Called on WPS or FN button pressed
 ### \$1 - button param

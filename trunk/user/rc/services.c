@@ -242,14 +242,14 @@ int is_scutclient_run(void)
 }
 void stop_scutclient(void)
 {
-	eval("/bin/scutclient.sh","stop");
+	eval("/usr/bin/scutclient.sh","stop");
 }
 
 void start_scutclient(void)
 {
 	int scutclient_mode = nvram_get_int("scutclient_enable");
 	if (scutclient_mode == 1)
-		eval("/bin/scutclient.sh","start");
+		eval("/usr/bin/scutclient.sh","start");
 }
 
 void restart_scutclient(void)

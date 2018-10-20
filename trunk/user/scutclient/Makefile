@@ -29,5 +29,5 @@ clean:
 
 romfs:
 	chmod -R +x ./scripts
-	${ROMFSINST} $(THISDIR)/scripts/ /bin/
+	${ROMFSINST} $(THISDIR)/scripts/ /usr/bin/
 	$(ROMFSINST) -p +x $(THISDIR)/$(SRC_NAME)/build/scutclient /usr/bin/bin_scutclient

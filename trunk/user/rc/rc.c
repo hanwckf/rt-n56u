@@ -806,6 +806,24 @@ LED_CONTROL(int gpio_led, int flag)
 	}
 }
 
+int
+init_crontab(void)
+{
+	int ret = 0; //no change
+#if defined (APP_SCUT)
+	ret |= system("/sbin/check_crontab.sh a/1 a a a a scutclient_watchcat.sh");
+#endif
+#if defined (APP_SHADOWSOCKS)
+	ret |= system("/sbin/check_crontab.sh a/5 a a a a ss-watchcat.sh");
+	ret |= system("/sbin/check_crontab.sh 0 8 a/10 a a update_chnroute.sh");
+	ret |= system("/sbin/check_crontab.sh 0 7 a/10 a a update_gfwlist.sh");
+#endif
+#if defined (APP_DNSMASQ_CHINA_CONF)
+	ret |= system("/sbin/check_crontab.sh 0 9 a/10 a a update_dnsmasq_china_conf.sh");
+#endif
+	return ret;
+}
+
 void 
 init_router(void)
 {
@@ -899,13 +917,10 @@ init_router(void)
 
 	start_rwfs_optware();
 
-#if defined(APP_SCUT)
-	system("/bin/scutclient_watchcat.sh &");
-#endif
-
-#if defined(APP_SHADOWSOCKS)
-	system("/usr/bin/ss-watchcat.sh &");
-#endif
+	if (init_crontab()) {
+		write_storage_to_mtd();
+		restart_crond();
+	}
 	// system ready
 	system("/etc/storage/started_script.sh &");
 }

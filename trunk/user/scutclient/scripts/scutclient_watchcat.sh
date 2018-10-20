@@ -22,6 +22,7 @@ while true; do
 			break
 		else
 			fails=$((fails+1))
+		fi
 	done
 	[ $fails -eq $net_num ] && \
 	logger -st "scutclient_watchcat" "Connection failed, restart scutclient!" && \

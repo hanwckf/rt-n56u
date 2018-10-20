@@ -6,7 +6,7 @@ net_num=3
 
 while true; do
 	sleep 60
-	if [ "$(nvram get scutclient_watchcat)" != "1" ] || [ "$(nvram get scutclient_enable)" != "1" ]; then
+	if [ "$(nvram get scutclient_watchcat)" != "1" -o "$(nvram get scutclient_enable)" != "1" ]; then
 		continue
 	fi
 
@@ -17,15 +17,11 @@ while true; do
 
 	fails=0
 	for n in $net; do
-		tries=0
-		while [ $tries -lt 3 ]; do
-			if /bin/ping -c 1 "$n" -W 1 >/dev/null ; then
-				break 2
-			else
-				tries=$((tries+1))
-			fi
-		done
-		fails=$((fails+1))
+		/bin/ping -c 3 "$n" -w 5 >/dev/null 2>&1
+		if [ "$?" = "0" ]; then
+			break
+		else
+			fails=$((fails+1))
 	done
 	[ $fails -eq $net_num ] && \
 	logger -st "scutclient_watchcat" "Connection failed, restart scutclient!" && \

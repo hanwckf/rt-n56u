@@ -376,9 +376,9 @@ void start_napt66(void){
 	if (napt66_mode == 1) {
 		if (wan6_ifname) {
 			char napt66_para[32];
+			logmessage("napt66","wan6 ifname: %s",wan6_ifname);
 			snprintf(napt66_para,sizeof(napt66_para),"wan_if=%s",wan6_ifname);
 			module_smart_load("napt66", napt66_para);
-			logmessage("napt66","wan6 ifname: %s",wan6_ifname);
 		}
 		else
 			logmessage("napt66","Invalid wan6 ifname!");

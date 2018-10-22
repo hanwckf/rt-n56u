@@ -9,8 +9,6 @@ else
 endif
 
 romfs:
-	chmod -R +x scripts/
-	${ROMFSINST} $(THISDIR)/scripts/ /bin/
 
 clean:
 	$(MAKE) -C $(SRC_NAME) clean

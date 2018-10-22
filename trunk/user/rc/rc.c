@@ -916,7 +916,9 @@ init_router(void)
 	notify_leds_detect_link();
 
 	start_rwfs_optware();
-
+#if defined(APP_NAPT66)
+	start_napt66();
+#endif
 	if (init_crontab()) {
 		write_storage_to_mtd();
 		restart_crond();

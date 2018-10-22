@@ -372,8 +372,17 @@ void restart_dnsforwarder(void){
 #if defined(APP_NAPT66)
 void start_napt66(void){
 	int napt66_mode = nvram_get_int("napt66_enable");
-	if ( napt66_mode == 1)
-		eval("/bin/start_napt66");
+	char *wan6_ifname = nvram_get("wan0_ifname6");
+	if (napt66_mode == 1) {
+		if (wan6_ifname) {
+			char napt66_para[32];
+			snprintf(napt66_para,sizeof(napt66_para),"wan_if=%s",wan6_ifname);
+			module_smart_load("napt66", napt66_para);
+			logmessage("napt66","wan6 ifname: %s",wan6_ifname);
+		}
+		else
+			logmessage("napt66","Invalid wan6 ifname!");
+	}
 }
 #endif
 
@@ -583,9 +592,6 @@ start_services_once(int is_ap_mode)
 
 #if defined(APP_SCUT)
 	start_scutclient();
-#endif
-#if defined(APP_NAPT66)
-	start_napt66();
 #endif
 #if defined(APP_DNSFORWARDER)
 	start_dnsforwarder();

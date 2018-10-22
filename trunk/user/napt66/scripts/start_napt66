@@ -1,7 +1,0 @@
-#!/bin/sh
-
-if [ -z "$(nvram get wan0_ifname6)" ]; then
-	logger -st "napt66" "invaild config of WAN ipv6" && exit 1
-fi
-
-modprobe napt66 wan_if="$(nvram get wan0_ifname6)" || logger -st "napt66" "load fail!"

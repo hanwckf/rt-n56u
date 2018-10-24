@@ -35,14 +35,14 @@ func_start(){
 	func_log "WAN netmask : $(nvram get wan_netmask)"
 	echo -n "Starting scutclient:..."
 	start-stop-daemon -S -b -x "$scutclient_exec" -- -u "$(nvram get scutclient_username)" -p "$(nvram get scutclient_password)" \
-	-i "$(nvram get wan_ifname)" \
+	-f "$(nvram get wan_ifname)" \
 	-n "${sysdns:-"114.114.114.114"}" \
-	-H "$(nvram get scutclient_hostname)" \
+	-t "$(nvram get scutclient_hostname)" \
 	-s "$(nvram get scutclient_server_auth_ip)" \
 	-c "$(nvram get scutclient_version)" \
 	-h "$(nvram get scutclient_hash)" \
 	-E "$(nvram get scutclient_auth_exec)" \
-	-Q "$(nvram get scutclient_fail_exec)" \
+	-F "$(nvram get scutclient_fail_exec)" \
 	"$(get_arg_debug)"
 
 	if [ $? -eq 0 ] ; then

@@ -479,6 +479,7 @@ dhcp-option=252,"\n"
 
 ### Log for all queries
 #log-queries
+
 EOF
 	if [ -f /usr/bin/vlmcsd ]; then
 		cat >> "$user_dnsmasq_conf" <<EOF

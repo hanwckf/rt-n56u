@@ -2017,7 +2017,7 @@ static int rules_count_hook(int eid, webs_t wp, int argc, char **argv)
 #endif
 #if defined(APP_SHADOWSOCKS)
 	memset(count, 0, sizeof(count));
-	fstream = popen("cat /etc/storage/gfwlist/dnsmasq_gfwlist.conf |grep ^server |wc -l","r");
+	fstream = popen("grep ^server /etc/storage/gfwlist/dnsmasq_gfwlist.conf |wc -l","r");
 	if(fstream) {
 		fgets(count, sizeof(count), fstream);
 		pclose(fstream);

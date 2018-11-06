@@ -6,7 +6,7 @@ LDFLAGS += -Wl,--gc-sections
 THISDIR = $(shell pwd)
 
 all: config_test
-	$(MAKE) -C $(SRC_NAME)
+	$(MAKE) -j$(HOST_NCPU) -C $(SRC_NAME)
 
 config_test:
 	( if [ -f ./config_done ]; then \

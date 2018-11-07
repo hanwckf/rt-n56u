@@ -1,0 +1,68 @@
+_mtr_module()
+{
+  local cur prev OPTS
+  COMPREPLY=()
+  cur="${COMP_WORDS[COMP_CWORD]}"
+  prev="${COMP_WORDS[COMP_CWORD-1]}"
+  case $prev in
+    '-F'|'--filename')
+      local IFS=$'\n'
+      compopt -o filenames
+      COMPREPLY=( $(compgen -f -- $cur) )
+      return 0
+      ;;
+    '-a'|'--address')
+      COMPREPLY=( $(compgen -W "ADDRESS" -- $cur) )
+      return 0
+      ;;
+    '-f'|'--first-ttl'|'-m'|'--max-ttl'|'-m'|'--max-unknown'|'-B'|'--bitpattern'|'-Q'|'--tos'|'-c'|'--report-cycles')
+      COMPREPLY=( $(compgen -W "NUMBER" -- $cur) )
+      return 0
+      ;;
+    '-P'|'--port'|'-L'|'--localport')
+      COMPREPLY=( $(compgen -W "PORT" -- $cur) )
+      return 0
+      ;;
+    '-s'|'--psize')
+      COMPREPLY=( $(compgen -W "SIZE" -- $cur) )
+      return 0
+      ;;
+    '-i'|'--interval'|'-G'|'--gracetime'|'-Z'|'--timeout')
+      COMPREPLY=( $(compgen -W "SECONDS" -- $cur) )
+      return 0
+      ;;
+    '-M'|'--mark')
+      COMPREPLY=( $(compgen -W "MARK" -- $cur) )
+      return 0
+      ;;
+    '--displaymode')
+      COMPREPLY=( $(compgen -W "{0..2}" -- $cur) )
+      return 0
+      ;;
+    '-y'|'--ipinfo')
+      COMPREPLY=( $(compgen -W "{0..4}" -- $cur) )
+      return 0
+      ;;
+    '-o'|'--order')
+      COMPREPLY=( $(compgen -W "LDRSNBAWVGJMXI" -- $cur) )
+      return 0
+      ;;
+  esac
+  case $cur in
+    -*)
+      OPTS='
+        --filename --inet --inet6 --udp --tcp --address --first-ttl
+        --max-ttl --max-unknown --port --localport --psize --bitpattern
+        --interval --gracetime --tos --mpls --timeout --mark --report
+        --report-wide --report-cycles --json --xml --csv --raw --split
+        --curses --displaymode --gtk --no-dns --show-ips --order --ipinfo
+        --aslookup --help --version
+      '
+      COMPREPLY=( $(compgen -W "${OPTS[*]}" -- $cur) )
+      return 0
+      ;;
+  esac
+  COMPREPLY=( $(compgen -W "ip_address hostname" -- $cur) )
+  return 0
+}
+complete -F _mtr_module mtr

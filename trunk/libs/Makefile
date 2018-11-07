@@ -193,6 +193,10 @@ ifeq ($(CONFIG_FIRMWARE_ENABLE_FAT),y)
 LIBS_INCLUDE_LIBICONV=y
 endif
 
+ifeq ($(CONFIG_FIRMWARE_INCLUDE_MTR),y)
+LIBS_INCLUDE_NCURSES=y
+endif
+
 dir_y						+= libz
 dir_$(LIBS_INCLUDE_NCURSES)			+= libncurses
 dir_$(LIBS_INCLUDE_LIBLZO)			+= liblzo

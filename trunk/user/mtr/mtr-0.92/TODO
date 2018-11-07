@@ -1,0 +1,128 @@
+
+Hi everyone, 
+
+This is the "todo" file for mtr. I just realized that some people
+might think that this is all in MY queue to implement. That is not
+true: This is the "for everybody" todo list. Feel free to pick a
+"project" and implement something off this list.
+
+Students: Feel free to take up one of these as a programming exercise
+for one of your courses.
+
+Everybody: If you want to start on something, contact me first, so
+that the effort isn't wasted by someone who finishes just a tad
+earlier. I'll happily provide "coaching" to anyone who wants to
+implement something on this list. That way we get the design of
+these things the way I like them. This should result in a better
+maintainable mtr.
+
+Oh, Feel free to provide suggestions for this list. 
+
+
+-- REW
+
+----------------------------------------------------------------------
+
+
+- Stuff to implement:
+
+  - Allow mtr to log the return packets, for later analysis.
+    Done: 0.25 . Todo: allow the user interface(s) to work while
+    still logging to a file. Write a "logfile displaying" mode to
+    mtr.
+
+  - Request timestamping at the remote site.
+       Andreas Fasbender has an algorithm that will allow us to 
+       convert these measurements into one-way measurements, not just
+       round-trip.
+
+  - allow "keyboard navigation" in the GTK version. 
+
+  - Keep all packets and make the "best" and "worst" columns show the
+    xx-th percentile....
+
+  - Can the reports generated also include any secondary servers?  In 
+    the interactive mode, any new servers that are found in the 
+    traceroute are added to the list, but it seems to only include 
+    one set of servers when using the -r option.  
+
+  - Being able to expand the "column width" of the hosts listed would 
+    be nice, too.
+
+
+- Bugs to fix?
+
+  - Do something useful if host couldn't be resolved. 
+       -- Done. 
+
+  - Revert to curses mode even if DISPLAY is set, but a problem
+    prevents us from running in X11 mode.
+       -->  The problem is that gtk_init simply calls exit for us if
+            it finds a problem. Tricky! Suggestions welcome. 
+       --> Call "gtk_check_init" when available. (i.e. new enough
+           (1.2?) GTK version).
+
+- Nice to have:
+
+  - stop sending packets when a new host is getting entered. 
+
+  - Show state ("looking up host") while doing the DNS lookup for a new
+    host.
+
+  - to have a choice of icmp, tcp, and udp pings. -- Matt Martini
+
+  - Autoconf 2.13 has a neat function that can be used to find the 
+    res_init function: 
+
+	   AC_SEARCH_LIBS(res_init, bind resolv, ,
+	      AC_MSG_ERROR(No resolver library found))
+
+    At the moment (march 1999) autoconf 2.13 is still too new to require 
+    everyone to upgrade. About a year from now we can put this in....
+
+  - Implement rfc2317 mechanism to do reverse lookups for networks that
+    have DNS delegations on non-octet boundaries. -- Daniel Bergstrom
+    (noa@melody.se)
+
+  - The longer MTR runs, the less meaningful the packet loss
+    statistic. Or more meaningful, depending on your point of view.
+    Perhaps MTR should use a circular buffer of some configurable
+    number of results, and calculate the loss against that. -- Jacob Elder
+
+  - It would be nice if the window size wasn't fixed. If I'm only 5
+    hops from the host I'm monitoring, MTR wastes a lot of screen real
+    estate. -- Jacob Elder
+
+  - Colors in the curses version. -- Amix
+
+  - If we run a mtr to monitor a connection it would be nice if the time at
+    which mtr was started is print somewhere. -- Sebastian Ganschow
+
+
+
+------------------------------------------------------------------------
+
+Things that shouldn't be on the TODO list because they're done. ;-)
+
+  - Allow a toggle between hostname/IP number display. (for example a 
+    click on the hostname could revert to ip number display in gtk version.
+    curses: "n" key toggles hostnames/ipnumbers?)
+
+  - Allow mtr to also send larger packets. 
+       This will enable us to get a feel for the speed of the links
+       we're traversing. (Van Jacobson was working on this His tool
+       was slow, mtr will rock with this feature.... :-)
+       (Anybody have the statistics experience to tell me how
+       to do the data analysis?)
+	-- DONE. Thanks to Olav Kvittem ...
+
+  - The "don't probe all hosts at once" strategy can be improved a bit.
+    It should not probe more than 10 unknown hosts, but the counter need
+    not be reset at the start of the "round". This way if you probe
+    slowly (relative to the RTT time to the end host), it can probe
+    all hosts in the first "round". 
+       -- DONE.
+
+  - Read environment variable "MTR_DEFAULTS" as a commandline before
+    parsing the commandline.  -- DONE. (ok it's MTR_OPTIONS.)
+

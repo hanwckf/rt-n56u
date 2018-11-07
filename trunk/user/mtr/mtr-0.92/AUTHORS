@@ -1,0 +1,69 @@
+
+  Matt Kimball <matt.kimball@gmail.com> is the primary author of mtr.
+
+  Roger Wolff <R.E.Wolff@BitWizard.nl> is currently maintaining mtr.
+
+
+  Bug reports and feature requests should be sent as described in
+  the README file.
+
+  Thanks to everyone who has provided feedback on mtr.  
+
+  Thanks especially to those of you who have sent code:
+  (Reverse alphabetical order, and sometimes I just add people at
+   the end... )
+
+        Bohdan Vlasyuk <bohdan@cec.vstu.vinnica.ua>
+        Evgeniy Tretyak <evtr@ukr.net>
+        John Thacker <thacker@math.cornell.edu>
+        Juha Takala
+        David Sward <sward@clark.net>
+        David Stone <stone@AsIf.com>
+        Andrew Stesin
+        Greg Stark <gsstark@mit.edu>
+        Robert Sparks <rjsparks@nostrum.com>
+        Mike Simons <msimons@moria.simons-clan.com>
+        Aaron Scarisbrick
+        Craig Milo Rogers <Rogers@ISI.EDU>
+        Antonio Querubin <tony@lavanauts.org>
+        Russell Nelson <rn-mtr@crynwr.com>
+        Davin Milun
+        Josh Martin <jmartin@columbiaservices.net>
+        Alexander V. Lukyanov <lav@yars.free.net>
+        Charles Levert <charles@comm.polymtl.ca> 
+        Bertrand Leconte <B.Leconte@mail.dotcom.fr>
+        Anand Kumria
+        Olav Kvittem <Olav.Kvittem@uninett.no>
+        Adam Kramer <l3zqc@qcunix1.acc.qc.edu> 
+        Philip Kizer <pckizer@nostrum.com>
+        Simon Kirby
+        Sami Kerola <kerolasa@iki.fi>
+        Christophe Kalt
+        Steve Kann <stevek@spheara.horizonlive.com>
+        Brett Johnson <brett@jdacareers.com>
+        Roland Illig <roland.illig@gmx.de>
+        Damian Gryski <dgryski@uwaterloo.ca>
+        Rob Foehl <rwf@loonybin.net>
+        Mircea Damian
+        Cougar <cougar@random.ee>
+        Travis Cross <tc@traviscross.com>
+        Brian Casey <bcasey@imagiware.com>
+        Andrew Brown <atatat@atatdot.net>
+        Bill Bogstad <bogstad@pobox.com> 
+        Marc Bejarano <marc.bejarano@openwave.com>
+        Moritz Barsnick <barsnick@gmx.net>
+        Thomas Klausner <wiz@NetBSD.org>
+        Roderick Groesbeek <mtr@roderick.triple-it.nl>
+        Kyle J. McKay <mackyle@gmail.com>
+        Joseph Carter
+        Thales <thales@paponline.net>
+        "Min"
+        Vaibhav Bajpai <contact@vaibhavbajpai.com>
+        Jürgen Schönwälder <j.schoenwaelder@jacobs-university.de>
+
+        and anyone who has slipped through the cracks of my mail file.
+
+Authors: If you want your Email mentioned here, send it to me. 
+         If you don't want your Email mentioned here, tell me.  
+
+        -- REW

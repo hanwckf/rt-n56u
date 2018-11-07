@@ -1,0 +1,772 @@
+WHAT'S NEW?
+
+The new release script will do a "git shortlog" to add 
+the commit messages here. 
+
+#NEW_STUFF_HERE this is a tag my script looks for. 
+V0.92
+   added a few arguments to calls added by fmazu. Allows it to compile.
+
+V0.91
+   only made the tag point to the proper commit.  --REW
+   script now handles that situation (aborted release script) better. 
+
+V0.90
+   only fixed the release script. Should now contain fmaxullo's 
+   patch. --rew
+   fmazullo (1):
+         Add AS number to json output
+   
+V0.89
+   only made the tag point to the proper commit.  --REW
+
+V0.88
+   Antonio Querubin (3):
+         Merge remote-tracking branch 'origin/master' into newdns
+         Need to error check getnameinfo().
+         Merge remote-tracking branch 'origin/master' into newdns
+   
+   David Hill (1):
+         include <sys/select.h> for fd_set
+   
+   Jakub Wilk (1):
+         Fix typos
+   
+   Joe Bruggeman (2):
+         Replace all tabs tabs in net.c with spaces
+         cleanup the if blocks in net.c to improve readability
+   
+   Jürgen Weigert (1):
+         Mention + and - keys in the man page
+   
+   Kacper Michajłow (2):
+         Relax mtr-packet search rules.
+         Add missing errno.h include.
+   
+   Matt Kimball (20):
+         Added mtr-packet subprocess
+         test: Fix mtr-packet tests for Python 3
+         cmdline: multiple host names dropped all but one host  (issue #168)
+         mtr-packet: IPv6 support
+         mtr-packet: UDP probe support
+         mtr-packet: packet customization options (size, fill, mark, tos)
+         mtr-packet: TCP and SCTP probes
+         mtr-packet: MPLS decoding and local UDP port usage
+         mtr-packet: allow local address binding
+         Merge branch mtr-packet into 'master'
+         mtr-packet: drop capabilities + using BSD's linked lists for probes
+         build: moved front-end source into ui subdir
+         build: use AC_CHECK_LIB for ncurses, rather than pkg-tool
+         mtr-packet: Fall back to IPv4 only support if IPv6 sockets fail to open
+         build: if linking with ncurses fails, try curses  (for NetBSD)
+         build: Fix Solaris build issues
+         build: fix compiler warnings when for OpenBSD, NetBSD and Solaris
+         mtr-packet: Report probe status on host unreachable (Cygwin)
+         cleanup: Fix #ifdef structure which confuses 'ident'
+         cleanup: reindented C source with GNU indent
+   
+   Narthorn (2):
+         Initialize dns process before opening display
+         Add displaymode 2 back in
+   
+   R.E. Wolff (19):
+         Merge branch 'newdns' of https://github.com/traviscross/mtr into newdns
+         Merge branch 'newdns'
+         fixed double printout of start time, issue 131
+         Updated NEWS as in v0.87.1
+         format sent and rcvd fields correctly for big numbers #66
+         increased default unknownhosts #92 #132 #130     (I give in).
+         Merge branch 'master' of github.com:traviscross/mtr
+         fixed no-gtk build bug introduced with e2d898cc
+         more cleanup
+         Partial reverse of 6bb5b6b3b.
+         re-initialize ipinfo_no and -max. Fixes #161.
+         Merge branch 'master' of github.com:traviscross/mtr
+         fixed dynamic DNS on/off switch. Fixed #160
+         header alignment issue found&fixed by meingtsla. Fixes #164
+         Merge branch 'master' of github.com:traviscross/mtr
+         asn fix from meingtsla, fixes #163. Pong!
+         put ifdefs around IPV6 only part. Fixes #184
+         More whitespace mangling for consistency in net.c
+         The release script bumped the version number
+   
+   Roger Wolff (22):
+         New DNS works for IPV4....
+         moved towards IPV6 compatibilty...
+         removed the include mess...
+         merged antonios's bufsize fixes
+         Merge branch 'master' of github.com:traviscross/mtr into newdns
+         AQ: Added include for redhat, and fixed salen for BSD
+         removed last debug output from dns.c
+         One more patch to fix a getnameinfo corruption problem. -- AQ
+   
+   Rogier Wolff (5):
+         removed AC check for features newdns doesn't use
+         Fixed pull #133 another way....
+         fixed #27 and #35 where the fix was tested a long time ago.
+         fixed #141 compile without SCTP if not available
+         fixed typo.
+   
+   Sami Kerola (122):
+         warnings: remove unnecessary file
+         usage: add short and long options and descriptions to usage()
+         warnings: stop variable shadowing
+         dns: remove unnecessary dns_events() function
+         posix: replace bzero() and index() with modern equivelants
+         warnings: stop reassigning a value before the old one has been used
+         warnings: remove code that cannot be reached
+         warnings: fix printf data types
+         cleanup: remove unnecessary null check
+         build-sys; do not use subdirectory object
+         man: use url macro to urls and fix reference manual notations
+         build-sys: default to ,/configure --enable-silent-rules
+         warnings: do not take abs() when data type is unsigned
+         warnings: mark unused function input variables
+         warnings: fix couple unsigned vs signed variable comparisions
+         warnings: multiply timeval seconds only when the value is small
+         warnings: fix some missed unsigned vs signed variable comparisions
+         comment: add value range note to initialization
+         cast: do not downgrade to float when double should be used
+         warnings: remove dead code
+         build-sys: fix make distcheck
+         build-sys: remove old dist Makefile kludge
+         build-sys: use build version script from gnulib
+         build-sys: improve configure.am
+         build-sys: require automake 1.11.6 or newer
+         warnings: fix unused variable when ./configure --without-gtk is used
+         readability: always use EXIT_* definitions from stdlib.h
+         cleanup: remove unnecessary function
+         warnigns: add void to functions that do not take any arguments
+         build-sys: fix --without-ipinfo regressions
+         build-sys: fix ./configure --disable-ipv6
+         warnings: fix --disable-ipv6 --without-ipinfo compilation warnings
+         build-sys: check pkg-config availability
+         build-sys: use pkg-config to find gtk+-2.0
+         build-sys: use pkg-config to find ncurses
+         build-sys: get rid of double negative ipinfo autotools settings
+         cleanup: remove NO_SPLIT preprocessor check
+         build-sys: simplify finding resolver library
+         build-sys: remove unused autoconf check values
+         cleanup: remove obsolete herror() function
+         usage: reflect ./configure choices in available command line options
+         cleanup: remove preprocessor missing functions go-arounds
+         usage: be careful when parsing numeric user input
+         usage: use error(3) error-reporting function
+         cleanup: move max port number to be a define in net.h
+         build-sys: use system getopt_long() when it is available
+         build-sys: tell function locality explicitly
+         portability: fix float max check from values.h
+         portability: MacOS does not have error() function
+         portability: fix MacOS libresolv usage
+         data types: set static strings to be read-only
+         cleanup: remove redundant redeclaration
+         data types: move variable declaration from header to .c file
+         data types: check with smatch everything is in resonable scope
+         warnings: fix use of uninitialized warning
+         data types: get rid of all globals that are easy to remove
+         usability: fix --mark documentation
+         docs: make manual page versioning automatic
+         data types: move global data to control structures
+         data types: make control structure smaller
+         data types: move rest of the global variables to control structures
+         crash fix: make --xml not to dump core
+         warnings: correct function pointer prototype argument
+         warnings: do not use zero as NULL
+         warnings: avoid vla when malloc() is more appropriate
+         usability: print usage() if unknown options are used
+         cleanup: use definition for a magic value appearing twice in code
+         cleanup: remove commented out includes in dns.c
+         cleanup: avoid duplicating stdint.h
+         cleanup: use ICMP definitions from linux/icmp.h when possible
+         cleanup: move generic utility functions to a separate file
+         reliability: ensure string copy results to a null determined string
+         reliability: further removal of unsave string operation
+         reliability: always check malloc() return value
+         reliability: always check strdup() return value
+         reliability: check writing to stdout and stderr was successful
+         usability: use ISO-8601 timestamp
+         posix: do not use time(2) input argument
+         usability: add bash-completion file
+         bug fix: long option --gracetime is correct, --graceperiod is not
+         performance: use fewer printw() calls to center text
+         cleanup: merge two trim functions to one
+         crash fix: add ctl structure to gtk Pause_clicked() handler
+         crash fix: never return const string as address
+         crash fix: ctl->iiwidth_len was not initialized correctly
+         cleanup: make unused and const attributes to look the same
+         performance: make get_iiwidth() to be const function
+         cleanup: remove more/bottom labels header separation from mpls
+         cleanup: set variable only if it is used
+         cleanup: correct display_offset variable usage
+         cleanup: remove message duplicate
+         performance: set few variables read-only
+         docs: add Sami Kerola to authors
+         performance: make reset in net.c more effective
+         portability: fix bsd build
+         warnings: ensure printf will not overflow
+         misc: improve random initialization
+         net: fix net_reopen() initialization
+         warnings: fix warnings when everything possible is turned on
+         curses: simplify format_number()
+         curses: use switch case in mtr_curses_keyaction()
+         cleanup: remove dead code
+         style: convert c++ comment style to c style
+         display: avoid unnecessary switch case clauses
+         curses: convert magic numbers to an enum list
+         data types: move variables from a file to a function scope
+         cleanup: move file scope variables to the beginning of file
+         data types: move names list away from global scope
+         cleanup: move definitions and struct declarations to mtr.h
+         cleanup: clarify preprocessor nesting
+         build-sys: use proper check to find if time_t is defined
+         build-sys: enable all system extensions
+         regression: fix --displaymode=2 argument
+         user interface: do not allow out of range --ipinfo arguments
+         cleanup: use single logic to handle conditional options
+         docs: add very basic --sctp documentation to manual page
+         docs: improve mtr-packet(8) manual page
+         build-sys: update .gitignore file
+         smatch: extern keyword is needed only in header
+         smatch: fix couple warnings
+         build-sys: update .gitignore file
+         docs: FSF moved back in 2005
+   
+   Vlad Glagolev (1):
+         respect theme foreground color
+   
+   aquerubin (5):
+         Correct psize for IPv6.
+         Merge updates from branch 'master' into newdns
+         Merge branch 'master' into newdns
+         Merge branch 'newdns' of https://github.com/aquerubin/mtr into newdns
+         Fix standard deviation calculation.
+   
+   rewolff (22):
+   
+
+V0.87
+Antonio Querubin (1):
+      Use setcap instead of setuid when installing the binary.
+
+Baptiste Jonglez (4):
+      Allow enabling IP info and ASN lookup from the curses interface
+      Document the -y option in the manpage
+      Cosmetic cleanup of the option-parsing code
+      Fix wrap-around bug when displaying IP info (-y option)
+
+Danek Duvall (1):
+      Fix issue #76: rationalize the discovery of a terminal handling library
+
+Gareth Randall (6):
+      Corrected the "without gtk" reference to "./configure --without-gtk",
+      Filled in some of the missing man page sections.
+      Remove a warning message at compile time.
+      Fix typos and update mailing list references.
+      Add a section about granting limited security capabilities.
+      State that Github is the preferred way to report bugs.
+
+Guo Yixuan (1):
+      Raw output: add x for a ping-packet-sent event.
+
+Hajimu UMEMOTO (1):
+      Add aslookup support to gtk interface
+
+Jakub Wilk (1):
+      Fix typos.
+
+Kris Coward (1):
+      Added --displaymode option
+
+Narthorn (1):
+      curses: Fix background transparency in terminal
+
+Nikolai R Kristiansen (1):
+      Add support for JSON as report output format
+
+R.E. Wolff (9):
+      explanation of the version numbers in NEWS.
+      Merge branch 'master' of github.com:traviscross/mtr
+      removed warning about IPV6 socket when IPV6 is not available at runtime
+      fix for printing space field in XML.
+      modified name of timeout variable to prevent warning on solaris.
+      changed the name of the ping timeout timer from 'tag' to 'ping timeout timer'
+      net.c fix from AQ.
+      issue 128: compile should be in .gitignore
+      The release script bumped the version number
+      added use-default-colors...
+
+Theo Baschak (1):
+      Update asn.c - 32bit asn widths
+
+Tobias Rittweiler (5):
+      Fix typo in csv_close() that prevented any of the data columns from being printed.
+      --csv: Don't print spaces in columns.
+      --csv: Print a header line as the first line which names all columns.
+      asn.h: Guard against being included twice.
+      Fix setting length field of UDP header to broken value on BSD systems.
+
+Vojtech Kurka (1):
+      Fixed behaviour of Pause button
+
+aquerubin (3):
+      Correct psize for IPv6.
+      Fix Avg and Best column order to match column headers in GTK display.
+      Update Tony's email address in the GTK credits.
+
+penyu (1):
+      add max-unknown option
+
+russor (10):
+      allow setting local and remote port for UDP probing
+      fix checksum for odd sized packets
+      set the local address for display if it was bound
+      automatically set udp address if needed
+      fix improper aliasing
+      fix placement of zeros when running alternate udp checksum
+      endian neutral placement of alternate checksum
+      copy odd byte into a 16-bit temp value; used bit-sized types for calrity
+      correct checksum calculation when adding the overflow overflows
+      add option to set graceperiod
+
+swordfeng (3):
+      Add SCTP support (same way with tcp)
+      remove comment
+      fix sctp header structure
+
+=======
+#this is a tag my script looks for. 
+#NEW_STUFF_HERE
+V0.87
+   Antonio Querubin (1):
+         Use setcap instead of setuid when installing the binary.
+   
+   Baptiste Jonglez (4):
+         Allow enabling IP info and ASN lookup from the curses interface
+         Document the -y option in the manpage
+         Cosmetic cleanup of the option-parsing code
+         Fix wrap-around bug when displaying IP info (-y option)
+   
+   Danek Duvall (1):
+         Fix issue #76: rationalize the discovery of a terminal handling library
+   
+   Gareth Randall (6):
+         Corrected the "without gtk" reference to "./configure --without-gtk"
+         Filled in some of the missing man page sections.
+         Remove a warning message at compile time.
+         Fix typos and update mailing list references.
+         Add a section about granting limited security capabilities.
+         State that Github is the preferred way to report bugs.
+   
+   Guo Yixuan (1):
+         Raw output: add x for a ping-packet-sent event.
+   
+   Hajimu UMEMOTO (1):
+         Add aslookup support to gtk interface
+   
+   Jakub Wilk (1):
+         Fix typos.
+   
+   Kris Coward (1):
+         Added --displaymode option
+   
+   Narthorn (1):
+         curses: Fix background transparency in terminal
+   
+   Nikolai R Kristiansen (1):
+         Add support for JSON as report output format
+   
+   R.E. Wolff (9):
+         explanation of the version numbers in NEWS.
+         Merge branch 'master' of github.com:traviscross/mtr
+         removed warning about IPV6 socket when IPV6 is not available at runtime
+         fix for printing space field in XML.
+         modified name of timeout variable to prevent warning on solaris.
+         changed the name of the ping timeout timer from 'tag' to 'ping timeout timer'
+         net.c fix from AQ.
+         issue 128: compile should be in .gitignore
+         The release script bumped the version number
+   
+   Rogier Wolff (1):
+         added use-default-colors...
+   
+   Theo Baschak (1):
+         Update asn.c - 32bit asn widths
+   
+   Tobias Rittweiler (5):
+         Fix typo in csv_close() that prevented any of the data columns from being printed.
+         --csv: Don't print spaces in columns.
+         --csv: Print a header line as the first line which names all columns.
+         asn.h: Guard against being included twice.
+         Fix setting length field of UDP header to broken value on BSD systems.
+   
+   Vojtech Kurka (1):
+         Fixed behaviour of Pause button
+   
+   aquerubin (3):
+         Correct psize for IPv6.
+         Fix Avg and Best column order to match column headers in GTK display.
+         Update Tony's email address in the GTK credits.
+   
+   penyu (1):
+         add max-unknown option
+   
+   russor (10):
+         allow setting local and remote port for UDP probing
+         fix checksum for odd sized packets
+         set the local address for display if it was bound
+         automatically set udp address if needed
+         fix improper aliasing
+         fix placement of zeros when running alternate udp checksum
+         endian neutral placement of alternate checksum
+         copy odd byte into a 16-bit temp value; used bit-sized types for calrity
+         correct checksum calculation when adding the overflow overflows
+         add option to set graceperiod
+   
+   swordfeng (3):
+         Add SCTP support (same way with tcp)
+         remove comment
+         fix sctp header structure
+   
+
+V0.86 Fixed default hostname logic. 
+      Fix for NetBSD: 64bit time_t -- Thomas Klausner
+      Fix unnecessary runtime dependency on glib from VSYakovetsky through 
+           Thomas
+      Inverted IPINFO define in the code. Removes double negatives. 
+         -- Vladimir Yakovetsky, REW.
+      Fixed failure on IPv4 only systems when IPv6 was available at
+         compile time. -- REW.
+      Fixed (longstanding) bug that mtr used 100% cpu when paused. 
+      Cosmetic changes from Richard Hartman. 
+
+V0.85 Fixed asn support. (better compile time detection of required features)
+      support for multiple hostnames. (fixed in 0.86)
+      support for TCP probes
+
+V0.84 Fix some glib things by Thomas. 
+
+V0.83 Move to github. Mostly done by Travis.
+
+Author: Travis Cross <tc@traviscross.com>
+    Add autotools bootstrap script
+    Update README for building from git repository
+    Cleanup whitespace in the NEWS file
+    Resolve -Wunused-but-set-variable warnings
+    Resolve -Wnull-dereference clang warning
+    Add -z / --show-ip support
+Author: R.E. Wolff <R.E.Wolff@BitWizard.nl> (mostly from patches by others)
+    some running patches
+    Made report wide switch properly to displayreport mode. Bug #780647
+    fixed gtk field order. Bug #701513
+    added aslookup patch from bug #701514
+    added some extra clarifications to the SECURITY file.
+    enable ipv6 resolvers. By Antonio Querubin. Fixes bug #752583
+
+  V0.82 Removed old Changelog file appended at the end as oldest
+        changes.
+        2011-03-28  Mark Kamichoff <prox@prolixium.com>
+        Enable decoding of ICMP extensions for MPLS for curses and
+        report interfaces.  Use the -e flag or press 'e' to enable it.
+
+  V0.81 Moved to git. Testing git...
+
+  V0.80 Some compilation fixes for BSD by Jeremy Chadwick
+        <freebsd@jdc.parodius.com>
+
+  V0.78/0.79 some compilation fixes for BSD&others by
+        Thomas Klausner <wiz@NetBSD.org>
+
+  V0.76 display load sharing hosts in --raw output.
+        added about button in gui.
+
+  v0.75 Feelgood patch to move sprintf to snprintf. People might think
+        that sprintf might cause a buffer overflow. Now it's clean.
+        cut-paste patches: you can now copy an intermediate host to the
+        clipboard.
+
+  v0.74 Martin Pels' patch to allow UDP probes.
+        KES reported a build problem. Turns out I need to install gtk-1.2
+        on my development system, otherwise my release script causes the
+        build to break.
+        changed some docs to advertise the new mailing list.
+        added documentation for the Mac OS X compilation problem.
+        added -Wno-pointer-sign to the compiler options.
+        Nico Lichtmaier's cleanup-gtk patch. (now mtr uses a more modern
+        dialect of gtk).
+
+  v0.73 Some security patches. Although MTR drops privileges as soon
+        as possible after opening the sockets, it still had some
+        sprintf calls, which have now been converted into snprintf.
+
+  v0.72 Fix signed/unsigned bug in IPV6 part
+        improved random packet size behaviour. --REW
+
+  v0.71 Some IPV6 fixes, introduce packet size cmdline option.
+        (was already present as a cmdline argument)
+
+  v0.70 Antinio submitted a cumulative patch containing some
+        nice improvements. He also submitted an automake patch
+        that causes mtr to no longer compile on my system. I
+        refuse to have mtr "in the dark" that I can't test-compile
+        the dist.
+
+  v0.69 make distclean should now also remove "rej" files.
+        Antonio Querubin: update getopt.h . More cleanups using
+        new infrastructure.
+        rcw: Fixed IPV6 support: When compiled in an IPV6-supporting
+        environment, but when the kernel doesn't support IPV6, mtr would
+        fail to start.
+
+  v0.68 included some old patches.
+        included patch from Antonio Querubin for better IPV6 support
+        restructured some more whitespace.
+        added mtr.h where "global" things should go. Not finished
+        moving things around, but now that the infrastructure is there,
+        it should be easy.
+
+  v0.67 Bad keyboarding by REW caused this one out the door. Sorry.
+        No changes.
+
+  v0.66 Through the Debian bugtracking system a bug report and
+        fix was sent my way, that deals with stupid optimization
+        trying to save some 768 bytes of memory, sacrificing "it
+        works" on a different architecture... (default char signedness)
+
+  v0.65 Dancer Vesperman noted that mtr no longer traces past
+        a section of non-responding hosts. Apparently I added
+        a line in net.c that didn't make sense in mtr-0.56. I
+        can't find the reason for adding that line, so someone
+        who thinks (s)he needs it, should holler.
+
+  v0.64 Philippe suggests to do the time_t thingy before socket.h.
+        Apparently, MAC OS X doesn't compile socket.h otherwise.
+
+  v0.63 Suggestion by RCW: Add -lm at line 70 of Configure.in.
+        On my system no ill effects ensued, so this version released
+        so that he can test if it still works on his system.
+
+        Let me add that it's stupid that I have to specify that this
+        this program now requires Automake version 1.5 to build, where
+        Automake was intended to make software independent of different
+        versions of build software!
+
+        For those concerned about the above statement: If you're just
+        trying to compile and use MTR, there is no need for automake.
+        Just when you're messing with the configure and build system of
+        mtr is automake a tool you need.
+
+  v0.62 Apparently someone changed gethostbyname into gethostbyname2
+        in mtr.c in an attempt to add IPV6 support. For systems without
+        ipv6 support, the old gethostbyname should be used! Linux
+        has the call even if you don't enable IPV6. Thanks Gary (rsub)
+
+  v0.61 Attempt to get/print the local IP address. Now shows as
+        0.0.0.0 :-( Hints and tips appreciated! -- REW
+        Lots of blank space reformatting.
+        moved the interface address setting to net.c (where it
+        belongs).
+
+  v0.60 John Thacker submitted a surprisingly simple patch to
+        enable linking against GTK2.  (up to 2.4.0)
+
+  v0.59 Josh Martin suggested to add some bounds checking to
+        the dynamic field code. This caused me to delve in, and
+        rewrite some things. Now 50 lines of code less, but cleaner
+        code. :-)
+
+  v0.58 I don't remember. Forgot to update this. :-( Check the
+        patch.
+
+  v0.57 Lots of whitespace cleanups. And a DNS fix: Don't do DNS
+        lookups in raw mode with -n specified.
+
+  v0.56 Fixed compile warnings. Now compiles with -Wall. If your
+        compiler finds things mine didn't feel free to shout.
+
+  v0.55 Cleanup patch. I'm going to do some maintenance on MTR,
+        but I want to be able to say: Can you see which version
+        fixed/broke things for you, so you're going to see a
+        bunch of new releases soon.
+
+  v0.54 Added "scrolling" patch from Roland Illig, to allow
+        scrolling in text mode. I've always wanted this......
+
+  v0.53 Added fix for raw mode.
+
+  v0.52 Mostly cleanups from Brett Johnson on MacOS X. It may
+        clean up some compilation problems on MacOS X as well.
+
+  v0.51 Fixed the bug introduced by the previous select loop fix...
+        Thanks Evgeniy
+
+  v0.50 Make "interface address" option work.
+        Changes to "select" loop to allow window resizes (select
+        interruption) to work. Thanks Mike!
+
+  v0.49 Fix compilation problems on several platforms.
+
+  v0.48 Draw names in red (GTK) or bold (Curses) if host doesn't
+        respond.
+
+  v0.47 Fixed a (believed-) non-exploitable buffer overflow.
+        Thanks Damian.
+
+  v0.46 Included patch to be able to specify outgoing interface
+        address.
+
+  v0.45 People are pressuring me to release new versions with their
+        changes. That's fine. Now this version just adds dynamic
+        switching between numeric / dns names, and some minor
+        stuff I forgot. This release serves as a code-sync-release.
+        new version with even more new stuff in about two weeks!
+        I'm afraid I don't know how to fix the MacOS-X compilation
+        problems in the source. Help wanted...
+
+  v0.44 David Stone adds the "last" column to the gtk version.
+
+  v0.43 Compile fixes.
+
+  v0.41 Added afr's patch to allow disabling of gtk without Robn's hack.
+        Made report mode report the newly added extra resolution.
+
+  v0.40 Fixed some problems with HPUX and SunOS.
+        Included Olav Kvittem's patch to do packetsize option.
+        Made the timekeeping in micro seconds.
+
+  v0.39 Forgot the parentheses around the previous fix... :-(
+
+  v0.38 fixed some dubious code in dns.c (noted by someone's lint)
+
+  v0.37 Added Bill Bogstad's "show the local host & time" patch.
+        Added R. Sparks' show-last-ping patch, submitted by Philip Kizer.
+
+  v0.36 Added Craigs change-the-interval-on-the-fly patch.
+        Added Moritz Barsnick's "do something sensible if host not found"
+            patch.
+        Some cleanup of both Craigs and Moritz' patches.
+
+  v0.35 Added Craig Milo Rogers pause/resume for GTK patch.
+        Added Craig Milo Rogers cleanup of "reset". (restart at the beginning)
+        Net_open used to send a first packet. After that the display-driver
+            got a chance to distort the timing by taking its time to
+            initialize.
+
+  v0.34 Added Matt's nifty "use the icmp unreachables to do the timing" patch.
+        Added Steve Kann's pause/resume patch.
+
+  v0.33 Fixed the Linux glibc resolver problems.
+        Fixed the off-by-one problem with -c option.
+
+  v0.32 Fixed the FreeBSD bug detection stuff.
+
+  v0.31 Fixed a few documentation issues. -- Matt
+        Changed the autoconf stuff to find the resolver library on
+            Solaris. -- REW
+        Cleaned up the autoconf.in file a bit. -- Matt.
+
+  v0.30 Fixed a typo in the changelog (NEWS) entry for 0.27. :-)
+        added use of "MTR_OPTIONS" environment variable for defaults.
+
+  v0.29 Lots of stuff.
+        Neato overview display by David Sward.
+        FreeBSD does wrong in the kernel the same that Solaris/x86 (see
+            note for 0.27 does right. It forces mtr to send bad packets....
+        Adjusted "not too much at once" algorithm. Now probing
+           continues as long as not more than 5 hosts are unknown.
+           Returning packets usually allow us to do the first sweep
+           in one go.
+
+  v0.28 DNS lookups are now suppressed if you don't want them.
+
+  v0.27
+        Fixed bug that showed up on Solaris/x86.
+        GTK mainloop now runs as it's supposed to.
+
+  v0.26
+        Added "-n" flag for numeric output.
+        fixed IP numbers displaying backwards.
+        GTK mainloop now runs at 10 packets per second.
+          - That's too much if there are only 3 hosts
+          - that's too little if there are 20 hosts.
+        -> Someone tell me how to change the "ping-timeout"
+           callback time in gtk. Can't find it in the docs.
+        The default for "hostname" is now "localhost" so that
+        you can start mtr without any arguments and later
+        fill in the host you want to trace to.
+
+  v0.25
+        Included two "raw" formats. One for separating GUI from
+        the setuid program, and one suitable for later parsing and
+        displaying. Volunteers wanted to separate the GTK
+        backend. Thanks to Bertrand Leconte for contributing
+        the format that's now called "split".
+
+  v0.24
+        Fixed number of probes. Accidentally was counted per
+        packet sent instead of per round of packets.
+
+  v0.23
+        Fixed Sparc alignment problem with statmalloc
+
+  v0.22
+        Roger has take over maintenance.
+        mtr now uses an "int" to pass options to the kernel.
+        Makes things work on Solaris and *BSD I'm told.
+        mtr doesn't fire off a flurry of packets when a new
+        second comes around. Instead they are spaced evenly
+        around the whole second. This allows people with a
+        relatively slow first link to do meaningful measurements
+        of whatever is behind that.
+
+  v0.21
+        mtr now drops root permissions after it acquires the raw
+        sockets it needs.
+        mtr should be a bit happier about building under SCO and
+        Solaris.
+        Fixed the problem with packets arriving after a reset.
+
+  v0.20
+        The build process for mtr now uses automake.
+        Fixed a build problem for Irix.
+        Now uses non-blocking DNS code, so mtr can attempt
+        to do reverse lookup on multiple hosts at once.
+        Fewer packets are sent out each cycle, so mtr
+        doesn't hog quite so much bandwidth.
+
+  v0.19
+        Fixed a type-o in curses.c
+
+  v0.18
+        Fixed the network code to work properly under FreeBSD.
+        Hopefully this will fix some other operating systems too.
+        Also, fixed a build problem and the DNS hanging bug.
+
+  v0.17
+        Fixed the configure script to always like with the math
+        library.  Added an icon.
+
+  v0.16
+        Added one #include to select.c.  Some people were unable
+        to build mtr without this line.
+
+  v0.15
+        Both the build process and the networking code have
+        been cleaned up and reorganized.  mtr now builds
+        cleanly with GTK+ 0.99.8.
+
+--- Below is the contents of the old "Changelog file" that annoyed some
+people as it didn't contain any recent changes/news.
+
+2002-03-06  Cougar <cougar@random.ee>
+        + If hop doesn't respond, draw its name in red (GTK) or bold (curses)
+
+2002-02-09  bodq  <bohdan@vstu.edu.ua>
+        + Added --address option to bind to given IP address
+
+2001-04-15  root  <alane@geeksrus.net>
+        + Added this file so that automake won't complain.
+        + Commented out the test for res_init in configure.in;
+        it does not work for GLIBC2 systems (e.g., RedHat 7+).
+        + Fixed the subordinate CHECK_LIBS on the test for res_mkquery,
+        so that they test for res_mkquery, not res_init.
+

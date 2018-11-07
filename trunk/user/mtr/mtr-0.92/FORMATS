@@ -1,0 +1,103 @@
+
+The "split" format is for a separating the gui from the main program.
+The main program can be installed setuid, and you don't want to link a
+gui-library with a setuid program.
+
+
+The split format is:
+
+<pos> <host> <loss%> <rcvd pckts> <sent pckts> <best> <avg> <worst> 
+
+
+The "raw" format is:
+
+hostline|xmitline|pingline|dnsline|timestampline
+
+hostline:
+h <pos> <host IP>
+
+xmitline:
+x <pos> <seqnum>
+
+pingline:
+p <pos> <pingtime (ms)> <seqnum>
+
+dnsline: 
+d <pos> <hostname>
+
+timestampline:
+t <pos> <pingtime> <timestamp>
+
+
+Timestampline is not  yet implemented. Need to find out how to do
+ICMP timestamping first. :-)
+
+
+Someone suggested to put the following text here. As to context: Some
+people are wondering why mtr sometimes reports hosts beyond the
+destination host. 
+
+
+The FINAL host will occasionally be mentioned at position n, n+1, n+2
+etc.
+
+You know traceroute, right? It sends a packet, waits for the reply to
+come back and when it comes back, it sends the next packet.
+
+If say hosts 5-8 do not send "time exceeded" packets, you'll wait a
+4*3 = twelve seconds extra before you get any results on hosts 9 and
+further. MTR doesn't work like that.
+
+In theory we could send out a probe for host 1-40 all at once. But
+this would pose an unnecessary burden on the network. So what we do,
+is we send out probes for a max of 5 hosts beyond where we've seen a
+reply. So in the example above, we'd see a reply from router at
+position 4, then we'd send out 5-9 (and because the max-host is now at
+9, we'll send them out at 1s/9 = 111ms intervals). When the reply from
+host 9 comes back, we'll start probing for host 10-15 (at about 60ms
+intervals). But suppose the network delay up to host 9 is already 200ms
+and suppose our destination host is at position 11. Then by the time
+the packet from host 11 comes back, we'll already have sent probe
+packets for position 12, 13, and 14! Those will come back as
+"destination reached" and be reported by the "raw" mode.
+
+Curses mode will stop showing hosts with position numbers beyond the
+first reply of the destination host. It could gather the information
+about replies to packets sent as probes FURTHER than it actually is
+into the line displayed at its true position, but it doesn't (yet).
+
+In fact the above example is almost completely true:
+
+% mtr -r -n -c 2 152.179.99.218 | tail -5
+ 13.|-- 144.232.18.238 0.0% 2 94.8 95.4 94.8 96.0 0.8
+ 14.|-- 152.63.16.182 0.0% 2 95.1 95.5 95.1 95.8 0.5
+ 15.|-- 152.63.64.106 0.0% 2 163.9 163.9 163.9 164.0 0.1
+ 16.|-- 152.63.50.89 50.0% 2 163.7 163.7 163.7 163.7 0.0
+ 17.|-- 152.179.99.218 50.0% 2 168.2 168.2 168.2 168.2 0.0
+% mtr -l -c 2 152.179.99.218 | grep -v "^[dp]" |tail -7
+h 10 144.232.1.41
+h 11 144.232.4.96
+h 16 152.179.99.218
+h 17 152.179.99.218
+h 18 152.179.99.218
+h 12 144.232.18.238
+h 13 152.63.16.182
+
+As you can see we get the reply from the destination host at position
+16 AFTER we've sent probes for position 17 and 18. When those come
+back, they are reported. That's what raw mode does. It reports the raw
+information.
+
+If you write a backend for the raw mode, it's up to you to
+filter/display the results.
+
+h 10 144.232.1.41
+h 11 144.232.4.96
+h 12 144.232.18.238
+h 13 152.63.16.182
+h 14 152.63.64.106
+h 15 152.63.50.89
+h 16 152.179.99.218
+h 17 152.179.99.218
+h 18 152.179.99.218
+

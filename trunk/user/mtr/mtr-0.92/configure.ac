@@ -100,15 +100,11 @@ AS_IF([test "x$with_ncurses" = "xyes"],
   # Prefer ncurses over curses, if both are available.
   # (On Solaris 11.3, ncurses builds and links for us, but curses does not.)
   [AC_SEARCH_LIBS(
-    [initscr], [ncurses curses],
+    [initscr], [ncursesw curses],
     [AC_DEFINE([HAVE_CURSES], [1], [Define if a curses library available])],
     [with_ncurses=no])
 ])
 AM_CONDITIONAL([WITH_CURSES], [test "x$with_ncurses" = xyes])
-
-AC_CHECK_LIB([cap], [cap_set_proc], [],
-  AS_IF([test "$host_os" = linux-gnu],
-    AC_MSG_WARN([Capabilities support is strongly recommended for increased security.  See SECURITY for more information.])))
 
 # Enable ipinfo
 AC_ARG_WITH([ipinfo],

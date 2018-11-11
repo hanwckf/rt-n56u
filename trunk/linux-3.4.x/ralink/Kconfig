@@ -103,11 +103,11 @@ choice
 
 	config RT_FIRST_IF_EEPROM_EFUSE
 	bool "eFUSE on-die"
-	depends on !(RT_FIRST_IF_RT2860 || RT_FIRST_IF_MT7620 || RT_FIRST_IF_MT7628)
+	depends on !(RT_FIRST_IF_RT2860 || RT_FIRST_IF_MT7620 || RT_FIRST_IF_MT7628 || RT_FIRST_IF_MT7615E)
 
 	config RT_FIRST_IF_EEPROM_PROM
 	bool "EEPROM chip"
-	depends on !(RT_FIRST_IF_RT2860 || RT_FIRST_IF_MT7620 || RT_FIRST_IF_MT7628)
+	depends on !(RT_FIRST_IF_RT2860 || RT_FIRST_IF_MT7620 || RT_FIRST_IF_MT7628 || RT_FIRST_IF_MT7615E)
 endchoice
 
 config  RT_FIRST_IF_RF_OFFSET
@@ -228,6 +228,22 @@ config RT_SECOND_CARD_EEPROM
 	default "efuse" if RT_SECOND_IF_EEPROM_EFUSE
 	default "flash" if RT_SECOND_IF_EEPROM_FLASH
 
+comment "3rd Wireless Interface"
+
+choice
+	prompt "Choose 3rd Wireless Interface"
+	config RT_THIRD_IF_NONE
+	bool "None"
+
+	config RT_THIRD_IF_MT7615E
+	bool "MT7615E PCIe"
+endchoice
+
+config  RT_THIRD_CARD
+	int
+	default 0    if RT_THIRD_IF_NONE
+	default 7615 if RT_THIRD_IF_MT7615E
+
 comment "Wireless drivers settings"
 	depends on (!RT_FIRST_IF_NONE || !RT_SECOND_IF_NONE)
 
@@ -334,7 +350,13 @@ source "drivers/net/wireless/ralink/mt76x3_ap/Kconfig"
 endmenu
 endif
 
-if (!RT_FIRST_IF_NONE || !RT_SECOND_IF_NONE)
+if (RT_FIRST_IF_MT7615E || RT_SECOND_IF_MT7615E)
+menu "AP MODE MediaTek MT7615E PCIe Wireless driver"
+source "drivers/net/wireless/ralink/mt7615/embedded/Kconfig"
+endmenu
+endif
+
+if (!RT_FIRST_IF_NONE || !RT_SECOND_IF_NONE) && !RT_FIRST_IF_MT7615E && !RT_SECOND_IF_MT7615E
 menu "Wireless drivers common configs"
 source "drivers/net/wireless/ralink/Kconfig"
 endmenu

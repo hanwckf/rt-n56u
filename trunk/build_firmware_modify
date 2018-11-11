@@ -154,6 +154,7 @@ rm -rf "$dir_wifi_dst/mt7610"
 rm -rf "$dir_wifi_dst/mt76x2"
 rm -rf "$dir_wifi_dst/mt76x3"
 rm -rf "$dir_wifi_dst/mt7628"
+rm -rf "$dir_wifi_dst/mt7615"
 
 PATCH_DIR="${ROOTDIR}/PROMETHEUS/wifi_patch"
 if [ "$CONFIG_APPLY_PROMETHEUS_WIFI_DRIVER_PATCH" = "y" ] && [ ! -f "$dir_wifi_src/.patched_by_PROMETHEUS" ] ; then
@@ -236,6 +237,11 @@ if [ -n "$CONFIG_MT7628_AP" ] ; then
 	dir_wifi_ver="4.1.X.X"
 	cp -rfL "$dir_wifi_src/rtsoc/$dir_wifi_ver/mt7628" "$dir_wifi_dst/"
 	cp -rfL "$dir_wifi_src/rtsoc/$dir_wifi_ver/mt7628_ap" "$dir_wifi_dst/"
+fi
+if [ -n "$CONFIG_MT7615_AP" ] ; then
+	dir_wifi_ver="4.4.2.1"
+	cp -rfL "$dir_wifi_src/rtpci/$dir_wifi_ver/mt7615" "$dir_wifi_dst/"
+	cp -rfL "$dir_wifi_src/rtpci/$dir_wifi_ver/mt7615_ap" "$dir_wifi_dst/"
 fi
 ############################ HWNAT ####################################
 dir_ppe_src="$ROOTDIR/proprietary/rt_ppe"

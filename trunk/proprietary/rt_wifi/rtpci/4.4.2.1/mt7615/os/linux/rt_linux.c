@@ -361,8 +361,8 @@ void RtmpFlashRead(
 #else
 	//wilsonl, fix compile for temp
 #ifndef MT7622
-	/* ra_mtd_read_nm("Factory", a&0xFFFF, (size_t) b, p); */
-	ra_mtd_read_nm("Factory", a, (size_t) b, p);  /* triple card needs to access beyond 0xFFFF , don't mask */
+	ra_mtd_read_nm("Factory", a&0xFFFF, (size_t) b, p); 
+	//ra_mtd_read_nm("Factory", a, (size_t) b, p);  /* triple card needs to access beyond 0xFFFF , don't mask */
 #endif
 #endif
 #endif /* CONFIG_RALINK_FLASH_API */
@@ -381,8 +381,8 @@ void RtmpFlashWrite(
 #else
 	//wilsonl, fix compile for temp
 #ifndef MT7622
-	/* ra_mtd_write_nm("Factory", a&0xFFFF, (size_t) b, p); */
-	ra_mtd_write_nm("Factory", a, (size_t) b, p);  /* triple card needs to access beyond 0xFFFF , don't mask */
+	ra_mtd_write_nm("Factory", a&0xFFFF, (size_t) b, p);
+	//ra_mtd_write_nm("Factory", a, (size_t) b, p);  /* triple card needs to access beyond 0xFFFF , don't mask */
 #endif
 #endif
 #endif /* CONFIG_RALINK_FLASH_API */

@@ -18,9 +18,9 @@
 #include "rt_config.h"
 
 /*Local definition*/
-#define FIRST_AP_2G_PROFILE_PATH	"/etc/Wireless/RT2860/RT2860_2G.dat"
-#define FIRST_AP_5G_PROFILE_PATH	"/etc/Wireless/RT2860/RT2860_5G.dat"
-#define FIRST_AP_MERGE_PROFILE_PATH "/etc/Wireless/RT2860/RT2860_dbdc.dat"
+#define FIRST_AP_2G_PROFILE_PATH	"/etc/Wireless/RT2860/RT2860AP.dat"
+#define FIRST_AP_5G_PROFILE_PATH	"/etc/Wireless/iNIC/iNIC_ap.dat"
+#define FIRST_AP_MERGE_PROFILE_PATH "/etc/Wireless/.mt7615_dbdc.dat"
 #ifdef RT_CFG80211_SUPPORT
 #define FIRST_AP_5G_DEVNAME "wlanx"
 #else

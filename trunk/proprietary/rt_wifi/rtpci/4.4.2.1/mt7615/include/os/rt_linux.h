@@ -133,8 +133,8 @@ typedef struct usb_ctrlrequest devctrlrequest;
 #define AP_PROFILE_PATH			"/etc/Wireless/iNIC/iNIC_ap.dat"
 #define AP_RTMP_FIRMWARE_FILE_NAME "/etc_ro/Wireless/iNIC/RT2860AP.bin"
 #else
-#define AP_PROFILE_PATH			"/etc/Wireless/RT2860AP/RT2860AP.dat"
-#define AP_RTMP_FIRMWARE_FILE_NAME "/etc/Wireless/RT2860AP/RT2860AP.bin"
+#define AP_PROFILE_PATH			"/etc/Wireless/RT2860/RT2860AP.dat"
+#define AP_RTMP_FIRMWARE_FILE_NAME "/etc/Wireless/RT2860/RT2860AP.bin"
 #endif
 
 

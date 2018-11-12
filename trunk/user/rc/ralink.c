@@ -726,7 +726,7 @@ gen_ralink_config(int is_soc_ap, int is_aband, int disable_autoscan)
 		fprintf(fp, "BndStrgRssiDiff=%d\n", 30);
 
 /* if Rssi5G < RssiLow, then this client cannot connect to 5G */
-		fprintf(fp, "BndStrgRssiLow=%d\n", -86);
+		fprintf(fp, "BndStrgRssiLow=%d\n", -90);
 
 /* Entry Age Time (ms) */
 		fprintf(fp, "BndStrgAge=%d\n", 600000);

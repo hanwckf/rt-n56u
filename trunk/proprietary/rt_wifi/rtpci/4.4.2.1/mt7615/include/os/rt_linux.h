@@ -148,9 +148,9 @@ typedef struct usb_ctrlrequest devctrlrequest;
 
 
 #ifdef SINGLE_SKU_V2
-#define SINGLE_SKU_TABLE_FILE_NAME	"/etc_ro/Wireless/RT2860AP/7615_SingleSKU.dat"
+#define SINGLE_SKU_TABLE_FILE_NAME	"/etc_ro/Wireless/SingleSKU_mt7615e-sku.dat"
 #define BF_GAIN_TABLE_FILE_NAME     "/etc_ro/Wireless/RT2860AP/7615_BF_Gain_Table.dat"
-#define BF_SKU_TABLE_FILE_NAME      "/etc_ro/Wireless/RT2860AP/7615_SingleSKU_BF.dat"
+#define BF_SKU_TABLE_FILE_NAME      "/etc_ro/Wireless/SingleSKU_mt7615e-sku-bf.dat"
 #endif /* SINGLE_SKU_V2 */
 
 #endif /* CONFIG_AP_SUPPORT */

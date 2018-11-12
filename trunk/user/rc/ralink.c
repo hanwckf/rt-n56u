@@ -677,19 +677,35 @@ gen_ralink_config(int is_soc_ap, int is_aband, int disable_autoscan)
 	fprintf(fp, "Channel=%d\n", i_channel);
 
 #if defined (USE_MT7615_AP)
-	fprintf(fp, "EfuseBufferMode=%d\n", 0);
 	fprintf(fp, "E2pAccessMode=%d\n", 2);
+	fprintf(fp, "RED_Enable=%d\n", 1);
+	fprintf(fp, "CalCacheApply=%d\n", 0);
+	fprintf(fp, "LoadCodeMethod=%d\n", 0);
+	fprintf(fp, "VHT_Sec80_Channel=%d\n", 0);
+	fprintf(fp, "WNMEnable=%d\n", 0);
 	fprintf(fp, "SKUenable=%d\n", 0); //TODO
 #endif
 #if defined (USE_WID_2G) && USE_WID_2G==7615
 	if (!is_aband) {
 		fprintf(fp, "G_BAND_256QAM=%d\n", nvram_wlan_get_int(0, "turbo_qam"));
-		fprintf(fp, "VOW_Airtime_Fairness_En=%d\n", nvram_wlan_get_int(0, "airtimefairness"));
+		if (nvram_wlan_get_int(0, "airtimefairness")) {
+			fprintf(fp, "VOW_Airtime_Fairness_En=%d\n", 1);
+			fprintf(fp, "VOW_Airtime_Ctrl_En=%d\n", 1);
+			fprintf(fp, "VOW_RX_En=%d\n", 1);
+		} else {
+			fprintf(fp, "VOW_Airtime_Fairness_En=%d\n", 0);
+			fprintf(fp, "VOW_Airtime_Ctrl_En=%d\n", 0);
+			fprintf(fp, "VOW_RX_En=%d\n", 0);
+		}
+		fprintf(fp, "VOW_Rate_Ctrl_En=%d\n", 0);
 	}
 #endif
 #if defined (USE_WID_5G) && USE_WID_5G==7615
 	if (is_aband) {
-		fprintf(fp, "MUTxRxEnable=%d\n", nvram_wlan_get_int(1, "mumimo"));
+		if (nvram_wlan_get_int(1, "mumimo"))
+			fprintf(fp, "MUTxRxEnable=%d\n", 3);
+		else
+			fprintf(fp, "MUTxRxEnable=%d\n", 0);
 		fprintf(fp, "ITxBfTimeout=%d\n", 0);
 		fprintf(fp, "ETxBfTimeout=%d\n", 0);
 		fprintf(fp, "ETxBfNoncompress=%d\n", 0);

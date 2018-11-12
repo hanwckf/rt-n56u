@@ -688,6 +688,7 @@ gen_ralink_config(int is_soc_ap, int is_aband, int disable_autoscan)
 #if defined (USE_WID_2G) && USE_WID_2G==7615
 	if (!is_aband) {
 		fprintf(fp, "G_BAND_256QAM=%d\n", nvram_wlan_get_int(0, "turbo_qam"));
+
 		if (nvram_wlan_get_int(0, "airtimefairness")) {
 			fprintf(fp, "VOW_Airtime_Fairness_En=%d\n", 1);
 			fprintf(fp, "VOW_Airtime_Ctrl_En=%d\n", 1);
@@ -698,6 +699,11 @@ gen_ralink_config(int is_soc_ap, int is_aband, int disable_autoscan)
 			fprintf(fp, "VOW_RX_En=%d\n", 0);
 		}
 		fprintf(fp, "VOW_Rate_Ctrl_En=%d\n", 0);
+		fprintf(fp, "VOW_WATF_Enable=%d\n", 0);
+		fprintf(fp, "VOW_Group_Max_Rate=%d\n", 30);
+		fprintf(fp, "VOW_Group_Max_Ratio=%d\n", 10);
+		fprintf(fp, "VOW_Group_Min_Rate=%d\n", 10);
+		fprintf(fp, "VOW_Group_Min_Ratio=%d\n", 5);	
 	}
 #endif
 #if defined (USE_WID_5G) && USE_WID_5G==7615
@@ -710,12 +716,39 @@ gen_ralink_config(int is_soc_ap, int is_aband, int disable_autoscan)
 		fprintf(fp, "ETxBfTimeout=%d\n", 0);
 		fprintf(fp, "ETxBfNoncompress=%d\n", 0);
 		fprintf(fp, "ETxBfIncapable=%d\n", 0);
-		fprintf(fp, "BandSteering=%d\n", nvram_wlan_get_int(1, "band_steering"));
+
+		if (nvram_wlan_get_int(1, "band_steering"))
+			fprintf(fp, "BandSteering=%d\n", 1);
+		else 
+			fprintf(fp, "BandSteering=%d\n", 0);
+
+/* if Rssi2.4G > Rssi5G by RssiDiff, then allow client to connect 2.4G */
+		fprintf(fp, "BndStrgRssiDiff=%d\n", 30);
+
+/* if Rssi5G < RssiLow, then this client cannot connect to 5G */
+		fprintf(fp, "BndStrgRssiLow=%d\n", -86);
+
+/* Entry Age Time (ms) */
+		fprintf(fp, "BndStrgAge=%d\n", 600000);
+
+/* Time for holding 2.4G connection rsp (ms) */
+		fprintf(fp, "BndStrgHoldTime=%d\n", 5000);
+
+/* Time for deciding if a client is 2.4G only (ms) */
+		fprintf(fp, "BndStrgCheckTime=%d\n", 7000);
+
 	}
 #endif
 #if defined (BOARD_K2P)
 	fprintf(fp, "DBDC_MODE=%d\n", 1);
 #endif
+
+/* range 0 - -100 dBm, reject assoc req due to weak signal, default 0 (off) */
+//	fprintf(fp, "AssocReqRssiThres=%d\n", -70);
+
+/* range 0 - -100 dBm, auto disonnect sta if rssi low (active clients), default 0 (off) */
+//	fprintf(fp, "KickStaRssiLow=%d\n", -78);
+
 	//AutoChannelSelect
 	i_val = (i_channel == 0) ? 2 : 0;
 	fprintf(fp, "AutoChannelSelect=%d\n", i_val);

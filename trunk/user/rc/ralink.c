@@ -678,7 +678,7 @@ gen_ralink_config(int is_soc_ap, int is_aband, int disable_autoscan)
 
 #if defined (USE_MT7615_AP)
 	fprintf(fp, "E2pAccessMode=%d\n", 2);
-//	fprintf(fp, "CP_SUPPORT=%d\n", 2);
+	fprintf(fp, "CP_SUPPORT=%d\n", 2);
 	fprintf(fp, "PMFMFPC=%d\n", 0);
 	fprintf(fp, "PMFMFPR=%d\n", 0);
 	fprintf(fp, "PMFSHA256=%d\n", 0);
@@ -748,10 +748,10 @@ gen_ralink_config(int is_soc_ap, int is_aband, int disable_autoscan)
 #endif
 
 /* range 0 - -100 dBm, reject assoc req due to weak signal, default 0 (off) */
-//	fprintf(fp, "AssocReqRssiThres=%d\n", -70);
+//	fprintf(fp, "AssocReqRssiThres=%d\n", -90);
 
 /* range 0 - -100 dBm, auto disonnect sta if rssi low (active clients), default 0 (off) */
-//	fprintf(fp, "KickStaRssiLow=%d\n", -78);
+//	fprintf(fp, "KickStaRssiLow=%d\n", -98);
 
 	//AutoChannelSelect
 	i_val = (i_channel == 0) ? 2 : 0;

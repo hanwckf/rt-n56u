@@ -1281,9 +1281,6 @@ gen_ralink_config(int is_soc_ap, int is_aband, int disable_autoscan)
 		//VHT_SGI
 		fprintf(fp, "VHT_SGI=%d\n", 1);
 		
-		//VHT_STBC
-		fprintf(fp, "VHT_STBC=%d\n", 0);
-		
 		//VHT_BW_SIGNAL
 		fprintf(fp, "VHT_BW_SIGNAL=%d\n", 0);
 		
@@ -1293,6 +1290,13 @@ gen_ralink_config(int is_soc_ap, int is_aband, int disable_autoscan)
 		//VHT_LDPC
 		i_val = (i_ldpc == 2 || i_ldpc == 3) ? 1 : 0;
 		fprintf(fp, "VHT_LDPC=%d\n", i_val);
+		
+		//VHT_STBC
+#if defined (USE_WID_5G) && USE_WID_5G==7615
+		fprintf(fp, "VHT_STBC=%d\n", i_val);
+#else
+		fprintf(fp, "VHT_STBC=%d\n", 0);
+#endif
 	}
 #endif
 

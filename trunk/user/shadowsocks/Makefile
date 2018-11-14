@@ -11,13 +11,13 @@ GFWLIST_NAME=dnsmasq_gfwlist.conf
 GFWLIST_URL=https://cokebar.github.io/gfwlist2dnsmasq/$(GFWLIST_NAME)
 GFWLIST_DIR=gfwlist
 
-all: gfwlist extract_test config_test
+all: gfwlist_dl extract_test config_test
 ifeq ($(CONFIG_FIRMWARE_INCLUDE_SHADOWSOCKS),y)
 	$(MAKE) -C $(SRC_SSR_NAME)
 endif
 	$(MAKE) -C $(SRC_SS_NAME)
 
-gfwlist:
+gfwlist_dl:
 ifeq ($(CONFIG_FIRMWARE_INCLUDE_SHADOWSOCKS),y)
 	mkdir -p $(GFWLIST_DIR)
 	( if [ ! -f $(GFWLIST_DIR)/.finish ]; then \

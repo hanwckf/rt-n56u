@@ -138,6 +138,7 @@ dir_y						+= httpd
 dir_y						+= www
 dir_y						+= rc
 dir_$(CONFIG_FIRMWARE_INCLUDE_NAPT66)		+= napt66
+dir_$(CONFIG_SHORTCUT_FE)			+= shortcut-fe
 dir_y						+= infosvr
 dir_y						+= inadyn
 dir_y						+= miniupnpd

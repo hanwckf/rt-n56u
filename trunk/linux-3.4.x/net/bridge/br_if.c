@@ -461,3 +461,28 @@ void __net_exit br_net_exit(struct net *net)
 	rtnl_unlock();
 
 }
+
+/* Update bridge statistics for bridge packets processed by offload engines */
+void br_dev_update_stats(struct net_device *dev, struct rtnl_link_stats64 *nlstats)
+{
+		struct net_bridge *br;
+		struct br_cpu_netstats *stats;
+
+		/*
+		 * Is this a bridge?
+		 */
+		if (!(dev->priv_flags & IFF_EBRIDGE)) {
+			return;
+		}
+
+		br = netdev_priv(dev);
+		stats = this_cpu_ptr(br->stats);
+
+		u64_stats_update_begin(&stats->syncp);
+		stats->rx_packets += nlstats->rx_packets;
+		stats->rx_bytes += nlstats->rx_bytes;
+		stats->tx_packets += nlstats->tx_packets;
+		stats->tx_bytes += nlstats->tx_bytes;
+		u64_stats_update_end(&stats->syncp);
+}
+EXPORT_SYMBOL_GPL(br_dev_update_stats);

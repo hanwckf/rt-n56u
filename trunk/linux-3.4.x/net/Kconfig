@@ -22,6 +22,8 @@ menuconfig NET
 	  <http://www.tldp.org/docs.html#howto>.
 
 if NET
+config SHORTCUT_FE
+	bool "Enables kernel network stack path for Shortcut Forwarding Engine"
 
 config WANT_COMPAT_NETLINK_MESSAGES
 	bool

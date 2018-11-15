@@ -311,7 +311,7 @@ if [ "$CONFIG_FIRMWARE_ENABLE_IPV6" != "y" ] ; then
 	func_enable_busybox_param "CONFIG_FEATURE_IP_ROUTE"
 fi
 #SFE
-if ["$CONFIG_FIRMWARE_INCLUDE_SFE" = "y" ] ; then
+if [ "$CONFIG_FIRMWARE_INCLUDE_SFE" = "y" ] ; then
 	func_enable_kernel_param "CONFIG_SHORTCUT_FE"
 else
 	func_disable_kernel_param "CONFIG_SHORTCUT_FE"

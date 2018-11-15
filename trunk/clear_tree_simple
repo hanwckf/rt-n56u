@@ -14,7 +14,7 @@ fi
 
 echo "-------------CLEAN-ALL---------------"
 rm -rf $ROOTDIR/stage
-DIRS="user/rc user/httpd user/wpa_supplicant user/shared user/libdisk user/wireless_tools"
+DIRS="linux-3.4.x user/rc user/httpd user/wpa_supplicant user/shared user/libdisk user/wireless_tools"
 for dir in ${DIRS} ; do
 	make -C $dir clean
 done

@@ -1,7 +1,7 @@
 THISDIR = $(shell pwd)
 
-SRC_SS_NAME=shadowsocks-libev-3.2.0
-#https://github.com/shadowsocks/shadowsocks-libev/releases/download/v3.2.0/shadowsocks-libev-3.2.0.tar.gz
+SRC_SS_NAME=shadowsocks-libev-3.2.1
+#https://github.com/shadowsocks/shadowsocks-libev/releases/download/v3.2.0/shadowsocks-libev-3.2.1.tar.gz
 
 SRC_SSR_NAME=shadowsocksr-libev-master
 ARCHIVE_SSR_NAME=shadowsocksr-libev-master-e2373d7

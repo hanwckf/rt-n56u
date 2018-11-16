@@ -11585,7 +11585,7 @@ INT32 MtCmdPktBudgetCtrl(struct _RTMP_ADAPTER *pAd,UINT8 bss_idx,UINT16 wcid,UCH
 	UCHAR i;
 	UINT32 size = sizeof(pbc);
 
-	MTWF_LOG(DBG_CAT_CFG, DBG_SUBCAT_ALL, DBG_LVL_OFF,
+	MTWF_LOG(DBG_CAT_CFG, DBG_SUBCAT_ALL, DBG_LVL_TRACE,
 				(":%s: bssid(%d),wcid(%d),type(%d)\n", __FUNCTION__, bss_idx,wcid,type));
 
 	if(type >= PBC_TYPE_END){

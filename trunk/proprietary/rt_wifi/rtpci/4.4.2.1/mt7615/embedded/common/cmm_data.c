@@ -5806,7 +5806,7 @@ VOID mt_dynamic_wmm_be_tx_op(
 
 #ifdef PKT_BUDGET_CTRL_SUPPORT
 				HW_SET_PBC_CTRL(pAd,NULL,NULL,PBC_TYPE_NORMAL);
-				MTWF_LOG(DBG_CAT_CFG, DBG_SUBCAT_ALL, DBG_LVL_OFF, (":%s: OneSecondnonBEpackets: %lu\n", __FUNCTION__, pAd->OneSecondnonBEpackets));
+				//MTWF_LOG(DBG_CAT_CFG, DBG_SUBCAT_ALL, DBG_LVL_OFF, (":%s: OneSecondnonBEpackets: %lu\n", __FUNCTION__, pAd->OneSecondnonBEpackets));
 #endif /*PKT_BUDGET_CTRL_SUPPORT*/
 				RTMP_SET_FLAG(pAd, fRTMP_ADAPTER_DYNAMIC_BE_TXOP_ACTIVE);
 			}

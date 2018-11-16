@@ -766,7 +766,7 @@ BOOLEAN BARecSessionAdd(
 		pBAEntry->max_reord_pkt_timeout = MAX_REORDERING_PACKET_TIMEOUT;
 		pBAEntry->reord_pkt_timeout = REORDERING_PACKET_TIMEOUT;
 
-		MTWF_LOG(DBG_CAT_PROTO, CATPROTO_BA, DBG_LVL_OFF, ("Start Seq = %08x\n",  pFrame->BaStartSeq.field.StartSeq));
+		MTWF_LOG(DBG_CAT_PROTO, CATPROTO_BA, DBG_LVL_TRACE, ("Start Seq = %08x\n",  pFrame->BaStartSeq.field.StartSeq));
 		NdisReleaseSpinLock(&pAd->BATabLock);
 
 		if (pEntry->RXBAbitmap & (1<<TID))
@@ -1286,7 +1286,7 @@ VOID PeerAddBAReqAction(RTMP_ADAPTER *pAd, MLME_QUEUE_ELEM *Elem)
 	{
 		if ((pAd->CommonCfg.bBADecline == FALSE) && IS_HT_STA(pMacEntry))
 		{
-			MTWF_LOG(DBG_CAT_PROTO, CATPROTO_BA, DBG_LVL_OFF, ("Rcv Wcid(%d) AddBAReq\n", Elem->Wcid));
+			MTWF_LOG(DBG_CAT_PROTO, CATPROTO_BA, DBG_LVL_TRACE, ("Rcv Wcid(%d) AddBAReq\n", Elem->Wcid));
 			if (BARecSessionAdd(pAd, &pAd->MacTab.Content[Elem->Wcid], pAddreqFrame))
 			{
 #ifdef PEER_DELBA_TX_ADAPT

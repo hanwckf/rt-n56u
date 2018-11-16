@@ -145,7 +145,7 @@ int conn_init(struct sk_buff *skb,struct conn_entry* entry,int direc)
 				
 				proto = ip6e_h->nexthdr;
 				hlen += ip6e_h->hdrlen * 8;//u_int8_t ip6e_len;
-				printk(KERN_INFO "发现扩展报头\n");
+				//printk(KERN_INFO "发现扩展报头\n");
 				break;
 
 			case IPPROTO_FRAGMENT:

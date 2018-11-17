@@ -1,5 +1,0 @@
-include include/asm-generic/Kbuild.asm
-
-header-y += bfin_sport.h
-header-y += cachectl.h
-header-y += fixed_code.h

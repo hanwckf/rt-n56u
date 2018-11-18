@@ -127,11 +127,11 @@ mkdir -p $ROOTDIR/images
 echo --------------------------COPY-CONFIG-----------------------------
 ######################### FOR-ALL-DEVICES #############################
 ln -sf vendors/Ralink/$CONFIG_PRODUCT/config.arch config.arch
-cp -fL "$kernel_cf" "$kernel_tf"
-cp -fL "$uclibc_cf" "$uclibc_tf"
-cp -fL "$busybox_cf" "$busybox_tf"
-cp -fL "$board_mk" "$ROOTDIR/user/shared/board.mk"
-cp -fL "$board_h" "$ROOTDIR/user/shared/include/ralink_board.h"
+echo cp -fL "$kernel_cf" "$kernel_tf"
+echo cp -fL "$uclibc_cf" "$uclibc_tf"
+echo cp -fL "$busybox_cf" "$busybox_tf"
+echo cp -fL "$board_mk" "$ROOTDIR/user/shared/board.mk"
+echo cp -fL "$board_h" "$ROOTDIR/user/shared/include/ralink_board.h"
 ############################# WI-FI ###################################
 dir_wifi_src="$ROOTDIR/proprietary/rt_wifi"
 dir_wifi_dst="$ROOTDIR/$CONFIG_LINUXDIR/drivers/net/wireless/ralink"
@@ -215,15 +215,15 @@ fi
 ############################ HWNAT ####################################
 dir_ppe_src="$ROOTDIR/proprietary/rt_ppe"
 dir_ppe_dst="$ROOTDIR/$CONFIG_LINUXDIR/net/nat"
-rm -rf "$dir_ppe_dst/hw_nat"
-cp -rf "$dir_ppe_src/hw_nat" "$dir_ppe_dst/"
+echo rm -rf "$dir_ppe_dst/hw_nat"
+echo cp -rf "$dir_ppe_src/hw_nat" "$dir_ppe_dst/"
 ############################ EIP93 ####################################
 dir_eip_src="$ROOTDIR/proprietary/rt_eip"
 dir_eip_dst="$ROOTDIR/$CONFIG_LINUXDIR/drivers/net"
 if [ "$CONFIG_PRODUCT" = "MT7621" ] ; then
 	if [ -d "$dir_eip_src" ] ; then
-		rm -rf "$dir_eip_dst/rt_eip"
-		cp -rf "$dir_eip_src" "$dir_eip_dst/"
+		echo rm -rf "$dir_eip_dst/rt_eip"
+		echo cp -rf "$dir_eip_src" "$dir_eip_dst/"
 	fi
 fi
 ############################# CPU #####################################
@@ -486,4 +486,4 @@ fi
 echo --------------------------MAKE-DEP--------------------------------
 make dep
 echo --------------------------MAKE-ALL--------------------------------
-make
+make $@

@@ -5,8 +5,8 @@
 ENDIAN = little
 CPUFLAGS = -mips32r2 -march=mips32r2 -mtune=1004kc
 VENDOR_CFLAGS =
-UOPT = -Os
-LOPT = -Os
+UOPT = -O3
+LOPT = -O3
 HOST_TARGET = mipsel-linux
 
 ###########################################################################

@@ -9,6 +9,8 @@
 *.la
 *.a
 *.a.cmd
+*.in
+*.m4
 .libs
 .depend
 .dirstamp

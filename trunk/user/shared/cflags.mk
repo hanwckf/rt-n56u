@@ -17,6 +17,7 @@ CFLAGS += $(if $(CONFIG_RT3593_AP),-DUSE_RT3593_AP,)
 CFLAGS += $(if $(CONFIG_MT7610_AP),-DUSE_MT7610_AP,)
 CFLAGS += $(if $(CONFIG_MT76X2_AP),-DUSE_MT76X2_AP,)
 CFLAGS += $(if $(CONFIG_MT76X3_AP),-DUSE_MT76X3_AP,)
+CFLAGS += $(if $(CONFIG_MT7615_AP),-DUSE_MT7615_AP,)
 CFLAGS += $(if $(CONFIG_MT7628_AP),-DUSE_MT7628_AP,)
 CFLAGS += $(if $(CONFIG_RT3352_INIC_MII),-DUSE_RT3352_MII,)
 CFLAGS += $(if $(CONFIG_RT_WSC),-DUSE_WSC_WPS,)
@@ -90,16 +91,13 @@ CFLAGS += -DUSE_WID_5G=$(CONFIG_RT_FIRST_CARD)
 else
 ifdef CONFIG_RT_SECOND_IF_RANGE_5GHZ
 CFLAGS += -DUSE_WID_5G=$(CONFIG_RT_SECOND_CARD)
-endif
-endif
-
+else
 ifdef CONFIG_RT_FIRST_IF_MT7615E
-CFLAGS += -DUSE_MT7615_AP
+CFLAGS += -DUSE_WID_5G=7615
+endif
+endif
 endif
 
-ifdef CONFIG_RT_SECOND_IF_MT7615E
-CFLAGS += -DUSE_MT7615_AP
-endif
 ##################################################################
 # Project .config related params
 ##################################################################

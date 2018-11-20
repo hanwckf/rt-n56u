@@ -810,7 +810,11 @@ is_mac_in_sta_list(const unsigned char* p_mac)
 		RT_802_11_MAC_TABLE *mp = (RT_802_11_MAC_TABLE *)wrq.u.data.pointer;
 		for (i = 0; i < mp->Num; i++) {
 			if (memcmp(mp->Entry[i].Addr, p_mac, ETHER_ADDR_LEN) == 0)
+#if defined (BOARD_K2P)
+				return (mp->Entry[i].ApIdx == 2) ? 1 : 2;
+#else
 				return (mp->Entry[i].ApIdx == 0) ? 1 : 2;
+#endif
 		}
 	}
 #endif
@@ -873,7 +877,11 @@ print_sta_list(webs_t wp, RT_802_11_MAC_TABLE *mp, int num_ss_rx, int ap_idx)
 
 	ret = 0;
 
+#if defined (BOARD_K2P)
+	ret += websWrite(wp, "\nAP %s Stations List\n", (ap_idx == 0 || ap_idx == 2) ? "Main" : "Guest");
+#else
 	ret += websWrite(wp, "\nAP %s Stations List\n", (ap_idx == 0) ? "Main" : "Guest");
+#endif
 	ret += websWrite(wp, "----------------------------------------\n");
 	ret += websWrite(wp, "%-19s%-8s%-4s%-4s%-4s%-5s%-5s%-6s%-5s%-4s%-12s\n",
 			   "MAC", "PhyMode", " BW", "MCS", "SGI", "LDPC", "STBC", "TRate", "RSSI", "PSM", "Connect Time");

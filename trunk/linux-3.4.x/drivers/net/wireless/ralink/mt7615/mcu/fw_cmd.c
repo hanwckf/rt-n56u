@@ -3136,10 +3136,9 @@ static VOID bssUpdateBmcMngRate(
     CmdBssInfoBmcRate.u2Tag = BSS_INFO_BROADCAST_INFO;
     CmdBssInfoBmcRate.u2Length = sizeof(CMD_BSSINFO_BMC_RATE_T);
 
+	//mao modi 2018.11.20 
     MTWF_LOG(DBG_CAT_FW, DBG_SUBCAT_ALL, DBG_LVL_OFF,
-            ("%s (BSS_INFO_BROADCAST_INFO), \
-                CmdBssInfoBmcRate.u2BcTransmit= %d, \
-                CmdBssInfoBmcRate.u2McTransmit = %d\n",
+            ("%s (BSS_INFO_BROADCAST_INFO), CmdBssInfoBmcRate.u2BcTransmit= %d, CmdBssInfoBmcRate.u2McTransmit = %d\n",
                 __FUNCTION__,
                 le2cpu16(CmdBssInfoBmcRate.u2BcTransmit),
                 le2cpu16(CmdBssInfoBmcRate.u2McTransmit)));

@@ -188,14 +188,16 @@ unpack_trx:
 	unpack-trx.sh
 
 clean:
-	make clean -C tools
+	##make clean -C tools
 	for dir in  $(DIRS); do [ ! -d $$dir ] || $(MAKEARCH) -C $$dir clean ; done
-	$(MAKEARCH_KERNEL) -C $(LINUXDIR) distclean
+	$(MAKEARCH_KERNEL) -C $(LINUXDIR) clean ##distclean
 	rm -rf $(STAGEDIR)
 	rm -rf $(ROMFSDIR)
 	rm -rf $(IMAGEDIR)
 	rm -rf $(LINUXDIR)/net/ipsec/alg/libaes $(LINUXDIR)/net/ipsec/alg/perlasm
 	rm -f $(LINUXDIR)/arch/mips/ramdisk/*.gz
+distclean:
+	$(MAKEARCH_KERNEL) -C $(LINUXDIR) distclean
 
 %_romfs:
 	@case "$(@)" in \

@@ -155,7 +155,7 @@ rm -rf "$dir_wifi_dst/mt76x2"
 rm -rf "$dir_wifi_dst/mt76x3"
 rm -rf "$dir_wifi_dst/mt7628"
 rm -rf "$dir_wifi_dst/mt7615"
-mkdir -p "$dir_wifi_dst/mt7615/embedded/tools/plug_in"
+mkdir -p "$dir_wifi_dst/mt7615/embedded"
 cp -f "$dir_wifi_src/rtpci/4.4.2.1/mt7615/embedded/Kconfig" "$dir_wifi_dst/mt7615/embedded/Kconfig"
 
 PATCH_DIR="${ROOTDIR}/PROMETHEUS/wifi_patch"
@@ -242,6 +242,9 @@ if [ -n "$CONFIG_MT7628_AP" ] ; then
 fi
 if [ -n "$CONFIG_MT7615_AP" ] ; then
 	dir_wifi_ver="4.4.2.1"
+	if [ "$CONFIG_FIRMWARE_WIFI_DRIVER" = "4.4.1.2" ] ; then
+		dir_wifi_ver="4.4.1.2"
+	fi
 	cp -rfL "$dir_wifi_src/rtpci/$dir_wifi_ver/mt7615" "$dir_wifi_dst/"
 	cp -rfL "$dir_wifi_src/rtpci/$dir_wifi_ver/mt7615_ap" "$dir_wifi_dst/"
 fi

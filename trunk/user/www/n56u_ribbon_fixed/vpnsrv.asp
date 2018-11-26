@@ -61,8 +61,9 @@ function initial(){
 	else
 	if (!support_ipv6() || ip6_service == ''){
 		var o = document.form.vpns_ov_prot;
-		o.remove(2);
-		o.remove(2);
+		for (var i = 0; i < 4; i++) {
+			o.remove(2);
+		}
 	}
 
 	if (openssl_util_found() && login_safe()) {
@@ -844,10 +845,12 @@ function getHash(){
                                     <th><#OVPN_Prot#></th>
                                     <td>
                                         <select name="vpns_ov_prot" class="input">
-                                            <option value="0" <% nvram_match_x("", "vpns_ov_prot", "0","selected"); %>>UDP (*)</option>
-                                            <option value="1" <% nvram_match_x("", "vpns_ov_prot", "1","selected"); %>>TCP</option>
+                                            <option value="0" <% nvram_match_x("", "vpns_ov_prot", "0","selected"); %>>UDP over IPv4 (*)</option>
+                                            <option value="1" <% nvram_match_x("", "vpns_ov_prot", "1","selected"); %>>TCP over IPv4</option>
                                             <option value="2" <% nvram_match_x("", "vpns_ov_prot", "2","selected"); %>>UDP over IPv6</option>
                                             <option value="3" <% nvram_match_x("", "vpns_ov_prot", "3","selected"); %>>TCP over IPv6</option>
+                                            <option value="4" <% nvram_match_x("", "vpns_ov_prot", "4","selected"); %>>UDP both</option>
+                                            <option value="5" <% nvram_match_x("", "vpns_ov_prot", "5","selected"); %>>TCP both</option>
                                         </select>
                                     </td>
                                 </tr>

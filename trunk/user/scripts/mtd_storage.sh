@@ -607,6 +607,10 @@ client-to-client
 ### Allow clients with duplicate "Common Name"
 ;duplicate-cn
 
+### Legacy LZO adaptive compression
+;comp-lzo adaptive
+;push "comp-lzo adaptive"
+
 ### Keepalive and timeout
 keepalive 10 60
 

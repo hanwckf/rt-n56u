@@ -364,12 +364,16 @@ openvpn_create_server_conf(const char *conf_file, int is_tun)
 		p_prot = "tcp6-server";
 	else if (i_prot == 2)
 		p_prot = "udp6";
+	else if (i_prot == 5)
+		p_prot = "tcp-server";
+	else if (i_prot == 4)
+		p_prot = "udp";
 	else
 #endif
 	if (i_prot == 1)
-		p_prot = "tcp-server";
+		p_prot = "tcp4-server";
 	else
-		p_prot = "udp";
+		p_prot = "udp4";
 
 	/* fixup ipv4/ipv6 mismatch */
 	if (i_prot != i_prot_ori)
@@ -532,12 +536,16 @@ openvpn_create_client_conf(const char *conf_file, int is_tun)
 		p_prot = "tcp6-client";
 	else if (i_prot == 2)
 		p_prot = "udp6";
+	else if (i_prot == 5)
+		p_prot = "tcp-client";
+	else if (i_prot == 4)
+		p_prot = "udp";
 	else
 #endif
 	if (i_prot == 1)
-		p_prot = "tcp-client";
+		p_prot = "tcp4-client";
 	else
-		p_prot = "udp";
+		p_prot = "udp4";
 
 	/* fixup ipv4/ipv6 mismatch */
 	if (i_prot != i_prot_ori)
@@ -1027,12 +1035,16 @@ ovpn_server_expcli_main(int argc, char **argv)
 		p_prot = "tcp6-client";
 	else if (i_prot == 2)
 		p_prot = "udp6";
+	else if (i_prot == 5)
+		p_prot = "tcp-client";
+	else if (i_prot == 4)
+		p_prot = "udp";
 	else
 #endif
 	if (i_prot == 1)
-		p_prot = "tcp-client";
+		p_prot = "tcp4-client";
 	else
-		p_prot = "udp";
+		p_prot = "udp4";
 
 	wan_addr = get_ddns_fqdn();
 	if (!wan_addr) {

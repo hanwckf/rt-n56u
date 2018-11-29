@@ -1,4 +1,4 @@
-SRC_NAME=iptables-1.4.16.3
+SRC_NAME=iptables-1.4.18
 
 CFLAGS  += -ffunction-sections -fdata-sections
 LDFLAGS += -Wl,--gc-sections

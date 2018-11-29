@@ -45,7 +45,7 @@
 #include "httpd.h"
 #include "common.h"
 
-#define LOGIN_TIMEOUT		60
+#define LOGIN_TIMEOUT		30
 #define SERVER_NAME		"httpd"
 #define SERVER_PORT		80
 #define SERVER_PORT_SSL		443
@@ -949,14 +949,14 @@ handle_request(FILE *conn_fp, const conn_item_t *item)
 	usockaddr_to_uaddr(&item->usa, &conn_ip);
 
 	login_state = http_login_check(&conn_ip);
-	/*
+	
 	if (login_state == 0) {
 		if (strstr(file, ".htm") != NULL || strstr(file, ".asp") != NULL) {
 			file = "Nologin.asp";
 			query = NULL;
 		}
 	}
-	*/
+	
 
 	/* special case for reset browser credentials */
 	if (strcmp(file, "logout") == 0) {

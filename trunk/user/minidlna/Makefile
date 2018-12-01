@@ -13,7 +13,6 @@ DLNA_LIBS += -ldl -lm -lpthread -lz -lexif -ljpeg -lsqlite3 -lid3tag -lFLAC -lvo
 THISDIR = $(shell pwd)
 
 all: download_test extract_test config_test
-#all: config_test
 	$(MAKE) -C $(SRC_NAME)
 
 download_test:

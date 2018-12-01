@@ -13,9 +13,9 @@ GFWLIST_DIR=gfwlist
 
 all: gfwlist_dl extract_test config_test
 ifeq ($(CONFIG_FIRMWARE_INCLUDE_SHADOWSOCKS),y)
-	$(MAKE) -C $(SRC_SSR_NAME)
+	$(MAKE) -j$(HOST_NCPU) -C $(SRC_SSR_NAME)
 endif
-	$(MAKE) -C $(SRC_SS_NAME)
+	$(MAKE) -j$(HOST_NCPU) -C $(SRC_SS_NAME)
 
 gfwlist_dl:
 ifeq ($(CONFIG_FIRMWARE_INCLUDE_SHADOWSOCKS),y)

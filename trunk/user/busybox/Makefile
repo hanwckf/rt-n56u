@@ -1,7 +1,7 @@
 SRC_NAME=busybox-1.24.x
 
 all:
-	$(MAKE) -C $(SRC_NAME)
+	$(MAKE) -j$(HOST_NCPU) -C $(SRC_NAME)
 
 clean:
 	$(MAKE) -C $(SRC_NAME) distclean

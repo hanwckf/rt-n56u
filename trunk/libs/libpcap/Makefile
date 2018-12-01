@@ -2,7 +2,7 @@ SRC_NAME=libpcap-1.9.0
 SRC_URL=http://www.tcpdump.org/release/$(SRC_NAME).tar.gz
 
 all: download_test extract_test config_test
-	$(MAKE) -C $(SRC_NAME)
+	$(MAKE) -j$(HOST_NCPU) -C $(SRC_NAME)
 
 download_test:
 	( if [ ! -f $(SRC_NAME).tar.gz ]; then \

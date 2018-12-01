@@ -3,7 +3,7 @@ SRC_URL = https://hisham.hm/htop/releases/2.2.0/htop-2.2.0.tar.gz
 THISDIR = $(shell pwd)
 
 all: download_test extract_test config_test
-	$(MAKE) -C $(SRC_NAME)
+	$(MAKE) -j$(HOST_NCPU) -C $(SRC_NAME)
 
 download_test:
 	( if [ ! -f $(SRC_NAME).tar.gz ]; then \

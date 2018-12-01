@@ -41,7 +41,7 @@ configure:
 	)
 
 build:
-	$(MAKE) -C $(SRC_NAME) TCPDUMP_MINI=1
+	$(MAKE) -j$(HOST_NCPU) -C $(SRC_NAME) TCPDUMP_MINI=1
 
 clean:
 	rm -f config_done

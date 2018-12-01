@@ -3,7 +3,7 @@ SRC_URL = https://ohse.de/uwe/releases/lrzsz-0.12.20.tar.gz
 THISDIR = $(shell pwd)
 
 all: download_test extract_test config_test
-	$(MAKE) -C $(SRC_NAME)
+	$(MAKE) -j$(HOST_NCPU) -C $(SRC_NAME)
 
 download_test:
 	( if [ ! -f $(THISDIR)/$(SRC_NAME).tar.gz ]; then \

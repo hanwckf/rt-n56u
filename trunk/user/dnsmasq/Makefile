@@ -12,7 +12,7 @@ COPTS += -DNO_IPSET
 endif
 
 all:
-	$(MAKE) -C $(SRC_NAME) COPTS="$(COPTS)"
+	$(MAKE) -j$(HOST_NCPU) -C $(SRC_NAME) COPTS="$(COPTS)"
 
 clean:
 	$(MAKE) -C $(SRC_NAME) clean

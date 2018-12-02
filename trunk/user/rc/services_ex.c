@@ -596,7 +596,12 @@ write_smb_conf_header(void)
 	fprintf(fp, "obey pam restrictions = no\n");
 	fprintf(fp, "host msdfs = no\n");
 	fprintf(fp, "disable spoolss = yes\n");
-
+#if defined (APP_SMBD36)
+	fprintf(fp, "max protocol = SMB2\n");
+	fprintf(fp, "passdb backend = smbpasswd\n");
+	fprintf(fp, "security = USER\n");
+	fprintf(fp, "username level = 8\n");
+#endif
 	return fp;
 }
 

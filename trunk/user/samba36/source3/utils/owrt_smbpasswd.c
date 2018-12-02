@@ -119,129 +119,41 @@ static void smbpasswd_write_user(FILE *fp, const char *user, int uid, const char
 	fputs(buf, fp);
 }
 
-static void smbpasswd_delete_user(FILE *fp)
-{
-	fpos_t r_pos, w_pos;
-	int len = strlen(buf);
-
-	fgetpos(fp, &r_pos);
-	fseek(fp, -len, SEEK_CUR);
-	fgetpos(fp, &w_pos);
-	fsetpos(fp, &r_pos);
-
-	while (fgets(buf, sizeof(buf) - 1, fp)) {
-		int cur_len = strlen(buf);
-
-		fsetpos(fp, &w_pos);
-		fputs(buf, fp);
-		fgetpos(fp, &w_pos);
-
-		fsetpos(fp, &r_pos);
-		fseek(fp, cur_len, SEEK_CUR);
-		fgetpos(fp, &r_pos);
-	}
-
-	fsetpos(fp, &w_pos);
-	ftruncate(fileno(fp), ftello(fp));
-}
-
-static int usage(const char *progname)
-{
-	fprintf(stderr,
-		"Usage: %s [options] <username>\n"
-		"\n"
-		"Options:\n"
-		"  -s		read password from stdin\n"
-		"  -a		add user\n"
-		"  -x		delete user\n",
-		progname);
-	return 1;
-}
-
 int main(int argc, char **argv)
 {
-	const char *prog = argv[0];
-	const char *user;
-	char *pw1, *pw2;
+	const char *user, *pw;
 	FILE *fp;
-	bool add = false, delete = false, get_stdin = false, found;
-	int ch;
+	bool found;
 	int uid;
 
 	TALLOC_CTX *frame = talloc_stackframe();
 
-	while ((ch = getopt(argc, argv, "asx")) != EOF) {
-		switch (ch) {
-		case 's':
-			get_stdin = true;
-			break;
-		case 'a':
-			add = true;
-			break;
-		case 'x':
-			delete = true;
-			break;
-		default:
-			return usage(prog);
-		}
+	if (argc < 3){
+		fprintf(stderr, "usage for smbpasswd - \n\t%s USERNAME PASSWD\n", argv[0]);
+		return 1;
 	}
 
-	if (add && delete)
-		return usage(prog);
-
-	argc -= optind;
-	argv += optind;
-
-	if (!argc)
-		return usage(prog);
-
-	user = argv[0];
-	if (!delete) {
-		uid = find_uid_for_user(user);
-		if (uid < 0) {
-			fprintf(stderr, "Could not find user '%s' in /etc/passwd\n", user);
-			return 2;
-		}
+	user = argv[1];
+	uid = find_uid_for_user(user);
+	if (uid < 0) {
+		fprintf(stderr, "Could not find user '%s' in /etc/passwd\n", user);
+		return 2;
 	}
 
-	fp = fopen("/etc/smbpasswd", "r+");
+	fp = fopen("/etc/samba/smbpasswd", "a+");
 	if(!fp) {
-		fprintf(stderr, "Failed to open /etc/smbpasswd");
+		fprintf(stderr, "Failed to open /etc/samba/smbpasswd");
 		return 3;
 	}
+	fseek(fp, 0, SEEK_SET);
 
 	found = find_passwd_line(fp, user, NULL);
-	if (!add && !found) {
-		fprintf(stderr, "Could not find user '%s' in /etc/smbpasswd\n", user);
-		return 3;
-	}
-
-	if (delete) {
-		smbpasswd_delete_user(fp);
-		goto out;
-	}
-
-	pw1 = get_pass("New SMB password:", get_stdin);
-	if (!pw1)
-		pw1 = strdup("");
-
-	pw2 = get_pass("Retype SMB password:", get_stdin);
-	if (!pw2)
-		pw2 = strdup("");
-
-	if (strcmp(pw1, pw2) != 0) {
-		fprintf(stderr, "Mismatch - password unchanged.\n");
-		goto out_free;
-	}
 
 	if (found)
 		fseek(fp, -strlen(buf), SEEK_CUR);
-	smbpasswd_write_user(fp, user, uid, pw2);
+	pw = argv[2];
+	smbpasswd_write_user(fp, user, uid, pw);
 
-out_free:
-	free(pw1);
-	free(pw2);
-out:
 	fclose(fp);
 	TALLOC_FREE(frame);
 

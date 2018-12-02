@@ -456,7 +456,11 @@ clean_smbd_trash(void)
 	for (i=0; locks[i] && *locks[i]; i++)
 		doSystem("rm -f /var/locks/%s", locks[i]);
 
+#if defined (APP_SMBD36)
+	doSystem("rm -f %s", "/var/log.*");
+#else
 	doSystem("rm -f %s", "/var/*.log");
+#endif
 	doSystem("rm -f %s", "/var/log/*");
 }
 

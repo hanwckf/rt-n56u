@@ -1,7 +1,7 @@
 SRC_NAME=libid3tag-0.15.1b
 
 all: config_test
-	$(MAKE) -C $(SRC_NAME)
+	$(MAKE) -j$(HOST_NCPU) -C $(SRC_NAME)
 
 config_test:
 	( if [ -f ./config_done ]; then \

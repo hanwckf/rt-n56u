@@ -29,7 +29,7 @@ PROTOCOLS_CONFIG=--enable-protocol=file
 CFLAGS += -D_LARGEFILE64_SOURCE -D_LFS64_LARGEFILE
 
 all: config_test
-	$(MAKE) -C $(SRC_NAME)
+	$(MAKE) -j$(HOST_NCPU) -C $(SRC_NAME)
 
 config_test:
 	( if [ -f ./config_done ]; then \

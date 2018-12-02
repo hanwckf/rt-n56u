@@ -2,7 +2,7 @@ SRC_NAME=mbedtls-2.7.4
 SRC_URL=https://tls.mbed.org/download/mbedtls-2.7.4-apache.tgz
 
 all: download_test extract_test config_test
-	$(MAKE) -C $(SRC_NAME)/build
+	$(MAKE) -j$(HOST_NCPU) -C $(SRC_NAME)/build
 
 download_test:
 	( if [ ! -f $(SRC_NAME).tgz ]; then \

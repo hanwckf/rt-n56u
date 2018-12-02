@@ -2,7 +2,7 @@ SRC_NAME=librtlsdr-0.6.0
 SRC_URL=https://github.com/steve-m/librtlsdr/archive/v0.6.0.zip
 
 all: download_test extract_test config_test
-	$(MAKE) -C $(SRC_NAME)/build
+	$(MAKE) -j$(HOST_NCPU) -C $(SRC_NAME)/build
 
 download_test:
 	( if [ ! -f $(SRC_NAME).zip ]; then \

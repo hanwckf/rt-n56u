@@ -1,7 +1,7 @@
 SRC_NAME=libxml2-2.7.8
 
 all: config_test
-	$(MAKE) -C $(SRC_NAME)
+	$(MAKE) -j$(HOST_NCPU) -C $(SRC_NAME)
 
 config_test:
 	( if [ -f ./config_done ]; then \

@@ -2,7 +2,7 @@ SRC_NAME=c-ares-1.14.0
 SRC_URL=https://github.com/c-ares/c-ares/files/1731591/c-ares-1.14.0.tar.gz
 
 all: download_test extract_test config_test
-	$(MAKE) -C $(SRC_NAME)/build
+	$(MAKE) -j$(HOST_NCPU) -C $(SRC_NAME)/build
 
 download_test:
 	( if [ ! -f $(SRC_NAME).tar.gz ]; then \

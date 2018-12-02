@@ -66,6 +66,7 @@ Contributors of this project are not responsible for what happens next.
 >- K2P_DRV/K2P_nano (128M)
 >- MZ-R13 (64M)
 >- MZ-R13P (未测试,64M)
+>- HC5661A (128M)
 >- OYE-001 (128M,USB)
 >- MI-MINI (未测试,128M,USB)
 >- MI-3 (未测试,128M,USB)

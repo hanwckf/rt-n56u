@@ -9,7 +9,7 @@ compiler:
 
 install:
     - sudo apt-get update -qq
-    - sudo apt-get install -qq p7zip-full autoconf automake bison build-essential flex gawk gettext gperf libtool pkg-config zlib1g-dev libgmp3-dev libmpc-dev libmpfr-dev texinfo python-docutils libncurses5-dev autopoint curl
+    - sudo apt-get install -qq p7zip-full autoconf automake bison build-essential flex gawk gettext gperf libtool pkg-config zlib1g-dev libgmp3-dev libmpc-dev libmpfr-dev texinfo python-docutils libncurses5-dev autopoint curl libltdl-dev cmake
     - sudo cp -f ./trunk/tools/travis/* /opt && sudo bash ./trunk/tools/travis_ci_build_trig.sh
 
 before_script:

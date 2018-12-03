@@ -14,7 +14,7 @@ while true ;do
 
 	if [ -z "$process_status" ] ;then
 		echo "Build script is exit"
-		if [ "$(tail -1 build.log)" = "make[1]: Leaving directory \`/opt/rt-n56u/trunk/vendors'" ]; then
+		if [ "$(tail -1 build.log)" = "make[1]: Leaving directory '/opt/rt-n56u/trunk/vendors'" ]; then
 			tail -20 build.log && exit 0
 		else
 			tail -60 build.log && exit 1

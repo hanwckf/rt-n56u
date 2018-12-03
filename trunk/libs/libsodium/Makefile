@@ -24,6 +24,7 @@ config_test:
 configure:
 	( cd $(SRC_NAME) ; \
 	./configure \
+		--disable-ssp \
 		--prefix=$(STAGEDIR) \
 		--host=$(HOST_TARGET) \
 		--build=$(HOST_BUILD) ; \

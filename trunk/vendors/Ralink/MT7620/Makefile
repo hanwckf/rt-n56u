@@ -69,14 +69,14 @@ romfs.post::
 	rm -f $(RAMDISK)
 	rm -f $(KERNELZ).lzma
 ifeq ($(CONFIG_RT2880_ROOTFS_IN_FLASH),y)
-	$(ROOTDIR)/tools/bin/mksquashfs_xz-4.0 $(ROMFSDIR) $(RAMDISK) -all-root -no-exports -noappend -nopad -noI -no-xattrs
+	$(ROOTDIR)/tools/mksquashfs_xz/mksquashfs $(ROMFSDIR) $(RAMDISK) -all-root -no-exports -noappend -nopad -noI -no-xattrs
 endif
 
 image:
 	##############CREATE IMAGE#################
 	$(CROSS_COMPILE)objcopy -O binary -R .note -R .comment -S $(ROOTDIR)/$(LINUXDIR)/vmlinux $(KERNELZ)
 	cd $(IMAGEDIR) ; rm -f $(KERNELZ).*; \
-	$(ROOTDIR)/tools/bin/lzma_alone e -a1 -d25 $(KERNELZ) $(KERNELZ).$(COMP)
+	$(ROOTDIR)/tools/lzma/lzma e -a1 -d25 $(KERNELZ) $(KERNELZ).$(COMP)
 ifeq ($(CONFIG_BLK_DEV_INITRD),)
 ifeq ($(CONFIG_ROOTFS_IN_FLASH_NO_PADDING),)
 	@#============================================================

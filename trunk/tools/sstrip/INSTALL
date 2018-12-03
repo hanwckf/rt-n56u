@@ -1,0 +1,18 @@
+To build one of the programs, just go to its subdirectory and run
+make. There's no configure script, since the programs by their nature
+are written for x86 Linux.
+
+(Some of the programs are architecture and Unix-flavor-neutral, and so
+could be used on other configurations. However I have not had the
+opportunity to test my code on anything but x86 Linux, so I can make
+no guarantees.)
+
+A top-level makefile is also provided. All it does is recursively
+invoke the makefile in each subdirectory, and then copy the programs
+and man pages to their own directories (bin and doc, respectively).
+You can feel free to ignore it. The top-level makefile also provides a
+default installation step. By default the root destination for the
+install is /usr/local; set the makefile variables "prefix" to a
+different value to change this. (Alternately, as each program is
+self-contained, you can just use cp(1) to manually install the
+programs and/or man pages to the destination of your choice.)

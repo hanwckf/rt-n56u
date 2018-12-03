@@ -1,0 +1,28 @@
+elfrw is a very simple library that provides wrapper functions around
+the reading and writing of ELF structs to and from files. Each read
+function returns a 64-bit struct. If the source is itself a 64-bit ELF
+file, then each function becomes a simple read, but when the source is
+a 32-bit ELF file the function translates the struct into the
+equivalent 64-bit ELF struct before returning. Likewise, the write
+functions only accept 64-bit structs, and automatically translate the
+data into 32-bit structs when writing to 32-bit ELF files. This allows
+the same piece of code to support both types of ELF files with
+relatively transparency.
+
+(The library functions also check the endianness flag, and will
+automatically flip the struct field values around if the ELF file's
+endianness doesn't match the program's own.)
+
+The library provides an initialization function in which a specific
+setting can be requested. However, it is typically unnecessary to use
+this function, since reading/writing the ELF header struct will
+automatically set the bitness (and endianness) for all future calls.
+
+Note that the purpose of this library is not to make a 32-bit ELF file
+"look like" a 64-bit file. None of the actual values of the fields are
+modified -- a 32-bit ELF header's e_ehsize field, for example, will
+not be altered to the size of the 64-bit version. The purpose of this
+library is not to hide which kind of file a program is working with;
+rather, it is simply to avoid having to write two all-but-identical
+functions for cases when the only difference is the size and
+arrangement of struct fields.

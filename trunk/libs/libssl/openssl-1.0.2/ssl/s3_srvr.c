@@ -56,7 +56,7 @@
  * [including the GNU Public Licence.]
  */
 /* ====================================================================
- * Copyright (c) 1998-2007 The OpenSSL Project.  All rights reserved.
+ * Copyright (c) 1998-2018 The OpenSSL Project.  All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -1959,11 +1959,12 @@ int ssl3_send_server_key_exchange(SSL *s)
 
 #ifndef OPENSSL_NO_PSK
         if (type & SSL_kPSK) {
+            size_t len = strlen(s->ctx->psk_identity_hint);
+
             /* copy PSK identity hint */
-            s2n(strlen(s->ctx->psk_identity_hint), p);
-            strncpy((char *)p, s->ctx->psk_identity_hint,
-                    strlen(s->ctx->psk_identity_hint));
-            p += strlen(s->ctx->psk_identity_hint);
+            s2n(len, p);
+            memcpy(p, s->ctx->psk_identity_hint, len);
+            p += len;
         }
 #endif
 
@@ -2090,6 +2091,11 @@ int ssl3_send_certificate_request(SSL *s)
         if (SSL_USE_SIGALGS(s)) {
             const unsigned char *psigs;
             nl = tls12_get_psigalgs(s, 1, &psigs);
+            if (nl > SSL_MAX_2_BYTE_LEN) {
+                SSLerr(SSL_F_SSL3_SEND_CERTIFICATE_REQUEST,
+                       SSL_R_LENGTH_TOO_LONG);
+                goto err;
+            }
             s2n(nl, p);
             memcpy(p, psigs, nl);
             p += nl;
@@ -2106,6 +2112,11 @@ int ssl3_send_certificate_request(SSL *s)
             for (i = 0; i < sk_X509_NAME_num(sk); i++) {
                 name = sk_X509_NAME_value(sk, i);
                 j = i2d_X509_NAME(name, NULL);
+                if (j > SSL_MAX_2_BYTE_LEN) {
+                    SSLerr(SSL_F_SSL3_SEND_CERTIFICATE_REQUEST,
+                           SSL_R_LENGTH_TOO_LONG);
+                    goto err;
+                }
                 if (!BUF_MEM_grow_clean
                     (buf, SSL_HM_HEADER_LENGTH(s) + n + j + 2)) {
                     SSLerr(SSL_F_SSL3_SEND_CERTIFICATE_REQUEST,
@@ -2126,6 +2137,11 @@ int ssl3_send_certificate_request(SSL *s)
                     j += 2;
                     n += j;
                     nl += j;
+                }
+                if (nl > SSL_MAX_2_BYTE_LEN) {
+                    SSLerr(SSL_F_SSL3_SEND_CERTIFICATE_REQUEST,
+                           SSL_R_LENGTH_TOO_LONG);
+                    goto err;
                 }
             }
         }
@@ -2202,7 +2218,7 @@ int ssl3_get_client_key_exchange(SSL *s)
         unsigned char rand_premaster_secret[SSL_MAX_MASTER_KEY_LENGTH];
         int decrypt_len;
         unsigned char decrypt_good, version_good;
-        size_t j;
+        size_t j, padding_len;
 
         /* FIX THIS UP EAY EAY EAY EAY */
         if (s->s3->tmp.use_rsa_tmp) {
@@ -2270,16 +2286,38 @@ int ssl3_get_client_key_exchange(SSL *s)
         if (RAND_bytes(rand_premaster_secret,
                        sizeof(rand_premaster_secret)) <= 0)
             goto err;
-        decrypt_len =
-            RSA_private_decrypt((int)n, p, p, rsa, RSA_PKCS1_PADDING);
-        ERR_clear_error();
 
         /*
-         * decrypt_len should be SSL_MAX_MASTER_KEY_LENGTH. decrypt_good will
-         * be 0xff if so and zero otherwise.
+         * Decrypt with no padding. PKCS#1 padding will be removed as part of
+         * the timing-sensitive code below.
          */
-        decrypt_good =
-            constant_time_eq_int_8(decrypt_len, SSL_MAX_MASTER_KEY_LENGTH);
+        decrypt_len =
+            RSA_private_decrypt((int)n, p, p, rsa, RSA_NO_PADDING);
+        if (decrypt_len < 0)
+            goto err;
+
+        /* Check the padding. See RFC 3447, section 7.2.2. */
+
+        /*
+         * The smallest padded premaster is 11 bytes of overhead. Small keys
+         * are publicly invalid, so this may return immediately. This ensures
+         * PS is at least 8 bytes.
+         */
+        if (decrypt_len < 11 + SSL_MAX_MASTER_KEY_LENGTH) {
+            al = SSL_AD_DECRYPT_ERROR;
+            SSLerr(SSL_F_SSL3_GET_CLIENT_KEY_EXCHANGE,
+                   SSL_R_DECRYPTION_FAILED);
+            goto f_err;
+        }
+
+        padding_len = decrypt_len - SSL_MAX_MASTER_KEY_LENGTH;
+        decrypt_good = constant_time_eq_int_8(p[0], 0) &
+                       constant_time_eq_int_8(p[1], 2);
+        for (j = 2; j < padding_len - 1; j++) {
+            decrypt_good &= ~constant_time_is_zero_8(p[j]);
+        }
+        decrypt_good &= constant_time_is_zero_8(p[padding_len - 1]);
+        p += padding_len;
 
         /*
          * If the version in the decrypted pre-master secret is correct then
@@ -2488,7 +2526,7 @@ int ssl3_get_client_key_exchange(SSL *s)
         /*
          * Note that the length is checked again below, ** after decryption
          */
-        if (enc_pms.length > sizeof pms) {
+        if (enc_pms.length > sizeof(pms)) {
             SSLerr(SSL_F_SSL3_GET_CLIENT_KEY_EXCHANGE,
                    SSL_R_DATA_LENGTH_TOO_LONG);
             goto err;
@@ -2541,7 +2579,7 @@ int ssl3_get_client_key_exchange(SSL *s)
         if (enc == NULL)
             goto err;
 
-        memset(iv, 0, sizeof iv); /* per RFC 1510 */
+        memset(iv, 0, sizeof(iv)); /* per RFC 1510 */
 
         if (!EVP_DecryptInit_ex(&ciph_ctx, enc, NULL, kssl_ctx->key, iv)) {
             SSLerr(SSL_F_SSL3_GET_CLIENT_KEY_EXCHANGE,

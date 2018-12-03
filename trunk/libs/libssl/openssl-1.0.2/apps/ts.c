@@ -57,6 +57,8 @@
  *
  */
 
+#include <openssl/opensslconf.h>
+#ifndef OPENSSL_NO_TS
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -1117,3 +1119,4 @@ static int MS_CALLBACK verify_cb(int ok, X509_STORE_CTX *ctx)
 
     return ok;
 }
+#endif

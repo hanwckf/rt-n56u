@@ -146,9 +146,16 @@ int dsa_builtin_paramgen(DSA *ret, size_t bits, size_t qbits,
         /* invalid q size */
         return 0;
 
-    if (evpmd == NULL)
-        /* use SHA1 as default */
+    if (evpmd == NULL) {
+        if (qsize == SHA_DIGEST_LENGTH)
         evpmd = EVP_sha1();
+        else if (qsize == SHA224_DIGEST_LENGTH)
+            evpmd = EVP_sha224();
+        else
+            evpmd = EVP_sha256();
+    } else {
+        qsize = EVP_MD_size(evpmd);
+    }
 
     if (bits < 512)
         bits = 512;
@@ -428,6 +435,12 @@ int dsa_builtin_paramgen2(DSA *ret, size_t L, size_t N,
 
     EVP_MD_CTX_init(&mctx);
 
+    /* make sure L > N, otherwise we'll get trapped in an infinite loop */
+    if (L <= N) {
+        DSAerr(DSA_F_DSA_BUILTIN_PARAMGEN2, DSA_R_INVALID_PARAMETERS);
+        goto err;
+    }
+
     if (evpmd == NULL) {
         if (N == 160)
             evpmd = EVP_sha1();
@@ -482,6 +495,8 @@ int dsa_builtin_paramgen2(DSA *ret, size_t L, size_t N,
     } else {
         p = BN_CTX_get(ctx);
         q = BN_CTX_get(ctx);
+        if (q == NULL)
+            goto err;
     }
 
     if (!BN_lshift(test, BN_value_one(), L - 1))

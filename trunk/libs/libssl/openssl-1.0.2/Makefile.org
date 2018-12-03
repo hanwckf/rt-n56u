@@ -165,7 +165,7 @@ MAN3=3
 MANSUFFIX=
 HTMLSUFFIX=html
 HTMLDIR=$(OPENSSLDIR)/html
-SHELL=/bin/sh
+SHELL ?= /bin/sh
 
 TOP=    .
 ONEDIRS=out tmp
@@ -282,17 +282,17 @@ build_libcrypto: build_crypto build_engines libcrypto.pc
 build_libssl: build_ssl libssl.pc
 
 build_crypto:
-	@dir=crypto; target=all; $(BUILD_ONE_CMD)
+	+@dir=crypto; target=all; $(BUILD_ONE_CMD)
 build_ssl: build_crypto
-	@dir=ssl; target=all; $(BUILD_ONE_CMD)
+	+@dir=ssl; target=all; $(BUILD_ONE_CMD)
 build_engines: build_crypto
-	@dir=engines; target=all; $(BUILD_ONE_CMD)
+	+@dir=engines; target=all; $(BUILD_ONE_CMD)
 build_apps: build_libs
-	@dir=apps; target=all; $(BUILD_ONE_CMD)
+	+@dir=apps; target=all; $(BUILD_ONE_CMD)
 build_tests: build_libs
-	@dir=test; target=all; $(BUILD_ONE_CMD)
+	+@dir=test; target=all; $(BUILD_ONE_CMD)
 build_tools: build_libs
-	@dir=tools; target=all; $(BUILD_ONE_CMD)
+	+@dir=tools; target=all; $(BUILD_ONE_CMD)
 
 all_testapps: build_libs build_testapps
 build_testapps:
@@ -473,7 +473,7 @@ update: errors stacks util/libeay.num util/ssleay.num TABLE
 	@set -e; target=update; $(RECURSIVE_BUILD_CMD)
 
 depend:
-	@set -e; target=depend; $(RECURSIVE_BUILD_CMD)
+	+@set -e; target=depend; $(RECURSIVE_BUILD_CMD)
 
 lint:
 	@set -e; target=lint; $(RECURSIVE_BUILD_CMD)
@@ -535,9 +535,9 @@ dist:
 	@$(MAKE) SDIRS='$(SDIRS)' clean
 	@$(MAKE) TAR='$(TAR)' TARFLAGS='$(TARFLAGS)' $(DISTTARVARS) tar
 
-install: all install_sw
+install: install_sw
 
-install_sw:
+install_dirs:
 	@$(PERL) $(TOP)/util/mkdir-p.pl $(INSTALL_PREFIX)$(INSTALLTOP)/bin \
 		$(INSTALL_PREFIX)$(INSTALLTOP)/$(LIBDIR) \
 		$(INSTALL_PREFIX)$(INSTALLTOP)/$(LIBDIR)/engines \
@@ -546,12 +546,19 @@ install_sw:
 		$(INSTALL_PREFIX)$(OPENSSLDIR)/misc \
 		$(INSTALL_PREFIX)$(OPENSSLDIR)/certs \
 		$(INSTALL_PREFIX)$(OPENSSLDIR)/private
+	@$(PERL) $(TOP)/util/mkdir-p.pl \
+		$(INSTALL_PREFIX)$(MANDIR)/man1 \
+		$(INSTALL_PREFIX)$(MANDIR)/man3 \
+		$(INSTALL_PREFIX)$(MANDIR)/man5 \
+		$(INSTALL_PREFIX)$(MANDIR)/man7
+
+install_sw: install_dirs
 	@set -e; headerlist="$(EXHEADER)"; for i in $$headerlist;\
 	do \
 	(cp $$i $(INSTALL_PREFIX)$(INSTALLTOP)/include/openssl/$$i; \
 	chmod 644 $(INSTALL_PREFIX)$(INSTALLTOP)/include/openssl/$$i ); \
 	done;
-	@set -e; target=install; $(RECURSIVE_BUILD_CMD)
+	+@set -e; target=install; $(RECURSIVE_BUILD_CMD)
 	@set -e; liblist="$(LIBS)"; for i in $$liblist ;\
 	do \
 		if [ -f "$$i" ]; then \
@@ -635,12 +642,7 @@ install_html_docs:
 		done; \
 	done
 
-install_docs:
-	@$(PERL) $(TOP)/util/mkdir-p.pl \
-		$(INSTALL_PREFIX)$(MANDIR)/man1 \
-		$(INSTALL_PREFIX)$(MANDIR)/man3 \
-		$(INSTALL_PREFIX)$(MANDIR)/man5 \
-		$(INSTALL_PREFIX)$(MANDIR)/man7
+install_docs: install_dirs
 	@pod2man="`cd ./util; ./pod2mantest $(PERL)`"; \
 	here="`pwd`"; \
 	filecase=; \

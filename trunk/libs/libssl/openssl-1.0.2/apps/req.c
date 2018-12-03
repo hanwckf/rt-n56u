@@ -659,8 +659,7 @@ int MAIN(int argc, char **argv)
             }
         }
 
-        BIO_printf(bio_err, "Generating a %ld bit %s private key\n",
-                   newkey, keyalgstr);
+        BIO_printf(bio_err, "Generating a %s private key\n", keyalgstr);
 
         EVP_PKEY_CTX_set_cb(genctx, genpkey_cb);
         EVP_PKEY_CTX_set_app_data(genctx, bio_err);
@@ -1193,7 +1192,7 @@ static int prompt_info(X509_REQ *req,
             /* If OBJ not recognised ignore it */
             if ((nid = OBJ_txt2nid(type)) == NID_undef)
                 goto start;
-            if (BIO_snprintf(buf, sizeof buf, "%s_default", v->name)
+            if (BIO_snprintf(buf, sizeof(buf), "%s_default", v->name)
                 >= (int)sizeof(buf)) {
                 BIO_printf(bio_err, "Name '%s' too long\n", v->name);
                 return 0;
@@ -1204,19 +1203,19 @@ static int prompt_info(X509_REQ *req,
                 def = "";
             }
 
-            BIO_snprintf(buf, sizeof buf, "%s_value", v->name);
+            BIO_snprintf(buf, sizeof(buf), "%s_value", v->name);
             if ((value = NCONF_get_string(req_conf, dn_sect, buf)) == NULL) {
                 ERR_clear_error();
                 value = NULL;
             }
 
-            BIO_snprintf(buf, sizeof buf, "%s_min", v->name);
+            BIO_snprintf(buf, sizeof(buf), "%s_min", v->name);
             if (!NCONF_get_number(req_conf, dn_sect, buf, &n_min)) {
                 ERR_clear_error();
                 n_min = -1;
             }
 
-            BIO_snprintf(buf, sizeof buf, "%s_max", v->name);
+            BIO_snprintf(buf, sizeof(buf), "%s_max", v->name);
             if (!NCONF_get_number(req_conf, dn_sect, buf, &n_max)) {
                 ERR_clear_error();
                 n_max = -1;
@@ -1252,7 +1251,7 @@ static int prompt_info(X509_REQ *req,
                 if ((nid = OBJ_txt2nid(type)) == NID_undef)
                     goto start2;
 
-                if (BIO_snprintf(buf, sizeof buf, "%s_default", type)
+                if (BIO_snprintf(buf, sizeof(buf), "%s_default", type)
                     >= (int)sizeof(buf)) {
                     BIO_printf(bio_err, "Name '%s' too long\n", v->name);
                     return 0;
@@ -1264,20 +1263,20 @@ static int prompt_info(X509_REQ *req,
                     def = "";
                 }
 
-                BIO_snprintf(buf, sizeof buf, "%s_value", type);
+                BIO_snprintf(buf, sizeof(buf), "%s_value", type);
                 if ((value = NCONF_get_string(req_conf, attr_sect, buf))
                     == NULL) {
                     ERR_clear_error();
                     value = NULL;
                 }
 
-                BIO_snprintf(buf, sizeof buf, "%s_min", type);
+                BIO_snprintf(buf, sizeof(buf), "%s_min", type);
                 if (!NCONF_get_number(req_conf, attr_sect, buf, &n_min)) {
                     ERR_clear_error();
                     n_min = -1;
                 }
 
-                BIO_snprintf(buf, sizeof buf, "%s_max", type);
+                BIO_snprintf(buf, sizeof(buf), "%s_max", type);
                 if (!NCONF_get_number(req_conf, attr_sect, buf, &n_max)) {
                     ERR_clear_error();
                     n_max = -1;
@@ -1372,13 +1371,13 @@ static int add_DN_object(X509_NAME *n, char *text, const char *def,
         BIO_printf(bio_err, "%s [%s]:", text, def);
     (void)BIO_flush(bio_err);
     if (value != NULL) {
-        BUF_strlcpy(buf, value, sizeof buf);
-        BUF_strlcat(buf, "\n", sizeof buf);
+        BUF_strlcpy(buf, value, sizeof(buf));
+        BUF_strlcat(buf, "\n", sizeof(buf));
         BIO_printf(bio_err, "%s\n", value);
     } else {
         buf[0] = '\0';
         if (!batch) {
-            if (!fgets(buf, sizeof buf, stdin))
+            if (!fgets(buf, sizeof(buf), stdin))
                 return 0;
         } else {
             buf[0] = '\n';
@@ -1391,8 +1390,8 @@ static int add_DN_object(X509_NAME *n, char *text, const char *def,
     else if (buf[0] == '\n') {
         if ((def == NULL) || (def[0] == '\0'))
             return (1);
-        BUF_strlcpy(buf, def, sizeof buf);
-        BUF_strlcat(buf, "\n", sizeof buf);
+        BUF_strlcpy(buf, def, sizeof(buf));
+        BUF_strlcat(buf, "\n", sizeof(buf));
     } else if ((buf[0] == '.') && (buf[1] == '\n'))
         return (1);
 
@@ -1431,13 +1430,13 @@ static int add_attribute_object(X509_REQ *req, char *text, const char *def,
         BIO_printf(bio_err, "%s [%s]:", text, def);
     (void)BIO_flush(bio_err);
     if (value != NULL) {
-        BUF_strlcpy(buf, value, sizeof buf);
-        BUF_strlcat(buf, "\n", sizeof buf);
+        BUF_strlcpy(buf, value, sizeof(buf));
+        BUF_strlcat(buf, "\n", sizeof(buf));
         BIO_printf(bio_err, "%s\n", value);
     } else {
         buf[0] = '\0';
         if (!batch) {
-            if (!fgets(buf, sizeof buf, stdin))
+            if (!fgets(buf, sizeof(buf), stdin))
                 return 0;
         } else {
             buf[0] = '\n';
@@ -1450,8 +1449,8 @@ static int add_attribute_object(X509_REQ *req, char *text, const char *def,
     else if (buf[0] == '\n') {
         if ((def == NULL) || (def[0] == '\0'))
             return (1);
-        BUF_strlcpy(buf, def, sizeof buf);
-        BUF_strlcat(buf, "\n", sizeof buf);
+        BUF_strlcpy(buf, def, sizeof(buf));
+        BUF_strlcat(buf, "\n", sizeof(buf));
     } else if ((buf[0] == '.') && (buf[1] == '\n'))
         return (1);
 

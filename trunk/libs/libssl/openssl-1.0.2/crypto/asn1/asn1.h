@@ -1264,7 +1264,10 @@ void ERR_load_ASN1_strings(void);
 # define ASN1_F_D2I_X509                                  156
 # define ASN1_F_D2I_X509_CINF                             157
 # define ASN1_F_D2I_X509_PKEY                             159
+# define ASN1_F_DO_BUF                                    221
 # define ASN1_F_I2D_ASN1_BIO_STREAM                       211
+# define ASN1_F_I2D_ASN1_BOOLEAN                          223
+# define ASN1_F_I2D_ASN1_OBJECT                           222
 # define ASN1_F_I2D_ASN1_SET                              188
 # define ASN1_F_I2D_ASN1_TIME                             160
 # define ASN1_F_I2D_DSA_PUBKEY                            161
@@ -1365,6 +1368,7 @@ void ERR_load_ASN1_strings(void);
 # define ASN1_R_MSTRING_NOT_UNIVERSAL                     139
 # define ASN1_R_MSTRING_WRONG_TAG                         140
 # define ASN1_R_NESTED_ASN1_STRING                        197
+# define ASN1_R_NESTED_TOO_DEEP                           219
 # define ASN1_R_NON_HEX_CHARACTERS                        141
 # define ASN1_R_NOT_ASCII_FORMAT                          190
 # define ASN1_R_NOT_ENOUGH_DATA                           142

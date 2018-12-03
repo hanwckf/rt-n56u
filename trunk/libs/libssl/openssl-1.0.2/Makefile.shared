@@ -120,6 +120,7 @@ SYMLINK_SO=	\
 			done; \
 		fi; \
 		if [ -n "$$SHLIB_SOVER" ]; then \
+			[ -e "$$SHLIB$$SHLIB_SUFFIX" ] || \
 			( $(SET_X); rm -f $$SHLIB$$SHLIB_SUFFIX; \
 			  ln -s $$prev $$SHLIB$$SHLIB_SUFFIX ); \
 		fi; \

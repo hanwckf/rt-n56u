@@ -100,7 +100,9 @@
 #ifdef OPENSSL_FIPS
 # include <openssl/fips.h>
 #endif
+#ifndef OPENSSL_NO_TS
 #include <openssl/ts.h>
+#endif
 #ifndef OPENSSL_NO_CMS
 # include <openssl/cms.h>
 #endif

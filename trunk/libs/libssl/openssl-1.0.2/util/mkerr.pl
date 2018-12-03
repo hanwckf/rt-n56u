@@ -1,4 +1,4 @@
-#!/usr/bin/perl
+#!/usr/local/bin/perl -w
 
 my $config = "crypto/err/openssl.ec";
 my $hprefix = "openssl/";

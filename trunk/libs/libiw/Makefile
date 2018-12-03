@@ -1,6 +1,6 @@
 all:
 	( if [ ! -d $(MERGE_ROOTFS) ] ; then \
-		@echo "unpacked rootfs not found!" ; \
+		echo "unpacked rootfs not found!" ; \
 		exit 1 ; \
 	fi)
 	mkdir -p $(CONFIG_FIRMWARE_PRODUCT_ID)

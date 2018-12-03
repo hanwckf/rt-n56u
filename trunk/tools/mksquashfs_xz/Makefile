@@ -29,6 +29,7 @@ build_xz:
 build_squashfs:
 	make -j$(HOST_NCPU) -C $(SRC_NAME1) XZUTILSDIR=$(shell pwd)/$(SRC_NAME2) ; \
 	cp $(SRC_NAME1)/mksquashfs ./
+	cp $(SRC_NAME1)/unsquashfs ./
 
 clean:
 	if [ -f $(SRC_NAME2)/Makefile ] ; then \

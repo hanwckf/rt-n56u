@@ -38,7 +38,6 @@ OPENSSL_CIPHERS += no-ec
 endif
 
 all: config_test
-	$(MAKE) -C $(SRC_NAME) depend
 	$(MAKE) -j$(HOST_NCPU) -C $(SRC_NAME)
 
 config_test:
@@ -49,7 +48,6 @@ config_test:
 	fi )
 
 configure:
-	# build all symlinks
 	( cd $(SRC_NAME) ; \
 	./Configure \
 		linux-mipsel \
@@ -57,18 +55,6 @@ configure:
 		--prefix=/ \
 		--install_prefix=$(STAGEDIR) \
 		--openssldir=/etc/ssl \
-		$(COPTS) \
-		$(LOPTS) ; \
-	)
-	# refresh config for target
-	( cd $(SRC_NAME) ; \
-	./Configure \
-		linux-mipsel \
-		shared \
-		--prefix=/ \
-		--install_prefix=$(STAGEDIR) \
-		--openssldir=/etc/ssl \
-		no-symlinks \
 		$(COPTS) \
 		$(LOPTS) \
 		$(OPENSSL_APPS) \
@@ -77,13 +63,10 @@ configure:
 
 clean:
 	$(MAKE) -C $(SRC_NAME) distclean
-	rm -rf $(SRC_NAME)/include/*
 	rm -f config_done
 
 install:
 	$(MAKE) -C $(SRC_NAME) install DESTDIR="$(STAGEDIR)"
-	# restore Makefile after depend command
-	$(MAKE) -j$(HOST_NCPU) -C $(SRC_NAME) dclean
 	# remove unneeded
 	rm -f $(DESTDIR)/lib/libssl.a
 	rm -f $(DESTDIR)/lib/libcrypto.a

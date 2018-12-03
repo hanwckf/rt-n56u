@@ -47,7 +47,7 @@ SCRIPTSDIR     = $(ROOTDIR)/config/scripts
 LINUX_CONFIG   = $(ROOTDIR)/$(LINUXDIR)/.config
 PROJECT_CONFIG = $(ROOTDIR)/.config
 SSTRIP_TOOL    = $(if $(CONFIG_FIRMWARE_PERFORM_SSTRIP),$(ROOTDIR)/tools/sstrip/sstrip)
-UNSQSHFS_TOOL  = $(ROOTDIR)/tools/bin/unsquashfs_xz-4.0
+UNSQSHFS_TOOL  = $(ROOTDIR)/tools/mksquashfs_xz/unsquashfs
 MERGE_DIR      = $(ROOTDIR)/merge
 MERGE_ROOTFS   = $(MERGE_DIR)/$(CONFIG_FIRMWARE_PRODUCT_ID)/rootfs
 

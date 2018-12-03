@@ -1,6 +1,4 @@
-group: deprecated-2017Q4
-
-dist: trusty
+dist: xenial
 
 sudo: required
 

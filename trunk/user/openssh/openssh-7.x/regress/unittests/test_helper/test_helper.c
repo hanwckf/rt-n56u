@@ -1,4 +1,4 @@
-/*	$OpenBSD: test_helper.c,v 1.6 2015/03/03 20:42:49 djm Exp $	*/
+/*	$OpenBSD: test_helper.c,v 1.8 2018/02/08 08:46:20 djm Exp $	*/
 /*
  * Copyright (c) 2011 Damien Miller <djm@mindrot.org>
  *
@@ -166,6 +166,18 @@ main(int argc, char **argv)
 	return 0;
 }
 
+int
+test_is_verbose()
+{
+	return verbose_mode;
+}
+
+int
+test_is_quiet()
+{
+	return quiet_mode;
+}
+
 const char *
 test_data_file(const char *name)
 {
@@ -191,7 +203,6 @@ test_info(char *s, size_t len)
 	    *subtest_info != '\0' ? " - " : "", subtest_info);
 }
 
-#ifdef SIGINFO
 static void
 siginfo(int unused __attribute__((__unused__)))
 {
@@ -200,7 +211,6 @@ siginfo(int unused __attribute__((__unused__)))
 	test_info(buf, sizeof(buf));
 	atomicio(vwrite, STDERR_FILENO, buf, strlen(buf));
 }
-#endif
 
 void
 test_start(const char *n)
@@ -214,6 +224,7 @@ test_start(const char *n)
 #ifdef SIGINFO
 	signal(SIGINFO, siginfo);
 #endif
+	signal(SIGUSR1, siginfo);
 }
 
 void
@@ -438,6 +449,17 @@ assert_u_int(const char *file, int line, const char *a1, const char *a2,
 	test_header(file, line, a1, a2, "U_INT", pred);
 	fprintf(stderr, "%12s = %u / 0x%x\n", a1, aa1, aa1);
 	fprintf(stderr, "%12s = %u / 0x%x\n", a2, aa2, aa2);
+	test_die();
+}
+
+void
+assert_long(const char *file, int line, const char *a1, const char *a2,
+    long aa1, long aa2, enum test_predicate pred)
+{
+	TEST_CHECK(aa1, aa2, pred);
+	test_header(file, line, a1, a2, "LONG", pred);
+	fprintf(stderr, "%12s = %ld / 0x%lx\n", a1, aa1, aa1);
+	fprintf(stderr, "%12s = %ld / 0x%lx\n", a2, aa2, aa2);
 	test_die();
 }
 

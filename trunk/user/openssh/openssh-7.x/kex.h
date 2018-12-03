@@ -1,4 +1,4 @@
-/* $OpenBSD: kex.h,v 1.81 2016/09/28 21:44:52 djm Exp $ */
+/* $OpenBSD: kex.h,v 1.91 2018/07/11 18:53:29 markus Exp $ */
 
 /*
  * Copyright (c) 2000, 2001 Markus Friedl.  All rights reserved.
@@ -27,8 +27,6 @@
 #define KEX_H
 
 #include "mac.h"
-#include "buffer.h" /* XXX for typedef */
-#include "key.h" /* XXX for typedef */
 
 #ifdef WITH_LEAKMALLOC
 #include "leakmalloc.h"
@@ -43,6 +41,8 @@
 #  define EC_POINT	void
 # endif /* OPENSSL_HAS_ECC */
 #else /* WITH_OPENSSL */
+# define DH		void
+# define BIGNUM		void
 # define EC_KEY		void
 # define EC_GROUP	void
 # define EC_POINT	void
@@ -64,6 +64,7 @@
 #define	KEX_CURVE25519_SHA256_OLD	"curve25519-sha256@libssh.org"
 
 #define COMP_NONE	0
+/* pre-auth compression (COMP_ZLIB) is only supported in the client */
 #define COMP_ZLIB	1
 #define COMP_DELAYED	2
 
@@ -139,7 +140,7 @@ struct kex {
 	int	hostkey_type;
 	int	hostkey_nid;
 	u_int	kex_type;
-	int	rsa_sha2;
+	char	*server_sig_algs;
 	int	ext_info_c;
 	struct sshbuf *my;
 	struct sshbuf *peer;
@@ -169,7 +170,7 @@ struct kex {
 int	 kex_names_valid(const char *);
 char	*kex_alg_list(char);
 char	*kex_names_cat(const char *, const char *);
-int	 kex_assemble_names(const char *, char **);
+int	 kex_assemble_names(char **, const char *, const char *);
 
 int	 kex_new(struct ssh *, char *[PROPOSAL_MAX], struct kex **);
 int	 kex_setup(struct ssh *, char *[PROPOSAL_MAX]);
@@ -181,8 +182,8 @@ int	 kex_prop2buf(struct sshbuf *, char *proposal[PROPOSAL_MAX]);
 void	 kex_prop_free(char **);
 
 int	 kex_send_kexinit(struct ssh *);
-int	 kex_input_kexinit(int, u_int32_t, void *);
-int	 kex_input_ext_info(int, u_int32_t, void *);
+int	 kex_input_kexinit(int, u_int32_t, struct ssh *);
+int	 kex_input_ext_info(int, u_int32_t, struct ssh *);
 int	 kex_derive_keys(struct ssh *, u_char *, u_int, const struct sshbuf *);
 int	 kex_derive_keys_bn(struct ssh *, u_char *, u_int, const BIGNUM *);
 int	 kex_send_newkeys(struct ssh *);
@@ -224,9 +225,6 @@ int	kexc25519_shared_key(const u_char key[CURVE25519_SIZE],
     const u_char pub[CURVE25519_SIZE], struct sshbuf *out)
 	__attribute__((__bounded__(__minbytes__, 1, CURVE25519_SIZE)))
 	__attribute__((__bounded__(__minbytes__, 2, CURVE25519_SIZE)));
-
-int
-derive_ssh1_session_id(BIGNUM *, BIGNUM *, u_int8_t[8], u_int8_t[16]);
 
 #if defined(DEBUG_KEX) || defined(DEBUG_KEXDH) || defined(DEBUG_KEXECDH)
 void	dump_digest(char *, u_char *, int);

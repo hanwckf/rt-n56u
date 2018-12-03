@@ -1,4 +1,4 @@
-/*	$OpenBSD: sshbuf.h,v 1.8 2016/11/25 23:22:04 djm Exp $	*/
+/*	$OpenBSD: sshbuf.h,v 1.11 2018/07/09 21:56:06 markus Exp $	*/
 /*
  * Copyright (c) 2011 Damien Miller
  *
@@ -49,15 +49,6 @@ struct sshbuf {
 	u_int refcount;		/* Tracks self and number of child buffers */
 	struct sshbuf *parent;	/* If child, pointer to parent */
 };
-
-#ifndef SSHBUF_NO_DEPREACTED
-/*
- * NB. Please do not use sshbuf_init() in new code. Please use sshbuf_new()
- * instead. sshbuf_init() is deprectated and will go away soon (it is
- * only included to allow compat with buffer_* in OpenSSH)
- */
-void sshbuf_init(struct sshbuf *buf);
-#endif
 
 /*
  * Create a new sshbuf buffer.
@@ -211,6 +202,7 @@ int	sshbuf_get_string_direct(struct sshbuf *buf, const u_char **valp,
 /* Another variant: "peeks" into the buffer without modifying it */
 int	sshbuf_peek_string_direct(const struct sshbuf *buf, const u_char **valp,
 	    size_t *lenp);
+/* XXX peek_u8 / peek_u32 */
 
 /*
  * Functions to extract or store SSH wire encoded bignums and elliptic

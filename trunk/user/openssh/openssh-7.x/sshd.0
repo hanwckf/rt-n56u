@@ -33,12 +33,14 @@ DESCRIPTION
      -C connection_spec
              Specify the connection parameters to use for the -T extended test
              mode.  If provided, any Match directives in the configuration
-             file that would apply to the specified user, host, and address
-             will be set before the configuration is written to standard
-             output.  The connection parameters are supplied as keyword=value
-             pairs.  The keywords are M-bM-^@M-^\userM-bM-^@M-^], M-bM-^@M-^\hostM-bM-^@M-^], M-bM-^@M-^\laddrM-bM-^@M-^], M-bM-^@M-^\lportM-bM-^@M-^], and
-             M-bM-^@M-^\addrM-bM-^@M-^].  All are required and may be supplied in any order,
+             file that would apply are applied before the configuration is
+             written to standard output.  The connection parameters are
+             supplied as keyword=value pairs and may be supplied in any order,
              either with multiple -C options or as a comma-separated list.
+             The keywords are M-bM-^@M-^\addr,M-bM-^@M-^] M-bM-^@M-^\userM-bM-^@M-^], M-bM-^@M-^\hostM-bM-^@M-^], M-bM-^@M-^\laddrM-bM-^@M-^], M-bM-^@M-^\lportM-bM-^@M-^], and
+             M-bM-^@M-^\rdomainM-bM-^@M-^] and correspond to source address, user, resolved source
+             host name, local address, local port number and routing domain
+             respectively.
 
      -c host_certificate_file
              Specifies a path to a certificate file to identify sshd during
@@ -75,10 +77,9 @@ DESCRIPTION
              Specifies a file from which a host key is read.  This option must
              be given if sshd is not run as root (as the normal host key files
              are normally not readable by anyone but root).  The default is
-             /etc/ssh/ssh_host_dsa_key, /etc/ssh/ssh_host_ecdsa_key,
-             /etc/ssh/ssh_host_ed25519_key and /etc/ssh/ssh_host_rsa_key.  It
-             is possible to have multiple host key files for the different
-             host key algorithms.
+             /etc/ssh/ssh_host_ecdsa_key, /etc/ssh/ssh_host_ed25519_key and
+             /etc/ssh/ssh_host_rsa_key.  It is possible to have multiple host
+             key files for the different host key algorithms.
 
      -i      Specifies that sshd is being run from inetd(8).
 
@@ -134,7 +135,7 @@ AUTHENTICATION
      client selects the encryption algorithm to use from those offered by the
      server.  Additionally, session integrity is provided through a
      cryptographic message authentication code (hmac-md5, hmac-sha1, umac-64,
-     umac-128, hmac-ripemd160, hmac-sha2-256 or hmac-sha2-512).
+     umac-128, hmac-sha2-256 or hmac-sha2-512).
 
      Finally, the server and the client enter an authentication dialog.  The
      client tries to authenticate itself using host-based authentication,
@@ -144,7 +145,7 @@ AUTHENTICATION
      Regardless of the authentication type, the account is checked to ensure
      that it is accessible.  An account is not accessible if it is locked,
      listed in DenyUsers or its group is listed in DenyGroups .  The
-     definition of a locked account is system dependant. Some platforms have
+     definition of a locked account is system dependent. Some platforms have
      their own account database (eg AIX) and some modify the passwd field (
      M-bM-^@M-^X*LK*M-bM-^@M-^Y on Solaris and UnixWare, M-bM-^@M-^X*M-bM-^@M-^Y on HP-UX, containing M-bM-^@M-^XNologinM-bM-^@M-^Y on
      Tru64, a leading M-bM-^@M-^X*LOCKED*M-bM-^@M-^Y on FreeBSD and a leading M-bM-^@M-^X!M-bM-^@M-^Y on most
@@ -247,7 +248,7 @@ AUTHORIZED_KEYS FILE FORMAT
      You don't want to type them in; instead, copy the id_dsa.pub,
      id_ecdsa.pub, id_ed25519.pub, or the id_rsa.pub file and edit it.
 
-     sshd enforces a minimum RSA key modulus size of 768 bits.
+     sshd enforces a minimum RSA key modulus size of 1024 bits.
 
      The options (if present) consist of comma-separated option
      specifications.  No spaces are permitted, except within double quotes.
@@ -299,6 +300,11 @@ AUTHORIZED_KEYS FILE FORMAT
              this type are permitted.  Environment processing is disabled by
              default and is controlled via the PermitUserEnvironment option.
 
+     expiry-time="timespec"
+             Specifies a time after which the key will not be accepted.  The
+             time may be specified as a YYYYMMDD date or a YYYYMMDDHHMM[SS]
+             time in the system time-zone.
+
      from="pattern-list"
              Specifies that in addition to public key authentication, either
              the canonical name of the remote host or its IP address must be
@@ -335,17 +341,32 @@ AUTHORIZED_KEYS FILE FORMAT
              Forbids X11 forwarding when this key is used for authentication.
              Any X11 forward requests by the client will return an error.
 
+     permitlisten="[host:]port"
+             Limit remote port forwarding with the ssh(1) -R option such that
+             it may only listen on the specified host (optional) and port.
+             IPv6 addresses can be specified by enclosing the address in
+             square brackets.  Multiple permitlisten options may be applied
+             separated by commas.  Hostnames may include wildcards as
+             described in the PATTERNS section in ssh_config(5).  A port
+             specification of * matches any port.  Note that the setting of
+             GatewayPorts may further restrict listen addresses.  Note that
+             ssh(1) will send a hostname of M-bM-^@M-^\localhostM-bM-^@M-^] if a listen host was
+             not specified when the forwarding was requested, and that this
+             name is treated differently to the explicit localhost addresses
+             M-bM-^@M-^\127.0.0.1M-bM-^@M-^] and M-bM-^@M-^\::1M-bM-^@M-^].
+
      permitopen="host:port"
-             Limit local port forwarding with ssh(1) -L such that it may only
-             connect to the specified host and port.  IPv6 addresses can be
-             specified by enclosing the address in square brackets.  Multiple
-             permitopen options may be applied separated by commas.  No
-             pattern matching is performed on the specified hostnames, they
-             must be literal domains or addresses.  A port specification of *
-             matches any port.
+             Limit local port forwarding with the ssh(1) -L option such that
+             it may only connect to the specified host and port.  IPv6
+             addresses can be specified by enclosing the address in square
+             brackets.  Multiple permitopen options may be applied separated
+             by commas.  No pattern matching is performed on the specified
+             hostnames, they must be literal domains or addresses.  A port
+             specification of * matches any port.
 
      port-forwarding
              Enable port forwarding previously disabled by the restrict
+             option.
 
      principals="principals"
              On a cert-authority line, specifies allowed principals for
@@ -383,9 +404,11 @@ AUTHORIZED_KEYS FILE FORMAT
         ssh-rsa AAAAB3Nza...LiPk== user@example.net
         from="*.sales.example.net,!pc.sales.example.net" ssh-rsa
         AAAAB2...19Q== john@example.net
-        command="dump /home",no-pty,no-port-forwarding ssh-dss
+        command="dump /home",no-pty,no-port-forwarding ssh-rsa
         AAAAC3...51R== example.net
-        permitopen="192.0.2.1:80",permitopen="192.0.2.2:25" ssh-dss
+        permitopen="192.0.2.1:80",permitopen="192.0.2.2:25" ssh-rsa
+        AAAAB5...21S==
+        permitlisten="localhost:8080",permitopen="localhost:22000" ssh-rsa
         AAAAB5...21S==
         tunnel="0",command="sh /etc/netstart tun0" ssh-rsa AAAA...==
         jane@example.net
@@ -398,8 +421,8 @@ SSH_KNOWN_HOSTS FILE FORMAT
      The /etc/ssh/ssh_known_hosts and ~/.ssh/known_hosts files contain host
      public keys for all known hosts.  The global file should be prepared by
      the administrator (optional), and the per-user file is maintained
-     automatically: whenever the user connects from an unknown host, its key
-     is added to the per-user file.
+     automatically: whenever the user connects to an unknown host, its key is
+     added to the per-user file.
 
      Each line in these files contains the following fields: markers
      (optional), hostnames, keytype, base64-encoded key, comment.  The fields
@@ -412,13 +435,19 @@ SSH_KNOWN_HOSTS FILE FORMAT
      should be used on a key line.
 
      Hostnames is a comma-separated list of patterns (M-bM-^@M-^X*M-bM-^@M-^Y and M-bM-^@M-^X?M-bM-^@M-^Y act as
-     wildcards); each pattern in turn is matched against the canonical host
-     name (when authenticating a client) or against the user-supplied name
-     (when authenticating a server).  A pattern may also be preceded by M-bM-^@M-^X!M-bM-^@M-^Y to
-     indicate negation: if the host name matches a negated pattern, it is not
-     accepted (by that line) even if it matched another pattern on the line.
-     A hostname or address may optionally be enclosed within M-bM-^@M-^X[M-bM-^@M-^Y and M-bM-^@M-^X]M-bM-^@M-^Y
-     brackets then followed by M-bM-^@M-^X:M-bM-^@M-^Y and a non-standard port number.
+     wildcards); each pattern in turn is matched against the host name.  When
+     sshd is authenticating a client, such as when using
+     HostbasedAuthentication, this will be the canonical client host name.
+     When ssh(1) is authenticating a server, this will be the host name given
+     by the user, the value of the ssh(1) HostkeyAlias if it was specified, or
+     the canonical server hostname if the ssh(1) CanonicalizeHostname option
+     was used.
+
+     A pattern may also be preceded by M-bM-^@M-^X!M-bM-^@M-^Y to indicate negation: if the host
+     name matches a negated pattern, it is not accepted (by that line) even if
+     it matched another pattern on the line.  A hostname or address may
+     optionally be enclosed within M-bM-^@M-^X[M-bM-^@M-^Y and M-bM-^@M-^X]M-bM-^@M-^Y brackets then followed by M-bM-^@M-^X:M-bM-^@M-^Y
+     and a non-standard port number.
 
      Alternately, hostnames may be stored in a hashed form which hides host
      names and addresses should the file's contents be disclosed.  Hashed
@@ -561,7 +590,6 @@ FILES
              allows host-based authentication without permitting login with
              rlogin/rsh.
 
-     /etc/ssh/ssh_host_dsa_key
      /etc/ssh/ssh_host_ecdsa_key
      /etc/ssh/ssh_host_ed25519_key
      /etc/ssh/ssh_host_rsa_key
@@ -570,7 +598,6 @@ FILES
              not accessible to others.  Note that sshd does not start if these
              files are group/world-accessible.
 
-     /etc/ssh/ssh_host_dsa_key.pub
      /etc/ssh/ssh_host_ecdsa_key.pub
      /etc/ssh/ssh_host_ed25519_key.pub
      /etc/ssh/ssh_host_rsa_key.pub
@@ -623,4 +650,4 @@ AUTHORS
      versions 1.5 and 2.0.  Niels Provos and Markus Friedl contributed support
      for privilege separation.
 
-OpenBSD 6.0                    November 30, 2016                   OpenBSD 6.0
+OpenBSD 6.4                      July 22, 2018                     OpenBSD 6.4

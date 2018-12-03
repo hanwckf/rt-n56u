@@ -27,7 +27,6 @@ configure:
 		--with-privsep-user=sshd \
 		--with-sandbox=no \
 		--without-pam \
-		--without-ssh1 \
 		--without-selinux \
 		--without-bsd-auth \
 		--without-kerberos5 \

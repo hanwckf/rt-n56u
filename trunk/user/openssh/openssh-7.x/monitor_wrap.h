@@ -1,4 +1,4 @@
-/* $OpenBSD: monitor_wrap.h,v 1.32 2016/09/28 16:33:07 djm Exp $ */
+/* $OpenBSD: monitor_wrap.h,v 1.38 2018/07/11 18:53:29 markus Exp $ */
 
 /*
  * Copyright 2002 Niels Provos <provos@citi.umich.edu>
@@ -34,22 +34,27 @@ extern int use_privsep;
 enum mm_keytype { MM_NOKEY, MM_HOSTKEY, MM_USERKEY };
 
 struct monitor;
-struct mm_master;
 struct Authctxt;
+struct sshkey;
+struct sshauthopt;
 
 void mm_log_handler(LogLevel, const char *, void *);
 int mm_is_monitor(void);
 DH *mm_choose_dh(int, int, int);
-int mm_key_sign(Key *, u_char **, u_int *, const u_char *, u_int, const char *);
+int mm_sshkey_sign(struct sshkey *, u_char **, size_t *, const u_char *, size_t,
+    const char *, u_int compat);
 void mm_inform_authserv(char *, char *);
 struct passwd *mm_getpwnamallow(const char *);
 char *mm_auth2_read_banner(void);
-int mm_auth_password(struct Authctxt *, char *);
-int mm_key_allowed(enum mm_keytype, const char *, const char *, Key *, int);
-int mm_user_key_allowed(struct passwd *, Key *, int);
+int mm_auth_password(struct ssh *, char *);
+int mm_key_allowed(enum mm_keytype, const char *, const char *, struct sshkey *,
+    int, struct sshauthopt **);
+int mm_user_key_allowed(struct ssh *, struct passwd *, struct sshkey *, int,
+    struct sshauthopt **);
 int mm_hostbased_key_allowed(struct passwd *, const char *,
-    const char *, Key *);
-int mm_key_verify(Key *, u_char *, u_int, u_char *, u_int);
+    const char *, struct sshkey *);
+int mm_sshkey_verify(const struct sshkey *, const u_char *, size_t,
+    const u_char *, size_t, const char *, u_int);
 
 #ifdef GSSAPI
 OM_uint32 mm_ssh_gssapi_server_ctx(Gssctxt **, gss_OID);
@@ -83,6 +88,7 @@ void mm_session_pty_cleanup2(struct Session *);
 struct newkeys *mm_newkeys_from_blob(u_char *, int);
 int mm_newkeys_to_blob(int, u_char **, u_int *);
 
+void monitor_clear_keystate(struct monitor *);
 void monitor_apply_keystate(struct monitor *);
 void mm_get_keystate(struct monitor *);
 void mm_send_keystate(struct monitor*);
@@ -90,9 +96,5 @@ void mm_send_keystate(struct monitor*);
 /* bsdauth */
 int mm_bsdauth_query(void *, char **, char **, u_int *, char ***, u_int **);
 int mm_bsdauth_respond(void *, u_int, char **);
-
-/* skey */
-int mm_skey_query(void *, char **, char **, u_int *, char ***, u_int **);
-int mm_skey_respond(void *, u_int, char **);
 
 #endif /* _MM_WRAP_H_ */

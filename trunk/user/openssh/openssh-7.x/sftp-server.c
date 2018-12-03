@@ -1,4 +1,4 @@
-/* $OpenBSD: sftp-server.c,v 1.110 2016/09/12 01:22:38 deraadt Exp $ */
+/* $OpenBSD: sftp-server.c,v 1.112 2018/06/01 03:33:53 djm Exp $ */
 /*
  * Copyright (c) 2000-2004 Markus Friedl.  All rights reserved.
  *
@@ -691,8 +691,8 @@ process_open(u_int32_t id)
 	logit("open \"%s\" flags %s mode 0%o",
 	    name, string_from_portable(pflags), mode);
 	if (readonly &&
-	    ((flags & O_ACCMODE) == O_WRONLY ||
-	    (flags & O_ACCMODE) == O_RDWR)) {
+	    ((flags & O_ACCMODE) != O_RDONLY ||
+	    (flags & (O_CREAT|O_TRUNC)) != 0)) {
 		verbose("Refusing open request in read-only mode");
 		status = SSH2_FX_PERMISSION_DENIED;
 	} else {
@@ -1503,7 +1503,7 @@ sftp_server_main(int argc, char **argv, struct passwd *user_pw)
 	int i, r, in, out, max, ch, skipargs = 0, log_stderr = 0;
 	ssize_t len, olen, set_size;
 	SyslogFacility log_facility = SYSLOG_FACILITY_AUTH;
-	char *cp, *homedir = NULL, buf[4*4096];
+	char *cp, *homedir = NULL, uidstr[32], buf[4*4096];
 	long mask;
 
 	extern char *optarg;
@@ -1554,8 +1554,10 @@ sftp_server_main(int argc, char **argv, struct passwd *user_pw)
 			break;
 		case 'd':
 			cp = tilde_expand_filename(optarg, user_pw->pw_uid);
+			snprintf(uidstr, sizeof(uidstr), "%llu",
+			    (unsigned long long)pw->pw_uid);
 			homedir = percent_expand(cp, "d", user_pw->pw_dir,
-			    "u", user_pw->pw_name, (char *)NULL);
+			    "u", user_pw->pw_name, "U", uidstr, (char *)NULL);
 			free(cp);
 			break;
 		case 'p':

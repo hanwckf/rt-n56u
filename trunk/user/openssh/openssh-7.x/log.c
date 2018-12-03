@@ -1,4 +1,4 @@
-/* $OpenBSD: log.c,v 1.48 2016/07/15 05:01:58 dtucker Exp $ */
+/* $OpenBSD: log.c,v 1.51 2018/07/27 12:03:17 markus Exp $ */
 /*
  * Author: Tatu Ylonen <ylo@cs.hut.fi>
  * Copyright (c) 1995 Tatu Ylonen <ylo@cs.hut.fi>, Espoo, Finland
@@ -104,6 +104,12 @@ static struct {
 	{ "DEBUG3",	SYSLOG_LEVEL_DEBUG3 },
 	{ NULL,		SYSLOG_LEVEL_NOT_SET }
 };
+
+LogLevel
+log_level_get(void)
+{
+	return log_level;
+}
 
 SyslogFacility
 log_facility_number(char *name)
@@ -256,18 +262,7 @@ log_init(char *av0, LogLevel level, SyslogFacility facility, int on_stderr)
 
 	argv0 = av0;
 
-	switch (level) {
-	case SYSLOG_LEVEL_QUIET:
-	case SYSLOG_LEVEL_FATAL:
-	case SYSLOG_LEVEL_ERROR:
-	case SYSLOG_LEVEL_INFO:
-	case SYSLOG_LEVEL_VERBOSE:
-	case SYSLOG_LEVEL_DEBUG1:
-	case SYSLOG_LEVEL_DEBUG2:
-	case SYSLOG_LEVEL_DEBUG3:
-		log_level = level;
-		break;
-	default:
+	if (log_change_level(level) != 0) {
 		fprintf(stderr, "Unrecognized internal syslog level code %d\n",
 		    (int) level);
 		exit(1);
@@ -340,13 +335,27 @@ log_init(char *av0, LogLevel level, SyslogFacility facility, int on_stderr)
 #endif
 }
 
-void
+int
 log_change_level(LogLevel new_log_level)
 {
 	/* no-op if log_init has not been called */
 	if (argv0 == NULL)
-		return;
-	log_init(argv0, new_log_level, log_facility, log_on_stderr);
+		return 0;
+
+	switch (new_log_level) {
+	case SYSLOG_LEVEL_QUIET:
+	case SYSLOG_LEVEL_FATAL:
+	case SYSLOG_LEVEL_ERROR:
+	case SYSLOG_LEVEL_INFO:
+	case SYSLOG_LEVEL_VERBOSE:
+	case SYSLOG_LEVEL_DEBUG1:
+	case SYSLOG_LEVEL_DEBUG2:
+	case SYSLOG_LEVEL_DEBUG3:
+		log_level = new_log_level;
+		return 0;
+	default:
+		return -1;
+	}
 }
 
 int
@@ -453,7 +462,8 @@ do_log(LogLevel level, const char *fmt, va_list args)
 		tmp_handler(level, fmtbuf, log_handler_ctx);
 		log_handler = tmp_handler;
 	} else if (log_on_stderr) {
-		snprintf(msgbuf, sizeof msgbuf, "%s\r\n", fmtbuf);
+		snprintf(msgbuf, sizeof msgbuf, "%.*s\r\n",
+		    (int)sizeof msgbuf - 3, fmtbuf);
 		(void)write(log_stderr_fd, msgbuf, strlen(msgbuf));
 	} else {
 #if defined(HAVE_OPENLOG_R) && defined(SYSLOG_DATA_INIT)

@@ -1,4 +1,4 @@
-#	$OpenBSD: sshd_config,v 1.100 2016/08/15 12:32:04 naddy Exp $
+#	$OpenBSD: sshd_config,v 1.103 2018/04/09 20:41:22 tj Exp $
 
 # This is the sshd server system-wide configuration file.  See
 # sshd_config(5) for more information.
@@ -16,7 +16,6 @@
 #ListenAddress ::
 
 #HostKey /etc/ssh/ssh_host_rsa_key
-#HostKey /etc/ssh/ssh_host_dsa_key
 #HostKey /etc/ssh/ssh_host_ecdsa_key
 #HostKey /etc/ssh/ssh_host_ed25519_key
 
@@ -92,8 +91,6 @@ AuthorizedKeysFile	.ssh/authorized_keys
 #PrintMotd yes
 #PrintLastLog yes
 #TCPKeepAlive yes
-#UseLogin no
-#UsePrivilegeSeparation sandbox
 #PermitUserEnvironment no
 #Compression delayed
 #ClientAliveInterval 0

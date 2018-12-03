@@ -214,24 +214,12 @@ typedef signed char int8_t;
 # if (SIZEOF_SHORT_INT == 2)
 typedef short int int16_t;
 # else
-#  ifdef _UNICOS
-#   if (SIZEOF_SHORT_INT == 4)
-typedef short int16_t;
-#   else
-typedef long  int16_t;
-#   endif
-#  else
 #   error "16 bit int type not found."
-#  endif /* _UNICOS */
 # endif
 # if (SIZEOF_INT == 4)
 typedef int int32_t;
 # else
-#  ifdef _UNICOS
-typedef long  int32_t;
-#  else
 #   error "32 bit int type not found."
-#  endif /* _UNICOS */
 # endif
 #endif
 
@@ -247,24 +235,12 @@ typedef unsigned char u_int8_t;
 #  if (SIZEOF_SHORT_INT == 2)
 typedef unsigned short int u_int16_t;
 #  else
-#   ifdef _UNICOS
-#    if (SIZEOF_SHORT_INT == 4)
-typedef unsigned short u_int16_t;
-#    else
-typedef unsigned long  u_int16_t;
-#    endif
-#   else
 #    error "16 bit int type not found."
-#   endif
 #  endif
 #  if (SIZEOF_INT == 4)
 typedef unsigned int u_int32_t;
 #  else
-#   ifdef _UNICOS
-typedef unsigned long  u_int32_t;
-#   else
 #    error "32 bit int type not found."
-#   endif
 #  endif
 # endif
 #define __BIT_TYPES_DEFINED__
@@ -326,6 +302,28 @@ typedef unsigned int size_t;
 
 #ifndef SIZE_MAX
 #define SIZE_MAX SIZE_T_MAX
+#endif
+
+#ifndef INT32_MAX
+# if (SIZEOF_INT == 4)
+#  define INT32_MAX INT_MAX
+# elif (SIZEOF_LONG == 4)
+#  define INT32_MAX LONG_MAX
+# else
+#  error "need INT32_MAX"
+# endif
+#endif
+
+#ifndef INT64_MAX
+# if (SIZEOF_INT == 8)
+#  define INT64_MAX INT_MAX
+# elif (SIZEOF_LONG == 8)
+#  define INT64_MAX LONG_MAX
+# elif (SIZEOF_LONG_LONG_INT == 8)
+#  define INT64_MAX LLONG_MAX
+# else
+#  error "need INT64_MAX"
+# endif
 #endif
 
 #ifndef HAVE_SSIZE_T
@@ -497,6 +495,13 @@ struct winsize {
 }
 #endif
 
+#ifndef timespeccmp
+#define timespeccmp(tsp, usp, cmp)					\
+	(((tsp)->tv_sec == (usp)->tv_sec) ?				\
+	    ((tsp)->tv_nsec cmp (usp)->tv_nsec) :			\
+	    ((tsp)->tv_sec cmp (usp)->tv_sec))
+#endif
+
 #ifndef __P
 # define __P(x) x
 #endif
@@ -653,12 +658,6 @@ struct winsize {
 
 #if defined(KRB5) && !defined(HEIMDAL)
 #  define krb5_get_err_text(context,code) error_message(code)
-#endif
-
-#if defined(SKEYCHALLENGE_4ARG)
-# define _compat_skeychallenge(a,b,c,d) skeychallenge(a,b,c,d)
-#else
-# define _compat_skeychallenge(a,b,c,d) skeychallenge(a,b,c)
 #endif
 
 /* Maximum number of file descriptors available */

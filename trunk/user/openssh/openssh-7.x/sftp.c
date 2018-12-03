@@ -1,4 +1,4 @@
-/* $OpenBSD: sftp.c,v 1.177 2016/10/18 12:41:22 millert Exp $ */
+/* $OpenBSD: sftp.c,v 1.186 2018/09/07 04:26:56 dtucker Exp $ */
 /*
  * Copyright (c) 2001-2004 Damien Miller <djm@openbsd.org>
  *
@@ -81,7 +81,7 @@ FILE* infile;
 int batchmode = 0;
 
 /* PID of ssh transport process */
-static pid_t sshpid = -1;
+static volatile pid_t sshpid = -1;
 
 /* Suppress diagnositic messages */
 int quiet = 0;
@@ -106,6 +106,7 @@ volatile sig_atomic_t interrupted = 0;
 
 /* I wish qsort() took a separate ctx for the comparison function...*/
 int sort_flag;
+glob_t *sort_glob;
 
 /* Context used for commandline completion */
 struct complete_ctx {
@@ -216,8 +217,6 @@ static const struct CMD cmds[] = {
 	{ NULL,		-1,		-1	}
 };
 
-int interactive_loop(struct sftp_conn *, char *file1, char *file2);
-
 /* ARGSUSED */
 static void
 killchild(int signo)
@@ -252,6 +251,25 @@ cmd_interrupt(int signo)
 	(void)write(STDERR_FILENO, msg, sizeof(msg) - 1);
 	interrupted = 1;
 	errno = olderrno;
+}
+
+/*ARGSUSED*/
+static void
+sigchld_handler(int sig)
+{
+	int save_errno = errno;
+	pid_t pid;
+	const char msg[] = "\rConnection closed.  \n";
+
+	/* Report if ssh transport process dies. */
+	while ((pid = waitpid(sshpid, NULL, WNOHANG)) == -1 && errno == EINTR)
+		continue;
+	if (pid == sshpid) {
+		(void)write(STDERR_FILENO, msg, sizeof(msg) - 1);
+		sshpid = -1;
+	}
+
+	errno = save_errno;
 }
 
 static void
@@ -879,6 +897,34 @@ do_ls_dir(struct sftp_conn *conn, const char *path,
 	return (0);
 }
 
+static int
+sglob_comp(const void *aa, const void *bb)
+{
+	u_int a = *(const u_int *)aa;
+	u_int b = *(const u_int *)bb;
+	const char *ap = sort_glob->gl_pathv[a];
+	const char *bp = sort_glob->gl_pathv[b];
+	const struct stat *as = sort_glob->gl_statv[a];
+	const struct stat *bs = sort_glob->gl_statv[b];
+	int rmul = sort_flag & LS_REVERSE_SORT ? -1 : 1;
+
+#define NCMP(a,b) (a == b ? 0 : (a < b ? 1 : -1))
+	if (sort_flag & LS_NAME_SORT)
+		return (rmul * strcmp(ap, bp));
+	else if (sort_flag & LS_TIME_SORT) {
+#if defined(HAVE_STRUCT_STAT_ST_MTIM)
+		return (rmul * timespeccmp(&as->st_mtim, &bs->st_mtim, <));
+#elif defined(HAVE_STRUCT_STAT_ST_MTIME)
+		return (rmul * NCMP(as->st_mtime, bs->st_mtime));
+#else
+	return rmul * 1;
+#endif
+	} else if (sort_flag & LS_SIZE_SORT)
+		return (rmul * NCMP(as->st_size, bs->st_size));
+
+	fatal("Unknown ls sort type");
+}
+
 /* sftp ls.1 replacement which handles path globs */
 static int
 do_globbed_ls(struct sftp_conn *conn, const char *path,
@@ -888,7 +934,8 @@ do_globbed_ls(struct sftp_conn *conn, const char *path,
 	glob_t g;
 	int err, r;
 	struct winsize ws;
-	u_int i, c = 1, colspace = 0, columns = 1, m = 0, width = 80;
+	u_int i, j, nentries, *indices = NULL, c = 1;
+	u_int colspace = 0, columns = 1, m = 0, width = 80;
 
 	memset(&g, 0, sizeof(g));
 
@@ -933,7 +980,26 @@ do_globbed_ls(struct sftp_conn *conn, const char *path,
 		colspace = width / columns;
 	}
 
-	for (i = 0; g.gl_pathv[i] && !interrupted; i++) {
+	/*
+	 * Sorting: rather than mess with the contents of glob_t, prepare
+	 * an array of indices into it and sort that. For the usual
+	 * unsorted case, the indices are just the identity 1=1, 2=2, etc.
+	 */
+	for (nentries = 0; g.gl_pathv[nentries] != NULL; nentries++)
+		;	/* count entries */
+	indices = calloc(nentries, sizeof(*indices));
+	for (i = 0; i < nentries; i++)
+		indices[i] = i;
+
+	if (lflag & SORT_FLAGS) {
+		sort_glob = &g;
+		sort_flag = lflag & (SORT_FLAGS|LS_REVERSE_SORT);
+		qsort(indices, nentries, sizeof(*indices), sglob_comp);
+		sort_glob = NULL;
+	}
+
+	for (j = 0; j < nentries && !interrupted; j++) {
+		i = indices[j];
 		fname = path_strip(g.gl_pathv[i], strip_path);
 		if (lflag & LS_LONG_VIEW) {
 			if (g.gl_statv[i] == NULL) {
@@ -961,6 +1027,7 @@ do_globbed_ls(struct sftp_conn *conn, const char *path,
  out:
 	if (g.gl_pathc)
 		globfree(&g);
+	free(indices);
 
 	return 0;
 }
@@ -969,23 +1036,34 @@ static int
 do_df(struct sftp_conn *conn, const char *path, int hflag, int iflag)
 {
 	struct sftp_statvfs st;
-	char s_used[FMT_SCALED_STRSIZE];
-	char s_avail[FMT_SCALED_STRSIZE];
-	char s_root[FMT_SCALED_STRSIZE];
-	char s_total[FMT_SCALED_STRSIZE];
-	unsigned long long ffree;
+	char s_used[FMT_SCALED_STRSIZE], s_avail[FMT_SCALED_STRSIZE];
+	char s_root[FMT_SCALED_STRSIZE], s_total[FMT_SCALED_STRSIZE];
+	char s_icapacity[16], s_dcapacity[16];
 
 	if (do_statvfs(conn, path, &st, 1) == -1)
 		return -1;
+	if (st.f_files == 0)
+		strlcpy(s_icapacity, "ERR", sizeof(s_icapacity));
+	else {
+		snprintf(s_icapacity, sizeof(s_icapacity), "%3llu%%",
+		    (unsigned long long)(100 * (st.f_files - st.f_ffree) /
+		    st.f_files));
+	}
+	if (st.f_blocks == 0)
+		strlcpy(s_dcapacity, "ERR", sizeof(s_dcapacity));
+	else {
+		snprintf(s_dcapacity, sizeof(s_dcapacity), "%3llu%%",
+		    (unsigned long long)(100 * (st.f_blocks - st.f_bfree) /
+		    st.f_blocks));
+	}
 	if (iflag) {
-		ffree = st.f_files ? (100 * (st.f_files - st.f_ffree) / st.f_files) : 0;
 		printf("     Inodes        Used       Avail      "
 		    "(root)    %%Capacity\n");
-		printf("%11llu %11llu %11llu %11llu         %3llu%%\n",
+		printf("%11llu %11llu %11llu %11llu         %s\n",
 		    (unsigned long long)st.f_files,
 		    (unsigned long long)(st.f_files - st.f_ffree),
 		    (unsigned long long)st.f_favail,
-		    (unsigned long long)st.f_ffree, ffree);
+		    (unsigned long long)st.f_ffree, s_icapacity);
 	} else if (hflag) {
 		strlcpy(s_used, "error", sizeof(s_used));
 		strlcpy(s_avail, "error", sizeof(s_avail));
@@ -996,21 +1074,18 @@ do_df(struct sftp_conn *conn, const char *path, int hflag, int iflag)
 		fmt_scaled(st.f_bfree * st.f_frsize, s_root);
 		fmt_scaled(st.f_blocks * st.f_frsize, s_total);
 		printf("    Size     Used    Avail   (root)    %%Capacity\n");
-		printf("%7sB %7sB %7sB %7sB         %3llu%%\n",
-		    s_total, s_used, s_avail, s_root,
-		    (unsigned long long)(100 * (st.f_blocks - st.f_bfree) /
-		    st.f_blocks));
+		printf("%7sB %7sB %7sB %7sB         %s\n",
+		    s_total, s_used, s_avail, s_root, s_dcapacity);
 	} else {
 		printf("        Size         Used        Avail       "
 		    "(root)    %%Capacity\n");
-		printf("%12llu %12llu %12llu %12llu         %3llu%%\n",
+		printf("%12llu %12llu %12llu %12llu         %s\n",
 		    (unsigned long long)(st.f_frsize * st.f_blocks / 1024),
 		    (unsigned long long)(st.f_frsize *
 		    (st.f_blocks - st.f_bfree) / 1024),
 		    (unsigned long long)(st.f_frsize * st.f_bavail / 1024),
 		    (unsigned long long)(st.f_frsize * st.f_bfree / 1024),
-		    (unsigned long long)(100 * (st.f_blocks - st.f_bfree) /
-		    st.f_blocks));
+		    s_dcapacity);
 	}
 	return 0;
 }
@@ -1230,7 +1305,7 @@ parse_args(const char **cpp, int *ignore_errors, int *aflag,
 	char *cp2, **argv;
 	int base = 0;
 	long l;
-	int i, cmdnum, optidx, argc;
+	int path1_mandatory = 0, i, cmdnum, optidx, argc;
 
 	/* Skip leading whitespace */
 	cp = cp + strspn(cp, WHITESPACE);
@@ -1320,13 +1395,17 @@ parse_args(const char **cpp, int *ignore_errors, int *aflag,
 	case I_RM:
 	case I_MKDIR:
 	case I_RMDIR:
+	case I_LMKDIR:
+		path1_mandatory = 1;
+		/* FALLTHROUGH */
 	case I_CHDIR:
 	case I_LCHDIR:
-	case I_LMKDIR:
 		if ((optidx = parse_no_flags(cmd, argv, argc)) == -1)
 			return -1;
 		/* Get pathname (mandatory) */
 		if (argc - optidx < 1) {
+			if (!path1_mandatory)
+				break; /* return a NULL path1 */
 			error("You must specify a path after a %s command.",
 			    cmd);
 			return -1;
@@ -1364,6 +1443,7 @@ parse_args(const char **cpp, int *ignore_errors, int *aflag,
 	case I_LUMASK:
 	case I_CHMOD:
 		base = 8;
+		/* FALLTHROUGH */
 	case I_CHOWN:
 	case I_CHGRP:
 		if ((optidx = parse_no_flags(cmd, argv, argc)) == -1)
@@ -1411,7 +1491,7 @@ parse_args(const char **cpp, int *ignore_errors, int *aflag,
 
 static int
 parse_dispatch_command(struct sftp_conn *conn, const char *cmd, char **pwd,
-    int err_abort)
+    const char *startdir, int err_abort)
 {
 	char *path1, *path2, *tmp;
 	int ignore_errors = 0, aflag = 0, fflag = 0, hflag = 0,
@@ -1462,6 +1542,7 @@ parse_dispatch_command(struct sftp_conn *conn, const char *cmd, char **pwd,
 		break;
 	case I_SYMLINK:
 		sflag = 1;
+		/* FALLTHROUGH */
 	case I_LINK:
 		if (!sflag)
 			path1 = make_absolute(path1, *pwd);
@@ -1491,6 +1572,8 @@ parse_dispatch_command(struct sftp_conn *conn, const char *cmd, char **pwd,
 		err = do_rmdir(conn, path1);
 		break;
 	case I_CHDIR:
+		if (path1 == NULL || *path1 == '\0')
+			path1 = xstrdup(startdir);
 		path1 = make_absolute(path1, *pwd);
 		if ((tmp = do_realpath(conn, path1)) == NULL) {
 			err = 1;
@@ -1539,6 +1622,8 @@ parse_dispatch_command(struct sftp_conn *conn, const char *cmd, char **pwd,
 		err = do_df(conn, path1, hflag, iflag);
 		break;
 	case I_LCHDIR:
+		if (path1 == NULL || *path1 == '\0')
+			path1 = xstrdup("~");
 		tmp = tilde_expand_filename(path1, getuid());
 		free(path1);
 		path1 = tmp;
@@ -1780,7 +1865,7 @@ complete_cmd_parse(EditLine *el, char *cmd, int lastarg, char quote,
 		return 0;
 	}
 
-	/* Complete ambigious command */
+	/* Complete ambiguous command */
 	tmp = complete_ambiguous(cmd, list, count);
 	if (count > 1)
 		complete_display(list, 0);
@@ -2025,11 +2110,11 @@ complete(EditLine *el, int ch)
 }
 #endif /* USE_LIBEDIT */
 
-int
+static int
 interactive_loop(struct sftp_conn *conn, char *file1, char *file2)
 {
 	char *remote_path;
-	char *dir = NULL;
+	char *dir = NULL, *startdir = NULL;
 	char cmd[2048];
 	int err, interactive;
 	EditLine *el = NULL;
@@ -2073,6 +2158,7 @@ interactive_loop(struct sftp_conn *conn, char *file1, char *file2)
 	remote_path = do_realpath(conn, ".");
 	if (remote_path == NULL)
 		fatal("Need cwd");
+	startdir = xstrdup(remote_path);
 
 	if (file1 != NULL) {
 		dir = xstrdup(file1);
@@ -2083,8 +2169,9 @@ interactive_loop(struct sftp_conn *conn, char *file1, char *file2)
 				mprintf("Changing to: %s\n", dir);
 			snprintf(cmd, sizeof cmd, "cd \"%s\"", dir);
 			if (parse_dispatch_command(conn, cmd,
-			    &remote_path, 1) != 0) {
+			    &remote_path, startdir, 1) != 0) {
 				free(dir);
+				free(startdir);
 				free(remote_path);
 				free(conn);
 				return (-1);
@@ -2096,8 +2183,9 @@ interactive_loop(struct sftp_conn *conn, char *file1, char *file2)
 			    file2 == NULL ? "" : " ",
 			    file2 == NULL ? "" : file2);
 			err = parse_dispatch_command(conn, cmd,
-			    &remote_path, 1);
+			    &remote_path, startdir, 1);
 			free(dir);
+			free(startdir);
 			free(remote_path);
 			free(conn);
 			return (err);
@@ -2156,11 +2244,13 @@ interactive_loop(struct sftp_conn *conn, char *file1, char *file2)
 		signal(SIGINT, cmd_interrupt);
 
 		err = parse_dispatch_command(conn, cmd, &remote_path,
-		    batchmode);
+		    startdir, batchmode);
 		if (err != 0)
 			break;
 	}
+	signal(SIGCHLD, SIG_DFL);
 	free(remote_path);
+	free(startdir);
 	free(conn);
 
 #ifdef USE_LIBEDIT
@@ -2228,6 +2318,7 @@ connect_to_server(char *path, char **args, int *in, int *out)
 	signal(SIGTSTP, suspchild);
 	signal(SIGTTIN, suspchild);
 	signal(SIGTTOU, suspchild);
+	signal(SIGCHLD, sigchld_handler);
 	close(c_in);
 	close(c_out);
 }
@@ -2238,24 +2329,21 @@ usage(void)
 	extern char *__progname;
 
 	fprintf(stderr,
-	    "usage: %s [-1246aCfpqrv] [-B buffer_size] [-b batchfile] [-c cipher]\n"
+	    "usage: %s [-46aCfpqrv] [-B buffer_size] [-b batchfile] [-c cipher]\n"
 	    "          [-D sftp_server_path] [-F ssh_config] "
 	    "[-i identity_file] [-l limit]\n"
 	    "          [-o ssh_option] [-P port] [-R num_requests] "
 	    "[-S program]\n"
-	    "          [-s subsystem | sftp_server] host\n"
-	    "       %s [user@]host[:file ...]\n"
-	    "       %s [user@]host[:dir[/]]\n"
-	    "       %s -b batchfile [user@]host\n",
-	    __progname, __progname, __progname, __progname);
+	    "          [-s subsystem | sftp_server] destination\n",
+	    __progname);
 	exit(1);
 }
 
 int
 main(int argc, char **argv)
 {
-	int in, out, ch, err;
-	char *host = NULL, *userhost, *cp, *file2 = NULL;
+	int in, out, ch, err, tmp, port = -1;
+	char *host = NULL, *user, *cp, *file2 = NULL;
 	int debug_level = 0, sshver = 2;
 	char *file1 = NULL, *sftp_server = NULL;
 	char *ssh_program = _PATH_SSH_PROGRAM, *sftp_direct = NULL;
@@ -2310,7 +2398,9 @@ main(int argc, char **argv)
 			addargs(&args, "-%c", ch);
 			break;
 		case 'P':
-			addargs(&args, "-oPort %s", optarg);
+			port = a2port(optarg);
+			if (port <= 0)
+				fatal("Bad port \"%s\"\n", optarg);
 			break;
 		case 'v':
 			if (debug_level < 3) {
@@ -2393,33 +2483,38 @@ main(int argc, char **argv)
 	if (sftp_direct == NULL) {
 		if (optind == argc || argc > (optind + 2))
 			usage();
+		argv += optind;
 
-		userhost = xstrdup(argv[optind]);
-		file2 = argv[optind+1];
-
-		if ((host = strrchr(userhost, '@')) == NULL)
-			host = userhost;
-		else {
-			*host++ = '\0';
-			if (!userhost[0]) {
-				fprintf(stderr, "Missing username\n");
-				usage();
+		switch (parse_uri("sftp", *argv, &user, &host, &tmp, &file1)) {
+		case -1:
+			usage();
+			break;
+		case 0:
+			if (tmp != -1)
+				port = tmp;
+			break;
+		default:
+			if (parse_user_host_path(*argv, &user, &host,
+			    &file1) == -1) {
+				/* Treat as a plain hostname. */
+				host = xstrdup(*argv);
+				host = cleanhostname(host);
 			}
-			addargs(&args, "-l");
-			addargs(&args, "%s", userhost);
+			break;
 		}
+		file2 = *(argv + 1);
 
-		if ((cp = colon(host)) != NULL) {
-			*cp++ = '\0';
-			file1 = cp;
-		}
-
-		host = cleanhostname(host);
 		if (!*host) {
 			fprintf(stderr, "Missing hostname\n");
 			usage();
 		}
 
+		if (port != -1)
+			addargs(&args, "-oPort %d", port);
+		if (user != NULL) {
+			addargs(&args, "-l");
+			addargs(&args, "%s", user);
+		}
 		addargs(&args, "-oProtocol %d", sshver);
 
 		/* no subsystem if the server-spec contains a '/' */
@@ -2463,7 +2558,7 @@ main(int argc, char **argv)
 	if (batchmode)
 		fclose(infile);
 
-	while (waitpid(sshpid, NULL, 0) == -1)
+	while (waitpid(sshpid, NULL, 0) == -1 && sshpid > 1)
 		if (errno != EINTR)
 			fatal("Couldn't wait for ssh process: %s",
 			    strerror(errno));

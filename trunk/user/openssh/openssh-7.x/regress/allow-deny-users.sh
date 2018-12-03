@@ -1,13 +1,16 @@
 # Public Domain
 # Zev Weiss, 2016
+# $OpenBSD: allow-deny-users.sh,v 1.5 2018/07/13 02:13:50 djm Exp $
 
 tid="AllowUsers/DenyUsers"
 
 me="$LOGNAME"
-if [ "x$me" == "x" ]; then
+if [ "x$me" = "x" ]; then
 	me=`whoami`
 fi
 other="nobody"
+
+cp $OBJ/sshd_proxy $OBJ/sshd_proxy.orig
 
 test_auth()
 {
@@ -16,17 +19,19 @@ test_auth()
 	should_succeed="$3"
 	failmsg="$4"
 
+	cp $OBJ/sshd_proxy.orig $OBJ/sshd_proxy
+	echo DenyUsers="$deny" >> $OBJ/sshd_proxy
+	echo AllowUsers="$allow" >> $OBJ/sshd_proxy
+
 	start_sshd -oDenyUsers="$deny" -oAllowUsers="$allow"
 
-	${SSH} -F $OBJ/ssh_config "$me@somehost" true
+	${SSH} -F $OBJ/ssh_proxy "$me@somehost" true
 	status=$?
 
 	if (test $status -eq 0 && ! $should_succeed) \
 	    || (test $status -ne 0 && $should_succeed); then
 		fail "$failmsg"
 	fi
-
-	stop_sshd
 }
 
 #         DenyUsers     AllowUsers    should_succeed  failure_message

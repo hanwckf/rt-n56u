@@ -1,5 +1,5 @@
 SRC_NAME=aria2-1.17.1
-BIN_DIR_NAME=aria2-1.33.1
+BIN_DIR_NAME=aria2-1.34.0
 
 SRC_ARIA_NG_NAME=AriaNg-1.0.0
 SRC_ARIA_NG_URL=https://github.com/mayswind/AriaNg/releases/download/1.0.0/AriaNg-1.0.0.zip
@@ -14,7 +14,7 @@ all: extract_test config_test
 ifeq ($(CONFIG_FIRMWARE_INCLUDE_ARIA2_NEW_PREBUILD_BIN),y)
 	@echo $(BIN_DIR_NAME) done
 else
-	$(MAKE) -C $(SRC_NAME)
+	$(MAKE) -j$(HOST_NCPU) -C $(SRC_NAME)
 endif
 ifeq ($(CONFIG_FIRMWARE_INCLUDE_ARIA_WEB_CONTROL),y)
 	( if [ ! -f $(THISDIR)/$(SRC_ARIA_NG_NAME).zip ]; then \
@@ -57,8 +57,8 @@ configure:
 		--with-libz \
 		--with-openssl \
 		--with-libxml2 \
-		--with-xml-prefix=$(STAGEDIR) \
 		--with-libiconv-prefix=$(STAGEDIR) \
+		PKG_CONFIG_LIBDIR="$(STAGEDIR)/lib/pkgconfig" \
 		ZLIB_CFLAGS="-I$(STAGEDIR)/include" \
 		ZLIB_LIBS="-L$(STAGEDIR)/lib -lz" \
 		OPENSSL_CFLAGS="-I$(STAGEDIR)/include" \
@@ -80,7 +80,11 @@ ifeq ($(CONFIG_FIRMWARE_INCLUDE_ARIA_WEB_CONTROL),y)
 	cp -rf $(THISDIR)/ariaweb $(INSTALLDIR)/www
 endif
 ifeq ($(CONFIG_FIRMWARE_INCLUDE_ARIA2_NEW_PREBUILD_BIN),y)
-	$(ROMFSINST) $(THISDIR)/aria2-bin/$(BIN_DIR_NAME)/aria2c /usr/bin/aria2c
+ifeq ($(CONFIG_PRODUCT),MT7621)
+	$(ROMFSINST) -S $(THISDIR)/aria2-bin/$(BIN_DIR_NAME)/mipsel_1004kc/aria2c /usr/bin/aria2c
+else
+	$(ROMFSINST) -S $(THISDIR)/aria2-bin/$(BIN_DIR_NAME)/mipsel_24kc/aria2c /usr/bin/aria2c
+endif
 else
 	$(ROMFSINST) $(THISDIR)/$(SRC_NAME)/src/aria2c /usr/bin/aria2c
 endif

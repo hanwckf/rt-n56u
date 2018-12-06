@@ -91,7 +91,6 @@ AllowAgentForwarding no
 #PrintLastLog yes
 #TCPKeepAlive yes
 #UseLogin no
-UsePrivilegeSeparation yes
 #PermitUserEnvironment no
 #Compression delayed
 #ClientAliveInterval 0

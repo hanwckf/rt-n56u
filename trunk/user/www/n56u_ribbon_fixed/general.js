@@ -407,6 +407,8 @@ function is_string2(o,e) {
 function validate_ssidchar(ch) {
     if (ch >= 32 && ch <= 126)
         return true;
+    if (ch >= 0x4e00 && ch <= 0x9fa5)
+        return true;
     return false;
 }
 

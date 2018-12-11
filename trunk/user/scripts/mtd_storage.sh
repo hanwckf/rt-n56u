@@ -269,6 +269,9 @@ func_fill()
 #modprobe ip_set_list_set
 #modprobe xt_set
 
+#drop caches
+sync && echo 3 > /proc/sys/vm/drop_caches
+
 EOF
 		chmod 755 "$script_started"
 	fi

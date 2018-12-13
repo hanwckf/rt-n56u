@@ -541,18 +541,10 @@ void restart_vlmcsd(void);
 #if defined(APP_NAPT66)
 void start_napt66(void);
 #endif
-#if defined(APP_CHINADNS)
-void stop_chinadns(void);
-void start_chinadns(void);
-void restart_chinadns(void);
-#endif
 #if defined(APP_DNSFORWARDER)
 void stop_dnsforwarder(void);
 void start_dnsforwarder(void);
 void restart_dnsforwarder(void);
-#endif
-#if defined(APP_DNSMASQ_CHINA_CONF)
-void update_dnsmasq_china_conf(void);
 #endif
 
 /* services_ex.c */

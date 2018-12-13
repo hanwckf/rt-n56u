@@ -387,14 +387,11 @@ tabtitle[9] = new Array("", "<#menu5_7_2#>", "<#menu5_7_3#>", "<#menu5_7_5#>", "
 if (found_app_scutclient()){
 	tabtitle[10] = new Array("", "<#menu5_1_1#>","<#menu5_13_log#>");
 }
-if (found_app_chinadns()){
+if (found_app_dnsforwarder()){
 	tabtitle[11] = new Array("", "<#menu5_1_1#>");
 }
-if (found_app_dnsforwarder()){
-	tabtitle[12] = new Array("", "<#menu5_1_1#>");
-}
 if (found_app_shadowsocks()){
-	tabtitle[13] = new Array("", "<#menu5_1_1#>","<#menu5_16_20#>");
+	tabtitle[12] = new Array("", "<#menu5_1_1#>","<#menu5_16_20#>");
 }
 
 //Level 3 Tab title
@@ -413,17 +410,13 @@ if (found_app_scutclient()){
 	scutclient_array = new Array("", "scutclient.asp", "scutclient_log.asp");
 	tablink[10] = (scutclient_array);
 }
-if (found_app_chinadns()){
-	chinadns_array = new Array("", "Chinadns.asp");
-	tablink[11] = (chinadns_array);
-}
 if (found_app_dnsforwarder()){
 	dns_forwarder_array = new Array("", "dns-forwarder.asp");
-	tablink[12] = (dns_forwarder_array);
+	tablink[11] = (dns_forwarder_array);
 }
 if (found_app_shadowsocks()){
 	shadowsocks_array = new Array("","Shadowsocks.asp","Shadowsocks_log.asp");
-	tablink[13] = (shadowsocks_array);
+	tablink[12] = (shadowsocks_array);
 }
 
 //Level 2 Menu
@@ -431,10 +424,6 @@ menuL2_title = new Array(15)
 menuL2_title = new Array("", "<#menu5_11#>", "<#menu5_12#>", "<#menu5_2#>", "<#menu5_3#>", "<#menu5_5#>", "<#menu5_4#>", "<#menu5_6#>", "<#menu5_10#>", "<#menu5_9#>", "<#menu5_7#>");
 if (found_app_scutclient()){
 	menuL2_title.push("<#menu5_13#>");
-} else menuL2_title.push("");
-
-if (found_app_chinadns()){
-	menuL2_title.push("<#menu5_14#>");
 } else menuL2_title.push("");
 
 if (found_app_dnsforwarder()){
@@ -449,10 +438,6 @@ if (found_app_shadowsocks()){
 menuL2_link  = new Array("", tablink[0][1], tablink[1][1], tablink[2][1], tablink[3][1], tablink[4][1], tablink[5][1], tablink[6][1], tablink[7][1], tablink[8][1], tablink[9][1]);
 if (found_app_scutclient()){
 	menuL2_link.push(scutclient_array[1]);
-} else menuL2_link.push("");
-
-if (found_app_chinadns()){
-	menuL2_link.push(chinadns_array[1]);
 } else menuL2_link.push("");
 
 if (found_app_dnsforwarder()){

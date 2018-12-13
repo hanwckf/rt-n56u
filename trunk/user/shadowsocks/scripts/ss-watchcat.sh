@@ -25,7 +25,6 @@ detect_shadowsocks(){
 restart_apps(){
 	/usr/bin/shadowsocks.sh restart >/dev/null 2>&1 && loger "Problem decteted, restart shadowsocks."
 	[ -f /usr/bin/dns-forwarder.sh ] && [ "$(nvram get dns_forwarder_enable)" = "1" ] && /usr/bin/dns-forwarder.sh restart >/dev/null 2>&1 && loger "Problem decteted, restart dns-forwarder."
-	[ -f /usr/bin/chinadns.sh ] && [ "$(nvram get chinadns_enable)" = "1" ] && /usr/bin/chinadns.sh restart >/dev/null 2>&1 && loger "Problem decteted, restart chinadns."
 }
 
 [ -f $pidfile ] && kill -9 "$(cat $pidfile)" || echo "$$" > $pidfile

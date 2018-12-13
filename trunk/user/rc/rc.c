@@ -818,9 +818,6 @@ init_crontab(void)
 	ret |= system("/sbin/check_crontab.sh 0 8 a/10 a a update_chnroute.sh");
 	ret |= system("/sbin/check_crontab.sh 0 7 a/10 a a update_gfwlist.sh");
 #endif
-#if defined (APP_DNSMASQ_CHINA_CONF)
-	ret |= system("/sbin/check_crontab.sh 0 9 a/10 a a update_dnsmasq_china_conf.sh");
-#endif
 	return ret;
 }
 
@@ -1279,22 +1276,10 @@ handle_notifications(void)
 			restart_vlmcsd();
 		}
 #endif
-#if defined(APP_CHINADNS)
-		else if (strcmp(entry->d_name, RCN_RESTART_CHINADNS) == 0)
-		{
-			restart_chinadns();
-		}
-#endif
 #if defined(APP_DNSFORWARDER)
 		else if (strcmp(entry->d_name, RCN_RESTART_DNSFORWARDER) == 0)
 		{
 			restart_dnsforwarder();
-		}
-#endif
-#if defined(APP_DNSMASQ_CHINA_CONF)
-		else if (strcmp(entry->d_name, RCN_RESTART_DNSMASQ_CHINA_CONF_UPD) == 0)
-		{
-			update_dnsmasq_china_conf();
 		}
 #endif
 #if defined(APP_SMBD) || defined(APP_NMBD)

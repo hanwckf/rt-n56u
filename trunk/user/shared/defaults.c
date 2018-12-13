@@ -500,13 +500,6 @@ struct nvram_pair router_defaults[] = {
 	
 	/* vlmcsd */
 	{ "vlmcsd_enable", "0" },
-	
-	/* chinadns */
-	{ "chinadns_enable", "0" },
-	{ "chinadns_bind", "0.0.0.0" },
-	{ "chinadns_port", "5302" },
-	{ "chinadns_server", "114.114.114.114,127.0.0.1#5301" },
-	{ "chinadns_bi_filter", "1" },
 
 	/* dns-forwarder */
 	{ "dns_forwarder_enable", "0" },
@@ -541,10 +534,6 @@ struct nvram_pair router_defaults[] = {
 	{ "ss_watchcat", "1" },
 	{ "ss_update_chnroute", "0" },
 	{ "ss_update_gfwlist", "0" },
-	
-	/* dnsmasq-china-conf */
-	{ "dnsmasq_china_conf_update", "0" },
-	{ "dnsmasq_china_conf_dns_server", "114.114.114.114" },
 	
 	/* DHCP server parameters */
 	{ "dhcp_start", DEF_LAN_DHCP_BEG },	/* First assignable DHCP address */

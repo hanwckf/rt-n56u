@@ -335,23 +335,6 @@ void restart_vlmcsd(void){
 }
 #endif
 
-#if defined(APP_CHINADNS)
-void stop_chinadns(void){
-	eval("/usr/bin/chinadns.sh","stop");
-}
-
-void start_chinadns(void){
-	int chinadns_mode = nvram_get_int("chinadns_enable");
-	if (chinadns_mode == 1)
-		eval("/usr/bin/chinadns.sh","start");
-}
-
-void restart_chinadns(void){
-	stop_chinadns();
-	start_chinadns();
-}
-#endif
-
 #if defined(APP_DNSFORWARDER)
 void stop_dnsforwarder(void){
 	eval("/usr/bin/dns-forwarder.sh","stop");
@@ -383,12 +366,6 @@ void start_napt66(void){
 		else
 			logmessage("napt66","Invalid wan6 ifname!");
 	}
-}
-#endif
-
-#if defined(APP_DNSMASQ_CHINA_CONF)
-void update_dnsmasq_china_conf(void){
-	eval("sh","-c","/usr/bin/update_dnsmasq_china_conf.sh force &");
 }
 #endif
 
@@ -595,9 +572,6 @@ start_services_once(int is_ap_mode)
 #endif
 #if defined(APP_DNSFORWARDER)
 	start_dnsforwarder();
-#endif
-#if defined(APP_CHINADNS)
-	start_chinadns();
 #endif
 #if defined(APP_SHADOWSOCKS)
 	start_ss();

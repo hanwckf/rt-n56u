@@ -789,17 +789,6 @@
 	};
 #endif
 
-#if defined(APP_CHINADNS)
-	struct variable variables_ChinadnsConf[] = {
-			{"chinadns_enable", "", NULL, EVM_RESTART_CHINADNS},
-			{"chinadns_bind", "", NULL, EVM_RESTART_CHINADNS},
-			{"chinadns_port", "", NULL, EVM_RESTART_CHINADNS},			
-			{"chinadns_server", "", NULL, EVM_RESTART_CHINADNS},			
-			{"chinadns_bi_filter", "", NULL, EVM_RESTART_CHINADNS},
-			{0,0,0,0}
-	};
-#endif
-
 #if defined(APP_DNSFORWARDER)
 	struct variable variables_dnsforwarderConf[] = {
 			{"dns_forwarder_enable", "", NULL, EVM_RESTART_DNSFORWARDER},
@@ -836,7 +825,6 @@
 			{"ss-tunnel_local_port","",NULL, EVM_RESTART_SS_TUNNEL},
 			{"ss-tunnel_remote","",NULL, EVM_RESTART_SS_TUNNEL},
 			{"ss-tunnel_mtu","",NULL, EVM_RESTART_SS_TUNNEL},
-			{"dnsmasq_china_conf_update","",NULL,FALSE},
 			{0,0,0,0}
 	};
 #endif
@@ -957,9 +945,6 @@
 #if defined(APP_SHADOWSOCKS)
 		{"ShadowsocksConf",		variables_ShadowsocksConf},
 #endif
-#if defined(APP_CHINADNS)
-		{"ChinadnsConf",		variables_ChinadnsConf},
-#endif
 		{"LANGUAGE",			variables_Language},
 		{0,0}
 	};
@@ -1032,9 +1017,6 @@
 #endif
 #if defined(APP_VLMCSD)
 		{EVM_RESTART_VLMCSD,	EVT_RESTART_VLMCSD,		RCN_RESTART_VLMCSD,	0},
-#endif
-#if defined(APP_CHINADNS)
-		{EVM_RESTART_CHINADNS,	EVT_RESTART_CHINADNS,	RCN_RESTART_CHINADNS, 0},
 #endif
 #if defined(APP_DNSFORWARDER)
 		{EVM_RESTART_DNSFORWARDER,	EVT_RESTART_DNSFORWARDER,	RCN_RESTART_DNSFORWARDER, 0},

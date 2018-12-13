@@ -67,8 +67,6 @@
 #define RCN_RESTART_CHNROUTE_UPD	"restart_chnroute_upd"
 #define RCN_RESTART_DNSFORWARDER	"restart_dns_forwarder"
 #define RCN_RESTART_SS_TUNNEL		"restart_ss_tunnel"
-#define RCN_RESTART_CHINADNS		"restart_chinadns"
-#define RCN_RESTART_DNSMASQ_CHINA_CONF_UPD	"restart_dnsmasq_china_conf_upd"
 #define RCN_RESTART_GFWLIST_UPD		"restart_gfwlist_upd"
 #define RCN_RESTART_REBOOT		"restart_reboot"
 

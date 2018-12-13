@@ -1969,11 +1969,6 @@ static int shadowsocks_action_hook(int eid, webs_t wp, int argc, char **argv)
 	} else if (!strcmp(ss_action, "Update_gfwlist")) {
 		notify_rc(RCN_RESTART_GFWLIST_UPD);
 	}
-#if defined(APP_DNSMASQ_CHINA_CONF)
-	else if (!strcmp(ss_action, "Update_dnsmasq_china_conf")) {
-		notify_rc(RCN_RESTART_DNSMASQ_CHINA_CONF_UPD);
-	}
-#endif
 	websWrite(wp, "<script>restart_needed_time(%d);</script>\n", needed_seconds);
 	return 0;
 }
@@ -2002,19 +1997,6 @@ static int rules_count_hook(int eid, webs_t wp, int argc, char **argv)
 	if (strlen(count) > 0)
 		count[strlen(count) - 1] = 0;
 	websWrite(wp, "function chnroute_count() { return '%s';}\n", count);
-#if defined(APP_DNSMASQ_CHINA_CONF)
-	memset(count, 0, sizeof(count));
-	fstream = popen("cat /etc/storage/dnsmasq-china-conf/accelerated-domains.china.conf |wc -l","r");
-	if(fstream) {
-		fgets(count, sizeof(count), fstream);
-		pclose(fstream);
-	} else {
-		sprintf(count, "%d", 0);
-	}
-	if (strlen(count) > 0)
-		count[strlen(count) - 1] = 0;
-	websWrite(wp, "function dnsmasq_china_conf_count() { return '%s';}\n", count);	
-#endif
 #if defined(APP_SHADOWSOCKS)
 	memset(count, 0, sizeof(count));
 	fstream = popen("grep ^server /etc/storage/gfwlist/dnsmasq_gfwlist.conf |wc -l","r");
@@ -2031,15 +2013,6 @@ static int rules_count_hook(int eid, webs_t wp, int argc, char **argv)
 	return 0;
 }
 
-#endif
-
-#if defined(APP_CHINADNS)
-static int chinadns_status_hook(int eid, webs_t wp, int argc, char **argv)
-{
-	int status_code = pids("chinadns");
-	websWrite(wp, "function chinadns_status() { return %d;}\n", status_code);
-	return 0;
-}
 #endif
 
 #if defined(APP_DNSFORWARDER)
@@ -2225,11 +2198,6 @@ ej_firmware_caps_hook(int eid, webs_t wp, int argc, char **argv)
 #else
 	int found_app_napt66 = 0;
 #endif
-#if defined(APP_CHINADNS)
-	int found_app_chinadns = 1;
-#else
-	int found_app_chinadns = 0;
-#endif
 #if defined(APP_SHADOWSOCKS)
 	int found_app_shadowsocks = 1;
 #else
@@ -2239,11 +2207,6 @@ ej_firmware_caps_hook(int eid, webs_t wp, int argc, char **argv)
 	int found_app_dnsforwarder = 1;
 #else
 	int found_app_dnsforwarder = 0;
-#endif
-#if defined(APP_DNSMASQ_CHINA_CONF)
-	int found_app_dnsmasq_china_conf = 1;
-#else
-	int found_app_dnsmasq_china_conf = 0;
 #endif
 #if defined(APP_XUPNPD)
 	int found_app_xupnpd = 1;
@@ -2402,9 +2365,7 @@ ej_firmware_caps_hook(int eid, webs_t wp, int argc, char **argv)
 		"function found_app_vlmcsd() { return %d;}\n"
 		"function found_app_napt66() { return %d;}\n"
 		"function found_app_dnsforwarder() { return %d;}\n"
-		"function found_app_chinadns() { return %d;}\n"
 		"function found_app_shadowsocks() { return %d;}\n"
-		"function found_app_dnsmasq_china_conf() { return %d;}\n"
 		"function found_app_xupnpd() { return %d;}\n",
 		found_utl_hdparm,
 		found_app_ovpn,
@@ -2425,9 +2386,7 @@ ej_firmware_caps_hook(int eid, webs_t wp, int argc, char **argv)
 		found_app_vlmcsd,
 		found_app_napt66,
 		found_app_dnsforwarder,
-		found_app_chinadns,
 		found_app_shadowsocks,
-		found_app_dnsmasq_china_conf,
 		found_app_xupnpd
 	);
 
@@ -4074,9 +4033,6 @@ struct ej_handler ej_handlers[] =
 	{ "shadowsocks_action", shadowsocks_action_hook},
 	{ "shadowsocks_status", shadowsocks_status_hook},
 	{ "rules_count", rules_count_hook},
-#endif
-#if defined (APP_CHINADNS)
-	{ "chinadns_status", chinadns_status_hook},
 #endif
 #if defined (APP_DNSFORWARDER)
 	{ "dnsforwarder_status", dnsforwarder_status_hook},

@@ -35,14 +35,11 @@ $j(document).ready(function(){
 	init_itoggle('ss_update_chnroute');
 	init_itoggle('ss_update_gfwlist');
 	init_itoggle('ss-tunnel_enable');
-	if(found_app_dnsmasq_china_conf()){
-		init_itoggle('dnsmasq_china_conf_update');
-	}
 });
 
 function initial(){
 	show_banner(2);
-	show_menu(5,14,1);
+	show_menu(5,13,1);
 	show_footer();
 	var o1 = document.form.ss_method;
 	var o2 = document.form.ss_mode;
@@ -61,13 +58,6 @@ function initial(){
 	fill_ss_tunnel_status(shadowsocks_tunnel_status());
 	$("chnroute_count").innerHTML = '<#menu5_17_3#>' + chnroute_count() ;
 	$("gfwlist_count").innerHTML = '<#menu5_17_3#>' + gfwlist_count() ;
-	if(found_app_dnsmasq_china_conf()){
-		$("dnsmasq_china_conf_count").innerHTML = '<#menu5_17_3#>' + dnsmasq_china_conf_count() ;
-	} else {
-		showhide_div('div_dnsmasq_china_conf_0', 0);
-		showhide_div('div_dnsmasq_china_conf_1', 0);
-		showhide_div('div_dnsmasq_china_conf_2', 0);
-	}
 	switch_ss_type();
 }
 
@@ -460,7 +450,7 @@ function fill_ss_tunnel_status(status_code){
                                         <tr>
                                             <th width="50%"><#menu5_17_1#>&nbsp;&nbsp;&nbsp;&nbsp;<span class="label label-info" style="padding: 5px 5px 5px 5px;" id="gfwlist_count"></span></th>
                                             <td style="border-top: 0 none;" colspan="2">
-                                                <input type="button" id="btn_connect_3" class="btn btn-info" value=<#menu5_17_2#> onclick="submitInternet('Update_gfwlist');">
+                                                <input type="button" id="btn_connect_4" class="btn btn-info" value=<#menu5_17_2#> onclick="submitInternet('Update_gfwlist');">
                                             </td>
                                         </tr>
 
@@ -475,29 +465,6 @@ function fill_ss_tunnel_status(status_code){
                                                 <div style="position: absolute; margin-left: -10000px;">
                                                     <input type="radio" value="1" name="ss_update_gfwlist" id="ss_update_gfwlist_1" <% nvram_match_x("", "ss_update_gfwlist", "1", "checked"); %>><#checkbox_Yes#>
                                                     <input type="radio" value="0" name="ss_update_gfwlist" id="ss_update_gfwlist_0" <% nvram_match_x("", "ss_update_gfwlist", "0", "checked"); %>><#checkbox_No#>
-                                                </div>
-                                            </td>
-                                        </tr>
-
-                                        <tr id="div_dnsmasq_china_conf_0"> <th colspan="2" style="background-color: #E3E3E3;"><#menu5_17#></th> </tr>
-
-                                        <tr id="div_dnsmasq_china_conf_1">
-                                            <th width="50%"><#menu5_17_1#>&nbsp;&nbsp;&nbsp;&nbsp;<span class="label label-info" style="padding: 5px 5px 5px 5px;" id="dnsmasq_china_conf_count"></span></th>
-                                            <td style="border-top: 0 none;" colspan="2">
-                                                <input type="button" id="btn_connect_4" class="btn btn-info" value=<#menu5_17_2#> onclick="submitInternet('Update_dnsmasq_china_conf');">
-                                            </td>
-                                        </tr>
-
-                                        <tr id="div_dnsmasq_china_conf_2"> <th width="50%"><#menu5_16_19#></th>
-                                            <td>
-                                                <div class="main_itoggle">
-                                                    <div id="dnsmasq_china_conf_update_on_of">
-                                                        <input type="checkbox" id="dnsmasq_china_conf_update_fake" <% nvram_match_x("", "dnsmasq_china_conf_update", "1", "value=1 checked"); %><% nvram_match_x("", "dnsmasq_china_conf_update", "0", "value=0"); %>>
-                                                    </div>
-                                                </div>
-                                                <div style="position: absolute; margin-left: -10000px;">
-                                                    <input type="radio" value="1" name="dnsmasq_china_conf_update" id="dnsmasq_china_conf_update_1" <% nvram_match_x("", "dnsmasq_china_conf_update", "1", "checked"); %>><#checkbox_Yes#>
-                                                    <input type="radio" value="0" name="dnsmasq_china_conf_update" id="dnsmasq_china_conf_update_0" <% nvram_match_x("", "dnsmasq_china_conf_update", "0", "checked"); %>><#checkbox_No#>
                                                 </div>
                                             </td>
                                         </tr>

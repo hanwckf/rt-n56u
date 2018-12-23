@@ -1,17 +1,47 @@
 THISDIR = $(shell pwd)
-BIN_DIR = softether-v4.27-9666-beta
 
-all:
-	@echo "softethervpn done"
+SRC_VER = v4.25-9656
+SRC_NAME = softether-src-$(SRC_VER)-rtm
+SRC_DATE = 2018.01.15
+
+SRC_URL = http://www.softether-download.com/files/softether/$(SRC_VER)-rtm-$(SRC_DATE)-tree/Source_Code/$(SRC_NAME).tar.gz
+
+HAMCORE_DIR = $(SRC_VER)/src/bin/BuiltHamcoreFiles/unix
+CFLAGS += -minterlink-mips16
+
+all: download_test extract_test put_hamcore
+	$(MAKE) -j$(HOST_NCPU) -C $(SRC_VER) -f src/makefiles/linux_32bit.mak
+
+download_test:
+	( if [ ! -f $(SRC_NAME).tar.gz ]; then \
+		wget -t5 --timeout=20 --no-check-certificate -O $(SRC_NAME).tar.gz $(SRC_URL); \
+	fi )
+
+extract_test:
+	( if [ ! -d $(SRC_VER) ]; then \
+		tar xf $(SRC_NAME).tar.gz; \
+		patch --binary -d $(SRC_VER) -p1 < softethervpn-$(SRC_VER).patch ; \
+	fi )
+
+put_hamcore:
+	( mkdir -p $(HAMCORE_DIR) && cp -f hamcore-unix/$(SRC_VER)/hamcore.se2 $(HAMCORE_DIR)/hamcore.se2 && \
+		touch -t `date -d next-day +%Y%m%d%H%M` $(HAMCORE_DIR)/hamcore.se2 \
+	)
 
 romfs:
 ifeq ($(CONFIG_FIRMWARE_INCLUDE_SOFTETHERVPN_CMD),y)
-	$(ROMFSINST) -S -p +x $(THISDIR)/$(BIN_DIR)/vpncmd /etc_ro/vpncmd
+	$(ROMFSINST) -d -p +x $(THISDIR)/$(SRC_VER)/bin/vpncmd/vpncmd /etc_ro/softethervpn/vpncmd
 endif
 ifeq ($(CONFIG_FIRMWARE_INCLUDE_SOFTETHERVPN_CLIENT),y)
-	$(ROMFSINST) -S -p +x $(THISDIR)/$(BIN_DIR)/vpnclient /etc_ro/vpnclient
+	$(ROMFSINST) -d -p +x $(THISDIR)/$(SRC_VER)/bin/vpnclient/vpnclient /etc_ro/softethervpn/vpnclient
 endif
-	$(ROMFSINST) -S $(THISDIR)/$(BIN_DIR)/hamcore.se2 /etc_ro/hamcore.se2
+ifeq ($(CONFIG_FIRMWARE_INCLUDE_SOFTETHERVPN_SERVER),y)
+	$(ROMFSINST) -d -p +x $(THISDIR)/$(SRC_VER)/bin/vpnserver/vpnserver /etc_ro/softethervpn/vpnserver
+endif
+	$(ROMFSINST) -d -S $(THISDIR)/hamcore-unix/$(SRC_VER)/hamcore.se2 /etc_ro/softethervpn/hamcore.se2
+	$(ROMFSINST) $(THISDIR)/softethervpn.sh /usr/bin/softethervpn.sh
 
 clean:
-	@echo "softethervpn done"
+	if [ -d $(SRC_VER) ]; then \
+		make -C $(SRC_VER) -f src/makefiles/linux_32bit.mak clean ; \
+	fi

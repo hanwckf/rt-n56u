@@ -1,0 +1,80 @@
+--- a/src/Mayaqua/Mayaqua.h	2018-01-15 10:00:41.000000000 +0800
++++ b/src/Mayaqua/Mayaqua.h	2018-12-23 15:57:56.076680603 +0800
+@@ -289,17 +289,7 @@ int PASCAL WinMain(HINSTANCE hInst, HINS
+ #include <ifaddrs.h>
+ #endif	// MAYAQUA_SUPPORTS_GETIFADDRS
+ 
+-#ifdef	UNIX_LINUX
+-typedef void *iconv_t;
+-iconv_t iconv_open (__const char *__tocode, __const char *__fromcode);
+-size_t iconv (iconv_t __cd, char **__restrict __inbuf,
+-                     size_t *__restrict __inbytesleft,
+-                     char **__restrict __outbuf,
+-                     size_t *__restrict __outbytesleft);
+-int iconv_close (iconv_t __cd);
+-#else	// UNIX_LINUX
+ #include <iconv.h>
+-#endif	// UNIX_LINUX
+ 
+ 
+ 
+--- a/src/makefiles/linux_32bit.mak	2018-01-15 10:00:42.000000000 +0800
++++ b/src/makefiles/linux_32bit.mak	2018-12-23 15:57:07.360013929 +0800
+@@ -25,13 +25,13 @@
+ 
+ #CC=gcc
+ 
+-OPTIONS_COMPILE_DEBUG=-D_DEBUG -DDEBUG -DUNIX -DUNIX_LINUX -D_REENTRANT -DREENTRANT -D_THREAD_SAFE -D_THREADSAFE -DTHREAD_SAFE -DTHREADSAFE -D_FILE_OFFSET_BITS=64 -I./src/ -I./src/Cedar/ -I./src/Mayaqua/ -g -fsigned-char
++OPTIONS_COMPILE_DEBUG=$(CFLAGS) -D_DEBUG -DDEBUG -DUNIX -DUNIX_LINUX -D_REENTRANT -DREENTRANT -D_THREAD_SAFE -D_THREADSAFE -DTHREAD_SAFE -DTHREADSAFE -D_FILE_OFFSET_BITS=64 -I./src/ -I./src/Cedar/ -I./src/Mayaqua/ -g -fsigned-char
+ 
+-OPTIONS_LINK_DEBUG=-g -fsigned-char -lm -ldl -lrt -lpthread -lssl -lcrypto -lreadline -lncurses -lz
++OPTIONS_LINK_DEBUG=$(LDFLAGS) -g -fsigned-char -lm -ldl -lrt -lpthread -lssl -lcrypto -lreadline -lncursesw -lz -liconv
+ 
+-OPTIONS_COMPILE_RELEASE=-DNDEBUG -DVPN_SPEED -DUNIX -DUNIX_LINUX -D_REENTRANT -DREENTRANT -D_THREAD_SAFE -D_THREADSAFE -DTHREAD_SAFE -DTHREADSAFE -D_FILE_OFFSET_BITS=64 -I./src/ -I./src/Cedar/ -I./src/Mayaqua/ -O2 -fsigned-char
++OPTIONS_COMPILE_RELEASE=$(CFLAGS) -DNDEBUG -DVPN_SPEED -DUNIX -DUNIX_LINUX -D_REENTRANT -DREENTRANT -D_THREAD_SAFE -D_THREADSAFE -DTHREAD_SAFE -DTHREADSAFE -D_FILE_OFFSET_BITS=64 -I./src/ -I./src/Cedar/ -I./src/Mayaqua/ -O2 -fsigned-char
+ 
+-OPTIONS_LINK_RELEASE=-O2 -fsigned-char -lm -ldl -lrt -lpthread -lssl -lcrypto -lreadline -lncurses -lz
++OPTIONS_LINK_RELEASE=$(LDFLAGS) -O2 -fsigned-char -lm -ldl -lrt -lpthread -lssl -lcrypto -lreadline -lncursesw -lz -liconv
+ 
+ INSTALL_BINDIR=/usr/bin/
+ INSTALL_VPNSERVER_DIR=/usr/vpnserver/
+--- a/src/Mayaqua/Network.c	2018-01-15 10:00:41.000000000 +0800
++++ b/src/Mayaqua/Network.c	2018-12-23 15:59:16.083347308 +0800
+@@ -9429,7 +9429,7 @@ void UnixInitAsyncSocket(SOCK *sock)
+ 		UnixSetSocketNonBlockingMode(sock->socket, true);
+ 	}
+ 
+-#if OPENSSL_VERSION_NUMBER < 0x10100000L
++#if 0
+ 	if (sock->ssl != NULL && sock->ssl->s3 != NULL)
+ 	{
+ 		sock->Ssl_Init_Async_SendAlert[0] = sock->ssl->s3->send_alert[0];
+--- a/src/Mayaqua/Internat.c	2018-01-15 10:00:41.000000000 +0800
++++ b/src/Mayaqua/Internat.c	2018-12-23 15:58:47.430013970 +0800
+@@ -123,7 +123,7 @@
+ #include <Mayaqua/Mayaqua.h>
+ 
+ extern LOCK *token_lock;
+-static char charset[MAX_SIZE] = "EUCJP";
++static char charset[MAX_SIZE] = "utf-8";
+ static LOCK *iconv_lock = NULL;
+ void *iconv_cache_wide_to_str = 0;
+ void *iconv_cache_str_to_wide = 0;
+@@ -938,7 +938,7 @@ void InitInternational()
+ #ifdef	UNIX_MACOS
+ 		StrCpy(charset, sizeof(charset), "utf-8");
+ #else	// UNIX_MACOS
+-		StrCpy(charset, sizeof(charset), "EUCJP");
++		StrCpy(charset, sizeof(charset), "utf-8");
+ #endif	// UNIX_MACOS
+ 		d = IconvWideToStrInternal();
+ 		if (d == (void *)-1)
+@@ -1198,7 +1198,7 @@ void GetCurrentCharSet(char *name, UINT
+ 		}
+ 		else
+ 		{
+-			StrCpy(name, size, "eucJP");
++			StrCpy(name, size, "utf-8");
+ 		}
+ 	}
+ 	FreeToken(t);

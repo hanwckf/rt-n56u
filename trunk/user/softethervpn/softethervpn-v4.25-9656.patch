@@ -39,16 +39,16 @@
  INSTALL_BINDIR=/usr/bin/
  INSTALL_VPNSERVER_DIR=/usr/vpnserver/
 --- a/src/Mayaqua/Network.c	2018-01-15 10:00:41.000000000 +0800
-+++ b/src/Mayaqua/Network.c	2018-12-23 15:59:16.083347308 +0800
-@@ -9429,7 +9429,7 @@ void UnixInitAsyncSocket(SOCK *sock)
- 		UnixSetSocketNonBlockingMode(sock->socket, true);
- 	}
- 
++++ b/src/Mayaqua/Network.c	2018-12-23 22:05:48.396667000 +0800
+@@ -13025,7 +13025,7 @@ bool StartSSLEx(SOCK *sock, X *x, K *pri
+ 		{
+ 			if (client_tls == false)
+ 			{
 -#if OPENSSL_VERSION_NUMBER < 0x10100000L
 +#if 0
- 	if (sock->ssl != NULL && sock->ssl->s3 != NULL)
- 	{
- 		sock->Ssl_Init_Async_SendAlert[0] = sock->ssl->s3->send_alert[0];
+ 				SSL_CTX_set_ssl_version(ssl_ctx, SSLv3_method());
+ #else
+ 				SSL_CTX_set_ssl_version(ssl_ctx, SSLv23_method());
 --- a/src/Mayaqua/Internat.c	2018-01-15 10:00:41.000000000 +0800
 +++ b/src/Mayaqua/Internat.c	2018-12-23 15:58:47.430013970 +0800
 @@ -123,7 +123,7 @@

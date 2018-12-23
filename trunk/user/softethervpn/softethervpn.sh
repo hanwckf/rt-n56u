@@ -18,7 +18,17 @@ func_stop(){
 	[ -f $vpn_exec_dir/$1 ] && LANG=en_US.UTF-8 $vpn_exec_dir/$1 stop
 }
 
+func_save(){
+	mkdir -p $vpn_conf
+	[ -f $vpn_exec_dir/vpn_client.config ] && cp -f $vpn_exec_dir/vpn_client.config $vpn_conf/vpn_client.config
+	[ -f $vpn_exec_dir/vpn_server.config ] && cp -f $vpn_exec_dir/vpn_server.config $vpn_conf/vpn_server.config
+	mtd_storage.sh save
+}
+
 case "$1" in
+save)
+		func_save
+	;;
 start_srv)
 		func_start vpnserver
 	;;
@@ -32,7 +42,7 @@ stop_cli)
 		func_stop vpnclient
 	;;
 *)
-		echo "Usage: $0 { start_srv | start_cli | stop_srv | stop_cli }"
+		echo "Usage: $0 { start_srv | start_cli | stop_srv | stop_cli | save }"
 		exit 1
 	;;
 esac

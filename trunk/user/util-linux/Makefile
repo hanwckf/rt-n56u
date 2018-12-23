@@ -19,9 +19,7 @@ endif
 
 all: config_test
 	$(MAKE) -j$(HOST_NCPU) -C $(SRC_NAME) && \
-	$(MAKE) -C $(SRC_NAME) install DESTDIR=$(THISDIR)/install && \
-	cp -rfP $(THISDIR)/install/lib $(STAGEDIR) && \
-	cp -rfP $(THISDIR)/install/include $(STAGEDIR)
+	$(MAKE) -C $(SRC_NAME) install DESTDIR=""
 
 config_test:
 	( if [ -f ./config_done ]; then \
@@ -35,7 +33,7 @@ configure:
 	PKG_CONFIG_PATH=$(STAGEDIR)/lib/pkgconfig \
 	scanf_cv_type_modifier=no \
 	./configure \
-		--prefix= \
+		--prefix=$(STAGEDIR) \
 		--without-pam \
 		--without-ncurses \
 		--without-slang \
@@ -81,11 +79,11 @@ clean:
 	rm -rf install
 
 romfs:
-	$(ROMFSINST) $(THISDIR)/install/bin/hexdump /usr/bin/hexdump
+	$(ROMFSINST) $(STAGEDIR)/bin/hexdump /usr/bin/hexdump
 ifeq ($(BLKID_ENABLED),y)
-	$(ROMFSINST) $(THISDIR)/install/sbin/blkid /sbin/blkid
-	$(ROMFSINST) $(THISDIR)/install/lib/libblkid.so.1.1.0 /lib/libblkid.so.1.1.0
-	$(ROMFSINST) $(THISDIR)/install/lib/libuuid.so.1.3.0 /lib/libuuid.so.1.3.0
+	$(ROMFSINST) $(STAGEDIR)/sbin/blkid /sbin/blkid
+	$(ROMFSINST) $(STAGEDIR)/lib/libblkid.so.1.1.0 /lib/libblkid.so.1.1.0
+	$(ROMFSINST) $(STAGEDIR)/lib/libuuid.so.1.3.0 /lib/libuuid.so.1.3.0
 	$(ROMFSINST) -s libblkid.so.1.1.0 /lib/libblkid.so
 	$(ROMFSINST) -s libblkid.so.1.1.0 /lib/libblkid.so.1
 	$(ROMFSINST) -s libuuid.so.1.3.0 /lib/libuuid.so

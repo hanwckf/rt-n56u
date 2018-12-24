@@ -76,7 +76,6 @@ clean:
 		$(MAKE) -C $(SRC_NAME) distclean ; \
 	fi ; \
 	rm -f config_done
-	rm -rf install
 
 romfs:
 	$(ROMFSINST) $(STAGEDIR)/bin/hexdump /usr/bin/hexdump

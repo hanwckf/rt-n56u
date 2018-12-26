@@ -46,6 +46,8 @@ function initial(){
 		o2.options[1].text = "2R (867Mbps)";
 		o1.options[2].text = "3T (1300Mbps)";
 		o2.options[2].text = "3R (1300Mbps)";
+		o1.options[3].text = "4T (1733Mbps)";
+		o2.options[3].text = "4R (1733Mbps)";
 	}
 
 	if (typeof(support_5g_wid) === 'function'){
@@ -58,6 +60,8 @@ function initial(){
 		}
 	}
 
+	if (support_5g_stream_tx()<4)
+		document.form.wl_stream_tx.remove(3);
 	if (support_5g_stream_tx()<3)
 		document.form.wl_stream_tx.remove(2);
 	if (support_5g_stream_tx()<2) {
@@ -65,6 +69,8 @@ function initial(){
 		showhide_div("row_greenap", 0);
 	}
 
+	if (support_5g_stream_rx()<4)
+		document.form.wl_stream_rx.remove(3);
 	if (support_5g_stream_rx()<3)
 		document.form.wl_stream_rx.remove(2);
 	if (support_5g_stream_rx()<2)
@@ -184,6 +190,7 @@ function done_validating(action){
                                                     <option value="1" <% nvram_match_x("", "wl_stream_tx", "1", "selected"); %>>1T (150Mbps)</option>
                                                     <option value="2" <% nvram_match_x("", "wl_stream_tx", "2", "selected"); %>>2T (300Mbps)</option>
                                                     <option value="3" <% nvram_match_x("", "wl_stream_tx", "3", "selected"); %>>3T (450Mbps)</option>
+                                                    <option value="4" <% nvram_match_x("", "wl_stream_tx", "4", "selected"); %>>4T (600Mbps)</option>
                                                 </select>
                                             </td>
                                         </tr>
@@ -194,6 +201,7 @@ function done_validating(action){
                                                     <option value="1" <% nvram_match_x("", "wl_stream_rx", "1", "selected"); %>>1R (150Mbps)</option>
                                                     <option value="2" <% nvram_match_x("", "wl_stream_rx", "2", "selected"); %>>2R (300Mbps)</option>
                                                     <option value="3" <% nvram_match_x("", "wl_stream_rx", "3", "selected"); %>>3R (450Mbps)</option>
+                                                    <option value="4" <% nvram_match_x("", "wl_stream_rx", "4", "selected"); %>>4R (600Mbps)</option>
                                                 </select>
                                             </td>
                                         </tr>

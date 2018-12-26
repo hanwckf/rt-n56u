@@ -716,6 +716,7 @@ gen_ralink_config(int is_soc_ap, int is_aband, int disable_autoscan)
 			fprintf(fp, "MUTxRxEnable=%d\n", 3);
 		else
 			fprintf(fp, "MUTxRxEnable=%d\n", 0);
+
 		fprintf(fp, "ITxBfTimeout=%d\n", 0);
 		fprintf(fp, "ETxBfTimeout=%d\n", 0);
 		fprintf(fp, "ETxBfNoncompress=%d\n", 0);

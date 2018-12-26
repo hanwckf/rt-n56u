@@ -242,9 +242,6 @@ if [ -n "$CONFIG_MT7628_AP" ] ; then
 fi
 if [ -n "$CONFIG_MT7615_AP" ] ; then
 	dir_wifi_ver="4.4.2.1"
-	if [ "$CONFIG_FIRMWARE_WIFI_DRIVER" = "4.4.1.2" ] ; then
-		dir_wifi_ver="4.4.1.2"
-	fi
 	cp -rfL "$dir_wifi_src/rtpci/$dir_wifi_ver/mt7615" "$dir_wifi_dst/"
 	cp -rfL "$dir_wifi_src/rtpci/$dir_wifi_ver/mt7615_ap" "$dir_wifi_dst/"
 fi

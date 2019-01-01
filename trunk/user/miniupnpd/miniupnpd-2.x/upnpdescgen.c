@@ -1,8 +1,8 @@
-/* $Id: upnpdescgen.c,v 1.86 2018/07/06 12:05:48 nanard Exp $ */
-/* vim: tabstop=4 shiftwidth=4 noexpandtab
- * MiniUPnP project
+/* $Id: upnpdescgen.c,v 1.82 2016/02/16 12:15:02 nanard Exp $ */
+/* vim: tabstop=4 shiftwidth=4 noexpandtab */
+/* MiniUPnP project
  * http://miniupnp.free.fr/ or http://miniupnp.tuxfamily.org/
- * (c) 2006-2018 Thomas Bernard
+ * (c) 2006-2016 Thomas Bernard
  * This software is subject to the conditions detailed
  * in the LICENCE file provided within the distribution */
 
@@ -535,6 +535,16 @@ static const struct stateVar WANIPCnVars[] =
 	{"PortMappingEnabled", 1, 0}, /* Required */
 /* 10 */
 	{"PortMappingLeaseDuration", 3, 2, 1}, /* required */
+	/* TODO : for IGD v2 :
+	 * <stateVariable sendEvents="no">
+	 *   <name>PortMappingLeaseDuration</name>
+	 *   <dataType>ui4</dataType>
+	 *   <defaultValue>Vendor-defined</defaultValue>
+	 *   <allowedValueRange>
+	 *      <minimum>0</minimum>
+	 *      <maximum>604800</maximum>
+	 *   </allowedValueRange>
+	 * </stateVariable> */
 	{"RemoteHost", 0, 0},   /* required. Default : empty string */
 	{"ExternalPort", 2, 0}, /* required */
 	{"InternalPort", 2, 0, 3}, /* required */
@@ -884,7 +894,6 @@ static char *
 genXML(char * str, int * len, int * tmplen,
                    const struct XMLElt * p)
 {
-#define GENXML_STACK_SIZE 16
 	unsigned short i, j;
 	unsigned long k;
 	int top;
@@ -894,7 +903,7 @@ genXML(char * str, int * len, int * tmplen,
 		unsigned short i;
 		unsigned short j;
 		const char * eltname;
-	} pile[GENXML_STACK_SIZE]; /* stack */
+	} pile[16]; /* stack */
 	top = -1;
 	i = 0;	/* current node */
 	j = 1;	/* i + number of nodes*/
@@ -905,35 +914,13 @@ genXML(char * str, int * len, int * tmplen,
 			return str;
 		if(eltname[0] == '/')
 		{
-			/* leaf node */
 			if(p[i].data && p[i].data[0])
 			{
 				/*printf("<%s>%s<%s>\n", eltname+1, p[i].data, eltname); */
 				str = strcat_char(str, len, tmplen, '<');
 				str = strcat_str(str, len, tmplen, eltname+1);
 				str = strcat_char(str, len, tmplen, '>');
-#ifdef RANDOMIZE_URLS
-				if(p[i].data[0] == '/')
-				{
-					/* prepend all URL paths with a "random" value */
-					str = strcat_char(str, len, tmplen, '/');
-					str = strcat_str(str, len, tmplen, random_url);
-				}
-#endif /* RANDOMIZE_URLS */
 				str = strcat_str(str, len, tmplen, p[i].data);
-#ifdef IGD_V2
-				/* checking a single 'u' saves us 4 strcmp() calls most of the time */
-				if (GETFLAG(FORCEIGDDESCV1MASK) && (p[i].data[0] == 'u'))
-				{
-					if ((strcmp(p[i].data, DEVICE_TYPE_IGD) == 0) ||
-						(strcmp(p[i].data, DEVICE_TYPE_WAN) == 0)  ||
-						(strcmp(p[i].data, DEVICE_TYPE_WANC) == 0) ||
-						(strcmp(p[i].data, SERVICE_TYPE_WANIPC) == 0) )
-					{
-						str[*len - 1] = '1';	/* Change the version number to 1 */
-					}
-				}
-#endif
 				str = strcat_char(str, len, tmplen, '<');
 				str = strcat_str(str, len, tmplen, eltname);
 				str = strcat_char(str, len, tmplen, '>');
@@ -962,7 +949,6 @@ genXML(char * str, int * len, int * tmplen,
 		}
 		else
 		{
-			/* node with child(ren) */
 			/*printf("<%s>\n", eltname); */
 			str = strcat_char(str, len, tmplen, '<');
 			str = strcat_str(str, len, tmplen, eltname);
@@ -977,17 +963,11 @@ genXML(char * str, int * len, int * tmplen,
 			k = (unsigned long)p[i].data;
 			i = k & 0xffff;
 			j = i + (k >> 16);
-			if(top < (GENXML_STACK_SIZE - 1)) {
-				top++;
-				/*printf(" +pile[%d]\t%d %d\n", top, i, j); */
-				pile[top].i = i;
-				pile[top].j = j;
-				pile[top].eltname = eltname;
-#ifdef DEBUG
-			} else {
-				fprintf(stderr, "*** GenXML(): stack OVERFLOW ***\n");
-#endif /* DEBUG */
-			}
+			top++;
+			/*printf(" +pile[%d]\t%d %d\n", top, i, j); */
+			pile[top].i = i;
+			pile[top].j = j;
+			pile[top].eltname = eltname;
 		}
 	}
 }
@@ -1281,9 +1261,8 @@ genEventVars(int * len, const struct serviceDesc * s)
 				if(use_ext_ip_addr)
 					str = strcat_str(str, len, &tmplen, use_ext_ip_addr);
 				else {
-					struct in_addr addr;
 					char ext_ip_addr[INET_ADDRSTRLEN];
-					if(getifaddr(ext_if_name, ext_ip_addr, INET_ADDRSTRLEN, &addr, NULL) < 0 || addr_is_reserved(&addr)) {
+					if(getifaddr(ext_if_name, ext_ip_addr, INET_ADDRSTRLEN, NULL, NULL) < 0) {
 						str = strcat_str(str, len, &tmplen, "0.0.0.0");
 					} else {
 						str = strcat_str(str, len, &tmplen, ext_ip_addr);

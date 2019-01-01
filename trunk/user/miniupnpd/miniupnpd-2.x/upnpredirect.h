@@ -1,8 +1,7 @@
-/* $Id: upnpredirect.h,v 1.37 2018/05/03 08:27:41 nanard Exp $ */
-/* vim: tabstop=4 shiftwidth=4 noexpandtab
- * MiniUPnP project
- * http://miniupnp.free.fr/ or https://miniupnp.tuxfamily.org/
- * (c) 2006-2018 Thomas Bernard
+/* $Id: upnpredirect.h,v 1.35 2012/09/27 15:47:15 nanard Exp $ */
+/* MiniUPnP project
+ * http://miniupnp.free.fr/ or http://miniupnp.tuxfamily.org/
+ * (c) 2006-2012 Thomas Bernard
  * This software is subject to the conditions detailed
  * in the LICENCE file provided within the distribution */
 
@@ -16,13 +15,10 @@
 
 #ifdef ENABLE_LEASEFILE
 int reload_from_lease_file(void);
-#ifdef LEASEFILE_USE_REMAINING_TIME
-void lease_file_rewrite(void);
-#endif
 #endif
 
 /* upnp_redirect()
- * calls OS/fw dependent implementation of the redirection.
+ * calls OS/fw dependant implementation of the redirection.
  * protocol should be the string "TCP" or "UDP"
  * returns: 0 on success
  *          -1 failed to redirect

@@ -1,16 +1,13 @@
 #! /bin/sh
-# $Id: ip6tables_removeall.sh,v 1.2 2018/04/06 09:21:11 nanard Exp $
+# $Id: ip6tables_removeall.sh,v 1.1 2012/04/24 22:13:41 nanard Exp $
+IPTABLES=/sbin/ip6tables
 
-IPV6=1
-EXT=1
-. $(dirname "$0")/miniupnpd_functions.sh
+#change this parameters :
+EXTIF=eth0
 
 #removing the MINIUPNPD chain for filter
-if [ "$FDIRTY" = "${CHAIN}Chain" ]; then
-	$IPTABLES -t filter -F $CHAIN
-	$IPTABLES -t filter -D FORWARD -i $EXTIF ! -o $EXTIF -j $CHAIN
-	$IPTABLES -t filter -X $CHAIN
-elif [ "$FDIRTY" = "Chain" ]; then
-	$IPTABLES -t filter -F $CHAIN
-	$IPTABLES -t filter -X $CHAIN
-fi
+$IPTABLES -t filter -F MINIUPNPD
+#adding the rule to MINIUPNPD
+$IPTABLES -t filter -D FORWARD -i $EXTIF ! -o $EXTIF -j MINIUPNPD
+$IPTABLES -t filter -X MINIUPNPD
+

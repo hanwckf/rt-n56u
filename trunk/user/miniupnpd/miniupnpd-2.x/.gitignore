@@ -1,0 +1,4 @@
+*.o
+config.h
+miniupnpd
+miniupnpdctl

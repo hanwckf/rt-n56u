@@ -1,4 +1,4 @@
-# $Id: Makefile,v 1.91 2018/07/06 12:04:47 nanard Exp $
+# $Id: Makefile,v 1.89 2017/04/21 11:28:42 nanard Exp $
 # MiniUPnP project
 # http://miniupnp.free.fr/ or http://miniupnp.tuxfamily.org/
 # Author: Thomas Bernard
@@ -101,7 +101,6 @@ STDOBJS = miniupnpd.o upnphttp.o upnpdescgen.o upnpsoap.o \
           upnpredirect.o getifaddr.o daemonize.o upnpglobalvars.o \
           options.o upnppermissions.o minissdp.o natpmp.o pcpserver.o \
           upnpevents.o upnputils.o getconnstatus.o \
-          upnpstun.o \
           upnppinhole.o asyncsendto.o portinuse.o
 BSDOBJS = bsd/getifstats.o bsd/ifacewatcher.o bsd/getroute.o
 SUNOSOBJS = solaris/getifstats.o bsd/ifacewatcher.o bsd/getroute.o
@@ -140,13 +139,11 @@ TESTGETIFADDROBJS = testgetifaddr.o getifaddr.o
 MINIUPNPDCTLOBJS = miniupnpdctl.o
 TESTASYNCSENDTOOBJS = testasyncsendto.o asyncsendto.o upnputils.o bsd/getroute.o
 TESTPORTINUSEOBJS = testportinuse.o portinuse.o getifaddr.o
-TESTMINISSDPOBJS = testminissdp.o minissdp.o upnputils.o upnpglobalvars.o \
-                   asyncsendto.o bsd/getroute.o
 
 EXECUTABLES = miniupnpd testupnpdescgen testgetifstats \
               testupnppermissions miniupnpdctl \
               testgetifaddr testgetroute testasyncsendto \
-              testportinuse testssdppktgen testminissdp
+              testportinuse testssdppktgen
 
 .if $(OSNAME) == "Darwin"
 LIBS =
@@ -254,9 +251,6 @@ testasyncsendto:	config.h $(TESTASYNCSENDTOOBJS)
 
 testportinuse:	config.h $(TESTPORTINUSEOBJS)
 	$(CC) $(LDFLAGS) -o $@ $(TESTPORTINUSEOBJS) $(LIBS)
-
-testminissdp:	config.h $(TESTMINISSDPOBJS)
-	$(CC) $(LDFLAGS) -o $@ $(TESTMINISSDPOBJS) $(LIBS)
 
 # gmake :
 #	$(CC) $(CFLAGS) -o $@ $^

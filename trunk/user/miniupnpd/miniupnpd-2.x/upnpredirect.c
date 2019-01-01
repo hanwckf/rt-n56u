@@ -1,8 +1,8 @@
-/* $Id: upnpredirect.c,v 1.95 2018/07/06 12:05:48 nanard Exp $ */
+/* $Id: upnpredirect.c,v 1.91 2016/02/16 12:15:02 nanard Exp $ */
 /* vim: tabstop=4 shiftwidth=4 noexpandtab
  * MiniUPnP project
- * http://miniupnp.free.fr/ or https://miniupnp.tuxfamily.org/
- * (c) 2006-2018 Thomas Bernard
+ * http://miniupnp.free.fr/ or http://miniupnp.tuxfamily.org/
+ * (c) 2006-2016 Thomas Bernard
  * This software is subject to the conditions detailed
  * in the LICENCE file provided within the distribution */
 
@@ -25,7 +25,6 @@
 #include "upnpglobalvars.h"
 #include "upnpevents.h"
 #include "portinuse.h"
-#include "upnputils.h"
 #if defined(USE_NETFILTER)
 #include "netfilter/iptcrdr.h"
 #endif
@@ -109,15 +108,6 @@ lease_file_add(unsigned short eport,
 		return -1;
 	}
 
-	/* convert our time to unix time
-     * if LEASEFILE_USE_REMAINING_TIME is defined, only the remaining time is stored */
-	if (timestamp != 0) {
-		timestamp -= upnp_time();
-#ifndef LEASEFILE_USE_REMAINING_TIME
-		timestamp += time(NULL);
-#endif
-	}
-
 	fprintf(fd, "%s:%hu:%s:%hu:%u:%s\n",
 	        proto_itoa(proto), eport, iaddr, iport,
 	        timestamp, desc);
@@ -144,7 +134,8 @@ lease_file_remove(unsigned short eport, int proto)
 		return -1;
 	}
 
-	snprintf( tmpfilename, sizeof(tmpfilename), "%sXXXXXX", lease_file);
+	strncpy( tmpfilename, lease_file, sizeof(tmpfilename) );
+	strncat( tmpfilename, "XXXXXX", sizeof(tmpfilename) - strlen(tmpfilename));
 
 	fd = fopen( lease_file, "r");
 	if (fd==NULL) {
@@ -198,9 +189,6 @@ int reload_from_lease_file()
 	unsigned int leaseduration;
 	unsigned int timestamp;
 	time_t current_time;
-#ifndef LEASEFILE_USE_REMAINING_TIME
-	time_t current_unix_time;
-#endif
 	char line[128];
 	int r;
 
@@ -214,10 +202,7 @@ int reload_from_lease_file()
 		syslog(LOG_WARNING, "could not unlink file %s : %m", lease_file);
 	}
 
-	current_time = upnp_time();
-#ifndef LEASEFILE_USE_REMAINING_TIME
-	current_unix_time = time(NULL);
-#endif
+	current_time = time(NULL);
 	while(fgets(line, sizeof(line), fd)) {
 		syslog(LOG_DEBUG, "parsing lease file line '%s'", line);
 		proto = line;
@@ -265,18 +250,12 @@ int reload_from_lease_file()
 			*(p--) = '\0';
 
 		if(timestamp > 0) {
-#ifdef LEASEFILE_USE_REMAINING_TIME
-			leaseduration = timestamp;
-			timestamp += current_time;	/* convert to our time */
-#else
-			if(timestamp <= (unsigned int)current_unix_time) {
+			if(timestamp <= (unsigned int)current_time) {
 				syslog(LOG_NOTICE, "already expired lease in lease file");
 				continue;
 			} else {
-				leaseduration = timestamp - current_unix_time;
-				timestamp = leaseduration + current_time; /* convert to our time */
+				leaseduration = timestamp - current_time;
 			}
-#endif
 		} else {
 			leaseduration = 0;	/* default value */
 		}
@@ -295,35 +274,10 @@ int reload_from_lease_file()
 
 	return 0;
 }
-
-#ifdef LEASEFILE_USE_REMAINING_TIME
-void lease_file_rewrite(void)
-{
-	int index;
-	unsigned short eport, iport;
-	int proto;
-	char iaddr[32];
-	char desc[64];
-	char rhost[40];
-	unsigned int timestamp;
-
-	if (lease_file == NULL) return;
-	remove(lease_file);
-	for(index = 0; ; index++) {
-		if(get_redirect_rule_by_index(index, 0/*ifname*/, &eport, iaddr, sizeof(iaddr),
-		                              &iport, &proto, desc, sizeof(desc),
-		                              rhost, sizeof(rhost), &timestamp,
-		                              0, 0) < 0)
-			break;
-		if(lease_file_add(eport, iaddr, iport, proto, desc, timestamp) < 0)
-			break;
-	}
-}
-#endif
 #endif
 
 /* upnp_redirect()
- * calls OS/fw dependent implementation of the redirection.
+ * calls OS/fw dependant implementation of the redirection.
  * protocol should be the string "TCP" or "UDP"
  * returns: 0 on success
  *          -1 failed to redirect
@@ -399,7 +353,7 @@ upnp_redirect(const char * rhost, unsigned short eport,
 		    (rhost && (strcmp(rhost, rhost_old) == 0)))) {
 			syslog(LOG_INFO, "updating existing port mapping %hu %s (rhost '%s') => %s:%hu",
 				eport, protocol, rhost_old, iaddr_old, iport_old);
-			timestamp = (leaseduration > 0) ? upnp_time() + leaseduration : 0;
+			timestamp = (leaseduration > 0) ? time(NULL) + leaseduration : 0;
 			if(iport != iport_old) {
 				r = update_portmapping(ext_if_name, eport, proto, iport, desc, timestamp);
 			} else {
@@ -424,7 +378,7 @@ upnp_redirect(const char * rhost, unsigned short eport,
 		return -4;
 #endif /* CHECK_PORTINUSE */
 	} else {
-		timestamp = (leaseduration > 0) ? upnp_time() + leaseduration : 0;
+		timestamp = (leaseduration > 0) ? time(NULL) + leaseduration : 0;
 		syslog(LOG_INFO, "redirecting port %hu to %s:%hu protocol %s for: %s",
 			eport, iaddr, iport, protocol, desc);
 		return upnp_redirect_internal(rhost, eport, iaddr, iport, proto,
@@ -440,8 +394,6 @@ upnp_redirect_internal(const char * rhost, unsigned short eport,
 {
 	/*syslog(LOG_INFO, "redirecting port %hu to %s:%hu protocol %s for: %s",
 		eport, iaddr, iport, protocol, desc);			*/
-	if(disable_port_forwarding)
-		return -1;
 	if(add_redirect_rule2(ext_if_name, rhost, eport, iaddr, iport, proto,
 	                      desc, timestamp) < 0) {
 		return -1;
@@ -473,7 +425,7 @@ upnp_redirect_internal(const char * rhost, unsigned short eport,
 
 
 
-/* Firewall independent code which call the FW dependent code. */
+/* Firewall independant code which call the FW dependant code. */
 int
 upnp_get_redirection_infos(unsigned short eport, const char * protocol,
                            unsigned short * iport,
@@ -496,7 +448,7 @@ upnp_get_redirection_infos(unsigned short eport, const char * protocol,
 	                      0, 0);
 	if(r == 0 &&
 	   timestamp > 0 &&
-	   timestamp > (unsigned int)(current_time = upnp_time())) {
+	   timestamp > (unsigned int)(current_time = time(NULL))) {
 		*leaseduration = timestamp - current_time;
 	} else {
 		*leaseduration = 0;
@@ -529,7 +481,7 @@ upnp_get_redirection_infos_by_index(int index,
 		return -1;
 	else
 	{
-		current_time = upnp_time();
+		current_time = time(NULL);
 		*leaseduration = (timestamp > (unsigned int)current_time)
 		                 ? (timestamp - current_time)
 		                 : 0;
@@ -615,7 +567,7 @@ get_upnp_rules_state_list(int max_rules_number_target)
 	tmp = malloc(sizeof(struct rule_state));
 	if(!tmp)
 		return 0;
-	current_time = upnp_time();
+	current_time = time(NULL);
 	nextruletoclean_timestamp = 0;
 	while(get_redirect_rule_by_index(i, /*ifname*/0, &tmp->eport, 0, 0,
 	                              &iport, &proto, 0, 0, 0,0, &timestamp,
@@ -719,7 +671,7 @@ remove_unused_rules(struct rule_state * list)
 				       list->eport, proto_itoa(list->proto),
 				       packets, bytes);
 				if(_upnp_delete_redir(list->eport, list->proto) >= 0)
-				n++;
+					n++;
 			}
 		}
 		tmp = list;
@@ -781,3 +733,4 @@ write_ruleset_details(int s)
 	}
 }
 #endif
+

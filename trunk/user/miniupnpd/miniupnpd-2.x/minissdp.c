@@ -1,8 +1,7 @@
-/* $Id: minissdp.c,v 1.93 2018/04/22 19:36:58 nanard Exp $ */
-/* vim: tabstop=4 shiftwidth=4 noexpandtab
- * MiniUPnP project
- * http://miniupnp.free.fr/ or https://miniupnp.tuxfamily.org/
- * (c) 2006-2018 Thomas Bernard
+/* $Id: minissdp.c,v 1.85 2017/04/21 11:23:43 nanard Exp $ */
+/* MiniUPnP project
+ * http://miniupnp.free.fr/ or http://miniupnp.tuxfamily.org/
+ * (c) 2006-2017 Thomas Bernard
  * This software is subject to the conditions detailed
  * in the LICENCE file provided within the distribution */
 
@@ -16,13 +15,6 @@
 #include <arpa/inet.h>
 #include <errno.h>
 #include <syslog.h>
-
-#ifdef IP_RECVIF
-#include <sys/types.h>
-#include <sys/uio.h>
-#include <net/if.h>
-#include <net/if_dl.h>
-#endif
 
 #include "config.h"
 #if defined(ENABLE_IPV6) && defined(UPNP_STRICT)
@@ -39,10 +31,6 @@
 #include "asyncsendto.h"
 #include "codelength.h"
 #include "macros.h"
-
-#ifndef MIN
-#define MIN(x,y) (((x)<(y))?(x):(y))
-#endif /* MIN */
 
 /* SSDP ip/port */
 #define SSDP_PORT (1900)
@@ -165,7 +153,7 @@ OpenAndConfSSDPReceiveSocket(int ipv6)
 	struct sockaddr_storage sockname;
 	socklen_t sockname_len;
 	struct lan_addr_s * lan_addr;
-	const int on = 1;
+	int j = 1;
 
 	if( (s = socket(ipv6 ? PF_INET6 : PF_INET, SOCK_DGRAM, 0)) < 0)
 	{
@@ -189,43 +177,17 @@ OpenAndConfSSDPReceiveSocket(int ipv6)
 		struct sockaddr_in * saddr = (struct sockaddr_in *)&sockname;
 		saddr->sin_family = AF_INET;
 		saddr->sin_port = htons(SSDP_PORT);
-		/* NOTE : it seems it doesn't work when binding on the specific address */
+		/* NOTE : it seems it doesnt work when binding on the specific address */
 		/*saddr->sin_addr.s_addr = inet_addr(UPNP_MCAST_ADDR);*/
 		saddr->sin_addr.s_addr = htonl(INADDR_ANY);
 		/*saddr->sin_addr.s_addr = inet_addr(ifaddr);*/
 		sockname_len = sizeof(struct sockaddr_in);
 	}
 
-	if(setsockopt(s, SOL_SOCKET, SO_REUSEADDR, &on, sizeof(on)) < 0)
+	if(setsockopt(s, SOL_SOCKET, SO_REUSEADDR, &j, sizeof(j)) < 0)
 	{
 		syslog(LOG_WARNING, "setsockopt(udp, SO_REUSEADDR): %m");
 	}
-#ifdef IP_RECVIF
-	/* BSD */
-	if(!ipv6) {
-		if(setsockopt(s, IPPROTO_IP, IP_RECVIF, &on, sizeof(on)) < 0)
-		{
-			syslog(LOG_WARNING, "setsockopt(udp, IP_RECVIF): %m");
-		}
-	}
-#endif /* IP_RECVIF */
-#ifdef IP_PKTINFO
-	/* Linux */
-	if(!ipv6) {
-		if(setsockopt(s, IPPROTO_IP, IP_PKTINFO, &on, sizeof(on)) < 0)
-		{
-			syslog(LOG_WARNING, "setsockopt(udp, IP_PKTINFO): %m");
-		}
-	}
-#endif /* IP_PKTINFO */
-#if defined(ENABLE_IPV6) && defined(IPV6_RECVPKTINFO)
-	if(ipv6) {
-		if(setsockopt(s, IPPROTO_IP, IPV6_RECVPKTINFO, &on, sizeof(on)) < 0)
-		{
-			syslog(LOG_WARNING, "setsockopt(udp, IPV6_RECVPKTINFO): %m");
-		}
-	}
-#endif /* defined(ENABLE_IPV6) && defined(IPV6_RECVPKTINFO) */
 
 	if(!set_non_blocking(s))
 	{
@@ -236,7 +198,7 @@ OpenAndConfSSDPReceiveSocket(int ipv6)
 #if defined(SO_BINDTODEVICE) && !defined(MULTIPLE_EXTERNAL_IP)
 	/* One and only one LAN interface */
 	if(lan_addrs.lh_first != NULL && lan_addrs.lh_first->list.le_next == NULL
-	   && lan_addrs.lh_first->ifname[0] != '\0')
+	   && strlen(lan_addrs.lh_first->ifname) > 0)
 	{
 		if(setsockopt(s, SOL_SOCKET, SO_BINDTODEVICE,
 		              lan_addrs.lh_first->ifname,
@@ -264,7 +226,7 @@ OpenAndConfSSDPReceiveSocket(int ipv6)
 			{
 				syslog(LOG_WARNING,
 				       "Failed to add IPv6 multicast membership for interface %s",
-				       strlen(lan_addr->str) ? lan_addr->str : "NULL");
+				       lan_addr->str ? lan_addr->str : "NULL");
 			}
 		}
 	}
@@ -523,17 +485,10 @@ SendSSDPResponse(int s, const struct sockaddr * addr,
 		"USN: %s%s%.*s%s\r\n"
 		"EXT:\r\n"
 		"SERVER: " MINIUPNPD_SERVER_STRING "\r\n"
-#ifndef RANDOMIZE_URLS
 		"LOCATION: http://%s:%u" ROOTDESC_PATH "\r\n"
 #ifdef ENABLE_HTTPS
 		"SECURELOCATION.UPNP.ORG: https://%s:%u" ROOTDESC_PATH "\r\n"
-#endif	/* ENABLE_HTTPS */
-#else	/* RANDOMIZE_URLS */
-		"LOCATION: http://%s:%u/%s" ROOTDESC_PATH "\r\n"
-#ifdef ENABLE_HTTPS
-		"SECURELOCATION.UPNP.ORG: https://%s:%u/%s" ROOTDESC_PATH "\r\n"
-#endif	/* ENABLE_HTTPS */
-#endif	/* RANDOMIZE_URLS */
+#endif
 		"OPT: \"http://schemas.upnp.org/upnp/1/0/\"; ns=01\r\n" /* UDA v1.1 */
 		"01-NLS: %u\r\n" /* same as BOOTID. UDA v1.1 */
 		"BOOTID.UPNP.ORG: %u\r\n" /* UDA v1.1 */
@@ -546,15 +501,9 @@ SendSSDPResponse(int s, const struct sockaddr * addr,
 		uuidvalue, st_is_uuid ? "" : "::",
 		st_is_uuid ? 0 : st_len, st, suffix,
 		host, (unsigned int)http_port,
-#ifdef RANDOMIZE_URLS
-		random_url,
-#endif	/* RANDOMIZE_URLS */
 #ifdef ENABLE_HTTPS
 		host, (unsigned int)https_port,
-#ifdef RANDOMIZE_URLS
-		random_url,
-#endif	/* RANDOMIZE_URLS */
-#endif	/* ENABLE_HTTPS */
+#endif
 		upnp_bootid, upnp_bootid, upnp_configid);
 	if(l<0)
 	{
@@ -642,17 +591,10 @@ SendSSDPNotify(int s, const struct sockaddr * dest, socklen_t dest_len,
 		"NOTIFY * HTTP/1.1\r\n"
 		"HOST: %s:%d\r\n"
 		"CACHE-CONTROL: max-age=%u\r\n"
-#ifndef RANDOMIZE_URLS
 		"LOCATION: http://%s:%u" ROOTDESC_PATH "\r\n"
 #ifdef ENABLE_HTTPS
 		"SECURELOCATION.UPNP.ORG: https://%s:%u" ROOTDESC_PATH "\r\n"
-#endif	/* ENABLE_HTTPS */
-#else	/* RANDOMIZE_URLS */
-		"LOCATION: http://%s:%u/%s" ROOTDESC_PATH "\r\n"
-#ifdef ENABLE_HTTPS
-		"SECURELOCATION.UPNP.ORG: https://%s:%u/%s" ROOTDESC_PATH "\r\n"
-#endif	/* ENABLE_HTTPS */
-#endif	/* RANDOMIZE_URLS */
+#endif
 		"SERVER: " MINIUPNPD_SERVER_STRING "\r\n"
 		"NT: %s%s\r\n"
 		"USN: %s%s%s%s\r\n"
@@ -665,15 +607,9 @@ SendSSDPNotify(int s, const struct sockaddr * dest, socklen_t dest_len,
 		dest_str, SSDP_PORT,			/* HOST: */
 		lifetime,						/* CACHE-CONTROL: */
 		host, (unsigned int)http_port,	/* LOCATION: */
-#ifdef RANDOMIZE_URLS
-		random_url,
-#endif	/* RANDOMIZE_URLS */
 #ifdef ENABLE_HTTPS
 		host, (unsigned int)https_port,	/* SECURE-LOCATION: */
-#ifdef RANDOMIZE_URLS
-		random_url,
-#endif	/* RANDOMIZE_URLS */
-#endif	/* ENABLE_HTTPS */
+#endif
 		nt, suffix,						/* NT: */
 		usn1, usn2, usn3, suffix,		/* USN: */
 		upnp_bootid,					/* 01-NLS: */
@@ -851,53 +787,17 @@ ProcessSSDPRequest(int s, unsigned short http_port)
 {
 	int n;
 	char bufr[1500];
+	socklen_t len_r;
 #ifdef ENABLE_IPV6
 	struct sockaddr_storage sendername;
+	len_r = sizeof(struct sockaddr_storage);
 #else
 	struct sockaddr_in sendername;
+	len_r = sizeof(struct sockaddr_in);
 #endif
-	int source_ifindex = -1;
-#ifdef IP_PKTINFO
-	char cmbuf[CMSG_SPACE(sizeof(struct in_pktinfo))];
-	struct iovec iovec = {
-		.iov_base = bufr,
-		.iov_len = sizeof(bufr)
-	};
-	struct msghdr mh = {
-		.msg_name = &sendername,
-		.msg_namelen = sizeof(sendername),
-		.msg_iov = &iovec,
-		.msg_iovlen = 1,
-		.msg_control = cmbuf,
-		.msg_controllen = sizeof(cmbuf)
-	};
-	struct cmsghdr *cmptr;
-#endif /* IP_PKTINFO */
-#ifdef IP_RECVIF
-	char cmbuf[CMSG_SPACE(sizeof(struct sockaddr_dl))];
-	struct iovec iovec = {
-		.iov_base = bufr,
-		.iov_len = sizeof(bufr)
-	};
-	struct msghdr mh = {
-		.msg_name = &sendername,
-		.msg_namelen = sizeof(sendername),
-		.msg_iov = &iovec,
-		.msg_iovlen = 1,
-		.msg_control = cmbuf,
-		.msg_controllen = sizeof(cmbuf)
-	};
-	struct cmsghdr *cmptr;
-#endif /* IP_RECVIF */
 
-#if defined(IP_RECVIF) || defined(IP_PKTINFO)
-	n = recvmsg(s, &mh, 0);
-#else
-	socklen_t len_r;
-	len_r = sizeof(sendername);
 	n = recvfrom(s, bufr, sizeof(bufr), 0,
 	             (struct sockaddr *)&sendername, &len_r);
-#endif /* defined(IP_RECVIF) || defined(IP_PKTINFO) */
 	if(n < 0)
 	{
 		/* EAGAIN, EWOULDBLOCK, EINTR : silently ignore (try again next time)
@@ -910,45 +810,11 @@ ProcessSSDPRequest(int s, unsigned short http_port)
 		}
 		return;
 	}
-
-#if defined(IP_RECVIF) || defined(IP_PKTINFO)
-	for(cmptr = CMSG_FIRSTHDR(&mh); cmptr != NULL; cmptr = CMSG_NXTHDR(&mh, cmptr))
-	{
-		syslog(LOG_DEBUG, "level=%d type=%d", cmptr->cmsg_level, cmptr->cmsg_type);
-#ifdef IP_PKTINFO
-		if(cmptr->cmsg_level == IPPROTO_IP && cmptr->cmsg_type == IP_PKTINFO)
-		{
-			struct in_pktinfo * pi;	/* fields : ifindex, spec_dst, addr */
-			pi = (struct in_pktinfo *)CMSG_DATA(cmptr);
-			syslog(LOG_DEBUG, "ifindex = %u  %s", pi->ipi_ifindex, inet_ntoa(pi->ipi_spec_dst));
-			source_ifindex = pi->ipi_ifindex;
-		}
-#endif /* IP_PKTINFO */
-#if defined(ENABLE_IPV6) && defined(IPV6_RECVPKTINFO)
-		if(cmptr->cmsg_level == IPPROTO_IPV6 && cmptr->cmsg_type == IPV6_RECVPKTINFO)
-		{
-			struct in6_pktinfo * pi6;	/* fields : ifindex, addr */
-			pi6 = (struct in6_pktinfo *)CMSG_DATA(cmptr);
-			syslog(LOG_DEBUG, "ifindex = %u", pi6->ipi6_ifindex);
-			source_ifindex = pi6->ipi6_ifindex;
-		}
-#endif /* defined(ENABLE_IPV6) && defined(IPV6_RECVPKTINFO) */
-#ifdef IP_RECVIF
-		if(cmptr->cmsg_level == IPPROTO_IP && cmptr->cmsg_type == IP_RECVIF)
-		{
-			struct sockaddr_dl *sdl;	/* fields : len, family, index, type, nlen, alen, slen, data */
-			sdl = (struct sockaddr_dl *)CMSG_DATA(cmptr);
-			syslog(LOG_DEBUG, "sdl_index = %d  %s", sdl->sdl_index, link_ntoa(sdl));
-			source_ifindex = sdl->sdl_index;
-		}
-#endif /* IP_RECVIF */
-	}
-#endif /* defined(IP_RECVIF) || defined(IP_PKTINFO) */
 #ifdef ENABLE_HTTPS
-	ProcessSSDPData(s, bufr, n, (struct sockaddr *)&sendername, source_ifindex,
+	ProcessSSDPData(s, bufr, n, (struct sockaddr *)&sendername,
 	                http_port, https_port);
 #else
-	ProcessSSDPData(s, bufr, n, (struct sockaddr *)&sendername, source_ifindex,
+	ProcessSSDPData(s, bufr, n, (struct sockaddr *)&sendername,
 	                http_port);
 #endif
 
@@ -957,12 +823,12 @@ ProcessSSDPRequest(int s, unsigned short http_port)
 #ifdef ENABLE_HTTPS
 void
 ProcessSSDPData(int s, const char *bufr, int n,
-                const struct sockaddr * sender, int source_if,
+                const struct sockaddr * sender,
                 unsigned short http_port, unsigned short https_port)
 #else
 void
 ProcessSSDPData(int s, const char *bufr, int n,
-                const struct sockaddr * sender, int source_if,
+                const struct sockaddr * sender,
                 unsigned short http_port)
 #endif
 {
@@ -992,36 +858,14 @@ ProcessSSDPData(int s, const char *bufr, int n,
 	 * a multiple part response from the device, those multiple part
 	 * responses SHOULD be spread at random intervals through the time period
 	 * from 0 to the number of seconds specified in the MX header field. */
-	char atoi_buffer[8];
 
 	/* get the string representation of the sender address */
 	sockaddr_to_string(sender, sender_str, sizeof(sender_str));
 	lan_addr = get_lan_for_peer(sender);
-	if(source_if >= 0)
-	{
-		if(lan_addr != NULL)
-		{
-			if(lan_addr->index != (unsigned)source_if && lan_addr->index != 0)
-			{
-				syslog(LOG_DEBUG, "interface index not matching %u != %d", lan_addr->index, source_if);
-			}
-		}
-		else
-		{
-			/* use the interface index */
-			for(lan_addr = lan_addrs.lh_first;
-			    lan_addr != NULL;
-			    lan_addr = lan_addr->list.le_next)
-			{
-				if(lan_addr->index == (unsigned)source_if)
-					break;
-			}
-		}
-	}
 	if(lan_addr == NULL)
 	{
-		syslog(LOG_DEBUG, "SSDP packet sender %s (if_index=%d) not from a LAN, ignoring",
-		       sender_str, source_if);
+		syslog(LOG_DEBUG, "SSDP packet sender %s not from a LAN, ignoring",
+		       sender_str);
 		return;
 	}
 
@@ -1044,15 +888,13 @@ ProcessSSDPData(int s, const char *bufr, int n,
 				st_len = 0;
 				while((*st == ' ' || *st == '\t') && (st < bufr + n))
 					st++;
-				while((st + st_len < bufr + n)
-				      && (st[st_len]!='\r' && st[st_len]!='\n'))
+				while(st[st_len]!='\r' && st[st_len]!='\n'
+				     && (st + st_len < bufr + n))
 					st_len++;
 				l = st_len;
 				while(l > 0 && st[l-1] != ':')
 					l--;
-				memset(atoi_buffer, 0, sizeof(atoi_buffer));
-				memcpy(atoi_buffer, st + l, MIN((int)(sizeof(atoi_buffer) - 1), st_len - l));
-				st_ver = atoi(atoi_buffer);
+				st_ver = atoi(st+l);
 				syslog(LOG_DEBUG, "ST: %.*s (ver=%d)", st_len, st, st_ver);
 				/*j = 0;*/
 				/*while(bufr[i+j]!='\r') j++;*/
@@ -1065,14 +907,12 @@ ProcessSSDPData(int s, const char *bufr, int n,
 				int mx_len;
 				mx = bufr+i+3;
 				mx_len = 0;
-				while((mx < bufr + n) && (*mx == ' ' || *mx == '\t'))
+				while((*mx == ' ' || *mx == '\t') && (mx < bufr + n))
 					mx++;
-				while((mx + mx_len < bufr + n)
-				      && (mx[mx_len]!='\r' && mx[mx_len]!='\n'))
+				while(mx[mx_len]!='\r' && mx[mx_len]!='\n'
+				     && (mx + mx_len < bufr + n))
 					mx_len++;
-				memset(atoi_buffer, 0, sizeof(atoi_buffer));
-				memcpy(atoi_buffer, mx, MIN((int)(sizeof(atoi_buffer) - 1), mx_len));
-				mx_value = atoi(atoi_buffer);
+				mx_value = atoi(mx);
 				syslog(LOG_DEBUG, "MX: %.*s (value=%d)", mx_len, mx, mx_value);
 			}
 #endif /* defined(UPNP_STRICT) || defined(DELAY_MSEARCH_RESPONSE) */
@@ -1084,12 +924,12 @@ ProcessSSDPData(int s, const char *bufr, int n,
 				int man_len;
 				man = bufr+i+4;
 				man_len = 0;
-				while((man < bufr + n) && (*man == ' ' || *man == '\t'))
+				while((*man == ' ' || *man == '\t') && (man < bufr + n))
 					man++;
-				while((man + man_len < bufr + n)
-					  && (man[man_len]!='\r' && man[man_len]!='\n'))
+				while(man[man_len]!='\r' && man[man_len]!='\n'
+				     && (man + man_len < bufr + n))
 					man_len++;
-				if((man_len < 15) || (strncmp(man, "\"ssdp:discover\"", 15) != 0)) {
+				if(strncmp(man, "\"ssdp:discover\"", 15) != 0) {
 					syslog(LOG_INFO, "ignoring SSDP packet MAN empty or invalid header");
 					return;
 				}
@@ -1495,23 +1335,20 @@ SubmitServicesToMiniSSDPD(const char * host, unsigned short port) {
 	}
 	for(i = 0; known_service_types[i].s; i++) {
 		buffer[0] = 4;	/* request type 4 : submit service */
+		/* 4 strings following : ST (service type), USN, Server, Location */
+		p = buffer + 1;
+		l = (int)strlen(known_service_types[i].s);
+		if(i > 0)
+			l++;
+		CODELENGTH(l, p);
+		memcpy(p, known_service_types[i].s, l);
+		if(i > 0)
+			p[l-1] = '1';
+		p += l;
 		if(i==0)
 			ver_str[0] = '\0';
 		else
 			snprintf(ver_str, sizeof(ver_str), "%d", known_service_types[i].version);
-		/* 4 strings following : ST (service type), USN, Server, Location */
-		p = buffer + 1;
-		l = snprintf(strbuf, sizeof(strbuf), "%s%s",
-		             known_service_types[i].s, ver_str);
-		if(l<0) {
-			syslog(LOG_WARNING, "SubmitServicesToMiniSSDPD: snprintf %m");
-			continue;
-		} else if((unsigned)l>=sizeof(strbuf)) {
-			l = sizeof(strbuf) - 1;
-		}
-		CODELENGTH(l, p);
-		memcpy(p, strbuf, l);
-		p += l;
 		l = snprintf(strbuf, sizeof(strbuf), "%s::%s%s",
 		             known_service_types[i].uuid, known_service_types[i].s, ver_str);
 		if(l<0) {
@@ -1559,7 +1396,6 @@ SubmitServicesToMiniSSDPD(const char * host, unsigned short port) {
 		}
 	}
  	close(s);
-	syslog(LOG_DEBUG, "%d service submitted to MiniSSDPd", i);
 	return 0;
 }
 

@@ -1,7 +1,7 @@
-/* $Id: iptpinhole.c,v 1.19 2018/04/22 19:36:58 nanard Exp $ */
+/* $Id: iptpinhole.c,v 1.16 2016/01/19 10:03:30 nanard Exp $ */
 /* MiniUPnP project
  * http://miniupnp.free.fr/ or http://miniupnp.tuxfamily.org/
- * (c) 2012-2018 Thomas Bernard
+ * (c) 2012-2016 Thomas Bernard
  * This software is subject to the conditions detailed
  * in the LICENCE file provided within the distribution */
 
@@ -16,7 +16,6 @@
 #include "../macros.h"
 #include "iptpinhole.h"
 #include "../upnpglobalvars.h"
-#include "../upnputils.h"
 
 #ifdef ENABLE_UPNPPINHOLE
 
@@ -222,7 +221,6 @@ int add_pinhole(const char * ifname,
 	if (proto)
 		e->ipv6.flags |= IP6T_F_PROTO;
 
-	/* TODO: check if enforcing USE_IFNAME_IN_RULES is needed */
 	if(ifname)
 		strncpy(e->ipv6.iniface, ifname, IFNAMSIZ);
 	if(rem_host && (rem_host[0] != '\0')) {
@@ -459,7 +457,7 @@ clean_pinhole_list(unsigned int * next_timestamp)
 	time_t current_time;
 	int n = 0;
 
-	current_time = upnp_time();
+	current_time = time(NULL);
 	p = pinhole_list.lh_first;
 	while(p != NULL) {
 		if(p->timestamp <= (unsigned int)current_time) {

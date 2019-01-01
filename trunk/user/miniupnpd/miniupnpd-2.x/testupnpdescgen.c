@@ -1,8 +1,7 @@
-/* $Id: testupnpdescgen.c,v 1.36 2018/07/06 12:05:48 nanard Exp $ */
-/* vim: tabstop=4 shiftwidth=4 noexpandtab
- * MiniUPnP project
+/* $Id: testupnpdescgen.c,v 1.33 2016/02/16 12:15:02 nanard Exp $ */
+/* MiniUPnP project
  * http://miniupnp.free.fr/ or http://miniupnp.tuxfamily.org/
- * (c) 2006-2018 Thomas Bernard
+ * (c) 2006-2016 Thomas Bernard
  * This software is subject to the conditions detailed
  * in the LICENCE file provided within the distribution */
 
@@ -16,7 +15,6 @@
 
 #include "macros.h"
 #include "config.h"
-#include "upnpglobalvars.h"
 #include "upnpdescgen.h"
 #include "upnpdescstrings.h"
 #include "getifaddr.h"
@@ -35,13 +33,10 @@ char manufacturer_url[] = ROOTDEV_MANUFACTURERURL;
 char model_name[] = ROOTDEV_MODELNAME;
 char model_description[] = ROOTDEV_MODELDESCRIPTION;
 char model_url[] = ROOTDEV_MODELURL;
-#endif /* ENABLE_MANUFACTURER_INFO_CONFIGURATION */
-#ifdef RANDOMIZE_URLS
-char random_url[] = "RANDOM";
-#endif /* RANDOMIZE_URLS */
+#endif
 unsigned int upnp_configid = 666;
 
-const char * use_ext_ip_addr = NULL;
+char * use_ext_ip_addr = NULL;
 const char * ext_if_name = "eth0";
 
 int runtime_flags = 0;
@@ -52,12 +47,6 @@ int getifaddr(const char * ifname, char * buf, int len, struct in_addr * addr, s
 	UNUSED(addr);
 	UNUSED(mask);
 	strncpy(buf, "1.2.3.4", len);
-	return 0;
-}
-
-int addr_is_reserved(struct in_addr * addr)
-{
-	UNUSED(addr);
 	return 0;
 }
 
@@ -147,25 +136,8 @@ main(int argc, char * * argv)
 	char * s;
 	int l;
 	FILE * f;
-
-	for(l = 1; l < argc; l++) {
-		if(0 == strcmp(argv[l], "--help") || 0 == strcmp(argv[l], "-h")) {
-			printf("Usage:\t%s [options]\n", argv[0]);
-			printf("options:\n");
-#ifdef IGD_V2
-			printf("\t--forceigdv1    Force versions of devices to be 1\n");
-#else
-			printf("\tNone\n");
-#endif
-			return 0;
-#ifdef IGD_V2
-		} else if(0 == strcmp(argv[l], "--forceigdv1")) {
-			SETFLAG(FORCEIGDDESCV1MASK);
-#endif
-		} else {
-			fprintf(stderr, "unknown option %s\n", argv[l]);
-		}
-	}
+	UNUSED(argc);
+	UNUSED(argv);
 
 	if(mkdir("testdescs", 0777) < 0) {
 		if(errno != EEXIST) {

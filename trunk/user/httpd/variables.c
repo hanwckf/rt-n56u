@@ -783,7 +783,6 @@
 			{"scutclient_version","",NULL,EVM_RESTART_SCUT },
 			{"scutclient_hash","",NULL,EVM_RESTART_SCUT },
 			{"scutclient_hostname","",NULL,EVM_RESTART_SCUT },
-			{"scutclient_done","",NULL,EVM_RESTART_SCUT },
 			{"scutclient_watchcat","",NULL,FALSE},
 			{0,0,0,0}
 	};

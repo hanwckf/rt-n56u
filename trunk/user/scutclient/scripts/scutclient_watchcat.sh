@@ -6,7 +6,7 @@ net="202.38.193.188 114.114.114.114 119.29.29.29"
 
 go_exit(){
 	rm -f $pidfile
-	exit
+	exit 0
 }
 
 if [ "$(nvram get scutclient_watchcat)" != "1" ] || [ "$(nvram get scutclient_enable)" != "1" ]; then
@@ -14,7 +14,7 @@ if [ "$(nvram get scutclient_watchcat)" != "1" ] || [ "$(nvram get scutclient_en
 fi
 
 if [ "$(mtk_esw 11)" = "WAN ports link state: 0" ]; then
-	logger -t "scutclient_watchcat" "WAN has no link!"
+#	logger -t "scutclient_watchcat" "WAN has no link!"
 	go_exit
 fi
 
@@ -25,6 +25,10 @@ for n in $net; do
 	fi
 done
 
-logger -t "scutclient_watchcat" "Connection failed, restart scutclient!"
-/usr/bin/scutclient.sh restart > /dev/null 2>&1
+if [ $(date '+%H') -lt 6 ]; then
+	/usr/bin/scutclient.sh restart nolog > /dev/null 2>&1
+else
+	logger -t "scutclient_watchcat" "Connection failed, restart scutclient!"
+	/usr/bin/scutclient.sh restart > /dev/null 2>&1
+fi
 go_exit

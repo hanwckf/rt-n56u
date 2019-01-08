@@ -1,6 +1,9 @@
 #!/bin/sh
+pidfile="/var/scutclient.sh.pid"
 scutclient_exec="bin_scutclient"
 LOG="$2"
+
+[ -f $pidfile ] && kill -9 "$(cat $pidfile)" || echo "$$" > $pidfile
 
 func_log(){
 	[ "$LOG" != "nolog" ] && logger -st "Scutclient" "$1"
@@ -56,6 +59,7 @@ restart)
 	;;
 *)
 	echo "Usage: $0 { start | stop | restart }"
-	exit 1
 	;;
 esac
+rm -f $pidfile
+exit 0

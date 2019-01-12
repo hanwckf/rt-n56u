@@ -199,7 +199,7 @@ function show_clients(){
 			xClientType.innerHTML = "<img title='" +DEVICE_TYPE[clients[j][5]]+"' src='/bootstrap/img/wl_device/" + clients[j][5] +".gif'>";
 			xClientName.innerHTML = "<div class='"+(j == 0 ? 'popover_bottom' : 'popover_top' ) + "' data-original-title='<font size=-1><#MAC_Address#>: " + fMAC + isWL + "</font>' data-content='"+("<#Computer_Name#>: " + clients[j][0])+"'>" + clients[j][0] + "</div>";
 			xClientIP.innerHTML = clients[j][1];
-			xClientMAC.innerHTML = "<a target='_blank' href='http://standards.ieee.org/cgi-bin/ouisearch?" + clients[j][2].substr(0,6) + "'>" + clients[j][2] + "</a>";
+			xClientMAC.innerHTML = "<a target='_blank' href='http://apps.neu.edu.cn/macquery/?mac=" + clients[j][2].substr(0,2) + "%3A" + clients[j][2].substr(2,2) + "%3A" + clients[j][2].substr(4,2) + "'>" + clients[j][2] + "</a>";
 			
 			if(list_type != "1"){
 				xClientunBlock.style.textAlign = "center";

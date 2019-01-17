@@ -127,9 +127,7 @@ dir_y						+= accel-pptpd
 endif
 dir_y						+= ebtables
 dir_y						+= iproute2
-ifneq ($(CONFIG_WITHOUT_IW),y)
 dir_y						+= wireless_tools
-endif
 dir_y						+= shared
 dir_$(STORAGE_ENABLED)				+= libdisk
 dir_y						+= nvram

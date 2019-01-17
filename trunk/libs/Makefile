@@ -214,9 +214,6 @@ dir_$(LIBS_INCLUDE_LIBUDNS)			+= libudns
 dir_$(LIBS_INCLUDE_MBEDTLS)			+= mbedtls
 dir_$(LIBS_INCLUDE_CURL)			+= libcurl
 dir_y						+= libnfnetlink
-ifeq ($(CONFIG_WITHOUT_IW),y)
-dir_y						+= libiw
-endif
 # ipset shared libs
 ifneq ($(CONFIG_WITHOUT_KERNEL),y)
 dir_$(CONFIG_FIRMWARE_INCLUDE_IPSET)		+= libmnl

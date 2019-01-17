@@ -9,19 +9,11 @@ include $(SHDIR)/boards.mk
 include $(SHDIR)/cflags.mk
 
 CFLAGS += -Wall -I. -I$(SHDIR) -I$(SHDIR)/include
-ifeq ($(CONFIG_WITHOUT_IW),y)
-CFLAGS += -I$(ROOTDIR)/libs/libiw/include
-else
 CFLAGS += -I$(USERDIR)/wireless_tools
-endif
 
 LDFLAGS += -L. -lm
 LDFLAGS += -L$(SHDIR) -lshared
-ifeq ($(CONFIG_WITHOUT_IW),y)
-LDFLAGS += -L$(ROOTDIR)/libs/libiw/$(CONFIG_FIRMWARE_PRODUCT_ID) -liw
-else
 LDFLAGS += -L$(USERDIR)/wireless_tools -liw
-endif
 ifeq ($(STORAGE_ENABLED),y)
 CFLAGS  += -I$(USERDIR)/libdisk
 LDFLAGS += -L$(USERDIR)/libdisk -ldisk

@@ -266,6 +266,9 @@ openvpn_add_cipher(FILE *fp, int cipher_idx)
 	case 14:
 		cipher_str = "AES-256-GCM";
 		break;
+	case 15:
+		cipher_str = "CHACHA20-POLY1305";
+		break;
 	default:
 		return;
 	}

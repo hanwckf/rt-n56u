@@ -78,17 +78,17 @@ int GetNetRate(FILE* fd, char *interface, long long *recv, long long *send) {
         exit(0);
         return -1;
     }
-    sscanf(pDev, "%[^' ']\t%[^' ']\t%[^' ']\t%[^' ']\t%[^' ']\t%[^' ']\t%[^' ']\t%[^' ']\t%[^' ']\t%[^' ']\t%[^' ']\t%[^' ']\t",\
-	tempstr[0], tempstr[1], tempstr[2], tempstr[3], tempstr[4], tempstr[5], tempstr[6], tempstr[7], tempstr[8], tempstr[9], tempstr[10], tempstr[11]);
-        
-    *recv = atoll(tempstr[1]);
-    *send = atoll(tempstr[9]);
 
-	if(0){
+	sscanf(pDev, "%*[^:]:%s%*s%*s%*s%*s%*s%*s%*s%s%*s",
+	tempstr[0], tempstr[1]);
+        
+	if(debugflag){
 		printf("values:%s-%s %lld %lld \n", 
-            tempstr[1],tempstr[9],*recv,*send );
+            tempstr[0],tempstr[1],*recv,*send );
 	}
 
+    *recv = atoll(tempstr[0]);
+    *send = atoll(tempstr[1]);
 }
 
 int main(int argc, char** argv) {

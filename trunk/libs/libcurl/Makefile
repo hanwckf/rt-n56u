@@ -1,9 +1,9 @@
-SRC_NAME=curl-7.62.0
-SRC_URL=https://github.com/curl/curl/releases/download/curl-7_62_0/curl-7.62.0.tar.gz
+SRC_NAME=curl-7.63.0
+SRC_URL=https://github.com/curl/curl/releases/download/curl-7_63_0/curl-7.63.0.tar.gz
 
 all: download_test extract_test config_test
 	$(MAKE) -j$(HOST_NCPU) -C $(SRC_NAME)
-	
+
 download_test:
 	( if [ ! -f $(SRC_NAME).tar.gz ]; then \
 		wget -t5 --timeout=20 --no-check-certificate -O $(SRC_NAME).tar.gz $(SRC_URL); \

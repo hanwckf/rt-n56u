@@ -609,9 +609,9 @@ function show_footer(){
 	footer_code = '<div align="center" class="bottom-image"></div>\n';
 	footer_code +='<div align="center" class="copyright"><#footer_copyright_desc#></div>\n';
 	footer_code +='<div align="center">\n';
-	footer_code +='  <span>Highcharts by Torstein Hønsi & <a href="http://www.highcharts.com">Highsoft</a> Compiled by HL.MAO</span></br>\n';
-	footer_code +='  <span>Big icons designed by <a href="http://www.freepik.com">Freepik</a></br></span>';
-	footer_code +='  <span>Non-Commercial Use Only</span></br>\n';
+	footer_code +='  <span>Highcharts by Torstein Hønsi & <a href="http://www.highcharts.com">Highsoft</a> | Compiled by HL.MAO</span></br>\n';
+	footer_code +='  <span>Big icons designed by <a href="http://www.freepik.com">Freepik</a> | Non-Commercial Use Only</br></span>';
+	//footer_code +='  <span>Non-Commercial Use Only</span></br>\n';
 	footer_code +='</div>\n';
 
 	$("footer").innerHTML = footer_code;

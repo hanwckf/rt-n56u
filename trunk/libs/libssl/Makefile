@@ -12,13 +12,9 @@ LOPTS=-Wl,--gc-sections -L$(DESTDIR)/lib
 OPENSSL_APPS =
 
 OPENSSL_CIPHERS = no-capieng no-cms no-gmp no-jpake no-rfc3779 no-seed \
-                  no-ec2m no-err no-idea no-rc5 no-ripemd no-rmd160 \
+                  no-ec2m no-err no-threads no-idea no-rc5 no-ripemd no-rmd160 \
                   no-static-engine no-hw no-md2 no-sse2 no-dso no-ts no-sha0 no-mdc2 no-krb5 \
                   no-smime no-ans1 no-cast no-whirlpool no-sctp no-srp no-ssl2 no-ssl3
-
-#ifneq ($(CONFIG_FIRMWARE_INCLUDE_TOR),y)
-OPENSSL_CIPHERS += no-threads
-#endif
 
 ifdef CONFIG_CRYPTO_DEV_LINUX
 COPTS+=-DHAVE_CRYPTODEV
@@ -30,7 +26,7 @@ ifneq ($(CONFIG_FIRMWARE_INCLUDE_SSWAN),y)
 OPENSSL_CIPHERS += no-rc2
 endif
 
-ifeq (,$(filter y,$(CONFIG_FIRMWARE_INCLUDE_OPENSSL_EC) $(CONFIG_FIRMWARE_INCLUDE_TOR)))
+ifneq ($(CONFIG_FIRMWARE_INCLUDE_OPENSSL_EC),y)
 OPENSSL_CIPHERS += no-ec
 endif
 

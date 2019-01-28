@@ -1,10 +1,10 @@
 THISDIR = $(shell pwd)
 
 SRC_VER = v4.25-9656
-SRC_NAME = softether-src-$(SRC_VER)-rtm
-SRC_DATE = 2018.01.15
+SRC_BRANCH = rtm
 
-SRC_URL = http://www.softether-download.com/files/softether/$(SRC_VER)-rtm-$(SRC_DATE)-tree/Source_Code/$(SRC_NAME).tar.gz
+SRC_NAME = softether-src-$(SRC_VER)-$(SRC_BRANCH)
+SRC_URL = https://github.com/SoftEtherVPN/SoftEtherVPN_Stable/releases/download/$(SRC_VER)-$(SRC_BRANCH)/$(SRC_NAME).tar.gz
 
 HAMCORE_DIR = $(SRC_VER)/src/bin/BuiltHamcoreFiles/unix
 CFLAGS += -minterlink-mips16

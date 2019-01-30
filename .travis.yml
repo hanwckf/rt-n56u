@@ -21,11 +21,9 @@ before_script:
     - cd /opt/rt-n56u/trunk/
 
 script:
-    - sudo bash ./build_firmware_nohup PSG1218 && sudo cp -f images/*.trx /opt/images
-    - sudo bash ./clear_tree_simple >/dev/null 2>&1 && sudo bash ./build_firmware_nohup MI-MINI && sudo cp -f images/*.trx /opt/images
-    - sudo bash ./clear_tree_simple >/dev/null 2>&1 && sudo bash ./build_firmware_nohup MI-3 && sudo cp -f images/*.trx /opt/images
-    - sudo bash ./clear_tree_simple >/dev/null 2>&1 && sudo bash ./build_firmware_nohup 5K-W20 && sudo cp -f images/*.trx /opt/images
-    - sudo bash ./clear_tree_simple >/dev/null 2>&1 && sudo bash ./build_firmware_nohup OYE-001 && sudo cp -f images/*.trx /opt/images
+    - sudo bash ./build_firmware_nohup K2P && sudo cp -f images/*.trx /opt/images
+    - sudo bash ./clear_tree_simple >/dev/null 2>&1 && sudo bash ./build_firmware_nohup K2P_DRV && sudo cp -f images/*.trx /opt/images
+
 
 after_script:
     - GIT_VERSION=`git rev-parse --short=7 HEAD 2>/dev/null` && [ -n "$GIT_VERSION" ] && image_name=images_mt7620_$GIT_VERSION || image_name=images_mt7620

@@ -439,7 +439,7 @@
  # vpnserver
 -bin/vpnserver/vpnserver: tmp/as/vpnserver.a bin/vpnserver/hamcore.se2 $(HEADERS_MAYAQUA) $(HEADERS_CEDAR) $(OBJECTS_MAYAQUA) $(OBJECTS_CEDAR)
 -	$(CC) tmp/as/vpnserver.a $(OPTIONS_LINK) -o bin/vpnserver/vpnserver
-+bin/vpnserver/vpnserver: tmp/objs/vpnserver.o bin/vpnserver/hamcore.se2 $(HEADERS_MAYAQUA) $(HEADERS_CEDAR) $(OBJECTS_MAYAQUA) $(OBJECTS_CEDAR)
++bin/vpnserver/vpnserver: tmp/objs/vpnserver.o bin/vpnserver/hamcore.se2 tmp/objs/Mayaqua/libMayaqua.so tmp/objs/Cedar/libCedar.so $(HEADERS_MAYAQUA) $(HEADERS_CEDAR) $(OBJECTS_MAYAQUA) $(OBJECTS_CEDAR)
 +	$(CC) tmp/objs/vpnserver.o $(OPTIONS_LINK) -o bin/vpnserver/vpnserver
  
  tmp/as/vpnserver.a: tmp/objs/vpnserver.o $(HEADERS_MAYAQUA) $(HEADERS_CEDAR) $(OBJECTS_MAYAQUA) $(OBJECTS_CEDAR)
@@ -450,7 +450,7 @@
  # vpnclient
 -bin/vpnclient/vpnclient: tmp/as/vpnclient.a bin/vpnclient/hamcore.se2 $(HEADERS_MAYAQUA) $(HEADERS_CEDAR) $(OBJECTS_MAYAQUA) $(OBJECTS_CEDAR)
 -	$(CC) tmp/as/vpnclient.a $(OPTIONS_LINK) -o bin/vpnclient/vpnclient
-+bin/vpnclient/vpnclient: tmp/objs/vpnclient.o bin/vpnclient/hamcore.se2 $(HEADERS_MAYAQUA) $(HEADERS_CEDAR) $(OBJECTS_MAYAQUA) $(OBJECTS_CEDAR)
++bin/vpnclient/vpnclient: tmp/objs/vpnclient.o bin/vpnclient/hamcore.se2 tmp/objs/Mayaqua/libMayaqua.so tmp/objs/Cedar/libCedar.so $(HEADERS_MAYAQUA) $(HEADERS_CEDAR) $(OBJECTS_MAYAQUA) $(OBJECTS_CEDAR)
 +	$(CC) tmp/objs/vpnclient.o $(OPTIONS_LINK) -o bin/vpnclient/vpnclient
  
  tmp/as/vpnclient.a: tmp/objs/vpnclient.o $(HEADERS_MAYAQUA) $(HEADERS_CEDAR) $(OBJECTS_MAYAQUA) $(OBJECTS_CEDAR)
@@ -461,7 +461,7 @@
  # vpnbridge
 -bin/vpnbridge/vpnbridge: tmp/as/vpnbridge.a bin/vpnbridge/hamcore.se2 $(HEADERS_MAYAQUA) $(HEADERS_CEDAR) $(OBJECTS_MAYAQUA) $(OBJECTS_CEDAR)
 -	$(CC) tmp/as/vpnbridge.a $(OPTIONS_LINK) -o bin/vpnbridge/vpnbridge
-+bin/vpnbridge/vpnbridge: tmp/objs/vpnbridge.o bin/vpnbridge/hamcore.se2 $(HEADERS_MAYAQUA) $(HEADERS_CEDAR) $(OBJECTS_MAYAQUA) $(OBJECTS_CEDAR)
++bin/vpnbridge/vpnbridge: tmp/objs/vpnbridge.o bin/vpnbridge/hamcore.se2 tmp/objs/Mayaqua/libMayaqua.so tmp/objs/Cedar/libCedar.so $(HEADERS_MAYAQUA) $(HEADERS_CEDAR) $(OBJECTS_MAYAQUA) $(OBJECTS_CEDAR)
 +	$(CC) tmp/objs/vpnbridge.o $(OPTIONS_LINK) -o bin/vpnbridge/vpnbridge
  
  tmp/as/vpnbridge.a: tmp/objs/vpnbridge.o $(HEADERS_MAYAQUA) $(HEADERS_CEDAR) $(OBJECTS_MAYAQUA) $(OBJECTS_CEDAR)
@@ -472,7 +472,7 @@
  # vpncmd
 -bin/vpncmd/vpncmd: tmp/as/vpncmd.a bin/vpncmd/hamcore.se2 $(HEADERS_MAYAQUA) $(HEADERS_CEDAR) $(OBJECTS_MAYAQUA) $(OBJECTS_CEDAR)
 -	$(CC) tmp/as/vpncmd.a $(OPTIONS_LINK) -o bin/vpncmd/vpncmd
-+bin/vpncmd/vpncmd: tmp/objs/vpncmd.o bin/vpncmd/hamcore.se2 $(HEADERS_MAYAQUA) $(HEADERS_CEDAR) $(OBJECTS_MAYAQUA) $(OBJECTS_CEDAR)
++bin/vpncmd/vpncmd: tmp/objs/vpncmd.o bin/vpncmd/hamcore.se2 tmp/objs/Mayaqua/libMayaqua.so tmp/objs/Cedar/libCedar.so $(HEADERS_MAYAQUA) $(HEADERS_CEDAR) $(OBJECTS_MAYAQUA) $(OBJECTS_CEDAR)
 +	$(CC) tmp/objs/vpncmd.o $(OPTIONS_LINK) -o bin/vpncmd/vpncmd
  
  tmp/as/vpncmd.a: tmp/objs/vpncmd.o $(HEADERS_MAYAQUA) $(HEADERS_CEDAR) $(OBJECTS_MAYAQUA) $(OBJECTS_CEDAR)

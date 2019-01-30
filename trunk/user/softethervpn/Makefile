@@ -49,6 +49,8 @@ ifeq ($(CONFIG_FIRMWARE_INCLUDE_SOFTETHERVPN_SERVER),y)
 	$(ROMFSINST) -d -p +x $(THISDIR)/$(SRC_VER)/bin/vpnserver/vpnserver /etc_ro/softethervpn/vpnserver
 endif
 	$(ROMFSINST) -d -S $(THISDIR)/hamcore-unix/$(SRC_VER)/hamcore.se2 /etc_ro/softethervpn/hamcore.se2
+	$(ROMFSINST) -d -S $(THISDIR)/$(SRC_VER)/tmp/objs/Mayaqua/libMayaqua.so /lib/libMayaqua.so
+	$(ROMFSINST) -d -S $(THISDIR)/$(SRC_VER)/tmp/objs/Cedar/libCedar.so /lib/libCedar.so
 	$(ROMFSINST) $(THISDIR)/softethervpn.sh /usr/bin/softethervpn.sh
 
 clean:

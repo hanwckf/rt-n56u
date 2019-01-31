@@ -55,5 +55,5 @@ endif
 
 clean:
 	if [ -d $(SRC_VER) ]; then \
-		make -C $(SRC_VER) -f src/makefiles/linux_32bit.mak clean ; \
+		$(MAKE) -C $(SRC_VER) -f src/makefiles/linux_32bit.mak clean ; \
 	fi

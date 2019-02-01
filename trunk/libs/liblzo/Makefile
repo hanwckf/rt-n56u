@@ -1,9 +1,20 @@
-SRC_NAME=lzo-2.09
+SRC_NAME=lzo-2.10
+SRC_URL=http://www.oberhumer.com/opensource/lzo/download/$(SRC_NAME).tar.gz
 
 CFLAGS += -O2
 
-all: config_test
-	$(MAKE) -C $(SRC_NAME)
+all: download_test extract_test config_test
+	$(MAKE) -j$(HOST_NCPU) -C $(SRC_NAME)
+
+download_test:
+	( if [ ! -f $(SRC_NAME).tar.gz ]; then \
+		wget -t5 --timeout=20 --no-check-certificate -O $(SRC_NAME).tar.gz $(SRC_URL); \
+	fi )
+
+extract_test:
+	( if [ ! -d $(SRC_NAME) ]; then \
+		tar zxf $(SRC_NAME).tar.gz; \
+	fi )
 
 config_test:
 	( if [ -f ./config_done ]; then \

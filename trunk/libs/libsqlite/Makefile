@@ -1,8 +1,8 @@
-SRC_NAME=sqlite-autoconf-3250100
+SRC_NAME=sqlite-autoconf-3260000
 SRC_URL=https://www.sqlite.org/2018/$(SRC_NAME).tar.gz
 
 all: download_test extract_test config_test
-	$(MAKE) -C $(SRC_NAME)
+	$(MAKE) -j$(HOST_NCPU) -C $(SRC_NAME)
 
 download_test:
 	( if [ ! -f $(SRC_NAME).tar.gz ]; then \
@@ -34,6 +34,9 @@ configure:
 		--disable-fts5 \
 		--disable-json1 \
 		--disable-rtree \
+		--disable-session \
+		--disable-debug \
+		--disable-static-shell \
 		--host=$(HOST_TARGET) \
 		--build=$(HOST_BUILD) ; \
 	)

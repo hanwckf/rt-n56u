@@ -2,7 +2,7 @@ SRC_NAME=libvorbis-1.3.6
 SRC_URL=http://downloads.xiph.org/releases/vorbis/$(SRC_NAME).tar.xz
 
 all: download_test extract_test config_test
-	$(MAKE) -C $(SRC_NAME)
+	$(MAKE) -j$(HOST_NCPU) -C $(SRC_NAME)
 
 download_test:
 	( if [ ! -f $(SRC_NAME).tar.xz ]; then \
@@ -11,8 +11,9 @@ download_test:
 
 extract_test:
 	( if [ ! -d $(SRC_NAME) ]; then \
-		tar xJf $(SRC_NAME).tar.xz; \
-		patch -d $(SRC_NAME) -p1 -i ../disable-doc-test.patch; \
+		tar xJf $(SRC_NAME).tar.xz ; \
+		patch -d $(SRC_NAME) -p1 -i ../disable-doc-test.patch ; \
+		patch -d $(SRC_NAME) -p1 -i ../0001-CVE-2017-14160-fix-bounds-check-on-very-low-sample-rates.patch ; \
 	fi )
 
 config_test:
@@ -35,12 +36,12 @@ configure:
 	)
 
 clean:
+	if [ -f $(SRC_NAME)/Makefile ] ; then \
+		$(MAKE) -C $(SRC_NAME) distclean ; \
+	fi ; \
 	rm -f config_done
-	rm -rf $(SRC_NAME)
 
 install:
 	$(MAKE) -C $(SRC_NAME) install DESTDIR=""
 
 romfs:
-
-

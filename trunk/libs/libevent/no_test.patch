@@ -1,0 +1,11 @@
+diff -urw libevent-2.1.8-stable-ref/Makefile.am libevent-2.1.8-stable/Makefile.am
+--- libevent-2.1.8-stable-ref/Makefile.am	2017-01-29 21:41:27.000000000 +0300
++++ libevent-2.1.8-stable/Makefile.am	2018-12-30 18:10:51.858308023 +0300
+@@ -144,7 +144,6 @@
+ BUILT_SOURCES =
+ include include/include.am
+ include sample/include.am
+-include test/include.am
+ 
+ if BUILD_WIN32
+ 

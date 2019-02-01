@@ -12,7 +12,8 @@ download_test:
 extract_test:
 	( if [ ! -d $(SRC_NAME) ]; then \
 		tar jxf $(SRC_NAME).tar.bz2; \
-	fi ) 
+		patch -d $(SRC_NAME) -p1 -i ../no_doc_test.patch ; \
+	fi )
 
 config_test:
 	( if [ -f ./config_done ]; then \
@@ -34,8 +35,10 @@ configure:
 	)
 
 clean:
+	if [ -f $(SRC_NAME)/Makefile ] ; then \
+		$(MAKE) -C $(SRC_NAME) distclean ; \
+	fi ; \
 	rm -f config_done
-	rm -rf $(SRC_NAME)
 
 install:
 	$(MAKE) -C $(SRC_NAME) install DESTDIR=""

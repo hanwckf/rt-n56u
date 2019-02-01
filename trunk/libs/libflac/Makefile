@@ -11,8 +11,9 @@ download_test:
 
 extract_test:
 	( if [ ! -d $(SRC_NAME) ]; then \
-		tar xJf  $(SRC_NAME).tar.xz; \
-		patch -d $(SRC_NAME) -p1 -i ../flac-orig.patch; \
+		tar xJf  $(SRC_NAME).tar.xz ; \
+		patch -d $(SRC_NAME) -p1 -i ../flac-orig.patch ; \
+		patch -d $(SRC_NAME) -p1 -i ../100-CVE-2017-6888.patch ; \
 	fi )
 
 config_test:
@@ -24,6 +25,7 @@ config_test:
 
 configure:
 	( cd $(SRC_NAME) ; \
+	./autogen.sh ; \
 	./configure \
 		--prefix=$(STAGEDIR) \
 		$(if $(LIBS_BUILD_SHARED),--disable-static,--enable-static) \
@@ -43,8 +45,10 @@ configure:
 	)
 
 clean:
+	if [ -f $(SRC_NAME)/Makefile ] ; then \
+		$(MAKE) -C $(SRC_NAME) distclean ; \
+	fi ; \
 	rm -f config_done
-	rm -rf $(SRC_NAME)
 
 install:
 	$(MAKE) -C $(SRC_NAME) install DESTDIR=""

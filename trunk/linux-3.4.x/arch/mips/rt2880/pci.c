@@ -676,6 +676,8 @@ int __init init_ralink_pci(void)
 		bypass_pipe_rst();
 	set_phy_for_ssc();
 
+	mdelay(100);
+
 #if defined (GPIO_PERST)
 	val = 0;
 #if defined (CONFIG_PCIE_PORT0)

@@ -534,7 +534,7 @@ echo "Initializing Automake:"
 # http://debbugs.gnu.org/cgi/bugreport.cgi?bug=17354
 # The -Wno-unsupported is used to silence warnings about missing
 # "subdir-objects".
-AM_INIT_AUTOMAKE([1.12 foreign tar-v7 filename-length-max=99 serial-tests -Wno-unsupported])
+AM_INIT_AUTOMAKE([1.12 foreign tar-v7 filename-length-max=99 -Wno-unsupported])
 AC_PROG_LN_S
 
 AC_PROG_CC_C99

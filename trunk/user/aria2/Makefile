@@ -28,7 +28,7 @@ endif
 extract_test:
 ifneq ($(CONFIG_FIRMWARE_INCLUDE_ARIA2_NEW_PREBUILD_BIN),y)
 	( if [ ! -d $(SRC_NAME) ]; then \
-		tar zxf $(SRC_NAME).tar.gz; \
+		tar xf $(SRC_NAME).tar.gz; \
 		patch -d $(SRC_NAME) -p1 -i ../disable-doc-test.patch; \
 	fi )
 endif
@@ -74,7 +74,6 @@ clean:
 	fi ; \
 	rm -rf ariaweb
 	rm -f config_done
-	rm -rf install
 
 romfs:
 ifeq ($(CONFIG_FIRMWARE_INCLUDE_ARIA_WEB_CONTROL),y)

@@ -1793,12 +1793,12 @@ struct libusb_device* search_devices( int *numFound, int vendor, char* productLi
 	if (!vendor || *productList == '\0')
 		return NULL;
 
-	listcopy = malloc(strlen(productList)+1);
-
 	if (libusb_get_device_list(ctx, &devs) < 0) {
 		perror("Libusb failed to get USB access!");
 		return 0;
 	}
+
+	listcopy = malloc(strlen(productList)+1);
 
 	while ((dev = devs[i++]) != NULL) {
 		struct libusb_device_descriptor descriptor;

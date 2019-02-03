@@ -47,6 +47,7 @@ configure:
 	./configure \
 		--prefix=$(STAGEDIR) \
 		--without-tinfo \
+		--without-ncurses \
 		--without-user \
 		--without-cap-ng \
 		--without-util \

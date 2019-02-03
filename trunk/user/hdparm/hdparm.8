@@ -1,4 +1,4 @@
-.TH HDPARM 8 "November 2010" "Version 9.36"
+.TH HDPARM 8 "October 2018" "Version 9.58"
 
 .SH NAME
 hdparm \- get/set SATA/IDE device parameters
@@ -282,6 +282,9 @@ more detail than with the older
 .B -i
 option.
 .TP
+.I --Iraw <pathname>
+This option dumps the drive's identify data in raw binary to the specified file.
+.TP
 .I --Istdin
 This is a special variation on the
 .B -I
@@ -308,6 +311,31 @@ later use with the
 .B --Istdin
 option.
 .TP
+.I -J
+Get/set the Western Digital (WD) Green Drive's "idle3" timeout value.
+This timeout controls how often the drive parks its heads and enters
+a low power consumption state.  The factory default is eight (8) seconds,
+which is a very poor choice for use with Linux.  Leaving it at the default
+will result in hundreds of thousands of head load/unload cycles in a very
+short period of time.  The drive mechanism is only rated for 300,000 to 1,000,000
+cycles, so leaving it at the default could result in premature failure,
+not to mention the performance impact of the drive often having to wake-up
+before doing routine I/O.
+.IP
+WD supply a WDIDLE3.EXE DOS utility for tweaking this setting,
+and you should use that program instead of hdparm
+if at all possible.  The reverse-engineered implementation in hdparm
+is not as complete as the original official program, even though it does
+seem to work on at a least a few drives.  A full power cycle is required
+for any change in setting to take effect, regardless of which program is
+used to tweak things.
+.IP
+A setting of 30 seconds is recommended for Linux use.
+Permitted values are from 8 to 12 seconds, and from 30 to 300 seconds
+in 30-second increments.
+Specify a value of zero (0) to disable the WD idle3 timer completely
+(NOT RECOMMENDED!).
+.TP
 .I -k
 Get/set the "keep_settings_over_reset" flag for the drive.
 When this flag is set, the drive will preserve the
@@ -321,9 +349,9 @@ settings.  The
 option should therefore only be set after one has achieved confidence in
 correct system operation with a chosen set of configuration settings.
 In practice, all that is typically necessary to test a configuration
-(prior to using -k) is to verify that the drive can be read/written,
+(prior to using \-k) is to verify that the drive can be read/written,
 and that no error logs (kernel messages) are generated in the process
-(look in /var/adm/messages on most systems).
+(look in /var/log/messages on most systems).
 .TP
 .I -K
 Set the drive\'s "keep_features_over_reset" flag.  Setting this enables
@@ -484,7 +512,7 @@ and an unsuccessful outcome may result in
 .TP
 .I -P
 Set the maximum sector count for the drive\'s internal prefetch mechanism.
-Not all drives support this feature, and it was dropped from the offical spec
+Not all drives support this feature, and it was dropped from the official spec
 as of ATA-4.
 .TP
 .I --prefer-ata12
@@ -517,6 +545,17 @@ For SATA disks, this is the Native Command Queuing (NCQ) queue depth.
 .I -r
 Get/set read-only flag for the device.  When set, Linux disallows write operations on the device.
 .TP
+.I -R
+Get/set Write-Read-Verify feature, if the drive supports it.
+Usage:
+.B -R0
+(disable) or
+.B -R1
+(enable).  This feature is intended to have the drive firmware automatically
+read-back any data that is written by software, to verify that the data was
+successfully written.  This is generally overkill, and can slow down disk
+writes by as much as a factor of two (or more).
+.TP
 .I --read-sector
 Reads from the specified sector number, and dumps the contents in hex to standard output.
 The sector number must be given (base10) after this option.
@@ -543,7 +582,7 @@ reducing the instantaneous current draw burden when many drives
 share a power supply.  Primarily for use in large RAID setups.
 This feature is usually disabled and the drive is powered-up in the
 .B active
-mode (see -C above).
+mode (see \-C above).
 Note that a drive may also allow enabling this feature by a jumper.
 Some SATA drives support the control of this feature by pin 11 of
 the SATA power connector. In these cases, this command may be
@@ -566,6 +605,13 @@ minutes. A value of 253 sets a vendor-defined timeout period between 8
 and 12 hours, and the value 254 is reserved.  255 is interpreted as 21
 minutes plus 15 seconds.  Note that some older drives may have very
 different interpretations of these values.
+.TP
+.I --set-sector-size
+For drives which support reconfiguring of the Logical Sector Size,
+this flag can be used to specify the new desired sector size in bytes.
+.B VERY DANGEROUS.  This most likely will scramble all data on the drive.
+The specified size must be one of 512, 520, 528, 4096, 4160, or 4224.
+Very few drives support values other than 512 and 4096.
 .TP
 .I -t
 Perform timings of device reads for benchmark and comparison purposes.
@@ -638,8 +684,11 @@ feature of these interfaces (usually a BIOS/CMOS setting)
 provides a safe fix for the problem for use with earlier kernels.
 .TP
 .I -v 
-Display some basic settings, similar to -acdgkmur for IDE.
+Display some basic settings, similar to \-acdgkmur for IDE.
 This is also the default behaviour when no options are specified.
+.TP
+.I -V
+Display program version and exit immediately.
 .TP
 .I --verbose 
 Display extra diagnostics from some commands.
@@ -731,19 +780,23 @@ to experiment with, and might not work with some kernels.
 .B USE AT YOUR OWN RISK.
 .TP
 .I --security-help             
-Display terse usage info for all of the --security-* options.
+Display terse usage info for all of the \--security-* options.
 .TP
 .I --security-freeze             
 Freeze the drive\'s security settings.
 The drive does not accept any security commands until next power-on reset.
-Use this function in combination with --security-unlock to protect drive
+Use this function in combination with \--security-unlock to protect drive
 from any attempt to set a new password. Can be used standalone, too.
 No other options are permitted on the command line with this one.
+.TP
+.I --security-prompt-for-password
+Prompt for the --security PWD rather than getting from the command line args.
+This avoids having passwords show up in shell history or in /proc/self/cmdline during execution.
 .TP
 .I --security-unlock PWD 
 Unlock the drive, using password PWD.
 Password is given as an ASCII string and is padded with NULs to reach 32 bytes.
-The applicable drive password is selected with the --user-master switch
+The applicable drive password is selected with the \--user-master switch
 (default is "user" password).
 No other options are permitted on the command line with this one.
 .TP
@@ -754,15 +807,15 @@ Password is given as an ASCII string and is padded with NULs to reach 32 bytes.
 Use the special password
 .B NULL
 to set an empty password.
-The applicable drive password is selected with the --user-master switch
+The applicable drive password is selected with the \--user-master switch
 (default is "user" password)
-and the applicable security mode with the --security-mode switch.
+and the applicable security mode with the \--security-mode switch.
 No other options are permitted on the command line with this one.
 .TP
 .I --security-disable PWD 
 Disable drive locking, using password PWD.
 Password is given as an ASCII string and is padded with NULs to reach 32 bytes.
-The applicable drive password is selected with the --user-master switch
+The applicable drive password is selected with the \--user-master switch
 (default is "user" password).
 No other options are permitted on the command line with this one.
 .TP
@@ -773,7 +826,7 @@ Password is given as an ASCII string and is padded with NULs to reach 32 bytes.
 Use the special password
 .B NULL
 to represent an empty password.
-The applicable drive password is selected with the --user-master switch
+The applicable drive password is selected with the \--user-master switch
 (default is "user" password).
 No other options are permitted on the command line with this one.
 .TP
@@ -781,15 +834,15 @@ No other options are permitted on the command line with this one.
 Enhanced erase (locked) drive, using password PWD
 .B (DANGEROUS).
 Password is given as an ASCII string and is padded with NULs to reach 32 bytes.
-The applicable drive password is selected with the --user-master switch
+The applicable drive password is selected with the \--user-master switch
 (default is "user" password).
 No other options are permitted on the command line with this one.
 .TP
 .I --user-master USER
 Specifies which password (user/master) to select.
 .B Defaults to "user" password.
-Only useful in combination with --security-unlock, --security-set-pass,
---security-disable, --security-erase or --security-erase-enhanced.
+Only useful in combination with \--security-unlock, \--security-set-pass,
+\--security-disable, \--security-erase or \--security-erase-enhanced.
         u       user password
         m       master password
 
@@ -797,7 +850,7 @@ Only useful in combination with --security-unlock, --security-set-pass,
 .I --security-mode MODE 
 Specifies which security mode (high/maximum) to set.
 .B Defaults to high.
-Only useful in combination with --security-set-pass.
+Only useful in combination with \--security-set-pass.
         h       high security
         m       maximum security
 
@@ -814,7 +867,7 @@ read-only filesystem.  Most drives work well with these features, but
 a few drive/controller combinations are not 100% compatible.  Filesystem
 corruption may result.  Backup everything before experimenting!
 .PP
-Some options (e.g. -r for SCSI) may not work with old kernels as 
+Some options (e.g. \-r for SCSI) may not work with old kernels as 
 necessary ioctl()\'s were not supported.
 .PP
 Although this utility is intended primarily for use with SATA/IDE hard disk
@@ -836,7 +889,7 @@ consecutively and issue the two necessary commands that way.
 .SH AUTHOR
 .B hdparm
 has been written by Mark Lord <mlord@pobox.com>, the original primary
-developer and maintainer of the (E)IDE driver for Linux, and current contributer
+developer and maintainer of the (E)IDE driver for Linux, and current contributor
 to the libata subsystem, along with suggestions and patches from many netfolk.
 .PP
 The disable Seagate auto-powersaving code

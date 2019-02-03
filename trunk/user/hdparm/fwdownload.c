@@ -35,13 +35,16 @@ static int send_firmware (int fd, unsigned int xfer_mode, unsigned int offset,
 	int err = 0;
 	struct hdio_taskfile *r;
 	unsigned int blockcount = bytecount / 512;
-	unsigned int timeout_secs = 20;
+	unsigned int timeout_secs = 120;
 	__u64 lba;
 
 	lba = ((offset / 512) << 8) | ((blockcount >> 8) & 0xff);
 	r = malloc(sizeof(struct hdio_taskfile) + bytecount);
 	if (!r) {
-		if (xfer_mode == 3) { putchar('\n'); fflush(stdout); }
+		if (xfer_mode == 3 || xfer_mode == 0x0e) {
+			putchar('\n');
+			fflush(stdout);
+		}
 		err = errno;
 		perror("malloc()");
 		return err;
@@ -49,19 +52,25 @@ static int send_firmware (int fd, unsigned int xfer_mode, unsigned int offset,
 	init_hdio_taskfile(r, ATA_OP_DOWNLOAD_MICROCODE, RW_WRITE, LBA28_OK, lba, blockcount & 0xff, bytecount);
 
 	r->lob.feat = xfer_mode;
-	r->oflags.lob.feat  = 1;
-	r->iflags.lob.nsect = 1;
+	r->oflags.bits.lob.feat  = 1;
+	r->iflags.bits.lob.nsect = 1;
 
 	if (data && bytecount)
 		memcpy(r->data, data, bytecount);
 
 	if (do_taskfile_cmd(fd, r, timeout_secs)) {
 		err = errno;
-		if (xfer_mode == 3) { putchar('\n'); fflush(stdout); }
+		if (xfer_mode == 3 || xfer_mode == 0x0e) {
+			putchar('\n');
+			fflush(stdout);
+		}
 		perror("FAILED");
 	} else {
-		if (xfer_mode == 3) {
-			if (!verbose) { putchar('.'); fflush(stdout); }
+		if (xfer_mode == 3 || xfer_mode == 0x0e) {
+			if (!verbose) {
+				putchar('.');
+				fflush(stdout);
+			}
 			switch (r->lob.nsect) {
 				case 1:	// drive wants more data
 				case 2:	// drive thinks it is all done
@@ -127,6 +136,7 @@ int fwdownload (int fd, __u16 *id, const char *fwpath, int xfer_mode)
 		err = ENOTSUP;
 		goto done;
 	}
+
 	if (xfer_mode == 0) {
 		if ((id[119] & 0x10) && (id[120] & 0x10))
 			xfer_mode = 3;
@@ -134,7 +144,7 @@ int fwdownload (int fd, __u16 *id, const char *fwpath, int xfer_mode)
 			xfer_mode = 7;
 	}
 
-	if (xfer_mode == 3 || xfer_mode == 30) {
+	if (xfer_mode == 3 || xfer_mode == 0x30  || xfer_mode == 0x0e) {
 		/* the newer, segmented transfer mode */
 		xfer_min = id[234];
 		if (xfer_min == 0 || xfer_min == 0xffff)
@@ -144,11 +154,22 @@ int fwdownload (int fd, __u16 *id, const char *fwpath, int xfer_mode)
 			xfer_max = xfer_min;
 	}
 
-	if (xfer_mode == 30) {	// mode-3, using xfer_max
+	if (xfer_mode == 0x30) {	// mode-3, using xfer_max
 		xfer_mode = 3;
 		xfer_size = xfer_max;
 	} else if (xfer_mode == 3) {
 		xfer_size = xfer_min;
+	} else if (xfer_mode == 0x0e) {
+#if 0
+		xfer_size = xfer_max;
+	} else if (xfer_mode == 0xe0) {
+		xfer_size = xfer_min;
+#else
+		xfer_size = xfer_min;
+	} else if (xfer_mode == 0xe0) {
+		xfer_mode = 0x0e;
+		xfer_size = xfer_max;
+#endif
 	} else {
 		xfer_size = st.st_size / 512;
 		if (xfer_size > 0xffff) {
@@ -174,7 +195,10 @@ int fwdownload (int fd, __u16 *id, const char *fwpath, int xfer_mode)
 			if (offset >= st.st_size) { // transfer complete?
 				err = 0;
 			} else {
-				if (xfer_mode == 3) { putchar('\n'); fflush(stdout); }
+				if (xfer_mode == 3 || xfer_mode == 0x0e) {
+					putchar('\n');
+					fflush(stdout);
+				}
 				fprintf(stderr, "Error: drive completed transfer at %llu/%llu bytes\n",
 						(unsigned long long)offset, (unsigned long long)st.st_size);
 				err = EIO;
@@ -189,7 +213,10 @@ int fwdownload (int fd, __u16 *id, const char *fwpath, int xfer_mode)
 					break;
 				}
 #endif
-				if (xfer_mode == 3) { putchar('\n'); fflush(stdout); }
+				if (xfer_mode == 3 || xfer_mode == 0x0e) {
+					putchar('\n');
+					fflush(stdout);
+				}
 				fprintf(stderr, "Error: drive expects more data than provided,\n");
 				fprintf(stderr, "but the transfer may have worked regardless.\n");
 				err = EIO;

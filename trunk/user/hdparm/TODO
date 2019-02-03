@@ -1,7 +1,7 @@
 Mark's TO-DO list for hdparm:
 ============================
 
-- Make parameter parsing/etc.. LBA48 safe everywhere (instead of merely u32).
+- Find a new maintainer.
 
 - Add "wipe-drive" functionality via SCT WRITE_SAME (or manual).
 

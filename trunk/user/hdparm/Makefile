@@ -30,12 +30,13 @@ INSTALL_DATA = $(INSTALL) -m 644
 INSTALL_DIR = $(INSTALL) -m 755 -d
 INSTALL_PROGRAM = $(INSTALL)
 
-OBJS = hdparm.o identify.o sgio.o sysfs.o geom.o
+OBJS = hdparm.o identify.o sgio.o sysfs.o geom.o wdidle3.o apt.o
 ifndef HDPARM_MINI
 OBJS += fallocate.o fibmap.o fwdownload.o dvdspeed.o
 endif
 
-all: hdparm
+all:
+	$(MAKE) hdparm
 
 hdparm: hdparm.h sgio.h $(OBJS)
 	$(CC) $(CFLAGS) $(LDFLAGS) -o hdparm $(OBJS)
@@ -49,6 +50,8 @@ dvdspeed.o:     dvdspeed.c
 sgio.o: sgio.c sgio.h hdparm.h
 
 fwdownload.o: fwdownload.c sgio.h hdparm.h
+
+apt.o:		apt.c
 
 install: all hdparm.8
 	if [ ! -z $(DESTDIR) ]; then $(INSTALL_DIR) $(DESTDIR) ; fi

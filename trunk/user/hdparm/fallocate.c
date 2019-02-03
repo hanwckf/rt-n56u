@@ -27,7 +27,8 @@ int do_fallocate_syscall (const char *path, __u64 bytecount)
 	err = EINVAL;
 #else
 	int fd;
-	loff_t offset = 0, len;
+	unsigned long long offset = 0;	/* loff_t */
+	unsigned long long len;
 	int mode = 0;
 
 	fd = open(path, O_WRONLY|O_CREAT|O_EXCL, 0600);

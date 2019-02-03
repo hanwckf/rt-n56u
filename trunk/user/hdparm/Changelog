@@ -1,3 +1,87 @@
+hdparm-9.58:
+	- fix bug from 9.57 whereby -I for non-ATA might segfault.
+hdparm-9.57:
+	- added --set-sector-size flag to change logical sector size.
+	- fixed handling of non-512 byte logical sectors in several places.
+	- fixed possibility of infinite loop in sysfs_find_attr_file_path().
+	- respect the "quiet" flag in a few more places.
+	- skip "full device" checks for character devices (eg. /dev/sg*).
+	- don't issue READ_LOG_EXT commands unless the drive claims to support them.
+	- work around kernel/sysfs bug for "start" lba.
+hdparm-9.56:
+	- fixed byte order for --Istdout so that --Istdin can grok it
+	- added --Iraw for raw binary output of IDENTIFY data to a file
+hdparm-9.55:
+	- added #include <sys/sysmacros.h> for major()/minor() macros
+hdparm-9.54:
+	- Partial revert of Jmicron changes, from Jan Friesse.
+hdparm-9.53:
+	- Read Drive Capacity fixes from Iestyn Walters.
+	- SET MAX ADDRESS fixes from Tom Yan <tom.ty89@gmail.com>.
+	- added --security-prompt-for-password to --security-help output.
+	- fwdownload changes from Jihoon Lee.
+hdparm-9.52:
+	- Jmicron SATA-USB bridge support from Jan Friesse <jfriesse@gmail.com>.
+hdparm-9.51:
+	- add support for Jmicron USB-SATA bridges, courtesy Jan Friesse <jfriesse@gmail.com>.
+hdparm-9.51:
+	- New --security-prompt-for-password flag for use with the various --security- actions.
+	- Makefile tweak from Mike Frysinger.
+	- fix spelling/typos in man page and "removable", courtesy of Alex Mestiashvili.
+	- fix spelling/typos in --sanitize-crypto-scramble, courtesy of Tom Yan.
+	- fix NULL password handling in --security-unlock, courtesy of Tom Yan.
+hdparm-9.50:
+	- minor fixes for sanitize device stuff.
+hdparm-9.49:
+	- add ACS-3 overprovisioning support, courtesy of Intel.
+	- fix bug in display of security section and use updated erase-time values from ACS-3, courtesy of Patrick Higgins.
+	- increase timeout on fwdownload to 2 minutes, courtesy of Rusy Carruth.
+	- fix bugs from devslp patch.
+hdparm-9.48:
+	- fix bugs from devslp patch.
+hdparm-9.47:
+	- added devslp patch (IDENTIFY word 76) from David Woodhouse.
+	- help and manpage fixes from Michal Minar.
+hdparm-9.46:
+	- fix compilation with "musl libc".
+	- added "hex:aabbcc.." for binary security passwords.
+	- return EIO when read_big_block() fails
+	- use llabs() rather than abs() in identify.c
+hdparm-9.45:
+	- fixed blocksize handling in fibmap code to use result from FIGETBSZ in more places (Anton Altaparmakov).
+	- fixed divide by zero exception in geom.c
+	- tidying up formatting in sgio.c
+hdparm-9.44:
+	- changed reg_flags struct to more closely match kernel definition (Lucas Magasweran).
+	- added fwdownload mode "E" support (Rusty Carruth).
+	- fix timeouts for security-erase (again!)
+	- change display of security "supported" to handle ambiguous reporting from drives
+	- don't rely upon C-library for byte-swapping
+	- added --dco-setmax support, courtesy of Geoff Papilion.
+hdparm-9.43
+	- rearrange flag execution so that the idle/standby/sleep "now" flags are executed last.
+hdparm-9.42
+	- fix ordering of -S -y flags
+	- spelling, typo, and formatting fixes for manpage and others
+	- set block-count to 1 for Security commands sent via SAT (sgio)
+	- use FIGETBSZ to determine filesystem block size for fibmap -- needed for FAT
+	- fix master password revcode handling
+	- try and fix reg_flags (again!) for old IDE taskfile ioctls
+	- fixed '&&' bug in dco_identify code
+	- force sector dumps (read-sector, identify, ..) to use le16 output format
+hdparm-9.41
+	- proper SCT identify info courtesy of Leonid Evdokimov <leon@darkk.net.ru>
+	- updated raid1ext4trim.sh-1.5 script
+hdparm-9.40
+	- avoid HDIO_GETGEO_BIG when possible (doesn't exist in linux-2.6.xx and beyond)
+	- pad secure erase timeouts by 30minutes rather than 5minutes.
+hdparm-9.39
+	- added -R flag to control Read-Write-Verify feature, courtesy of Gordan Bobic
+	- nuked leftover sgio.c.orig file
+hdparm-9.38
+	- updated wiper.sh to allow all SCSI_DISK major numbers
+	- updated handing for very long SECURITY-ERASE times
+	- added -J flag for wdidle3 set/get
 hdparm-9.37
 	- handle raid1 start_lba values, and show -1 for indeterminte raid start_lba values
 	- abort --fibmap when start_lba is indeterminate

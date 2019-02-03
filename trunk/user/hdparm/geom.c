@@ -15,6 +15,7 @@
 #include <errno.h>
 #include <dirent.h>
 #include <sys/stat.h>
+#include <sys/sysmacros.h>
 #include <sys/ioctl.h>
 #include <linux/types.h>
 #include <linux/fs.h>
@@ -144,7 +145,8 @@ int get_dev_geometry (int fd, __u32 *cyls, __u32 *heads, __u32 *sects,
 {
 	static struct local_hd_geometry      g;
 	static struct local_hd_big_geometry bg;
-	int err = 0;
+	int err = 0, try_getgeo_big_first = 1;
+	int sector_bytes = get_current_sector_size(fd);
 
 	if (nsectors) {
 		err = get_sector_count(fd, nsectors);
@@ -158,19 +160,25 @@ int get_dev_geometry (int fd, __u32 *cyls, __u32 *heads, __u32 *sects,
 		 * so it cannot be relied upon for start_lba with very large drives >= 2TB.
 		 */
 		__u64 result;
-		if (0 == sysfs_get_attr(fd, "start", "%llu", &result, NULL, 0)
-		 || 0 == get_raid1_start_lba(fd, &result))
-		{
+		if (0 == sysfs_get_attr(fd, "start", "%llu", &result, NULL, 0)) {
+			result /= (sector_bytes / 512);   /* sysfs entry is broken for non-512byte sectors */
+			*start_lba = result;
+			start_lba = NULL;
+			try_getgeo_big_first = 0;	/* if kernel has sysfs, it probably lacks GETGEO_BIG */
+		} else if (0 == get_raid1_start_lba(fd, &result)) {
 			*start_lba = result;
 			 start_lba = NULL;
+			try_getgeo_big_first = 0;	/* if kernel has sysfs, it probably lacks GETGEO_BIG */
 		} else if (fd_is_raid(fd)) {
-			*start_lba = START_LBA_UNKNOWN;  /* RAID: no such thing as a "start_lba" */
+			*start_lba = START_LBA_UNKNOWN;	/* RAID: no such thing as a "start_lba" */
 			 start_lba = NULL;
+			try_getgeo_big_first = 0;	/* no point even trying it on RAID */
 		}
 	}
 
 	if (cyls || heads || sects || start_lba) {
-		if (!ioctl(fd, HDIO_GETGEO_BIG, &bg)) {
+		/* Skip HDIO_GETGEO_BIG (doesn't exist) on kernels with sysfs (>= 2.6.xx) */
+		if (try_getgeo_big_first && !ioctl(fd, HDIO_GETGEO_BIG, &bg)) {
 			if (cyls)	*cyls  = bg.cylinders;
 			if (heads)	*heads = bg.heads;
 			if (sects)	*sects = bg.sectors;
@@ -180,6 +188,11 @@ int get_dev_geometry (int fd, __u32 *cyls, __u32 *heads, __u32 *sects,
 			if (heads)	*heads = g.heads;
 			if (sects)	*sects = g.sectors;
 			if (start_lba)	*start_lba = g.start;
+		} else if (!try_getgeo_big_first && !ioctl(fd, HDIO_GETGEO_BIG, &bg)) {
+			if (cyls)	*cyls  = bg.cylinders;
+			if (heads)	*heads = bg.heads;
+			if (sects)	*sects = bg.sectors;
+			if (start_lba)	*start_lba = bg.start;
 		} else {
 			err = errno;
 			perror(" HDIO_GETGEO failed");
@@ -189,7 +202,8 @@ int get_dev_geometry (int fd, __u32 *cyls, __u32 *heads, __u32 *sects,
 		 * On all (32 and 64 bit) systems, the cyls value is bit-limited.
 		 * So try and correct it using other info we have at hand.
 		 */
-		if (nsectors && cyls && heads && sects) {
+		if (nsectors && cyls && heads && sects
+		 && *nsectors && *cyls && *heads && *sects) {
 			__u64 hs  = (*heads) * (*sects);
 			__u64 cyl = (*cyls);
 			__u64 chs = cyl * hs;
@@ -237,7 +251,7 @@ static int find_dev_in_directory (dev_t dev, const char *dir, char *path, int ve
 }
 
 int get_dev_t_geometry (dev_t dev, __u32 *cyls, __u32 *heads, __u32 *sects,
-				__u64 *start_lba, __u64 *nsectors)
+				__u64 *start_lba, __u64 *nsectors, unsigned int *sector_bytes)
 {
 	char path[PATH_MAX];
 	int fd, err;
@@ -252,6 +266,7 @@ int get_dev_t_geometry (dev_t dev, __u32 *cyls, __u32 *heads, __u32 *sects,
 		perror(path);
 		return err;
 	}
+	*sector_bytes = get_current_sector_size(fd);
 
 	err = get_dev_geometry(fd, cyls, heads, sects, start_lba, nsectors);
 	close(fd);

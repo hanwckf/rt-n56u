@@ -13,7 +13,9 @@
 #include <fcntl.h>
 #include <errno.h>
 #include <dirent.h>
+#include <limits.h>
 #include <sys/stat.h>
+#include <sys/sysmacros.h>
 #include <linux/types.h>
 
 #include "hdparm.h"
@@ -192,5 +194,66 @@ int sysfs_set_attr (int fd, const char *attr, const char *fmt, void *val_p, int 
 	err = sysfs_find_fd(fd, &path, verbose);
 	if (!err)
 		err = sysfs_write_attr(path, attr, fmt, val_p, verbose);
+	return err;
+}
+
+static int sysfs_find_attr_file_path (const char *start_path, char **dest_path, const char *attr)
+{
+	static char path[PATH_MAX];
+	static char have_prev = 0;
+	char file_path[PATH_MAX + FILENAME_MAX];
+	struct stat st;
+	ino_t stop_inode;
+	int depth = 0;
+
+	if (have_prev) {
+		*dest_path = path;
+
+		return 0;
+	}
+
+	stat("/sys/devices", &st);
+	stop_inode = st.st_ino;
+
+	strcpy(path, start_path);
+
+	while (depth++ < 20) {
+		strcat(path, "/..");
+
+		if (stat(path, &st) != 0)
+			return errno;
+
+		if (st.st_ino == stop_inode)
+			return EINVAL;
+
+		strcpy(file_path, path);
+		strcat(file_path, "/");
+		strcat(file_path, attr);
+
+		if (access(file_path, F_OK | R_OK) == 0) {
+			*dest_path = path;
+
+			return 0;
+		}
+	}
+
+	return EINVAL;
+}
+
+int sysfs_get_attr_recursive (int fd, const char *attr, const char *fmt, void *val1, void *val2, int verbose)
+{
+	char *path;
+	char *attr_path;
+	int err;
+
+	err = sysfs_find_fd(fd, &path, verbose);
+	if (!err) {
+		err = sysfs_find_attr_file_path(path, &attr_path, attr);
+
+		if (!err) {
+			err = sysfs_read_attr(attr_path, attr, fmt, val1, val2, verbose);
+		}
+	}
+
 	return err;
 }

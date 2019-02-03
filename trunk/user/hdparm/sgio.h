@@ -10,6 +10,7 @@ enum {
 	ATA_OP_READ_LONG_ONCE		= 0x23,
 	ATA_OP_READ_PIO_EXT		= 0x24,
 	ATA_OP_READ_DMA_EXT		= 0x25,
+	ATA_OP_READ_LOG_EXT		= 0x2f,
 	ATA_OP_READ_FPDMA		= 0x60,	// NCQ
 	ATA_OP_WRITE_PIO		= 0x30,
 	ATA_OP_WRITE_LONG		= 0x32,
@@ -29,8 +30,11 @@ enum {
 	ATA_OP_PIDENTIFY		= 0xa1,
 	ATA_OP_READ_NATIVE_MAX		= 0xf8,
 	ATA_OP_READ_NATIVE_MAX_EXT	= 0x27,
+	ATA_OP_GET_NATIVE_MAX_EXT	= 0x78,
 	ATA_OP_SMART			= 0xb0,
 	ATA_OP_DCO			= 0xb1,
+	ATA_OP_SET_SECTOR_CONFIGURATION = 0xb2,
+	ATA_OP_SANITIZE			= 0xb4,
 	ATA_OP_ERASE_SECTORS		= 0xc0,
 	ATA_OP_READ_DMA			= 0xc8,
 	ATA_OP_WRITE_DMA		= 0xca,
@@ -54,6 +58,7 @@ enum {
 	ATA_OP_SECURITY_ERASE_UNIT	= 0xf4,
 	ATA_OP_SECURITY_FREEZE_LOCK	= 0xf5,
 	ATA_OP_SECURITY_DISABLE		= 0xf6,
+	ATA_OP_VENDOR_SPECIFIC_0x80	= 0x80,
 };
 
 /*
@@ -114,7 +119,9 @@ enum {
 	TASKFILE_DPHASE_PIO_OUT	= 4,	/* ide: TASKFILE_OUT */
 };
 
-struct reg_flags {
+union reg_flags {
+	unsigned all				:16;
+	struct {
 	union {
 		unsigned lob_all		: 8;
 		struct {
@@ -141,7 +148,8 @@ struct reg_flags {
 			unsigned command	: 1;
 		} hob;
 	};
-};
+	} bits;
+} __attribute__((packed));
 
 struct taskfile_regs {
 	__u8	data;
@@ -157,8 +165,8 @@ struct taskfile_regs {
 struct hdio_taskfile {
 	struct taskfile_regs	lob;
 	struct taskfile_regs	hob;
-	struct reg_flags	oflags;
-	struct reg_flags	iflags;
+	union reg_flags		oflags;
+	union reg_flags		iflags;
 	int			dphase;
 	int			cmd_req;     /* IDE command_type */
 	unsigned long		obytes;
@@ -229,3 +237,7 @@ int do_taskfile_cmd (int fd, struct hdio_taskfile *r, unsigned int timeout_secs)
 int dev_has_sgio (int fd);
 void init_hdio_taskfile (struct hdio_taskfile *r, __u8 ata_op, int rw, int force_lba48,
 				__u64 lba, unsigned int nsect, int data_bytes);
+
+/* APT */
+int apt_sg16(int fd, int rw, int dma, struct ata_tf *tf,
+		void *data, unsigned int data_bytes, unsigned int timeout_secs);

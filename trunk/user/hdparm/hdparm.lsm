@@ -1,9 +1,30 @@
 Begin4
 Title:		hdparm
-Version:	9.37
-Entered-date:	2011-01-24
+Version:	9.58
+Entered-date:	2018-10-26
 Description:	hdparm - get/set hard disk parameters for Linux SATA/IDE drives.
-		v9.37 Enable --fibmap to work on RAID1; other tweaks.
+		v9.58 fixed -I crash on non-ATA
+		v9.57 added --set-sector-size, general support for non-512 byte partitions
+		v9.56 fixed --Istdout, added --Iraw
+		v9.55 #include <sys/sysmacros.h>
+		v9.54 partial revert of JMicron changes.
+		v9.53 Read Drive Capacity fixes, SET MAX ADDRESS fixes, fwdownload fixes.
+		v9.52 added JMicron USB-SATA bridge support, courtesy Jan Friesse <jfriesse@gmail.com>.
+		v9.51 minor fixes/tweaks, new --security-prompt-for-password flag.
+		v9.50 minor fixes for sanitize device stuff.
+		v9.49 bugfixes and ACS-3 enhancements.
+		v9.48 fix devslp bugs
+		v9.47 devslp reporting support
+		v9.46 added "hex:xxxxxxxx" format for binary security passwords; misc small fixes
+		v9.45 fixed fibmap block size; other minor stuff.
+		v9.44 better sgio compatibility with kernel; fwdownload mode "E"; longer erase timeout; etc.
+		v9.43 rearrange flag execution so that the idle/standby/sleep "now" flags are executed last.
+		v9.42 lots of fixes from the sourceforge queue
+		v9.41 updated SCT identification, other small fixes.
+		v9.40 internal release
+		v9.39 Added -R, courtesy of Gordan Bobic
+		v9.38 Added -J, fixed erase timeouts, updated wiper.sh
+		v9.37 Enable --fibmap to work on RAID1; other tweaks
 		v9.36 manpage updates, wiper.sh version 3.1
 		v9.35 Fixed CDB breakage from v9.34; -B works again now
 		v9.34 Fixed CDB transfer length bug that affected some commands
@@ -111,8 +132,8 @@ Author:		mlord@pobox.com (Mark Lord)
 Maintained-by:	mlord@pobox.com (Mark Lord)
 Primary-site:	http://sourceforge.net/projects/hdparm/
 Alternate-site:	http://www.ibiblio.org/pub/Linux/system/hardware
-		122K hdparm-9.37.tar.gz
-		4K hdparm.lsm
+		138K hdparm-9.58.tar.gz
+		7K hdparm.lsm
 Platforms:	Linux
 Copying-policy:	BSD License
 End

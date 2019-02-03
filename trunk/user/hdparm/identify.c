@@ -199,6 +199,7 @@ const char *ata1_cfg_str[] = {			/* word 0 in ATA-1 mode */
 /* words 47 & 59: sector_xfer_max & sector_xfer_cur */
 #define SECTOR_XFER		0x00ff  /* sectors xfered on r/w multiple cmds*/
 #define MULTIPLE_SETTING_VALID  0x0100  /* 1=multiple sector setting is valid */
+#define SANITIZE_FEAT_SUP       0x1000 /* SANITIZE FETURES set is supported */
 
 /* word 49: capabilities 0 */
 #define STD_STBY  		0x2000  /* 1=standard values supported (ATA);
@@ -222,6 +223,26 @@ const char *ata1_cfg_str[] = {			/* word 0 in ATA-1 mode */
 #define OK_W88     		0x0004	/* the ultra_dma info is valid */
 #define OK_W64_70		0x0002  /* see above for word descriptions */
 #define OK_W54_58		0x0001  /* current cyl, head, sector, cap. info valid */
+
+/* word 59: sanitize feature set */
+static const char *feat_word59_str[16] = {
+	"BLOCK_ERASE_EXT command",						/* word 84 bit 15 */
+	"OVERWRITE_EXT command",						/* word 84 bit 14 */
+	"CRYPTO_SCRAMBLE_EXT command",					/* word 59 bit 13 */
+	"SANITIZE feature set",							/* word 59 bit 12 */
+	NULL, 											/* word 59 bit 11 */
+	"SANITIZE_ANTIFREEZE_LOCK_EXT command",			/* word 59 bit 10 */
+	NULL,				/* word 59 bit  9 */
+	NULL,				/* word 59 bit  8 */
+	NULL,				/* word 59 bit  7 */
+	NULL,				/* word 59 bit  6 */
+	NULL,				/* word 59 bit  5 */
+	NULL,				/* word 59 bit  4 */
+	NULL,				/* word 59 bit  3 */
+	NULL,				/* word 59 bit  2 */
+	NULL,				/* word 59 bit  1 */
+	NULL				/* word 59 bit  0 */
+};
 
 /*word 63,88: dma_mode, ultra_dma_mode*/
 #define MODE_MAX		7	/* bit definitions force udma <=7 (when
@@ -421,9 +442,9 @@ static const char *feat_3_str[16] = {
 	"Disable Data Transfer After Error Detection"	/* word 119 bit  0 (ref: 2014DT)*/
 };
 static const char *cap_sata0_str[16] = { 
-	"unknown 76[15]",				/* word 76 bit 15 */
-	"unknown 76[14]",				/* word 76 bit 14 */
-	"unknown 76[13]",				/* word 76 bit 13 */
+	"READ_LOG_DMA_EXT equivalent to READ_LOG_EXT",	/* word 76 bit 15 */
+	"Device automatic Partial to Slumber transitions",/* word 76 bit 14 */
+	"Host automatic Partial to Slumber transitions",/* word 76 bit 13 */
 	"NCQ priority information",			/* word 76 bit 12 */
 	"Idle-Unload when NCQ is active",		/* word 76 bit 11 */
 	"Phy event counters",				/* word 76 bit 10 */
@@ -446,7 +467,7 @@ static const char *feat_sata0_str[16] = {
 	"unknown 78[11]",				/* word 78 bit 11 */
 	"unknown 78[10]",				/* word 78 bit 10 */
 	"unknown 78[9]",				/* word 78 bit  9 */
-	"unknown 78[8]",				/* word 78 bit  8 */
+	"Device Sleep (DEVSLP)",			/* word 78 bit  8 */
 	"unknown 78[7]",				/* word 78 bit  7 */
 	"Software settings preservation",		/* word 78 bit  6 */
 	"Asynchronous notification (eg. media change)",	/* word 78 bit  5 */
@@ -514,8 +535,8 @@ static const char *feat_sct_str[16] = {
 	"SCT Data Tables (AC5)",			/* word 206 bit  5 */
 	"SCT Features Control (AC4)",			/* word 206 bit  4 */
 	"SCT Error Recovery Control (AC3)",		/* word 206 bit  3 */
-	"SCT LBA Segment Access (AC2)",			/* word 206 bit  2 */
-	"SCT Long Sector Access (AC1)",			/* word 206 bit  1 */
+	"SCT Write Same (AC2)",				/* word 206 bit  2 */
+	"SCT Read/Write Long (AC1), obsolete",		/* word 206 bit  1: obsolete per T13/e08153r1 */
 	"SMART Command Transport (SCT) feature set"	/* word 206 bit  0 */
 };
 
@@ -648,8 +669,49 @@ static int is_cfa_dev (__u16 *id)
 	return id[0] == 0x848a || id[0] == 0x844a || (id[83] & 0xc004) == 0x4004;
 }
 
+static void print_devslp_info (int fd, __u16 *id)
+{
+	/* Print DEVSLP information */
+	if (id[78] & 0x0100) {
+		__u8 buf[512];
+		int deto = 0;
+		int mdat = 0;
+
+		memset(buf, 0, 512);
+		if (fd != -1 && !get_log_page_data(fd, 0x30, 8, buf) && (buf[0x37] & 0x80)) {
+			mdat = buf[0x30] & 0x1f;
+			deto = buf[0x31];
+			printf("Device Sleep:\n");
+			printf("\tDEVSLP Exit Timeout (DETO): %d ms (%s)\n", deto?deto:20, deto?"drive":"default");
+			printf("\tMinimum DEVSLP Assertion Time (MDAT): %d ms (%s)\n", mdat?mdat:10, deto?"drive":"default");
+		}
+	}
+}
+
+static void
+print_logical_sector_sizes (int fd)
+{
+	__u8 d[512] = {0,};
+	int i, found = 0, rc;
+
+	rc = get_log_page_data(fd, 0x2f, 0, d);
+	if (rc)
+		return;
+	for (i = 0; i < 128; i += 16) {
+		unsigned int lss;
+		if ((d[i] & 0x80) == 0)  /* Is this descriptor valid? */
+			continue;  /* not valid */
+		if (!found++)
+			printf(" [ Supported:");
+		lss = d[i + 4] | (d[i + 5] << 8) | (d[i + 6] << 16) | (d[i + 7] << 24);  /* logical sector size */
+		printf(" %u", lss);
+	}
+	if (found)
+		printf(" ]");
+}
+
 /* our main() routine: */
-void identify (__u16 *id_supplied)
+void identify (int fd, __u16 *id_supplied)
 {
 	unsigned int sector_bytes = 512;
 	__u16 val[256], ii, jj, kk;
@@ -907,22 +969,22 @@ void identify (__u16 *id_supplied)
 				if(like_std < 3) {
 					nn = (__u32)val[CAPACITY_LSB] << 16 | val[CAPACITY_MSB];
 					/* check Endian of capacity bytes */
-					if(abs(mm - bb) > abs(nn - bb))
+					if(llabs((long long)(mm - bb)) > llabs((long long)(nn - bb)))
 						mm = nn;
 				}
-				printf("\tCHS current addressable sectors:%11u\n",mm);
+				printf("\tCHS current addressable sectors:%12u\n",mm);
 			} 
 		}
 		if (val[CAPAB_0] & LBA_SUP) {
 		/* LBA addressing */
-			printf("\tLBA    user addressable sectors:%11u\n",ll);
+			printf("\tLBA    user addressable sectors:%12u\n",ll);
 			if( ((val[CMDS_SUPP_1] & VALID) == VALID_VAL) &&
 			     (val[CMDS_SUPP_1] & SUPPORT_48_BIT) ) {
 				bbbig = (__u64)val[LBA_64_MSB] << 48 | 
 				        (__u64)val[LBA_48_MSB] << 32 |
 				        (__u64)val[LBA_MID] << 16 | 
 					val[LBA_LSB] ;
-				printf("\tLBA48  user addressable sectors:%11llu\n", (unsigned long long)bbbig);
+				printf("\tLBA48  user addressable sectors:%12llu\n", (unsigned long long)bbbig);
 			}
 		}
 		if((val[106] & 0xc000) != 0x4000) {
@@ -934,20 +996,23 @@ void identify (__u16 *id_supplied)
 			if (val[106] & (1<<12))
 				lsize = (val[118] << 16) | val[117];
 			sector_bytes = 2 * lsize;
-			printf("\t%-31s %11u bytes\n","Logical  Sector size:", sector_bytes);
+			printf("\t%-31s %11u bytes","Logical  Sector size:", sector_bytes);
+			print_logical_sector_sizes(fd);
+			printf("\n");
 			printf("\t%-31s %11u bytes\n","Physical Sector size:", sector_bytes * pfactor);
 			if ((val[209] & 0xc000) == 0x4000) {
 				unsigned int offset = val[209] & 0x1fff;
 				printf("\t%-31s %11u bytes\n", "Logical Sector-0 offset:", offset * sector_bytes);
 			}
 		}
-		if (!bbbig) bbbig = (__u64)(ll>mm ? ll : mm); /* # 512 byte blocks */
+		if (!bbbig) bbbig = (__u64)((ll > mm) ? ll : mm); /* # 512 byte blocks */
 		if (!bbbig) bbbig = bb;
-		bbbig *= (sector_bytes / 512);
-		printf("\tdevice size with M = 1024*1024: %11llu MBytes\n", (unsigned long long)(bbbig>>11));
-		bbbig = (bbbig<<9)/1000000;
-		printf("\tdevice size with M = 1000*1000: %11llu MBytes ", (unsigned long long)bbbig);
-		if(bbbig > 1000) printf("(%llu GB)\n", (unsigned long long)(bbbig/1000));
+		bbbig *= sector_bytes;
+
+		printf("\tdevice size with M = 1024*1024: %11llu MBytes\n", bbbig / (1024ull * 1024ull));
+		bbbig /= 1000ull;
+		printf("\tdevice size with M = 1000*1000: %11llu MBytes ",  bbbig / 1000ull);
+		if (bbbig > 1000ull) printf("(%llu GB)\n", bbbig/1000000ull);
 		else printf("\n");
 	}
 
@@ -1204,6 +1269,8 @@ void identify (__u16 *id_supplied)
 			print_features(val[SATA_SUPP_0], val[SATA_EN_0], feat_sata0_str);
 		if (val[SCT_SUPP] & 0x1)
 			print_features(val[SCT_SUPP], val[SCT_SUPP] & 0x3f, feat_sct_str);
+		if (val[SECTOR_XFER_CUR] & SANITIZE_FEAT_SUP)
+			print_features(val[SECTOR_XFER_CUR], val[SECTOR_XFER_CUR], feat_word59_str);
 	}
 	if (like_std > 6) {
 		const __u16 trimd = 1<<14;	/* deterministic read data after TRIM */
@@ -1303,38 +1370,62 @@ void identify (__u16 *id_supplied)
 		}
 	}
 
-	if((val[RM_STAT] & RM_STAT_BITS) == RM_STAT_SUP) 
+	if((val[RM_STAT] & RM_STAT_BITS) == RM_STAT_SUP)
 		printf("\t\tRemovable Media Status Notification feature set supported\n");
 
+
 	/* security */
-	if((eqpt != CDROM) && (like_std > 3) && (val[SECU_STATUS] || val[ERASE_TIME] || val[ENH_ERASE_TIME]))
+	if ((val[CMDS_SUPP_0] & (1 << 1)) && (eqpt != CDROM) && (like_std > 3) && (val[SECU_STATUS] || val[ERASE_TIME] || val[ENH_ERASE_TIME]))
 	{
 		printf("Security: \n");
-		if(val[PSWD_CODE] && (val[PSWD_CODE] != 0xffff))
-			printf("\tMaster password revision code = %u\n",val[PSWD_CODE]);
+		if (val[PSWD_CODE] && (val[PSWD_CODE] != 0xffff))
+			printf("\tMaster password revision code = %u\n", val[PSWD_CODE]);
 		jj = val[SECU_STATUS];
-		if(jj) {
+		if (jj) {
 			for (ii = 0; ii < NUM_SECU_STR; ii++) {
-				if(!(jj & 0x0001)) printf("\tnot\t");
-				else		   printf("\t\t");
-				printf("%s\n",secu_str[ii]);
-				jj >>=1;
+				if (!(jj & 0x0001)) printf("%s", ii ? "\tnot\t" : "\t(?)\t");
+				else                printf("\t\t");
+				printf("%s\n", secu_str[ii]);
+				jj >>= 1;
 			}
-			if(val[SECU_STATUS] & SECU_ENABLED) {
+			if (val[SECU_STATUS] & SECU_ENABLED) {
 				printf("\tSecurity level ");
-				if(val[SECU_STATUS] & SECU_LEVEL) printf("maximum\n");
-				else				  printf("high\n");
+				if (val[SECU_STATUS] & SECU_LEVEL) printf("maximum\n");
+				else                               printf("high\n");
 			}
 		}
-		jj =  val[ERASE_TIME];
-		kk =  val[ENH_ERASE_TIME];
-		if((jj && jj <= 0x00ff) || (kk && kk <= 0x00ff)) {
-			printf("\t");
-			if(jj) printf("%umin for SECURITY ERASE UNIT. ",         (jj == 0xff) ? 508 : (jj * 2));
-			if(kk) printf("%umin for ENHANCED SECURITY ERASE UNIT.", (kk == 0xff) ? 508 : (kk * 2));
-			printf("\n");
+		jj = val[ERASE_TIME];                                 // Grab normal erase time
+		unsigned int const ext_time_n = (jj & (1 << 15)) != 0;// Check if erase time is extended format or not (ACS-3)
+		jj = ext_time_n ? jj & 0x7FFF: jj & 0x00FF;           // Mask off reserved bits accordingly
+		kk = val[ENH_ERASE_TIME];                             // Grab enhanced erase time
+		unsigned int const ext_time_e = (kk & (1 << 15)) != 0;// Check if erase time is extended format or not (ACS-3)
+		kk = ext_time_e ? kk & 0x7FFF: kk & 0x00FF;           // Mask off reserved bits accordingly
+		if ((jj != 0) || (kk != 0)) printf("\t");
+		if (jj != 0) {
+			if (ext_time_n && (jj == 0x7FFF)) {
+				printf("more than 65532");
+			} else if (!ext_time_n && (jj == 0x00FF)) {
+				printf("more than 508");
+			} else {
+				printf("%u", jj * 2);
+			}
+			printf("min for SECURITY ERASE UNIT.");
 		}
+		if ((jj != 0) && (kk != 0)) printf(" ");
+		if (kk != 0) {
+			if (ext_time_e && (kk == 0x7FFF)) {
+				printf("more than 65532");
+			} else if (!ext_time_e && (kk == 0x00FF)) {
+				printf("more than 508");
+			} else {
+				printf("%u", kk * 2);
+			}
+			printf("min for ENHANCED SECURITY ERASE UNIT.");
+		}
+		printf("\n");
 	}
+
+
 	//printf("w84=0x%04x w87=0x%04x like_std=%d\n", val[84], val[87], like_std);
 	if((eqpt != CDROM) && (like_std > 3) && (val[CMDS_SUPP_2] & WWN_SUP)) {
 		printf("Logical Unit WWN Device Identifier: %04x%04x%04x%04x\n", val[108], val[109], val[110], val[111]);
@@ -1361,6 +1452,7 @@ void identify (__u16 *id_supplied)
 			printf(" determined by CSEL");
 		printf("\n");
 	}
+	print_devslp_info(fd, val);
 
 	/* more stuff from std 5 */
 	if ((like_std > 4) && (eqpt != CDROM)) {
@@ -1461,7 +1553,7 @@ void dco_identify_print (__u16 *dco)
 	}
 	putchar('\n');
 
-	if (dco[8] && 0x1f) {
+	if (dco[8] & 0x1f) {
 		printf("\tSATA command/feature sets:\n\t\t");
 		if (dco[0] < 2)
 			printf(" (?):");

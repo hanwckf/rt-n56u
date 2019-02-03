@@ -1,0 +1,58 @@
+diff -urw parted-3.2-ref/libparted/arch/linux.c parted-3.2/libparted/arch/linux.c
+--- parted-3.2-ref/libparted/arch/linux.c	2014-06-15 23:15:54.000000000 +0400
++++ parted-3.2/libparted/arch/linux.c	2018-04-12 21:42:56.000000000 +0300
+@@ -2304,6 +2304,7 @@
+   return r < 0 ? NULL : resultp;
+ }
+ 
++#if ENABLE_DEVICE_MAPPER
+ static char *
+ dm_canonical_path (PedDevice const *dev)
+ {
+@@ -2326,12 +2327,17 @@
+ err:
+         return NULL;
+ }
++#endif
+ 
+ static char*
+ _device_get_part_path (PedDevice const *dev, int num)
+ {
++#if ENABLE_DEVICE_MAPPER
+         char *devpath = (dev->type == PED_DEVICE_DM
+                          ? dm_canonical_path (dev) : dev->path);
++#else
++        char *devpath = dev->path;
++#endif
+         size_t path_len = strlen (devpath);
+         char *result;
+         /* Check for devfs-style /disc => /partN transformation
+@@ -2349,8 +2355,10 @@
+                                  ? "p" : "");
+                 result = zasprintf ("%s%s%d", devpath, p, num);
+         }
++#if ENABLE_DEVICE_MAPPER
+         if (dev->type == PED_DEVICE_DM)
+                 free (devpath);
++#endif
+         return result;
+ }
+ 
+@@ -2944,13 +2952,15 @@
+                                                unsigned long long *start,
+                                                unsigned long long *length);
+ 
+-
++#if ENABLE_DEVICE_MAPPER
+         if (disk->dev->type == PED_DEVICE_DM) {
+                 add_partition = _dm_add_partition;
+                 remove_partition = _dm_remove_partition;
+                 resize_partition = _dm_resize_partition;
+                 get_partition_start_and_length = _dm_get_partition_start_and_length;
+-        } else {
++        } else
++#endif
++        {
+                 add_partition = _blkpg_add_partition;
+                 remove_partition = _blkpg_remove_partition;
+ #ifdef BLKPG_RESIZE_PARTITION

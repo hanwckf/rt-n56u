@@ -1,0 +1,127 @@
+diff -urw e2fsprogs-1.44.4-ref/configure.ac e2fsprogs-1.44.4/configure.ac
+--- e2fsprogs-1.44.4-ref/configure.ac	2018-08-19 05:26:58.000000000 +0300
++++ e2fsprogs-1.44.4/configure.ac	2018-08-30 09:33:20.324375999 +0300
+@@ -456,11 +456,8 @@
+ 		AC_MSG_ERROR([pkg-config not installed; please install it.])
+ 	fi
+ 
+-	AC_CHECK_LIB(uuid, uuid_generate,
+-		[LIBUUID=`$PKG_CONFIG --libs uuid`;
+-		 STATIC_LIBUUID=`$PKG_CONFIG --static --libs uuid`],
+-		[AC_MSG_ERROR([external uuid library not found])])
+-	PROFILED_LIBUUID=$LIBUUID
++	LIBUUID="-luuid"
++	STATIC_LIBUUID="-luuid"
+ 	UUID_CMT=#
+ 	AC_MSG_RESULT([Disabling private uuid library])
+ else
+@@ -473,16 +470,6 @@
+ 	AC_MSG_RESULT([Enabling private uuid library])
+ fi
+ ,
+-if test -n "$PKG_CONFIG"; then
+-	AC_CHECK_LIB(uuid, uuid_generate,
+-		[LIBUUID=`$PKG_CONFIG --libs uuid`;
+-		 STATIC_LIBUUID=`$PKG_CONFIG --static --libs uuid`])
+-fi
+-if test -n "$LIBUUID"; then
+-	PROFILED_LIBUUID=$LIBUUID
+-	UUID_CMT=#
+-	AC_MSG_RESULT([Using system uuid by default])
+-else
+ 	LIBUUID='$(LIB)/libuuid'$LIB_EXT
+ 	DEPLIBUUID=$LIBUUID
+ 	STATIC_LIBUUID='$(LIB)/libuuid'$STATIC_LIB_EXT
+@@ -490,7 +477,6 @@
+ 	PROFILED_LIBUUID='$(LIB)/libuuid'$PROFILED_LIB_EXT
+ 	DEPPROFILED_LIBUUID=$PROFILED_LIBUUID
+ 	AC_MSG_RESULT([Enabling private uuid library by default])
+-fi
+ )
+ AC_SUBST(LIBUUID)
+ AC_SUBST(DEPLIBUUID)
+@@ -519,12 +505,9 @@
+ 		AC_MSG_ERROR([pkg-config not installed; please install it.])
+ 	fi
+ 
+-	AC_CHECK_LIB(blkid, blkid_get_cache,
+-		[LIBBLKID=`$PKG_CONFIG --libs blkid`;
+-		 STATIC_LIBBLKID=`$PKG_CONFIG --static --libs blkid`],
+-		[AC_MSG_ERROR([external blkid library not found])], -luuid)
++	LIBBLKID="-lblkid -luuid"
++	STATIC_LIBBLKID="-lblkid -luuid"
+ 	BLKID_CMT=#
+-	PROFILED_LIBBLKID=$LIBBLKID
+ 	AC_MSG_RESULT([Disabling private blkid library])
+ else
+ 	LIBBLKID='$(LIB)/libblkid'$LIB_EXT
+@@ -537,16 +520,6 @@
+ 	AC_MSG_RESULT([Enabling private blkid library])
+ fi
+ ,
+-if test -n "$PKG_CONFIG"; then
+-	AC_CHECK_LIB(blkid, blkid_get_cache,
+-		[LIBBLKID=`$PKG_CONFIG --libs blkid`;
+-		 STATIC_LIBBLKID=`$PKG_CONFIG --static --libs blkid`])
+-fi
+-if test -n "$LIBBLKID"; then
+-	BLKID_CMT=#
+-	PROFILED_LIBBLKID=$LIBBLKID
+-	AC_MSG_RESULT([Using system blkid library by default])
+-else
+ 	LIBBLKID='$(LIB)/libblkid'$LIB_EXT
+ 	DEPLIBBLKID=$LIBBLKID
+ 	STATIC_LIBBLKID='$(LIB)/libblkid'$STATIC_LIB_EXT
+@@ -555,7 +528,6 @@
+ 	DEPPROFILED_LIBBLKID=$PROFILED_LIBBLKID
+ 	AC_DEFINE(CONFIG_BUILD_FINDFS, 1)
+ 	AC_MSG_RESULT([Enabling private blkid library by default])
+-fi
+ )
+ AC_SUBST(LIBBLKID)
+ AC_SUBST(DEPLIBBLKID)
+diff -urw e2fsprogs-1.44.4-ref/misc/e4defrag.c e2fsprogs-1.44.4/misc/e4defrag.c
+--- e2fsprogs-1.44.4-ref/misc/e4defrag.c	2018-08-19 05:26:58.000000000 +0300
++++ e2fsprogs-1.44.4/misc/e4defrag.c	2018-08-30 09:33:20.336382001 +0300
+@@ -195,9 +195,11 @@
+ #error posix_fadvise not available!
+ #endif
+ 
++#if 0
+ #ifndef HAVE_FALLOCATE64
+ #error fallocate64 not available!
+ #endif /* ! HAVE_FALLOCATE64 */
++#endif
+ 
+ /*
+  * get_mount_point() -	Get device's mount point.
+@@ -1555,7 +1557,7 @@
+ 	/* Allocate space for donor inode */
+ 	orig_group_tmp = orig_group_head;
+ 	do {
+-		ret = fallocate64(donor_fd, 0,
++		ret = posix_fallocate64(donor_fd,
+ 		  (loff_t)orig_group_tmp->start->data.logical * block_size,
+ 		  (loff_t)orig_group_tmp->len * block_size);
+ 		if (ret < 0) {
+diff -urw e2fsprogs-1.44.4-ref/misc/mke2fs.conf.in e2fsprogs-1.44.4/misc/mke2fs.conf.in
+--- e2fsprogs-1.44.4-ref/misc/mke2fs.conf.in	2018-08-19 05:26:58.000000000 +0300
++++ e2fsprogs-1.44.4/misc/mke2fs.conf.in	2018-08-30 09:33:20.336382001 +0300
+@@ -1,6 +1,6 @@
+ [defaults]
+-	base_features = sparse_super,large_file,filetype,resize_inode,dir_index,ext_attr
+-	default_mntopts = acl,user_xattr
++	base_features = sparse_super,filetype,resize_inode,dir_index,ext_attr
++	default_mntopts = user_xattr
+ 	enable_periodic_fsck = 0
+ 	blocksize = 4096
+ 	inode_size = 256
+@@ -11,7 +11,7 @@
+ 		features = has_journal
+ 	}
+ 	ext4 = {
+-		features = has_journal,extent,huge_file,flex_bg,metadata_csum,64bit,dir_nlink,extra_isize
++		features = has_journal,extent,huge_file,flex_bg,64bit,dir_nlink,extra_isize
+ 		inode_size = 256
+ 	}
+ 	small = {

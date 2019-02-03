@@ -1,0 +1,180 @@
+diff -ur util-linux-2.33-ref/configure util-linux-2.33/configure
+--- util-linux-2.33-ref/configure	2018-11-08 10:20:47.228286700 +0300
++++ util-linux-2.33/configure	2018-11-08 10:14:44.095653000 +0300
+@@ -24068,17 +24068,18 @@
+ 
+ 
+ 
+-  if test "x$ul_default_estate" != x; then
+-  enable_blkid=$ul_default_estate
+-  build_blkid=yes
+-  if test "x$ul_default_estate" = xno; then
+-    build_blkid=no
+-  fi
+-else
++#  if test "x$ul_default_estate" != x; then
++#  enable_blkid=$ul_default_estate
++#  build_blkid=yes
++#  if test "x$ul_default_estate" = xno; then
++#    build_blkid=no
++#  fi
++#else
+ 
+   build_blkid=yes
+-  enable_blkid=check
+-fi
++  enable_blkid=yes
++#  enable_blkid=check
++#fi
+ 
+ 
+ 
+Only in util-linux-2.33-ref/libblkid/docs: version.xml
+diff -ur util-linux-2.33-ref/libblkid/src/partitions/dos.c util-linux-2.33/libblkid/src/partitions/dos.c
+--- util-linux-2.33-ref/libblkid/src/partitions/dos.c	2018-11-08 10:20:44.380372400 +0300
++++ util-linux-2.33/libblkid/src/partitions/dos.c	2018-11-08 10:14:44.126866700 +0300
+@@ -25,10 +25,7 @@
+ } dos_nested[] = {
+ 	{ MBR_FREEBSD_PARTITION, &bsd_pt_idinfo },
+ 	{ MBR_NETBSD_PARTITION, &bsd_pt_idinfo },
+-	{ MBR_OPENBSD_PARTITION, &bsd_pt_idinfo },
+-	{ MBR_UNIXWARE_PARTITION, &unixware_pt_idinfo },
+-	{ MBR_SOLARIS_X86_PARTITION, &solaris_x86_pt_idinfo },
+-	{ MBR_MINIX_PARTITION, &minix_pt_idinfo }
++	{ MBR_OPENBSD_PARTITION, &bsd_pt_idinfo }
+ };
+ 
+ static inline int is_extended(struct dos_partition *p)
+diff -ur util-linux-2.33-ref/libblkid/src/partitions/partitions.c util-linux-2.33/libblkid/src/partitions/partitions.c
+--- util-linux-2.33-ref/libblkid/src/partitions/partitions.c	2018-11-08 10:20:44.411614700 +0300
++++ util-linux-2.33/libblkid/src/partitions/partitions.c	2018-11-08 10:14:44.142490500 +0300
+@@ -123,19 +123,11 @@
+  */
+ static const struct blkid_idinfo *idinfos[] =
+ {
+-	&aix_pt_idinfo,
+-	&sgi_pt_idinfo,
+-	&sun_pt_idinfo,
+ 	&dos_pt_idinfo,
+ 	&gpt_pt_idinfo,
+ 	&pmbr_pt_idinfo,	/* always after GPT */
+ 	&mac_pt_idinfo,
+-	&ultrix_pt_idinfo,
+-	&bsd_pt_idinfo,
+-	&unixware_pt_idinfo,
+-	&solaris_x86_pt_idinfo,
+-	&minix_pt_idinfo,
+-	&atari_pt_idinfo
++	&bsd_pt_idinfo
+ };
+ 
+ /*
+diff -ur util-linux-2.33-ref/libblkid/src/superblocks/superblocks.c util-linux-2.33/libblkid/src/superblocks/superblocks.c
+--- util-linux-2.33-ref/libblkid/src/superblocks/superblocks.c	2018-11-08 10:20:44.651826900 +0300
++++ util-linux-2.33/libblkid/src/superblocks/superblocks.c	2018-11-08 10:14:44.142490500 +0300
+@@ -87,84 +87,20 @@
+  */
+ static const struct blkid_idinfo *idinfos[] =
+ {
+-	/* RAIDs */
+-	&linuxraid_idinfo,
+-	&ddfraid_idinfo,
+-	&iswraid_idinfo,
+-	&lsiraid_idinfo,
+-	&viaraid_idinfo,
+-	&silraid_idinfo,
+-	&nvraid_idinfo,
+-	&pdcraid_idinfo,
+-	&highpoint45x_idinfo,
+-	&highpoint37x_idinfo,
+-	&adraid_idinfo,
+-	&jmraid_idinfo,
+-
+-	&bcache_idinfo,
+-	&drbd_idinfo,
+-	&drbdmanage_idinfo,
+-	&drbdproxy_datalog_idinfo,
+-	&lvm2_idinfo,
+-	&lvm1_idinfo,
+-	&snapcow_idinfo,
+-	&verity_hash_idinfo,
+-	&integrity_idinfo,
+-	&luks_idinfo,
+-	&vmfs_volume_idinfo,
+-	&ubi_idinfo,
+-	&vdo_idinfo,
+-	&stratis_idinfo,
+-	&bitlocker_idinfo,
+-
+ 	/* Filesystems */
+ 	&vfat_idinfo,
+ 	&swsuspend_idinfo,
+ 	&swap_idinfo,
+ 	&xfs_idinfo,
+-	&xfs_log_idinfo,
+-	&exfs_idinfo,
+ 	&ext4dev_idinfo,
+ 	&ext4_idinfo,
+ 	&ext3_idinfo,
+ 	&ext2_idinfo,
+ 	&jbd_idinfo,
+-	&reiser_idinfo,
+-	&reiser4_idinfo,
+-	&jfs_idinfo,
+-	&udf_idinfo,
+-	&iso9660_idinfo,
+-	&zfs_idinfo,
+ 	&hfsplus_idinfo,
+ 	&hfs_idinfo,
+-	&ufs_idinfo,
+-	&hpfs_idinfo,
+-	&sysv_idinfo,
+-        &xenix_idinfo,
+ 	&ntfs_idinfo,
+-	&refs_idinfo,
+-	&cramfs_idinfo,
+-	&romfs_idinfo,
+-	&minix_idinfo,
+-	&gfs_idinfo,
+-	&gfs2_idinfo,
+-	&ocfs_idinfo,
+-	&ocfs2_idinfo,
+-	&oracleasm_idinfo,
+-	&vxfs_idinfo,
+-	&squashfs_idinfo,
+-	&squashfs3_idinfo,
+-	&netware_idinfo,
+-	&btrfs_idinfo,
+-	&ubifs_idinfo,
+-	&bfs_idinfo,
+-	&vmfs_fs_idinfo,
+-	&befs_idinfo,
+-	&nilfs2_idinfo,
+-	&exfat_idinfo,
+-	&f2fs_idinfo,
+-	&mpool_idinfo,
+-	&apfs_idinfo
++	&exfat_idinfo
+ };
+ 
+ /*
+diff -ur util-linux-2.33-ref/libblkid/src/topology/topology.c util-linux-2.33/libblkid/src/topology/topology.c
+--- util-linux-2.33-ref/libblkid/src/topology/topology.c	2018-11-08 10:20:44.317896600 +0300
++++ util-linux-2.33/libblkid/src/topology/topology.c	2018-11-08 10:14:44.158110500 +0300
+@@ -76,11 +76,7 @@
+ {
+ #ifdef __linux__
+ 	&ioctl_tp_idinfo,
+-	&sysfs_tp_idinfo,
+-	&md_tp_idinfo,
+-	&dm_tp_idinfo,
+-	&lvm_tp_idinfo,
+-	&evms_tp_idinfo
++	&sysfs_tp_idinfo
+ #endif
+ };
+ 
+Only in util-linux-2.33-ref/libfdisk/docs: version.xml
+Only in util-linux-2.33-ref/libmount/docs: version.xml
+Only in util-linux-2.33-ref/libsmartcols/docs: version.xml
+Only in util-linux-2.33-ref/misc-utils: uuidd.8

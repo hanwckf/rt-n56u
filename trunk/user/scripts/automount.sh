@@ -24,7 +24,7 @@ dev_full="/dev/$1"
 ID_FS_TYPE=""
 ID_FS_UUID=""
 ID_FS_LABEL=""
-eval `/sbin/blkid -o udev $dev_full`
+eval `/sbin/blkid -s "TYPE" -s "UUID" -s "LABEL" -o udev $dev_full`
 
 if [ "$ID_FS_TYPE" == "swap" ] ; then
 	[ ! -x /sbin/swapon ] && exit 1

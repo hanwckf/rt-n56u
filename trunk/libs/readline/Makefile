@@ -2,7 +2,7 @@ SRC_NAME=readline-7.0
 SRC_URL=http://ftp.gnu.org/gnu/readline/readline-7.0.tar.gz
 
 all: download_test extract_test config_test
-	$(MAKE) -C $(SRC_NAME)
+	$(MAKE) -j$(HOST_NCPU) -C $(SRC_NAME)
 
 download_test:
 	( if [ ! -f $(SRC_NAME).tar.gz ]; then \

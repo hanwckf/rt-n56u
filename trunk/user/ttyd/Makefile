@@ -4,7 +4,7 @@ SRC_URL=https://github.com/tsl0922/ttyd/archive/1.4.0.tar.gz
 THISDIR = $(shell pwd)
 
 all: download_test extract_test config_test
-	$(MAKE) -C $(SRC_NAME)/build
+	$(MAKE) -j$(HOST_NCPU) -C $(SRC_NAME)/build
 
 download_test:
 	( if [ ! -f $(THISDIR)/$(SRC_NAME).tar.gz ]; then \

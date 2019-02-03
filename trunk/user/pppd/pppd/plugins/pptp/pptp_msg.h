@@ -86,7 +86,7 @@ struct pptp_header {
   u_int32_t magic;	  /* this should be PPTP_MAGIC.                 */
   u_int16_t ctrl_type;	  /* Control message type (0-15)                */
   u_int16_t reserved0;	  /* reserved.  MUST BE ZERO.                   */
-};
+}__attribute__((packed));
 
 struct pptp_start_ctrl_conn { /* for control message types 1 and 2 */
   struct pptp_header header;
@@ -102,7 +102,7 @@ struct pptp_start_ctrl_conn { /* for control message types 1 and 2 */
   u_int8_t  vendor[64];   /* Vendor string (64 octets, zero term.)      */
   /* MS says that end of hostname/vendor fields should be filled with   */
   /* octets of value 0, but Win95 PPTP driver doesn't do this.          */
-};
+}__attribute__((packed));
 
 struct pptp_stop_ctrl_conn { /* for control message types 3 and 4 */
   struct pptp_header header;
@@ -110,13 +110,13 @@ struct pptp_stop_ctrl_conn { /* for control message types 3 and 4 */
   u_int8_t reason_result; /* reason for rqst, result for rply          */
   u_int8_t error_code;	  /* MUST be 0, unless rply result==2 (general err)*/
   u_int16_t reserved1;    /* MUST be 0                                */
-};
+}__attribute__((packed));
 
 struct pptp_echo_rqst { /* for control message type 5 */
   struct pptp_header header;
   u_int32_t identifier;   /* arbitrary value set by sender which is used */
                           /* to match up reply and request               */
-};
+}__attribute__((packed));
 
 struct pptp_echo_rply { /* for control message type 6 */
   struct pptp_header header;
@@ -124,7 +124,7 @@ struct pptp_echo_rply { /* for control message type 6 */
   u_int8_t result_code;
   u_int8_t error_code;    /* =0, unless result_code==2 (general error)   */
   u_int16_t reserved1;    /* MUST BE ZERO                                */
-};
+}__attribute__((packed));
 
 struct pptp_out_call_rqst { /* for control message type 7 */
   struct pptp_header header;
@@ -140,7 +140,7 @@ struct pptp_out_call_rqst { /* for control message type 7 */
   u_int16_t reserved1;    /* MUST BE ZERO				 */
   u_int8_t  phone_num[64]; /* Phone Number (64 octets, null term.)       */
   u_int8_t subaddress[64]; /* Subaddress (64 octets, null term.)         */
-};
+}__attribute__((packed));
 
 struct pptp_out_call_rply { /* for control message type 8 */
   struct pptp_header header;
@@ -153,7 +153,7 @@ struct pptp_out_call_rply { /* for control message type 8 */
   u_int16_t recv_size;    /* Recv. Window Size (no. of buffered packets) */
   u_int16_t delay;	  /* Packet Processing Delay (in 1/10 sec)       */
   u_int32_t channel;      /* Physical Channel ID (for logging)           */
-};
+}__attribute__((packed));
 
 struct pptp_in_call_rqst { /* for control message type 9 */
   struct pptp_header header;
@@ -166,7 +166,7 @@ struct pptp_in_call_rqst { /* for control message type 9 */
   u_int8_t dialed_num[64]; /* Dialed Number (64 octets, zero term.)      */
   u_int8_t dialing_num[64]; /* Dialing Number (64 octets, zero term.)    */
   u_int8_t subaddress[64];  /* Subaddress (64 octets, zero term.)        */
-};
+}__attribute__((packed));
 
 struct pptp_in_call_rply { /* for control message type 10 */
   struct pptp_header header;
@@ -177,7 +177,7 @@ struct pptp_in_call_rply { /* for control message type 10 */
   u_int16_t recv_size;    /* Recv. Window Size (no. of buffered packets) */
   u_int16_t delay;	  /* Packet Processing Delay (in 1/10 sec)       */
   u_int16_t reserved1;    /* MUST BE ZERO                                */
-};
+}__attribute__((packed));
 
 struct pptp_in_call_connect { /* for control message type 11 */
   struct pptp_header header;
@@ -187,13 +187,13 @@ struct pptp_in_call_connect { /* for control message type 11 */
   u_int16_t recv_size;    /* Recv. Window Size (no. of buffered packets) */
   u_int16_t delay;	  /* Packet Processing Delay (in 1/10 sec)       */
   u_int32_t framing;      /* Framing type                                */
-};
+}__attribute__((packed));
 
 struct pptp_call_clear_rqst { /* for control message type 12 */
   struct pptp_header header;
   u_int16_t call_id;      /* Call ID (used to multiplex data over tunnel)*/
   u_int16_t reserved1;    /* MUST BE ZERO                                */
-};
+}__attribute__((packed));
 
 struct pptp_call_clear_ntfy { /* for control message type 13 */
   struct pptp_header header;
@@ -203,7 +203,7 @@ struct pptp_call_clear_ntfy { /* for control message type 13 */
   u_int16_t cause_code;   /* Cause Code (for ISDN, is Q.931 cause code)  */
   u_int16_t reserved1;    /* MUST BE ZERO                                */
   u_int8_t call_stats[128]; /* Call Statistics: 128 octets, ascii, 0-term */
-};
+}__attribute__((packed));
 
 struct pptp_wan_err_ntfy {    /* for control message type 14 */
   struct pptp_header header;
@@ -215,7 +215,7 @@ struct pptp_wan_err_ntfy {    /* for control message type 14 */
   u_int32_t buff_errors;  /* Buffer overruns				 */
   u_int32_t time_errors;  /* Time-out errors				 */
   u_int32_t align_errors; /* Alignment errors				 */
-};
+}__attribute__((packed));
 
 struct pptp_set_link_info {   /* for control message type 15 */
   struct pptp_header header;
@@ -223,7 +223,7 @@ struct pptp_set_link_info {   /* for control message type 15 */
   u_int16_t reserved1;    /* MUST BE ZERO                                   */
   u_int32_t send_accm;    /* Send ACCM (for PPP packets; default 0xFFFFFFFF)*/
   u_int32_t recv_accm;    /* Receive ACCM (for PPP pack.;default 0xFFFFFFFF)*/
-};
+}__attribute__((packed));
 
 /* helpful #defines: -------------------------------------------- */
 #define pptp_isvalid_ctrl(header, type, length) \
@@ -298,6 +298,6 @@ struct pptp_gre_header {
   u_int32_t seq;		/* sequence number.  Present if S==1 */
   u_int32_t ack;		/* seq number of highest packet recieved by */
   				/*  sender in this session */
-};
+}__attribute__((packed));
 
 #endif /* INC_PPTP_H */

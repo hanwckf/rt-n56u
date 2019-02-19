@@ -14,6 +14,6 @@ while true ;do
 			tail -60 build.log && exit 1
 		fi
 	else
-		tail -2 build.log
+		echo "$(tail -2 build.log)"
 	fi
 done

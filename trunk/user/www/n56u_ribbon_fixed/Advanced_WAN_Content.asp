@@ -1047,6 +1047,25 @@ function simplyMAC(fullMAC){
                                             <td><input type="text" name="viptv_gateway" maxlength="15" class="input" size="15" value="<% nvram_get_x("","viptv_gateway"); %>" onKeyPress="return is_ipaddr(this,event);"/></td>
                                         </tr>
                                     </table>
+                                    
+                                    <table width="100%" align="center" cellpadding="4" cellspacing="0" class="table" id="tbl_viptv_dhcp" >
+                                        <tr>
+                                            <th colspan="2" style="background-color: #E3E3E3;">VLAN CPU (IPTV) DHCP SETTING</th>
+                                        </tr>
+                                        <tr>
+                                            <th width="45%">Mac Addr</th>
+                                            <td  ><input type="text" name="viptv_mac" maxlength="35" class="input" size="35" value="<% nvram_get_x("","viptv_mac"); %>"  /></td>
+                                        </tr>
+                                        <tr>
+                                            <th width="30%">Vendor identifier</th>
+                                            <td  ><input type="text" name="viptv_mac" maxlength="35" class="input" size="35" value="<% nvram_get_x("","viptv_vi"); %>"  /></td>
+                                        </tr>
+                                        <tr>
+                                            <th width="30%">hostname</th>
+                                            <td  ><input type="text" name="viptv_mac" maxlength="35" class="input" size="35" value="<% nvram_get_x("","viptv_hostname"); %>"  /></td>
+                                        </tr>
+
+                                    </table>
 
                                     <table width="100%" cellpadding="4" cellspacing="0" class="table">
                                         <tr>

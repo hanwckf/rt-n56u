@@ -2076,7 +2076,7 @@ static VOID CmdExtStaRecUpdateRsp(struct cmd_msg *msg, char *Data, UINT16 Len)
 
 	if (EventExtCmdResult->u4Status != 0)
 	{
-		MTWF_LOG(DBG_CAT_FW, DBG_SUBCAT_ALL, DBG_LVL_ERROR,
+		MTWF_LOG(DBG_CAT_FW, DBG_SUBCAT_ALL, DBG_LVL_INFO,
             ("%s::ERROR::EventExtCmdResult.u4Status = 0x%x\n",
             __FUNCTION__, EventExtCmdResult->u4Status));
 		

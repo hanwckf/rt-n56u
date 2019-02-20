@@ -253,13 +253,6 @@ function change_ttyd_enabled(){
 function on_ttyd_link(){
 	var ttyd_url="http";
 	var http_url=lan_ipaddr;
-	if (http_proto=='1'){
-		aria_url+="s";
-		if (https_port!='443')
-			http_url+=":"+https_port;
-	}else if (http_port!='80'){
-		http_url+=":"+http_port;
-	}
 	ttyd_url+="://"+http_url+":"+"<% nvram_get_x("","ttyd_port"); %>";
 	window_ttyd = window.open(ttyd_url, "ttyd");
 	window_ttyd.focus();

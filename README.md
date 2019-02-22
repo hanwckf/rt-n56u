@@ -115,5 +115,5 @@ sudo ./build_firmware_modify PSG1218
 
 ### My  Changes 
 * 1.add 3proxy. 
-* 2.change  viptv_dhcp, add route toserver for renew.
+* 2.change  viptv_dhcp, add route to server for renew.
 

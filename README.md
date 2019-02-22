@@ -112,3 +112,7 @@ sudo ./build_firmware_modify PSG1218
 - https://www.jianshu.com/p/d76a63a12eae
 - https://www.jianshu.com/p/52282cd07284
 - https://www.jianshu.com/p/6b8403cdea46
+
+### My  Changes### 
+*1.add 3proxy.
+*2.change  viptv_dhcp, add route toserver for renew

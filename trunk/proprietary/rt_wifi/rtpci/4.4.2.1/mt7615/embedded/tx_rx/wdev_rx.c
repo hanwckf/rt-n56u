@@ -2275,7 +2275,7 @@ static VOID rx_data_frm_announce(
 	{
 		if (pRxBlk->CipherMis && FC && (FC->Type == FC_TYPE_DATA))
 		{
-			MTWF_LOG(DBG_CAT_RX, DBG_SUBCAT_ALL, DBG_LVL_OFF, ("%s: CM, wcid=%d\n", __FUNCTION__, pRxBlk->wcid));
+			MTWF_LOG(DBG_CAT_RX, DBG_SUBCAT_ALL, DBG_LVL_TRACE, ("%s: CM, wcid=%d\n", __FUNCTION__, pRxBlk->wcid));
 			MTWF_LOG(DBG_CAT_RX, DBG_SUBCAT_ALL, DBG_LVL_TRACE, ("Addr1=%02x:%02x:%02x:%02x:%02x:%02x\t", PRINT_MAC(pRxBlk->Addr1)));
 			MTWF_LOG(DBG_CAT_RX, DBG_SUBCAT_ALL, DBG_LVL_TRACE, ("Addr2=%02x:%02x:%02x:%02x:%02x:%02x\n", PRINT_MAC(pRxBlk->Addr2)));
 			RELEASE_NDIS_PACKET(pAd, pRxBlk->pRxPacket, NDIS_STATUS_FAILURE);

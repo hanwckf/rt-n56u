@@ -526,5 +526,7 @@ if [ "$CONFIG_WITHOUT_KERNEL" != "y" ] ; then
 echo --------------------------MAKE-DEP--------------------------------
 make dep
 fi
+if [ "$2" != "kmod" ] ; then
 echo --------------------------MAKE-ALL--------------------------------
 make
+fi

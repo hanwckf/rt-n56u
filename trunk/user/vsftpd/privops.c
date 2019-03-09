@@ -121,7 +121,7 @@ vsf_privop_pasv_listen(struct vsf_session* p_sess)
 {
   static struct vsf_sysutil_sockaddr* s_p_sockaddr;
   int bind_retries = 10;
-  unsigned short the_port;
+  unsigned short the_port = 0;
   /* IPPORT_RESERVED */
   unsigned short min_port = 1024;
   unsigned short max_port = 65535;

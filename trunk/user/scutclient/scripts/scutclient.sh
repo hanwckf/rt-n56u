@@ -6,7 +6,7 @@ LOG="$2"
 [ -f $pidfile ] && kill -9 "$(cat $pidfile)" || echo "$$" > $pidfile
 
 func_log(){
-	[ "$LOG" != "nolog" ] && logger -st "Scutclient" "$1"
+	[ "$LOG" != "nolog" ] && logger -st "scutclient" "$1"
 }
 
 get_arg_debug(){

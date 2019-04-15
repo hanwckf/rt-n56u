@@ -7,7 +7,7 @@ while true ;do
 	process_status=$(ps aux |grep build_firmware_modify |grep -v "grep")
 
 	if [ -z "$process_status" ] ;then
-		echo "Build script is exit"
+		echo "Build script exited"
 		if [ "$(tail -1 build.log)" = "make[1]: Leaving directory '/opt/rt-n56u/trunk/vendors'" ]; then
 			tail -20 build.log && exit 0
 		else

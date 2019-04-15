@@ -59,12 +59,13 @@ static void ap_assoc_info_debugshow(
 	{
 		assoc_ht_info_debugshow(pAd, pEntry, ie_list->ht_cap_len, &ie_list->HTCapability);
 
-//		printk("\n%s - HT support STA. Update AP OperaionMode=%d, fAnyStationIsLegacy=%d, fAnyStation20Only=%d, fAnyStationNonGF=%d\n",
+/*		printk("\n%s - HT support STA. Update AP OperaionMode=%d, fAnyStationIsLegacy=%d, fAnyStation20Only=%d, fAnyStationNonGF=%d\n",
 					sAssoc,
 					pAd->CommonCfg.AddHTInfo.AddHtInfo2.OperaionMode,
 					pAd->MacTab.fAnyStationIsLegacy,
 					pAd->MacTab.fAnyStation20Only,
 					pAd->MacTab.fAnyStationNonGF);
+*/
 
 #ifdef DOT11_VHT_AC
 		if ((ie_list->vht_cap_len) &&
@@ -2417,8 +2418,9 @@ LabelOK:
 	    pEntry = MacTableLookup(pAd, ie_list->Addr2);
 	    if (pEntry) {
 		    if (StatusCode != MLME_ASSOC_REJ_UNABLE_HANDLE_STA) /* decrease noise debug, remove class 2-3 errors flood */
-//			printk("%s ASSOC - Client %02x:%02x:%02x:%02x:%02x:%02x connection reject with Status code %d, remove it.\n",
+/*			printk("%s ASSOC - Client %02x:%02x:%02x:%02x:%02x:%02x connection reject with Status code %d, remove it.\n",
 			    pAd->CommonCfg.Channel > 14 ? "5GHz AP" : "2.4GHz AP", PRINT_MAC(pEntry->Addr), StatusCode);
+*/
 		    MacTableDeleteEntry(pAd, pEntry->wcid, pEntry->Addr);
 	    }
 	}
@@ -2538,8 +2540,9 @@ VOID APPeerDisassocReqAction(RTMP_ADAPTER *pAd, MLME_QUEUE_ELEM *Elem)
 			@2016/1/26
 		*/
 		if (!MAC_ADDR_EQUAL(wdev->if_addr, Addr1)) {
-//			printk("ASSOC - The DA of this DIS-ASSOC request is %02x:%02x:%02x:%02x:%02x:%02x, ignore.\n", 
+/*			printk("ASSOC - The DA of this DIS-ASSOC request is %02x:%02x:%02x:%02x:%02x:%02x, ignore.\n", 
 				PRINT_MAC(Addr1));
+*/
 			return;
 		}
 #ifdef DOT1X_SUPPORT
@@ -2576,9 +2579,10 @@ VOID APPeerDisassocReqAction(RTMP_ADAPTER *pAd, MLME_QUEUE_ELEM *Elem)
 		    DBGPRINT(RT_DEBUG_TRACE, ("%s: receive not client dis-assoc ###\n", __FUNCTION__));
 		} else {
 			MacTableDeleteEntry(pAd, Elem->Wcid, Addr2);
-//			printk("%s ASSOC - receive DIS-ASSOC(seq-%d) request from %02x:%02x:%02x:%02x:%02x:%02x, reason=%d\n",
+/*			printk("%s ASSOC - receive DIS-ASSOC(seq-%d) request from %02x:%02x:%02x:%02x:%02x:%02x, reason=%d\n",
 				pAd->CommonCfg.Channel > 14 ? "5GHz AP" : "2.4GHz AP",
 				SeqNum, PRINT_MAC(Addr2), Reason);
+*/
 		}
 
 #ifdef MAC_REPEATER_SUPPORT
@@ -2684,8 +2688,9 @@ VOID APMlmeKickOutSta(RTMP_ADAPTER *pAd, UCHAR *pStaAddr, UCHAR Wcid, USHORT Rea
 	    if (NStatus != NDIS_STATUS_SUCCESS)
 	        return;
 	    
-//	    printk("ASSOC - MLME disassociates %02x:%02x:%02x:%02x:%02x:%02x; Send DISASSOC request\n",
+/*	    printk("ASSOC - MLME disassociates %02x:%02x:%02x:%02x:%02x:%02x; Send DISASSOC request\n",
 	        		PRINT_MAC(pStaAddr));
+*/
 	    MgtMacHeaderInit(pAd, &DisassocHdr, SUBTYPE_DISASSOC, 0, pStaAddr, 
 							pAd->ApCfg.MBSSID[ApIdx].wdev.if_addr,
 							pAd->ApCfg.MBSSID[ApIdx].wdev.bssid);

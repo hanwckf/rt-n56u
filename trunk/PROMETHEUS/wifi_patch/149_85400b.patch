@@ -65,25 +65,3 @@
  				RX_BLK_SET_FLAG(pRxBlk, fRX_WDS);
  				FromWhichBSSID = pEntry->wdev_idx + MIN_NET_DEVICE_FOR_WDS;
  				break;
---- rt-n56u/trunk/proprietary/rt_wifi/rtpci/4.1.X.X/mt76x3/ap/ap_data.c
-+++ rt-n56u/trunk/proprietary/rt_wifi/rtpci/4.1.X.X/mt76x3/ap/ap_data.c
-@@ -3462,7 +3462,7 @@
- 				pEntry = FindWdsEntry(pAd, pRxBlk->wcid, pHeader->Addr2, pRxBlk->rx_rate.field.MODE);
- 
- 			/* have no valid wds entry exist, then discard the incoming packet.*/
--			if (!(pEntry && WDS_IF_UP_CHECK(pAd, pEntry->func_tb_idx)))
-+			if (!pEntry || !WDS_IF_UP_CHECK(pAd, pEntry->func_tb_idx))
- 				return FALSE;
- 
- 			/*receive corresponding WDS packet, disable TX lock state (fix WDS jam issue) */
---- rt-n56u/trunk/proprietary/rt_wifi/rtpci/4.1.X.X/mt76x3/ap/ap_wds.c
-+++ rt-n56u/trunk/proprietary/rt_wifi/rtpci/4.1.X.X/mt76x3/ap/ap_wds.c
-@@ -90,7 +90,7 @@
- 			pEntry = NULL;
- 
- 		/* have no valid wds entry exist, then discard the incoming packet.*/
--		if (!(pEntry && WDS_IF_UP_CHECK(pAd, pEntry->func_tb_idx)))
-+		if (!pEntry || !WDS_IF_UP_CHECK(pAd, pEntry->func_tb_idx))
- 			return FALSE;
- 
- 		/*receive corresponding WDS packet, disable TX lock state (fix WDS jam issue) */

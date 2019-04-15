@@ -50,7 +50,7 @@ INT wdev_tx_pkts(NDIS_HANDLE dev_hnd, PPNDIS_PACKET pkt_list, UINT pkt_cnt, stru
 {
 	RTMP_ADAPTER *pAd = (RTMP_ADAPTER *)dev_hnd;
 	PNDIS_PACKET pPacket;
-	BOOLEAN allowToSend;
+	BOOLEAN allowToSend = FALSE;
 	UCHAR wcid = MAX_LEN_OF_MAC_TABLE;
 	UINT Index;
 #ifdef CONFIG_FPGA_MODE
@@ -86,7 +86,7 @@ INT wdev_tx_pkts(NDIS_HANDLE dev_hnd, PPNDIS_PACKET pkt_list, UINT pkt_cnt, stru
 
 
 
-		if (((wdev->allow_data_tx == TRUE) 
+		if ((likely((wdev->allow_data_tx == TRUE)) 
 #ifdef CONFIG_FPGA_MODE
 			|| (force_tx == TRUE)
 #endif /* CONFIG_FPGA_MODE */
@@ -109,13 +109,9 @@ INT wdev_tx_pkts(NDIS_HANDLE dev_hnd, PPNDIS_PACKET pkt_list, UINT pkt_cnt, stru
 		}
 #endif /* CONFIG_FPGA_MODE */
 
-		if (allowToSend == TRUE)
+		if (likely(allowToSend == TRUE))
 		{
-			RTMP_SET_PACKET_WCID(pPacket, wcid);
 			RTMP_SET_PACKET_WDEV(pPacket, wdev->wdev_idx);
-			NDIS_SET_PACKET_STATUS(pPacket, NDIS_STATUS_PENDING);
-			pAd->RalinkCounters.PendingNdisPacketCount++;
-			
 			/*
 				WIFI HNAT need to learn packets going to which interface from skb cb setting.
 				@20150325
@@ -144,8 +140,12 @@ INT wdev_tx_pkts(NDIS_HANDLE dev_hnd, PPNDIS_PACKET pkt_list, UINT pkt_cnt, stru
 #endif
 #endif
 
-			if (wdev->tx_pkt_handle)
+			if (wdev->tx_pkt_handle) {
+				RTMP_SET_PACKET_WCID(pPacket, wcid);
+				NDIS_SET_PACKET_STATUS(pPacket, NDIS_STATUS_PENDING);
+				pAd->RalinkCounters.PendingNdisPacketCount++;
 				wdev->tx_pkt_handle(pAd, pPacket);
+			}
 			else
 			{
 				DBGPRINT(RT_DEBUG_ERROR, ("%s():tx_pkt_handle not assigned!\n", __FUNCTION__));
@@ -156,7 +156,7 @@ INT wdev_tx_pkts(NDIS_HANDLE dev_hnd, PPNDIS_PACKET pkt_list, UINT pkt_cnt, stru
 			RELEASE_NDIS_PACKET(pAd, pPacket, NDIS_STATUS_FAILURE);
 	}
 
-	RTMPDeQueuePacket(pAd, FALSE, NUM_OF_TX_RING, WCID_ALL, MAX_TX_PROCESS);
+	RTMPDeQueuePacket(pAd, FALSE, WMM_NUM_OF_AC, WCID_ALL, MAX_TX_PROCESS);
 
 	return 0;
 }

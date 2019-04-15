@@ -119,6 +119,9 @@ BOOLEAN MlmeDelBAReqSanity(
 	MLME_DELBA_REQ_STRUCT *pInfo;
 	pInfo = (MLME_DELBA_REQ_STRUCT *)Msg;
 
+    if (pInfo->Wcid >= MAX_LEN_OF_MAC_TABLE)
+        return FALSE;
+
     if ((MsgLen != sizeof(MLME_DELBA_REQ_STRUCT)))
     {
         DBGPRINT(RT_DEBUG_ERROR, ("MlmeDelBAReqSanity fail - message lenght not correct.\n"));
@@ -759,16 +762,14 @@ BOOLEAN PeerBeaconAndProbeRspSanity_Old(
 #endif /* DOT11R_FT_SUPPORT */
 
 			case IE_EXT_CAPABILITY:
-				if (pEid->Len >= 1)
-				{
-					UCHAR MaxSize;
-					UCHAR MySize = sizeof(EXT_CAP_INFO_ELEMENT);
+			    if (pEid->Len >= 1)
+			    {
+				UCHAR cp_len, buf_space = sizeof(EXT_CAP_INFO_ELEMENT);
 
-					MaxSize = min(pEid->Len, MySize);
-
-					NdisMoveMemory(pExtCapInfo,&pEid->Octet[0], MaxSize);
-				}
-				break;
+				cp_len = min(pEid->Len, buf_space);
+				NdisMoveMemory(pExtCapInfo,&pEid->Octet[0], cp_len);
+			    }
+			    break;
             default:
                 break;
         }
@@ -1327,7 +1328,9 @@ BOOLEAN PeerBeaconAndProbeRspSanity(
     }
 
 	LatchRfChannel = MsgChannel;
-	if ((pAd->LatchRfRegs.Channel > 14) && ((Sanity & 0x4) == 0))
+
+	/* wide channels supported in all 2.4/5GHz bands */
+	if ( /* (pAd->LatchRfRegs.Channel > 14) && */ ((Sanity & 0x4) == 0))
 	{
 		if (CtrlChannel != 0)
 			ie_list->Channel = CtrlChannel;
@@ -1337,7 +1340,7 @@ BOOLEAN PeerBeaconAndProbeRspSanity(
 				|| pAd->CommonCfg.RegTransmitSetting.field.BW == BW_80
 #endif /* DOT11_VHT_AC */
 			) {
-					ie_list->Channel = pAd->CommonCfg.Channel;
+					ie_list->Channel = LatchRfChannel;
 			}
 			else
 				ie_list->Channel = LatchRfChannel;
@@ -1851,7 +1854,10 @@ BOOLEAN PeerProbeReqSanity(
 #endif /* CONFIG_AP_SUPPORT */
 	UINT		total_ie_len = 0;
 
-	NdisZeroMemory(ProbeReqParam, sizeof(*ProbeReqParam));
+    if (Fr == NULL)
+	return FALSE;
+
+    NdisZeroMemory(ProbeReqParam, sizeof(*ProbeReqParam));
     COPY_MAC_ADDR(ProbeReqParam->Addr2, &Fr->Hdr.Addr2);
 
     if (Fr->Octet[0] != IE_SSID || Fr->Octet[1] > MAX_LEN_OF_SSID) 

@@ -396,6 +396,17 @@ VOID RRM_EnqueueTxStreamMeasureReq(
 	Return	: None.
 	==========================================================================
  */
+VOID RRM_ScanResultFix(BSS_ENTRY *pBssEntry);
+
+/*
+	==========================================================================
+	Description:
+		
+	Parametrs:
+	
+	Return	: None.
+	==========================================================================
+ */
 BOOLEAN RRM_PeerNeighborReqSanity(
 	IN PRTMP_ADAPTER pAd,
 	IN VOID *pMsg,

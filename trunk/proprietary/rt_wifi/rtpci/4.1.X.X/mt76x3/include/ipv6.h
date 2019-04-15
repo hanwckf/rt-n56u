@@ -93,7 +93,7 @@ typedef struct rt_ipv6_addr_
 	OS_NTOHS((ipv6Addr).ipv6_addr16[7])
 
 
-/* IPv6 Header related structures */
+/*IPv6 Header related structures */
 typedef struct GNU_PACKED _rt_ipv6_hdr_
 {
 	UINT32 			ver:4,

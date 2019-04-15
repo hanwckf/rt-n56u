@@ -31,7 +31,7 @@
 #ifndef _AP_WDS_H_
 #define _AP_WDS_H_
 
-#define WDS_ENTRY_RETRY_INTERVAL	(100 * OS_HZ / 1000)
+#define WDS_ENTRY_RETRY_INTERVAL	(50 * OS_HZ / 1000)
 
 
 static inline BOOLEAN WDS_IF_UP_CHECK(

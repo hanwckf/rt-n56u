@@ -15,9 +15,7 @@
 */
 
 #include "rt_config.h"
-#ifdef MT7603_E1
 #include "mcu/mt7603_firmware.h"
-#endif /* MT7603_E1 */
 #ifdef MT7603_E2
 #include "mcu/mt7603_e2_firmware.h"
 #endif /* MT7603_E2 */
@@ -26,7 +24,9 @@
 
 static VOID mt7603_bbp_adjust(RTMP_ADAPTER *pAd)
 {
+#ifdef DBG
 	static char *ext_str[]={"extNone", "extAbove", "", "extBelow"};
+#endif
 	UCHAR rf_bw, ext_ch;
 
 #ifdef DOT11_N_SUPPORT
@@ -138,10 +138,11 @@ static INT asic_set_tmac_info_template(RTMP_ADAPTER *pAd)
 	return TRUE;
 }
 
-
+static UCHAR ba_range[] = {4, 5, 8, 10, 16, 20, 21, 45};
 static VOID mt7603_init_mac_cr(RTMP_ADAPTER *pAd)
 {
 	UINT32 mac_val;
+	UINT32 TxAggLimit;
 
 	DBGPRINT(RT_DEBUG_OFF, ("%s()-->\n", __FUNCTION__));
 
@@ -151,47 +152,48 @@ static VOID mt7603_init_mac_cr(RTMP_ADAPTER *pAd)
 	/* A-MPDU BA WinSize control */
 	RTMP_IO_READ32(pAd, AGG_AWSCR, &mac_val);
 	mac_val &= ~WINSIZE0_MASK;
-	mac_val |= WINSIZE0(4);
+	mac_val |= WINSIZE0(ba_range[0]);
 	mac_val &= ~WINSIZE1_MASK;
-	mac_val |= WINSIZE1(5);
+	mac_val |= WINSIZE1(ba_range[1]);
 	mac_val &= ~WINSIZE2_MASK;
-	mac_val |= WINSIZE2(8);
+	mac_val |= WINSIZE2(ba_range[2]);
 	mac_val &= ~WINSIZE3_MASK;
-	mac_val |= WINSIZE3(10);
+	mac_val |= WINSIZE3(ba_range[3]);
 	RTMP_IO_WRITE32(pAd, AGG_AWSCR, mac_val);
 
 	RTMP_IO_READ32(pAd, AGG_AWSCR1, &mac_val);
 	mac_val &= ~WINSIZE4_MASK;
-	mac_val |= WINSIZE4(16);
+	mac_val |= WINSIZE4(ba_range[4]);
 	mac_val &= ~WINSIZE5_MASK;
-	mac_val |= WINSIZE5(20);
+	mac_val |= WINSIZE5(ba_range[5]);
 	mac_val &= ~WINSIZE6_MASK;
-	mac_val |= WINSIZE6(21);
+	mac_val |= WINSIZE6(ba_range[6]);
 	mac_val &= ~WINSIZE7_MASK;
-	mac_val |= WINSIZE7(42);
- 	RTMP_IO_WRITE32(pAd, AGG_AWSCR1, mac_val);
-	
+	mac_val |= WINSIZE7(ba_range[7]);
+	RTMP_IO_WRITE32(pAd, AGG_AWSCR1, mac_val);
+
 	/* A-MPDU Agg limit control */
+	TxAggLimit = pAd->chipCap.TxAggLimit;
 	RTMP_IO_READ32(pAd, AGG_AALCR, &mac_val);
 	mac_val &= ~AC0_AGG_LIMIT_MASK;
-	mac_val |= AC0_AGG_LIMIT(21);
+	mac_val |= AC0_AGG_LIMIT(TxAggLimit);
 	mac_val &= ~AC1_AGG_LIMIT_MASK;
-	mac_val |= AC1_AGG_LIMIT(21);
+	mac_val |= AC1_AGG_LIMIT(TxAggLimit);
 	mac_val &= ~AC2_AGG_LIMIT_MASK;
-	mac_val |= AC2_AGG_LIMIT(21);
+	mac_val |= AC2_AGG_LIMIT(TxAggLimit);
 	mac_val &= ~AC3_AGG_LIMIT_MASK;
-	mac_val |= AC3_AGG_LIMIT(21);
+	mac_val |= AC3_AGG_LIMIT(TxAggLimit);
 	RTMP_IO_WRITE32(pAd, AGG_AALCR, mac_val);
-	
+
 	RTMP_IO_READ32(pAd, AGG_AALCR1, &mac_val);
 	mac_val &= ~AC10_AGG_LIMIT_MASK;
-	mac_val |= AC10_AGG_LIMIT(21);
+	mac_val |= AC10_AGG_LIMIT(TxAggLimit);
 	mac_val &= ~AC11_AGG_LIMIT_MASK;
-	mac_val |= AC11_AGG_LIMIT(21);
+	mac_val |= AC11_AGG_LIMIT(TxAggLimit);
 	mac_val &= ~AC12_AGG_LIMIT_MASK;
-	mac_val |= AC12_AGG_LIMIT(21);
+	mac_val |= AC12_AGG_LIMIT(TxAggLimit);
 	mac_val &= ~AC13_AGG_LIMIT_MASK;
-	mac_val |= AC13_AGG_LIMIT(21);
+	mac_val |= AC13_AGG_LIMIT(TxAggLimit);
 	RTMP_IO_WRITE32(pAd, AGG_AALCR1, mac_val);
 	
 	/* Vector report queue setting */
@@ -765,7 +767,9 @@ void mt7603_get_tx_pwr_info(RTMP_ADAPTER *pAd)
 
 static VOID mt7603_show_pwr_info(RTMP_ADAPTER *pAd)
 {
+#ifdef DBG
 	struct MT_TX_PWR_CAP *cap = &pAd->chipCap.MTTxPwrCap;
+#endif
 	UINT32 value;
 
 	DBGPRINT(RT_DEBUG_OFF, ("\n===================================\n"));
@@ -980,7 +984,9 @@ static const RTMP_CHIP_CAP MT7603_ChipCap = {
 	.WPDMABurstSIZE = 3,
 #endif
 	.SnrFormula = SNR_FORMULA4,
+#ifdef WAPI_SUPPORT
 	.FlgIsHwWapiSup = TRUE,
+#endif /* WAPI_SUPPORT */
 	.FlgIsHwAntennaDiversitySup = FALSE,
 #ifdef STREAM_MODE_SUPPORT
 	.FlgHwStreamMode = FALSE,
@@ -1015,11 +1021,9 @@ static const RTMP_CHIP_CAP MT7603_ChipCap = {
 #ifdef RTMP_PCI_SUPPORT
 	.cmd_padding_len = 0,
 #endif
-#ifdef MT7603_E1
 	.fw_header_image = MT7603_FirmwareImage,
-	.fw_len = sizeof(MT7603_FirmwareImage),
-#endif /* MT7603_E1 */
 	.fw_bin_file_name = "mtk/MT7603.bin",
+	.fw_len = sizeof(MT7603_FirmwareImage),
 #ifdef CARRIER_DETECTION_SUPPORT
 	.carrier_func = TONE_RADAR_V2,
 #endif
@@ -1039,10 +1043,10 @@ static const RTMP_CHIP_CAP MT7603_ChipCap = {
 #endif /* CONFIG_WIFI_TEST */
 	.hif_type = HIF_MT,
 	.rf_type = RF_MT,
-	.RxBAWinSize = 64,
-	.AMPDUFactor = 3,
-
-    .BiTxOpOn = 1,
+	.TxAggLimit = 64,
+	.RxBAWinSize = 21,
+	.AMPDUFactor = 2,
+	.BiTxOpOn = 1,
 };
 
 
@@ -1100,16 +1104,13 @@ VOID mt7603_init(RTMP_ADAPTER *pAd)
 	pAd->chipCap.mac_type = MAC_MT;
 	
 	mt_phy_probe(pAd);
-#ifdef MT7603_E1
 	if (MTK_REV_GTE(pAd, MT7603, MT7603E1) && MTK_REV_LT(pAd, MT7603, MT7603E2)) {
 		pChipCap->fw_header_image = MT7603_FirmwareImage;
 		pChipCap->fw_bin_file_name = "mtk/MT7603.bin";
 		pChipCap->fw_len = sizeof(MT7603_FirmwareImage);
 	}
-	else
-#endif /* MT7603_E1 */
 #ifdef MT7603_E2
-	if(MTK_REV_GTE(pAd, MT7603, MT7603E2))
+	else if(MTK_REV_GTE(pAd, MT7603, MT7603E2))
 	{
 		pChipCap->fw_header_image = MT7603_e2_FirmwareImage;
 		pChipCap->fw_bin_file_name = "mtk/MT7603_e2.bin";
@@ -1358,3 +1359,4 @@ void mt7603_set_ed_cca(RTMP_ADAPTER *pAd, BOOLEAN enable)
 	}
 			
 }
+

@@ -214,6 +214,8 @@ NTSTATUS MtCmdAsicUpdateProtect(RTMP_ADAPTER *pAd, PCmdQElmt CMDQelmt)
 	    Value &= ~RTS_THRESHOLD_MASK;
         Value &= ~RTS_PKT_NUM_THRESHOLD_MASK;
 
+#if 0
+
 		if ((
 #ifdef DOT11_N_SUPPORT
             (pAd->CommonCfg.BACapability.field.AmsduEnable) ||
@@ -225,13 +227,14 @@ NTSTATUS MtCmdAsicUpdateProtect(RTMP_ADAPTER *pAd, PCmdQElmt CMDQelmt)
             Value |= RTS_PKT_NUM_THRESHOLD(0x7F);
         }
         else
+#endif
         {
 #ifdef APCLI_CERT_SUPPORT
             if (pAd->bApCliCertForceRTS)
             	Value |= RTS_THRESHOLD(1);
             else
 #endif /* APCLI_CERT_SUPPORT */
-            	Value |= RTS_THRESHOLD(pAd->CommonCfg.RtsThreshold);
+            Value |= RTS_THRESHOLD(pAd->CommonCfg.RtsThreshold);
 			
             Value |= RTS_PKT_NUM_THRESHOLD(1);
 
@@ -973,7 +976,7 @@ INT AsicGetTsfTime(RTMP_ADAPTER *pAd, UINT32 *high_part, UINT32 *low_part)
 #ifdef LINUX
 #ifdef MT7603_WLAN_HOOK_SUPPORT
 EXPORT_SYMBOL(AsicGetTsfTime);
-#endif /* RTMP_WLAN_HOOK_SUPPORT */
+#endif /* MT7603_WLAN_HOOK_SUPPORT */
 #endif /* LINUX */
 
 
@@ -1605,7 +1608,7 @@ INT AsicSetAllWmmParam(RTMP_ADAPTER *pAd,PEDCA_PARM pEdcaParm)
 {
 	CMD_EDCA_SET_T EdcaParam;
 	P_TX_AC_PARAM_T pAcParam;
-	UINT32 ac=0,index=0;;
+	UINT32 ac=0,index=0;
 
 	NdisZeroMemory(&EdcaParam,sizeof(CMD_EDCA_SET_T));
 	EdcaParam.ucTotalNum = CMD_EDCA_AC_MAX;
@@ -2321,10 +2324,10 @@ VOID Wtbl2RcpiGet(RTMP_ADAPTER *pAd, UCHAR ucWcid, union WTBL_2_DW13 *wtbl_2_d13
 }
 
 
-VOID AsicTxCntUpdate(RTMP_ADAPTER *pAd, MAC_TABLE_ENTRY *pEntry, MT_TX_COUNTER *pTxInfo)
+VOID AsicTxCntUpdate(RTMP_ADAPTER *pAd, MAC_TABLE_ENTRY *pEntry, MT_TX_COUNTER *pTxInfo, BOOLEAN softonesecup)
 {
 	TX_CNT_INFO tx_cnt_info;
-	UINT32 TxSuccess, TxRetransmit;
+	UINT32 TxSuccess;
 
 	if (IS_VALID_ENTRY(pEntry)) {
 		Wtbl2TxRateCounterGet(pAd, pEntry->wcid, &tx_cnt_info);
@@ -2341,18 +2344,8 @@ VOID AsicTxCntUpdate(RTMP_ADAPTER *pAd, MAC_TABLE_ENTRY *pEntry, MT_TX_COUNTER *
 		pTxInfo->Rate5TxCnt = tx_cnt_info.wtbl_2_d6.field.rate_5_tx_cnt;
 
 		pTxInfo->RateIndex = tx_cnt_info.wtbl_2_d9.field.rate_idx;
-/*
-		if ( pTxInfo->TxFailCount == 0 )
-			pEntry->OneSecTxNoRetryOkCount += pTxInfo->TxSuccessCount;
-		else
-		{
-			pEntry->OneSecTxRetryOkCount += pTxInfo->TxSuccessCount;
-			pEntry->OneSecTxFailCount += pTxInfo->TxFailCount;
-		}
-*/
 
 		TxSuccess = pTxInfo->TxCount -pTxInfo->TxFailCount;
-		TxRetransmit = pTxInfo->TxFailCount;
 
 		if ( pTxInfo->TxFailCount == 0 )
 		{
@@ -2373,24 +2366,38 @@ VOID AsicTxCntUpdate(RTMP_ADAPTER *pAd, MAC_TABLE_ENTRY *pEntry, MT_TX_COUNTER *
 		pAd->WlanCounters.FailedCount.u.LowPart += pTxInfo->TxFailCount;
 #endif /* STATS_COUNT_SUPPORT */
 
-		if ((TxSuccess == 0) && (pTxInfo->TxFailCount > 0))
-		{
-			/* prevent fast drop long range clients */
-			if (TxRetransmit > MAC_ENTRY_LIFE_CHECK_CNT / 4)
-				TxRetransmit = MAC_ENTRY_LIFE_CHECK_CNT / 4;
-			
-			/* No TxPkt ok in this period as continue tx fail */
-			pEntry->ContinueTxFailCnt += TxRetransmit;
-		}
-		else
-		{
-			pEntry->ContinueTxFailCnt = 0;
-		}
-		
-		DBGPRINT(RT_DEBUG_INFO, ("%s:(OK:%d, FAIL:%d, ConFail:%d) \n",__FUNCTION__,
-			TxSuccess, pTxInfo->TxFailCount, pEntry->ContinueTxFailCnt));	
-	}
+		if (softonesecup) {
+			if ((TxSuccess == 0) && (pTxInfo->TxFailCount > 0))
+			{
+				UINT32 TxRetransmit = pTxInfo->TxFailCount;
 
+				/* prevent fast drop long range clients */
+				/* No TxPkt ok in this period as continue tx fail */
+				/* error counter in ext_fifo ~3 times (with unreal big peaks) more then soft, need correction */
+				if (TxRetransmit > 512)
+					pEntry->ContinueTxFailCnt += 170;
+				else
+					pEntry->ContinueTxFailCnt += (TxRetransmit / 3);
+			}
+			else
+			{
+				pEntry->ContinueTxFailCnt = 0;
+			}
+
+			if (pTxInfo->TxFailCount == 0)
+			{
+			    pEntry->OneSecTxNoRetryOkCount += pTxInfo->TxCount;
+			}
+			else
+			{
+			    pEntry->OneSecTxRetryOkCount += pTxInfo->TxCount;
+			}
+
+			pEntry->OneSecTxFailCount += pTxInfo->TxFailCount;
+		}
+
+		DBGPRINT(RT_DEBUG_INFO, ("%s:(OK:%d, FAIL:%d, ConFail:%d) \n",__FUNCTION__, TxSuccess, pTxInfo->TxFailCount, pEntry->ContinueTxFailCnt));
+	}
 }
 
 
@@ -2536,6 +2543,7 @@ UCHAR aucHtMaxRetryLimit[]={
 	MCS_14, 12,
 	MCS_15, 12,
 };
+
 VOID asic_mcs_lut_update(RTMP_ADAPTER *pAd, MAC_TABLE_ENTRY *pEntry)
 {
 	union  WTBL_2_DW9 wtbl_2_d9 = {.word = 0};
@@ -2621,10 +2629,8 @@ VOID asic_mcs_lut_update(RTMP_ADAPTER *pAd, MAC_TABLE_ENTRY *pEntry)
 		UCHAR	ucIndex;
 		UCHAR	DownRateIdx, CurrRateIdx;
 		UCHAR mode, mcs;
-		BOOLEAN fgLowestRate = FALSE;
 
 		CurrRateIdx = pEntry->CurrTxRateIndex;
-		DownRateIdx = CurrRateIdx;
 
 #ifdef NEW_RATE_ADAPT_SUPPORT
 #ifdef WAPI_SUPPORT
@@ -2650,23 +2656,9 @@ VOID asic_mcs_lut_update(RTMP_ADAPTER *pAd, MAC_TABLE_ENTRY *pEntry)
 				RTMP_RA_GRP_TB *pCurrTxRate;
 
 				if ( ucIndex == 7 )
-				{
-					if (fgLowestRate == FALSE)
-					{
-						do {
-							CurrRateIdx = DownRateIdx;
-							DownRateIdx = MlmeSelectDownRate(pAd, pEntry, CurrRateIdx);
-						} while ( CurrRateIdx != DownRateIdx );
-					}
-				}
+					DownRateIdx = pEntry->LowestTxRateIndex;
 				else
-				{
 					DownRateIdx = MlmeSelectDownRate(pAd, pEntry, CurrRateIdx);
-					if (fgLowestRate == FALSE)
-					{
-						DownRateIdx = MlmeSelectDownRate(pAd, pEntry, CurrRateIdx);
-					}
-				}
 
 				if (pEntry->HTPhyMode.field.ShortGI)
 				{
@@ -2683,10 +2675,20 @@ VOID asic_mcs_lut_update(RTMP_ADAPTER *pAd, MAC_TABLE_ENTRY *pEntry)
 				mode = pCurrTxRate->Mode;
 				mcs = pCurrTxRate->CurrMCS;
 			} else {
-				mode = MODE_CCK;
-				mcs = 0;
-				DownRateIdx = 0;
-				DBGPRINT(RT_DEBUG_ERROR, ("%s: Not support legacy table.\n", __FUNCTION__));
+				RTMP_RA_LEGACY_TB *pCurrTxRate;
+
+				if ( ucIndex == 7 )
+					DownRateIdx = pEntry->LowestTxRateIndex;
+				else {
+					if ( CurrRateIdx > 0 )
+						CurrRateIdx -= 1;
+					DownRateIdx = CurrRateIdx;
+				}
+
+				pCurrTxRate = PTX_RA_LEGACY_ENTRY(pEntry->pTable, DownRateIdx);
+
+				mode = pCurrTxRate->Mode;
+				mcs = pCurrTxRate->CurrMCS;
 			}
 
 
@@ -2699,14 +2701,7 @@ VOID asic_mcs_lut_update(RTMP_ADAPTER *pAd, MAC_TABLE_ENTRY *pEntry)
 
 			rate[ucIndex] &= 0xfff;
 
-			if (CurrRateIdx == DownRateIdx)
-			{
-				fgLowestRate = TRUE;
-			}
-			else
-			{
-				CurrRateIdx = DownRateIdx;
-			}
+			CurrRateIdx = DownRateIdx;
 		}
 	}
 	else
@@ -2852,7 +2847,7 @@ UINT16 AsicGetTidSn(RTMP_ADAPTER *pAd, UCHAR Wcid, UCHAR Tid)
 }
 
 
-static UCHAR ba_range[] = {4, 5, 8, 10, 16, 20, 21, 42};
+static UCHAR ba_range[] = {4, 5, 8, 10, 16, 20, 21, 45};
 VOID AsicUpdateBASession(RTMP_ADAPTER *pAd, UCHAR wcid, UCHAR tid, UINT16 sn, UCHAR basize, BOOLEAN isAdd, INT ses_type)
 {
 	struct wtbl_entry ent;
@@ -3591,9 +3586,9 @@ VOID CmdProcAddRemoveKey(
 		if((Wcid != MCAST_WCID)
 #ifdef APCLI_SUPPORT
 #if defined(MULTI_APCLI_SUPPORT) || defined(APCLI_CONNECTION_TRIAL)
-			 && ((Wcid != APCLI_MCAST_WCID(0)) && (Wcid != APCLI_MCAST_WCID(1)) )
+          && ((Wcid != APCLI_MCAST_WCID(0)) && (Wcid != APCLI_MCAST_WCID(1)) )
 #else /* MULTI_APCLI_SUPPORT */
-			 && (Wcid != APCLI_MCAST_WCID)
+          && (Wcid != APCLI_MCAST_WCID)
 #endif /*! MULTI_APCLI_SUPPORT */
 #endif /* APCLI_SUPPORT */
            )
@@ -3717,7 +3712,9 @@ VOID AsicAddPairwiseKeyEntry(
 	UCHAR *pKey = pCipherKey->Key;
 	UCHAR *pTxMic = pCipherKey->TxMic;
 	UCHAR *pRxMic = pCipherKey->RxMic;
+#ifdef DBG
 	UCHAR CipherAlg = pCipherKey->CipherAlg;
+#endif
 #ifdef RTMP_MAC
 #ifdef RTMP_MAC_PCI
 #endif /* RTMP_MAC_PCI */
@@ -3781,10 +3778,7 @@ VOID AsicAddPairwiseKeyEntry(
 		}
 #endif /* RTMP_MAC_PCI */
 	}
-#ifdef RTMP_MAC
-#ifdef RTMP_MAC_PCI
-#endif /* RTMP_MAC_PCI */
-#endif /* RTMP_MAC */
+
 	DBGPRINT(RT_DEBUG_TRACE,("AsicAddPairwiseKeyEntry: WCID #%d Alg=%s\n",WCID, CipherName[CipherAlg]));
 	DBGPRINT(RT_DEBUG_TRACE,("	Key = %02x:%02x:%02x:%02x:%02x:%02x:%02x:%02x:%02x:%02x:%02x:%02x:%02x:%02x:%02x:%02x\n",
 		pKey[0],pKey[1],pKey[2],pKey[3],pKey[4],pKey[5],pKey[6],pKey[7],pKey[8],pKey[9],pKey[10],pKey[11],pKey[12],pKey[13],pKey[14],pKey[15]));
@@ -5809,7 +5803,7 @@ VOID MTPciPollTxRxEmpty(RTMP_ADAPTER *pAd)
 /* reduce the production time */
 	if (!ATE_ON(pAd))
 #endif /* CONFIG_ATE */
-		RtmpOsMsDelay(100);
+	RtmpOsMsDelay(100);
 
 	/* Fix Rx Ring FULL lead DMA Busy, when DUT is in reset stage */
 	RTMP_SET_FLAG(pAd, fRTMP_ADAPTER_POLL_IDLE);
@@ -5976,7 +5970,7 @@ VOID MTSdioMlmeRadioOn(PRTMP_ADAPTER pAd)
 	UINT32 Value=0;
 	UINT32 counter=0;
 
-	MTWF_LOG(DBG_CAT_ALL, DBG_LVL_TRACE,("%s()\n", __func__));
+	DBGPRINT(RT_DEBUG_TRACE, ("%s()\n", __func__));
 
     	/* Clear Radio off flag*/
 	RTMP_CLEAR_FLAG(pAd, fRTMP_ADAPTER_RADIO_OFF);
@@ -5986,11 +5980,11 @@ VOID MTSdioMlmeRadioOn(PRTMP_ADAPTER pAd)
 
 	while(!GET_W_FW_OWN_REQ_SET(Value)) {
 		RTMP_SDIO_READ32(pAd, WHLPCR, &Value);
-		MTWF_LOG(DBG_CAT_ALL, DBG_LVL_OFF, ("%s(): Request FW-Own processing: %x\n",__FUNCTION__,Value));
+		DBGPRINT(RT_DEBUG_TRACE, ("%s(): Request FW-Own processing: %x\n",__FUNCTION__,Value));
 		counter++;
 		RtmpOsMsDelay(50);
 		if(counter >100){
-			MTWF_LOG(DBG_CAT_ALL, DBG_LVL_ERROR, ("%s:  FW-Own back Faiure\n",__FUNCTION__));
+			DBGPRINT(RT_DEBUG_TRACE, ("%s:  FW-Own back Faiure\n",__FUNCTION__));
 			break;
 		}
 	}
@@ -6085,12 +6079,13 @@ VOID AsicSetRxGroup(RTMP_ADAPTER *pAd, UINT32 Port, UINT32 Group, BOOLEAN Enable
 
 
 #if defined(RTMP_MAC_PCI) || defined(RTMP_MAC_USB)
+#ifdef CONFIG_FPGA_MODE
 static CHAR *dma_sch_str[] = {
 	"LMAC",
 	"ByPass",
 	"HyBrid",
 	};
-
+#endif
 
 /*
     DMA scheduer reservation page assignment
@@ -6188,9 +6183,9 @@ INT32 AsicDMASchedulerInit(RTMP_ADAPTER *pAd, INT mode)
 		UINT32 max_bmcast_page_count = MAX_BMCAST_SIZE/page_size;
 		UINT32 max_mcucmd_page_count = MAX_MCUCMD_SIZE/page_size;
 		UINT32 max_data_page_count = MAX_DATA_SIZE/page_size;
-		UINT32 mcu_restore_val;
-		UINT32 bcn_restore_val;
-		UINT32 mbc_restore_val;
+		UINT32 mcu_restore_val=0;
+		UINT32 bcn_restore_val=0;
+		UINT32 mbc_restore_val=0;
 
 		/* Highest Priority Q7: Beacon > Q8: MC/BC > Q5: MCU CMD */
 		mac_val = 0x55555553;

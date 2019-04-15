@@ -132,6 +132,7 @@ INT rt28xx_ap_ioctl(struct net_device *net_dev, struct ifreq *rq, int cmd)
 
 	wrq->u.data.pointer = wrqin->u.data.pointer;
 	wrq->u.data.length = wrqin->u.data.length;
+	wrq->u.data.flags = wrqin->u.data.flags;
 	org_len = wrq->u.data.length;
 
 	pIoctlConfig->Status = 0;
@@ -287,9 +288,7 @@ skip_check:
 			break;
 		case SIOCGIWRANGE:	/*Get range of parameters */
 		    {
-/*				struct iw_range range; */
 				struct iw_range *prange = NULL;
-				//UINT32 len;
 
 				/* allocate memory */
 				os_alloc_mem(NULL, (UCHAR **)&prange, sizeof(struct iw_range));
@@ -311,7 +310,7 @@ skip_check:
 				prange->max_qual.qual = 100;
 				prange->max_qual.level = 0; /* dB */
 				prange->max_qual.noise = 0; /* dB */
-				/*len =*/ copy_to_user(wrq->u.data.pointer, prange, sizeof(struct iw_range));
+				copy_to_user(wrq->u.data.pointer, prange, sizeof(struct iw_range));
 				os_free_mem(NULL, prange);
 		    }
 		    break;

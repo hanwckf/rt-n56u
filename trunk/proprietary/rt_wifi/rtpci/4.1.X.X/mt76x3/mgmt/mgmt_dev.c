@@ -57,7 +57,7 @@ struct wifi_dev *get_wdev_by_idx(RTMP_ADAPTER *pAd, INT idx)
 				idx -= MIN_NET_DEVICE_FOR_WDS;		
 				if (idx < MAX_WDS_ENTRY)
 				{
-					wdev = &&pAd->WdsTab.WdsEntry[idx].wdev;
+					wdev = &pAd->WdsTab.WdsEntry[idx].wdev;
 					break;
 				}
 			}

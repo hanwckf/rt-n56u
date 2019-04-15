@@ -402,8 +402,8 @@ UINT8 NICGetBandSupported(RTMP_ADAPTER *pAd)
 
 INT WaitForAsicReady(RTMP_ADAPTER *pAd)
 {
-	UINT32 mac_val = 0;
 #if defined(RTMP_MAC) || defined(RLT_MAC)
+	UINT32 mac_val = 0;
 	UINT32 reg;
 	int idx = 0;
 #endif
@@ -430,11 +430,11 @@ INT WaitForAsicReady(RTMP_ADAPTER *pAd)
 		RtmpOsMsDelay(5);
 	} while (idx++ < 500);
 
-#endif /* defined(RTMP_MAC) || defined(RLT_MAC) */
-
 	DBGPRINT(RT_DEBUG_ERROR,
 				("%s(0x%x):AsicNotReady!\n",
 				__FUNCTION__, mac_val));
+#endif /* defined(RTMP_MAC) || defined(RLT_MAC) */
+
 	
 	return FALSE;
 }
@@ -488,7 +488,9 @@ Note:
 int RtmpChipOpsHook(VOID *pCB)
 {
 	RTMP_ADAPTER *pAd = (RTMP_ADAPTER *)pCB;
+#ifdef DBG
 	RTMP_CHIP_CAP *pChipCap = &pAd->chipCap;
+#endif
 #if defined(RTMP_MAC) || defined(RLT_MAC) || defined(RT65xx)
 	UINT32 MacValue;
 #endif /* defined(RTMP_MAC) || defined(RLT_MAC) || defined(RT65xx) */
@@ -503,7 +505,7 @@ int RtmpChipOpsHook(VOID *pCB)
 
 	// TODO: shiang-7603
 	if (IS_MT7603(pAd) || IS_MT7628(pAd)) {
-		DBGPRINT(RT_DEBUG_OFF, ("%s(%d): Not support for HIF_MT yet!\n",
+		DBGPRINT(RT_DEBUG_TRACE, ("%s(%d): Not support for HIF_MT yet!\n",
 							__FUNCTION__, __LINE__));
 	}
 	else

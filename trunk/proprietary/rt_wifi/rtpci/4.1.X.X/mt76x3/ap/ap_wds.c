@@ -90,7 +90,7 @@ INT wds_rx_pkt_allow(RTMP_ADAPTER *pAd, RX_BLK *pRxBlk)
 			pEntry = NULL;
 
 		/* have no valid wds entry exist, then discard the incoming packet.*/
-		if (!(pEntry && WDS_IF_UP_CHECK(pAd, pEntry->func_tb_idx)))
+		if (!pEntry || !WDS_IF_UP_CHECK(pAd, pEntry->func_tb_idx))
 			return FALSE;
 
 		/*receive corresponding WDS packet, disable TX lock state (fix WDS jam issue) */
@@ -504,8 +504,8 @@ VOID WdsTableMaintenance(RTMP_ADAPTER *pAd)
 		/* delete those MAC entry that has been idle for a long time */
 		if (pEntry->NoDataIdleCount >= MAC_TABLE_AGEOUT_TIME)
 		{
-			DBGPRINT(RT_DEBUG_TRACE, ("ageout %02x:%02x:%02x:%02x:%02x:%02x from WDS #%d after %d-sec silence\n",
-					PRINT_MAC(pEntry->Addr), idx, MAC_TABLE_AGEOUT_TIME));
+			printk("ageout %02x:%02x:%02x:%02x:%02x:%02x from WDS #%d after %d-sec silence\n",
+					PRINT_MAC(pEntry->Addr), idx, MAC_TABLE_AGEOUT_TIME);
 			WdsEntryDel(pAd, pEntry->Addr);
 			MacTableDeleteWDSEntry(pAd, pEntry->wcid, pEntry->Addr);
 		}
@@ -819,8 +819,6 @@ VOID APWdsInitialize(RTMP_ADAPTER *pAd)
 	return;	
 }
 
-
-#ifdef DBG
 INT Show_WdsTable_Proc(RTMP_ADAPTER *pAd, RTMP_STRING *arg)
 {
 	INT 	i;
@@ -837,32 +835,31 @@ INT Show_WdsTable_Proc(RTMP_ADAPTER *pAd, RTMP_STRING *arg)
 			hex_dump("Wds Key", pAd->WdsTab.WdsEntry[i].WdsKey.Key, pAd->WdsTab.WdsEntry[i].WdsKey.KeyLen);
 	}
 	
-	DBGPRINT(RT_DEBUG_OFF, ("\n%-19s%-4s%-4s%-4s%-7s%-7s%-7s%-10s%-6s%-6s%-6s%-6s\n",
-				"MAC", "IDX", "AID", "PSM", "RSSI0", "RSSI1", "RSSI2", "PhMd", "BW", "MCS", "SGI", "STBC"));
+	printk("\n%-19s%-4s%-4s%-4s%-7s%-7s%-7s%-10s%-6s%-6s%-6s%-6s\n",
+				"MAC", "IDX", "AID", "PSM", "RSSI0", "RSSI1", "RSSI2", "PhMd", "BW", "MCS", "SGI", "STBC");
 	
 	for (i=0; i<MAX_LEN_OF_MAC_TABLE; i++)
 	{
 		PMAC_TABLE_ENTRY pEntry = &pAd->MacTab.Content[i];
 		if (IS_ENTRY_WDS(pEntry))
 		{
-			DBGPRINT(RT_DEBUG_OFF, ("%02X:%02X:%02X:%02X:%02X:%02X  ", PRINT_MAC(pEntry->Addr)));
-			DBGPRINT(RT_DEBUG_OFF,("%-4d", (int)pEntry->func_tb_idx));
-			DBGPRINT(RT_DEBUG_OFF, ("%-4d", (int)pEntry->Aid));
-			DBGPRINT(RT_DEBUG_OFF, ("%-4d", (int)pEntry->PsMode));
-			DBGPRINT(RT_DEBUG_OFF, ("%-7d", pEntry->RssiSample.AvgRssi[0]));
-			DBGPRINT(RT_DEBUG_OFF, ("%-7d", pEntry->RssiSample.AvgRssi[1]));
-			DBGPRINT(RT_DEBUG_OFF, ("%-7d", pEntry->RssiSample.AvgRssi[2]));
-			DBGPRINT(RT_DEBUG_OFF, ("%-10s", get_phymode_str(pEntry->HTPhyMode.field.MODE)));
-			DBGPRINT(RT_DEBUG_OFF, ("%-6s", get_bw_str(pEntry->HTPhyMode.field.BW)));
-			DBGPRINT(RT_DEBUG_OFF, ("%-6d", pEntry->HTPhyMode.field.MCS));
-			DBGPRINT(RT_DEBUG_OFF, ("%-6d", pEntry->HTPhyMode.field.ShortGI));
-			DBGPRINT(RT_DEBUG_OFF, ("%-6d\n", pEntry->HTPhyMode.field.STBC));
+			printk("%02X:%02X:%02X:%02X:%02X:%02X  ", PRINT_MAC(pEntry->Addr));
+			printk("%-4d", (int)pEntry->func_tb_idx);
+			printk("%-4d", (int)pEntry->Aid);
+			printk("%-4d", (int)pEntry->PsMode);
+			printk("%-7d", pEntry->RssiSample.AvgRssi[0]);
+			printk("%-7d", pEntry->RssiSample.AvgRssi[1]);
+			printk("%-7d", pEntry->RssiSample.AvgRssi[2]);
+			printk("%-10s", get_phymode_str(pEntry->HTPhyMode.field.MODE));
+			printk("%-6s", get_bw_str(pEntry->HTPhyMode.field.BW));
+			printk("%-6d", pEntry->HTPhyMode.field.MCS);
+			printk("%-6d", pEntry->HTPhyMode.field.ShortGI);
+			printk("%-6d\n", pEntry->HTPhyMode.field.STBC);
 		}
 	} 
 
 	return TRUE;
 }
-#endif /* DBG */
 
 VOID rtmp_read_wds_from_file(RTMP_ADAPTER *pAd, RTMP_STRING *tmpbuf, RTMP_STRING *buffer)
 {

@@ -43,7 +43,8 @@ BOOLEAN BndStrg_CheckConnectionReq(
 		PRTMP_ADAPTER	pAd,
 		PUCHAR pSrcAddr,
 		UINT8 FrameType,
-		PCHAR Rssi);
+		PCHAR Rssi,
+		BOOLEAN bAllowStaConnectInHt);
 
 INT BndStrg_Enable(PBND_STRG_CLI_TABLE table, BOOLEAN enable);
 INT BndStrg_SetInfFlags(PRTMP_ADAPTER pAd, PBND_STRG_CLI_TABLE table, BOOLEAN bInfReady);
@@ -57,9 +58,9 @@ INT BndStrg_MsgHandle(PRTMP_ADAPTER pAd, RTMP_IOCTL_INPUT_STRUCT *wrq);
 #define IS_BND_STRG_DUAL_BAND_CLIENT(_Control_Flags) \
 	((_Control_Flags & fBND_STRG_CLIENT_SUPPORT_2G) && (_Control_Flags & fBND_STRG_CLIENT_SUPPORT_5G))
 
-#define BND_STRG_CHECK_CONNECTION_REQ(_pAd, _wdev, _SrcAddr, _FrameType, _RssiInfo, _pRet) \
+#define BND_STRG_CHECK_CONNECTION_REQ(_pAd, _wdev, _SrcAddr, _FrameType, _RssiInfo, _bAllowStaConnectInHt, _pRet) \
 {	\
-	CHAR Rssi[3] = {0};	\
+	CHAR Rssi[4] = {0};	\
 	Rssi[0] = _RssiInfo.raw_rssi[0] ? ConvertToRssi(_pAd, &_RssiInfo, RSSI_IDX_0) : 0;	\
 	Rssi[1] = _RssiInfo.raw_rssi[1] ? ConvertToRssi(_pAd, &_RssiInfo, RSSI_IDX_1) : 0;	\
 	Rssi[2] = _RssiInfo.raw_rssi[2] ? ConvertToRssi(_pAd, &_RssiInfo, RSSI_IDX_2) : 0;	\
@@ -67,15 +68,22 @@ INT BndStrg_MsgHandle(PRTMP_ADAPTER pAd, RTMP_IOCTL_INPUT_STRUCT *wrq);
 	*_pRet = BndStrg_CheckConnectionReq( _pAd, 	\
 								_SrcAddr,		\
 								_FrameType,		\
-								Rssi);	\
+								Rssi,	\
+								_bAllowStaConnectInHt); \
 }
 
 #ifdef BND_STRG_DBG
+#if 0
 #define RED(_text)  "\033[1;31m"_text"\033[0m"
 #define GRN(_text)  "\033[1;32m"_text"\033[0m"
 #define YLW(_text)  "\033[1;33m"_text"\033[0m"
 #define BLUE(_text) "\033[1;36m"_text"\033[0m"
-
+#else
+#define RED(_text)	 _text
+#define GRN(_text) _text
+#define YLW(_text) _text
+#define BLUE(_text) _text
+#endif
 #define BND_STRG_DBGPRINT(_Level, _Fmt) DBGPRINT(_Level, _Fmt)
 #else /* BND_STRG_DBG */
 #define RED(_text)	 _text
@@ -96,6 +104,7 @@ INT BndStrg_MsgHandle(PRTMP_ADAPTER pAd, RTMP_IOCTL_INPUT_STRUCT *wrq);
 #define BND_STRG_PRINTQAMSG(_Level, _Fmt)
 #endif /* BND_STRG_QA */
 
+#define BND_MAC_ADDR_HASH_INDEX(Addr)               (MAC_ADDR_HASH(Addr) & (BND_HASH_TABLE_SIZE - 1))
 #endif /* BAND_STEERING */
 #endif /* _BAND_STEERING_H_ */
 

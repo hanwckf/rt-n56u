@@ -167,7 +167,7 @@ ULONG JapRadarType(
 	IN PRTMP_ADAPTER pAd)
 {
 	ULONG		i;
-	const UCHAR	Channel[15]={52, 56, 60, 64, 100, 104, 108, 112, 116, 120, 124, 128, 132, 136, 140};
+	const UCHAR	Channel[16]={52, 56, 60, 64, 100, 104, 108, 112, 116, 120, 124, 128, 132, 136, 140, 144};
 
 	if (pAd->CommonCfg.RDDurRegion != JAP)
 	{

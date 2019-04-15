@@ -2451,7 +2451,7 @@ NDIS_STATUS	RTMPSetProfileParameters(
 			if (pAd->CommonCfg.Channel > 14)
 				pAd->Dot11_H.org_ch = pAd->CommonCfg.Channel;
 		}
-
+#if defined (CONFIG_WIFI_PKT_FWD)
 		/* EtherTrafficBand */
 		if (RTMPGetKeyParameter("EtherTrafficBand", tmpbuf, 10, pBuffer, TRUE))
 		{
@@ -2461,7 +2461,7 @@ NDIS_STATUS	RTMPSetProfileParameters(
 			if (pAd->CommonCfg.EtherTrafficBand > EtherTrafficBand5G)
 				pAd->CommonCfg.EtherTrafficBand = EtherTrafficBand5G;
 		}
-
+#endif
 		/*WirelessMode*/
 		/*Note: BssidNum must be put before WirelessMode in dat file*/
 		if(RTMPGetKeyParameter("WirelessMode", tmpbuf, 32, pBuffer, TRUE))
@@ -3817,37 +3817,41 @@ NDIS_STATUS	RTMPSetProfileParameters(
 					if (RTMPGetKeyParameter("McastPhyMode", tmpbuf, 32, pBuffer, TRUE))
 					{	
 						UCHAR PhyMode = simple_strtol(tmpbuf, 0, 10);
-									pAd->CommonCfg.MCastPhyMode.field.BW = pAd->CommonCfg.RegTransmitSetting.field.BW;
+						//pAd->CommonCfg.MCastPhyMode.field.BW = pAd->CommonCfg.RegTransmitSetting.field.BW;
 						switch (PhyMode)
 						{
-										case MCAST_DISABLE: /* disable*/
-											NdisMoveMemory(&pAd->CommonCfg.MCastPhyMode,
-												&pAd->MacTab.Content[MCAST_WCID].HTPhyMode, sizeof(HTTRANSMIT_SETTING));
-											break;
-
-										case MCAST_CCK:	/* CCK*/
-											pAd->CommonCfg.MCastPhyMode.field.MODE = MODE_CCK;
-											pAd->CommonCfg.MCastPhyMode.field.BW =  BW_20;
+							case MCAST_DISABLE: /* disable */
+								NdisMoveMemory(&pAd->CommonCfg.MCastPhyMode,
+									&pAd->MacTab.Content[MCAST_WCID].HTPhyMode, sizeof(HTTRANSMIT_SETTING));
 								break;
 
-										case MCAST_OFDM:	/* OFDM*/
-											pAd->CommonCfg.MCastPhyMode.field.MODE = MODE_OFDM;
+							case MCAST_CCK:	/* CCK*/
+								pAd->CommonCfg.MCastPhyMode.field.MODE = MODE_CCK;
+								pAd->CommonCfg.MCastPhyMode.field.BW =  BW_20;
+								break;
+
+							case MCAST_OFDM: /* OFDM*/
+								pAd->CommonCfg.MCastPhyMode.field.MODE = MODE_OFDM;
+								pAd->CommonCfg.MCastPhyMode.field.BW =  BW_20;
 								break;
 #ifdef DOT11_N_SUPPORT
-										case MCAST_HTMIX:	/* HTMIX*/
-											pAd->CommonCfg.MCastPhyMode.field.MODE = MODE_HTMIX;
+							case MCAST_HTMIX: /* HTMIX*/
+								pAd->CommonCfg.MCastPhyMode.field.MODE = MODE_HTMIX;
+								if (pAd->CommonCfg.BBPCurrentBW > BW_20)
+									pAd->CommonCfg.MCastPhyMode.field.BW =  BW_40;
+								else
+									pAd->CommonCfg.MCastPhyMode.field.BW =  BW_20;
 								break;
-#endif /* DOT11_N_SUPPORT */									
-
+#endif /* DOT11_N_SUPPORT */	
 							default:
-								DBGPRINT(RT_DEBUG_OFF, ("unknow Muticast PhyMode %d.\n", PhyMode));
-								DBGPRINT(RT_DEBUG_OFF, ("0:Disable 1:CCK, 2:OFDM, 3:HTMIX.\n"));
+								DBGPRINT(RT_DEBUG_OFF, ("Unknown Muticast PhyMode %d\n", PhyMode));
+								DBGPRINT(RT_DEBUG_OFF, ("0:Disable 1:CCK, 2:OFDM, 3:HTMIX\n"));
 								break;
 						}
 					}
 					else
-									NdisMoveMemory(&pAd->CommonCfg.MCastPhyMode,
-										&pAd->MacTab.Content[MCAST_WCID].HTPhyMode, sizeof(HTTRANSMIT_SETTING));
+						NdisMoveMemory(&pAd->CommonCfg.MCastPhyMode,
+							&pAd->MacTab.Content[MCAST_WCID].HTPhyMode, sizeof(HTTRANSMIT_SETTING));
 
 					/* McastMcs*/
 					if (RTMPGetKeyParameter("McastMcs", tmpbuf, 32, pBuffer, TRUE))

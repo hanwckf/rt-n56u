@@ -143,18 +143,18 @@ typedef struct usb_ctrlrequest devctrlrequest;
 #ifdef RTMP_MAC_PCI
 
 #if (CONFIG_RT_FIRST_CARD == 7603)
- #define AP_RTMP_FIRMWARE_FILE_NAME	"/etc_ro/Wireless/RT2860AP.bin"
+ #define AP_RTMP_FIRMWARE_FILE_NAME	"/etc/Wireless/RT2860AP.bin"
  #define AP_PROFILE_PATH		"/etc/Wireless/RT2860/RT2860AP.dat"
  #define SINGLE_SKU_TABLE_FILE_NAME	"/etc/Wireless/RT2860/SingleSKU.dat"
  #define CARD_INFO_PATH			"/etc/Wireless/RT2860/RT2860APCard.dat"
 #else
- #define AP_RTMP_FIRMWARE_FILE_NAME	"/etc_ro/Wireless/iNIC_ap.bin"
+ #define AP_RTMP_FIRMWARE_FILE_NAME	"/etc/Wireless/iNIC_ap.bin"
  #define AP_PROFILE_PATH		"/etc/Wireless/iNIC/iNIC_ap.dat"
  #define SINGLE_SKU_TABLE_FILE_NAME	"/etc/Wireless/iNIC/SingleSKU.dat"
  #define CARD_INFO_PATH			"/etc/Wireless/iNIC/RT2860APCard.dat"
 #endif
 
-#define AP_DRIVER_VERSION		"4.1.0.0_pre"
+#define AP_DRIVER_VERSION		"4.1.0.0.P48"
 
 #endif /* RTMP_MAC_PCI */
 #endif /* CONFIG_AP_SUPPORT */
@@ -283,16 +283,7 @@ struct iw_statistics *rt28xx_get_wireless_stats(
 /***********************************************************************************
  *	Ralink Specific network related constant definitions
  ***********************************************************************************/
-
-#ifdef LIMIT_GLOBAL_SW_QUEUE
 #define MAX_PACKETS_IN_QUEUE				1024
-#else /* LIMIT_GLOBAL_SW_QUEUE */
-#ifdef DOT11_VHT_AC
-#define MAX_PACKETS_IN_QUEUE				1024 /*(512)*/
-#else
-#define MAX_PACKETS_IN_QUEUE				(512)
-#endif /* DOT11_VHT_AC */
-#endif /* !LIMIT_GLOBAL_SW_QUEUE */
 
 /***********************************************************************************
  *	OS signaling related constant definitions
@@ -353,7 +344,8 @@ typedef spinlock_t			OS_NDIS_SPIN_LOCK;
 #define OS_IRQ_LOCK(__lock, __irqflags)			\
 {													\
     if (__irqflags);                            \
-	__irqflags = 0;									\
+	__irqflags = 0;				\
+	typecheck(unsigned long, __irqflags);	\
 	spin_lock_irqsave((spinlock_t *)(__lock), __irqflags);			\
 }
 
@@ -366,6 +358,7 @@ typedef spinlock_t			OS_NDIS_SPIN_LOCK;
 {												\
     if (__irqflags);                            \
 	__irqflags = 0;								\
+	typecheck(unsigned long, __irqflags);           \
 	spin_lock_bh((spinlock_t *)(__lock));		\
 }
 
@@ -731,7 +724,7 @@ do{                                   \
 
 #else
 #define DBGPRINT_RAW(Level, Fmt)    \
-do{                                   \
+do{                                    \
 	ULONG __gLevel = (Level) & 0xff;\
 	ULONG __fLevel = ((Level) & 0xffffff00);\
     if (__gLevel <= RTDebugLevel)      \
@@ -769,7 +762,7 @@ do{                                   \
 {                                                                               \
     if (!(x))                                                                   \
     {                                                                           \
-        printk(KERN_WARNING __FILE__ ":%d assert " #x "failed\n", __LINE__);    \
+        printk(KERN_WARNING __FILE__ ":%d assert " #x " failed\n", __LINE__);    \
     }                                                                           \
 }
 #else
@@ -787,23 +780,23 @@ void hex_dump(char *str, unsigned char *pSrcBufVA, unsigned int SrcBufLen);
 /***********************************************************************************
  * Device DMA Access related definitions and data structures.
  **********************************************************************************/
-ra_dma_addr_t linux_pci_map_single(void *handle, void *ptr, size_t size, int sd_idx, int direction);
-void linux_pci_unmap_single(void *handle, ra_dma_addr_t dma_addr, size_t size, int direction);
+ra_dma_addr_t linux_pci_map_single(struct pci_dev *pPciDev, void *ptr, size_t size, int sd_idx, int direction);
+void linux_pci_unmap_single(struct pci_dev *pPciDev, ra_dma_addr_t radma_addr, size_t size, int direction);
 
-#define PCI_MAP_SINGLE_DEV(_handle, _ptr, _size, _sd_idx, _dir)				\
-	linux_pci_map_single(_handle, _ptr, _size, _sd_idx, _dir)
+#define PCI_MAP_SINGLE_DEV(_pci_dev, _ptr, _size, _sd_idx, _dir)				\
+	linux_pci_map_single((struct pci_dev *)_pci_dev, _ptr, _size, _sd_idx, _dir)
 
-#define DMA_MAPPING_ERROR(_handle, _ptr)	\
-	dma_mapping_error(&((struct pci_dev *)(_handle))->dev, _ptr)
-
+#define DMA_MAPPING_ERROR(_pci_dev, _ptr)	\
+	dma_mapping_error(&((struct pci_dev *)(_pci_dev))->dev, _ptr)
+	
 #define PCI_UNMAP_SINGLE(_pAd, _ptr, _size, _dir)						\
 	linux_pci_unmap_single(((POS_COOKIE)(_pAd->OS_Cookie))->pci_dev, _ptr, _size, _dir)
 
-#define PCI_ALLOC_CONSISTENT(_pci_dev, _size, _ptr) \
-	pci_alloc_consistent(_pci_dev, _size, _ptr)
+#define PCI_ALLOC_CONSISTENT(_pci_dev, _size, _ptr)							\
+	dma_zalloc_coherent(_pci_dev == NULL ? NULL : &_pci_dev->dev, _size, _ptr, GFP_ATOMIC)
 
-#define PCI_FREE_CONSISTENT(_pci_dev, _size, _virtual_addr, _physical_addr) \
-	pci_free_consistent(_pci_dev, _size, _virtual_addr, _physical_addr)
+#define PCI_FREE_CONSISTENT(_pci_dev, _size, _virtual_addr, _physical_addr)	\
+	dma_free_coherent(_pci_dev == NULL ? NULL : &_pci_dev->dev, _size, _virtual_addr, _physical_addr)
 
 #ifdef VENDOR_FEATURE2_SUPPORT
 #define DEV_ALLOC_SKB(_pAd, _Pkt, _length)	\
@@ -1086,15 +1079,16 @@ do {	\
 		(RTPKT_TO_OSPKT(_pkt)->len) = (_len)
 
 #define GET_OS_PKT_DATATAIL(_pkt) \
-		(RTPKT_TO_OSPKT(_pkt)->tail)
+		skb_tail_pointer(RTPKT_TO_OSPKT(_pkt))
 #define SET_OS_PKT_DATATAIL(_pkt, _start, _len)	\
-		((RTPKT_TO_OSPKT(_pkt))->tail) = (PUCHAR)((_start) + (_len))
+		(skb_set_tail_pointer(RTPKT_TO_OSPKT(_pkt), \
+		(_len)-(int)(GET_OS_PKT_DATAPTR(_pkt)-(_start))))
 
 #define GET_OS_PKT_HEAD(_pkt) \
 		(RTPKT_TO_OSPKT(_pkt)->head)
 
 #define GET_OS_PKT_END(_pkt) \
-		(RTPKT_TO_OSPKT(_pkt)->end)
+		skb_end_pointer(RTPKT_TO_OSPKT(_pkt))
 
 #define GET_OS_PKT_NETDEV(_pkt) \
 		(RTPKT_TO_OSPKT(_pkt)->dev)
@@ -1608,7 +1602,7 @@ extern int rausb_control_msg(VOID *dev,
 #define ATEDBGPRINT DBGPRINT
 #ifdef RTMP_MAC_PCI
 #ifdef CONFIG_AP_SUPPORT
-#define EEPROM_BIN_FILE_NAME  "/etc/Wireless/RT2860AP/e2p.bin"
+#define EEPROM_BIN_FILE_NAME  "/etc/Wireless/RT2860/e2p.bin"
 #endif /* CONFIG_AP_SUPPORT */
 #endif /* RTMP_MAC_PCI */
 
@@ -1645,7 +1639,7 @@ void __exit rt_pci_cleanup_module(void);
 #define RTMP_OS_TXRXHOOK_CALL(hook,packet,queIdx,priv) RtmpOsTxRxHookCall(hook,packet,queIdx,priv)
 #define RTMP_OS_TXRXHOOK_INIT() RtmpOsTxRxHookInit()
 #else
-#define RTMP_OS_TXRXHOOK_CALL(hook,packet,queIdx,priv) if(priv!=NULL)
+#define RTMP_OS_TXRXHOOK_CALL(hook,packet,queIdx,priv) if(priv!=NULL) {}
 #define RTMP_OS_TXRXHOOK_INIT()
 #endif
 

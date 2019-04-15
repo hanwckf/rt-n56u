@@ -10,8 +10,8 @@
 #define ORI_BA_SESSION_TIMEOUT	(2000)	/* ms */
 #define REC_BA_SESSION_IDLE_TIMEOUT	(1000)	/* ms */
 
-#define REORDERING_PACKET_TIMEOUT		((100 * OS_HZ)/1000)	/* system ticks -- 100 ms*/
-#define MAX_REORDERING_PACKET_TIMEOUT	((3000 * OS_HZ)/1000)	/* system ticks -- 100 ms*/
+#define REORDERING_PACKET_TIMEOUT		((180 * OS_HZ)/1000)	/* system ticks -- 100 --> 180ms*/
+#define MAX_REORDERING_PACKET_TIMEOUT	((2000 * OS_HZ)/1000)	/* system ticks -- 1500 --> 2000ms*/
 
 
 #define RESET_RCV_SEQ		(0xFFFF)
@@ -411,11 +411,11 @@ void ba_flush_reordering_timeout_mpdus(
 /*		(RTMP_TIME_AFTER((unsigned long)Now32, (unsigned long)(pBAEntry->LastIndSeqAtTimer+(10*REORDERING_PACKET_TIMEOUT))) &&*/
 /*		 (pBAEntry->list.qlen > (pBAEntry->BAWinSize/8)))*/
 	if (RTMP_TIME_AFTER((unsigned long)Now32, (unsigned long)(pBAEntry->LastIndSeqAtTimer+(MAX_REORDERING_PACKET_TIMEOUT/6))) 
-		 &&(pBAEntry->list.qlen > 1)
+		 &&(pBAEntry->list.qlen > 0)
 		)
 	{
 		DBGPRINT(RT_DEBUG_TRACE,("timeout[%d] (%08lx-%08lx = %d > %d): %x, flush all!\n ", pBAEntry->list.qlen, Now32, (pBAEntry->LastIndSeqAtTimer), 
-			   (int)((long) Now32 - (long)(pBAEntry->LastIndSeqAtTimer)), MAX_REORDERING_PACKET_TIMEOUT,
+			   (int)((long) Now32 - (long)(pBAEntry->LastIndSeqAtTimer)), MAX_REORDERING_PACKET_TIMEOUT/6,
 			   pBAEntry->LastIndSeq));
 		ba_refresh_reordering_mpdus(pAd, pBAEntry);
 		pBAEntry->LastIndSeqAtTimer = Now32;
@@ -425,11 +425,13 @@ void ba_flush_reordering_timeout_mpdus(
 		&& (pBAEntry->list.qlen > 0)
 	   )
 		{
-/*
-		DBGPRINT(RT_DEBUG_OFF, ("timeout[%d] (%lx-%lx = %d > %d): %x, ", pBAEntry->list.qlen, Now32, (pBAEntry->LastIndSeqAtTimer),
-			   (int)((long) Now32 - (long)(pBAEntry->LastIndSeqAtTimer)), REORDERING_PACKET_TIMEOUT,
+//*
+		DBGPRINT(RT_DEBUG_OFF, ("timeout[%3d] (%lx-%lx = %d > %d(%dms)): %3X, ", 
+				pBAEntry->list.qlen, Now32, (pBAEntry->LastIndSeqAtTimer),
+			   (int)((long) Now32 - (long)(pBAEntry->LastIndSeqAtTimer)), 
+			   REORDERING_PACKET_TIMEOUT,REORDERING_PACKET_TIMEOUT*1000/OS_HZ,
 			   pBAEntry->LastIndSeq));
-*/
+//*/
     		
 		/* force LastIndSeq to shift to LastIndSeq+1*/
     		Sequence = (pBAEntry->LastIndSeq+1) & MAXSEQ;
@@ -444,7 +446,7 @@ void ba_flush_reordering_timeout_mpdus(
     			pBAEntry->LastIndSeq = Sequence;
     		}
 
-		DBGPRINT(RT_DEBUG_OFF, ("%x, flush one!\n", pBAEntry->LastIndSeq));
+		DBGPRINT(RT_DEBUG_OFF, ("%3x, flush one!\n", pBAEntry->LastIndSeq));
 
 	}
 }
@@ -1218,16 +1220,12 @@ VOID PeerAddBAReqAction(RTMP_ADAPTER *pAd, MLME_QUEUE_ELEM *Elem)
 	ADDframe.StatusCode = Status;
 	ADDframe.BaParm.BAPolicy = IMMED_BA;
 #ifdef DOT11_VHT_AC
-	if (pMacEntry && IS_VHT_STA(pMacEntry) && (Status == 0))
+	if (pMacEntry && IS_VHT_STA(pMacEntry) && Status == 0 && pAd->CommonCfg.DesiredHtPhy.AmsduEnable)
 		ADDframe.BaParm.AMSDUSupported = pAddreqFrame->BaParm.AMSDUSupported;
 	else
-#endif /* DOT11_VHT_AC */
+#endif
 		ADDframe.BaParm.AMSDUSupported = 0;
 
-#ifdef WFA_VHT_PF
-	if (pAd->CommonCfg.DesiredHtPhy.AmsduEnable)
-		ADDframe.BaParm.AMSDUSupported = 1;
-#endif /* WFA_VHT_PF */
 	ADDframe.BaParm.TID = pAddreqFrame->BaParm.TID;
 	ADDframe.BaParm.BufSize = min(((UCHAR)pAddreqFrame->BaParm.BufSize), (UCHAR)pAd->CommonCfg.BACapability.field.RxBAWinLimit);
 	if (ADDframe.BaParm.BufSize == 0) {
@@ -1395,79 +1393,6 @@ BOOLEAN CntlEnqueueForRecv(
 	return TRUE;
 }
 
-
-/* Description : Send SMPS Action frame If SMPS mode switches. */
-VOID SendSMPSAction(RTMP_ADAPTER *pAd, UCHAR Wcid, UCHAR smps)
-{
-	struct wifi_dev *wdev;
-	MAC_TABLE_ENTRY *pEntry;
-	UCHAR *pOutBuffer = NULL;
-	NDIS_STATUS NStatus;
-	FRAME_SMPS_ACTION Frame;
-	ULONG FrameLen;
-
-
-	NStatus = MlmeAllocateMemory(pAd, &pOutBuffer);	 /*Get an unused nonpaged memory*/
-	if (NStatus != NDIS_STATUS_SUCCESS)
-	{
-		DBGPRINT(RT_DEBUG_ERROR,("BA - MlmeADDBAAction() allocate memory failed \n"));
-		return;
-	}
-
-	if (!VALID_WCID(Wcid))
-	{
-		MlmeFreeMemory(pAd, pOutBuffer);
-		DBGPRINT(RT_DEBUG_ERROR,("BA - Invalid WCID(%d)\n",  Wcid));
-		return;
-	}
-
-	pEntry = &pAd->MacTab.Content[Wcid];
-	wdev = pEntry->wdev;
-	if (!wdev)
-	{
-		MlmeFreeMemory(pAd, pOutBuffer);
-		DBGPRINT(RT_DEBUG_ERROR, ("BA - wdev is null\n"));
-		return;
-	}
-
-#ifdef APCLI_SUPPORT
-	if (IS_ENTRY_APCLI(pEntry))
-	{
-#ifdef MAC_REPEATER_SUPPORT
-		if (pEntry->bReptCli)
-			ActHeaderInit(pAd, &Frame.Hdr, pEntry->Addr, pAd->ApCfg.ApCliTab[pEntry->func_tb_idx].RepeaterCli[pEntry->MatchReptCliIdx].CurrentAddress, wdev->bssid);
-		else
-#endif /* MAC_REPEATER_SUPPORT */
-		ActHeaderInit(pAd, &Frame.Hdr, pEntry->Addr, wdev->if_addr, wdev->bssid);
-	}
-	else
-#endif /* APCLI_SUPPORT */
-	ActHeaderInit(pAd, &Frame.Hdr, pEntry->Addr, wdev->if_addr, wdev->bssid);
-	Frame.Category = CATEGORY_HT;
-	Frame.Action = SMPS_ACTION;
-	switch (smps)
-	{
-		case MMPS_DISABLE:
-			Frame.smps = 0;
-			break;
-		case MMPS_DYNAMIC:
-			Frame.smps = 3;
-			break;
-		case MMPS_STATIC:
-			Frame.smps = 1;
-			break;
-	}
-
-
-	MakeOutgoingFrame(pOutBuffer, &FrameLen,
-					  sizeof(FRAME_SMPS_ACTION), &Frame,
-					  END_OF_ARGS);
-	MiniportMMRequest(pAd, QID_AC_BE, pOutBuffer, FrameLen);
-	MlmeFreeMemory(pAd, pOutBuffer);
-	DBGPRINT(RT_DEBUG_ERROR,("HT - %s( %d )  \n", __FUNCTION__, Frame.smps));
-}
-
-
 #define RADIO_MEASUREMENT_REQUEST_ACTION	0
 
 typedef struct GNU_PACKED _BEACON_REQUEST {
@@ -1574,6 +1499,9 @@ void convert_reordering_packet_to_preAMSDU_or_802_3_packet(
 */
 	RTMP_802_11_REMOVE_LLC_AND_CONVERT_TO_802_3(pRxBlk, Header802_3);
 	ASSERT(pRxBlk->pRxPacket);
+
+	if(pRxBlk->pRxPacket == NULL)
+		return;
 
 	pRxPkt = RTPKT_TO_OSPKT(pRxBlk->pRxPacket);
 
@@ -1831,6 +1759,13 @@ VOID Indicate_AMPDU_Packet(RTMP_ADAPTER *pAd, RX_BLK *pRxBlk, UCHAR wdev_idx)
 		data_len = pRxBlk->DataSize;
 	}
 
+	if (!data_len) {
+		/* release packet*/
+		/* avoid processing with null paiload packets - QCA61X4A bug */
+		RELEASE_NDIS_PACKET(pAd, pRxBlk->pRxPacket, NDIS_STATUS_FAILURE);
+		return;
+	}
+
 	if (!RX_BLK_TEST_FLAG(pRxBlk, fRX_AMSDU) &&  (data_len > max_pkt_len))
 	{
 		static int err_size;
@@ -1911,7 +1846,7 @@ VOID Indicate_AMPDU_Packet(RTMP_ADAPTER *pAd, RX_BLK *pRxBlk, UCHAR wdev_idx)
 #ifdef MAC_REPEATER_SUPPORT
 		Rtmp_Chk_Reset_Ba_Sequence(pAd, pRxBlk);
 #endif /* MAC_REPEATER_SUPPORT */
-
+#if 0 /* do not keep dupe packets */
 #ifdef FORCE_ANNOUNCE_CRITICAL_AMPDU
 		if (pRxBlk->CriticalPkt)
 		{
@@ -1921,7 +1856,8 @@ VOID Indicate_AMPDU_Packet(RTMP_ADAPTER *pAd, RX_BLK *pRxBlk, UCHAR wdev_idx)
 			INDICATE_LEGACY_OR_AMSDU(pAd, pRxBlk, wdev_idx);
 		}else
 #endif /* FORCE_ANNOUNCE_CRITICAL_AMPDU */
-			RELEASE_NDIS_PACKET(pAd, pRxBlk->pRxPacket, NDIS_STATUS_FAILURE);
+#endif
+		RELEASE_NDIS_PACKET(pAd, pRxBlk->pRxPacket, NDIS_STATUS_FAILURE);
 
 	}
 	/* III. Drop Old Received Packet*/
@@ -1942,7 +1878,7 @@ VOID Indicate_AMPDU_Packet(RTMP_ADAPTER *pAd, RX_BLK *pRxBlk, UCHAR wdev_idx)
 			INDICATE_LEGACY_OR_AMSDU(pAd, pRxBlk, wdev_idx);
 		}else
 #endif /* FORCE_ANNOUNCE_CRITICAL_AMPDU */
-			RELEASE_NDIS_PACKET(pAd, pRxBlk->pRxPacket, NDIS_STATUS_FAILURE);
+		RELEASE_NDIS_PACKET(pAd, pRxBlk->pRxPacket, NDIS_STATUS_FAILURE);
 
 	}
 	/* IV. Receive Sequence within Window Size*/

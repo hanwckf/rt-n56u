@@ -27,7 +27,7 @@
 #include "rt_config.h"
 
 #ifdef LED_SOFT_SUPPORT
-#include <ralink/ralink_gpio.h>
+#include <linux/ralink_gpio.h>
 #endif
 
 UCHAR	SNAP_802_1H[] = {0xaa, 0xaa, 0x03, 0x00, 0x00, 0x00};
@@ -305,13 +305,13 @@ VOID ParseRxVPacket(RTMP_ADAPTER *pAd, UINT32 Type, RX_BLK *RxBlk, UCHAR *Data)
         pAd->ATECtrl.RCPI1 = RXV1_3TH_CYCLE->Rcpi1;
         if(RXV1_5TH_CYCLE)
         {   
-            pAd->ATECtrl.FreqOffsetFromRx = RXV1_5TH_CYCLE->FoE;
-            pAd->ATECtrl.SNR0 = RXV1_5TH_CYCLE->LTF_SNR0;
+        pAd->ATECtrl.FreqOffsetFromRx = RXV1_5TH_CYCLE->FoE;
+        pAd->ATECtrl.SNR0 = RXV1_5TH_CYCLE->LTF_SNR0;
         }
         if(RXV2_2ND_CYCLE)
-            pAd->ATECtrl.SNR1 = RXV2_2ND_CYCLE->OfdmLtfSNR1;
-        pAd->ATECtrl.RSSI0 = RXV1_3TH_CYCLE->Rcpi0/2 - 110;
-        pAd->ATECtrl.RSSI1 = RXV1_3TH_CYCLE->Rcpi1/2 - 110;
+        pAd->ATECtrl.SNR1 = RXV2_2ND_CYCLE->OfdmLtfSNR1;
+	pAd->ATECtrl.RSSI0 = RXV1_3TH_CYCLE->Rcpi0/2 - 110;
+	pAd->ATECtrl.RSSI1 = RXV1_3TH_CYCLE->Rcpi1/2 - 110;
 #endif /* CONFIG_QA */
 	}
 	else
@@ -352,7 +352,7 @@ static inline INT32 mt_rx_info_2_blk(
     INT32 RMACInfoLen;
     struct rxd_base_struc *rx_base;
 	//RXD_GRP4_STRUCT *RxdGrp4 = NULL;
-	//RXD_GRP1_STRUCT *RxdGrp1 = NULL;
+	RXD_GRP1_STRUCT *RxdGrp1 = NULL;
 	RXD_GRP2_STRUCT *RxdGrp2 = NULL;
 	RXD_GRP3_STRUCT *RxdGrp3 = NULL;
 
@@ -372,7 +372,7 @@ static inline INT32 mt_rx_info_2_blk(
 
 	if (rx_base->rxd_0.grp_vld & RXS_GROUP1)
 	{
-		//RxdGrp1 = (RXD_GRP1_STRUCT *)Pos;
+		RxdGrp1 = (RXD_GRP1_STRUCT *)Pos;
 		Pos += RMAC_INFO_GRP_1_SIZE;
 	}
 
@@ -405,6 +405,14 @@ static inline INT32 mt_rx_info_2_blk(
         pRxBlk->MPDUtotalByteCnt -= 2;
         RMACInfoLen += 2;
     }
+
+	if (RxdGrp1 != NULL)
+	{
+		UINT64 pn_low = RxdGrp1->sec_pn_32;
+		UINT64 pn_high = RxdGrp1->sec_pn_48;
+
+		pRxBlk->CCMP_PN = pn_low + (pn_high << 32);
+	}
 
     pRxBlk->DataSize = pRxBlk->MPDUtotalByteCnt;
     pRxBlk->wcid = rx_base->rxd_2.wlan_idx;
@@ -479,7 +487,7 @@ UINT32 parse_rx_packet_type(RTMP_ADAPTER *ad, RX_BLK *rx_blk, VOID *rx_packet)
 #endif /* RT_BIG_ENDIAN */
 
 #ifdef RTMP_PCI_SUPPORT
-
+#if 0
 	if (rx_blk->PDMALen != RMAC_RX_PKT_RX_BYTE_COUNT(rxd_0->word))
 	{
 
@@ -488,7 +496,7 @@ UINT32 parse_rx_packet_type(RTMP_ADAPTER *ad, RX_BLK *rx_blk, VOID *rx_packet)
 		return 0;
 	
 	}
-
+#endif
 	if (RMAC_RX_PKT_RX_BYTE_COUNT(rxd_0->word) > RX_BUFFER_AGGRESIZE)
 	{
 		DBGPRINT(RT_DEBUG_ERROR, ("drop rx length = 0x%x packet\n", 
@@ -604,8 +612,8 @@ UINT32 parse_rx_packet_type(RTMP_ADAPTER *ad, RX_BLK *rx_blk, VOID *rx_packet)
             UCHAR hdr_info = txd_1->hdr_info*2;
             UCHAR *da, *sa;
             STA_TR_ENTRY *tr_entry;
-			MAC_TABLE_ENTRY *pEntry;
-         	unsigned long IrqFlags;
+	    MAC_TABLE_ENTRY *pEntry;
+	    ULONG IrqFlags = 0;
             UINT32 q_idx = QID_AC_BE;
             HEADER_802_11 *pWifi_hdr;
             UCHAR *qos_p;
@@ -733,9 +741,7 @@ UINT32 parse_rx_packet_type(RTMP_ADAPTER *ad, RX_BLK *rx_blk, VOID *rx_packet)
 						WLAN_MR_TIM_BIT_SET(ad, tr_entry->func_tb_idx, tr_entry->wcid);
 #endif /* CONFIG_AP_SUPPORT */
 					}
-
 					RX_BLK_SET_FLAG(rx_blk, fRX_RETRIEVE);
-
 				}
 			}
 			else
@@ -866,12 +872,12 @@ NDIS_STATUS MiniportMMRequest(RTMP_ADAPTER *pAd, UCHAR QueIdx, UCHAR *pData, UIN
 	NDIS_STATUS Status = NDIS_STATUS_FAILURE;
 	ULONG FreeNum;
 #ifdef RTMP_MAC_PCI
-	unsigned long	IrqFlags = 0;
+	ULONG IrqFlags = 0;
 	BOOLEAN bUseDataQ = FALSE;
 #endif /* RTMP_MAC_PCI */
-	BOOLEAN FlgDataQForce = FALSE, FlgIsLocked = FALSE;
+	BOOLEAN FlgDataQForce = FALSE, FlgIsLocked = FALSE, FlgIsCheckPS = FALSE;
 	int retryCnt = 0;
-	BOOLEAN			FlgIsCheckPS = FALSE;
+
 	ASSERT(Length <= MGMT_DMA_BUFFER_SIZE);
 
 	if ((QueIdx & MGMT_USE_QUEUE_FLAG) == MGMT_USE_QUEUE_FLAG)
@@ -897,12 +903,13 @@ NDIS_STATUS MiniportMMRequest(RTMP_ADAPTER *pAd, UCHAR QueIdx, UCHAR *pData, UIN
 	}
 #endif /* CONFIG_FPGA_MODE */
 #endif /* MT_PS */
-
+#ifdef CONFIG_HOTSPOT_R2
 	if ((QueIdx & MGMT_USE_PS_FLAG) == MGMT_USE_PS_FLAG)
 	{
 		FlgIsCheckPS = TRUE;
 		QueIdx &= (~MGMT_USE_PS_FLAG);
 	}
+#endif /* CONFIG_HOTSPOT_R2 */
 #ifdef RTMP_MAC_PCI
 	if (pAd->MACVersion == 0x28600100)
 	{
@@ -934,14 +941,17 @@ NDIS_STATUS MiniportMMRequest(RTMP_ADAPTER *pAd, UCHAR QueIdx, UCHAR *pData, UIN
 			break;
 		}
 
-
 		/* Check Free priority queue*/
 		/* Since we use PBF Queue2 for management frame.  Its corresponding DMA ring should be using TxRing.*/
 #ifdef RTMP_MAC_PCI
 		if (bUseDataQ)
 		{
-			/* free Tx(QueIdx) resources*/
-			RTMPFreeTXDUponTxDmaDone(pAd, QueIdx);
+			FreeNum = GET_TXRING_FREENO(pAd, QueIdx);
+			if (FreeNum <= 5)
+			{
+				/* free Tx(QueIdx) resources*/
+				RTMPFreeTXDUponTxDmaDone(pAd, QueIdx);
+			}
 			FreeNum = GET_TXRING_FREENO(pAd, QueIdx);
 		}
 		else
@@ -1284,7 +1294,7 @@ NDIS_STATUS MlmeHardTransmit(
 	}
 
 #ifdef DOT11K_RRM_SUPPORT
-#ifdef QUIET_SUPPORT
+#ifdef QUIET_SUPPORT_TXSTOP
 	if ((pEntry != NULL)
 		&& (pEntry->func_tb_idx < pAd->ApCfg.BssidNum)
 		&& IS_RRM_QUIET(pAd, pEntry->func_tb_idx))
@@ -1431,7 +1441,7 @@ NDIS_STATUS MlmeHardTransmitMgmtRing(RTMP_ADAPTER *pAd, UCHAR QueIdx, PNDIS_PACK
 	if ((pAd->LatchRfRegs.Channel > 14) && (MlmeRate < RATE_6)) /* 11A band*/
 		MlmeRate = RATE_6;
 
-	if (((pHeader_802_11->FC.Type == FC_TYPE_DATA) && (pHeader_802_11->FC.SubType == SUBTYPE_QOS_NULL)) || 
+	if (((pHeader_802_11->FC.Type == FC_TYPE_DATA) && (pHeader_802_11->FC.SubType == SUBTYPE_QOS_NULL)) ||
 		((pHeader_802_11->FC.Type == FC_TYPE_CNTL) && (pHeader_802_11->FC.SubType == SUBTYPE_BLOCK_ACK_REQ)))
 	{
 		pMacEntry = MacTableLookup(pAd, pHeader_802_11->Addr1);
@@ -1779,7 +1789,7 @@ NDIS_STATUS MlmeHardTransmitMgmtRing(RTMP_ADAPTER *pAd, UCHAR QueIdx, PNDIS_PACK
 	if(pAd->CommonCfg.TxStream == 1)
             mac_info.SpeEn = 0;
 	else
-	    mac_info.SpeEn = 1;
+	mac_info.SpeEn = 1;
 	mac_info.Preamble = LONG_PREAMBLE;
 
 #ifdef MT_MAC
@@ -2320,8 +2330,6 @@ BOOLEAN CanDoAggregateTransmit(RTMP_ADAPTER *pAd, NDIS_PACKET *pPacket, TX_BLK *
 
 }
 
-
-#ifdef DBG
 VOID rtmp_sta_txq_dump(RTMP_ADAPTER *pAd, STA_TR_ENTRY *tr_entry, INT qidx)
 {
 	ULONG IrqFlags = 0;
@@ -2374,8 +2382,6 @@ VOID rtmp_tx_swq_dump(RTMP_ADAPTER *pAd, INT qidx)
 	RTMP_IRQ_UNLOCK(&pAd->irq_lock, IrqFlags);
 	DBGPRINT(RT_DEBUG_OFF, ("\n"));
 }
-#endif /* DBG */
-
 
 VOID rtmp_ps_init(RTMP_ADAPTER *pAd)
 {
@@ -2437,7 +2443,7 @@ INT rtmp_psDeq_req(RTMP_ADAPTER *pAd)
 	UCHAR cnt=0,i=0;
 	INT32 capCount=0;
 	/*remove first psToken now, should check WCID requeue when report*/
-
+		
 	DlListForEachSafe(psEntry,tmp,&pAd->psTokenQueue,struct WCID_TABLE,list){
 		DlListDel(&psEntry->list);
 		if( psEntry->wcid >=  MAX_LEN_OF_TR_TABLE)
@@ -2642,8 +2648,7 @@ INT rtmp_enq_req(RTMP_ADAPTER *pAd, PNDIS_PACKET pkt, UCHAR qidx, STA_TR_ENTRY *
 	{
 	enq_idx = fifo_swq->enqIdx;
 #ifdef DATA_QUEUE_RESERVE
-		if (RTMP_GET_PACKET_DHCP(pkt) || RTMP_GET_PACKET_EAPOL(pkt)
-						|| RTMP_GET_PACKET_ICMP(pkt))
+		if (RTMP_GET_PACKET_DHCP(pkt) || RTMP_GET_PACKET_EAPOL(pkt) /* || RTMP_GET_PACKET_ICMP(pkt) */)
 		{
 			tr_entry->high_pkt_cnt ++;
 		}
@@ -2654,7 +2659,7 @@ INT rtmp_enq_req(RTMP_ADAPTER *pAd, PNDIS_PACKET pkt, UCHAR qidx, STA_TR_ENTRY *
 		{
 			capCount = (fifo_swq->enqIdx >=fifo_swq->deqIdx) ? (TX_SWQ_FIFO_LEN-fifo_swq->enqIdx+fifo_swq->deqIdx) : (fifo_swq->deqIdx-fifo_swq->enqIdx);
 			if (!(RTMP_GET_PACKET_DHCP(pkt) || RTMP_GET_PACKET_EAPOL(pkt)
-					|| RTMP_GET_PACKET_ICMP(pkt)))
+					/* || RTMP_GET_PACKET_ICMP(pkt)*/) )
 			{
 				if (capCount < FIFO_RSV_FOR_HIGH_PRIORITY)
 				{
@@ -2679,17 +2684,16 @@ INT rtmp_enq_req(RTMP_ADAPTER *pAd, PNDIS_PACKET pkt, UCHAR qidx, STA_TR_ENTRY *
 		} else
 	        {
 #ifdef DBG
-			occupied_wcid = fifo_swq->swq[enq_idx];
+		occupied_wcid = fifo_swq->swq[enq_idx];
 #endif /* DBG */
-			enq_done = FALSE;
 #ifdef DATA_QUEUE_RESERVE
 			if (RTMP_GET_PACKET_DHCP(pkt) || RTMP_GET_PACKET_EAPOL(pkt)
-							|| RTMP_GET_PACKET_ICMP(pkt))
+							/* || RTMP_GET_PACKET_ICMP(pkt) */)
 			{
 				tr_entry->high_pkt_drop_cnt ++;
 			}
 #endif /* DATA_QUEUE_RESERVE */
-
+			enq_done = FALSE;
 			goto enq_end;
 		}
 	}
@@ -2983,7 +2987,7 @@ INT rtmp_deq_report(RTMP_ADAPTER *pAd, struct dequeue_info *info)
 INT deq_mgmt_frame(RTMP_ADAPTER *pAd, PNDIS_PACKET pkt, UCHAR qIdx, BOOLEAN bLocked)
 {
 	NDIS_STATUS Status;
-	//unsigned long IrqFlags;
+	//ULONG IrqFlags = 0;
 
 #ifdef RTMP_MAC_PCI
 	if (RTMP_GET_PACKET_MGMT_PKT_DATA_QUE(pkt) == 1)
@@ -3014,7 +3018,7 @@ INT deq_mgmt_frame(RTMP_ADAPTER *pAd, PNDIS_PACKET pkt, UCHAR qIdx, BOOLEAN bLoc
 								fRTMP_ADAPTER_NIC_NOT_EXIST |\
 								fRTMP_ADAPTER_DISABLE_DEQUEUEPACKET)
 
-#define ENTRY_RETRY_INTERVAL	(100 * OS_HZ / 1000)
+#define ENTRY_RETRY_INTERVAL	(50 * OS_HZ / 1000)
 static inline BOOLEAN traffic_jam_chk(RTMP_ADAPTER *pAd, STA_TR_ENTRY *tr_entry)
 {
 	BOOLEAN drop_it = FALSE;
@@ -3059,7 +3063,7 @@ INT deq_packet_gatter(RTMP_ADAPTER *pAd, struct dequeue_info *deq_info, TX_BLK *
 	PQUEUE_ENTRY qEntry = NULL;
 	PNDIS_PACKET pPacket;
 	PQUEUE_HEADER pQueue;
-	//unsigned long IrqFlags;
+	//ULONG IrqFlags = 0;
 	UCHAR QueIdx = deq_info->cur_q;
 	UCHAR wcid = deq_info->cur_wcid;
 
@@ -3129,7 +3133,7 @@ dequeue:
 				{
 					//reserved Tx Ring
 					if (!(RTMP_GET_PACKET_DHCP(pPacket) || RTMP_GET_PACKET_EAPOL(pPacket)
-						|| RTMP_GET_PACKET_ICMP(pPacket)))
+						/* || RTMP_GET_PACKET_ICMP(pPacket)*/) )
 					{
 						hwd_cnt  = (hwd_cnt < TX_RING_SIZE_RSV) ? 0 : (hwd_cnt-TX_RING_SIZE_RSV);
 					}
@@ -3311,24 +3315,23 @@ start_kick:
 
 	========================================================================
 */
-VOID RTMPDeQueuePacket(
+inline VOID RTMPDeQueuePacket(
 	IN RTMP_ADAPTER *pAd,
 	IN BOOLEAN in_hwIRQ,
 	IN UCHAR QIdx,
 	IN INT wcid,
 	IN INT max_cnt)
 {
-	//NDIS_STATUS Status = NDIS_STATUS_SUCCESS;
+	NDIS_STATUS Status = NDIS_STATUS_SUCCESS;
 	INT Count = 0, round  = 0;
 	TX_BLK TxBlk, *pTxBlk = &TxBlk;
 	UCHAR QueIdx = 0;
-	unsigned long	IrqFlags = 0;
+	ULONG IrqFlags = 0;
 	struct dequeue_info deq_info = {0};
 
 #ifdef DATA_QUEUE_RESERVE
 	INT real_tx = 0;
 #endif /* DATA_QUEUE_RESERVE */
-
 
 #ifdef DBG_DIAGNOSE
 	if (pAd->DiagStruct.inited)
@@ -3352,29 +3355,41 @@ VOID RTMPDeQueuePacket(
 		DEQUEUE_LOCK(&pAd->irq_lock, in_hwIRQ, IrqFlags);
 
 		rtmp_deq_req(pAd, max_cnt, &deq_info);
+
+		DEQUEUE_UNLOCK(&pAd->irq_lock, in_hwIRQ, IrqFlags);
+
 		if (deq_info.status == NDIS_STATUS_FAILURE) {
-			DEQUEUE_UNLOCK(&pAd->irq_lock, in_hwIRQ, IrqFlags);
 			break;
 		}
-
-		QueIdx = deq_info.cur_q;
 
 #ifdef DBG_DEQUE
 		DBGPRINT(RT_DEBUG_INFO | DBG_FUNC_TXQ, ("%s(): deq_info:cur_wcid=%d, cur_qidx=%d, pkt_cnt=%d, pkt_bytes=%d\n",
 			__FUNCTION__, deq_info.cur_wcid, QueIdx, deq_info.pkt_cnt, deq_info.pkt_bytes));
 #endif
 
+		QueIdx = deq_info.cur_q;
 		NdisZeroMemory((UCHAR *)pTxBlk, sizeof(TX_BLK));
 
 		RTMP_START_DEQUEUE(pAd, QueIdx, IrqFlags);
 
+		DEQUEUE_LOCK(&pAd->irq_lock, in_hwIRQ, IrqFlags);
+
 		deq_packet_gatter(pAd, &deq_info, pTxBlk, in_hwIRQ);
+
+		DEQUEUE_UNLOCK(&pAd->irq_lock, in_hwIRQ, IrqFlags);
+
+
 		if (pTxBlk->TotalFrameNum) {
 #ifdef DATA_QUEUE_RESERVE
 			real_tx += pTxBlk->TotalFrameNum;
 #endif /* DATA_QUEUE_RESERVE */
 			ASSERT(pTxBlk->wdev);
-			ASSERT(pTxBlk->wdev->wdev_hard_tx);
+			if (pTxBlk->wdev)
+				ASSERT(pTxBlk->wdev->wdev_hard_tx);
+
+			if (IS_PCI_INF(pAd) || IS_RBUS_INF(pAd))
+				DEQUEUE_LOCK(&pAd->irq_lock, in_hwIRQ, IrqFlags);
+
 			if (pTxBlk->wdev && pTxBlk->wdev->wdev_hard_tx) {
 				pTxBlk->wdev->wdev_hard_tx(pAd, pTxBlk);
 			}
@@ -3386,14 +3401,18 @@ VOID RTMPDeQueuePacket(
 
 #ifdef CONFIG_AP_SUPPORT
 				IF_DEV_CONFIG_OPMODE_ON_AP(pAd)
-					/*Status =*/ APHardTransmit(pAd, pTxBlk);
+					Status = APHardTransmit(pAd, pTxBlk);
 #endif /* CONFIG_AP_SUPPORT */
 			}
+			if (IS_PCI_INF(pAd) || IS_RBUS_INF(pAd))
+				DEQUEUE_UNLOCK(&pAd->irq_lock, in_hwIRQ, IrqFlags);
 
 			Count += pTxBlk->TotalFrameNum;
 		}
 
 		RTMP_STOP_DEQUEUE(pAd, QueIdx, IrqFlags);
+
+		DEQUEUE_LOCK(&pAd->irq_lock, in_hwIRQ, IrqFlags);
 
 		rtmp_deq_report(pAd, &deq_info);
 
@@ -3412,13 +3431,14 @@ VOID RTMPDeQueuePacket(
 		}
 #endif /* RTMP_MAC_PCI */
 
+#ifdef DBG
 		if (round >= 1024) {
 			DBGPRINT(RT_DEBUG_OFF, ("%s():ForceToBreak!!Buggy here?\n", __FUNCTION__));
 			break;
 		}
+#endif /* DBG */
 
 	}while(1);
-
 
 #ifdef DATA_QUEUE_RESERVE
 	if(pAd->bDump)
@@ -3434,7 +3454,6 @@ VOID RTMPDeQueuePacket(
 			 			}
 	}
 #endif /* DATA_QUEUE_RESERVE */
-
 
 #ifdef DBG_DEQUE
 	DBGPRINT(RT_DEBUG_INFO | DBG_FUNC_TXQ,
@@ -3458,7 +3477,7 @@ VOID RTMPDeQueuePacket(
 
 
 #ifdef BLOCK_NET_IF
-	ASSERT((QueIdx < NUM_OF_TX_RING));
+	ASSERT((QueIdx < WMM_NUM_OF_AC));
 	if ((pAd->blockQueueTab[QueIdx].SwTxQueueBlockFlag == TRUE)
 		&& /* (pAd->TxSwQueue[QueIdx].Number < 1)*/
 		(pAd->tx_swq[QueIdx].enqIdx == pAd->tx_swq[QueIdx].deqIdx)
@@ -3467,7 +3486,6 @@ VOID RTMPDeQueuePacket(
 		releaseNetIf(&pAd->blockQueueTab[QueIdx]);
 	}
 #endif /* BLOCK_NET_IF */
-
 #if defined (LED_SOFT_SUPPORT)
 	if (Count > 0 && pAd->MacTab.Size > 0)
 		ralink_gpio_led_blink(LED_SOFT_BLINK_GPIO);
@@ -3793,7 +3811,7 @@ BOOLEAN RTMPCheckEtherType(
 
 				ASSERT((GET_OS_PKT_LEN(pPacket) > (ETH_HDR_LEN + IP_HDR_LEN)));	/* 14 for ethernet header, 20 for IP header*/
 				RTMP_SET_PACKET_IPV4(pPacket, 1);
-
+#if 0
 #ifdef DATA_QUEUE_RESERVE
 				if (ipv4_proto == 0x01)
 				{
@@ -3802,6 +3820,7 @@ BOOLEAN RTMPCheckEtherType(
 				}
 				else
 #endif /* DATA_QUEUE_RESERVE */
+#endif
 				if (ipv4_proto == IP_PROTO_UDP)
 				{
 					UINT16 srcPort, dstPort;
@@ -4050,8 +4069,7 @@ VOID RTMP_RxPacketClassify(
 	else if (protoType == ETH_P_IP)
 	{
 		UINT8 protocol = *(pData + 11);
-		//UINT8 icmp_type = *(pData + 22);
-
+#if 0
 		if (protocol == 0x1)
 		{
 			pRxBlk->CriticalPkt = 1;	// ICMP
@@ -4059,8 +4077,9 @@ VOID RTMP_RxPacketClassify(
 			DBGPRINT(RT_DEBUG_WARN, ("rx path ICMP #(aid=%d,wcid=%d, pHeader seq=%d, ampdu = %d)\n",
 				pEntry->Aid, pRxBlk->wcid, pRxBlk->pHeader->Sequence, RX_BLK_TEST_FLAG(pRxBlk, fRX_AMPDU)));
 		}
-#if 0
-		else if (protocol == IP_PROTO_UDP)
+		else
+#endif
+		if (protocol == IP_PROTO_UDP)
 		{
 			PUCHAR pUdpHdr = pData + 22;
 			UINT16 srcPort, dstPort;
@@ -4075,11 +4094,9 @@ VOID RTMP_RxPacketClassify(
 					pEntry->Aid, pRxBlk->wcid, pRxBlk->pHeader->Sequence, RX_BLK_TEST_FLAG(pRxBlk, fRX_AMPDU)));
 			}
 		}
-#endif
 	}
 }
 #endif /* FORCE_ANNOUNCE_CRITICAL_AMPDU */
-
 
 #ifdef DBG
 BOOLEAN CheckICMPPacket(RTMP_ADAPTER *pAd, UCHAR *pSrcBuf, UINT8 Direction)
@@ -4553,82 +4570,58 @@ INT TxOPUpdatingAlgo(RTMP_ADAPTER *pAd)
 #ifdef APCLI_SUPPORT
 	UINT apcliNum = 0, ifIndex = 0;
 #endif /* APCLI_SUPPORT */
-        //DBGPRINT(RT_DEBUG_TRACE, ("lala_1: [Tx Total Byte Count] = %lu\n", pAd->TxTotalByteCnt));
-        //DBGPRINT(RT_DEBUG_TRACE, ("lala_1: [Rx Total Byte Count] = %lu\n", pAd->RxTotalByteCnt));
 
-        if ((TxTotalByteCnt == 0) || (RxTotalByteCnt == 0))
-        {
-            /* Avoid to divide 0, when doing the traffic calculating */
-           // DBGPRINT(RT_DEBUG_TRACE, ("Not expected one of them is 0, TxTotalByteCnt = %lu, RxTotalByteCnt = %lu\n", TxTotalByteCnt, RxTotalByteCnt));
-           UpdateTxOP = 0x0;
-           
-        }
-        else if ((pAd->MacTab.Size == 1) && TxopEnabled)
-        {
-            if ((((TxTotalByteCnt + RxTotalByteCnt) << 3) >> 20) > pAd->CommonCfg.ManualTxopThreshold)
-            { /* TxopThreshold unit is Mbps */
-                if (TxTotalByteCnt > RxTotalByteCnt)
-                {
-                    if ((TxTotalByteCnt/RxTotalByteCnt) >= pAd->CommonCfg.ManualTxopUpBound)
-                    { /* Boundary unit is Ratio */
-                        DBGPRINT(RT_DEBUG_TRACE, ("(Ratio: %lu >= %d) Should be enable TxOP to 0x60\n", 
-                                TxTotalByteCnt/RxTotalByteCnt, pAd->CommonCfg.ManualTxopUpBound));
-			    UpdateTxOP = 0x60; // Tx
-                    }
-                    else if ((TxTotalByteCnt/RxTotalByteCnt) <= pAd->CommonCfg.ManualTxopLowBound)
-                    {
-                        if (pAd->chipCap.BiTxOpOn) 
-                        {
-				UpdateTxOP = 0x60;
-                        }
-                        else
-                        {
-                            DBGPRINT(RT_DEBUG_TRACE, ("(Ratio: %lu <= %d) Should be disable TxOP to 0x0\n", 
-                                        TxTotalByteCnt/RxTotalByteCnt, pAd->CommonCfg.ManualTxopLowBound));
-				UpdateTxOP = 0x0;
-                        }
-                    } 
-                    else
-                    {
-                        DBGPRINT(RT_DEBUG_TRACE, ("(Ratio: %d < %lu < %d) Keep the last TxOP setting\n", 
-                                pAd->CommonCfg.ManualTxopLowBound, TxTotalByteCnt/RxTotalByteCnt, pAd->CommonCfg.ManualTxopUpBound));
-                    }
-                }
-                else
-                {
-                    if ((RxTotalByteCnt/TxTotalByteCnt) >= pAd->CommonCfg.ManualTxopUpBound)
-                    { /* Boundary unit is Ratio */
-                        DBGPRINT(RT_DEBUG_TRACE, ("(Ratio: %lu >= %d) Should be enable TxOP to 0x60\n", 
-                                RxTotalByteCnt/TxTotalByteCnt, pAd->CommonCfg.ManualTxopUpBound));
-						UpdateTxOP = 0x60;
-                    }
-                    else if ((RxTotalByteCnt/TxTotalByteCnt) <= pAd->CommonCfg.ManualTxopLowBound)
-                    {
-                        if (pAd->chipCap.BiTxOpOn) 
-                        {
-				UpdateTxOP = 0x60;
-                        }
-                        else
-                        {
-                            DBGPRINT(RT_DEBUG_TRACE, ("(Ratio: %lu <= %d) Should be disable TxOP to 0x0\n", 
-                                        RxTotalByteCnt/TxTotalByteCnt, pAd->CommonCfg.ManualTxopLowBound));
-				UpdateTxOP = 0x0;
-                        }
-                    } 
-                    else
-                    {
-                        DBGPRINT(RT_DEBUG_TRACE, ("(Ratio: %d < %lu < %d) Keep the last TxOP setting\n", pAd->CommonCfg.ManualTxopLowBound, RxTotalByteCnt/TxTotalByteCnt, pAd->CommonCfg.ManualTxopUpBound));
-                    }
-                }
-            }
-            else
-            {
-                DBGPRINT(RT_DEBUG_TRACE, ("Current TP=%lu < Threshold(%lu), turn-off TxOP\n", 
-                        (((TxTotalByteCnt + RxTotalByteCnt) << 3) >> 20), pAd->CommonCfg.ManualTxopThreshold));
-                
-		  UpdateTxOP = 0x0;
-            }
-        }
+	if ((TxTotalByteCnt == 0) || (RxTotalByteCnt == 0))
+	{
+		/* Avoid to divide 0, when doing the traffic calculating */
+		//DBGPRINT(RT_DEBUG_TRACE, ("Not expected one of them is 0, TxTotalByteCnt = %lu, RxTotalByteCnt = %lu\n", (ULONG)TxTotalByteCnt, (ULONG)RxTotalByteCnt));
+	}
+	else if ((pAd->MacTab.Size == 1) && TxopEnabled)
+	{
+		if (RTMP_TEST_FLAG(pAd, fRTMP_ADAPTER_RDG_ACTIVE) == TRUE)
+		{
+			UpdateTxOP = 0x80; // Tx/Rx/Bi
+		}
+		else if ((((TxTotalByteCnt + RxTotalByteCnt) << 3) >> 20) > pAd->CommonCfg.ManualTxopThreshold)
+		{ /* TxopThreshold unit is Mbps */
+			if (TxTotalByteCnt > RxTotalByteCnt)
+			{
+				if ((TxTotalByteCnt/RxTotalByteCnt) >= pAd->CommonCfg.ManualTxopUpBound)
+				{ /* Boundary unit is Ratio */
+					UpdateTxOP = 0x60; // Tx
+				}
+				else if ((TxTotalByteCnt/RxTotalByteCnt) <= pAd->CommonCfg.ManualTxopLowBound)
+				{
+					UpdateTxOP = 0x0; // Bi
+				}
+				else
+			        {
+					// No change TxOP
+				}
+			}
+			else
+			{
+				if ((RxTotalByteCnt/TxTotalByteCnt) >= pAd->CommonCfg.ManualTxopUpBound)
+				{ /* Boundary unit is Ratio */
+					UpdateTxOP = 0x0; // Rx
+				}
+				else if ((RxTotalByteCnt/TxTotalByteCnt) <= pAd->CommonCfg.ManualTxopLowBound)
+				{
+					UpdateTxOP = 0x0; // Bi
+				}
+				else
+			        {
+					// No change TxOP
+				}
+			}
+		}
+		else
+		{
+			DBGPRINT(RT_DEBUG_TRACE,("Current TP=%lu < Threshold(%lu), turn-off TxOP\n",
+						(ULONG)(((TxTotalByteCnt + RxTotalByteCnt) << 3) >> 20), (ULONG)pAd->CommonCfg.ManualTxopThreshold));
+			UpdateTxOP = 0x0;
+		}
+	}
         else if (pAd->MacTab.Size > 1)
         {
 		UpdateTxOP = 0x0;

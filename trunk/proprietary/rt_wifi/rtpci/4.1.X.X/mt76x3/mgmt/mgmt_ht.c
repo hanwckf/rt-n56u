@@ -38,7 +38,7 @@ INT ht_mode_adjust(RTMP_ADAPTER *pAd, MAC_TABLE_ENTRY *pEntry, HT_CAPABILITY_IE 
 		pEntry->MaxHTPhyMode.field.MODE = MODE_HTGREENFIELD;
 	}
 	else
-	{	
+	{
 		pEntry->MaxHTPhyMode.field.MODE = MODE_HTMIX;
 		pAd->CommonCfg.AddHTInfo.AddHtInfo2.NonGfPresent = 1;
 		pAd->MacTab.fAnyStationNonGF = TRUE;
@@ -49,12 +49,14 @@ INT ht_mode_adjust(RTMP_ADAPTER *pAd, MAC_TABLE_ENTRY *pEntry, HT_CAPABILITY_IE 
 		pEntry->MaxHTPhyMode.field.ShortGI = ((my->ShortGIfor40) & (peer->HtCapInfo.ShortGIfor40));
 	}
 	else
-	{	
+	{
 		pEntry->MaxHTPhyMode.field.BW = BW_20;
 		pEntry->MaxHTPhyMode.field.ShortGI = ((my->ShortGIfor20) & (peer->HtCapInfo.ShortGIfor20));
 		pAd->MacTab.fAnyStation20Only = TRUE;
 	}
-				
+
+	pEntry->MaxHTPhyMode.field.STBC = (peer->HtCapInfo.RxSTBC & (pAd->CommonCfg.DesiredHtPhy.TxSTBC));
+
 	return TRUE;
 }
 
@@ -664,6 +666,8 @@ VOID RTMPSetIndividualHT(RTMP_ADAPTER *pAd, UCHAR apidx)
 	else
 		MlmeUpdateHtTxRates(pAd, apidx);
 
+	N_ChannelCheck(pAd);
+
 #ifdef DOT11_VHT_AC
 	if (WMODE_CAP_AC(pAd->CommonCfg.PhyMode)) {
 		pDesired_ht_phy->bVhtEnable = TRUE;
@@ -724,7 +728,7 @@ INT	SetCommonHT(RTMP_ADAPTER *pAd)
 		RTMPDisableDesiredHtInfo(pAd);
 		return FALSE;
 	}
-	
+
 	N_ChannelCheck(pAd); 
 
 #ifdef DOT11_VHT_AC

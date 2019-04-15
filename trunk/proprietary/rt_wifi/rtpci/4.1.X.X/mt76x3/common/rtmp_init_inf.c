@@ -807,7 +807,7 @@ VOID RTMPDrvClose(VOID *pAdSrc, VOID *net_dev)
 	WdsDown(pAd);
 #endif /* WDS_SUPPORT */
 
-	RtmpOsMsDelay(20); /* wait for disconnect requests transmitted */
+	RtmpOsMsDelay(30); /* wait for disconnect requests transmitted */
 
 	for (i = 0 ; i < NUM_OF_TX_RING; i++)
 	{
@@ -890,11 +890,13 @@ VOID RTMPDrvClose(VOID *pAdSrc, VOID *net_dev)
 
 #ifdef RTMP_MAC_PCI
 	{
-		RTMPDisableRxTx(pAd);
 		{
 			if (RTMP_TEST_FLAG(pAd, fRTMP_ADAPTER_INTERRUPT_ACTIVE))
 			{
-				DISABLE_TX_RX(pAd, RTMP_HALT);
+				if (pAd->chipCap.hif_type == HIF_MT)
+				    RTMPDisableRxTx(pAd);
+				else
+				    DISABLE_TX_RX(pAd, RTMP_HALT);
 				RTMP_ASIC_INTERRUPT_DISABLE(pAd);
 			}
 		}
@@ -985,7 +987,7 @@ VOID RTMPDrvClose(VOID *pAdSrc, VOID *net_dev)
 	NdisZeroMemory(&pAd->MacTab, sizeof(MAC_TABLE));
 
 	/* release all timers */
-	RtmpusecDelay(2000);
+	RtmpusecDelay(3000);
 	RTMP_AllTimerListRelease(pAd);
 
 #ifdef RTMP_TIMER_TASK_SUPPORT

@@ -329,7 +329,7 @@ static NDIS_STATUS rtmp_ee_flash_init(PRTMP_ADAPTER pAd, PUCHAR start)
 		RTMP_CAL_FREE_IC_CHECK(pAd,bCalFree);
 		if (bCalFree)
 		{
-			//MTWF_LOG(DBG_CAT_ALL, DBG_SUBCAT_ALL, DBG_LVL_TRACE, ("Cal Free IC!!\n"));
+			//DBGPRINT(RT_DEBUG_TRACE, ("Cal Free IC!!\n"));
 			DBGPRINT(RT_DEBUG_OFF, ("rtmp_ee_flash_init() Cal Free IC!!\n"));
 			RTMP_CAL_FREE_DATA_GET(pAd);
 		}

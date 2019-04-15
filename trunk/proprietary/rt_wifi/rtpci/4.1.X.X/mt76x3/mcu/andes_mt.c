@@ -458,7 +458,7 @@ static VOID CmdPsRetrieveStartRspFromCR(RTMP_ADAPTER *pAd, char *Data, UINT16 Le
 	unsigned char q_idx;
 	struct tx_swq_fifo *ps_fifo_swq;
 	UINT deq_qid;
-	//unsigned long IrqFlags;
+	//ULONG IrqFlags = 0;
 
 	EvtPsRetrieveStart = (P_EXT_EVENT_AP_PS_RETRIEVE_T)Data;
 	WlanIdx = le2cpu32(EvtPsRetrieveStart->u4Param1);
@@ -666,11 +666,11 @@ static VOID CmdPsClearRsp(struct cmd_msg *msg, char *Data, UINT16 Len)
 	P_CMD_AP_PS_CLEAR_STRUC_T EvtPsClear;
 	RTMP_ADAPTER *ad = (RTMP_ADAPTER *)msg->priv;
 	STA_TR_ENTRY *tr_entry;
-	//unsigned long IrqFlags;
+	//ULONG IrqFlags = 0;
 	//struct wtbl_entry tb_entry;
 	UINT32 WlanIndex;
 	//union WTBL_1_DW3 *dw3 = (union WTBL_1_DW3 *)&tb_entry.wtbl_1.wtbl_1_d3.word;
-	unsigned char q_idx = 0;
+	unsigned char q_idx = QID_AC_BE;
 
 	EvtPsClear = (struct _CMD_AP_PS_CLEAR_STRUC_T *)Data;
 	WlanIndex = le2cpu32(EvtPsClear->u4WlanIdx);
@@ -1982,7 +1982,9 @@ error:
 
 static VOID EventExtNicCapability(struct cmd_msg *msg, char *Data, UINT16 Len)
 {
+#ifdef DBG
 	struct _EXT_EVENT_NIC_CAPABILITY_T *ExtEventNicCapability = (EXT_EVENT_NIC_CAPABILITY *)Data;
+#endif
 	UINT32 Loop;
 
 	DBGPRINT(RT_DEBUG_OFF, ("The data code of firmware:"));
@@ -3357,7 +3359,6 @@ VOID CmdSetTxPowerCtrl(RTMP_ADAPTER *pAd, UINT8 central_chl)
 	int i, j;
 	UINT8 PwrPercentageDelta = 0;
 	USHORT Value;
-	struct MT_TX_PWR_CAP *cap = &pAd->chipCap.MTTxPwrCap;
 
 	msg = AndesAllocCmdMsg(pAd, sizeof(EXT_CMD_TX_POWER_CTRL_T));
 

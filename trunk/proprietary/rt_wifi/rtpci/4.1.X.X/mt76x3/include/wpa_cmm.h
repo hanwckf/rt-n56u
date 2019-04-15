@@ -16,9 +16,9 @@
 
 /* WPA mechanism retry timer interval */
 #define PEER_MSG1_RETRY_EXEC_INTV	1000	/* 1 sec */
-#define PEER_MSG3_RETRY_EXEC_INTV	3000	/* 3 sec */
+#define PEER_MSG3_RETRY_EXEC_INTV	1000	/* 1 sec */
 #define GROUP_KEY_UPDATE_EXEC_INTV	1000	/* 1 sec */
-#define PEER_GROUP_KEY_UPDATE_INIV	2000	/* 2 sec */
+#define PEER_GROUP_KEY_UPDATE_INIV	1000	/* 1 sec, for peridic group rekey timer */
 
 #define	EAPOL_MSG_INVALID	0
 #define	EAPOL_PAIR_MSG_1	1
@@ -28,7 +28,7 @@
 #define	EAPOL_GROUP_MSG_1	5
 #define	EAPOL_GROUP_MSG_2	6
 
-#define ENQUEUE_EAPOL_START_TIMER	100	/* 100 ms */
+#define ENQUEUE_EAPOL_START_TIMER	100	/* 100 ms, for 4 way */
 
 /* group rekey interval */
 #define TIME_REKEY                          0

@@ -226,7 +226,7 @@ VOID MtHandleRxPsPoll(RTMP_ADAPTER *pAd, UCHAR *pAddr, USHORT wcid, BOOLEAN isAc
 					DBGPRINT(RT_DEBUG_TRACE | DBG_FUNC_PS, ("RtmpHandleRxPsPoll fetch tx queue tr_entry->ps_queue.Number= %x tr_entry->tx_queue[0].Number=%x Total_Packet_Number=%x\n",
 						tr_entry->ps_queue.Number, tr_entry->tx_queue[QID_AC_BE].Number, Total_Packet_Number));
 
-					for (i = (WMM_QUE_NUM - 1); i >=0; i--)
+					for (i = WMM_QUE_NUM; i >=0; i--)
 					{
 						if (tr_entry->tx_queue[i].Head)
 						{
@@ -321,9 +321,9 @@ VOID MtHandleRxPsPoll(RTMP_ADAPTER *pAd, UCHAR *pAddr, USHORT wcid, BOOLEAN isAc
 		{
 			IsDequeu = TRUE;
 			DequeuAC = NUM_OF_TX_RING;
-			if (tr_entry->enqCount > MAX_TX_PROCESS)
+			if (tr_entry->enqCount > 8 /* MAX_TX_PROCESS */)
 			{
-				DequeuCOUNT = MAX_TX_PROCESS;
+				DequeuCOUNT =  8 /* MAX_TX_PROCESS */;
 				rtmp_ps_enq(pAd,tr_entry);
 			}
 			else

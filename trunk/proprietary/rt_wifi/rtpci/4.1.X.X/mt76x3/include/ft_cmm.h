@@ -48,12 +48,12 @@
 #define FT_KDP_FUNC_SOCK_COMM			/* used socket to communicate with driver */
 #define FT_KDP_FUNC_R0KH_IP_RECORD		/* used to keep IP of any R0KH */
 /*#define FT_KDP_FUNC_INFO_BROADCAST	broadcast my AP information periodically */
-#define FT_KDP_TEST
+//#define FT_KDP_TEST
 
 #define FT_KDP_RALINK_PASSPHRASE		"Ralink"
-#define FT_KDP_KEY_DEFAULT				"12345678"
+#define FT_KDP_KEY_DEFAULT				"1234567812345678"
 #define FT_KDP_KEY_ENCRYPTION_EXTEND	8 /* 8B for AES encryption extend size */
-#define FT_DEFAULT_MDID					"RT"
+#define FT_DEFAULT_MDID					"A1"
 
 #define FT_REASSOC_DEADLINE				20
 
@@ -71,7 +71,7 @@
 #define FT_KDP_S1KHID_MAX_SIZE			6
 #define FT_KDP_PMKR1_MAX_SIZE			32 /* 256-bit key */
 
-#define FT_R1KH_ENTRY_TABLE_SIZE		64
+#define FT_R1KH_ENTRY_TABLE_SIZE		256
 #define FT_R1KH_ENTRY_HASH_TABLE_SIZE	FT_R1KH_ENTRY_TABLE_SIZE
 
 /* ----- FT KDP ----- */

@@ -48,6 +48,8 @@ static BOOLEAN PeerDeauthReqSanity(
     OUT USHORT *Reason) 
 {
     PFRAME_802_11 Fr = (PFRAME_802_11)Msg;
+    if (Fr == NULL)
+	return FALSE;
 
     COPY_MAC_ADDR(pAddr2, &Fr->Hdr.Addr2);
 	*SeqNum = Fr->Hdr.Sequence;
@@ -75,6 +77,8 @@ static VOID APMlmeDeauthReqAction(
     MAC_TABLE_ENTRY			*pEntry;
 	UCHAR					apidx;
 
+    if (!pAd)
+	return;
 
     pInfo = (MLME_DEAUTH_REQ_STRUCT *)Elem->Msg;
 
@@ -104,7 +108,7 @@ static VOID APMlmeDeauthReqAction(
 			FBT_LINK_OFFLINE_NOTIFY);
 #endif /* ALL_NET_EVENT */
 
-		ApLogEvent(pAd, pInfo->Addr, EVENT_DISASSOCIATED);
+		//ApLogEvent(pAd, pInfo->Addr, EVENT_DISASSOCIATED);
 
 		apidx = pEntry->func_tb_idx;
 
@@ -116,10 +120,8 @@ static VOID APMlmeDeauthReqAction(
         if (NStatus != NDIS_STATUS_SUCCESS) 
             return;
 
-        DBGPRINT(RT_DEBUG_TRACE,
-				("AUTH - Send DE-AUTH req to %02x:%02x:%02x:%02x:%02x:%02x\n",
-				PRINT_MAC(pInfo->Addr)));
-           		
+        printk("%s AUTH - Send DE-AUTH req to %02x:%02x:%02x:%02x:%02x:%02x\n", pAd->CommonCfg.Channel > 14 ? "5GHz AP" : "2.4GHz AP", PRINT_MAC(pInfo->Addr));
+
         MgtMacHeaderInit(pAd, &Hdr, SUBTYPE_DEAUTH, 0, pInfo->Addr,
 						pAd->ApCfg.MBSSID[apidx].wdev.if_addr,
 						pAd->ApCfg.MBSSID[apidx].wdev.bssid);
@@ -133,7 +135,6 @@ static VOID APMlmeDeauthReqAction(
     }
 }
 
-
 static VOID APPeerDeauthReqAction(
     IN PRTMP_ADAPTER pAd, 
     IN PMLME_QUEUE_ELEM Elem) 
@@ -142,7 +143,8 @@ static VOID APPeerDeauthReqAction(
 	UINT16 Reason, SeqNum;
 	MAC_TABLE_ENTRY *pEntry;
 
-
+        if (!pAd)
+	    return;
 
 	if (! PeerDeauthReqSanity(pAd, Elem->Msg, Elem->MsgLen, Addr2, &SeqNum, &Reason)) 
 		return;
@@ -153,6 +155,8 @@ static VOID APPeerDeauthReqAction(
 	if (Elem->Wcid < MAX_LEN_OF_MAC_TABLE)
 	{
 		pEntry = &pAd->MacTab.Content[Elem->Wcid];
+		if (!pEntry)
+			return;
 
 		{ 
 			/*
@@ -164,7 +168,7 @@ static VOID APPeerDeauthReqAction(
 			unsigned char *tmp = (unsigned char *)pMbss->wdev.bssid;
 			unsigned char *tmp2 = (unsigned char *)&Fr->Hdr.Addr1;
 #endif /* DBG */
-			if (memcmp(&Fr->Hdr.Addr1, pMbss->wdev.bssid, 6) != 0)
+			if (!Fr || (memcmp(&Fr->Hdr.Addr1, pMbss->wdev.bssid, 6) != 0))
 			{
 				DBGPRINT(RT_DEBUG_INFO,
 					("da not match bssid,bssid:0x%02x%02x%02x%02x%02x%02x, addr1:0x%02x%02x%02x%02x%02x%02x\n",
@@ -206,7 +210,7 @@ static VOID APPeerDeauthReqAction(
 			FBT_LINK_OFFLINE_NOTIFY);
 #endif /* ALL_NET_EVENT */
 
-		ApLogEvent(pAd, Addr2, EVENT_DISASSOCIATED);
+		//ApLogEvent(pAd, Addr2, EVENT_DISASSOCIATED);
 
 		if (pEntry->CMTimerRunning == TRUE)
 		{
@@ -217,22 +221,12 @@ static VOID APPeerDeauthReqAction(
 			pAd->ApCfg.aMICFailTime = pAd->ApCfg.PrevaMICFailTime;
 		}
 
-#ifdef APCLI_SUPPORT
-                                if (pEntry && !(IS_ENTRY_APCLI(pEntry)))
-#endif /* APCLI_SUPPORT */
-                                {
-		MacTableDeleteEntry(pAd, Elem->Wcid, Addr2);
-					}
-#ifdef APCLI_SUPPORT
-                                else
-                                {
-						DBGPRINT(RT_DEBUG_TRACE,("%s: receive not client de-auth ###\n", __FUNCTION__));
-					}
-#endif /* APCLI_SUPPORT */
-		DBGPRINT(RT_DEBUG_TRACE,
-					("AUTH - receive DE-AUTH(seq-%d) from "
-					"%02x:%02x:%02x:%02x:%02x:%02x, reason=%d\n",
-					SeqNum, PRINT_MAC(Addr2), Reason));
+		if (!IS_ENTRY_CLIENT(pEntry)) {
+                    DBGPRINT(RT_DEBUG_OFF, ("%s: receive not client de-auth ###\n", __FUNCTION__));
+                } else {
+		    MacTableDeleteEntry(pAd, Elem->Wcid, Addr2);
+		    printk("%s AUTH - receive DE-AUTH(seq-%d) from %02x:%02x:%02x:%02x:%02x:%02x, reason=%d\n", pAd->CommonCfg.Channel > 14 ? "5GHz AP" : "2.4GHz AP", SeqNum, PRINT_MAC(Addr2), Reason);
+                }
 
 #ifdef MAC_REPEATER_SUPPORT
 		if (pAd->ApCfg.bMACRepeaterEn == TRUE)
@@ -271,6 +265,8 @@ static BOOLEAN APPeerAuthSanity(
     IN AUTH_FRAME_INFO *auth_info)
 {
 	PFRAME_802_11 Fr = (PFRAME_802_11)Msg;
+	if (Fr == NULL)
+	    return FALSE;
 
 	COPY_MAC_ADDR(auth_info->addr1,  &Fr->Hdr.Addr1);		/* BSSID */
 	COPY_MAC_ADDR(auth_info->addr2,  &Fr->Hdr.Addr2);		/* SA */
@@ -455,11 +451,19 @@ static VOID APPeerAuthReqAtIdleAction(RTMP_ADAPTER *pAd, MLME_QUEUE_ELEM *Elem)
 	BSS_STRUCT *pMbss;
 	struct wifi_dev *wdev;
 	UINT32 u4MaxMBSSIDSize = sizeof(pAd->ApCfg.MBSSID)/sizeof(pAd->ApCfg.MBSSID[0]);
+	CHAR rssi;
 #ifdef BAND_STEERING
 	BOOLEAN bBndStrgCheck = TRUE;
+	BOOLEAN bAllowStaConnectInHt = FALSE;
 #endif /* BAND_STEERING */
 
+	if (pAd == NULL)
+	{
+		DBGPRINT(RT_DEBUG_ERROR, ("%s: pAd is NULL\n",__FUNCTION__));
+ 		return;
+	}
 
+	/* disallow new association */
 	if (pAd->ApCfg.BANClass3Data == TRUE)
 	{
 		DBGPRINT(RT_DEBUG_TRACE, ("Disallow new Association\n"));
@@ -468,13 +472,18 @@ static VOID APPeerAuthReqAtIdleAction(RTMP_ADAPTER *pAd, MLME_QUEUE_ELEM *Elem)
 
 	if (!APPeerAuthSanity(pAd, Elem->Msg, Elem->MsgLen, &auth_info))
 		return;
-    
 
 	/* Find which MBSSID to be authenticate */
 	apidx = get_apidx_by_addr(pAd, auth_info.addr1);
 	if ((apidx >= pAd->ApCfg.BssidNum) || (apidx >= u4MaxMBSSIDSize))
 	{
 		DBGPRINT(RT_DEBUG_TRACE, ("AUTH - Bssid not found\n"));
+		return;
+	}
+
+	if (apidx >= HW_BEACON_MAX_NUM)
+	{
+		DBGPRINT(RT_DEBUG_TRACE, ("Index out of bound\n"));
 		return;
 	}
 
@@ -563,16 +572,68 @@ SendAuth:
     }
 
 #ifdef BAND_STEERING
+	if (WMODE_CAP_N(wdev->PhyMode))
+		bAllowStaConnectInHt = TRUE;
+
 	BND_STRG_CHECK_CONNECTION_REQ(	pAd,
 										NULL, 
 										auth_info.addr2,
 										Elem->MsgType,
 										Elem->rssi_info,
+										bAllowStaConnectInHt,
 										&bBndStrgCheck);
-	if (bBndStrgCheck == FALSE)
+#ifdef BAND_STEERING_AUTH_REJ
+	if (bBndStrgCheck == FALSE && pAd->CommonCfg.Channel <= 14) {
+		APPeerAuthSimpleRspGenAndSend(pAd, pRcvHdr, auth_info.auth_alg, auth_info.auth_seq + 1, MLME_UNSPECIFY_FAIL);
+		DBGPRINT(RT_DEBUG_TRACE, ("AUTH - BndStrg check failed.\n"));
+
+                /* If this STA exists, delete it. */
+                if (pEntry)
+                        MacTableDeleteEntry(pAd, pEntry->wcid, pEntry->Addr);
+
+                RTMPSendWirelessEvent(pAd, IW_MAC_FILTER_LIST_EVENT_FLAG, auth_info.addr2, apidx, 0);
 		return;
+	}
+#endif /* BAND_STEERING_AUTH_REJ */
 #endif /* BAND_STEERING */
 
+#ifdef DOT11K_RRM_SUPPORT
+	for (i = 0; i < MAX_MBSSID_NUM(pAd); i++) {
+		if (pAd->OpMode == OPMODE_AP && IS_RRM_ENABLE(pAd, i) && pAd->CommonCfg.RRMFirstScan == TRUE) {
+			DBGPRINT(RT_DEBUG_TRACE, ("RRM Enabled, wait bootup scan. Disallow new Association\n"));
+			APPeerAuthSimpleRspGenAndSend(pAd, pRcvHdr, auth_info.auth_alg, auth_info.auth_seq + 1, MLME_UNSPECIFY_FAIL);
+
+            		/* If this STA exists, delete it. */
+            		if (pEntry)
+                    		MacTableDeleteEntry(pAd, pEntry->wcid, pEntry->Addr);
+				return;
+			}
+	}
+#endif /* DOT11K_RRM_SUPPORT */
+
+	 /* YF@20130102: Refuse the weak signal of AuthReq */
+         rssi = RTMPMaxRssi(pAd, ConvertToRssi(pAd, &Elem->rssi_info, RSSI_IDX_0),
+                                  ConvertToRssi(pAd, &Elem->rssi_info, RSSI_IDX_1),
+                                  ConvertToRssi(pAd, &Elem->rssi_info, RSSI_IDX_2));
+
+         if ((pMbss->AuthFailRssiThreshold != 0 && rssi != 0 && rssi < pMbss->AuthFailRssiThreshold) ||
+             (pMbss->AuthNoRspRssiThreshold != 0 && rssi != 0 && rssi < pMbss->AuthNoRspRssiThreshold))
+         {
+    		DBGPRINT(RT_DEBUG_TRACE, ("%s: AUTH_FAIL_REQ Threshold = %d, AUTH_NO_RSP_REQ Threshold = %d, AUTH RSSI = %d\n",
+ 				  wdev->if_dev->name, pMbss->AuthFailRssiThreshold, pMbss->AuthNoRspRssiThreshold, rssi));
+
+		if (pMbss->AuthFailRssiThreshold != 0 && rssi < pMbss->AuthFailRssiThreshold) {
+            		DBGPRINT(RT_DEBUG_TRACE, ("Reject this AUTH_REQ due to Weak Signal.\n"));
+                	APPeerAuthSimpleRspGenAndSend(pAd, pRcvHdr, auth_info.auth_alg, auth_info.auth_seq + 1, MLME_UNSPECIFY_FAIL);
+		}
+
+                /* If this STA exists, delete it. */
+                if (pEntry)
+                        MacTableDeleteEntry(pAd, pEntry->wcid, pEntry->Addr);
+
+                RTMPSendWirelessEvent(pAd, IW_MAC_FILTER_LIST_EVENT_FLAG, auth_info.addr2, apidx, 0);
+                return;
+         }
 
 #ifdef DOT11R_FT_SUPPORT
 	pFtCfg = &pMbss->FtCfg;
@@ -584,7 +645,7 @@ SendAuth:
 		if (!pEntry)
 			pEntry = MacTableInsertEntry(pAd, auth_info.addr2, wdev, ENTRY_CLIENT, OPMODE_AP, TRUE);
 		
-		if (pEntry != NULL)
+		if (pEntry)
 		{
 			os_alloc_mem(pAd, (UCHAR **)&pFtInfoBuf, sizeof(FT_INFO));
 
@@ -602,8 +663,15 @@ SendAuth:
 				FT_EnqueueAuthReply(pAd, pRcvHdr, auth_info.auth_alg, 2, result,
 							&pFtInfoBuf->MdIeInfo, &pFtInfoBuf->FtIeInfo, NULL,
 							pFtInfoBuf->RSN_IE, pFtInfoBuf->RSNIE_Len);
-
+				NdisZeroMemory(pEntry->LastTK, LEN_TK);
 				os_free_mem(NULL, pFtInfoBuf);
+				if (result == MLME_SUCCESS) {
+					/* Install pairwise key */
+					WPAInstallPairwiseKey(pAd, pEntry->func_tb_idx, pEntry, TRUE);
+					/* Update status */
+					pEntry->WpaState = AS_PTKINITDONE;
+					pEntry->GTKState = REKEY_ESTABLISHED;
+				}
 			}
 		}
 		return;
@@ -631,8 +699,7 @@ SendAuth:
 			APPeerAuthSimpleRspGenAndSend(pAd, pRcvHdr, auth_info.auth_alg, auth_info.auth_seq + 1, MLME_SUCCESS);
 
 		}
-		else
-			; /* MAC table full, what should we respond ????? */
+		/* else ; MAC table full, what should we respond ????? */
 	}
 	else if ((auth_info.auth_alg == AUTH_MODE_KEY) && 
 				((wdev->AuthMode == Ndis802_11AuthModeShared)
@@ -676,8 +743,7 @@ SendAuth:
 			MiniportMMRequest(pAd, 0, pOutBuffer, FrameLen);
 			MlmeFreeMemory(pAd, pOutBuffer);
 		}
-		else
-			; /* MAC table full, what should we respond ???? */
+		/* else ; MAC table full, what should we respond ???? */
 	} 
 	else
 	{
@@ -724,6 +790,12 @@ static VOID APPeerAuthConfirmAction(
 	if ((apidx >= pAd->ApCfg.BssidNum) || (apidx >= u4MaxMBSSIDSize))
 	{	
 		DBGPRINT(RT_DEBUG_TRACE, ("AUTH - Bssid not found\n"));
+		return;
+	}
+
+	if (apidx >= HW_BEACON_MAX_NUM)
+	{
+		DBGPRINT(RT_DEBUG_TRACE, ("Index out of bound\n"));
 		return;
 	}
 
@@ -878,7 +950,7 @@ VOID APCls2errAction(
 		apidx = get_apidx_by_addr(pAd, pHeader->Addr1);         
 		if (apidx >= pAd->ApCfg.BssidNum)
 		{
-			DBGPRINT(RT_DEBUG_TRACE,("AUTH - Class 2 error but not my bssid %02x:%02x:%02x:%02x:%02x:%02x\n", PRINT_MAC(pHeader->Addr1))); 
+			DBGPRINT(RT_DEBUG_INFO,("AUTH - Class 2 error but not my bssid %02x:%02x:%02x:%02x:%02x:%02x\n", PRINT_MAC(pHeader->Addr1))); 
 			return;
 		}
 	}

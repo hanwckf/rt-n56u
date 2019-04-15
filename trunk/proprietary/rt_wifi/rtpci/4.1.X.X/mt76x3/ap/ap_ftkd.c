@@ -683,6 +683,7 @@ BOOLEAN TYPE_FUNC FT_KDP_KeyRequestToUs(
 {
 #ifndef FT_KDP_EMPTY
 	UINT32 IDR0KH;
+	MAC_TABLE_ENTRY *pEntry = NULL;
 	UINT32 ApIdx;
 
 
@@ -751,6 +752,11 @@ BOOLEAN TYPE_FUNC FT_KDP_KeyRequestToUs(
 				pEvtKeyReq->KeyInfo.R1KHID[4],
 				pEvtKeyReq->KeyInfo.R1KHID[5]));
 #endif /* FT_KDP_DEBUG */
+		pEntry = MacTableLookup(pAd, pEvtKeyReq->MacAddr);
+		if (!pEntry)
+			return FALSE;
+		else
+			ApIdx = pEntry->func_tb_idx;
 
 		/* calculate the PMK-R1 Key for the station vs. the AP */
 		if (FT_QueryKeyInfoForKDP(pAd, ApIdx, pEvtKeyReq) == FALSE)

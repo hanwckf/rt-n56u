@@ -398,7 +398,7 @@ VOID MlmeSelectTxRateTable(
 	(__pAd)->rateAlg = __Alg;
 
 #ifdef NEW_RATE_ADAPT_SUPPORT
-UCHAR ra_get_lowest_rate(struct _RTMP_ADAPTER *pAd, struct _MAC_TABLE_ENTRY *pEntry);
+UCHAR ra_get_lowest_rate(struct _RTMP_ADAPTER *pAd, UCHAR *pTable);
 #endif /* NEW_RATE_ADAPT_SUPPORT */
 
 #endif /* __DRS_EXTR_H__ */

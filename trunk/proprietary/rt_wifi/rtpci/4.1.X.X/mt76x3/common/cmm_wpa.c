@@ -274,7 +274,7 @@ VOID WpaEAPOLKeyAction(
 										ifIndex, CliIdx));				
 				break;
 			}
-			else
+		else
 			{
 			pEntry = &pAd->MacTab.Content[pAd->ApCfg.ApCliTab[ifIndex].RepeaterCli[CliIdx].MacTabWCID];
 			}
@@ -587,6 +587,10 @@ VOID RTMPToWirelessSta(
 
 	RTMP_SET_PACKET_WCID(pPacket, (UCHAR)pEntry->wcid);
 	// TODO: shiang-usw, fix this!
+	if (!pEntry->wdev) {
+		RELEASE_NDIS_PACKET(pAd, pPacket, NDIS_STATUS_FAILURE);
+		return;
+	}
 	RTMP_SET_PACKET_WDEV(pPacket, pEntry->wdev->wdev_idx);
 	RTMP_SET_PACKET_MOREDATA(pPacket, FALSE);
 
@@ -602,7 +606,7 @@ VOID RTMPToWirelessSta(
 
 	if (!RTMP_TEST_FLAG(pAd, (fRTMP_ADAPTER_BSS_SCAN_IN_PROGRESS |
 									fRTMP_ADAPTER_RESET_IN_PROGRESS)))
-		RTMPDeQueuePacket(pAd, FALSE, NUM_OF_TX_RING, WCID_ALL, MAX_TX_PROCESS);
+		RTMPDeQueuePacket(pAd, FALSE, WMM_NUM_OF_AC, WCID_ALL, MAX_TX_PROCESS);
 
 }
 
@@ -1109,6 +1113,10 @@ VOID PeerPairMsg1Action(
 
 	/* Generate random SNonce*/
 	GenRandom(pAd, (UCHAR *)pCurrentAddr, pEntry->SNonce);
+	pEntry->AllowInsPTK = TRUE;
+	pEntry->AllowUpdateRSC = FALSE;
+        pEntry->LastGroupKeyId = 0;
+        NdisZeroMemory(pEntry->LastGTK, MAX_LEN_GTK);
 
 #ifdef DOT11R_FT_SUPPORT
 	if (IS_FT_RSN_STA(pEntry))
@@ -1644,6 +1652,13 @@ VOID PeerPairMsg3Action(
 	UCHAR CliIdx = 0xFF;
 #endif /* MAC_REPEATER_SUPPORT */
 	STA_TR_ENTRY *tr_entry;
+	UCHAR idx = 0;
+	BOOLEAN bWPA2 = FALSE;
+
+	/* Choose WPA2 or not*/
+	if ((pEntry->AuthMode == Ndis802_11AuthModeWPA2) ||
+		(pEntry->AuthMode == Ndis802_11AuthModeWPA2PSK))
+		bWPA2 = TRUE;
 
 	DBGPRINT(RT_DEBUG_TRACE, ("===> PeerPairMsg3Action \n"));
 
@@ -1695,6 +1710,23 @@ VOID PeerPairMsg3Action(
 	if (PeerWpaMessageSanity(pAd, pMsg3, MsgLen, EAPOL_PAIR_MSG_3, pEntry) == FALSE)
 		return;
 
+	if ((pEntry->AllowInsPTK == TRUE) && bWPA2) {
+		UCHAR kid = pEntry->LastGroupKeyId;
+
+		if (unlikely(kid >= ARRAY_SIZE(pEntry->CCMP_BC_PN))) {
+			DBGPRINT(RT_DEBUG_TRACE, ("%s invalid key id %u\n", __func__, kid));
+			return;
+		}
+
+		pEntry->CCMP_BC_PN[kid] = 0;
+		for (idx = 0; idx < (LEN_KEY_DESC_RSC - 2); idx++)
+			pEntry->CCMP_BC_PN[kid] += ((UINT64)pMsg3->KeyDesc.KeyRsc[idx] << (idx*8));
+		pEntry->AllowUpdateRSC = FALSE;
+		pEntry->Init_CCMP_BC_PN_Passed[kid] = FALSE;
+		DBGPRINT(RT_DEBUG_OFF, ("%s(%d)-%d: update CCMP_BC_PN to %llu\n",
+			__FUNCTION__, pEntry->wcid, kid, pEntry->CCMP_BC_PN[kid]));
+	}
+
 	/* Save Replay counter, it will use construct message 4*/
 	NdisMoveMemory(pEntry->R_Counter, pMsg3->KeyDesc.ReplayCounter, LEN_KEY_DESC_REPLAY);
 
@@ -1734,8 +1766,16 @@ VOID PeerPairMsg3Action(
 	IF_DEV_CONFIG_OPMODE_ON_AP(pAd)
 	{
 #ifdef APCLI_SUPPORT
-		if (IS_ENTRY_APCLI(pEntry))
+		if (IS_ENTRY_APCLI(pEntry)) {
+		if(pEntry->AllowInsPTK == TRUE) {
 		 	APCliInstallPairwiseKey(pAd, pEntry);
+			pEntry->AllowInsPTK = FALSE;
+			pEntry->AllowUpdateRSC = TRUE;
+			} else {
+			DBGPRINT(RT_DEBUG_ERROR, ("!!!%s : the M3 reinstall attack, skip install key\n",
+											__func__));
+			}
+		}
 #endif /* APCLI_SUPPORT */
 	}
 #endif /* CONFIG_AP_SUPPORT */
@@ -1878,6 +1918,10 @@ VOID PeerPairMsg4Action(
 			break;
 		}
 
+	/* Sanity Check pEntry->func_tb_idx to avoid out of bound with pAd->ApCfg.MBSSID*/
+	if (pEntry->func_tb_idx >= HW_BEACON_MAX_NUM)
+		break;
+
         /* 3. Install pairwise key */
 #ifdef MT_MAC
         if (pAd->chipCap.hif_type != HIF_MT)
@@ -1993,9 +2037,15 @@ VOID PeerPairMsg4Action(
         	}
 #endif /* DOT1X_SUPPORT */
 #endif /* CONFIG_AP_SUPPORT */
+#ifdef IAPP_SUPPORT
+			if (IS_ENTRY_CLIENT(pEntry)) {
+			    IAPP_L2_Update_Frame_Send(pAd, pEntry->Addr, pEntry->wdev->wdev_idx);
+			    DBGPRINT(RT_DEBUG_TRACE, ("####### Send L2 Frame Mac=%02x:%02x:%02x:%02x:%02x:%02x for update ARP table at DS\n",PRINT_MAC(pEntry->Addr)));
+			}
+#endif /* IAPP_SUPPORT */
 
 			/* send wireless event - for set key done WPA2*/
-				RTMPSendWirelessEvent(pAd, IW_SET_KEY_DONE_WPA2_EVENT_FLAG, pEntry->Addr, pEntry->wdev->wdev_idx, 0);
+			RTMPSendWirelessEvent(pAd, IW_SET_KEY_DONE_WPA2_EVENT_FLAG, pEntry->Addr, pEntry->wdev->wdev_idx, 0);
 
 #ifdef CONFIG_HOTSPOT_R2
 		if (pEntry->IsWNMReqValid == TRUE)
@@ -2026,7 +2076,7 @@ VOID PeerPairMsg4Action(
 #endif
 
 
-	        DBGPRINT(RT_DEBUG_OFF, ("AP SETKEYS DONE - WPA2, AuthMode(%d)=%s, WepStatus(%d)=%s, GroupWepStatus(%d)=%s\n\n",
+	        DBGPRINT(RT_DEBUG_OFF, ("AP SETKEYS DONE - WPA2, AuthMode(%d)=%s, WepStatus(%d)=%s, GroupWepStatus(%d)=%s\n",
 									pEntry->AuthMode, GetAuthMode(pEntry->AuthMode),
 									pEntry->WepStatus, GetEncryptType(pEntry->WepStatus),
 									group_cipher,
@@ -2184,6 +2234,7 @@ VOID	PeerGroupMsg1Action(
 	UCHAR CliIdx = 0xFF;
 #endif /* MAC_REPEATER_SUPPORT */
 	STA_TR_ENTRY *tr_entry;
+	UCHAR idx = 0;
 
 	DBGPRINT(RT_DEBUG_TRACE, ("===> PeerGroupMsg1Action \n"));
 
@@ -2231,6 +2282,23 @@ VOID	PeerGroupMsg1Action(
 	/* Sanity Check peer group message 1 - Replay Counter, MIC, RSNIE*/
 	if (PeerWpaMessageSanity(pAd, pGroup, MsgLen, EAPOL_GROUP_MSG_1, pEntry) == FALSE)
 		return;
+
+	if (pEntry->AllowUpdateRSC == TRUE) {
+		UCHAR kid = pEntry->LastGroupKeyId;
+
+		if (unlikely(kid >= ARRAY_SIZE(pEntry->CCMP_BC_PN))) {
+			DBGPRINT(RT_DEBUG_TRACE, ("%s invalid key id %u\n", __func__, kid));
+			return;
+		}
+
+		pEntry->CCMP_BC_PN[kid] = 0;
+		for (idx = 0; idx < (LEN_KEY_DESC_RSC - 2); idx++)
+			pEntry->CCMP_BC_PN[kid] += ((UINT64)pGroup->KeyDesc.KeyRsc[idx] << (idx*8));
+		pEntry->AllowUpdateRSC = FALSE;
+		pEntry->Init_CCMP_BC_PN_Passed[kid] = FALSE;
+		DBGPRINT(RT_DEBUG_OFF, ("%s(%d)-%d: update CCMP_BC_PN to %llu\n",
+			__FUNCTION__, pEntry->wcid, kid, pEntry->CCMP_BC_PN[kid]));
+	}
 
 	/* delete retry timer*/
 #ifdef CONFIG_AP_SUPPORT
@@ -2335,10 +2403,10 @@ VOID EnqueueStartForPSKExec(
     IN PVOID SystemSpecific3)
 {
 	MAC_TABLE_ENTRY     *pEntry = (PMAC_TABLE_ENTRY) FunctionContext;
-	if(pEntry == NULL)
+	if(!pEntry)
 		return;
 
-	if ((pEntry) && IS_ENTRY_CLIENT(pEntry) && (pEntry->WpaState < AS_PTKSTART))
+	if (IS_ENTRY_CLIENT(pEntry) && (pEntry->WpaState < AS_PTKSTART))
 	{
 		PRTMP_ADAPTER pAd = (PRTMP_ADAPTER)pEntry->pAd;
 
@@ -2527,7 +2595,7 @@ VOID PeerGroupMsg2Action(
 			/* send wireless event - for set key done WPA2*/
 				RTMPSendWirelessEvent(pAd, IW_SET_KEY_DONE_WPA2_EVENT_FLAG, pEntry->Addr, pEntry->wdev->wdev_idx, 0);
 
-			DBGPRINT(RT_DEBUG_OFF, ("AP SETKEYS DONE - WPA2, AuthMode(%d)=%s, WepStatus(%d)=%s, GroupWepStatus(%d)=%s\n\n",
+			DBGPRINT(RT_DEBUG_OFF, ("AP SETKEYS DONE - WPA2, AuthMode(%d)=%s, WepStatus(%d)=%s, GroupWepStatus(%d)=%s\n",
 										pEntry->AuthMode, GetAuthMode(pEntry->AuthMode),
 										pEntry->WepStatus, GetEncryptType(pEntry->WepStatus),
 										group_cipher, GetEncryptType(group_cipher)));
@@ -2537,7 +2605,7 @@ VOID PeerGroupMsg2Action(
 			/* send wireless event - for set key done WPA*/
 				RTMPSendWirelessEvent(pAd, IW_SET_KEY_DONE_WPA1_EVENT_FLAG, pEntry->Addr, pEntry->wdev->wdev_idx, 0);
 
-        	DBGPRINT(RT_DEBUG_OFF, ("AP SETKEYS DONE - WPA1, AuthMode(%d)=%s, WepStatus(%d)=%s, GroupWepStatus(%d)=%s\n\n",
+        	DBGPRINT(RT_DEBUG_OFF, ("AP SETKEYS DONE - WPA1, AuthMode(%d)=%s, WepStatus(%d)=%s, GroupWepStatus(%d)=%s\n",
 										pEntry->AuthMode, GetAuthMode(pEntry->AuthMode),
 										pEntry->WepStatus, GetEncryptType(pEntry->WepStatus),
 										group_cipher, GetEncryptType(group_cipher)));
@@ -3405,15 +3473,15 @@ static VOID RTMPMakeRsnIeAKM(
 			else
 #endif /* APCLI_SUPPORT */                
 	                {
-	                        if (pAd->ApCfg.MBSSID[apidx].PmfCfg.MFPR) {
-	                                NdisMoveMemory(pRsnie_auth->auth[0].oui, OUI_WPA2_PSK_SHA256, 4);
-	                                DBGPRINT(RT_DEBUG_WARN, ("[PMF]%s: Insert PSK-SHA256 to AKM of RSNIE\n", __FUNCTION__));
-	                        } else if ((pAd->ApCfg.MBSSID[apidx].PmfCfg.MFPC) && (pAd->ApCfg.MBSSID[apidx].PmfCfg.PMFSHA256)) {
-	                                NdisMoveMemory(pRsnie_auth->auth[0].oui + (4*AkmCnt), OUI_WPA2_PSK_SHA256, 4);
-	                                AkmCnt++;
-	                                DBGPRINT(RT_DEBUG_WARN, ("[PMF]%s: Insert PSK-SHA256 to AKM of RSNIE\n", __FUNCTION__));
-	                        }
-			  }
+                        if (pAd->ApCfg.MBSSID[apidx].PmfCfg.MFPR) {
+                                NdisMoveMemory(pRsnie_auth->auth[0].oui, OUI_WPA2_PSK_SHA256, 4);
+                                DBGPRINT(RT_DEBUG_WARN, ("[PMF]%s: Insert PSK-SHA256 to AKM of RSNIE\n", __FUNCTION__));
+                        } else if ((pAd->ApCfg.MBSSID[apidx].PmfCfg.MFPC) && (pAd->ApCfg.MBSSID[apidx].PmfCfg.PMFSHA256)) {
+                                NdisMoveMemory(pRsnie_auth->auth[0].oui + (4*AkmCnt), OUI_WPA2_PSK_SHA256, 4);
+                                AkmCnt++;
+                                DBGPRINT(RT_DEBUG_WARN, ("[PMF]%s: Insert PSK-SHA256 to AKM of RSNIE\n", __FUNCTION__));
+                        }
+                }
                 }
 #endif /* CONFIG_AP_SUPPORT */
 
@@ -4182,10 +4250,20 @@ BOOLEAN RTMPParseEapolKeyData(
 #ifdef APCLI_SUPPORT
 		if ((pAd->chipCap.hif_type == HIF_RLT || pAd->chipCap.hif_type == HIF_RTMP) && IS_ENTRY_APCLI(pEntry))
 		{
-			/* Set Group key material, TxMic and RxMic for AP-Client*/
-			if (!APCliInstallSharedKey(pAd, GTK, GTKLEN, DefaultIdx, pEntry))
-			{
-				return FALSE;
+			/* Prevent the GTK reinstall key attack */
+			if (pEntry->LastGroupKeyId != DefaultIdx ||
+				!NdisEqualMemory(pEntry->LastGTK, GTK, MAX_LEN_GTK)) {
+				/* Set Group key material, TxMic and RxMic for AP-Client*/
+				if (!APCliInstallSharedKey(pAd, GTK, GTKLEN, DefaultIdx, pEntry))
+				{
+					return FALSE;
+				}
+				pEntry->LastGroupKeyId = DefaultIdx;
+				NdisMoveMemory(pEntry->LastGTK, GTK, MAX_LEN_GTK);
+				pEntry->AllowUpdateRSC = TRUE;
+			} else {
+				DBGPRINT(RT_DEBUG_ERROR, ("!!!%s : the Group reinstall attack, skip install key\n",
+					__func__));
 			}
 		}
 #ifdef MT_MAC
@@ -4199,23 +4277,34 @@ BOOLEAN RTMPParseEapolKeyData(
 
             pApcli_entry = &pAd->ApCfg.ApCliTab[IfIdx];
 
-            WPAInstallSharedKey(pAd,
-                pApcli_entry->GroupCipher,
-#if defined(MULTI_APCLI_SUPPORT) || defined(APCLI_CONNECTION_TRIAL)
-		pEntry->func_tb_idx,
+			/* Prevent the GTK reinstall key attack */
+			if (pEntry->LastGroupKeyId != DefaultIdx ||
+				!NdisEqualMemory(pEntry->LastGTK, GTK, MAX_LEN_GTK)) {
+				/* Set Group key material, TxMic and RxMic for AP-Client*/
+				WPAInstallSharedKey(pAd,
+					pApcli_entry->GroupCipher,
+#ifdef MULTI_APCLI_SUPPORT
+					pEntry->func_tb_idx,
 #else /* MULTI_APCLI_SUPPORT */
-                BSS0,
+					BSS0,
 #endif /* !MULTI_APCLI_SUPPORT */
-                DefaultIdx,
-#if defined(MULTI_APCLI_SUPPORT) || defined(APCLI_CONNECTION_TRIAL)
-                APCLI_MCAST_WCID(IfIdx),
+					DefaultIdx,
+#ifdef MULTI_APCLI_SUPPORT
+					APCLI_MCAST_WCID(IfIdx),
 #else /* MULTI_APCLI_SUPPORT */
-                APCLI_MCAST_WCID,
+					APCLI_MCAST_WCID,
 #endif /* !MULTI_APCLI_SUPPORT */
-                FALSE,
-                GTK,
-                GTKLEN);
-        }
+					FALSE,
+					GTK,
+					GTKLEN);
+				pEntry->LastGroupKeyId = DefaultIdx;
+				NdisMoveMemory(pEntry->LastGTK, GTK, MAX_LEN_GTK);
+				pEntry->AllowUpdateRSC = TRUE;
+			} else {
+				DBGPRINT(RT_DEBUG_ERROR, ("!!!%s : the Group reinstall attack, skip install key\n",
+					__func__));
+			}
+	}
 #endif /* MT_MAC */
 #endif /* APCLI_SUPPORT */
 #endif /* CONFIG_AP_SUPPORT */

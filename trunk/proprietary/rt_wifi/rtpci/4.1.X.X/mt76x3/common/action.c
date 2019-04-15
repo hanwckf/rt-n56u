@@ -165,10 +165,10 @@ VOID MlmeADDBAAction(RTMP_ADAPTER *pAd, MLME_QUEUE_ELEM *Elem)
 		Frame.Category = CATEGORY_BA;
 		Frame.Action = ADDBA_REQ;
 		Frame.BaParm.AMSDUSupported = 0;
-#ifdef WFA_VHT_PF
-		if (pAd->CommonCfg.DesiredHtPhy.AmsduEnable)
+#ifdef DOT11_VHT_AC
+		if (pEntry && IS_VHT_STA(pEntry) && pAd->CommonCfg.DesiredHtPhy.AmsduEnable)
 			Frame.BaParm.AMSDUSupported = 1;
-#endif /* WFA_VHT_PF */
+#endif
 		Frame.BaParm.BAPolicy = IMMED_BA;
 		Frame.BaParm.TID = pInfo->TID;
 		Frame.BaParm.BufSize = pInfo->BaBufSize;
@@ -898,7 +898,7 @@ VOID PeerPublicAction(RTMP_ADAPTER *pAd, MLME_QUEUE_ELEM *Elem)
 						for (apidx = 0; apidx < pAd->ApCfg.BssidNum; apidx++)
 							SendBSS2040CoexistMgmtAction(pAd, MCAST_WCID, apidx, 0);
 					}
-
+						
 #ifdef APCLI_SUPPORT	
 #ifdef APCLI_CERT_SUPPORT
 					}	

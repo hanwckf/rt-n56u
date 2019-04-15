@@ -8,6 +8,7 @@ typedef struct GNU_PACKED _WIFI_INFO_STRUCT{
 	UINT32 more_data:1;
 	UINT32 wep:1;
 	UINT32 ps:1;
+	UINT32 rdg:1;
 	UINT32 qos:1;
 	UINT32 eosp:1;
 	UINT32 tid:4;

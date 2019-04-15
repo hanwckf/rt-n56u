@@ -498,8 +498,6 @@ enum RXWI_FRQ_OFFSET_FIELD {
 /* Bit mask for the Tx ALC and the Tx fine power control */
 /* */
 
-#define DEFAULT_BBP_TX_FINE_POWER_CTRL 	0
-
 #endif /* RTMP_INTERNAL_TX_ALC || RTMP_TEMPERATURE_COMPENSATION */
 
 
@@ -631,8 +629,9 @@ struct _RTMP_CHIP_CAP {
 	
 	/* function */
 	/* use UINT8, not bit-or to speed up driver */
+#ifdef WAPI_SUPPORT
 	BOOLEAN FlgIsHwWapiSup;
-
+#endif /* WAPI_SUPPORT */
 	/* VCO calibration mode */
 	UINT8 VcoPeriod; /* default 10s */
 #define VCO_CAL_DISABLE		0	/* not support */
@@ -825,13 +824,10 @@ struct _RTMP_CHIP_CAP {
 	UCHAR TmrEnable;
 #endif
 
-
-	UINT8 TxBAWinSize;
+	UINT8 TxAggLimit;
 	UINT8 RxBAWinSize;
 	UINT8 AMPDUFactor;
-    UINT8 BiTxOpOn;
-
-    UINT32  CurrentTxOP;
+	UINT8 BiTxOpOn;
 };
 
 
@@ -1005,7 +1001,6 @@ struct _RTMP_CHIP_OP {
 	void (*usb_cfg_write)(struct _RTMP_ADAPTER *ad, UINT32 value);
 	void (*show_pwr_info)(struct _RTMP_ADAPTER *ad);
 	void (*cal_test)(struct _RTMP_ADAPTER *ad, UINT32 type);
-	
 };
 
 #define RTMP_CHIP_ENABLE_AP_MIMOPS(__pAd, __ReduceCorePower)	\

@@ -80,11 +80,7 @@
 #ifdef MEMORY_OPTIMIZATION
 #define MAX_RX_PROCESS		32
 #else
-#ifdef BB_SOC
-#define MAX_RX_PROCESS		64
-#else
 #define MAX_RX_PROCESS		128	/*64 //32 */
-#endif /* BB_SOC */
 #endif
 #define NUM_OF_LOCAL_TXBUF      2
 #define TXD_SIZE		16	/* TXD_SIZE = TxD + TxInfo */
@@ -104,7 +100,6 @@
 #define MGMT_DMA_BUFFER_SIZE    1600	/*2048 */
 
 #define RX_BUFFER_AGGRESIZE     3840	/*3904 //3968 //4096 //2048 //4096 */
-#define RX1_BUFFER_SIZE         1700    /* 1700 //512 */
 #define RX_BUFFER_NORMSIZE      3840	/*3904 //3968 //4096 //2048 //4096 */
 #define TX_BUFFER_NORMSIZE		RX_BUFFER_NORMSIZE
 #define MAX_FRAME_SIZE          2346	/* Maximum 802.11 frame size */
@@ -112,8 +107,6 @@
 #define MAX_NUM_OF_TUPLE_CACHE  2
 #define MAX_MCAST_LIST_SIZE     32
 #define MAX_LEN_OF_VENDOR_DESC  64
-/*#define MAX_SIZE_OF_MCAST_PSQ   (NUM_OF_LOCAL_TXBUF >> 2) // AP won't spend more than 1/4 of total buffers on M/BCAST PSQ */
-#define MAX_SIZE_OF_MCAST_PSQ               32
 
 #define MAX_RX_PROCESS_CNT	(RX_RING_SIZE)
 
@@ -143,11 +136,11 @@
 	clConfig.clNum = RX_RING_SIZE * 4;
 */
 
-#define MAX_PACKETS_IN_MCAST_PS_QUEUE		128
+#define MAX_PACKETS_IN_MCAST_PS_QUEUE	    32
 #ifdef BB_SOC
-#define MAX_PACKETS_IN_PS_QUEUE				64
+#define MAX_PACKETS_IN_PS_QUEUE             64
 #else /* BB_SOC */
-#define MAX_PACKETS_IN_PS_QUEUE				128	/*32 */
+#define MAX_PACKETS_IN_PS_QUEUE             128	/*32 */
 #endif /* !BB_SOC */
 #define WMM_NUM_OF_AC                       4	/* AC0, AC1, AC2, and AC3 */
 
@@ -678,15 +671,7 @@ enum WIFI_MODE{
 #define MAX_LEN_OF_BSS_TABLE             1
 #define MAX_REORDERING_MPDU_NUM			 256
 #else
-#ifdef BB_SOC
-#define MAX_LEN_OF_BSS_TABLE             20
-#else /* BB_SOC */
-#ifdef ECONET_ALPHA_RELEASE
-#define MAX_LEN_OF_BSS_TABLE             96 /* 64 */
-#else
 #define MAX_LEN_OF_BSS_TABLE             128 /* 64 */
-#endif /* ECONET_ALPHA_RELEASE */
-#endif /* !BB_SOC */
 #define MAX_REORDERING_MPDU_NUM			 512
 #endif
 
@@ -1537,6 +1522,8 @@ enum WIFI_MODE{
 #define BW_20		BAND_WIDTH_20
 #define BW_40		BAND_WIDTH_40
 #define BW_80		BAND_WIDTH_80
+#define BW_160		BAND_WIDTH_160
+
 #define BW_10		BAND_WIDTH_10	/* 802.11j has 10MHz. This definition is for internal usage. doesn't fill in the IE or other field. */
 
 
@@ -1704,16 +1691,20 @@ enum WIFI_MODE{
 #define PAIRWISE_KEY                1
 #define GROUP_KEY                   2
 
-
+#ifdef OPTIMISTIC_TRAINUP
+#define RA_TRAINDIV 1
+#else
+#define RA_TRAINDIV 2
+#endif /* OPTIMISTIC_TRAINUP */
 
 /* Rate Adaptation timing */
 #define RA_RATE		5					/* RA every fifth 100msec period */
 #define RA_INTERVAL		(RA_RATE*100)	/* RA Interval in msec */
 
 /* Rate Adaptation simpling interval setting */
-#define DEF_QUICK_RA_TIME_INTERVAL	100
-
-#define DEF_RA_TIME_INTRVAL			500
+#define DEF_QUICK_RA_TIME_INTERVAL		80 /* Quick RA 100 msec after rate change */
+#define DEF_RA_TIME_INTRVAL			400
+#define FASTRATEUPERRTH				20 /* < 20% errors to allow fast up rate */
 
 /*definition of DRS */
 #define MAX_TX_RATE_INDEX			33		/* Maximum Tx Rate Table Index value */
@@ -1735,10 +1726,10 @@ enum WIFI_MODE{
 #define I_ORIGINATOR                   FALSE
 
 #define DEFAULT_BBP_TX_POWER        0
-#define DEFAULT_RF_TX_POWER         5
-#define DEFAULT_BBP_TX_FINE_POWER_CTRL 0
+#define DEFAULT_RF_TX_POWER         8
+#define DEFAULT_MAX_TX_POWER        20
 
-#define MAX_INI_BUFFER_SIZE		4096
+#define MAX_INI_BUFFER_SIZE		10000   /* 4096 */
 #define MAX_PARAM_BUFFER_SIZE		(2048)	/* enough for ACL (18*64) */
 											/*18 : the length of Mac address acceptable format "01:02:03:04:05:06;") */
 											/*64 : MAX_NUM_OF_ACL_LIST */
@@ -2180,16 +2171,6 @@ do{									\
 		__p++;										\
 	}												\
 }while(0)
-
-
-#ifndef min
-#define min(_a, _b)     (((_a) < (_b)) ? (_a) : (_b))
-#endif
-
-#ifndef max
-#define max(_a, _b)     (((_a) > (_b)) ? (_a) : (_b))
-#endif
-
 
 /* ========================================================================== */
 /*

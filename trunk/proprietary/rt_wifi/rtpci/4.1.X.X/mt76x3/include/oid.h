@@ -42,8 +42,9 @@
 #define BAND_WIDTH_20		0
 #define BAND_WIDTH_40		1
 #define BAND_WIDTH_80		2
-#define BAND_WIDTH_BOTH	3
+#define BAND_WIDTH_BOTH		3
 #define BAND_WIDTH_10		4	/* 802.11j has 10MHz. This definition is for internal usage. doesn't fill in the IE or other field. */
+#define BAND_WIDTH_160		3
 
 
 /* SHORTGI */
@@ -72,11 +73,9 @@
 /*#define MAX_NUM_OF_CHS             		54 */ /* 14 channels @2.4G +  12@UNII(lower/middle) + 16@HiperLAN2 + 11@UNII(upper) + 0 @Japan + 1 as NULL termination */
 #define MAX_NUMBER_OF_EVENT				10	/* entry # in EVENT table */
 
-#ifdef CONFIG_RT_MAX_CLIENTS
-#define MAX_NUMBER_OF_MAC			CONFIG_RT_MAX_CLIENTS
-#else
-#define MAX_NUMBER_OF_MAC			32
-#endif
+#define CONFIG_MAX_CLIENTS CONFIG_RT_MAX_CLIENTS
+
+#define MAX_NUMBER_OF_MAC			CONFIG_MAX_CLIENTS
 
 #define MAX_NUMBER_OF_ACL				64
 #define MAX_LENGTH_OF_SUPPORT_RATES		12	/* 1, 2, 5.5, 11, 6, 9, 12, 18, 24, 36, 48, 54 */
@@ -451,6 +450,7 @@ typedef enum _NDIS_802_11_NETWORK_TYPE {
 	Ndis802_11Automode,
 	Ndis802_11OFDM5_N,
 	Ndis802_11OFDM24_N,
+	Ndis802_11OFDM5_AC,
 	Ndis802_11NetworkTypeMax	/* not a real type, defined as an upper bound */
 } NDIS_802_11_NETWORK_TYPE, *PNDIS_802_11_NETWORK_TYPE;
 
@@ -816,7 +816,7 @@ typedef struct _AP_BSSID_INFO {
 	BOOLEAN Valid;
 } AP_BSSID_INFO, *PAP_BSSID_INFO;
 
-#define MAX_PMKID_COUNT		8
+#define MAX_PMKID_COUNT	128
 typedef struct _NDIS_AP_802_11_PMKID {
 	AP_BSSID_INFO BSSIDInfo[MAX_PMKID_COUNT];
 } NDIS_AP_802_11_PMKID, *PNDIS_AP_802_11_PMKID;
@@ -838,14 +838,12 @@ typedef struct _NDIS_802_11_CAPABILITY {
 
 
 
-#ifdef DBG
 /*
 	When use private ioctl oid get/set the configuration, we can use following flags to provide specific rules when handle the cmd
  */
 #define RTPRIV_IOCTL_FLAG_UI			0x0001	/* Notidy this private cmd send by UI. */
 #define RTPRIV_IOCTL_FLAG_NODUMPMSG	0x0002	/* Notify driver cannot dump msg to stdio/stdout when run this private ioctl cmd */
 #define RTPRIV_IOCTL_FLAG_NOSPACE		0x0004	/* Notify driver didn't need copy msg to caller due to the caller didn't reserve space for this cmd */
-#endif /* DBG */
 
 
 #ifdef SNMP_SUPPORT
@@ -1080,6 +1078,8 @@ typedef struct _RT_802_11_MAC_ENTRY {
 	CHAR AvgRssi0;
 	CHAR AvgRssi1;
 	CHAR AvgRssi2;
+	UINT64 TxBytes;
+	UINT64 RxBytes;
 	UINT32 ConnectedTime;
 	MACHTTRANSMIT_SETTING TxRate;
 	UINT32 LastRxRate;
@@ -1100,6 +1100,7 @@ typedef struct _RT_802_11_HARDWARE_REGISTER {
 	ULONG Data;		/* R/W data buffer */
 } RT_802_11_HARDWARE_REGISTER, *PRT_802_11_HARDWARE_REGISTER;
 
+#if 0
 typedef struct _RT_802_11_AP_CONFIG {
 	ULONG EnableTxBurst;	/* 0-disable, 1-enable */
 	ULONG EnableTurboRate;	/* 0-disable, 1-enable 72/100mbps turbo rate */
@@ -1110,6 +1111,7 @@ typedef struct _RT_802_11_AP_CONFIG {
 	ULONG Rsv1;		/* must be 0 */
 	ULONG SystemErrorBitmap;	/* ignore upon SET, return system error upon QUERY */
 } RT_802_11_AP_CONFIG, *PRT_802_11_AP_CONFIG;
+#endif
 
 /* structure to query/set STA_CONFIG */
 typedef struct _RT_802_11_STA_CONFIG {

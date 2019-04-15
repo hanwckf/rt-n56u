@@ -722,7 +722,6 @@ const UCHAR wmm_aci_2_hw_ac_queue[18] =
 		16,
 		17,
 };
-
 VOID write_tmac_info(
 	IN RTMP_ADAPTER *pAd,
 	IN UCHAR *tmac_info,
@@ -1472,7 +1471,7 @@ VOID mt_asic_init_txrx_ring(RTMP_ADAPTER *pAd)
 	/* Init RX Ring0 Base/Size/Index pointer CSR */
 	for (i = 0; i < NUM_OF_RX_RING; i++) {
 		RTMP_RX_RING *rx_ring;
-		UINT16 RxRingSize = (i == 0) ? RX_RING_SIZE : RX1_RING_SIZE;
+		UINT16 RxRingSize = RX_RING_SIZE;
 
 		rx_ring = &pAd->RxRing[i];
 		offset = i * 0x10;
@@ -1632,7 +1631,7 @@ VOID dump_wtbl_1_info(RTMP_ADAPTER *pAd, struct wtbl_1_struc *tb)
 }
 
 
-static UCHAR ba_range[] = {4, 5, 8, 10, 16, 20, 21, 42};
+static UCHAR ba_range[] = {4, 5, 8, 10, 16, 20, 21, 45};
 static UCHAR *bw_str[] = {"20", "40", "80", "160"};
 VOID dump_wtbl_2_info(RTMP_ADAPTER *pAd, struct wtbl_2_struc *tb)
 {

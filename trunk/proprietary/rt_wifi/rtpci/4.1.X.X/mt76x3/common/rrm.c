@@ -251,6 +251,7 @@ INT Set_BeaconReq_Proc(RTMP_ADAPTER *pAd, RTMP_STRING *arg)
 						("%s: invalid Measure Mode. %d\n", 	__FUNCTION__, BcnReq.MeasureMode));
 					return TRUE;
 				}
+				break;
 			case 7: /* regulatory class. */
 				{
 					RTMP_STRING *RegClassString;
@@ -265,12 +266,25 @@ INT Set_BeaconReq_Proc(RTMP_ADAPTER *pAd, RTMP_STRING *arg)
 					}
 				}
 				break;
-			
+			case 8: /* Channel Report  List. */
+				{
+					RTMP_STRING *ChIdString;
+					int ChId;
+
+					ChId = 0;
+					while ((ChIdString = strsep((char **)&thisChar, "!")) != NULL)
+					{
+						BcnReq.ChRepList[ChId] =
+							(UINT8) simple_strtol(ChIdString, 0, 10);
+						ChId++;
+					}
+				}			
+				break;
 		}
 		ArgIdx++;
 	}	
 
-	if (ArgIdx < 7 || ArgIdx > 8)
+	if (ArgIdx < 7 || ArgIdx > 9)
 	{
 		DBGPRINT(RT_DEBUG_ERROR,
 			("%s: invalid args (%d).\n", __FUNCTION__, ArgIdx));
@@ -458,29 +472,24 @@ INT RRM_InfoDisplay_Proc(RTMP_ADAPTER *pAd, RTMP_STRING *arg)
 
 	for (loop = 0; loop < pAd->ApCfg.BssidNum; loop++)
 	{
-		DBGPRINT(RT_DEBUG_OFF, ("%d: bDot11kRRMEnable=%d\n",
-			loop, pAd->ApCfg.MBSSID[loop].RrmCfg.bDot11kRRMEnable));
+		printk("%d: bDot11kRRMEnable=%d\n", loop, pAd->ApCfg.MBSSID[loop].RrmCfg.bDot11kRRMEnable);
 	}
 
-	DBGPRINT(RT_DEBUG_OFF, ("Country Code=%s\n",
-		pAd->CommonCfg.CountryCode));
+	printk("Country Code=%s\n", pAd->CommonCfg.CountryCode);
 
-	DBGPRINT(RT_DEBUG_OFF, ("Power Constraint=%d\n",
-		pAd->CommonCfg.PwrConstraint));
+	printk("Power Constraint=%d\n",	pAd->CommonCfg.PwrConstraint);
 
-	DBGPRINT(RT_DEBUG_OFF, ("Regulator Class="));
+	printk("Regulator Class=");
 	for (loop = 0; loop < MAX_NUM_OF_REGULATORY_CLASS; loop++)
 	{
 		if (pAd->CommonCfg.RegulatoryClass[loop] == 0)
 			break;
 
-		DBGPRINT(RT_DEBUG_OFF, ("%d ",
-			pAd->CommonCfg.RegulatoryClass[loop]));
+		printk("%d ", pAd->CommonCfg.RegulatoryClass[loop]);
 	}
-	DBGPRINT(RT_DEBUG_OFF, ("\n"));	
+	printk("\n");
 
-	DBGPRINT(RT_DEBUG_OFF, ("Regulator TxPowerPercentage=%ld\n",
-		pAd->CommonCfg.TxPowerPercentage));
+	printk("Regulator TxPowerPercentage=%ld\n", pAd->CommonCfg.TxPowerPercentage);
 	return TRUE;
 }
 
@@ -502,9 +511,15 @@ VOID RRM_CfgInit(
 
 		pRrmCfg->QuietCB.QuietState = RRM_QUIET_IDLE;
 		pRrmCfg->QuietCB.CurAid = 1;
-		if (pRrmCfg->bDot11kRRMEnableSet == FALSE)
+		if (pRrmCfg->bDot11kRRMEnableSet == FALSE) {
 			pRrmCfg->bDot11kRRMEnable = FALSE; //set to default off
-		pRrmCfg->bDot11kRRMNeighborRepTSFEnable = FALSE;
+			pRrmCfg->bDot11kRRMNeighborRepTSFEnable = FALSE;
+		}
+		/* need fist scan at enable */
+		if (pRrmCfg->bDot11kRRMEnable == TRUE) {
+			pAd->CommonCfg.RRMFirstScan = TRUE;
+			pRrmCfg->bDot11kRRMNeighborRepTSFEnable = FALSE; /* temp disabe for wait final RFC for this, break compat with updated clients */
+		}
 	}
 
 	return;
@@ -571,7 +586,7 @@ VOID RRM_PeerNeighborReqAction(
 	IN MLME_QUEUE_ELEM *Elem) 
 {
 	PFRAME_802_11 pFr = (PFRAME_802_11)Elem->Msg;
-	PUCHAR pFramePtr = pFr->Octet;
+	PUCHAR pFramePtr;
 	PMAC_TABLE_ENTRY pEntry;
 	UINT8 DialogToken;
 	PCHAR pSsid = NULL;
@@ -580,6 +595,11 @@ VOID RRM_PeerNeighborReqAction(
 	UINT8 SsidLen = 0;
 
 	DBGPRINT(RT_DEBUG_TRACE, ("%s::\n", __FUNCTION__));
+
+	if (pFr == NULL)
+	    return;
+
+	pFramePtr = pFr->Octet;
 
 	/* skip Category and action code. */
 	pFramePtr += 2;
@@ -609,8 +629,13 @@ VOID RRM_BeaconReportHandler(
 	CHAR Rssi;
 	USHORT LenVIE = 0;
 	NDIS_802_11_VARIABLE_IEs *pVIE = NULL;
-	UCHAR VarIE[MAX_VIE_LEN];
+	UCHAR *VarIE = NULL;            /*Wframe-larger-than=1024 warning  removal*/
 	ULONG Idx = BSS_NOT_FOUND;
+	/*
+	 	if peer response mesurement pilot frame, pVIE->Length should be init.
+	 	Sofar we don't know the mesurement pilot frame format, so we use below flag to avoid call BssTableSetEntry() instead of init. pVIE->Length
+	*/
+	BOOLEAN bFrameBody = FALSE;
 	LONG RemainLen = Length;
 	PRRM_BEACON_REP_INFO pBcnRep;
 	PUINT8 ptr;
@@ -618,9 +643,18 @@ VOID RRM_BeaconReportHandler(
 	UINT32 Ptsf;
 	BCN_IE_LIST *ie_list = NULL;
 
+	os_alloc_mem(NULL, (UCHAR **)&VarIE, 1024);
+	if (VarIE == NULL) {
+		DBGPRINT(RT_DEBUG_ERROR, ("%s(): Alloc VarIE failed!\n", __FUNCTION__));
+		return;
+	}
+	NdisZeroMemory(VarIE, 1024);
 
 	os_alloc_mem(NULL, (UCHAR **)&ie_list, sizeof(BCN_IE_LIST));
 	if (ie_list == NULL) {
+		if (VarIE != NULL) {
+			os_free_mem(NULL, VarIE);
+		}
 		DBGPRINT(RT_DEBUG_ERROR, ("%s(): Alloc ie_list failed!\n", __FUNCTION__));
 		return;
 	}
@@ -652,13 +686,13 @@ VOID RRM_BeaconReportHandler(
 		switch(pRrmSubFrame->SubId)
 		{
 			case 1:
-				if (BcnReqInfoField.field.ReportFrameType == 0)
+				if (BcnReqInfoField.field.ReportFrameType == 0) // 0 ==> beacon or probe response frame , 1 ==> Measurement Pilot frame
 				{
 					/* Init Variable IE structure */
 					pVIE = (PNDIS_802_11_VARIABLE_IEs) VarIE;
 					pVIE->Length = 0;
 
-					PeerBeaconAndProbeRspSanity(pAd,
+					bFrameBody = PeerBeaconAndProbeRspSanity(pAd,
 								pRrmSubFrame->Oct,
 								pRrmSubFrame->Length,
 								pBcnRep->ChNumber,
@@ -666,6 +700,7 @@ VOID RRM_BeaconReportHandler(
 								&LenVIE,
 								pVIE,
 								FALSE);
+					DBGPRINT(RT_DEBUG_TRACE, ("%s:: bFrameBody=%d\n", __FUNCTION__, bFrameBody));
 				}
 				break;
 
@@ -686,18 +721,50 @@ VOID RRM_BeaconReportHandler(
 	if (NdisEqualMemory(pBcnRep->Bssid, ie_list->Bssid, MAC_ADDR_LEN) == FALSE)
 	{
 		DBGPRINT(RT_DEBUG_WARN, ("%s():BcnReq->BSSID not equal ie_list->Bssid!\n", __FUNCTION__));
+
+		if (NdisEqualMemory(ie_list->Bssid, ZERO_MAC_ADDR, MAC_ADDR_LEN))
+		{
+			COPY_MAC_ADDR(&ie_list->Addr2[0], pBcnRep->Bssid);
+			COPY_MAC_ADDR(&ie_list->Bssid[0], pBcnRep->Bssid);
+		}
 	}
+
+	if (ie_list->Channel == 0)
+		ie_list->Channel = pBcnRep->ChNumber;
+
 #ifdef AP_SCAN_SUPPORT
-	Idx = BssTableSetEntry(pAd, &pAd->ScanTab, ie_list, Rssi, LenVIE, pVIE);
-	if (Idx != BSS_NOT_FOUND)
+	if (bFrameBody)
 	{
-		BSS_ENTRY *pBssEntry = &pAd->ScanTab.BssEntry[Idx];
-		NdisMoveMemory(pBssEntry->PTSF, (PUCHAR)&Ptsf, 4);
-		pBssEntry->RegulatoryClass = pBcnRep->RegulatoryClass;
-		pBssEntry->CondensedPhyType = BcnReqInfoField.field.CondensePhyType;
-		pBssEntry->RSNI = pBcnRep->RSNI;
+
+		ie_list->FromBcnReport = TRUE;
+
+		Idx = BssTableSetEntry(pAd, &pAd->ScanTab, ie_list, Rssi, LenVIE, pVIE);
+
+		if (Idx != BSS_NOT_FOUND)
+		{
+			BSS_ENTRY *pBssEntry = &pAd->ScanTab.BssEntry[Idx];
+			NdisMoveMemory(pBssEntry->PTSF, (PUCHAR)&Ptsf, 4);
+			pBssEntry->RegulatoryClass = pBcnRep->RegulatoryClass;
+			pBssEntry->CondensedPhyType = BcnReqInfoField.field.CondensePhyType;
+			pBssEntry->RSNI = pBcnRep->RSNI;
+			/* sanity check and recalc some params if need */
+			RRM_ScanResultFix(pBssEntry);
+		}
+		/* sort entry by rssi every insert */
+		if (!ApScanRunning(pAd) && pAd->ScanTab.BssNr > 1)
+		    BssTableSortByRssi(&pAd->ScanTab, FALSE);
 	}
 #endif /* AP_SCAN_SUPPORT */
+
+	if (ie_list != NULL)
+	{
+		os_free_mem(NULL, ie_list);
+	}
+
+	if (VarIE != NULL) {
+		os_free_mem(NULL, VarIE);
+	}
+
 	return;
 }
 
@@ -706,11 +773,16 @@ VOID RRM_PeerMeasureRepAction(
 	IN MLME_QUEUE_ELEM *Elem) 
 {
 	PFRAME_802_11 pFr = (PFRAME_802_11)Elem->Msg;
-	PUCHAR pFramePtr = pFr->Octet;
+	PUCHAR pFramePtr;
 	ULONG MsgLen = Elem->MsgLen;
 	PMEASURE_REQ_ENTRY pDialogEntry;
 	PMAC_TABLE_ENTRY pEntry;
 	UINT8 DialogToken;
+
+	if (pFr == NULL)
+	    return;
+
+	pFramePtr = pFr->Octet;
 
 	DBGPRINT(RT_DEBUG_TRACE, ("%s::\n", __FUNCTION__));
 

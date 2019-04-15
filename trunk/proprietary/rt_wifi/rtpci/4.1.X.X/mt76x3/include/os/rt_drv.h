@@ -63,11 +63,11 @@ typedef VOID	pregs;
  ***********************************************************************************/
 #ifdef CONFIG_AP_SUPPORT
 #ifdef RTMP_MAC_PCI
-#define AP_PROFILE_PATH			"/etc/Wireless/RT2860AP/RT2860AP.dat"
-#define AP_RTMP_FIRMWARE_FILE_NAME "/etc/Wireless/RT2860AP/RT2860AP.bin"
-#define AP_DRIVER_VERSION			"4.0.1.0_rev2"
+#define AP_PROFILE_PATH			"/etc/Wireless/RT2860/RT2860AP.dat"
+#define AP_RTMP_FIRMWARE_FILE_NAME	"/etc/Wireless/RT2860/RT2860AP.bin"
+#define AP_DRIVER_VERSION		"4.1.0.0"
 #ifdef MULTIPLE_CARD_SUPPORT
-#define CARD_INFO_PATH			"/etc/Wireless/RT2860AP/RT2860APCard.dat"
+#define CARD_INFO_PATH			"/etc/Wireless/RT2860/RT2860APCard.dat"
 #endif /* MULTIPLE_CARD_SUPPORT */
 #endif /* RTMP_MAC_PCI */
 
@@ -142,16 +142,7 @@ typedef char 				* PNDIS_BUFFER;
 /***********************************************************************************
  *	Ralink Specific network related constant definitions
  ***********************************************************************************/
-
-#ifdef LIMIT_GLOBAL_SW_QUEUE
 #define MAX_PACKETS_IN_QUEUE				1024
-#else /* LIMIT_GLOBAL_SW_QUEUE */
-#ifdef DOT11_VHT_AC
-#define MAX_PACKETS_IN_QUEUE				1024 /*(512)*/
-#else
-#define MAX_PACKETS_IN_QUEUE				(512)
-#endif /* DOT11_VHT_AC */
-#endif /* !LIMIT_GLOBAL_SW_QUEUE */
 
 /***********************************************************************************
  *	OS signaling related constant definitions
@@ -362,7 +353,7 @@ extern ULONG		RTDebugFunc;
 
 #if defined(MT7603_FPGA) || defined(MT7628_FPGA)
 #define DBGPRINT_RAW(Level, Fmt)    \
-do{                                   \
+do{                  dd                 \
 	ULONG __gLevel = (Level) & 0xff;\
 	ULONG __fLevel = ((Level) & 0xffffff00);\
     if (((RTDebugLevel == RT_DEBUG_FPGA) && (__gLevel == RTDebugLevel)) || ((RTDebugLevel != RT_DEBUG_FPGA) && (__gLevel <= RTDebugLevel)))      \
@@ -375,7 +366,7 @@ do{                                   \
 
 #else
 #define DBGPRINT_RAW(Level, Fmt)    \
-do{                                   \
+do{                  xx                 \
 	ULONG __gLevel = (Level) & 0xff;\
 	ULONG __fLevel = ((Level) & 0xffffff00);\
     if (__gLevel <= RTDebugLevel)      \
@@ -434,26 +425,26 @@ void hex_dump(char *str, unsigned char *pSrcBufVA, unsigned int SrcBufLen);
 /*#ifdef RTMP_MAC_PCI*/
 #define size_t						ULONG
 
-ra_dma_addr_t linux_pci_map_single(void *handle, void *ptr, size_t size, int sd_idx, int direction);
-void linux_pci_unmap_single(void *handle, ra_dma_addr_t dma_addr, size_t size, int direction);
+ra_dma_addr_t linux_pci_map_single(struct pci_dev *handle, void *ptr, size_t size, int sd_idx, int direction);
+void linux_pci_unmap_single(struct pci_dev *pPciDev, ra_dma_addr_t radma_addr, size_t size, int direction);
 
 #define pci_enable_msi		RtmpOsPciMsiEnable
 #define pci_disable_msi		RtmpOsPciMsiDisable
 
-#define PCI_MAP_SINGLE_DEV(_handle, _ptr, _size, _sd_idx, _dir)				\
-	linux_pci_map_single(_handle, _ptr, _size, _sd_idx, _dir)
+#define PCI_MAP_SINGLE_DEV(_pci_dev, _ptr, _size, _sd_idx, _dir)				\
+	linux_pci_map_single((struct pci_dev *)_pci_dev, _ptr, _size, _sd_idx, _dir)
 
-#define DMA_MAPPING_ERROR(_handle, _ptr)	\
-	dma_mapping_error(&((struct pci_dev *)(_handle))->dev, _ptr)
+#define DMA_MAPPING_ERROR(_pci_dev, _ptr)	\
+	dma_mapping_error(&((struct pci_dev *)(_pci_dev))->dev, _ptr)
 	
 #define PCI_UNMAP_SINGLE(_pAd, _ptr, _size, _dir)						\
 	linux_pci_unmap_single(((POS_COOKIE)(_pAd->OS_Cookie))->pci_dev, _ptr, _size, _dir)
 
 #define PCI_ALLOC_CONSISTENT(_pci_dev, _size, _ptr)							\
-	pci_alloc_consistent(_pci_dev, _size, _ptr)
+	dma_zalloc_coherent(_pci_dev == NULL ? NULL : &_pci_dev->dev, _size, _ptr, GFP_ATOMIC)
 
 #define PCI_FREE_CONSISTENT(_pci_dev, _size, _virtual_addr, _physical_addr)	\
-	pci_free_consistent(_pci_dev, _size, _virtual_addr, _physical_addr)
+	dma_free_coherent(_pci_dev == NULL ? NULL : &_pci_dev->dev, _size, _virtual_addr, _physical_addr)
 /*#endif RTMP_MAC_PCI*/
 
 #define DEV_ALLOC_SKB(_pAd, _Pkt, _length)									\
@@ -784,7 +775,7 @@ void RTMP_GetCurrentSystemTime(LARGE_INTEGER *time);
 #define ATEDBGPRINT DBGPRINT
 #ifdef RTMP_MAC_PCI
 #ifdef CONFIG_AP_SUPPORT
-#define EEPROM_BIN_FILE_NAME  "/etc/Wireless/RT2860AP/e2p.bin"
+#define EEPROM_BIN_FILE_NAME  "/etc/Wireless/RT2860/e2p.bin"
 #endif /* CONFIG_AP_SUPPORT */
 #endif /* RTMP_MAC_PCI */
 

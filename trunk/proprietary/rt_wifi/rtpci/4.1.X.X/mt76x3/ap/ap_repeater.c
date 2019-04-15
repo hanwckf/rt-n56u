@@ -50,7 +50,7 @@ REPEATER_CLIENT_ENTRY *RTMPLookupRepeaterCliEntry(
 	} else {
 		NdisAcquireSpinLock(((REPEATER_ADAPTER_DATA_TABLE *)pData)->EntryLock);
 	}
-	
+
 	COPY_MAC_ADDR(tempMAC, pAddr);
 	HashIdx = MAC_ADDR_HASH_INDEX(tempMAC);
 
@@ -72,7 +72,7 @@ REPEATER_CLIENT_ENTRY *RTMPLookupRepeaterCliEntry(
 					pEntry = NULL;
 				}
 				
-				break;			
+				break;
 			}
 			else
 			{
@@ -445,7 +445,7 @@ done:
 	NdisZeroMemory(pAd->ApCfg.ApCliTab[func_tb_idx].RepeaterCli[CliIdx].OriginalAddress, MAC_ADDR_LEN);
 
 	if ((bVaild == TRUE) && (pAd->ApCfg.RepeaterCliSize > 0))
-	pAd->ApCfg.RepeaterCliSize--;
+		pAd->ApCfg.RepeaterCliSize--;
 
 	/* set the apcli interface be invalid. */
 	pAd->ApCfg.ApCliTab[func_tb_idx].RepeaterCli[CliIdx].CliValid = FALSE;

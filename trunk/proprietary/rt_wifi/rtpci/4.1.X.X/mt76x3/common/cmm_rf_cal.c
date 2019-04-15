@@ -367,7 +367,7 @@ VOID RtmpKickOutHwNullFrame(
 			if(pAd->CommonCfg.TxStream == 1)
 			    mac_info.SpeEn = 0;
 			else
-			    mac_info.SpeEn = 1;
+			mac_info.SpeEn = 1;
 			
 			write_tmac_info(pAd, (UCHAR *)pTxWI, &mac_info, &MlmeTransmit);
 

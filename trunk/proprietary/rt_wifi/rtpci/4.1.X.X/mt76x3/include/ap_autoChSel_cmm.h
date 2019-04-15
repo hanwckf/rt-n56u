@@ -58,7 +58,6 @@ typedef enum ChannelSelAlg
 	ChannelAlgApCnt,
 	ChannelAlgCCA,
 	ChannelAlgBusyTime,
-	ChannelAlgCombined
 } ChannelSel_Alg;
 
 #endif /* __AUTOCHSELECT_CMM_H__ */

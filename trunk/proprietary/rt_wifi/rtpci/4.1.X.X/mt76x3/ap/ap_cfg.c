@@ -125,7 +125,7 @@ COUNTRY_CODE_TO_COUNTRY_REGION allCountry[] = {
 	{630,	"PR",	"PUERTO RICO",			TRUE,	A_BAND_REGION_0,	TRUE,	G_BAND_REGION_0},
 	{634,	"QA",	"QATAR",				FALSE,	A_BAND_REGION_0,	TRUE,	G_BAND_REGION_1},
 	{642,	"RO",	"ROMANIA",				FALSE,	A_BAND_REGION_0,	TRUE,	G_BAND_REGION_1},
-	{643,	"RU",	"RUSSIAN FEDERATION",	FALSE,	A_BAND_REGION_0,	TRUE,	G_BAND_REGION_1},
+	{643,	"RU",	"RUSSIAN FEDERATION",		TRUE,	A_BAND_REGION_7,	TRUE,	G_BAND_REGION_5},
 	{682,	"SA",	"SAUDI ARABIA",			FALSE,	A_BAND_REGION_0,	TRUE,	G_BAND_REGION_1},
 	{702,	"SG",	"SINGAPORE",			TRUE,	A_BAND_REGION_0,	TRUE,	G_BAND_REGION_1},
 	{703,	"SK",	"SLOVAKIA",				TRUE,	A_BAND_REGION_1,	TRUE,	G_BAND_REGION_1},
@@ -201,9 +201,17 @@ INT Set_AP_RekeyMethod_Proc(RTMP_ADAPTER *pAd, RTMP_STRING *arg);
 
 INT Set_AP_PMKCachePeriod_Proc(RTMP_ADAPTER *pAd, RTMP_STRING *arg);
 
-INT Set_AP_ASSOC_REQ_RSSI_THRESHOLD(RTMP_ADAPTER *pAd, RTMP_STRING *arg);
-
-INT	Set_AP_KickStaRssiLow_Proc(RTMP_ADAPTER *pAd, RTMP_STRING *arg);
+INT Set_AP_KickStaRssiLow_Proc(RTMP_ADAPTER *pAd, RTMP_STRING *arg);
+INT Set_AP_KickStaRssiLowPSM_Proc(RTMP_ADAPTER *pAd, RTMP_STRING *arg);
+INT Set_AP_KickStaRssiLowFT_Proc(RTMP_ADAPTER *pAd, RTMP_STRING *arg);
+INT Set_AP_KickStaRssiLowDelay_Proc(RTMP_ADAPTER *pAd, RTMP_STRING *arg);
+INT Set_AP_PROBE_RSSI_THRESHOLD(RTMP_ADAPTER *pAd, RTMP_STRING *arg);
+INT Set_AP_AFTER_KICK_BLOCK(RTMP_ADAPTER *pAd, RTMP_STRING *arg);
+INT Set_AP_AUTH_FAIL_RSSI_THRESHOLD(RTMP_ADAPTER *pAd, RTMP_STRING *arg);
+INT Set_AP_AUTH_NO_RSP_RSSI_THRESHOLD(RTMP_ADAPTER *pAd, RTMP_STRING *arg);
+INT Set_AP_ASSOC_REQ_FAIL_RSSI_THRESHOLD(RTMP_ADAPTER *pAd, RTMP_STRING *arg);
+INT Set_AP_ASSOC_REQ_NO_RSP_RSSI_THRESHOLD(RTMP_ADAPTER *pAd, RTMP_STRING *arg);
+INT Set_AP_PROBE_RSP_TIMES(RTMP_ADAPTER *pAd, RTMP_STRING *arg);
 
 INT Set_AP_DefaultKeyID_Proc(RTMP_ADAPTER *pAd, RTMP_STRING *arg);
 INT Set_AP_Key1_Proc(RTMP_ADAPTER *pAd, RTMP_STRING *arg);
@@ -250,14 +258,14 @@ INT Set_AutoChannelSelCheckTime_Proc(RTMP_ADAPTER *pAd, RTMP_STRING *arg);
 #endif /* AP_SCAN_SUPPORT */
 
 INT Set_BADecline_Proc(RTMP_ADAPTER *pAd, RTMP_STRING *arg);
-#ifdef DBG
+
 INT Show_StaCount_Proc(RTMP_ADAPTER *pAd, RTMP_STRING *arg);
 INT Show_StaSecurityInfo_Proc(RTMP_ADAPTER *pAd, RTMP_STRING *arg);
 INT Show_DriverInfo_Proc(RTMP_ADAPTER *pAd, RTMP_STRING *arg);
 INT Show_Sat_Proc(RTMP_ADAPTER *pAd, RTMP_STRING *arg);
 INT Show_RAInfo_Proc(RTMP_ADAPTER *pAd, RTMP_STRING *arg);
 INT Show_Sat_Reset_Proc(RTMP_ADAPTER *pAd, RTMP_STRING *arg);
-#endif /* DBG */
+
 #ifdef RTMP_MAC_PCI
 #ifdef DBG_DIAGNOSE
 INT Set_DiagOpt_Proc(RTMP_ADAPTER *pAd, RTMP_STRING *arg);
@@ -519,6 +527,9 @@ static struct {
 	{"CountryCode",				Set_CountryCode_Proc},
 #ifdef EXT_BUILD_CHANNEL_LIST
 	{"ChGeography",				Set_ChGeography_Proc},
+	{"ChannelListAdd",				Set_ChannelListAdd_Proc},
+	{"ChannelListShow", 			Set_ChannelListShow_Proc},
+	{"ChannelListDel",				Set_ChannelListDel_Proc},
 #endif /* EXT_BUILD_CHANNEL_LIST */
 	{"SSID",						Set_AP_SSID_Proc},
 #ifdef CONFIG_SNIFFER_SUPPORT
@@ -545,7 +556,6 @@ static struct {
 #ifdef DOT11_N_SUPPORT
 	{"BASetup",					Set_BASetup_Proc},
 	{"BADecline",					Set_BADecline_Proc},
-	{"SendMIMOPS",				Set_SendSMPSAction_Proc},
 	{"BAOriTearDown",				Set_BAOriTearDown_Proc},
 	{"BARecTearDown",				Set_BARecTearDown_Proc},
 	{"HtBw",						Set_HtBw_Proc},
@@ -624,8 +634,17 @@ static struct {
 #ifdef SPECIFIC_TX_POWER_SUPPORT
 	{"PktPwr",						Set_AP_PKT_PWR},
 #endif /* SPECIFIC_TX_POWER_SUPPORT */
-	{"AssocReqRssiThres",           Set_AP_ASSOC_REQ_RSSI_THRESHOLD},
+	{"ApProbeRspTimes",		Set_AP_PROBE_RSP_TIMES},
+	{"AuthRspFail",                 Set_AP_AUTH_FAIL_RSSI_THRESHOLD},
+	{"AuthRspRssi",                 Set_AP_AUTH_NO_RSP_RSSI_THRESHOLD},
+	{"AssocReqRssiThres",           Set_AP_ASSOC_REQ_FAIL_RSSI_THRESHOLD},
+	{"AssocRspIgnor",               Set_AP_ASSOC_REQ_NO_RSP_RSSI_THRESHOLD},
 	{"KickStaRssiLow",				Set_AP_KickStaRssiLow_Proc},
+	{"KickStaRssiLowPSM",				Set_AP_KickStaRssiLowPSM_Proc},
+	{"KickStaRssiLowFT",				Set_AP_KickStaRssiLowFT_Proc},
+	{"KickStaRssiLowDelay",				Set_AP_KickStaRssiLowDelay_Proc},
+	{"ProbeRspRssi",                Set_AP_PROBE_RSSI_THRESHOLD},
+	{"TmpBlockAfterKick",				Set_AP_AFTER_KICK_BLOCK},
 #ifdef AP_SCAN_SUPPORT
 	{"SiteSurvey",					Set_SiteSurvey_Proc},
 	{"AutoChannelSel",				Set_AutoChannelSel_Proc},
@@ -1131,7 +1150,6 @@ static struct {
 	{"dumpon", set_dump_on_proc},
 	{"rsv_cnt_clear", set_rsv_cnt_clear_proc},
 #endif /* DATA_QUEUE_RESERVE */
-
 #ifdef BAND_STEERING
 	{"BndStrgEnable", 		Set_BndStrg_Enable},
 	{"BndStrgRssiDiff", 	Set_BndStrg_RssiDiff},
@@ -1154,10 +1172,10 @@ static struct {
 	RTMP_STRING *name;
 	INT (*set_proc)(RTMP_ADAPTER *pAd, RTMP_STRING *arg);
 } *PRTMP_PRIVATE_SHOW_PROC, RTMP_PRIVATE_SHOW_SUPPORT_PROC[] = {
-#ifdef DBG
 	{"stainfo",			Show_MacTable_Proc},
 	{"StationKeepAlive",	Show_StationKeepAliveTime_Proc},
 #ifdef MT_MAC
+#ifdef DBG
 	{"psinfo",			Show_PSTable_Proc},
 	{"wtbl",				show_wtbl_proc},
 	{"mibinfo", show_mib_proc},
@@ -1168,6 +1186,7 @@ static struct {
 	{"psedata", ShowPseData},
 #if defined(RTMP_PCI_SUPPORT) || defined(RTMP_USB_SUPPORT)
 	{"dschinfo", ShowDMASchInfo},
+#endif
 #endif
 #endif /* MT_MAC */
 	{"sta_tr",				Show_sta_tr_proc},
@@ -1230,7 +1249,9 @@ static struct {
 	{"rainfo",				Show_RAInfo_Proc},
 
 #ifdef MBSS_SUPPORT
+#ifdef DBG
 	{"mbss",			Show_MbssInfo_Display_Proc},
+#endif
 #endif /* MBSS_SUPPORT */
 #ifdef WSC_AP_SUPPORT
 	{"WscPeerList", 		WscApShowPeerList},
@@ -1244,7 +1265,6 @@ static struct {
 #endif /* ACL_V2_SUPPORT */
 #endif /* WSC_AP_SUPPORT */
 	{"bbpinfo", ShowBBPInfo},
-#endif /* DBG */
 #ifdef BAND_STEERING
 	{"BndStrgList", 		Show_BndStrg_List},
 	{"BndStrgInfo", 		Show_BndStrg_Info},
@@ -1408,9 +1428,8 @@ INT RTMPAPSetInformation(
 
 #ifdef SNMP_SUPPORT
 	/*snmp */
-    UINT						KeyIdx = 0;
-    PNDIS_AP_802_11_KEY			pKey = NULL;
-	ULONG						ShortRetryLimit, LongRetryLimit;
+	PNDIS_AP_802_11_KEY			pKey = NULL;
+	ULONG					ShortRetryLimit, LongRetryLimit;
 #endif /* SNMP_SUPPORT */
 
 
@@ -1497,7 +1516,8 @@ INT RTMPAPSetInformation(
 				}
     			else
     			{
-					RTMP_GET_OS_PID(pObj->IappPid, IappPid);
+					// TODO:  correct the following line
+					/* RTMP_GET_OS_PID(pObj->IappPid, IappPid); */
 					pObj->IappPid_nr = IappPid;
 					DBGPRINT(RT_DEBUG_TRACE, ("RT_SET_APD_PID::(IappPid=%lu(0x%lx))\n", IappPid, IappPid));
 				}
@@ -1646,25 +1666,34 @@ INT RTMPAPSetInformation(
     	case RT_SET_APD_PID:
 			{
 				unsigned long apd_pid;
+				if(sizeof(apd_pid)!=wrq->u.data.length){
+					Status = -EFAULT;
+					break;
+				}
 				if (copy_from_user(&apd_pid, wrq->u.data.pointer, wrq->u.data.length))
 				{
 					Status = -EFAULT;
 				}
     			else
     			{
-					RTMP_GET_OS_PID(pObj->apd_pid, apd_pid);
+    					// TODO:  correct the following line
+					/*RTMP_GET_OS_PID(pObj->apd_pid, apd_pid);*/
 					pObj->apd_pid_nr = apd_pid;
 					DBGPRINT(RT_DEBUG_TRACE, ("RT_SET_APD_PID::(ApdPid=%lu(0x%lx))\n", apd_pid, apd_pid));
 				}
     		}
 			break;
 		case RT_SET_DEL_MAC_ENTRY:
-    		if (copy_from_user(Addr, wrq->u.data.pointer, wrq->u.data.length))
-			{
-				Status = -EFAULT;
-			}
-    		else
-    		{
+		    if(MAC_ADDR_LEN!=wrq->u.data.length){
+			Status = -EFAULT;
+			break;
+		    }
+    		    if (copy_from_user(Addr, wrq->u.data.pointer, wrq->u.data.length))
+		    {
+			Status = -EFAULT;
+		    }
+    		    else
+    		    {
 				MAC_TABLE_ENTRY *pEntry = NULL;
 
 				DBGPRINT(RT_DEBUG_TRACE, ("RT_SET_DEL_MAC_ENTRY::(%02x:%02x:%02x:%02x:%02x:%02x)\n", Addr[0],Addr[1],Addr[2],Addr[3],Addr[4],Addr[5]));
@@ -1697,22 +1726,27 @@ INT RTMPAPSetInformation(
 					}
 #endif /* MAC_REPEATER_SUPPORT */
 
+					if (IS_ENTRY_CLIENT(pEntry)) {
+						/*
+						    If AP send de-auth to Apple STA, 
+						    Apple STA will re-do auth/assoc and security handshaking with AP again.
+						    @20150313
+						    This client allready migrate to new STA, not need anything send.
+						*/
 #ifdef DOT11R_FT_SUPPORT
-					/*
-						If AP send de-auth to Apple STA, 
-						Apple STA will re-do auth/assoc and security handshaking with AP again.
-						@20150313
-					*/
-					if (IS_FT_RSN_STA(pEntry))
-					{
-						MacTableDeleteEntry(pAd, pEntry->Aid, Addr);
-					}
-					else
+						PUCHAR	sFTSupport = IS_FT_RSN_STA(pEntry) ? (PUCHAR)", FT mode" : (PUCHAR)"";
+#else
+						PUCHAR	sFTSupport = (PUCHAR)"";
 #endif /* DOT11R_FT_SUPPORT */
-					MlmeDeAuthAction(pAd, pEntry, REASON_DISASSOC_STA_LEAVING, FALSE);
+						printk("STA %02x:%02x:%02x:%02x:%02x:%02x roam from this AP%s, delete entry\n", PRINT_MAC(pEntry->Addr), sFTSupport);
+						MacTableDeleteEntry(pAd, pEntry->wcid, Addr);
+					} else {
+						/* WDS/APCLI must be send deauth after migrate */
+						MlmeDeAuthAction(pAd, pEntry, REASON_DISASSOC_STA_LEAVING, FALSE);
+					}
 				}
-    		}
-			break;
+    		    }
+		    break;
 #ifdef WSC_AP_SUPPORT
 		case RT_OID_WSC_SET_SELECTED_REGISTRAR:
 			{
@@ -3036,7 +3070,6 @@ INT RTMPAPQueryInformation(
 #endif /* WSC_AP_SUPPORT */
 
 #ifdef SNMP_SUPPORT
-	ULONG ulInfo;
 	DefaultKeyIdxValue *pKeyIdxValue;
 	INT valueLen;
 	ULONG ShortRetryLimit, LongRetryLimit;
@@ -3150,7 +3183,7 @@ INT RTMPAPQueryInformation(
             		Status = copy_to_user(wrq->u.data.pointer, &Ssid, wrq->u.data.length);
            		 DBGPRINT(RT_DEBUG_TRACE, ("Query Apcli::OID_802_11_SSID (Len=%d, ssid=%s)\n", Ssid.SsidLength,Ssid.Ssid));
             break;
-
+			
 #endif/*APCLI_SUPPORT*/
 
 		case RT_OID_VERSION_INFO:
@@ -3491,10 +3524,16 @@ INT RTMPAPQueryInformation(
             	{
             		if (IS_ENTRY_CLIENT(&pAd->MacTab.Content[i]) && (pAd->MacTab.Content[i].Sst == SST_ASSOC))
             		{
-            			COPY_MAC_ADDR(AssocTab.Entry[AssocTab.Num].Addr, &pAd->MacTab.Content[i].Addr);
-                        AssocTab.Entry[AssocTab.Num].phyMode = pAd->CommonCfg.PhyMode;
-                        AssocTab.Entry[AssocTab.Num].MOR = RateIdToMbps[pAd->ApCfg.MBSSID[apidx].MaxTxRate] * 2;
-            			AssocTab.Num += 1;
+				if (AssocTab.Num < 64) /* avoid the size out of definition from LLTD daemon */
+				{
+            			    COPY_MAC_ADDR(AssocTab.Entry[AssocTab.Num].Addr, &pAd->MacTab.Content[i].Addr);
+                    		    AssocTab.Entry[AssocTab.Num].phyMode = pAd->CommonCfg.PhyMode;
+                    		    AssocTab.Entry[AssocTab.Num].MOR = RateIdToMbps[pAd->ApCfg.MBSSID[apidx].MaxTxRate] * 2;
+            			    AssocTab.Num += 1;
+				} else {
+				    DBGPRINT(RT_DEBUG_ERROR, ("Query::Get LLTD association table But of out table\n"));
+				    break;
+				}
             		}
             	}
                 wrq->u.data.length = sizeof(RT_LLTD_ASSOICATION_TABLE);
@@ -3581,7 +3620,7 @@ INT RTMPAPQueryInformation(
 			wrq->u.data.length = sizeof(DefaultKeyIdxValue);
 
 			Status = copy_to_user(wrq->u.data.pointer, pKeyIdxValue, wrq->u.data.length);
-			DBGPRINT(RT_DEBUG_TRACE,("DefaultKeyId = %d, total len = %d, str len=%d, KeyValue= %02x %02x %02x %02x \n", pAd->ApCfg.MBSSID[pObj->ioctl_if].DefaultKeyId, wrq->u.data.length, pAd->SharedKey[pObj->ioctl_if][pAd->ApCfg.MBSSID[pObj->ioctl_if].DefaultKeyId].KeyLen,
+			DBGPRINT(RT_DEBUG_TRACE,("DefaultKeyId = %d, total len = %d, str len=%d, KeyValue= %02x %02x %02x %02x \n", pAd->ApCfg.MBSSID[pObj->ioctl_if].wdev.DefaultKeyId, wrq->u.data.length, pAd->SharedKey[pObj->ioctl_if][pAd->ApCfg.MBSSID[pObj->ioctl_if].wdev.DefaultKeyId].KeyLen,
 			pAd->SharedKey[pObj->ioctl_if][0].Key[0],
 			pAd->SharedKey[pObj->ioctl_if][1].Key[0],
 			pAd->SharedKey[pObj->ioctl_if][2].Key[0],
@@ -5330,74 +5369,6 @@ INT	Set_AP_RekeyMethod_Proc(
 /*
     ==========================================================================
     Description:
-        Set PMK-cache period
-    Return:
-        TRUE if all parameters are OK, FALSE otherwise
-    ==========================================================================
-*/
-INT	Set_AP_PMKCachePeriod_Proc(
-	IN	PRTMP_ADAPTER	pAd,
-	IN	RTMP_STRING *arg)
-{
-	POS_COOKIE 	pObj = (POS_COOKIE) pAd->OS_Cookie;
-	UCHAR		apidx = pObj->ioctl_if;
-	UINT32 val = simple_strtol(arg, 0, 10);
-
-	pAd->ApCfg.MBSSID[apidx].PMKCachePeriod = val * 60 * OS_HZ;
-
-	DBGPRINT(RT_DEBUG_TRACE, ("I/F(ra%d) Set_AP_PMKCachePeriod_Proc=%ld\n",
-									apidx, pAd->ApCfg.MBSSID[apidx].PMKCachePeriod));
-
-	return TRUE;
-}
-
-
-/*
-    ==========================================================================
-    Description:
-        Set AssocReq RSSI Threshold to reject STA with weak signal.
-    Return:
-        TRUE if all parameters are OK, FALSE otherwise
-    ==========================================================================
-*/
-INT Set_AP_ASSOC_REQ_RSSI_THRESHOLD(
-    IN  PRTMP_ADAPTER    pAd,
-    IN  RTMP_STRING *arg)
-{
-	POS_COOKIE pObj = (POS_COOKIE) pAd->OS_Cookie;
-	UCHAR           apidx = pObj->ioctl_if;
-	UINT j;
-        CHAR rssi;
-        rssi = simple_strtol(arg, 0, 10);
-
-        if (rssi == 0)
-        {
-                DBGPRINT(RT_DEBUG_TRACE, ("Disable AP_ASSOC_REQ_RSSI_THRESHOLD\n"));
-        }
-        else if (rssi > 0 || rssi < -100)
-        {
-                DBGPRINT(RT_DEBUG_TRACE, ("Set_AP_ASSOC_REQ_RSSI_THRESHOLD Value Error.\n"));
-                return FALSE;
-        }
-
-
-        pAd->ApCfg.MBSSID[apidx].AssocReqRssiThreshold = rssi;
-
-        DBGPRINT(RT_DEBUG_TRACE, ("I/F(ra%d) Set_AP_ASSOC_REQ_RSSI_THRESHOLD=%d\n", apidx,
-                                                                        pAd->ApCfg.MBSSID[apidx].AssocReqRssiThreshold ));
-
-	for(j = BSS0; j < pAd->ApCfg.BssidNum; j++)
-	{
-		DBGPRINT(RT_DEBUG_TRACE, ("%d. ==> %d\n", j, pAd->ApCfg.MBSSID[j].AssocReqRssiThreshold ));
-	}
-
-
-        return TRUE;
-}
-
-/*
-    ==========================================================================
-    Description:
         Set lower limit for AP kicking out a STA.
     Return:
         TRUE if all parameters are OK, FALSE otherwise
@@ -5405,7 +5376,7 @@ INT Set_AP_ASSOC_REQ_RSSI_THRESHOLD(
 */
 INT Set_AP_KickStaRssiLow_Proc(
     IN  PRTMP_ADAPTER    pAd,
-    IN  RTMP_STRING *arg)
+    IN  PSTRING          arg)
 {
         POS_COOKIE pObj = (POS_COOKIE) pAd->OS_Cookie;
         UCHAR           apidx = pObj->ioctl_if;
@@ -5426,18 +5397,352 @@ INT Set_AP_KickStaRssiLow_Proc(
 
         pAd->ApCfg.MBSSID[apidx].RssiLowForStaKickOut = rssi;
 
-        DBGPRINT(RT_DEBUG_TRACE, ("I/F(ra%d) RssiLowForStaKickOut=%d\n", apidx,
-                                                                        pAd->ApCfg.MBSSID[apidx].RssiLowForStaKickOut ));
+        DBGPRINT(RT_DEBUG_TRACE, ("I/F(%s) RssiLowForStaKickOut=%d\n", 
+				  pAd->ApCfg.MBSSID[apidx].wdev.if_dev->name,
+                                  pAd->ApCfg.MBSSID[apidx].RssiLowForStaKickOut));
 
         for(j = BSS0; j < pAd->ApCfg.BssidNum; j++)
         {
                 DBGPRINT(RT_DEBUG_TRACE, ("%d. ==> %d\n", j, pAd->ApCfg.MBSSID[j].RssiLowForStaKickOut ));
         }
 
+        return TRUE;
+}
+
+INT Set_AP_KickStaRssiLowPSM_Proc(
+    IN  PRTMP_ADAPTER    pAd,
+    IN  PSTRING          arg)
+{
+        POS_COOKIE pObj = (POS_COOKIE) pAd->OS_Cookie;
+        UCHAR           apidx = pObj->ioctl_if;
+        UINT j;
+        CHAR rssi;
+        rssi = simple_strtol(arg, 0, 10);
+
+        if (rssi == 0)
+        {
+                DBGPRINT(RT_DEBUG_TRACE, ("Disable RssiLowForStaKickOutPSM Function\n"));
+        }
+        else if (rssi > 0 || rssi < -100)
+        {
+                DBGPRINT(RT_DEBUG_TRACE, ("RssiLowForStaKickOutPSM Value Error.\n"));
+                return FALSE;
+        }
+
+
+        pAd->ApCfg.MBSSID[apidx].RssiLowForStaKickOutPSM = rssi;
+
+        DBGPRINT(RT_DEBUG_TRACE, ("I/F(ra%d) RssiLowForStaKickOutPSM=%d\n", apidx, pAd->ApCfg.MBSSID[apidx].RssiLowForStaKickOutPSM));
+
+        for(j = BSS0; j < pAd->ApCfg.BssidNum; j++)
+        {
+                DBGPRINT(RT_DEBUG_TRACE, ("%d. ==> %d\n", j, pAd->ApCfg.MBSSID[j].RssiLowForStaKickOutPSM ));
+        }
 
         return TRUE;
 }
 
+INT Set_AP_KickStaRssiLowFT_Proc(
+    IN  PRTMP_ADAPTER    pAd,
+    IN  PSTRING          arg)
+{
+        POS_COOKIE pObj = (POS_COOKIE) pAd->OS_Cookie;
+        UCHAR           apidx = pObj->ioctl_if;
+        UINT j;
+        CHAR rssi;
+        rssi = simple_strtol(arg, 0, 10);
+
+        if (rssi == 0)
+        {
+                DBGPRINT(RT_DEBUG_TRACE, ("Disable RssiLowForStaKickOutFT Function\n"));
+        }
+        else if (rssi > 0 || rssi < -100)
+        {
+                DBGPRINT(RT_DEBUG_TRACE, ("RssiLowForStaKickOutFT Value Error.\n"));
+                return FALSE;
+        }
+
+
+        pAd->ApCfg.MBSSID[apidx].RssiLowForStaKickOutFT = rssi;
+
+        DBGPRINT(RT_DEBUG_TRACE, ("I/F(ra%d) RssiLowForStaKickOutFT=%d\n", apidx, pAd->ApCfg.MBSSID[apidx].RssiLowForStaKickOutFT));
+
+        for(j = BSS0; j < pAd->ApCfg.BssidNum; j++)
+        {
+                DBGPRINT(RT_DEBUG_TRACE, ("%d. ==> %d\n", j, pAd->ApCfg.MBSSID[j].RssiLowForStaKickOutFT ));
+        }
+
+        return TRUE;
+}
+
+INT Set_AP_KickStaRssiLowDelay_Proc(
+    IN  PRTMP_ADAPTER    pAd,
+    IN  PSTRING          arg)
+{
+        POS_COOKIE pObj = (POS_COOKIE) pAd->OS_Cookie;
+        CHAR           apidx = pObj->ioctl_if;
+        UINT j;
+        UCHAR timeout;
+        timeout = simple_strtol(arg, 0, 10);
+
+        if (timeout < 0 || timeout > 200)
+	    timeout = 5;
+
+        pAd->ApCfg.MBSSID[apidx].RssiLowForStaKickOutDelay = timeout;
+
+        DBGPRINT(RT_DEBUG_TRACE, ("I/F(ra%d) RssiLowForStaKickOutDelay=%d\n", apidx, pAd->ApCfg.MBSSID[apidx].RssiLowForStaKickOutDelay));
+
+        for(j = BSS0; j < pAd->ApCfg.BssidNum; j++)
+        {
+                DBGPRINT(RT_DEBUG_TRACE, ("%d. ==> %d\n", j, pAd->ApCfg.MBSSID[j].RssiLowForStaKickOutDelay));
+        }
+
+        return TRUE;
+}
+
+INT Set_AP_PROBE_RSP_TIMES(
+    IN  PRTMP_ADAPTER    pAd,
+    IN  PSTRING          arg)
+{
+        POS_COOKIE pObj = (POS_COOKIE) pAd->OS_Cookie;
+        UCHAR           apidx = pObj->ioctl_if;
+        INT input;
+        input = simple_strtol(arg, 0, 10);
+
+        if ((input >= 0) && (input <= 10))
+                pAd->ApCfg.MBSSID[apidx].ProbeRspTimes = input;
+        else
+                DBGPRINT(RT_DEBUG_ERROR, ("AP[%d]->ProbeRspTimes: Out of Range\n", apidx));
+
+	DBGPRINT(RT_DEBUG_TRACE, ("AP[%d]->ProbeRspTimes: %d\n", apidx, pAd->ApCfg.MBSSID[apidx].ProbeRspTimes));
+
+	return TRUE;
+
+}
+
+INT     Set_AP_PROBE_RSSI_THRESHOLD(
+        IN  PRTMP_ADAPTER    pAd,
+        IN  PSTRING          arg)
+{
+        POS_COOKIE pObj = (POS_COOKIE) pAd->OS_Cookie;
+        UCHAR           apidx = pObj->ioctl_if;
+        UINT j;
+        CHAR rssi;
+        rssi = simple_strtol(arg, 0, 10);
+
+        if (rssi == 0)
+        {
+                DBGPRINT(RT_DEBUG_TRACE, ("Disable AP_PROBE_RSSI_THRESHOLD\n"));
+        }
+        else if (rssi > 0 || rssi < -100)
+        {
+                DBGPRINT(RT_DEBUG_TRACE, ("Set_AP_PROBE_RSSI_THRESHOLD Value Error.\n"));
+                return FALSE;
+        }
+
+        pAd->ApCfg.MBSSID[apidx].ProbeRspRssiThreshold = rssi;
+        DBGPRINT(RT_DEBUG_TRACE, ("I/F(%s) Set_AP_PROBE_RSSI_THRESHOLD=%d\n",
+                                  pAd->ApCfg.MBSSID[apidx].wdev.if_dev->name,
+                                  pAd->ApCfg.MBSSID[apidx].ProbeRspRssiThreshold));
+
+        for(j = BSS0; j < pAd->ApCfg.BssidNum; j++)
+        {
+                DBGPRINT(RT_DEBUG_TRACE, ("%d. ==> %d\n", j, pAd->ApCfg.MBSSID[j].ProbeRspRssiThreshold ));
+        }
+
+        return TRUE;
+}
+
+INT     Set_AP_AFTER_KICK_BLOCK(
+        IN  PRTMP_ADAPTER    pAd,
+        IN  PSTRING          arg)
+{
+        POS_COOKIE pObj = (POS_COOKIE) pAd->OS_Cookie;
+        UCHAR           apidx = pObj->ioctl_if;
+        UINT j;
+        CHAR times;
+        times = simple_strtol(arg, 0, 10);
+
+        if (times <= 0 || times > 200)
+        {
+                DBGPRINT(RT_DEBUG_TRACE, ("Disable AP_AFTER_KICK_BLOCK\n"));
+        }
+
+        pAd->ApCfg.MBSSID[apidx].TmpBlockAfterKickTimes = times;
+        DBGPRINT(RT_DEBUG_TRACE, ("I/F(ra%d) Set_AP_AFTER_KICK_BLOCK=%d\n", apidx, pAd->ApCfg.MBSSID[apidx].TmpBlockAfterKickTimes));
+
+        for(j = BSS0; j < pAd->ApCfg.BssidNum; j++)
+        {
+                DBGPRINT(RT_DEBUG_TRACE, ("%d. ==> %d\n", j, pAd->ApCfg.MBSSID[j].TmpBlockAfterKickTimes ));
+        }
+
+        return TRUE;
+}
+
+INT     Set_AP_AUTH_FAIL_RSSI_THRESHOLD(
+        IN  PRTMP_ADAPTER    pAd,
+        IN  PSTRING          arg)
+{
+        POS_COOKIE pObj = (POS_COOKIE) pAd->OS_Cookie;
+        UCHAR           apidx = pObj->ioctl_if;
+        UINT j;
+        CHAR rssi;
+        rssi = simple_strtol(arg, 0, 10);
+
+        if (rssi == 0)
+        {
+                DBGPRINT(RT_DEBUG_TRACE, ("Disable AP_AUTH_FAIL_RSSI_THRESHOLD\n"));
+        }
+        else if (rssi > 0 || rssi < -100)
+        {
+                DBGPRINT(RT_DEBUG_TRACE, ("Set_AP_AUTH_FAIL_RSSI_THRESHOLD Value Error.\n"));
+                return FALSE;
+        }
+
+        pAd->ApCfg.MBSSID[apidx].AuthFailRssiThreshold = rssi;
+        DBGPRINT(RT_DEBUG_TRACE, ("I/F(%s) Set_AP_AUTH_RSSI_THRESHOLD=%d\n",
+				  pAd->ApCfg.MBSSID[apidx].wdev.if_dev->name,			
+                                  pAd->ApCfg.MBSSID[apidx].AuthFailRssiThreshold));
+
+        for(j = BSS0; j < pAd->ApCfg.BssidNum; j++)
+        {
+        	DBGPRINT(RT_DEBUG_TRACE, ("%d. ==> %d\n", j, pAd->ApCfg.MBSSID[j].AuthFailRssiThreshold ));
+        }
+
+        return TRUE;
+}
+
+INT     Set_AP_AUTH_NO_RSP_RSSI_THRESHOLD(
+        IN  PRTMP_ADAPTER    pAd,
+        IN  PSTRING          arg)
+{
+        POS_COOKIE pObj = (POS_COOKIE) pAd->OS_Cookie;
+        UCHAR           apidx = pObj->ioctl_if;
+        UINT j;
+        CHAR rssi;
+        rssi = simple_strtol(arg, 0, 10);
+
+        if (rssi == 0)
+        {
+                DBGPRINT(RT_DEBUG_TRACE, ("Disable AP_AUTH_NO_RSP_RSSI_THRESHOLD\n"));
+        }
+        else if (rssi > 0 || rssi < -100)
+        {
+                DBGPRINT(RT_DEBUG_TRACE, ("Set_AP_AUTH_NO_RSP_RSSI_THRESHOLD Value Error.\n"));
+                return FALSE;
+        }
+
+        pAd->ApCfg.MBSSID[apidx].AuthNoRspRssiThreshold = rssi;
+        DBGPRINT(RT_DEBUG_TRACE, ("I/F(%s) Set_AP_AUTH_NO_RSP_RSSI_THRESHOLD=%d\n",
+                                  pAd->ApCfg.MBSSID[apidx].wdev.if_dev->name,
+                                  pAd->ApCfg.MBSSID[apidx].AuthNoRspRssiThreshold));
+
+        for(j = BSS0; j < pAd->ApCfg.BssidNum; j++)
+        {
+                DBGPRINT(RT_DEBUG_TRACE, ("%d. ==> %d\n", j, pAd->ApCfg.MBSSID[j].AuthNoRspRssiThreshold ));
+        }
+
+        return TRUE;
+}
+
+/*
+    ==========================================================================
+    Description:
+        Set AssocReq RSSI Threshold to reject STA with weak signal.
+    Return:
+        TRUE if all parameters are OK, FALSE otherwise
+    ==========================================================================
+*/
+INT Set_AP_ASSOC_REQ_FAIL_RSSI_THRESHOLD(
+    IN  PRTMP_ADAPTER    pAd,
+    IN  PSTRING          arg)
+{
+	POS_COOKIE pObj = (POS_COOKIE) pAd->OS_Cookie;
+	UCHAR           apidx = pObj->ioctl_if;
+	UINT j;
+        CHAR rssi;
+        rssi = simple_strtol(arg, 0, 10);
+
+        if (rssi == 0)
+        {
+                DBGPRINT(RT_DEBUG_TRACE, ("Disable AP_ASSOC_REQ_FAIL_RSSI_THRESHOLD\n"));
+        }
+        else if (rssi > 0 || rssi < -100)
+        {
+                DBGPRINT(RT_DEBUG_TRACE, ("Set_AP_ASSOC_REQ_FAIL_RSSI_THRESHOLD Value Error.\n"));
+                return FALSE;
+        }
+
+        pAd->ApCfg.MBSSID[apidx].AssocReqFailRssiThreshold = rssi;
+        DBGPRINT(RT_DEBUG_TRACE, ("I/F(%s) Set_AP_ASSOC_REQ_FAIL_RSSI_THRESHOLD=%d\n", 
+				  pAd->ApCfg.MBSSID[apidx].wdev.if_dev->name,
+                                  pAd->ApCfg.MBSSID[apidx].AssocReqFailRssiThreshold ));
+
+	for(j = BSS0; j < pAd->ApCfg.BssidNum; j++)
+	{
+		DBGPRINT(RT_DEBUG_TRACE, ("%d. ==> %d\n", j, pAd->ApCfg.MBSSID[j].AssocReqFailRssiThreshold ));	
+	}
+
+        return TRUE;
+}
+
+INT Set_AP_ASSOC_REQ_NO_RSP_RSSI_THRESHOLD(
+    IN  PRTMP_ADAPTER    pAd,
+    IN  PSTRING          arg)
+{
+        POS_COOKIE pObj = (POS_COOKIE) pAd->OS_Cookie;
+        UCHAR           apidx = pObj->ioctl_if;
+        UINT j;
+        CHAR rssi;
+        rssi = simple_strtol(arg, 0, 10);
+
+        if (rssi == 0)
+        {
+                DBGPRINT(RT_DEBUG_TRACE, ("Disable AP_ASSOC_REQ_NO_RSP_RSSI_THRESHOLD\n"));
+        }
+        else if (rssi > 0 || rssi < -100)
+        {
+                DBGPRINT(RT_DEBUG_TRACE, ("Set_AP_ASSOC_REQ_NO_RSP_RSSI_THRESHOLD Value Error.\n"));
+                return FALSE;
+        }
+
+
+        pAd->ApCfg.MBSSID[apidx].AssocReqNoRspRssiThreshold = rssi;
+        DBGPRINT(RT_DEBUG_TRACE, ("I/F(%s) Set_AP_ASSOC_REQ_NO_RSP_RSSI_THRESHOLD=%d\n",
+                                  pAd->ApCfg.MBSSID[apidx].wdev.if_dev->name,
+                                  pAd->ApCfg.MBSSID[apidx].AssocReqNoRspRssiThreshold ));
+
+        for(j = BSS0; j < pAd->ApCfg.BssidNum; j++)
+        {
+                DBGPRINT(RT_DEBUG_TRACE, ("%d. ==> %d\n", j, pAd->ApCfg.MBSSID[j].AssocReqNoRspRssiThreshold ));
+        }
+
+        return TRUE;
+}
+
+/*
+    ==========================================================================
+    Description:
+        Set PMK-cache period
+    Return:
+        TRUE if all parameters are OK, FALSE otherwise
+    ==========================================================================
+*/
+INT	Set_AP_PMKCachePeriod_Proc(
+	IN	PRTMP_ADAPTER	pAd,
+	IN	RTMP_STRING *arg)
+{
+	POS_COOKIE 	pObj = (POS_COOKIE) pAd->OS_Cookie;
+	UCHAR		apidx = pObj->ioctl_if;
+	UINT32 val = simple_strtol(arg, 0, 10);
+
+	pAd->ApCfg.MBSSID[apidx].PMKCachePeriod = val * 60 * OS_HZ;
+
+	DBGPRINT(RT_DEBUG_TRACE, ("I/F(ra%d) Set_AP_PMKCachePeriod_Proc=%ld\n",
+									apidx, pAd->ApCfg.MBSSID[apidx].PMKCachePeriod));
+
+	return TRUE;
+}
 
 /*
     ==========================================================================
@@ -6395,7 +6700,6 @@ INT Set_ARPSpoofChk_Enable_Proc(RTMP_ADAPTER *pAd, RTMP_STRING *arg)
 }
 #endif /* PREVENT_ARP_SPOOFING */
 
-#ifdef DBG
 INT Show_DriverInfo_Proc(RTMP_ADAPTER *pAd, RTMP_STRING *arg)
 {
 	DBGPRINT(RT_DEBUG_OFF, ("driver version: %s (%s %s) .\n", AP_DRIVER_VERSION, __DATE__, __TIME__));
@@ -6502,8 +6806,8 @@ INT Show_StaCount_Proc(RTMP_ADAPTER *pAd, RTMP_STRING *arg)
 			printk("%-4d", (int)pEntry->Aid);
 			printk("%-12ld",(ULONG)pEntry->TxPackets.QuadPart);
 			printk("%-12ld", (ULONG)pEntry->RxPackets.QuadPart);
-			printk("%-12ld", (ULONG)pEntry->TxBytes);
-			printk("%-12ld", (ULONG)pEntry->RxBytes);
+			printk("%-12lld", (UINT64)pEntry->TxBytes);
+			printk("%-12lld", (UINT64)pEntry->RxBytes);
 			printk("\n");
 		}
 	}
@@ -6556,35 +6860,34 @@ INT Show_StaSecurityInfo_Proc(RTMP_ADAPTER *pAd, RTMP_STRING *arg)
 INT Show_RAInfo_Proc(RTMP_ADAPTER *pAd, RTMP_STRING *arg)
 {
 #ifdef PRE_ANT_SWITCH
-	DBGPRINT(RT_DEBUG_OFF, ("PreAntSwitch: %d\n", pAd->CommonCfg.PreAntSwitch));
-	DBGPRINT(RT_DEBUG_OFF, ("PreAntSwitchRSSI: %d\n", pAd->CommonCfg.PreAntSwitchRSSI));
+	printk("PreAntSwitch: %d\n", pAd->CommonCfg.PreAntSwitch);
+	printk("PreAntSwitchRSSI: %d\n", pAd->CommonCfg.PreAntSwitchRSSI);
 #endif /* PRE_ANT_SWITCH */
 
 #ifdef CFO_TRACK
-	DBGPRINT(RT_DEBUG_OFF, ("CFOTrack: %d\n", pAd->CommonCfg.CFOTrack));
+	printk("CFOTrack: %d\n", pAd->CommonCfg.CFOTrack);
 #endif /* CFO_TRACK */
 
 
 #ifdef NEW_RATE_ADAPT_SUPPORT
-	DBGPRINT(RT_DEBUG_OFF, ("LowTrafficThrd: %d\n", pAd->CommonCfg.lowTrafficThrd));
-	DBGPRINT(RT_DEBUG_OFF, ("TrainUpRule: %d\n", pAd->CommonCfg.TrainUpRule));
-	DBGPRINT(RT_DEBUG_OFF, ("TrainUpRuleRSSI: %d\n", pAd->CommonCfg.TrainUpRuleRSSI));
-	DBGPRINT(RT_DEBUG_OFF, ("TrainUpLowThrd: %d\n", pAd->CommonCfg.TrainUpLowThrd));
-	DBGPRINT(RT_DEBUG_OFF, ("TrainUpHighThrd: %d\n", pAd->CommonCfg.TrainUpHighThrd));
+	printk("LowTrafficThrd: %d\n", pAd->CommonCfg.lowTrafficThrd);
+	printk("TrainUpRule: %d\n", pAd->CommonCfg.TrainUpRule);
+	printk("TrainUpRuleRSSI: %d\n", pAd->CommonCfg.TrainUpRuleRSSI);
+	printk("TrainUpLowThrd: %d\n", pAd->CommonCfg.TrainUpLowThrd);
+	printk("TrainUpHighThrd: %d\n", pAd->CommonCfg.TrainUpHighThrd);
 #endif /* NEW_RATE_ADAPT_SUPPORT */
 
 #ifdef STREAM_MODE_SUPPORT
-	DBGPRINT(RT_DEBUG_OFF, ("StreamMode: %d\n", pAd->CommonCfg.StreamMode));
-	DBGPRINT(RT_DEBUG_OFF, ("StreamModeMCS: 0x%04x\n", pAd->CommonCfg.StreamModeMCS));
+	printk("StreamMode: %d\n", pAd->CommonCfg.StreamMode);
+	printk("StreamModeMCS: 0x%04x\n", pAd->CommonCfg.StreamModeMCS);
 #endif /* STREAM_MODE_SUPPORT */
 
 #ifdef DBG_CTRL_SUPPORT
-	DBGPRINT(RT_DEBUG_OFF, ("DebugFlags: 0x%lx\n", pAd->CommonCfg.DebugFlags));
+	printk("DebugFlags: 0x%lx\n", pAd->CommonCfg.DebugFlags);
 #endif /* DBG_CTRL_SUPPORT */
 
 	return TRUE;
 }
-#endif /* DBG */
 
 #ifdef RTMP_MAC_PCI
 #ifdef DBG_DIAGNOSE
@@ -7016,8 +7319,6 @@ done:
 #endif /* DBG_DIAGNOSE */
 #endif /* RTMP_MAC_PCI */
 
-
-#ifdef DBG
 INT Show_Sat_Proc(RTMP_ADAPTER *pAd, RTMP_STRING *arg)
 {
 	/* Sanity check for calculation of sucessful count */
@@ -7249,8 +7550,6 @@ INT Show_Sat_Reset_Proc(RTMP_ADAPTER *pAd, RTMP_STRING *arg)
 
 	return TRUE;
 }
-#endif /* DBG */
-
 
 #ifdef MAT_SUPPORT
 INT Show_MATTable_Proc(RTMP_ADAPTER *pAd, RTMP_STRING *arg)
@@ -9806,7 +10105,6 @@ INT Set_ApCli_AutoConnect_Proc(
 
 	if (pObj->ioctl_if_type != INT_APCLI)
 		return FALSE;
-
 	pApCfg = &pAd->ApCfg;
 	ifIndex = pObj->ioctl_if;
 
@@ -9822,6 +10120,7 @@ INT Set_ApCli_AutoConnect_Proc(
 	DBGPRINT(RT_DEBUG_TRACE, ("I/F(apcli%d) Set_ApCli_AutoConnect_Proc::(Len=%d,Ssid=%s)\n",
 			ifIndex, pApCfg->ApCliTab[ifIndex].CfgSsidLen, pApCfg->ApCliTab[ifIndex].CfgSsid));
 
+
 	ApCliAutoConnectStart(pAd, ifIndex);
 
 	return TRUE;
@@ -9834,17 +10133,17 @@ INT Set_AP_WscSsid_Proc(
 	IN	PRTMP_ADAPTER	pAd,
 	IN	RTMP_STRING *arg)
 {
-	POS_COOKIE 		pObj = (POS_COOKIE) pAd->OS_Cookie;
-	UCHAR			ifIndex = pObj->ioctl_if;
+    POS_COOKIE 		pObj = (POS_COOKIE) pAd->OS_Cookie;
+    UCHAR			ifIndex = pObj->ioctl_if;
 	PWSC_CTRL	    pWscControl = &pAd->ApCfg.ApCliTab[ifIndex].WscControl;
 
-	if (pObj->ioctl_if_type != INT_APCLI)
+    if (pObj->ioctl_if_type != INT_APCLI)
 		return FALSE;
 
 	NdisZeroMemory(&pWscControl->WscSsid, sizeof(NDIS_802_11_SSID));
 
 	if( (strlen(arg) > 0) && (strlen(arg) <= MAX_LEN_OF_SSID))
-	{
+    {
 		NdisMoveMemory(pWscControl->WscSsid.Ssid, arg, strlen(arg));
 		pWscControl->WscSsid.SsidLength = strlen(arg);
 
@@ -11750,38 +12049,41 @@ INT Set_UAPSD_Proc(RTMP_ADAPTER *pAd, RTMP_STRING *arg)
 } /* End of Set_UAPSD_Proc */
 #endif /* UAPSD_SUPPORT */
 
-
-
 #ifdef MCAST_RATE_SPECIFIC
 INT Set_McastPhyMode(
 	IN PRTMP_ADAPTER pAd,
-	IN RTMP_STRING *arg)
+	IN PSTRING arg)
 {
 	UCHAR PhyMode = simple_strtol(arg, 0, 10);
 
-	pAd->CommonCfg.MCastPhyMode.field.BW = pAd->CommonCfg.RegTransmitSetting.field.BW;
+	//pAd->CommonCfg.MCastPhyMode.field.BW = pAd->CommonCfg.RegTransmitSetting.field.BW;
 	switch (PhyMode)
 	{
 		case MCAST_DISABLE: /* disable */
 			NdisMoveMemory(&pAd->CommonCfg.MCastPhyMode, &pAd->MacTab.Content[MCAST_WCID].HTPhyMode, sizeof(HTTRANSMIT_SETTING));
 			break;
 
-		case MCAST_CCK:	/* CCK */
+		case MCAST_CCK: /* CCK */
 			pAd->CommonCfg.MCastPhyMode.field.MODE = MODE_CCK;
 			pAd->CommonCfg.MCastPhyMode.field.BW =  BW_20;
 			break;
 
-		case MCAST_OFDM:	/* OFDM */
+		case MCAST_OFDM: /* OFDM */
 			pAd->CommonCfg.MCastPhyMode.field.MODE = MODE_OFDM;
-			break;
+			pAd->CommonCfg.MCastPhyMode.field.BW =  BW_20;
+			break;		
 #ifdef DOT11_N_SUPPORT
-		case MCAST_HTMIX:	/* HTMIX */
+		case MCAST_HTMIX: /* HTMIX */
 			pAd->CommonCfg.MCastPhyMode.field.MODE = MODE_HTMIX;
+			if (pAd->CommonCfg.BBPCurrentBW > BW_20)
+				pAd->CommonCfg.MCastPhyMode.field.BW =  BW_40;
+			else	
+				pAd->CommonCfg.MCastPhyMode.field.BW =  BW_20;
 			break;
 #endif /* DOT11_N_SUPPORT */
 		default:
-			printk("unknow Muticast PhyMode %d.\n", PhyMode);
-			printk("0:Disable 1:CCK, 2:OFDM, 3:HTMIX.\n");
+			printk("Unknown Muticast PhyMode %d\n", PhyMode);
+			printk("0:Disabled, 1:CCK, 2:OFDM, 3:HTMIX\n");
 			break;
 	}
 
@@ -11794,25 +12096,22 @@ INT Set_McastMcs(
 {
 	UCHAR Mcs = simple_strtol(arg, 0, 10);
 
-	if (Mcs > 15)
-		printk("Mcs must in range of 0 to 15\n");
-
-	switch(pAd->CommonCfg.MCastPhyMode.field.MODE)
+	switch (pAd->CommonCfg.MCastPhyMode.field.MODE)
 	{
 		case MODE_CCK:
 			if ((Mcs <= 3) || (Mcs >= 8 && Mcs <= 11))
 				pAd->CommonCfg.MCastPhyMode.field.MCS = Mcs;
 			else
-				printk("MCS must in range of 0 ~ 3 and 8 ~ 11 for CCK Mode.\n");
+				printk("MCS must in range of 0 ~ 3 and 8 ~ 11 for CCK mode\n");
 			break;
 
 		case MODE_OFDM:
 			if (Mcs > 7)
-				printk("MCS must in range from 0 to 7 for CCK Mode.\n");
+				printk("MCS must in range from 0 to 7 for OFDM mode\n");
 			else
 				pAd->CommonCfg.MCastPhyMode.field.MCS = Mcs;
 			break;
-
+			
 		default:
 			pAd->CommonCfg.MCastPhyMode.field.MCS = Mcs;
 			break;
@@ -11825,8 +12124,9 @@ INT Show_McastRate(
 	IN PRTMP_ADAPTER pAd,
 	IN RTMP_STRING *arg)
 {
-	printk("Mcast PhyMode =%d\n", pAd->CommonCfg.MCastPhyMode.field.MODE);
-	printk("Mcast Mcs =%d\n", pAd->CommonCfg.MCastPhyMode.field.MCS);
+	printk("Mcast PhyMode = %d\n", pAd->CommonCfg.MCastPhyMode.field.MODE);
+	printk("Mcast MCS = %d\n", pAd->CommonCfg.MCastPhyMode.field.MCS);
+
 	return TRUE;
 }
 #endif /* MCAST_RATE_SPECIFIC */

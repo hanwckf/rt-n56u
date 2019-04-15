@@ -45,6 +45,7 @@ BUILD_TIMER_FUNCTION(PMF_SAQueryConfirmTimeOut);
 
 
 #ifdef CONFIG_AP_SUPPORT
+#ifdef DOT11N_DRAFT3
 extern VOID APDetectOverlappingExec(
 				IN PVOID SystemSpecific1, 
 				IN PVOID FunctionContext, 
@@ -52,8 +53,6 @@ extern VOID APDetectOverlappingExec(
 				IN PVOID SystemSpecific3);
 
 BUILD_TIMER_FUNCTION(APDetectOverlappingExec);
-
-#ifdef DOT11N_DRAFT3
 BUILD_TIMER_FUNCTION(Bss2040CoexistTimeOut);
 #endif /* DOT11N_DRAFT3 */
 

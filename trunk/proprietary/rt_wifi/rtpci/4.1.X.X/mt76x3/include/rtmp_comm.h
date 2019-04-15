@@ -406,10 +406,19 @@ typedef struct  _PACKET_INFO    {
 
 #define MAC_ADDR_LEN                    6
 
-#define IS_BM_MAC_ADDR(Addr)				(((Addr[0]) & 0x01) == 0x01)
+#ifdef LINUX
+/* use native linux mcast/bcast adress checks. */
+#include <linux/etherdevice.h>
+
+#define IS_MULTICAST_MAC_ADDR(Addr)			(is_multicast_ether_addr(Addr) && !is_broadcast_ether_addr(Addr))
+#define IS_IPV6_MULTICAST_MAC_ADDR(Addr)                (is_multicast_ether_addr(Addr) && ((Addr[0]) == 0x33))
+#define IS_BROADCAST_MAC_ADDR(Addr)			(is_broadcast_ether_addr(Addr))
+#else
 #define IS_MULTICAST_MAC_ADDR(Addr)			((((Addr[0]) & 0x01) == 0x01) && ((Addr[0]) != 0xff))
 #define IS_BROADCAST_MAC_ADDR(Addr)			((((Addr[0]) & 0xff) == 0xff))
+#endif
 
+#define IS_BM_MAC_ADDR(Addr)				(((Addr[0]) & 0x01) == 0x01)
 
 
 #define RLT_MAC_BASE 0x01

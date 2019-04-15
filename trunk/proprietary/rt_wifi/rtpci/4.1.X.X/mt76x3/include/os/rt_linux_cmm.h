@@ -277,6 +277,7 @@ RTMP_DECLARE_DRV_OPS_FUNCTION(pci);
 #define RTMP_IRQ_LOCK(__lock, __irqflags)			\
 {													\
 	__irqflags = 0;									\
+	typecheck(unsigned long, __irqflags);           \
 	spin_lock_irqsave((spinlock_t *)(__lock), __irqflags);			\
 }
 
@@ -288,6 +289,7 @@ RTMP_DECLARE_DRV_OPS_FUNCTION(pci);
 #define RTMP_IRQ_LOCK(__lock, __irqflags)		\
 {												\
 	__irqflags = 0;								\
+	typecheck(unsigned long, __irqflags);           \
 	RtmpOsSpinLockBh(__lock);					\
 }
 
@@ -440,29 +442,15 @@ extern RTMP_USB_CONFIG *pRtmpUsbConfig;
 #define APCLI_IF_UP_CHECK(pAd, ifidx) (RtmpOSNetDevIsUp((pAd)->ApCfg.ApCliTab[(ifidx)].wdev.if_dev) == TRUE)
 
 #ifdef RTMP_MAC_PCI
-#ifdef MEMORY_OPTIMIZATION
-#define TX_RING_SIZE            64
-#define RX_RING_SIZE            64
-#define MGMT_RING_SIZE          32
-#else
-#ifdef DOT11_VHT_AC
-#define TX_RING_SIZE            256
-#define RX_RING_SIZE            256
-#else
-#define TX_RING_SIZE            64
-#ifdef BB_SOC
-#define RX_RING_SIZE            64
+#define TX_RING_SIZE            128 // mt7603 not support long agg sizes
+/* for MT_MAC RX ring size must me = Tx ring size */
+#ifdef MT_MAC
+#define RX_RING_SIZE            TX_RING_SIZE
 #else
 #define RX_RING_SIZE            128
 #endif
-#endif /* DOT11_VHT_AC */
-#ifdef BB_SOC
-#define MGMT_RING_SIZE          64
-#else
-#define MGMT_RING_SIZE          128
-#endif
-#endif
 
+#define MGMT_RING_SIZE          128
 #ifdef DATA_QUEUE_RESERVE
 // TX_RING_SIZE_RSV must small than TX_RING_SIZE
 #define TX_RING_SIZE_RSV    16
@@ -470,18 +458,12 @@ extern RTMP_USB_CONFIG *pRtmpUsbConfig;
 
 
 #ifdef MT_MAC
-#ifdef MEMORY_OPTIMIZATION
-#define RX1_RING_SIZE		32
-#else
-#define RX1_RING_SIZE		64
-#endif /* MEMORY_OPTIMIZATION */
 #define BCN_RING_SIZE		20
 #endif /* MT_MAC */
 
-#define MAX_TX_PROCESS          TX_RING_SIZE /*8 */
+#define MAX_TX_PROCESS          TX_RING_SIZE
 #define MAX_DMA_DONE_PROCESS    TX_RING_SIZE
-#define MAX_TX_DONE_PROCESS     TX_RING_SIZE /*8 */
-#define LOCAL_TXBUF_SIZE        2
+#define MAX_TX_DONE_PROCESS     TX_RING_SIZE
 #endif /* RTMP_MAC_PCI */
 
 #define RTMP_OS_NETDEV_SET_PRIV		RtmpOsSetNetDevPriv

@@ -29,7 +29,7 @@
 
 
 #include	"rt_config.h"
-
+#include        <linux/prefetch.h>
 
 #ifdef DBG
 VOID dump_txd(RTMP_ADAPTER *pAd, TXD_STRUC *pTxD)
@@ -93,7 +93,7 @@ VOID dumpRxRing(RTMP_ADAPTER *pAd, INT ring_idx)
 	RTMP_RX_RING *pRxRing;
 	RXD_STRUC *pRxD;
 	int index;
-	int RxRingSize = (ring_idx == 0) ? RX_RING_SIZE : RX1_RING_SIZE;
+	int RxRingSize = RX_RING_SIZE;
 
 	pRxRing = &pAd->RxRing[ring_idx];
 	for (index = 0; index < RxRingSize; index++)
@@ -513,8 +513,8 @@ USHORT RtmpPCI_WriteMultiTxResource(
 			hwHdrLen = pTxBlk->MpduHeaderLen - AMSDU_SUBHEAD_LEN + pTxBlk->HdrPadLen + AMSDU_SUBHEAD_LEN;
 		else if (pTxBlk->TxFrameType == TX_RALINK_FRAME)
 			hwHdrLen = pTxBlk->MpduHeaderLen - ARALINK_HEADER_LEN + pTxBlk->HdrPadLen + ARALINK_HEADER_LEN;
-
-		hwHdrLen = pTxBlk->MpduHeaderLen + pTxBlk->HdrPadLen;
+		else
+			hwHdrLen = pTxBlk->MpduHeaderLen + pTxBlk->HdrPadLen;
 
 		firstDMALen = pAd->chipCap.TXWISize + hwHdrLen;
 	}
@@ -606,6 +606,10 @@ VOID RtmpPCI_FinalWriteTxResource(
 
 	/* get Tx Ring Resource*/
 	pTxRing = &pAd->TxRing[pTxBlk->QueIdx];
+
+	if (FirstTxIdx >= TX_RING_SIZE)
+		return;
+
 	tmac_info = (UCHAR *)pTxRing->Cell[FirstTxIdx].DmaBuf.AllocVa;
 #ifdef RLT_MAC
 	if (pAd->chipCap.hif_type == HIF_RLT) {
@@ -891,6 +895,7 @@ BOOLEAN RTMPFreeTXDUponTxDmaDone(
 #endif
 	PNDIS_PACKET pPacket;
 	UCHAR FREE = 0;
+	TXD_STRUC TxD, *pOriTxD;
 	BOOLEAN bReschedule = FALSE;
 	//UINT8 TXWISize = pAd->chipCap.TXWISize;
 
@@ -927,8 +932,14 @@ BOOLEAN RTMPFreeTXDUponTxDmaDone(
 			FREE++;
 #ifndef RT_BIG_ENDIAN
 			pTxD = (TXD_STRUC *) (dma_cb->AllocVa);
+			pOriTxD = pTxD;
+			NdisMoveMemory(&TxD, pTxD, sizeof(TXD_STRUC));
+			pTxD = &TxD;
 #else
 			pDestTxD = (TXD_STRUC *) (dma_cb->AllocVa);
+			pOriTxD = pDestTxD ;
+			//TxD = *pDestTxD;
+			//pTxD = &TxD;
 			NdisMoveMemory(&tx_hw_info[0], pDestTxD, TXD_SIZE);
 			pTxD = (TXD_STRUC *)&tx_hw_info[0];
 			RTMPDescriptorEndianChange((PUCHAR)pTxD, TYPE_TXD);
@@ -977,8 +988,11 @@ BOOLEAN RTMPFreeTXDUponTxDmaDone(
 				DBGPRINT(RT_DEBUG_OFF,("pTxRing->TxSwFreeIdx = %d\n", pTxRing->TxSwFreeIdx));
 			}
 
-#ifdef RT_BIG_ENDIAN
+#ifndef RT_BIG_ENDIAN
+			NdisMoveMemory(pOriTxD, pTxD, sizeof(TXD_STRUC));
+#else
 			RTMPDescriptorEndianChange((PUCHAR)pTxD, TYPE_TXD);
+			//*pDestTxD = TxD;
 			NdisMoveMemory(pDestTxD, pTxD, TXD_SIZE);
 #endif /* RT_BIG_ENDIAN */
 
@@ -1011,8 +1025,14 @@ BOOLEAN RTMPFreeTXDUponTxDmaDone(
 		FREE++;
 #ifndef RT_BIG_ENDIAN
 		pTxD = (TXD_STRUC *) (dma_cb->AllocVa);
+		pOriTxD = pTxD;
+		NdisMoveMemory(&TxD, pTxD, sizeof(TXD_STRUC));
+		pTxD = &TxD;
 #else
 		pDestTxD = (TXD_STRUC *) (dma_cb->AllocVa);
+		pOriTxD = pDestTxD ;
+		//TxD = *pDestTxD;
+		//pTxD = &TxD;
 		NdisMoveMemory(&tx_hw_info[0], pDestTxD, TXD_SIZE);
 		pTxD = (TXD_STRUC *)&tx_hw_info[0];
 		RTMPDescriptorEndianChange((PUCHAR)pTxD, TYPE_TXD);
@@ -1116,7 +1136,10 @@ BOOLEAN RTMPFreeTXDUponTxDmaDone(
 
 #ifdef RT_BIG_ENDIAN
 		RTMPDescriptorEndianChange((PUCHAR)pTxD, TYPE_TXD);
+		//*pDestTxD = TxD;
 		NdisMoveMemory(pDestTxD, pTxD, TXD_SIZE);
+#else
+		NdisMoveMemory(pOriTxD, pTxD, sizeof(TXD_STRUC));
 #endif
 
 #ifdef CONFIG_ATE
@@ -1146,14 +1169,20 @@ kick_out:
 				INC_RING_INDEX(pAd->TxRing[QueIdx].TxCpuIdx, TX_RING_SIZE);
 #ifndef RT_BIG_ENDIAN
 				pTxD = (TXD_STRUC *) (pTxRing->Cell[pAd->TxRing[QueIdx].TxCpuIdx].AllocVa);
+				pOriTxD = pTxD;
+		        NdisMoveMemory(&TxD, pTxD, sizeof(TXD_STRUC));
+				pTxD = &TxD;
 #else
 		        pDestTxD = (TXD_STRUC *) (pTxRing->Cell[pAd->TxRing[QueIdx].TxCpuIdx].AllocVa);
+		        pOriTxD = pDestTxD ;
 				NdisMoveMemory(&tx_hw_info[0], pDestTxD, TXD_SIZE);
 				pTxD = (TXD_STRUC *)&tx_hw_info[0];
 		        RTMPDescriptorEndianChange((PUCHAR)pTxD, TYPE_TXD);
 #endif
 				pTxD->DMADONE = 0;
-#ifdef RT_BIG_ENDIAN
+#ifndef RT_BIG_ENDIAN
+        		NdisMoveMemory(pOriTxD, pTxD, sizeof(TXD_STRUC));
+#else
         		RTMPDescriptorEndianChange((PUCHAR)pTxD, TYPE_TXD);
 				NdisMoveMemory(pDestTxD, pTxD, TXD_SIZE);
 #endif
@@ -1240,7 +1269,7 @@ BOOLEAN	RTMPHandleTxRingDmaDoneInterrupt(
 	/* Make sure to release Tx ring resource*/
 	RTMP_IRQ_UNLOCK(&pAd->irq_lock, IrqFlags);
 
-	RTMPDeQueuePacket(pAd, FALSE, NUM_OF_TX_RING, WCID_ALL, MAX_TX_PROCESS);
+	RTMPDeQueuePacket(pAd, FALSE, WMM_NUM_OF_AC, WCID_ALL, MAX_TX_PROCESS);
 
 	return  bReschedule;
 }
@@ -1677,12 +1706,6 @@ PNDIS_PACKET GetPacketFromRxRing(
 	UINT16 RxRingSize = RX_RING_SIZE;
 	UINT16 RxBufferSize = RX_BUFFER_AGGRESIZE;
 
-	if (RxRingNo != 0)
-	{
-		RxRingSize = RX1_RING_SIZE;
-		RxBufferSize = RX1_BUFFER_SIZE;
-	}
-
 	pRxRing = &pAd->RxRing[RxRingNo];
 	pRxRingLock = &pAd->RxRingLock[RxRingNo];
 	RTMP_SEM_LOCK(pRxRingLock);
@@ -1881,6 +1904,13 @@ PNDIS_PACKET GetPacketFromRxRing(
 
 	pRxRing->RxCpuIdx = (pRxRing->RxSwReadIdx == 0) ? (RxRingSize-1) : (pRxRing->RxSwReadIdx-1);
 	RTMP_IO_WRITE32(pAd, pRxRing->hw_cidx_addr, pRxRing->RxCpuIdx);
+
+#ifdef  CONFIG_WIFI_PREFETCH_RXDATA
+	/* prefetch to enhance throughput */
+	if ((RxRingNo == 0) && *pRxPending > 0) {
+		prefetch(pRxRing->Cell[pRxRing->RxSwReadIdx].pNdisPacket);
+	}
+#endif /* CONFIG_WIFI_PREFETCH_RXDATA */
 
 #else /* CACHE_LINE_32B */
 	/*
@@ -2160,6 +2190,7 @@ NDIS_STATUS MlmeHardTransmitTxRing(RTMP_ADAPTER *pAd, UCHAR QueIdx, PNDIS_PACKET
 			if (pHeader_802_11->FC.SubType == SUBTYPE_PROBE_RSP)
 			{
 				bInsertTimestamp = TRUE;
+				bAckRequired = FALSE;
 #ifdef CONFIG_AP_SUPPORT
 #ifdef SPECIFIC_TX_POWER_SUPPORT
 				/* Find which MBSSID to be send this probeRsp */
@@ -2341,7 +2372,7 @@ NDIS_STATUS MlmeHardTransmitTxRing(RTMP_ADAPTER *pAd, UCHAR QueIdx, PNDIS_PACKET
 	if(pAd->CommonCfg.TxStream == 1)
             mac_info.SpeEn = 0;
 	else
-	    mac_info.SpeEn = 1;
+	mac_info.SpeEn = 1;
 	mac_info.Preamble = LONG_PREAMBLE;
 
 	/* PCI use Miniport to send NULL frame and need to add NULL frame TxS control here to enter PSM */
@@ -2473,9 +2504,8 @@ BOOLEAN RxRing1DoneInterruptHandle(RTMP_ADAPTER *pAd)
 				a. be indicated to upper layer or
 				b. be released if it is discarded
 		*/
-
+		NdisZeroMemory(&rxblk,sizeof(RX_BLK));
 		pRxBlk = &rxblk;
-
 		pRxPacket = GetPacketFromRxRing(pAd, pRxBlk, &bReschedule, &RxPending, 1);
 		if (pRxPacket == NULL)
 			break;

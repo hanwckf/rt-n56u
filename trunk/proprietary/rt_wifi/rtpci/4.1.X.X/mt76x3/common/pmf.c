@@ -124,7 +124,7 @@ VOID PMF_MlmeSAQueryReq(
                 MgtMacHeaderInit(pAd, &SAQReqHdr, SUBTYPE_ACTION, 0, pEntry->Addr,
                                 pAd->ApCfg.MBSSID[pEntry->func_tb_idx].wdev.bssid,
                                 pAd->ApCfg.MBSSID[pEntry->func_tb_idx].wdev.bssid);
-			}
+		}
 		}
 #endif /* CONFIG_AP_SUPPORT */
 
@@ -217,7 +217,7 @@ VOID PMF_PeerSAQueryReqAction(
 			MgtMacHeaderInit(pAd, &SAQRspHdr, SUBTYPE_ACTION, 0, pHeader->Hdr.Addr2,
 							pAd->ApCfg.MBSSID[pEntry->func_tb_idx].wdev.bssid,
 						pAd->ApCfg.MBSSID[pEntry->func_tb_idx].wdev.bssid);
-			}
+		}
 		}
 #endif /* CONFIG_AP_SUPPORT */
 
@@ -1347,14 +1347,14 @@ BOOLEAN	PMF_PerformRxFrameAction(RTMP_ADAPTER *pAd, RX_BLK *pRxBlk)
 			}
 			else
 			{
-				return TRUE;
-			}
+		return TRUE;
+	}
 #endif /* defined (CONFIG_STA_SUPPORT) || defined (APCLI_SUPPORT) */
 	}
 
 	if(pEntry == NULL)
 		return TRUE;
-	
+
 	if (!CLIENT_STATUS_TEST_FLAG(pEntry, fCLIENT_STATUS_PMF_CAPABLE))
 	{
 #if defined (CONFIG_STA_SUPPORT) || defined (APCLI_SUPPORT)
@@ -1372,7 +1372,7 @@ BOOLEAN	PMF_PerformRxFrameAction(RTMP_ADAPTER *pAd, RX_BLK *pRxBlk)
 					return TRUE;
 			}
 			else
-				return TRUE;
+		return TRUE;
 #endif /* defined (CONFIG_STA_SUPPORT) || defined (APCLI_SUPPORT) */
 	}
 

@@ -144,17 +144,6 @@
 #endif /* CONFIG_ATE */
 #endif /* CONFIG_QA */
 
-
-
-#ifdef WAPI_SUPPORT
-#include "wapi.h"
-#endif /* WAPI_SUPPORT */
-
-#ifdef DOT11K_RRM_SUPPORT
-#include "rrm.h"
-#endif /* DOT11K_RRM_SUPPORT */
-
-
 #if defined(AP_WSC_INCLUDED) || defined(STA_WSC_INCLUDED)
 #define WSC_INCLUDED
 #endif

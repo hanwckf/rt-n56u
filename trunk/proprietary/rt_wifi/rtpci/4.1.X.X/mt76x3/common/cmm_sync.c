@@ -125,7 +125,7 @@ VOID BuildChannelList(RTMP_ADAPTER *pAd)
 #endif /* DOT11_VHT_AC */
 #endif /* DOT11_N_SUPPORT */
 
-				pAd->ChannelList[index+i].MaxTxPwr = 20;
+				pAd->ChannelList[index+i].MaxTxPwr = 30;
 			}
 
 			index += num;
@@ -160,7 +160,7 @@ VOID BuildChannelList(RTMP_ADAPTER *pAd)
 
 		if (num > 0)
 		{
-			UCHAR RadarCh[15]={52, 56, 60, 64, 100, 104, 108, 112, 116, 120, 124, 128, 132, 136, 140};
+			UCHAR RadarCh[16]={52, 56, 60, 64, 100, 104, 108, 112, 116, 120, 124, 128, 132, 136, 140, 144};
 #ifdef CONFIG_AP_SUPPORT
 			UCHAR q=0;
 #endif /* CONFIG_AP_SUPPORT */
@@ -201,7 +201,7 @@ VOID BuildChannelList(RTMP_ADAPTER *pAd)
 						(pAd->CommonCfg.RDDurRegion == FCC) &&
 						(pAd->Dot11_H.bDFSIndoor == 1))
 				{
-					if((GetChannel_5GHZ(pChDesc, i) < 116) || (GetChannel_5GHZ(pChDesc, i) > 128))
+					if((GetChannel_5GHZ(pChDesc, i) < 120) || (GetChannel_5GHZ(pChDesc, i) > 128))
 					{
 						pChannelList[q] = GetChannel_5GHZ(pChDesc, i);
 						pChannelListFlag[q] = GetChannelFlag(pChDesc, i);
@@ -249,7 +249,7 @@ VOID BuildChannelList(RTMP_ADAPTER *pAd)
 					if (pChannelList[i] == RadarCh[j])
 						pAd->ChannelList[index+i].DfsReq = TRUE;
 				}
-				pAd->ChannelList[index+i].MaxTxPwr = 20;
+				pAd->ChannelList[index+i].MaxTxPwr = 30;
 			}
 			index += num;
 

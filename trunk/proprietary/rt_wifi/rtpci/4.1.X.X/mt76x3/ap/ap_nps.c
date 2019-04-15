@@ -110,7 +110,7 @@ VOID write_tmac_info_tim(RTMP_ADAPTER *pAd, INT apidx, UCHAR *tmac_buf, HTTRANSM
 	if(pAd->CommonCfg.TxStream == 1)
             mac_info.SpeEn = 0;
 	else
-	    mac_info.SpeEn = 1;
+	mac_info.SpeEn = 1;
 	mac_info.Preamble = LONG_PREAMBLE;
 	write_tmac_info(pAd, tmac_buf, &mac_info, BeaconTransmit);
 }

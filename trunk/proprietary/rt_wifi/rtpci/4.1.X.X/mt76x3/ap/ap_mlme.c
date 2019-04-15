@@ -38,11 +38,10 @@ extern void MT7662ReceCoexFromOtherCHip(
 #endif
 
 #ifdef DOT11_N_SUPPORT
+#ifdef DOT11N_DRAFT3
 
 int DetectOverlappingPeriodicRound;
 
-
-#ifdef DOT11N_DRAFT3
 VOID Bss2040CoexistTimeOut(
 	IN PVOID SystemSpecific1, 
 	IN PVOID FunctionContext, 
@@ -70,9 +69,6 @@ VOID Bss2040CoexistTimeOut(
 		SendBSS2040CoexistMgmtAction(pAd, MCAST_WCID, apidx, 0);
 	
 }
-#endif /* DOT11N_DRAFT3 */
-
-#endif /* DOT11_N_SUPPORT */
 
 
 VOID APDetectOverlappingExec(
@@ -81,7 +77,6 @@ VOID APDetectOverlappingExec(
 	IN PVOID SystemSpecific2, 
 	IN PVOID SystemSpecific3) 
 {
-#ifdef DOT11_N_SUPPORT
 	PRTMP_ADAPTER	pAd = (RTMP_ADAPTER *)FunctionContext;
 
 	if (DetectOverlappingPeriodicRound == 0)
@@ -107,8 +102,9 @@ VOID APDetectOverlappingExec(
 		}
 		DetectOverlappingPeriodicRound--;
 	}
-#endif /* DOT11_N_SUPPORT */
 }
+#endif /* DOT11N_DRAFT3 */
+#endif /* DOT11_N_SUPPORT */
 
 
 /*
@@ -124,6 +120,7 @@ VOID APDetectOverlappingExec(
 VOID APMlmePeriodicExec(
     PRTMP_ADAPTER pAd)
 {
+	INT i;
     /* 
 		Reqeust by David 2005/05/12
 		It make sense to disable Adjust Tx Power on AP mode, since we can't 
@@ -183,6 +180,17 @@ VOID APMlmePeriodicExec(
 	{
 		/* one second timer */
 	    MacTableMaintenance(pAd);
+
+	    /* increase block count every secons for time limit probe temp limit function */
+	    for (i = 0; i < pAd->ApCfg.BssidNum; i++) {
+		if (pAd->ApCfg.MBSSID[i].TmpBlockAfterKickTimes != 0 && pAd->ApCfg.MBSSID[i].TmpBlockAfterKickCount < pAd->ApCfg.MBSSID[i].TmpBlockAfterKickTimes) {
+		    if (!MAC_ADDR_EQUAL(pAd->ApCfg.MBSSID[i].TmpBlockAfterKickMac, ZERO_MAC_ADDR))
+			pAd->ApCfg.MBSSID[i].TmpBlockAfterKickCount++;
+		} else {
+		    /* cleanup blocked mac address */
+		    NdisZeroMemory(pAd->ApCfg.MBSSID[i].TmpBlockAfterKickMac, MAC_ADDR_LEN);
+		}
+	    }
 
 #ifdef CONFIG_FPGA_MODE
 	if (pAd->fpga_ctl.fpga_tr_stop)
@@ -406,7 +414,27 @@ VOID APMlmePeriodicExec(
 #endif /* DOT11N_DRAFT3 */
 #endif /* DOT11_N_SUPPORT */
 #endif /* APCLI_SUPPORT */
-
+#ifdef DOT11K_RRM_SUPPORT
+	if (!ApScanRunning(pAd)) {
+	    /* after boot need force first scan at 15sec */
+	    if ((pAd->Mlme.OneSecPeriodicRound % 240 == 0) ||
+		    (pAd->Mlme.OneSecPeriodicRound % 15 == 0 && pAd->CommonCfg.RRMFirstScan == TRUE))
+	    {
+		    if (pAd->MacTab.Size == 0 || pAd->CommonCfg.RRMFirstScan == TRUE) {
+			INT needscan = 0;
+			for (i = 0; i < MAX_MBSSID_NUM(pAd); i++) {
+				if (pAd->OpMode == OPMODE_AP && IS_RRM_ENABLE(pAd, i))
+					needscan = 1;
+			}
+			if (needscan == 1) {
+				DBGPRINT(RT_DEBUG_TRACE, ("RRM: rescan every 240sec for update neighbour info\n"));
+				pAd->CommonCfg.RRMFirstScan = FALSE;
+				ApSiteSurvey(pAd, NULL, SCAN_ACTIVE, FALSE);
+			}
+		    }
+	    }
+	}
+#endif /* DOT11K_RRM_SUPPORT */
 }
 
 
@@ -646,7 +674,7 @@ VOID APAsicEvaluateRxAnt(
 */
 VOID APAsicRxAntEvalTimeout(RTMP_ADAPTER *pAd)
 {
-	CHAR rssi[3], *target_rssi;
+	CHAR rssi[3] = {0}, *target_rssi;
 
 #ifdef CONFIG_ATE
 	if (ATE_ON(pAd))

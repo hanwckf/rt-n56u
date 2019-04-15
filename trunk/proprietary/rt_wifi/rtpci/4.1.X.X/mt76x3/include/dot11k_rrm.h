@@ -54,13 +54,21 @@
 #define RRM_MEASURE_SUBTYPE_CH_LOAD			3
 #define RRM_MEASURE_SUBTYPE_NOISE_HISTOGRAM	4
 #define RRM_MEASURE_SUBTYPE_BEACON			5
+#define RRM_MEASURE_SUBTYPE_LCI				8 /*location add*/
 #define RRM_MEASURE_SUBTYPE_TX_STREAM		9
+#define RRM_MEASURE_SUBTYPE_LOCATION_CIVIC	11 /*location add*/
+#define RRM_MEASURE_SUBTYPE_LOCATION_ID		12 /*location add*/
+
+
 
 #define RRM_NEIGHBOR_REQ_SSID_SUB_ID	0
 #define RRM_NEIGHBOR_REQ_VENDOR_SUB_ID	221
+#define RRM_NEIGHBOR_REQ_MEASUREMENT_REQUEST_SUB_ID	38  /*location add*/
+
 
 #define RRM_NEIGHBOR_REP_TSF_INFO_SUB_ID			1
 #define RRM_NEIGHBOR_REP_COUNTRY_STRING_SUB_ID		2
+#define RRM_NEIGHBOR_REP_MEASUREMENT_REPORT_SUB_ID	39  /*location add*/
 #define RRM_NEIGHBOR_REP_MEASURE_PILOT_TX_SUB_ID	66
 #define RRM_ENABLE_CAPABILTY_SUB_ID					70
 #define RRM_MULTIPLE_BSSID_SUB_ID					71
@@ -216,7 +224,9 @@ typedef union GNU_PACKED __RRM_EN_CAP_IE
 	struct GNU_PACKED
 	{
 #ifdef RT_BIG_ENDIAN
-		UINT64 :30;
+		UINT64 :28;
+		UINT64 CIVICMeasureCap:1;
+		UINT64 FTMRangeReportCapability:1;
 		UINT64 AntennaInfoCap:1;
 		UINT64 BssAvaiableAcmCap:1;
 		UINT64 BssAvgAccessDelayCap:1;
@@ -275,7 +285,9 @@ typedef union GNU_PACKED __RRM_EN_CAP_IE
 		UINT64 BssAvgAccessDelayCap:1;
 		UINT64 BssAvaiableAcmCap:1;
 		UINT64 AntennaInfoCap:1;
-		UINT64 :30;
+		UINT64 FTMRangeReportCapability:1;
+		UINT64 CIVICMeasureCap:1;
+		UINT64 :28;
 #endif
 	} field;
 	UINT64 word;

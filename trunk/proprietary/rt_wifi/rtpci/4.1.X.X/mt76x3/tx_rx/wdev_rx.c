@@ -126,6 +126,66 @@ VOID Update_Rssi_Sample(
 	}
 }
 
+#ifdef APCLI_SUPPORT
+/* this function ONLY if not allow pn replay attack and drop packet */
+static BOOLEAN check_rx_pkt_pn_allowed(RTMP_ADAPTER *pAd, RX_BLK *rx_blk)
+{
+	MAC_TABLE_ENTRY *pEntry = NULL;
+	BOOLEAN isAllow = TRUE;
+	HEADER_802_11 *pHeader = rx_blk->pHeader;
+	FRAME_CONTROL *pFmeCtrl = &pHeader->FC;
+
+	if (pFmeCtrl->Wep == 0)
+		return TRUE;
+
+	if (rx_blk->wcid >= MAX_LEN_OF_MAC_TABLE)
+		return TRUE;
+
+	pEntry = &pAd->MacTab.Content[rx_blk->wcid];
+
+	if ((!pEntry) || (!pEntry->wdev) || (!IS_ENTRY_APCLI(pEntry)))
+		return TRUE;
+
+	if (rx_blk->pRxInfo->Mcast || rx_blk->pRxInfo->Bcast) {
+		NDIS_802_11_ENCRYPTION_STATUS GroupCipher;
+		UCHAR kid = rx_blk->key_idx;
+
+		WPA_GET_GROUP_CIPHER(pAd, pEntry, GroupCipher);
+
+		if (GroupCipher == Ndis802_11AESEnable) {
+			if (unlikely(kid >= ARRAY_SIZE(pEntry->CCMP_BC_PN))) {
+				DBGPRINT(RT_DEBUG_TRACE, ("BC, %s invalid key id %u\n", __func__, kid));
+				return TRUE;
+			}
+
+			if (unlikely(pEntry->Init_CCMP_BC_PN_Passed[kid] == FALSE)) {
+				if (rx_blk->CCMP_PN >= pEntry->CCMP_BC_PN[kid]) {
+					DBGPRINT(RT_DEBUG_TRACE, ("BC, %s (%d)-%d OK: come-in the %llu and now is %llu\n",
+						__FUNCTION__, pEntry->wcid, kid, rx_blk->CCMP_PN, pEntry->CCMP_BC_PN[kid]));
+					pEntry->CCMP_BC_PN[kid] = rx_blk->CCMP_PN;
+					pEntry->Init_CCMP_BC_PN_Passed[kid] = TRUE;
+				} else {
+					DBGPRINT(RT_DEBUG_ERROR, ("BC, %s (%d)-%d Reject: come-in the %llu and now is %llu\n",
+						__FUNCTION__, pEntry->wcid, kid, rx_blk->CCMP_PN, pEntry->CCMP_BC_PN[kid]));
+					isAllow = FALSE;
+				}
+			} else {
+				if (rx_blk->CCMP_PN > pEntry->CCMP_BC_PN[kid]) {
+					DBGPRINT(RT_DEBUG_TRACE, ("BC, %s (%d)-%d OK: come-in the %llu and now is %llu\n",
+						__FUNCTION__, pEntry->wcid, kid, rx_blk->CCMP_PN, pEntry->CCMP_BC_PN[kid]));
+					pEntry->CCMP_BC_PN[kid] = rx_blk->CCMP_PN;
+				} else {
+					DBGPRINT(RT_DEBUG_ERROR, ("BC, %s (%d)-%d Reject: come-in the %llu and now is %llu\n",
+						__FUNCTION__, pEntry->wcid, kid, rx_blk->CCMP_PN, pEntry->CCMP_BC_PN[kid]));
+					isAllow = FALSE;
+				}
+			}
+		}
+	}
+
+	return isAllow;
+}
+#endif /* APCLI_SUPPORT */
 
 #ifdef DOT11_N_SUPPORT
 UINT deaggregate_AMSDU_announce(
@@ -244,7 +304,14 @@ UINT deaggregate_AMSDU_announce(
 
 VOID Indicate_AMSDU_Packet(RTMP_ADAPTER *pAd, RX_BLK *pRxBlk, UCHAR wdev_idx)
 {
-	//UINT nMSDU;
+
+#ifdef APCLI_SUPPORT
+	if (check_rx_pkt_pn_allowed(pAd, pRxBlk) == FALSE) {
+		DBGPRINT(RT_DEBUG_WARN, ("%s:drop packet by PN mismatch!\n", __FUNCTION__));
+		RELEASE_NDIS_PACKET(pAd, pRxBlk->pRxPacket, NDIS_STATUS_FAILURE);
+		return;
+	}
+#endif /* APCLI_SUPPORT */
 
 	RTMP_UPDATE_OS_PACKET_INFO(pAd, pRxBlk, wdev_idx);
 	RTMP_SET_PACKET_WDEV(pRxBlk->pRxPacket, wdev_idx);
@@ -312,18 +379,26 @@ VOID Indicate_Legacy_Packet(RTMP_ADAPTER *pAd, RX_BLK *pRxBlk, UCHAR wdev_idx)
 	}
 	wdev = pAd->wdev_list[wdev_idx];
 
+#ifdef APCLI_SUPPORT
+	if (check_rx_pkt_pn_allowed(pAd, pRxBlk) == FALSE) {
+		DBGPRINT(RT_DEBUG_WARN, ("%s:drop packet by PN mismatch!\n", __FUNCTION__));
+		RELEASE_NDIS_PACKET(pAd, pRxPacket, NDIS_STATUS_FAILURE);
+		return;
+	}
+#endif /* APCLI_SUPPORT */
+
 //+++Add by shiang for debug
-if (1) {
 #ifdef HDR_TRANS_SUPPORT
+if (1) {
 	if (pRxBlk->bHdrRxTrans) {
 		pData = pRxBlk->pTransData;
 		data_len = pRxBlk->TransDataSize;
 	}
-#endif /* HDR_TRANS_SUPPORT */
 //	hex_dump("Indicate_Legacy_Packet", pData, data_len);
 //	hex_dump("802_11_hdr", (UCHAR *)pRxBlk->pHeader, LENGTH_802_11);
 }
 //---Add by shiang for debug
+#endif /* HDR_TRANS_SUPPORT */
 
 	/*
 		1. get 802.3 Header
@@ -340,6 +415,29 @@ if (1) {
 	else
 #endif /* HDR_TRANS_SUPPORT */
 
+	if (!data_len) {
+		/* release packet*/
+		/* avoid processing with null paiload packets - QCA61X4A bug */
+		RELEASE_NDIS_PACKET(pAd, pRxBlk->pRxPacket, NDIS_STATUS_FAILURE);
+		return;
+	}
+
+	IF_DEV_CONFIG_OPMODE_ON_AP(pAd) {
+                 /* Skip IEEE 802.3 header if present. 802.3 header is front of LLC */
+                 {
+                         static const UCHAR LLC_Header[] = { 0xaa, 0xaa, 0x03, 0x00,
+                                 0x00, 0x00 };
+
+                         if( ( memcmp(LLC_Header, pRxBlk->pData, 6) != 0 ) &&
+                                         ( memcmp(LLC_Header, &(pRxBlk->pData[14]), 6) == 0 ) )
+                         {
+                                 /* IEEE 802.3 header - skip it */
+                                 printk("%s: SKIP IEEE802.3!!!\n", __FUNCTION__);
+                                 pRxBlk->pData += 14;
+                                 pRxBlk->DataSize -= 14;
+                         }
+                 }
+	}
 	RTMP_802_11_REMOVE_LLC_AND_CONVERT_TO_802_3(pRxBlk, Header802_3);
 	//hex_dump("802_3_hdr", (UCHAR *)Header802_3, LENGTH_802_3);
 
@@ -378,7 +476,8 @@ if (0) {
 		pOSPkt->dev = get_netdev_from_bssid(pAd, wdev_idx);
 		pOSPkt->data = pRxBlk->pTransData;
 		pOSPkt->len = pRxBlk->TransDataSize;
-		pOSPkt->tail = pOSPkt->data + pOSPkt->len;
+
+		skb_set_tail_pointer(pOSPkt, pOSPkt->len);
 		//printk("%s: rx trans ...%d\n", __FUNCTION__, __LINE__);
 	}
 	else
@@ -543,6 +642,11 @@ VOID Indicate_ARalink_Packet(
 	RTMP_802_11_REMOVE_LLC_AND_CONVERT_TO_802_3(pRxBlk, Header802_3);
 
 	ASSERT(pRxBlk->pRxPacket);
+	if (!pRxBlk->pRxPacket)
+	{
+		RELEASE_NDIS_PACKET(pAd, pRxBlk->pRxPacket, NDIS_STATUS_FAILURE);
+		return;
+	}
 
 	pAd->RalinkCounters.OneSecRxARalinkCnt++;
 	Payload1Size = pRxBlk->DataSize - Msdu2Size;
@@ -583,7 +687,6 @@ VOID Indicate_ARalink_Packet(
 PNDIS_PACKET RTMPDeFragmentDataFrame(RTMP_ADAPTER *pAd, RX_BLK *pRxBlk)
 {
 	HEADER_802_11 *pHeader = pRxBlk->pHeader;
-	PNDIS_PACKET pRxPacket = pRxBlk->pRxPacket;
 	UCHAR *pData = pRxBlk->pData;
 	USHORT DataSize = pRxBlk->DataSize;
 	PNDIS_PACKET pRetPacket = NULL;
@@ -608,7 +711,6 @@ PNDIS_PACKET RTMPDeFragmentDataFrame(RTMP_ADAPTER *pAd, RX_BLK *pRxBlk)
 		/* the first pkt of fragment, record it.*/
 		if (pHeader->FC.MoreFrag)
 		{
-			ASSERT(pAd->FragFrame.pFragPacket);
 			pFragBuffer = GET_OS_PKT_DATAPTR(pAd->FragFrame.pFragPacket);
 			/* Fix MT5396 crash issue when Rx fragmentation frame for Wi-Fi TGn 5.2.4 & 5.2.13 test items.
 			    Copy RxWI content to pFragBuffer.
@@ -623,6 +725,10 @@ PNDIS_PACKET RTMPDeFragmentDataFrame(RTMP_ADAPTER *pAd, RX_BLK *pRxBlk)
 			ASSERT(pAd->FragFrame.LastFrag == 0);
 			goto done;	/* end of processing this frame*/
 		}
+		else if (!pAd->FragFrame.pFragPacket)
+		{
+			DBGPRINT(RT_DEBUG_ERROR, ("ERR: pAd->FragFrame.pFragPacket is NULL.\n"));
+		}
 	}
 	else
 	{	/*Middle & End of fragment*/
@@ -631,7 +737,8 @@ PNDIS_PACKET RTMPDeFragmentDataFrame(RTMP_ADAPTER *pAd, RX_BLK *pRxBlk)
 		{
 			/* Fragment is not the same sequence or out of fragment number order*/
 			/* Reset Fragment control blk*/
-			RESET_FRAGFRAME(pAd->FragFrame);
+			if (pHeader->Sequence != pAd->FragFrame.Sequence)
+				RESET_FRAGFRAME(pAd->FragFrame);
 			DBGPRINT(RT_DEBUG_ERROR, ("Fragment is not the same sequence or out of fragment number order.\n"));
 			goto done;
 		}
@@ -669,7 +776,8 @@ PNDIS_PACKET RTMPDeFragmentDataFrame(RTMP_ADAPTER *pAd, RX_BLK *pRxBlk)
 
 done:
 	/* always release rx fragmented packet*/
-	RELEASE_NDIS_PACKET(pAd, pRxPacket, NDIS_STATUS_FAILURE);
+	RELEASE_NDIS_PACKET(pAd, pRxBlk->pRxPacket, NDIS_STATUS_FAILURE);
+	pRxBlk->pRxPacket = NULL;
 
 	/* return defragmented packet if packet is reassembled completely*/
 	/* otherwise return NULL*/
@@ -763,7 +871,7 @@ VOID rx_eapol_frm_handle(
 
 
 
-	if (IS_ENTRY_AP(pEntry))
+	if (pEntry && IS_ENTRY_AP(pEntry))
 	{
 		{
 			to_mlme = TRUE;
@@ -772,7 +880,7 @@ VOID rx_eapol_frm_handle(
 	}
 
 #ifdef CONFIG_AP_SUPPORT
-	if (IS_ENTRY_CLIENT(pEntry))
+	if (pEntry && IS_ENTRY_CLIENT(pEntry))
 	{
 #ifdef DOT1X_SUPPORT
 		/* sent this frame to upper layer TCPIP */
@@ -872,6 +980,14 @@ VOID Indicate_EAPOL_Packet(
 		RELEASE_NDIS_PACKET(pAd, pRxBlk->pRxPacket, NDIS_STATUS_FAILURE);
 		return;
 	}
+
+#ifdef APCLI_SUPPORT
+	if (check_rx_pkt_pn_allowed(pAd, pRxBlk) == FALSE) {
+		DBGPRINT(RT_DEBUG_WARN, ("%s:drop packet by PN mismatch!\n", __FUNCTION__));
+		RELEASE_NDIS_PACKET(pAd, pRxBlk->pRxPacket, NDIS_STATUS_FAILURE);
+		return;
+	}
+#endif /* APCLI_SUPPORT */
 
 	pEntry = &pAd->MacTab.Content[pRxBlk->wcid];
 	if (pEntry == NULL)
@@ -1586,10 +1702,8 @@ DBGPRINT(RT_DEBUG_OFF, ("%s():  Not my bss! pRxInfo->MyBss=%d\n", __FUNCTION__, 
 #endif /* APCLI_SUPPORT */
 #endif /* CONFIG_AP_SUPPORT */
 
-	if (pEntry) {
-	}
-
-
+#ifdef DOT11_N_SUPPORT
+#ifndef DOT11_VHT_AC
 #ifndef WFA_VHT_PF
 	// TODO: shiang@PF#2, is this atheros protection still necessary here???
 	/* check Atheros Client */
@@ -1598,6 +1712,8 @@ DBGPRINT(RT_DEBUG_OFF, ("%s():  Not my bss! pRxInfo->MyBss=%d\n", __FUNCTION__, 
 		pEntry->bIAmBadAtheros = TRUE;
 	}
 #endif /* WFA_VHT_PF */
+#endif /* DOT11_VHT_AC */
+#endif /* DOT11_N_SUPPORT */
 
 ret: 
 	hdr_len = LENGTH_802_11;
@@ -1607,7 +1723,7 @@ ret:
 #endif /* defined(CONFIG_STA_SUPPORT) || defined(APCLI_SUPPORT) */
 
 
-VOID rx_data_frm_announce(
+static VOID rx_data_frm_announce(
 	IN RTMP_ADAPTER *pAd,
 	IN MAC_TABLE_ENTRY *pEntry,
 	IN RX_BLK *pRxBlk,
@@ -1714,7 +1830,7 @@ VOID rx_data_frm_announce(
 			UCHAR *pDA = pRxBlk->pHeader->Addr3;
 			if (((*pDA) & 0x1) == 0x01) {
 				if(IS_BROADCAST_MAC_ADDR(pDA))
-					pMbss->bcPktsRx++;				
+					pMbss->bcPktsRx++;
 				else
 					pMbss->mcPktsRx++;
 			} else
@@ -1805,6 +1921,12 @@ static INT rx_chk_duplicate_frame(RTMP_ADAPTER *pAd, RX_BLK *pRxBlk)
 		return NDIS_STATUS_SUCCESS;
 	}
 
+	if ((pFmeCtrl->Type == FC_TYPE_DATA && pFmeCtrl->SubType == SUBTYPE_DATA_NULL) ||
+		(pFmeCtrl->Type == FC_TYPE_DATA && pFmeCtrl->SubType == SUBTYPE_QOS_NULL))
+	{
+		return NDIS_STATUS_SUCCESS;
+	}
+
 	/*check is vaild sta entry*/
 	if(wcid >= MAX_LEN_OF_TR_TABLE)
 	{
@@ -1817,6 +1939,7 @@ static INT rx_chk_duplicate_frame(RTMP_ADAPTER *pAd, RX_BLK *pRxBlk)
 	{
 		return NDIS_STATUS_SUCCESS;
 	}
+
 	/*check frame is QoS or Non-QoS frame*/
 	if(!(pFmeCtrl->SubType & 0x08))
 	{
@@ -2008,8 +2131,8 @@ VOID dev_rx_data_frm(RTMP_ADAPTER *pAd, RX_BLK *pRxBlk)
 #if defined(RTMP_MAC) || defined(RLT_MAC)
 		if  ((pAd->chipCap.hif_type == HIF_RTMP) || (pAd->chipCap.hif_type == HIF_RLT))
 		{
-			/* count packets priroity more than BE */
-			detect_wmm_traffic(pAd, UserPriority, 0);
+		/* count packets priroity more than BE */
+		detect_wmm_traffic(pAd, UserPriority, 0);
 		}
 #endif /* defined(RTMP_MAC) || defined(RLT_MAC) */
 #ifdef MT_MAC
@@ -2036,11 +2159,6 @@ VOID dev_rx_data_frm(RTMP_ADAPTER *pAd, RX_BLK *pRxBlk)
 			/* incremented by the number of MPDUs */
 			/* received in the A-MPDU when an A-MPDU is received. */
 			pCounter->MPDUInReceivedAMPDUCount.u.LowPart ++;
-		}
-		else
-		{
-			if (pAd->MacTab.Content[pRxBlk->wcid].BARecWcidArray[pRxBlk->TID] != 0)
-				RX_BLK_SET_FLAG(pRxBlk, fRX_AMPDU);
 		}
 #endif /* DOT11_N_SUPPORT */
 
@@ -2493,20 +2611,16 @@ BOOLEAN rtmp_rx_done_handle(RTMP_ADAPTER *pAd)
 		//RTMPWIEndianChange(pAd , (UCHAR *)pRxWI, TYPE_RXWI);
 #endif /* RT_BIG_ENDIAN */
 
-//+++Add by shiang for debug
-		if (1 || (pHeader->FC.Type == FC_TYPE_DATA)) {
-			if (!pRxBlk->pRxInfo) {
+		if((pRxBlk == NULL) || (pRxBlk->pRxInfo == NULL)) {
+			if (pRxBlk == NULL) {
+				DBGPRINT(RT_DEBUG_ERROR, ("%s(): pRxBlk is NULL!\n", __FUNCTION__));
+				RELEASE_NDIS_PACKET(pAd, pRxPacket, NDIS_STATUS_SUCCESS);
+			} else {
 				DBGPRINT(RT_DEBUG_ERROR, ("%s(): pRxBlk->pRxInfo is NULL!\n", __FUNCTION__));
 				RELEASE_NDIS_PACKET(pAd, pRxPacket, NDIS_STATUS_SUCCESS);
-				continue;
 			}
-
-			//DBGPRINT(RT_DEBUG_TRACE, ("%s():Dump the RxBlk info\n", __FUNCTION__));
-			//dump_rxblk(pAd, pRxBlk);
-			//hex_dump("RxPacket", (UCHAR *)pHeader, pRxBlk->MPDUtotalByteCnt);
-			//DBGPRINT(RT_DEBUG_TRACE, ("%s():==>Finish dump!\n", __FUNCTION__));
+			continue;
 		}
-//---Add by shiang for debug
 
 #ifdef DBG_CTRL_SUPPORT
 #ifdef INCLUDE_DEBUG_QUEUE

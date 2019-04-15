@@ -148,7 +148,7 @@ static VOID ClearTxRingClientAck(RTMP_ADAPTER *pAd, MAC_TABLE_ENTRY *pEntry)
 
 #ifdef RLT_MAC
 	if (pAd->chipCap.hif_type == HIF_RLT) {
-		DBGPRINT(RT_DEBUG_OFF, ("%s(): TBD for this function!\n", __FUNCTION__));
+		DBGPRINT(RT_DEBUG_OFF, ("%s(): TBD for this function!\n", __FUNCTION__));
 	}
 #endif /* RLT_MAC */
 
@@ -280,7 +280,7 @@ INT rtmp_mac_fifo_stat_update(RTMP_ADAPTER *pAd)
 			{			
 				DBGPRINT(RT_DEBUG_TRACE, ("#"));
 #ifdef DOT11_N_SUPPORT
-				pEntry->NoBADataCountDown = 64;
+				pEntry->NoBADataCountDown = 10;
 #endif /* DOT11_N_SUPPORT */
 
 
@@ -317,7 +317,7 @@ INT rtmp_mac_fifo_stat_update(RTMP_ADAPTER *pAd)
 #ifdef CONFIG_AP_SUPPORT
 #ifdef RTMP_MAC_PCI
 		/* if Tx fail >= 20, then clear TXWI ack in Tx Ring*/
-		if (pEntry->ContinueTxFailCnt >= pAd->ApCfg.EntryLifeCheck)
+		if (IS_ENTRY_CLIENT(pEntry) && pEntry->ContinueTxFailCnt >= pAd->ApCfg.EntryLifeCheck)
 			ClearTxRingClientAck(pAd, pEntry);	
 #endif /* RTMP_MAC_PCI */				
 #endif /* CONFIG_AP_SUPPORT */

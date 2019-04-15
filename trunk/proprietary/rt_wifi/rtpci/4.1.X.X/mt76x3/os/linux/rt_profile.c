@@ -29,11 +29,10 @@
 #include <linux/foe_hook.h>
 #endif
 
-#if defined (CONFIG_RA_HW_NAT)  || defined (CONFIG_RA_HW_NAT_MODULE)
-#include "../../../../../../net/nat/hw_nat/ra_nat.h"
-#include "../../../../../../net/nat/hw_nat/frame_engine.h"
+#if defined(CONFIG_RA_HW_NAT) || defined(CONFIG_RA_HW_NAT_MODULE)
+#include "../../../../../../../net/nat/hw_nat/ra_nat.h"
+#include "../../../../../../../net/nat/hw_nat/frame_engine.h"
 #endif
-
 
 struct dev_type_name_map{
 	INT type;
@@ -52,7 +51,7 @@ struct dev_type_name_map{
 #define xdef_to_str(s)			def_to_str(s)
 #define def_to_str(s)			#s
 
-#define FIRST_AP_PROFILE_PATH		"/etc/Wireless/RT2860/RT2860AP.dat"
+#define FIRST_AP_PROFILE_PATH		"/etc/Wireless/RT2860/RT2860.dat"
 #define FIRST_CHIP_ID			xdef_to_str(CONFIG_RT_FIRST_CARD)
 
 #define SECOND_AP_PROFILE_PATH		"/etc/Wireless/iNIC/iNIC_ap.dat"
@@ -90,7 +89,7 @@ INT get_dev_config_idx(RTMP_ADAPTER *pAd)
 
 	A2Hex(first_card, FIRST_CHIP_ID);
 	A2Hex(second_card, SECOND_CHIP_ID);
-	DBGPRINT(RT_DEBUG_TRACE, ("chip_id1=0x%x, chip_id2=0x%x, pAd->MACVersion=0x%x\n", first_card, second_card, pAd->MACVersion));
+	printk("chip_id1=0x%x, chip_id2=0x%x, pAd->MACVersion=0x%x\n", first_card, second_card, pAd->MACVersion);
 
 	if (IS_RT8592(pAd))
 		idx = 0;
@@ -304,7 +303,7 @@ void tbtt_tasklet(unsigned long data)
 			QUEUE_ENTRY *pEntry;	
 			QUEUE_ENTRY *pTail;
 			UINT count = 0;
-			unsigned long IrqFlags;			
+			ULONG IrqFlags = 0;
 #endif /* RTMP_MAC_PCI */
 		
 #ifndef MT_MAC
@@ -414,7 +413,7 @@ void tbtt_tasklet(unsigned long data)
 
 						if (deq_cnt)
 						{
-							RTMPDeQueuePacket(pAd, FALSE, QID_AC_BE, wcid, deq_cnt);
+						RTMPDeQueuePacket(pAd, FALSE, QID_AC_BE, wcid, deq_cnt); 
 #ifdef DATA_QUEUE_RESERVE
 							if (pAd->bDump)
 								DBGPRINT(RT_DEBUG_WARN, (" %s: bss:%u, deq_cnt = %u\n", __FUNCTION__, apidx, deq_cnt));
@@ -480,7 +479,7 @@ void tbtt_tasklet(unsigned long data)
 			if (bPS == TRUE) 
 			{
 				// TODO: shiang-usw, modify the WCID_ALL to pMBss->tr_entry because we need to tx B/Mcast frame here!!
-				RTMPDeQueuePacket(pAd, FALSE, NUM_OF_TX_RING, WCID_ALL, /*MAX_TX_IN_TBTT*/MAX_PACKETS_IN_MCAST_PS_QUEUE);
+				RTMPDeQueuePacket(pAd, FALSE, WMM_NUM_OF_AC, WCID_ALL, /*MAX_TX_IN_TBTT*/MAX_PACKETS_IN_MCAST_PS_QUEUE);
 			}
 #endif /* !MT_MAC */			
 		}
@@ -614,14 +613,14 @@ void announce_802_3_packet(
 			BOOLEAN	 need_drop = FALSE;
 
 			ApCliLinkCoverRxPolicy(pAd, pNetPkt, &need_drop);
-			
+
 			if (need_drop == TRUE) {
 				RELEASE_NDIS_PACKET(pAd, pRxPkt, NDIS_STATUS_FAILURE);
 				return;
 			}
 #endif /* CONFIG_WIFI_PKT_FWD */
 			RTMP_MATEngineRxHandle(pAd, pNetPkt, 0);
-		}
+		 }
 #endif /* MAT_SUPPORT */
 	}
 #endif /* APCLI_SUPPORT */
@@ -738,7 +737,6 @@ void announce_802_3_packet(
 			return;
 	}
 #endif
-
 #if defined (CONFIG_WIFI_PKT_FWD)
 		{
 			struct sk_buff *pOsRxPkt = RTPKT_TO_OSPKT(pRxPkt);
@@ -807,7 +805,6 @@ void announce_802_3_packet(
 			}
 		}
 #endif /* CONFIG_WIFI_PKT_FWD */
-
 	netif_rx(pRxPkt);
 }
 
@@ -1161,7 +1158,7 @@ VOID RTMPFreeAdapter(VOID *pAdSrc)
 	RTMP_OS_FREE_SEM(pAd);
 	RTMP_OS_FREE_ATOMIC(pAd);
 
-	RtmpOsVfree(pAd); /* pci_free_consistent(os_cookie->pci_dev,sizeof(RTMP_ADAPTER),pAd,os_cookie->pAd_pa); */
+	RtmpOsVfree(pAd);
 	if (os_cookie)
 		os_free_mem(NULL, os_cookie);
 }

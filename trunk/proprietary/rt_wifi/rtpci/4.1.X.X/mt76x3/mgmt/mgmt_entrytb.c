@@ -109,14 +109,13 @@ VOID tr_tb_set_entry(RTMP_ADAPTER *pAd, UCHAR tr_tb_idx, MAC_TABLE_ENTRY *pEntry
 {
 	struct _STA_TR_ENTRY *tr_entry;
 	INT qidx, tid,upId;
-    //MAC_TABLE_ENTRY *mac_entry;
-    struct wtbl_entry tb_entry;
-    //struct wtbl_2_struc *wtbl_2;
+	struct wtbl_entry tb_entry;
 
 	if (tr_tb_idx < MAX_LEN_OF_TR_TABLE)
 	{
 		tr_entry = &pAd->MacTab.tr_entry[tr_tb_idx];
 
+		pEntry->tr_tb_idx = tr_tb_idx;
 		tr_entry->EntryType = pEntry->EntryType;
 		tr_entry->wdev = pEntry->wdev;
 		tr_entry->func_tb_idx = pEntry->func_tb_idx;
@@ -169,10 +168,16 @@ VOID tr_tb_set_entry(RTMP_ADAPTER *pAd, UCHAR tr_tb_idx, MAC_TABLE_ENTRY *pEntry
 
 VOID tr_tb_set_mcast_entry(RTMP_ADAPTER *pAd, UCHAR tr_tb_idx, struct wifi_dev *wdev)
 {
-	struct _STA_TR_ENTRY *tr_entry = &pAd->MacTab.tr_entry[tr_tb_idx];
+	struct _STA_TR_ENTRY *tr_entry = NULL;
 	INT qidx, tid;
 
-	NdisZeroMemory(tr_entry, sizeof(struct _STA_TR_ENTRY));
+	if (tr_tb_idx > MAX_LEN_OF_TR_TABLE)
+		return;
+
+	tr_entry = &pAd->MacTab.tr_entry[tr_tb_idx];
+
+	if (!tr_entry)
+		return;
 
 	tr_entry->EntryType = ENTRY_CAT_MCAST;
 	tr_entry->wdev = wdev;
@@ -193,6 +198,7 @@ VOID tr_tb_set_mcast_entry(RTMP_ADAPTER *pAd, UCHAR tr_tb_idx, struct wifi_dev *
 		InitializeQueueHeader(&tr_entry->tx_queue[qidx]);
 		NdisAllocateSpinLock(pAd, &tr_entry->txq_lock[qidx]);
 	}
+
 	InitializeQueueHeader(&tr_entry->ps_queue);
 	NdisAllocateSpinLock(pAd, &tr_entry->ps_queue_lock);
 	tr_entry->deq_cnt = 0;
@@ -206,15 +212,27 @@ VOID tr_tb_set_mcast_entry(RTMP_ADAPTER *pAd, UCHAR tr_tb_idx, struct wifi_dev *
 	tr_entry->high_pkt_drop_cnt = 0;
 #endif /* DATA_QUEUE_RESERVE */
 
+    /*
+        Carter check,
+        if Mcast pkt will reference the bssid field for do something?
+        if so, need to check flow.
+    */
 	NdisMoveMemory(tr_entry->bssid, wdev->bssid, MAC_ADDR_LEN);
-	
 }
 
 
 // TODO: this function not finish yet!!
 VOID mgmt_tb_set_mcast_entry(RTMP_ADAPTER *pAd, UCHAR wcid)
 {
-	MAC_TABLE_ENTRY *pEntry = &pAd->MacTab.Content[MCAST_WCID];
+	MAC_TABLE_ENTRY *pEntry;
+
+	if(wcid >=MAX_LEN_OF_MAC_TABLE)
+	{
+		DBGPRINT(RT_DEBUG_OFF, ("%s: wcid out of boundary!\n", __FUNCTION__));
+		return;
+	}
+
+	pEntry= &pAd->MacTab.Content[wcid];
 
 	pEntry->EntryType = ENTRY_CAT_MCAST;
 	pEntry->Sst = SST_ASSOC;
@@ -228,7 +246,7 @@ VOID mgmt_tb_set_mcast_entry(RTMP_ADAPTER *pAd, UCHAR wcid)
 	pEntry->HTPhyMode.field.MCS = 3;
 
 	NdisMoveMemory(pEntry->Addr, &BROADCAST_ADDR[0], MAC_ADDR_LEN);
-	
+
 #ifdef CONFIG_AP_SUPPORT
 	IF_DEV_CONFIG_OPMODE_ON_AP(pAd){
 		pEntry->wdev = &pAd->ApCfg.MBSSID[MAIN_MBSSID].wdev;
@@ -266,14 +284,17 @@ VOID set_sta_ra_cap(RTMP_ADAPTER *pAd, MAC_TABLE_ENTRY *ent, ULONG ra_ie)
 	CLIENT_CAP_CLEAR_FLAG(ent, fCLIENT_STATUS_RALINK_CHIPSET);
 	CLIENT_CAP_CLEAR_FLAG(ent, fCLIENT_STATUS_AGGREGATION_CAPABLE);
 	CLIENT_CAP_CLEAR_FLAG(ent, fCLIENT_STATUS_PIGGYBACK_CAPABLE);
+	CLIENT_CAP_CLEAR_FLAG(ent, fCLIENT_STATUS_RDG_CAPABLE);
 
 	CLIENT_STATUS_CLEAR_FLAG(ent, fCLIENT_STATUS_RALINK_CHIPSET);
 	CLIENT_STATUS_CLEAR_FLAG(ent, fCLIENT_STATUS_AGGREGATION_CAPABLE);
 	CLIENT_STATUS_CLEAR_FLAG(ent, fCLIENT_STATUS_PIGGYBACK_CAPABLE);
+	CLIENT_STATUS_CLEAR_FLAG(ent, fCLIENT_STATUS_RDG_CAPABLE);
 	
 	/* Set cap flags */
 	if (ra_ie != 0x0) {
 		CLIENT_CAP_SET_FLAG(ent, fCLIENT_STATUS_RALINK_CHIPSET);
+		CLIENT_STATUS_SET_FLAG(ent, fCLIENT_STATUS_RALINK_CHIPSET);
 
 #ifdef AGGREGATION_SUPPORT
 		if (ra_ie & 0x00000001)
@@ -305,7 +326,6 @@ VOID set_sta_ra_cap(RTMP_ADAPTER *pAd, MAC_TABLE_ENTRY *ent, ULONG ra_ie)
 		DBGPRINT(RT_DEBUG_TRACE, ("PiggyBack= 1\n"));
 	}
 #endif /* PIGGYBACK_SUPPORT */
-
 }
 
 
@@ -433,7 +453,8 @@ MAC_TABLE_ENTRY *MacTableInsertEntry(
 			pEntry->RSNIE_Len = 0;
 			NdisZeroMemory(pEntry->R_Counter, sizeof(pEntry->R_Counter));
 			pEntry->ReTryCounter = PEER_MSG1_RETRY_TIMER_CTR;
-			tr_entry->PortSecured = WPA_802_1X_PORT_NOT_SECURED;			
+			tr_entry->PortSecured = WPA_802_1X_PORT_NOT_SECURED;
+			pEntry->AllowInsPTK = TRUE;
 
 			do
 			{
@@ -693,6 +714,9 @@ BOOLEAN MacTableDeleteEntry(RTMP_ADAPTER *pAd, USHORT wcid, UCHAR *pAddr)
 	STA_TR_ENTRY *tr_entry;
 	BOOLEAN Cancelled;
 
+	if (!pAd)
+		return FALSE;
+
 	if (wcid >= MAX_LEN_OF_MAC_TABLE)
 		return FALSE;
 
@@ -936,7 +960,7 @@ VOID MacTableReset(RTMP_ADAPTER *pAd, INT startWcid)
 	BOOLEAN Cancelled;    
 #ifdef CONFIG_AP_SUPPORT
 #ifdef RTMP_MAC_PCI
-	unsigned long	IrqFlags=0;
+	ULONG IrqFlags = 0;
 #endif /* RTMP_MAC_PCI */
 	UCHAR *pOutBuffer = NULL;
 	NDIS_STATUS NStatus;
@@ -946,6 +970,9 @@ VOID MacTableReset(RTMP_ADAPTER *pAd, INT startWcid)
 	UCHAR apidx = MAIN_MBSSID;
 #endif /* CONFIG_AP_SUPPORT */
 	MAC_TABLE_ENTRY *pMacEntry;
+
+	if (!pAd)
+		return;
 
 	DBGPRINT(RT_DEBUG_TRACE, ("MacTableReset\n"));
 	/*NdisAcquireSpinLock(&pAd->MacTabLock);*/
@@ -1027,7 +1054,7 @@ VOID MacTableReset(RTMP_ADAPTER *pAd, INT startWcid)
 /*		NdisZeroMemory(&pAd->MacTab, sizeof(MAC_TABLE));*/
 		NdisZeroMemory(&pAd->MacTab.Size,
 							sizeof(MAC_TABLE)-
-							Offsetof(MAC_TABLE, Size));
+							offsetof(MAC_TABLE, Size));
 
 		InitializeQueueHeader(&pAd->MacTab.McastPsQueue);
 		/*NdisReleaseSpinLock(&pAd->MacTabLock);*/

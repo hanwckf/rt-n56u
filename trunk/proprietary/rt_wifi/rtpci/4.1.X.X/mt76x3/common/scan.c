@@ -180,9 +180,9 @@ static INT scan_active(RTMP_ADAPTER *pAd, UCHAR OpMode, UCHAR ScanType)
 			else
 #endif /* WSC_INCLUDED */						
 #endif /* APCLI_SUPPORT */
-				MgtMacHeaderInitExt(pAd, &Hdr80211, SUBTYPE_PROBE_REQ, 0, BROADCAST_ADDR,
-									pAd->ApCfg.MBSSID[0].wdev.bssid,
-									BROADCAST_ADDR);
+			MgtMacHeaderInitExt(pAd, &Hdr80211, SUBTYPE_PROBE_REQ, 0, BROADCAST_ADDR,
+								pAd->ApCfg.MBSSID[0].wdev.bssid,
+								BROADCAST_ADDR);
 		}
 #endif /* CONFIG_AP_SUPPORT */
 
@@ -472,7 +472,11 @@ VOID ScanNextChannel(RTMP_ADAPTER *pAd, UCHAR OpMode)
 					stay_time = MIN_CHANNEL_TIME;
 			}
 			else
-				stay_time = MAX_CHANNEL_TIME;
+				/* for long beacon interval need more time for scan */
+				if (pAd->CommonCfg.BeaconPeriod > 80)
+				    stay_time = MAX_CHANNEL_TIME + pAd->CommonCfg.BeaconPeriod;
+				else
+				    stay_time = MAX_CHANNEL_TIME;
 #ifdef CONFIG_AP_SUPPORT					
 #endif			
 		}

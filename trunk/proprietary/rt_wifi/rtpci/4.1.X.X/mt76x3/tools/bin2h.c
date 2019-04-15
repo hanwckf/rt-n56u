@@ -313,7 +313,7 @@ int main(int argc ,char *argv[])
 			if (strncmp(rt28xx_mode, "AP", 2) == 0)
 				strcat(infname1, "/mcu/bin/MT7603EAP/WIFI_RAM_CODE_MT7603_e2.bin");
 			else
-				strcat(infname1, "/mcu/bin/WIFI_RAM_CODE_MT7603_e2.bin");
+			strcat(infname1, "/mcu/bin/WIFI_RAM_CODE_MT7603_e2.bin");
 			strcat(outfname, "/include/mcu/mt7603_firmware.h");
 			strcat(outfname1, "/include/mcu/mt7603_e2_firmware.h");
 			strcat(fw_name, "MT7603_FirmwareImage");

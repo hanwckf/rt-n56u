@@ -307,5 +307,10 @@ VOID IAPP_L2_UpdatePostCtrl(RTMP_ADAPTER *pAd, UINT8 *mac, INT wdev_idx);
 #define AIRPLAY_ON(_pAd)          ((_pAd)->bAirplayEnable == 1)
 #endif /* AIRPLAY_SUPPORT*/
 
+BOOLEAN IAPP_L2_Update_Frame_Send(
+	IN PRTMP_ADAPTER	pAd,
+    IN UINT8 *mac_p,
+    IN INT  bssid);
+
 #endif  /* __AP_H__ */
 

@@ -29,6 +29,9 @@
 #include "rt_config.h"
 
 #define OBSS_BEACON_RSSI_THRESHOLD		(-85)
+#define AUTO_CHANNEL_SCAN_MINRSSI		(-90)
+#define COLECT_PROBE_MINRSSI			(-93)
+#define RRM_LIST_MINRSSI			(-95)
 
 
 /*
@@ -55,13 +58,18 @@ VOID APPeerProbeReqAction(
 	UCHAR RSNIe=IE_WPA, RSNIe2=IE_WPA2;
 	BSS_STRUCT *mbss;
 	struct wifi_dev *wdev;
+	CHAR idx = 0;
 #ifdef BAND_STEERING
 	BOOLEAN bBndStrgCheck = TRUE;
+	BOOLEAN bAllowStaConnectInHt = FALSE;
 #endif /* BAND_STEERING */
 
 #ifdef WSC_AP_SUPPORT
 	UCHAR Addr3[MAC_ADDR_LEN];
 	PFRAME_802_11 pFrame = (PFRAME_802_11)Elem->Msg;
+
+	if (pFrame == NULL)
+	    return;
 
 	COPY_MAC_ADDR(Addr3, pFrame->Hdr.Addr3);
 #endif /* WSC_AP_SUPPORT */
@@ -91,6 +99,11 @@ DBGPRINT(RT_DEBUG_OFF, ("%s():shiang! PeerProbeReqSanity failed!\n", __FUNCTION_
 			/* the interface is down, so we can not send probe response */
 			continue;
 		}
+#if 0 /* this correcnt only for BW_20 clients, full check moved to probe sanity functions */
+		if (Elem->Channel != pAd->CommonCfg.Channel) {
+			continue;
+		}
+#endif
 #ifdef AIRPLAY_SUPPORT
 		if (pAd->ApCfg.MBSSID[apidx].bcn_buf.bBcnSntReq == FALSE)
 			continue;
@@ -117,16 +130,58 @@ DBGPRINT(RT_DEBUG_OFF, ("%s():shiang! PeerProbeReqSanity failed!\n", __FUNCTION_
 		}
 
 
+		if (mbss->ProbeRspRssiThreshold != 0)
+		{
+			CHAR rssi = RTMPMaxRssi(pAd, ConvertToRssi(pAd, &Elem->rssi_info, RSSI_IDX_0),
+                                  ConvertToRssi(pAd, &Elem->rssi_info, RSSI_IDX_1),
+                                  ConvertToRssi(pAd, &Elem->rssi_info, RSSI_IDX_2));
 #ifdef BAND_STEERING
-		BND_STRG_CHECK_CONNECTION_REQ(	pAd,
+			/* collect probe req from long range clients for band steering, for 5GHz collect all frames > -90dBm */
+			if (rssi != 0 && ((rssi > COLECT_PROBE_MINRSSI && pAd->CommonCfg.Channel > 14) || rssi > mbss->ProbeRspRssiThreshold)) {
+				    if (WMODE_CAP_N(wdev->PhyMode))
+						bAllowStaConnectInHt = TRUE;
+				    BND_STRG_CHECK_CONNECTION_REQ(pAd, NULL, ProbeReqParam.Addr2, Elem->MsgType, Elem->rssi_info, bAllowStaConnectInHt, &bBndStrgCheck);
+				    if (bBndStrgCheck == FALSE && pAd->CommonCfg.Channel <= 14)
+					    continue;
+			}
+#endif /* BAND_STEERING */
+
+			if (rssi != 0 && rssi < mbss->ProbeRspRssiThreshold) {
+			    DBGPRINT(RT_DEBUG_INFO, ("%s: PROBE_RSP Threshold = %d , PROBE RSSI = %d\n", wdev->if_dev->name, mbss->ProbeRspRssiThreshold, rssi));
+			    continue;
+			}
+		} else {
+
+#ifdef BAND_STEERING
+		    if (WMODE_CAP_N(wdev->PhyMode))
+				bAllowStaConnectInHt = TRUE;
+
+		    BND_STRG_CHECK_CONNECTION_REQ(	pAd,
 											NULL, 
 											ProbeReqParam.Addr2,
 											Elem->MsgType,
 											Elem->rssi_info,
+											bAllowStaConnectInHt,
 											&bBndStrgCheck);
-		if (bBndStrgCheck == FALSE)
-			return;
+		    if (bBndStrgCheck == FALSE && pAd->CommonCfg.Channel <= 14)
+			    continue;
 #endif /* BAND_STEERING */
+		}
+
+		/* temporary block probe req from last kickouted client */
+		if (pAd->ApCfg.MBSSID[apidx].TmpBlockAfterKickTimes != 0
+		    && pAd->ApCfg.MBSSID[apidx].TmpBlockAfterKickCount < pAd->ApCfg.MBSSID[apidx].TmpBlockAfterKickTimes) {
+		    /* ignore probe req if address eqal */
+		    if (!MAC_ADDR_EQUAL(ZERO_MAC_ADDR, pAd->ApCfg.MBSSID[apidx].TmpBlockAfterKickMac) && MAC_ADDR_EQUAL(ProbeReqParam.Addr2, pAd->ApCfg.MBSSID[apidx].TmpBlockAfterKickMac)) {
+			    pAd->ApCfg.MBSSID[apidx].TmpBlockAfterKickCount++;
+			    DBGPRINT(RT_DEBUG_INFO, ("PROBE_RSP Temp Block MAC %02x:%02x:%02x:%02x:%02x:%02x , PROBE COUNT = %d of %d\n",
+				    PRINT_MAC(ProbeReqParam.Addr2), pAd->ApCfg.MBSSID[apidx].TmpBlockAfterKickCount, pAd->ApCfg.MBSSID[apidx].TmpBlockAfterKickTimes));
+			    continue;
+		    }
+		} else {
+		    /* cleanup blocked mac address */
+		    NdisZeroMemory(pAd->ApCfg.MBSSID[apidx].TmpBlockAfterKickMac, MAC_ADDR_LEN);
+		}
 
 		/* allocate and send out ProbeRsp frame */
 		NStatus = MlmeAllocateMemory(pAd, &pOutBuffer);
@@ -228,9 +283,7 @@ DBGPRINT(RT_DEBUG_OFF, ("%s():shiang! PeerProbeReqSanity failed!\n", __FUNCTION_
 #ifdef RT_BIG_ENDIAN
 			ADD_HT_INFO_IE	addHTInfoTmp;
 #endif
-
-/* YF@20120419: Fix IOT Issue with Atheros STA on Windows 7 When IEEE80211H flag turn on. */
-
+			/* YF@20120419: Fix IOT Issue with Atheros STA on Windows 7 When IEEE80211H flag turn on. */
 			HtLen = sizeof(pAd->CommonCfg.HtCapability);
 			AddHtLen = sizeof(pAd->CommonCfg.AddHTInfo);
 			//NewExtLen = 1;
@@ -375,7 +428,9 @@ DBGPRINT(RT_DEBUG_OFF, ("%s():shiang! PeerProbeReqSanity failed!\n", __FUNCTION_
 
 		/* Extended Capabilities IE */
 		{
-			ULONG TmpLen;
+			ULONG TmpLen, infoPos;
+			PUCHAR pInfo;
+			BOOLEAN bNeedAppendExtIE = FALSE;
 			EXT_CAP_INFO_ELEMENT extCapInfo;
 			UCHAR extInfoLen = sizeof(EXT_CAP_INFO_ELEMENT);
 
@@ -408,14 +463,34 @@ DBGPRINT(RT_DEBUG_OFF, ("%s():shiang! PeerProbeReqSanity failed!\n", __FUNCTION_
 			if (pAd->ApCfg.MBSSID[apidx].HotSpotCtrl.HotSpotEnable)
 				extCapInfo.interworking = 1;
 #endif
+			pInfo = (PUCHAR)(&extCapInfo);
+			for (infoPos = 0; infoPos < extInfoLen; infoPos++)
+			{
+				if (pInfo[infoPos] != 0)
+				{
+					bNeedAppendExtIE = TRUE;
+					break;
+				}
+			}
 
-			MakeOutgoingFrame(pOutBuffer+FrameLen, &TmpLen,
+			if (bNeedAppendExtIE == TRUE)
+			{
+				for (infoPos = (extInfoLen - 1); infoPos >= EXT_CAP_MIN_SAFE_LENGTH; infoPos--)
+				{
+					if (pInfo[infoPos] == 0)
+						extInfoLen --;
+					else
+						break;
+				}
+
+				MakeOutgoingFrame(pOutBuffer+FrameLen, &TmpLen,
 								1, 			&ExtCapIe,
 								1, 			&extInfoLen,
 								extInfoLen, 	&extCapInfo,
 								END_OF_ARGS);
-				
-			FrameLen += TmpLen;
+
+				FrameLen += TmpLen;
+			}
 		}
 
 #ifdef AP_QLOAD_SUPPORT
@@ -459,8 +534,6 @@ DBGPRINT(RT_DEBUG_OFF, ("%s():shiang! PeerProbeReqSanity failed!\n", __FUNCTION_
 #ifdef DOT11K_RRM_SUPPORT
 		if (IS_RRM_ENABLE(pAd, apidx))
 		{
-			InsertTpcReportIE(pAd, pOutBuffer+FrameLen, &FrameLen,
-			RTMP_GetTxPwr(pAd, pAd->CommonCfg.MlmeTransmit), 0);
 			RRM_InsertRRMEnCapIE(pAd, pOutBuffer+FrameLen, &FrameLen, apidx);
 		}
 
@@ -473,7 +546,7 @@ DBGPRINT(RT_DEBUG_OFF, ("%s():shiang! PeerProbeReqSanity failed!\n", __FUNCTION_
 					break;
 				InsertChannelRepIE(pAd, pOutBuffer+FrameLen, &FrameLen,
 									(RTMP_STRING *)pAd->CommonCfg.CountryCode,
-									pAd->CommonCfg.RegulatoryClass[loop]);
+									pAd->CommonCfg.RegulatoryClass[loop], NULL);
 			}
 		}
 
@@ -521,12 +594,12 @@ DBGPRINT(RT_DEBUG_OFF, ("%s():shiang! PeerProbeReqSanity failed!\n", __FUNCTION_
 		/* 7.3.2.27 Extended Capabilities IE */
 		{
 			ULONG TmpLen;
-			EXT_CAP_INFO_ELEMENT extCapInfo;
+			EXT_CAP_INFO_ELEMENT extCapInfo = { 0 };
 			UCHAR extInfoLen;
 
 
 			extInfoLen = sizeof(EXT_CAP_INFO_ELEMENT);
-			NdisZeroMemory(&extCapInfo, extInfoLen);
+			//NdisZeroMemory(&extCapInfo, extInfoLen);
 
 			/* P802.11n_D1.10, HT Information Exchange Support */
 			if (WMODE_CAP_N(PhyMode) && (pAd->CommonCfg.Channel <= 14) &&
@@ -547,26 +620,47 @@ DBGPRINT(RT_DEBUG_OFF, ("%s():shiang! PeerProbeReqSanity failed!\n", __FUNCTION_
 #endif /* DOT11N_DRAFT3 */
 #endif /* DOT11_N_SUPPORT */
 
-	    /* add country IE, power constraint IE */
-		if (pAd->CommonCfg.bCountryFlag)
+		/* add Country IE and power-related IE */
+		if (pAd->CommonCfg.bCountryFlag ||
+			(pAd->CommonCfg.Channel > 14 && pAd->CommonCfg.bIEEE80211H == TRUE)
+#ifdef DOT11K_RRM_SUPPORT
+				|| IS_RRM_ENABLE(pAd, apidx)
+#endif /* DOT11K_RRM_SUPPORT */
+			)
 		{
 			ULONG TmpLen2=0;
-			UCHAR TmpFrame[256];
+			UCHAR TmpFrame[256] = { 0 };
 			UCHAR CountryIe = IE_COUNTRY;
-			UCHAR MaxTxPower=16;
 
-#ifdef A_BAND_SUPPORT
-			/* 
-			Only 802.11a APs that comply with 802.11h are required to include
-			a Power Constrint Element(IE=32) in beacons and probe response frames
+			/*
+				Only APs that comply with 802.11h or 802.11k are required to include
+				the Power Constraint element (IE=32) and
+				the TPC Report element (IE=35) and
+				the VHT Transmit Power Envelope element (IE=195)
+				in beacon frames and probe response frames
 			*/
-			if (pAd->CommonCfg.Channel > 14 && pAd->CommonCfg.bIEEE80211H == TRUE)
+			if ((pAd->CommonCfg.Channel > 14 && pAd->CommonCfg.bIEEE80211H == TRUE)
+#ifdef DOT11K_RRM_SUPPORT
+					|| IS_RRM_ENABLE(pAd, apidx)
+#endif /* DOT11K_RRM_SUPPORT */
+			    )
 			{
+				UINT8 PwrConstraintIE = IE_POWER_CONSTRAINT;
+				UINT8 PwrConstraintLen = 1;
+				UINT8 PwrConstraint = pAd->CommonCfg.PwrConstraint;
+
 				/* prepare power constraint IE */
 				MakeOutgoingFrame(pOutBuffer+FrameLen,    &TmpLen,
-						3,                 	PowerConstraintIE,
+						1,                          &PwrConstraintIE,
+						1,                          &PwrConstraintLen,
+						1,                          &PwrConstraint,
 						END_OF_ARGS);
-						FrameLen += TmpLen;
+
+		    		FrameLen += TmpLen;
+
+				/* prepare TPC Report IE */
+				InsertTpcReportIE(pAd, pOutBuffer+FrameLen, &FrameLen,
+				RTMP_GetTxPwr(pAd, pAd->CommonCfg.MlmeTransmit), 0);
 
 #ifdef DOT11_VHT_AC
 				if (WMODE_CAP_AC(PhyMode)) {
@@ -585,19 +679,21 @@ DBGPRINT(RT_DEBUG_OFF, ("%s():shiang! PeerProbeReqSanity failed!\n", __FUNCTION_
 				}
 #endif /* DOT11_VHT_AC */
 			}
-#endif /* A_BAND_SUPPORT */
 
-			NdisZeroMemory(TmpFrame, sizeof(TmpFrame));
+			//NdisZeroMemory(TmpFrame, sizeof(TmpFrame));
 
 			/* prepare channel information */
-			MaxTxPower = GetCuntryMaxTxPwr(pAd, pAd->CommonCfg.Channel);
+#ifdef EXT_BUILD_CHANNEL_LIST
+			BuildBeaconChList(pAd, TmpFrame, &TmpLen2);
+#else
+			UCHAR MaxTxPower = GetCuntryMaxTxPwr(pAd, pAd->CommonCfg.Channel);
 			MakeOutgoingFrame(TmpFrame+TmpLen2,     &TmpLen,
 					1,                 	&pAd->ChannelList[0].Channel,
 					1,                 	&pAd->ChannelListNum,
 					1,                 	&MaxTxPower,
 					END_OF_ARGS);
 			TmpLen2 += TmpLen;
-
+#endif /* EXT_BUILD_CHANNEL_LIST */
 #ifdef DOT11K_RRM_SUPPORT
 			if (IS_RRM_ENABLE(pAd, apidx)
 				&& (pAd->CommonCfg.RegulatoryClass[0] != 0))
@@ -659,9 +755,9 @@ DBGPRINT(RT_DEBUG_OFF, ("%s():shiang! PeerProbeReqSanity failed!\n", __FUNCTION_
 				MakeOutgoingFrame(pOutBuffer + FrameLen, &TmpLen,
 								  sizeof(HT_EXT_CHANNEL_SWITCH_ANNOUNCEMENT_IE),	&HtExtChannelSwitchIe,
 								  END_OF_ARGS);
+				FrameLen += TmpLen;
 			}
 #endif /* DOT11_N_SUPPORT */
-			FrameLen += TmpLen;
 		}
 #endif /* A_BAND_SUPPORT */
 
@@ -810,6 +906,7 @@ DBGPRINT(RT_DEBUG_OFF, ("%s():shiang! PeerProbeReqSanity failed!\n", __FUNCTION_
 		add Ralink-specific IE here - Byte0.b0=1 for aggregation, Byte0.b1=1 for piggy-back
 		                                 Byte0.b3=1 for rssi-feedback 
 	*/
+	if (pAd->CommonCfg.bAggregationCapable || pAd->CommonCfg.bPiggyBackCapable || pAd->CommonCfg.bRdg || ProbeReqParam.bRequestRssi == TRUE)
 	{
 		ULONG TmpLen;
 		UCHAR RalinkSpecificIe[9] = {IE_VENDOR_SPECIFIC, 7, 0x00, 0x0c, 0x43, 0x00, 0x00, 0x00, 0x00};
@@ -865,11 +962,11 @@ DBGPRINT(RT_DEBUG_OFF, ("%s():shiang! PeerProbeReqSanity failed!\n", __FUNCTION_
 		}
 #endif /* AIRPLAY_SUPPORT*/
 
-	/* 802.11n 11.1.3.2.2 active scanning. sending probe response with MCS rate is */
-	MiniportMMRequest(pAd, 0, pOutBuffer, FrameLen);
-	MiniportMMRequest(pAd, 0, pOutBuffer, FrameLen);
-	MiniportMMRequest(pAd, 0, pOutBuffer, FrameLen);
-	MlmeFreeMemory(pAd, pOutBuffer);
+	    /* 802.11n 11.1.3.2.2 active scanning. sending probe response with MCS rate is */
+	    for (idx = 0; idx < mbss->ProbeRspTimes; idx++)
+		    MiniportMMRequest(pAd, 0, pOutBuffer, FrameLen);
+
+	    MlmeFreeMemory(pAd, pOutBuffer);
 	}
 }
 
@@ -914,6 +1011,7 @@ VOID APPeerBeaconAction(
 #endif /* MT_MAC */
 #endif /* APCLI_SUPPORT */
 	BCN_IE_LIST *ie_list = NULL;
+	UCHAR Channel = 0;
 
 
 	/* allocate memory */
@@ -939,6 +1037,9 @@ VOID APPeerBeaconAction(
 
 	pRates = (PUCHAR)Rates;
 
+	/* Init the DUT's working channel from RX'D param first, actually we need to get the accurate Channel from wdev */
+	Channel = Elem->Channel;
+	/* PeerBeaconAndProbeRspSanity() may overwrite ie_list->Channel if beacon or  probe resp contain IE_DS_PARM */
 	ie_list->Channel = Elem->Channel;
 	RealRssi = RTMPMaxRssi(pAd, ConvertToRssi(pAd, &Elem->rssi_info, RSSI_IDX_0),
 							ConvertToRssi(pAd, &Elem->rssi_info, RSSI_IDX_1),
@@ -960,7 +1061,7 @@ VOID APPeerBeaconAction(
 
 
 		/* ignore BEACON not in this channel */
-		if (ie_list->Channel != pAd->CommonCfg.Channel
+		if (ie_list->Channel != Channel
 #ifdef DOT11_N_SUPPORT
 #ifdef DOT11N_DRAFT3
 			&& (pAd->CommonCfg.bOverlapScanning == FALSE)
@@ -971,17 +1072,10 @@ VOID APPeerBeaconAction(
 			goto __End_Of_APPeerBeaconAction;
 		}
 
-#ifdef IDS_SUPPORT
-		/* Conflict SSID detection */
-		RTMPConflictSsidDetection(pAd, (PUCHAR)ie_list->Ssid, ie_list->SsidLen,
-								(CHAR)Elem->rssi_info.raw_rssi[0],
-								(CHAR)Elem->rssi_info.raw_rssi[1],
-								(CHAR)Elem->rssi_info.raw_rssi[2]);
-#endif /* IDS_SUPPORT */
 #ifdef SMART_CARRIER_SENSE_SUPPORT
 		/* Collect BEACON for SCS reference. */
-		 if ((RealRssi + pAd->BbpRssiToDbmDelta) > Rssi)
-		Rssi = RealRssi + pAd->BbpRssiToDbmDelta;
+		if (!Rssi || (RealRssi + pAd->BbpRssiToDbmDelta) > Rssi)
+			Rssi = RealRssi + pAd->BbpRssiToDbmDelta;
 		Idx = BssTableSetEntry(pAd, &pAd->SCSCtrl.SCSBssTab, ie_list, Rssi, LenVIE, pVIE);
 		if (Idx != BSS_NOT_FOUND)
 		{
@@ -991,7 +1085,6 @@ VOID APPeerBeaconAction(
 		}
 
 #endif /* SMART_CARRIER_SENSE_SUPPORT */
-
 
 #ifdef DOT11_N_SUPPORT
 #ifdef DOT11N_DRAFT3
@@ -1024,13 +1117,22 @@ VOID APPeerBeaconAction(
 			}
 			else
 			{
-				if (ie_list->Channel != pAd->CommonCfg.Channel)
+				if (ie_list->Channel != Channel)
 				{
-					//goto __End_Of_APPeerBeaconAction;
+					goto __End_Of_APPeerBeaconAction;
 				}
 			}
 		}
 #endif /* DOT11_N_SUPPORT */
+
+#ifdef IDS_SUPPORT
+		/* Conflict SSID detection */
+		if (ie_list->Channel == pAd->CommonCfg.Channel)
+			RTMPConflictSsidDetection(pAd, (PUCHAR)ie_list->Ssid, ie_list->SsidLen,
+								(CHAR)Elem->rssi_info.raw_rssi[0],
+								(CHAR)Elem->rssi_info.raw_rssi[1],
+								(CHAR)Elem->rssi_info.raw_rssi[2]);
+#endif /* IDS_SUPPORT */
 
                 SupportRate(ie_list->SupRate, ie_list->SupRateLen, ie_list->ExtRate, ie_list->ExtRateLen, &pRates, &RatesLen, &MaxSupportedRate);
 		
@@ -1046,8 +1148,7 @@ VOID APPeerBeaconAction(
 		}
 
 #ifdef DOT11_N_SUPPORT
-		if ((pAd->CommonCfg.bHTProtect)
-			&& (ie_list->HtCapabilityLen == 0) && (RealRssi > OBSS_BEACON_RSSI_THRESHOLD))
+		if ((ie_list->HtCapabilityLen == 0) && (RealRssi > OBSS_BEACON_RSSI_THRESHOLD))
 		{
 			
 			pAd->ApCfg.LastNoneHTOLBCDetectTime = pAd->Mlme.Now32;
@@ -1169,11 +1270,11 @@ VOID APPeerBeaconAction(
 			if (brc == TRUE)
 			{
 				pAd->CommonCfg.Dot11BssWidthTriggerScanInt = le2cpu16(BssScan.TriggerScanInt); /*APBssScan.TriggerScanInt[1] * 256 + APBssScan.TriggerScanInt[0];*/
-				/*MTWF_LOG(DBG_CAT_ALL, DBG_SUBCAT_ALL, DBG_LVL_ERROR,("Update Dot11BssWidthTriggerScanInt=%d \n", pAd->CommonCfg.Dot11BssWidthTriggerScanInt)); */
+				/* DBGPRINT(RT_DEBUG_TRACE, ("Update Dot11BssWidthTriggerScanInt=%d \n", pAd->CommonCfg.Dot11BssWidthTriggerScanInt)); */
 				/* out of range defined in MIB... So fall back to default value.*/
 				if ((pAd->CommonCfg.Dot11BssWidthTriggerScanInt < 10) ||(pAd->CommonCfg.Dot11BssWidthTriggerScanInt > 900))
 				{
-					/*MTWF_LOG(DBG_CAT_ALL, DBG_SUBCAT_ALL, DBG_LVL_ERROR,("ACT - UpdateBssScanParm( Dot11BssWidthTriggerScanInt out of range !!!!)  \n"));*/
+					/* DBGPRINT(RT_DEBUG_TRACE, ("ACT - UpdateBssScanParm( Dot11BssWidthTriggerScanInt out of range !!!!)  \n"));*/
 					pAd->CommonCfg.Dot11BssWidthTriggerScanInt = 900;
 				}
 			}
@@ -1276,9 +1377,38 @@ __End_Of_APPeerBeaconAction:
 #ifdef CONFIG_AP_SUPPORT
 IF_DEV_CONFIG_OPMODE_ON_AP(pAd)
 {
+#ifdef DOT11K_RRM_SUPPORT
+	UCHAR apidx;
+
+	/* update my network scanlist from neighbour beacons with SSID filter for RRM, only on work channel (rssi info valid only for this) */
+	for(apidx=0; apidx<pAd->ApCfg.BssidNum; apidx++) {
+	    if (IS_RRM_ENABLE(pAd, apidx) && RealRssi > RRM_LIST_MINRSSI && pAd->ScanTab.BssNr < MAX_LEN_OF_BSS_TABLE &&
+		/* ie_list->Channel == Channel && */ ie_list->SsidLen > 0 && pAd->ApCfg.MBSSID[apidx].SsidLen > 0 &&
+		ie_list->SsidLen == pAd->ApCfg.MBSSID[apidx].SsidLen &&
+		RTMPEqualMemory((PUCHAR)ie_list->Ssid, (PUCHAR)pAd->ApCfg.MBSSID[apidx].Ssid, min(ie_list->SsidLen, pAd->ApCfg.MBSSID[apidx].SsidLen))
+	    ) {
+		ULONG Idx = BssTableSearch(&pAd->ScanTab, ie_list->Bssid, ie_list->Channel);
+		if (Idx == BSS_NOT_FOUND) {
+			Idx = BssTableSetEntry(pAd, &pAd->ScanTab, ie_list, RealRssi, LenVIE, pVIE);
+			if (Idx != BSS_NOT_FOUND)
+			{
+			    NdisMoveMemory(pAd->ScanTab.BssEntry[Idx].PTSF, &Elem->Msg[24], 4);
+			    NdisMoveMemory(&pAd->ScanTab.BssEntry[Idx].TTSF[0], &Elem->TimeStamp.u.LowPart, 4);
+			    NdisMoveMemory(&pAd->ScanTab.BssEntry[Idx].TTSF[4], &Elem->TimeStamp.u.LowPart, 4);
+			}
+			/* sort entry by rssi every insert */
+			if (!ApScanRunning(pAd) && pAd->ScanTab.BssNr > 1)
+			    BssTableSortByRssi(&pAd->ScanTab, FALSE);
+			DBGPRINT(RT_DEBUG_TRACE, ("ADD new SSID %s to ScanTab table\n", ie_list->Ssid));
+		}
+	    } else {
+			//DBGPRINT(RT_DEBUG_TRACE, ("SSID %s %s %d %d %d %d NOT EQAL\n", ie_list->Ssid, pAd->ApCfg.MBSSID[apidx].Ssid, ie_list->SsidLen, pAd->ApCfg.MBSSID[apidx].SsidLen, ie_list->Channel, pAd->CommonCfg.Channel));
+	    }
+	}
+#endif /* DOT11K_RRM_SUPPORT */
 	if (pAd->pChannelInfo != NULL)
 	{
-		if (ie_list->Channel == pAd->ApCfg.AutoChannel_Channel)
+		if (ie_list->Channel == pAd->ApCfg.AutoChannel_Channel && RealRssi > AUTO_CHANNEL_SCAN_MINRSSI)
 		{
 			if (AutoChBssSearchWithSSID(pAd, ie_list->Bssid, (PUCHAR)ie_list->Ssid, ie_list->SsidLen, ie_list->Channel) == BSS_NOT_FOUND)
 				pAd->pChannelInfo->ApCnt[pAd->ApCfg.current_channel_index]++;
@@ -1360,6 +1490,9 @@ VOID APScanTimeoutAction(RTMP_ADAPTER *pAd, MLME_QUEUE_ELEM *Elem)
 	}
 #endif /* CONFIG_AP_SUPPORT */
 	ScanNextChannel(pAd, OPMODE_AP);
+	/* sort entry by rssi every scan */
+	if (pAd->ScanTab.BssNr > 1)
+	    BssTableSortByRssi(&pAd->ScanTab, FALSE);
 }
 
 /*
@@ -1418,7 +1551,6 @@ VOID APMlmeScanReqAction(RTMP_ADAPTER *pAd, MLME_QUEUE_ELEM *Elem)
 	}
 }
 
-
 /*
     ==========================================================================
     Description:
@@ -1431,9 +1563,15 @@ VOID APPeerBeaconAtScanAction(RTMP_ADAPTER *pAd, MLME_QUEUE_ELEM *Elem)
 	UCHAR *VarIE = NULL;
 	USHORT LenVIE;
 	NDIS_802_11_VARIABLE_IEs *pVIE = NULL;
+	CHAR  Rssi = -127;
 	CHAR RealRssi = -127;
 
 	BCN_IE_LIST *ie_list = NULL;
+
+#ifdef DOT11K_RRM_SUPPORT
+	UCHAR apidx;
+	BOOLEAN rrm_use = FALSE;
+#endif /* DOT11K_RRM_SUPPORT */
 
 	os_alloc_mem(pAd, (UCHAR **)&ie_list, sizeof(BCN_IE_LIST));
 	if (!ie_list) {
@@ -1461,7 +1599,6 @@ VOID APPeerBeaconAtScanAction(RTMP_ADAPTER *pAd, MLME_QUEUE_ELEM *Elem)
 					ie_list, &LenVIE, pVIE, FALSE))
     {
 		ULONG Idx;
-		CHAR  Rssi = -127;
 
 		RealRssi = RTMPMaxRssi(pAd, ConvertToRssi(pAd, &Elem->rssi_info, RSSI_IDX_0),
 								ConvertToRssi(pAd, &Elem->rssi_info, RSSI_IDX_1),
@@ -1523,8 +1660,18 @@ VOID APPeerBeaconAtScanAction(RTMP_ADAPTER *pAd, MLME_QUEUE_ELEM *Elem)
 		RealRssi = RTMPMaxRssi(pAd, ConvertToRssi(pAd, &Elem->rssi_info, RSSI_IDX_0), 
 								ConvertToRssi(pAd, &Elem->rssi_info, RSSI_IDX_1),
 								ConvertToRssi(pAd, &Elem->rssi_info, RSSI_IDX_2));
-        if ((RealRssi + pAd->BbpRssiToDbmDelta) > Rssi)
-            Rssi = RealRssi + pAd->BbpRssiToDbmDelta;
+	if (!Rssi || (RealRssi + pAd->BbpRssiToDbmDelta) > Rssi)
+        	Rssi = RealRssi + pAd->BbpRssiToDbmDelta;
+#ifdef DOT11K_RRM_SUPPORT
+		/* check for any MBSSID use RRM */
+		for(apidx=0; apidx<pAd->ApCfg.BssidNum; apidx++)
+		    if (IS_RRM_ENABLE(pAd, apidx))
+			rrm_use = TRUE;
+
+		/* in RRM mode skip very low for normal connect AP at scan */
+		if (rrm_use == TRUE && Rssi < RRM_LIST_MINRSSI)
+			goto __End_Of_APPeerBeaconAtScanAction;
+#endif /* DOT11K_RRM_SUPPORT */
 
 		Idx = BssTableSetEntry(pAd, &pAd->ScanTab, ie_list, Rssi, LenVIE, pVIE
 							);
@@ -1589,7 +1736,7 @@ IF_DEV_CONFIG_OPMODE_ON_AP(pAd)
 {
 	if (pAd->pChannelInfo != NULL)
 	{
-		if (ie_list->Channel == pAd->ApCfg.AutoChannel_Channel)
+		if (ie_list->Channel == pAd->ApCfg.AutoChannel_Channel && Rssi > AUTO_CHANNEL_SCAN_MINRSSI)
 		{
 			if (AutoChBssSearchWithSSID(pAd, ie_list->Bssid, (PUCHAR)ie_list->Ssid, ie_list->SsidLen, ie_list->Channel) == BSS_NOT_FOUND)
 				pAd->pChannelInfo->ApCnt[pAd->ApCfg.current_channel_index]++;
@@ -1770,32 +1917,34 @@ VOID SupportRate(
 typedef struct
 {
 	UCHAR	regclass;		/* regulatory class */
-	UCHAR	spacing;		/* 0: 20Mhz, 1: 40Mhz */
+	UCHAR	spacing;		/* 0: 20Mhz, 1: 40Mhz, 2: 80Mhz */
 	UCHAR	channelset[16];	/* max 15 channels, use 0 as terminator */
 } REG_CLASS;
 
 REG_CLASS reg_class[] =
 {
-	{  1, 0, {36, 40, 44, 48, 0}},
-	{  2, 0, {52, 56, 60, 64, 0}},
-	{  3, 0, {149, 153, 157, 161, 0}},
-	{  4, 0, {100, 104, 108, 112, 116, 120, 124, 128, 132, 136, 140, 0}},
-	{  5, 0, {165, 0}},
-	{ 22, 1, {36, 44, 0}},
-	{ 23, 1, {52, 60, 0}},
-	{ 24, 1, {100, 108, 116, 124, 132, 0}},
-	{ 25, 1, {149, 157, 0}},
-	{ 26, 1, {149, 157, 0}},
-	{ 27, 1, {40, 48, 0}},
-	{ 28, 1, {56, 64, 0}},
-	{ 29, 1, {104, 112, 120, 128, 136, 0}},
-	{ 30, 1, {153, 161, 0}},
-	{ 31, 1, {153, 161, 0}},
-	{ 32, 1, {1, 2, 3, 4, 5, 6, 7, 0}},
-	{ 33, 1, {5, 6, 7, 8, 9, 10, 11, 0}},
+	{  1, BW_20,  {36, 40, 44, 48, 0}},
+	{  2, BW_20,  {52, 56, 60, 64, 0}},
+	{  3, BW_20,  {149, 153, 157, 161, 0}},
+	{  4, BW_20,  {100, 104, 108, 112, 116, 120, 124, 128, 132, 136, 140, 144, 0}},
+	{  5, BW_20,  {149, 153, 157, 161, 165, 0}},
+	{ 22, BW_40,  {36, 44, 0}},
+	{ 23, BW_40,  {52, 60, 0}},
+	{ 24, BW_40,  {100, 108, 116, 124, 132, 140, 0}},
+	{ 25, BW_40,  {149, 157, 0}},
+	{ 26, BW_40,  {149, 157, 0}},
+	{ 27, BW_40,  {40, 48, 0}},
+	{ 28, BW_40,  {56, 64, 0}},
+	{ 29, BW_40,  {104, 112, 120, 128, 136, 144, 0}},
+	{ 30, BW_40,  {153, 161, 0}},
+	{ 31, BW_40,  {153, 161, 0}},
+	{ 32, BW_40,  {1, 2, 3, 4, 5, 6, 7, 0}},
+	{ 33, BW_40,  {5, 6, 7, 8, 9, 10, 11, 0}},
+	{128, BW_80,  {42, 58, 106, 122, 138, 155, 0}},
+	{129, BW_160, {50, 114, 0}},
+	{130, BW_80,  {42, 58, 106, 122, 138, 155, 0}},
 	{ 0,  0, {0}}			/* end */
 };
-
 
 UCHAR get_regulatory_class(RTMP_ADAPTER *pAd)
 {
@@ -1804,7 +1953,7 @@ UCHAR get_regulatory_class(RTMP_ADAPTER *pAd)
 
 	do
 	{
-		if (reg_class[i].spacing == pAd->CommonCfg.HtCapability.HtCapInfo.ChannelWidth)
+		if (reg_class[i].spacing >= pAd->CommonCfg.HtCapability.HtCapInfo.ChannelWidth)
 		{
 			int j=0;
 

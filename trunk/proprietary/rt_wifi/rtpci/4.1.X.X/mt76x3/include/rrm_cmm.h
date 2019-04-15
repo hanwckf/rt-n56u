@@ -57,6 +57,10 @@ typedef struct _RRM_CONFIG
 	BOOLEAN bDot11kRRMEnable;
 	BOOLEAN bDot11kRRMNeighborRepTSFEnable;
 	RRM_QUIET_CB QuietCB;
+	/* FOR AP Measurement Report */
+	UINT8	PeerMeasurementToken;
+	BOOLEAN bPeerReqLCI;
+	BOOLEAN bPeerReqCIVIC;
 } RRM_CONFIG, *PRRM_CONFIG;
 
 typedef union _RRM_BCN_REQ_CAP
@@ -81,6 +85,7 @@ typedef struct _RRM_MLME_BCN_REQ_INFO
 	UINT8 MeasureMode;
 	RRM_BCN_REQ_CAP BcnReqCapFlag;
 	UINT8 ChRepRegulatoryClass[MAX_NUM_OF_REGULATORY_CLASS];
+	UINT8 ChRepList[MAX_NUM_OF_CHS];
 } RRM_MLME_BCN_REQ_INFO, *PRRM_MLME_BCN_REQ_INFO;
 
 typedef struct _RRM_MLME_TRANSMIT_REQ_INFO

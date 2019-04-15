@@ -291,7 +291,7 @@ UCHAR RateSwitchTableAdapt11BG[] = {
 	 0, 0x00,  0, 40, 101,   0,    1,     1,   1,   1, /* CCK 1M */
 	 1, 0x00,  1, 40,  50,   0,    2,     2,   2,   2, /* CCK 2M */
 	 2, 0x00,  2, 35,  45,   1,    3,     3,   3,   5, /* CCK 5M */
-	 3, 0x00,  3, 20,  45,   2,    4,     4,   4,  11, /* CCK 11M*/
+	 3, 0x10,  1, 20,  35,   2,    4,     4,   4,   9, /* OFDM 9M */
 	 4, 0x10,  2, 20,  35,   3,    5,     5,   5,  12, /* OFDM 12M */
 	 5, 0x10,  3, 16,  35,   4,    6,     6,   6,  18, /* OFDM 18M */
 	 6, 0x10,  4, 10,  25,   5,    7,     7,   7,  24, /* OFDM 24M */
@@ -388,10 +388,10 @@ UCHAR RateSwitchTableAdapt11N2S[] = {
 	17, 0x22, 14,  8,  14,  14, sg15,sg15,  15, 130, /* mcs14+shortGI */
 	18, 0x23,  7,  8,  14,   7,   12,  12,sg07,  72, /* mcs7+shortGI */
 #else
-	14, 0x20, 14,  8,  18,  13,   15,  15,  14, 117,/* mcs14 */
-	15, 0x20, 15,  8,  25,  14,   16,  16,  15, 130,/* mcs15 */
-	16, 0x22, 15,  8,  25,  15,   16,  16,  16, 144,/* mcs15+shortGI */
-  17,    0,  0,  0,   0,   0,   0,    0,   0,   0,
+	14, 0x20, 14,  8,  18,  13,   16,  16,  14, 117,/* mcs14 */
+	15, 0x22, 14,  8,  14,  14,   17,  17,  15, 130,/* mcs14+shortGI */	
+	16, 0x20, 15,  8,  25,  15,   17,  17,  16, 130,/* mcs15 */
+	17, 0x22, 15,  8,  25,  16,   17,  17,  17, 144,/* mcs15+shortGI */
   18,    0,  0,  0,   0,   0,   0,    0,   0,   0,
 #endif
   19, 0x00,  0, 40,  101, 19 ,  19,    19,   20,  1, /* cck-1M */
@@ -880,7 +880,16 @@ VOID APMlmeSetTxRate(
 	UCHAR tx_mode = pTxRate->Mode;
 #ifdef DOT11_VHT_AC
 	UCHAR tx_bw = pTxRate->BW;
+#endif /* DOT11_VHT_AC */
+	ULONG TxErrorRatio = 0, TxTotalCnt = 0, TxSuccess = 0, TxRetransmit = 0, TxFailCount = 0;
 
+	/* fix drop to CCK or legacy OFDM modes in 5GHz if not supported by config. 5GHz support only OFDM mode */
+	if (tx_mode == MODE_CCK && (pAd->LatchRfRegs.Channel > 14 || !WMODE_EQUAL(pAd->CommonCfg.PhyMode, WMODE_B)))
+		tx_mode = MODE_OFDM;
+	else if (tx_mode == MODE_OFDM && (pAd->LatchRfRegs.Channel > 14 && WMODE_HT_ONLY(pAd->CommonCfg.PhyMode)))
+		tx_mode = MODE_HTMIX;
+
+#ifdef DOT11_VHT_AC
 	if ((pAd->chipCap.phy_caps & fPHY_CAP_VHT) && 
 		((pEntry->pTable == RateTableVht2S) || (pEntry->pTable == RateTableVht1S) ||
 		 (pEntry->pTable == RateTableVht1S_MCS9) ||
@@ -1135,9 +1144,38 @@ DBGPRINT(RT_DEBUG_INFO, ("%s(): txbw=%d, txmode=%d\n", __FUNCTION__, tx_bw, tx_m
 #endif /* DBG_CTRL_SUPPORT */
 #endif /* RANGE_EXTEND */
 
+	/* if PER very high - fallback to 40MHz BW and some time hold it */
+	TxRetransmit = pEntry->OneSecTxRetryOkCount;
+	TxSuccess = pEntry->OneSecTxNoRetryOkCount;
+	TxFailCount = pEntry->OneSecTxFailCount;
+	TxTotalCnt = TxRetransmit + TxSuccess + TxFailCount;
+
+	if(TxTotalCnt)
+		TxErrorRatio = ((TxRetransmit + TxFailCount) * 100) / TxTotalCnt;
+
+	/* only high traffic case */
+	if (TxTotalCnt > 15 && pEntry->HTPhyMode.field.BW == BW_80 && pEntry->LastSecTxRateChangeAction == RATE_DOWN) {
+		if (TxErrorRatio > 60) {
+			/* select hold limit BW time */
+			if (pEntry->OneSecBWLimitHoldCount == 0)
+				pEntry->OneSecBWLimitHoldCount = 10;
+			else
+				if (pEntry->OneSecBWLimitHoldCount < 10)
+					pEntry->OneSecBWLimitHoldCount++;
+		}
+	} else {
+		pEntry->OneSecBWLimitHoldCount = 0;
+	}
+
+	/* if hold time not 0 or all transmits is fail - switch to 40MHz  */
+	if (TxTotalCnt > 15 && pEntry->HTPhyMode.field.BW == BW_80 && (pEntry->OneSecBWLimitHoldCount > 0 || TxErrorRatio == 100)) {
+		pEntry->HTPhyMode.field.BW = BW_40;
+		pEntry->OneSecBWLimitHoldCount--;
+	}
+
 	/* Reexam each bandwidth's SGI support. */
 	if ((pEntry->HTPhyMode.field.BW==BW_20 && !CLIENT_STATUS_TEST_FLAG(pEntry, fCLIENT_STATUS_SGI20_CAPABLE)) ||
-		(pEntry->HTPhyMode.field.BW==BW_40 && !CLIENT_STATUS_TEST_FLAG(pEntry, fCLIENT_STATUS_SGI40_CAPABLE)) )
+		(pEntry->HTPhyMode.field.BW==BW_40 && !CLIENT_STATUS_TEST_FLAG(pEntry, fCLIENT_STATUS_SGI40_CAPABLE)) || (TxErrorRatio > 70))
 		pEntry->HTPhyMode.field.ShortGI = GI_800;
 
 #ifdef DBG_CTRL_SUPPORT
@@ -1155,6 +1193,14 @@ DBGPRINT(RT_DEBUG_INFO, ("%s(): txbw=%d, txmode=%d\n", __FUNCTION__, tx_bw, tx_m
 		AsicFifoExtEntryClean(pAd, pEntry);
 #endif /* FIFO_EXT_SUPPORT */
 #endif /* defined(RTMP_MAC) || defined(RLT_MAC) */
+
+	/* if PER>1% and rate target down, or Low/Zero traffic - clean QA counters (new mode=>new count cycle, prevent pessimistic trend) */
+	if (pEntry->LastSecTxRateChangeAction == RATE_DOWN) {
+		RESET_ONE_SEC_TX_CNT(pEntry);
+
+		if ((TxErrorRatio > 1 || TxTotalCnt < 15))
+			MlmeClearTxQuality(pEntry);
+	}
 
 #ifdef MCS_LUT_SUPPORT
 	asic_mcs_lut_update(pAd, pEntry);
@@ -1664,7 +1710,10 @@ VOID MlmeSelectTxRateTable(
 
 	*pTableSize = RATE_TABLE_SIZE(*ppTable);
 	*pInitTxRateIdx = RATE_TABLE_INIT_INDEX(*ppTable);
-
+#ifdef MCS_LUT_SUPPORT
+	if ( *ppTable)
+    	    pEntry->LowestTxRateIndex = ra_get_lowest_rate(pAd, *ppTable);    /* update the LowestRateIndex */
+#endif /* MCS_LUT_SUPPORT */
 }
 
 
@@ -1824,7 +1873,6 @@ UCHAR MlmeSelectTxRate(
 #endif /* NEW_RATE_ADAPT_SUPPORT */
 	)
 	{/*  N mode with 1 stream */
-		{
 			if (mcs[7]>=0 && (Rssi > (-72+RssiOffset)) && (pEntry->SupportHTMCS[MCS_7]))
 				TxRateIdx = mcs[7];
 			else if (mcs[6]>=0 && (Rssi > (-74+RssiOffset)) && (pEntry->SupportHTMCS[MCS_6]))
@@ -1841,7 +1889,6 @@ UCHAR MlmeSelectTxRate(
 				TxRateIdx = mcs[1];
 			else
 				TxRateIdx = mcs[0];
-		}
 	}
 	else
 #endif /*  DOT11_N_SUPPORT */
@@ -1900,7 +1947,6 @@ VOID MlmeRAInit(RTMP_ADAPTER *pAd, MAC_TABLE_ENTRY *pEntry)
 	pEntry->fLastSecAccordingRSSI = FALSE;
 	pEntry->LastSecTxRateChangeAction = RATE_NO_CHANGE;
 	pEntry->CurrTxRateIndex = 0;
-	pEntry->TxRateUpPenalty = 0;
 
 	MlmeClearAllTxQuality(pEntry);
 }
@@ -1934,7 +1980,10 @@ VOID MlmeRALog(
 #endif /* DBG_CTRL_SUPPORT */
 	)
 	{
-		BOOLEAN stbc, csd=FALSE;
+		BOOLEAN stbc;
+#ifdef STREAM_MODE_SUPPORT
+		BOOLEAN csd=FALSE;
+#endif
 		ULONG tp;
 
 		/*  Get STBC and StreamMode state */
@@ -1985,6 +2034,7 @@ VOID MlmeRALog(
 #endif /*  INCLUDE_DEBUG_QUEUE */
 #endif /*  DBG_CTRL_SUPPORT */
 		{
+#ifdef STREAM_MODE_SUPPORT
 			DBGPRINT_RAW(RT_DEBUG_ERROR,("%s[%d]: M=%d %c%c%c%c- PER=%ld%% TP=%ld ",
 				raLogType==RAL_QUICK_DRS? " Q": (raLogType==RAL_NEW_DRS? "\nRA": "\nra"),
 				pEntry->wcid, pEntry->HTPhyMode.field.MCS,
@@ -1993,6 +2043,7 @@ VOID MlmeRALog(
 				stbc? 'S': 's',
 				csd? 'C': 'c',
 				TxErrorRatio, tp) );
+#endif
 		}
 	}
 
@@ -2078,13 +2129,9 @@ VOID MlmeCheckRDG(
 }
 #endif /*  DOT11N_SS3_SUPPORT */
 
-
-
-
 #ifdef NEW_RATE_ADAPT_SUPPORT
-UCHAR ra_get_lowest_rate(RTMP_ADAPTER *pAd, MAC_TABLE_ENTRY *pEntry)
+UCHAR ra_get_lowest_rate(RTMP_ADAPTER *pAd, UCHAR *pTable)
 {
-	UCHAR *pTable = pEntry->pTable;
 	RTMP_RA_GRP_TB *pNextTxRate;
 	UCHAR TxRateIndex, NextTxRateIndex;
 
@@ -2105,7 +2152,6 @@ UCHAR ra_get_lowest_rate(RTMP_ADAPTER *pAd, MAC_TABLE_ENTRY *pEntry)
 	return TxRateIndex;
 }
 #endif /* NEW_RATE_ADAPT_SUPPORT */
-
 
 INT rtmp_get_rate_from_rate_tb(UCHAR *table, INT idx, RTMP_TX_RATE *tx_rate)
 {
@@ -2190,9 +2236,7 @@ VOID MlmeNewTxRate(RTMP_ADAPTER *pAd, MAC_TABLE_ENTRY *pEntry)
 	/*  Set new rate */
 #ifdef CONFIG_AP_SUPPORT
 	IF_DEV_CONFIG_OPMODE_ON_AP(pAd)
-	{
 		APMlmeSetTxRate(pAd, pEntry, pNextTxRate);
-	}
 #endif /*  CONFIG_AP_SUPPORT */
 
 #ifdef DOT11_N_SUPPORT
@@ -2277,7 +2321,7 @@ VOID RTMPSetSupportMCS(
 		}
 		else
 		{
-			NdisMoveMemory(&SupportedRates[SupRateLen], ExtRate, MAX_LEN_OF_SUPPORTED_RATES - ExtRateLen);
+			NdisMoveMemory(&SupportedRates[SupRateLen], ExtRate, MAX_LEN_OF_SUPPORTED_RATES - SupRateLen);
 			SupportedRatesLen = MAX_LEN_OF_SUPPORTED_RATES;
 
 		}

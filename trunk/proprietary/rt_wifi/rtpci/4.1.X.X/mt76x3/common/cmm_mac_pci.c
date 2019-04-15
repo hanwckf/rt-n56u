@@ -231,7 +231,7 @@ VOID RTMPResetTxRxRingMemory(RTMP_ADAPTER *pAd)
 			{
 				dma_cb->pNdisPacket = NULL;
 				PCI_UNMAP_SINGLE(pAd, pTxD->SDPtr0, pTxD->SDLen0, RTMP_PCI_DMA_TODEVICE);
-				//RELEASE_NDIS_PACKET(pAd, pPacket, NDIS_STATUS_SUCCESS);
+				RELEASE_NDIS_PACKET(pAd, pPacket, NDIS_STATUS_SUCCESS);
 			}
 
 			pPacket = dma_cb->pNextNdisPacket;
@@ -239,7 +239,7 @@ VOID RTMPResetTxRxRingMemory(RTMP_ADAPTER *pAd)
 			{
 				dma_cb->pNextNdisPacket = NULL;
 				PCI_UNMAP_SINGLE(pAd, pTxD->SDPtr1, pTxD->SDLen1, RTMP_PCI_DMA_TODEVICE);
-				//RELEASE_NDIS_PACKET(pAd, pPacket, NDIS_STATUS_SUCCESS);
+				RELEASE_NDIS_PACKET(pAd, pPacket, NDIS_STATUS_SUCCESS);
 			}
 
 			INC_RING_INDEX(pBcnRing->TxSwFreeIdx, BCN_RING_SIZE);
@@ -256,7 +256,7 @@ VOID RTMPResetTxRxRingMemory(RTMP_ADAPTER *pAd)
 
 	for (index=0;index< NUM_OF_RX_RING;index++)
 	{
-		UINT16 RxRingSize = (index == 0) ? RX_RING_SIZE : RX1_RING_SIZE;
+		UINT16 RxRingSize = RX_RING_SIZE;
 
 		RTMP_IRQ_LOCK(&pAd->RxRingLock[index], IrqFlags);
 
@@ -610,16 +610,8 @@ NDIS_STATUS RTMPInitTxRxRingMemory(RTMP_ADAPTER *pAd)
 		RingBasePaLow = RTMP_GetPhysicalAddressLow (pDescRing->AllocPa);
 		RingBaseVa = pDescRing->AllocVa;
 
-		if (num == 0)
-		{
-			RxRingSize = RX_RING_SIZE;
-			RxBufferSize = RX_BUFFER_AGGRESIZE;
-		}
-		else
-		{
-			RxRingSize = RX1_RING_SIZE;
-			RxBufferSize = RX1_BUFFER_SIZE;
-		}
+		RxRingSize = RX_RING_SIZE;
+		RxBufferSize = RX_BUFFER_AGGRESIZE;
 
 		/* Linking Rx Ring and associated buffer memory */
 		for (index = 0; index < RxRingSize; index++)
@@ -692,7 +684,7 @@ NDIS_STATUS RTMPInitTxRxRingMemory(RTMP_ADAPTER *pAd)
 
 	/* Init RX Ring index pointer */
 	for (index = 0; index < NUM_OF_RX_RING; index++) {
-		UINT16 RxRingSize = (index == 0) ? RX_RING_SIZE : RX1_RING_SIZE;
+		UINT16 RxRingSize = RX_RING_SIZE;
 		
 		pAd->RxRing[index].RxSwReadIdx = 0;
 		pAd->RxRing[index].RxCpuIdx = RxRingSize - 1;
@@ -848,7 +840,7 @@ NDIS_STATUS	RTMPAllocTxRxRingMemory(RTMP_ADAPTER *pAd)
 
 		/* Alloc RX ring desc memory except Tx ring allocated eariler */
 		for (num = 0; num < NUM_OF_RX_RING; num++) {
-			UINT16 RxRingSize = (num == 0) ? RX_RING_SIZE : RX1_RING_SIZE;
+			UINT16 RxRingSize = RX_RING_SIZE;
 			
 			desc_ring_alloc(pAd, &pAd->RxDescRing[num], RxRingSize * RXD_SIZE);
 			if (pAd->RxDescRing[num].AllocVa == NULL) {
@@ -1275,16 +1267,8 @@ NDIS_STATUS	RTMPAllocTxRxRingMemory(RTMP_ADAPTER *pAd)
 			UINT16 RxRingSize;
 			UINT16 RxBufferSize;
 
-			if (num == 0)
-			{
-				RxRingSize = RX_RING_SIZE;
-				RxBufferSize = RX_BUFFER_AGGRESIZE;
-			}
-			else
-			{
-				RxRingSize = RX1_RING_SIZE;
-				RxBufferSize = RX1_BUFFER_SIZE;
-			}
+			RxRingSize = RX_RING_SIZE;
+			RxBufferSize = RX_BUFFER_AGGRESIZE;
 
 			/* Alloc RxRingDesc memory except Tx ring allocated eariler */
 			desc_ring_alloc(pAd, &pAd->RxDescRing[num], RxRingSize * RXD_SIZE);
@@ -1391,7 +1375,7 @@ NDIS_STATUS	RTMPAllocTxRxRingMemory(RTMP_ADAPTER *pAd)
 
 	/* Init RX Ring index pointer*/
 	for(index = 0; index < NUM_OF_RX_RING; index++) {
-		UINT16 RxRingSize = (index == 0) ? RX_RING_SIZE : RX1_RING_SIZE;
+		UINT16 RxRingSize = RX_RING_SIZE;
 		
 		pAd->RxRing[index].RxSwReadIdx = 0;
 		pAd->RxRing[index].RxCpuIdx = RxRingSize - 1;
@@ -1654,7 +1638,7 @@ VOID RTMPFreeTxRxRingMemory(RTMP_ADAPTER *pAd)
 
 	for (j = 0; j < NUM_OF_RX_RING; j++)
 	{
-		UINT16 RxRingSize = (j == 0) ? RX_RING_SIZE : RX1_RING_SIZE;
+		UINT16 RxRingSize = RX_RING_SIZE;
 		
 		for (index = RxRingSize - 1 ; index >= 0; index--)
 		{
@@ -1786,9 +1770,14 @@ VOID RTMPRingCleanUp(RTMP_ADAPTER *pAd, UCHAR RingType)
 		case QID_AC_VI:
 		case QID_AC_VO:
 		case QID_HCCA:
-			
+
+			if (NUM_OF_TX_RING < RingType)
+			{
+				break;
+			}
+
 			pTxRing = &pAd->TxRing[RingType];
-			
+
 			RTMP_IRQ_LOCK(&pAd->irq_lock, IrqFlags);
 			for (i=0; i<TX_RING_SIZE; i++) /* We have to scan all TX ring*/
 			{
@@ -1878,16 +1867,8 @@ VOID RTMPRingCleanUp(RTMP_ADAPTER *pAd, UCHAR RingType)
 				pRxRing = &pAd->RxRing[ring_id];
 				lock = &pAd->RxRingLock[ring_id];
 				
-				if (ring_id == 0)
-				{
-					RxRingSize = RX_RING_SIZE;
-					RxBufferSize = RX_BUFFER_AGGRESIZE;
-				}
-				else
-				{
-					RxRingSize = RX1_RING_SIZE;
-					RxBufferSize = RX1_BUFFER_SIZE;
-				}
+				RxRingSize = RX_RING_SIZE;
+				RxBufferSize = RX_BUFFER_AGGRESIZE;
 
 				RTMP_IRQ_LOCK(lock, IrqFlags);
 				for (i=0; i<RxRingSize; i++)
@@ -2555,7 +2536,6 @@ VOID PSEACStuckWatchDog(RTMP_ADAPTER *pAd)
 		//clear after reset
 		//Value &= ~(1 << 6);
 		//RTMP_IO_WRITE32(pAd, 0x816c, Value);
-
 		DBGPRINT(RT_DEBUG_WARN, ("HIT MGMT !\n"));
 
 		pAd->MgtHitCount ++;
@@ -2913,7 +2893,8 @@ BOOLEAN RT28xxPciAsicRadioOff(
 	if (pAd->chipCap.hif_type == HIF_MT) {
 		DBGPRINT(RT_DEBUG_TRACE, ("%s(): Not support for HIF_MT yet!\n",
 					__FUNCTION__));
-		return FALSE;
+		/* always return true for this */
+		return TRUE;
 	}
 
 #if defined(RTMP_MAC) || defined(RLT_MAC)
@@ -3238,11 +3219,11 @@ int read_reg(RTMP_ADAPTER *ad, UINT32 base, UINT16 offset, UINT32 *value)
 	return 0;
 }
 
-	
+
 INT rtmp_irq_init(RTMP_ADAPTER *pAd)
 {
-	unsigned long irqFlags;
 	UINT32 reg_mask = 0;
+	unsigned long _irqFlags = 0;
 
 #ifdef RLT_MAC
 	if (pAd->chipCap.hif_type == HIF_RLT)
@@ -3260,11 +3241,11 @@ INT rtmp_irq_init(RTMP_ADAPTER *pAd)
 		reg_mask = ((MT_DELAYINTMASK) |(MT_RxINT|MT_TxDataInt|MT_TxMgmtInt)|MT_INT_BMC_DLY);
 #endif /* MT_MAC */
 
-	RTMP_INT_LOCK(&pAd->irq_lock, irqFlags);
+	RTMP_INT_LOCK(&pAd->irq_lock, _irqFlags);
 	pAd->int_enable_reg = reg_mask;
 	pAd->int_disable_mask = 0;
 	pAd->int_pending = 0;
-	RTMP_INT_UNLOCK(&pAd->irq_lock, irqFlags);
+	RTMP_INT_UNLOCK(&pAd->irq_lock, _irqFlags);
 
 	return 0;
 }

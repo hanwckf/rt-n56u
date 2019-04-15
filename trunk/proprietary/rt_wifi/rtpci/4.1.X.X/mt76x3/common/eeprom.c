@@ -294,8 +294,7 @@ INT NICReadEEPROMParameters(RTMP_ADAPTER *pAd, RTMP_STRING *mac_addr)
 
 #ifdef READ_MAC_FROM_EEPROM
 	/* Read MAC setting from EEPROM and record as permanent MAC address */
-	DBGPRINT(RT_DEBUG_TRACE, ("Initialize MAC Address from E2PROM \n"));
-
+	DBGPRINT(RT_DEBUG_ERROR, ("Initialize MAC Address from E2PROM \n"));
 	RT28xx_EEPROM_READ16(pAd, 0x04, Addr01);
 	RT28xx_EEPROM_READ16(pAd, 0x06, Addr23);
 	RT28xx_EEPROM_READ16(pAd, 0x08, Addr45);
@@ -311,13 +310,13 @@ INT NICReadEEPROMParameters(RTMP_ADAPTER *pAd, RTMP_STRING *mac_addr)
 	if (pAd->PermanentAddress[0] == 0xff)
 		pAd->PermanentAddress[0] = RandomByte(pAd)&0xf8;
 
-	DBGPRINT(RT_DEBUG_TRACE, ("E2PROM MAC: =%02x:%02x:%02x:%02x:%02x:%02x\n",
+	DBGPRINT(RT_DEBUG_OFF, ("E2PROM MAC: =%02x:%02x:%02x:%02x:%02x:%02x\n",
 								PRINT_MAC(pAd->PermanentAddress)));
 
 	/* Assign the actually working MAC Address */
 	if (pAd->bLocalAdminMAC)
 	{
-		DBGPRINT(RT_DEBUG_TRACE, ("Use the MAC address what is assigned from Configuration file(.dat). \n"));
+		DBGPRINT(RT_DEBUG_OFF, ("Use the MAC address what is assigned from Configuration file(.dat). \n"));
 #if defined(BB_SOC)&&!defined(NEW_MBSSID_MODE)
 		//BBUPrepareMAC(pAd, pAd->CurrentAddress);
 		COPY_MAC_ADDR(pAd->PermanentAddress, pAd->CurrentAddress);
@@ -340,13 +339,13 @@ INT NICReadEEPROMParameters(RTMP_ADAPTER *pAd, RTMP_STRING *mac_addr)
 			macptr=macptr+3;
 		}
 
-		DBGPRINT(RT_DEBUG_TRACE, ("Use the MAC address what is assigned from Moudle Parameter. \n"));
+		DBGPRINT(RT_DEBUG_OFF, ("Use the MAC address what is assigned from Moudle Parameter. \n"));
 	}
 #ifdef READ_MAC_FROM_EEPROM
 	else
 	{
 		COPY_MAC_ADDR(pAd->CurrentAddress, pAd->PermanentAddress);
-		DBGPRINT(RT_DEBUG_TRACE, ("Use the MAC address what is assigned from EEPROM. \n"));
+		DBGPRINT(RT_DEBUG_OFF, ("Use the MAC address what is assigned from EEPROM. \n"));
 	}
 #endif
 
@@ -354,7 +353,7 @@ INT NICReadEEPROMParameters(RTMP_ADAPTER *pAd, RTMP_STRING *mac_addr)
 	/* all subsequent E2RPOM retieval and set a system error bit to notify GUI*/
 	RT28xx_EEPROM_READ16(pAd, EEPROM_VERSION_OFFSET, Version.word);
 	pAd->EepromVersion = Version.field.Version + Version.field.FaeReleaseNumber * 256;
-	DBGPRINT(RT_DEBUG_TRACE, ("E2PROM: Version = %d, FAE release #%d\n", Version.field.Version, Version.field.FaeReleaseNumber));
+	DBGPRINT(RT_DEBUG_OFF, ("E2PROM: Version = %d, FAE release #%d\n", Version.field.Version, Version.field.FaeReleaseNumber));
 
 	/* Read BBP default value from EEPROM and store to array(EEPROMDefaultValue) in pAd */
 	RT28xx_EEPROM_READ16(pAd, EEPROM_NIC1_OFFSET, value);

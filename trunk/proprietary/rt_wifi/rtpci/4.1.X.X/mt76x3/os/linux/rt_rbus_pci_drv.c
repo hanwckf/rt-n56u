@@ -397,7 +397,7 @@ DBGPRINT(RT_DEBUG_FPGA, ("-->%s():\n", __FUNCTION__));
 
 	RTMP_INT_LOCK(&pAd->LockInterrupt, flags);
 	/* double check to avoid rotting packet  */
-	if (pAd->int_pending & INT_RX || bReschedule)
+	if ((pAd->int_pending & INT_RX) || bReschedule)
 	{
 		RTMP_OS_TASKLET_SCHE(&pObj->rx_done_task);
 		RTMP_INT_UNLOCK(&pAd->LockInterrupt, flags);
@@ -1216,7 +1216,7 @@ static void uapsd_eosp_sent_tasklet(unsigned long data)
 	PRTMP_ADAPTER pAd = (PRTMP_ADAPTER) data;
 #endif /* WORKQUEUE_BH */
 
-	RTMPDeQueuePacket(pAd, FALSE, NUM_OF_TX_RING, WCID_ALL, MAX_TX_PROCESS);
+	RTMPDeQueuePacket(pAd, FALSE, WMM_NUM_OF_AC, WCID_ALL, MAX_TX_PROCESS);
 }
 #endif /* UAPSD_SUPPORT */
 
@@ -1536,7 +1536,9 @@ redo:
 			RTMP_INT_LOCK(&pAd->LockInterrupt, flags);
 			if ((pAd->int_disable_mask & WF_MAC_INT_3) == 0)
 			{
+#ifdef DBG
                 UINT32   Lowpart, Highpart;
+#endif
                 rt2860_int_disable(pAd, WF_MAC_INT_3);
                 RTMP_IO_WRITE32(pAd, HWIER3, en_reg);
                 if (stat_reg & BIT31) {

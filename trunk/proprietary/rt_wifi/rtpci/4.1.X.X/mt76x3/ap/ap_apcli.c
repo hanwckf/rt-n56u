@@ -276,7 +276,7 @@ BOOLEAN ApCliCheckHt(
 		aux_ht_cap->ExtHtCapInfo.RDGSupport = pHtCapability->ExtHtCapInfo.RDGSupport;
 	}
 
-	if (pAd->CommonCfg.Channel < 14) {
+	if (pAd->CommonCfg.Channel <= 14) {
 		pApCliEntry->MlmeAux.AddHtInfo.AddHtInfo.RecomWidth = pAddHtInfo->AddHtInfo.RecomWidth;
 		pApCliEntry->MlmeAux.AddHtInfo.AddHtInfo.ExtChanOffset = pAddHtInfo->AddHtInfo.ExtChanOffset;
 		pApCliEntry->MlmeAux.AddHtInfo.ControlChan = pAddHtInfo->ControlChan;
@@ -383,10 +383,10 @@ BOOLEAN ApCliLinkUp(RTMP_ADAPTER *pAd, UCHAR ifIndex)
 			}
 #endif /* MAC_REPEATER_SUPPORT */
 
-			DBGPRINT(RT_DEBUG_TRACE, ("!!! APCLI LINK UP - IF(apcli%d) AuthMode(%d)=%s, WepStatus(%d)=%s !!!\n",
+			printk("!!! APCLI LINK UP - IF(apcli%d) AuthMode(%d)=%s, WepStatus(%d)=%s !!!\n",
 				ifIndex,
 				pAd->ApCfg.ApCliTab[ifIndex].wdev.AuthMode, GetAuthMode(pAd->ApCfg.ApCliTab[ifIndex].wdev.AuthMode),
-				pAd->ApCfg.ApCliTab[ifIndex].wdev.WepStatus, GetEncryptType(pAd->ApCfg.ApCliTab[ifIndex].wdev.WepStatus)));
+				pAd->ApCfg.ApCliTab[ifIndex].wdev.WepStatus, GetEncryptType(pAd->ApCfg.ApCliTab[ifIndex].wdev.WepStatus));
 		}
 		else
 		{
@@ -413,10 +413,6 @@ BOOLEAN ApCliLinkUp(RTMP_ADAPTER *pAd, UCHAR ifIndex)
 		}
 
 		wdev = &pApCliEntry->wdev;
-		printk("!!! APCLI LINK UP - IF(apcli%d) AuthMode(%d)=%s, WepStatus(%d)=%s!\n",
-					ifIndex,
-					wdev->AuthMode, GetAuthMode(wdev->AuthMode),
-					wdev->WepStatus, GetEncryptType(wdev->WepStatus));
 
 #if defined (CONFIG_WIFI_PKT_FWD)
 #ifdef MAC_REPEATER_SUPPORT
@@ -1257,19 +1253,19 @@ VOID ApCliIfMonitor(RTMP_ADAPTER *pAd)
 				{
 
 					if (pReptCliEntry->CliValid)
+				{
+					Wcid = pAd->ApCfg.ApCliTab[index].RepeaterCli[CliIdx].MacTabWCID;
+
+					if (!VALID_WCID(Wcid))
+						continue;
+
+					pMacEntry = &pAd->MacTab.Content[Wcid];
+					tr_entry = &pAd->MacTab.tr_entry[Wcid];
+					if ((tr_entry->PortSecured != WPA_802_1X_PORT_SECURED) &&
+						RTMP_TIME_AFTER(pAd->Mlme.Now32 , (pReptCliEntry->CliTriggerTime + (5 * OS_HZ))))
 					{
-						Wcid = pAd->ApCfg.ApCliTab[index].RepeaterCli[CliIdx].MacTabWCID;
-
-						if (!VALID_WCID(Wcid))
-							continue;
-
-						pMacEntry = &pAd->MacTab.Content[Wcid];
-						tr_entry = &pAd->MacTab.tr_entry[Wcid];
-						if ((tr_entry->PortSecured != WPA_802_1X_PORT_SECURED) &&
-							RTMP_TIME_AFTER(pAd->Mlme.Now32 , (pReptCliEntry->CliTriggerTime + (5 * OS_HZ))))
-						{
-							MlmeEnqueue(pAd, APCLI_CTRL_STATE_MACHINE, APCLI_CTRL_DISCONNECT_REQ, 0, NULL, (64 + MAX_EXT_MAC_ADDR_SIZE*index + CliIdx));
-							RTMP_MLME_HANDLER(pAd);
+						MlmeEnqueue(pAd, APCLI_CTRL_STATE_MACHINE, APCLI_CTRL_DISCONNECT_REQ, 0, NULL, (64 + MAX_EXT_MAC_ADDR_SIZE*index + CliIdx));
+						RTMP_MLME_HANDLER(pAd);
 						}
 					}
 					else
@@ -1300,14 +1296,14 @@ VOID ApCliIfMonitor(RTMP_ADAPTER *pAd)
 				&& (RTMP_TIME_AFTER(pAd->Mlme.Now32 , (pApCliEntry->ApCliLinkUpTime + (30 * OS_HZ)))))
 				bForceBrocken = TRUE;
 
-			if (RTMP_TIME_AFTER(pAd->Mlme.Now32 , (pApCliEntry->ApCliRcvBeaconTime + (8 * OS_HZ))))
+			if (RTMP_TIME_AFTER(pAd->Mlme.Now32 , (pApCliEntry->ApCliRcvBeaconTime + (30 * OS_HZ))))
 			{
 #ifdef ED_MONITOR
 				if (pAd->ed_tx_stoped == FALSE)
 #endif
 				{
-					printk("ApCliIfMonitor: IF(%s%d) - no Beacon is received from Root-AP.\n", INF_APCLI_DEV_NAME, index);
-					bForceBrocken = TRUE;
+				    printk("ApCliIfMonitor: IF(%s%d) - no Beacon is received from Root-AP.\n", INF_APCLI_DEV_NAME, index);
+				    bForceBrocken = TRUE;
 				}
 			}
 
@@ -3195,7 +3191,7 @@ BOOLEAN ApCliAutoConnectExec(
 			break;
 
 		if (NdisEqualMemory(pCfgSsid, pBssEntry->Ssid, CfgSsidLen) &&
-							(pBssEntry->SsidLen) &&
+							(CfgSsidLen == pBssEntry->SsidLen) &&
 							(pSsidBssTab->BssNr < MAX_LEN_OF_BSS_TABLE))
 		{
 			if (wdev->bWpaAutoMode == TRUE)

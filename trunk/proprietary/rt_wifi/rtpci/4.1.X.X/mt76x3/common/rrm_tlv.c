@@ -130,6 +130,7 @@ VOID RRM_InsertRRMEnCapIE(
 	else
 		return;
 
+	RrmEnCap.word = 0;
 	RrmEnCap.field.LinkMeasureCap = 1;
 	RrmEnCap.field.NeighborRepCap = 1;
 	RrmEnCap.field.ParallelMeasureCap = 0;
@@ -330,6 +331,19 @@ VOID RRM_InsertRequestIE(
 	OUT PULONG pFrameLen)
 {
 	UINT8 RequestIEs[] = {	0,		/* SSID */
+							1, /* Support Rate*/
+
+							50, /* Extended Support Rate*/
+							
+							45, /* HT IE*/
+							61, /* HT ADD*/
+
+							127, /* Ext Cap*/
+#ifdef DOT11_VHT_AC
+							191, /* VHT 1*/
+							192, /* VHT 2*/
+							195, /* VHT 3*/
+#endif
 							48,		/* RSN IE */
 							70,		/* RRM Capabilities. */
 							54,		/* Mobility Domain. */
@@ -339,7 +353,7 @@ VOID RRM_InsertRequestIE(
 	UINT8 IEId = IE_802_11D_REQUEST;
 	UINT8 Len;
 
-	Len = 5;
+	Len = 13;
 	MakeOutgoingFrame(	pFrameBuf,		&TempLen,
 						1,				&IEId,
 						1,				&Len,
@@ -442,7 +456,8 @@ VOID RRM_EnqueueBcnReq(
 	TotalLen += sizeof(RRM_BEACON_REQ_INFO);
 
 	/* inssert SSID sub field. */
-	if (pMlmeBcnReq->SsidLen != 0)
+	//Fix Voice Enterprise : Item V-E-4.3, case2 still need to include the SSID sub filed even SsidLen is 0
+	//if (pMlmeBcnReq->SsidLen != 0)		
 	{
 		RRM_InsertBcnReqSsidSubIE(pAd, (pOutBuffer+FrameLen),
 			&FrameLen, (PUCHAR)pMlmeBcnReq->pSsid, pMlmeBcnReq->SsidLen);
@@ -467,7 +482,9 @@ VOID RRM_EnqueueBcnReq(
 			ULONG FramelenTmp = FrameLen;
 			InsertChannelRepIE(pAd, (pOutBuffer+FrameLen), &FrameLen,
 								(RTMP_STRING *)pAd->CommonCfg.CountryCode,
-								pMlmeBcnReq->ChRepRegulatoryClass[idx]);
+								pMlmeBcnReq->ChRepRegulatoryClass[idx],
+								&pMlmeBcnReq->ChRepList[0]
+								);
 			TotalLen += (FrameLen - FramelenTmp);
 			idx ++;
 		}
@@ -509,7 +526,7 @@ VOID RRM_EnqueueBcnReq(
 
 	MeasureReqInsert(pAd, MeasureReqToken);
 
-	MiniportMMRequest(pAd, QID_AC_BE, pOutBuffer, FrameLen);
+	MiniportMMRequest(pAd, (MGMT_USE_QUEUE_FLAG | QID_AC_BE), pOutBuffer, FrameLen);
 
 	if (pOutBuffer)
 		MlmeFreeMemory(pAd, pOutBuffer);
@@ -526,7 +543,6 @@ VOID RRM_EnqueueNeighborRep(
 	IN PCHAR pSsid,
 	IN UINT8 SsidLen)
 {
-#define MIN(_x, _y) ((_x) > (_y) ? (_x) : (_y))
 	INT loop;
 	HEADER_802_11 ActHdr;
 	PUCHAR pOutBuffer = NULL;
@@ -568,6 +584,10 @@ VOID RRM_EnqueueNeighborRep(
 		UINT8 BssMatch = FALSE;
 		BSS_ENTRY *pBssEntry = &pAd->ScanTab.BssEntry[loop];
 
+		/* skip entry without SSID */
+		if (pBssEntry->SsidLen == 0)
+			continue;
+
 		/* Discards all remain Bss if the packet length exceed packet buffer size. */
 		PktLen = FrameLen + sizeof(RRM_NEIGHBOR_REP_INFO)
 				+ (pAd->ApCfg.MBSSID[pEntry->func_tb_idx].RrmCfg.bDot11kRRMNeighborRepTSFEnable == TRUE ? 6 : 0);
@@ -576,7 +596,7 @@ VOID RRM_EnqueueNeighborRep(
 
 		if (SsidLen != 0)
 			BssMatch = RTMPEqualMemory(pBssEntry->Ssid, pSsid,
-								MIN(SsidLen, pBssEntry->SsidLen));
+								min(SsidLen, pBssEntry->SsidLen));
 		else
 			BssMatch = TRUE;
 
@@ -584,16 +604,7 @@ VOID RRM_EnqueueNeighborRep(
 		{
 			RRM_BSSID_INFO BssidInfo;
 			BssidInfo.word = 0;
-			BssidInfo.field.APReachAble = 3;
-			BssidInfo.field.Security = 0; /* rrm to do. */
-			BssidInfo.field.KeyScope = 0; /* "report AP has same authenticator as the AP. */
-			BssidInfo.field.SepctrumMng = (pBssEntry->CapabilityInfo & (1 << 8))?1:0;
-			BssidInfo.field.Qos = (pBssEntry->CapabilityInfo & (1 << 9))?1:0;
-			BssidInfo.field.APSD = (pBssEntry->CapabilityInfo & (1 << 11))?1:0;
-			BssidInfo.field.RRM = (pBssEntry->CapabilityInfo & RRM_CAP_BIT)?1:0;
-			BssidInfo.field.DelayBlockAck = (pBssEntry->CapabilityInfo & (1 << 14))?1:0;
-			BssidInfo.field.ImmediateBA = (pBssEntry->CapabilityInfo & (1 << 15))?1:0;
-
+			BssidInfo.field.APReachAble = 3; /* not reachable for preauth, unknown, reachable for preauth */
 	
 /* 
 	reference 2012 spec.
@@ -603,9 +614,6 @@ VOID RRM_EnqueueNeighborRep(
 	as used by the STA in its current association. If the bit is 0, it indicates either that the AP does not support
 	the same security provisioning or that the security information is not available at this time.
 */
-
-			
-			BssidInfo.field.KeyScope = 0; /* "report AP has same authenticator as the AP. */
 /*
 	reference 2012 spec.
 	802.11-2012.pdf
@@ -614,15 +622,31 @@ VOID RRM_EnqueueNeighborRep(
 	sending the report. If this bit is 0, it indicates a distinct authenticator or the information is not available.
 */
 
+			if (pBssEntry->AuthMode >= Ndis802_11AuthModeWPA2) {
+				BssidInfo.field.Security = 1;				/* RSN Capability identical in others APs with current the AP. */
+				BssidInfo.field.KeyScope = 1; 				/* AP has same authenticator as the AP. */
+			} else {
+				BssidInfo.field.Security = 0;
+				BssidInfo.field.KeyScope = 0;
+			}
+
+/* temp allways set use MDIE if configured 802.11R */
+			if (pBssEntry->bHasMDIE || pAd->ApCfg.MBSSID[pEntry->func_tb_idx].FtCfg.FtCapFlag.Dot11rFtEnable) {
+				BssidInfo.field.MobilityDomain = 1;
+			} else {
+				BssidInfo.field.MobilityDomain = 0;
+			}
+
+/* temp allways send used RRM in reports (AP_SCAN not get correct RRM capability */
+			BssidInfo.field.RRM = 1;
+
 			BssidInfo.field.SepctrumMng = (pBssEntry->CapabilityInfo & (1 << 8))?1:0;
 			BssidInfo.field.Qos = (pBssEntry->CapabilityInfo & (1 << 9))?1:0;
 			BssidInfo.field.APSD = (pBssEntry->CapabilityInfo & (1 << 11))?1:0;
-			BssidInfo.field.RRM = (pBssEntry->CapabilityInfo & RRM_CAP_BIT)?1:0;
 			BssidInfo.field.DelayBlockAck = (pBssEntry->CapabilityInfo & (1 << 14))?1:0;
 			BssidInfo.field.ImmediateBA = (pBssEntry->CapabilityInfo & (1 << 15))?1:0;
 
 
-			BssidInfo.field.MobilityDomain = (pBssEntry->bHasMDIE )?1:0;
 			BssidInfo.field.HT = (pBssEntry->HtCapabilityLen != 0)?1:0;
 #ifdef DOT11_VHT_AC			
 			BssidInfo.field.VHT = (pBssEntry->vht_cap_len != 0)?1:0;
@@ -643,36 +667,8 @@ VOID RRM_EnqueueNeighborRep(
 			}
 
 			*/
-			
-			if (pBssEntry->Channel > 14) // 5G case
-			{
-				if (pBssEntry->HtCapabilityLen != 0) // HT or Higher case
-				{
-#ifdef DOT11_VHT_AC				
-					if (pBssEntry->vht_cap_len != 0)
-						pBssEntry->CondensedPhyType = 9;
-					else
-#endif /* DOT11_VHT_AC */
-						pBssEntry->CondensedPhyType = 7;
-				}
-				else // OFDM case
-				{
-					pBssEntry->CondensedPhyType = 4;
-				}
-			}
-			else // 2.4G case
-			{
-
-				if (pBssEntry->HtCapabilityLen != 0) //HT case
-					pBssEntry->CondensedPhyType = 7;
-				else if (ERP_IS_NON_ERP_PRESENT(pBssEntry->Erp)) //ERP case
-					pBssEntry->CondensedPhyType = 6;
-				else if (pBssEntry->SupRateLen > 4)// OFDM case (1,2,5.5,11 for CCK 4 Rates)
-					pBssEntry->CondensedPhyType = 4;
-
-				/* no CCK's definition in spec. */
-			}
-
+			/* sanity check and recalc some params if need */
+			RRM_ScanResultFix(pBssEntry);
 			RRM_InsertNeighborRepIE(pAd, (pOutBuffer + FrameLen), &FrameLen,
 				sizeof(RRM_NEIGHBOR_REP_INFO), pBssEntry->Bssid,
 				BssidInfo, pBssEntry->RegulatoryClass,
@@ -702,7 +698,7 @@ VOID RRM_EnqueueNeighborRep(
 		}
 	}
 #endif /* AP_SCAN_SUPPORT */
-	MiniportMMRequest(pAd, QID_AC_BE, pOutBuffer, FrameLen);
+	MiniportMMRequest(pAd, (MGMT_USE_QUEUE_FLAG | QID_AC_BE), pOutBuffer, FrameLen);
 
 	if (pOutBuffer)
 		MlmeFreeMemory(pAd, pOutBuffer);
@@ -779,7 +775,7 @@ VOID RRM_EnqueueLinkMeasureReq(
 
 	MeasureReqInsert(pAd, DialogToken);
 
-	MiniportMMRequest(pAd, QID_AC_BE, pOutBuffer, FrameLen);
+	MiniportMMRequest(pAd, (MGMT_USE_QUEUE_FLAG | QID_AC_BE), pOutBuffer, FrameLen);
 
 	if (pOutBuffer)
 		MlmeFreeMemory(pAd, pOutBuffer);
@@ -892,7 +888,7 @@ VOID RRM_EnqueueTxStreamMeasureReq(
 
 	MeasureReqInsert(pAd, MeasureReqToken);
 
-	MiniportMMRequest(pAd, QID_AC_BE, pOutBuffer, FrameLen);
+	MiniportMMRequest(pAd, (MGMT_USE_QUEUE_FLAG | QID_AC_BE), pOutBuffer, FrameLen);
 
 	if (pOutBuffer)
 		MlmeFreeMemory(pAd, pOutBuffer);

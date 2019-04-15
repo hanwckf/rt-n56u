@@ -151,10 +151,10 @@
 		if ((_pAd)->OpMode == OPMODE_AP)								\
 		{																\
 		if (IS_ENTRY_APCLI(_pEntry) && 								\
-			((_pEntry)->wdev_idx < MAX_APCLI_NUM))			\
-			_cipher = (_pAd)->ApCfg.ApCliTab[(_pEntry)->wdev_idx].GroupCipher;	\
+			((_pEntry)->func_tb_idx < MAX_APCLI_NUM))			\
+			_cipher = (_pAd)->ApCfg.ApCliTab[(_pEntry)->func_tb_idx].GroupCipher;	\
 			else if ((_pEntry)->func_tb_idx < (_pAd)->ApCfg.BssidNum)			\
-				_cipher = (_pAd)->ApCfg.MBSSID[_pEntry->func_tb_idx].GroupKeyWepStatus;\
+				_cipher = (_pAd)->ApCfg.MBSSID[_pEntry->func_tb_idx].wdev.GroupKeyWepStatus;\
 		}																\
 		else															\
 			_cipher = (_pAd)->StaCfg.GroupCipher;						\
@@ -169,10 +169,10 @@
 	{																\
 	_cipher = Ndis802_11WEPDisabled;							\
 	if (IS_ENTRY_APCLI(_pEntry) && 								\
-		((_pEntry)->wdev_idx < MAX_APCLI_NUM))			\
-		_cipher = (_pAd)->ApCfg.ApCliTab[(_pEntry)->wdev_idx].GroupCipher;	\
+			((_pEntry)->func_tb_idx < MAX_APCLI_NUM))			\
+			_cipher = (_pAd)->ApCfg.ApCliTab[(_pEntry)->func_tb_idx].GroupCipher;	\
 		else if ((_pEntry)->func_tb_idx < (_pAd)->ApCfg.BssidNum)			\
-			_cipher = (_pAd)->ApCfg.MBSSID[_pEntry->func_tb_idx].GroupKeyWepStatus;\
+			_cipher = (_pAd)->ApCfg.MBSSID[_pEntry->func_tb_idx].wdev.GroupKeyWepStatus;\
 	}
 
 #define WPA_BSSID(_pAd, _apidx) 	(_pAd)->ApCfg.MBSSID[_apidx].Bssid

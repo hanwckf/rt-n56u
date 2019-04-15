@@ -763,10 +763,8 @@ VOID AES_CCM_MAC (
             Copy_Length = AES_BLOCK_SIZES - Block_Index;
         }
         for (Temp_Index = 0; Temp_Index < Copy_Length; Temp_Index++)
-        {
         	if((Temp_Index + Block_Index) < AES_BLOCK_SIZES)
-            	Block[Temp_Index + Block_Index] = AAD[ADD_Index + Temp_Index];
-        }        
+            		Block[Temp_Index + Block_Index] = AAD[ADD_Index + Temp_Index];
         for (Temp_Index = 0; Temp_Index < AES_BLOCK_SIZES; Temp_Index++)
             Block[Temp_Index] ^= Block_MAC[Temp_Index];
         NdisZeroMemory(Block_MAC, AES_BLOCK_SIZES);
@@ -1005,7 +1003,9 @@ INT AES_CCM_Decrypt (
      * 2. Formatting of the Counter Block
      */
     NdisZeroMemory(Block_CTR, AES_BLOCK_SIZES);
+    NdisZeroMemory(Block_CTR_Cipher, AES_BLOCK_SIZES);    
     Temp_Value = (15 - NonceLength) - 1; /* Set bit 0-2 to (q-1), q = 15 - Nonce Length */
+	
     Block_CTR[0] |= Temp_Value;
     for (Temp_Index = 0; Temp_Index < NonceLength; Temp_Index++)
         Block_CTR[Temp_Index + 1] = Nonce[Temp_Index];
@@ -1016,6 +1016,7 @@ INT AES_CCM_Decrypt (
      * 3. Catch the MAC (MIC) from CipherText
      */
     Block_Index = 0;
+    NdisZeroMemory(Block_MAC_From_Cipher, AES_BLOCK_SIZES);	
     for (Temp_Index = (CipherTextLength - MACLength); Temp_Index < CipherTextLength; Temp_Index++, Block_Index++)
         Block_MAC_From_Cipher[Block_Index] = CipherText[Temp_Index]^Block_CTR_Cipher[Block_Index];
 

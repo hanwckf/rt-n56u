@@ -217,7 +217,7 @@ UCHAR *wmode_2_str(UCHAR wmode)
 
 RT_802_11_PHY_MODE wmode_2_cfgmode(UCHAR wmode)
 {
-	INT i, mode_cnt = sizeof(CFG_WMODE_MAP) / sizeof(UCHAR);
+	INT i, mode_cnt = sizeof(CFG_WMODE_MAP) / (sizeof(UCHAR) * 2);
 
 	for (i = 1; i < mode_cnt; i+=2)
 	{	
@@ -1066,6 +1066,9 @@ INT RTMP_COM_IoctlHandle(
 					extern VOID  APUpdateAllBeaconFrame(IN PRTMP_ADAPTER pAd);
 					APMakeAllBssBeacon(pAd);
 					APUpdateAllBeaconFrame(pAd);
+
+					if (pAd->Dot11_H.RDMode == RD_NORMAL_MODE)
+						AsicEnableBssSync(pAd, pAd->CommonCfg.BeaconPeriod);
 				}
 #endif /* CONFIG_AP_SUPPORT */
 			}

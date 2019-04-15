@@ -24,14 +24,17 @@
 
 /* use daemon */
 #define BNDSTRG_DAEMON
-#define BND_STRG_MAX_TABLE_SIZE	64
-#define BND_STRG_TIMER_PERIOD	1000
-#define BND_STRG_AGE_TIME		150000
-#define BND_STRG_HOLD_TIME		90000
-#define BND_STRG_CHECK_TIME_5G	30000
-#define BND_STRG_RSSI_DIFF		30
-#define BND_STRG_RSSI_LOW		-70
-#define BND_STRG_AUTO_ONOFF_THRD 4000
+
+#define BND_STRG_MAX_TABLE_SIZE		512
+#define BND_HASH_TABLE_SIZE		BND_STRG_MAX_TABLE_SIZE*2
+#define BND_STRG_TIMER_PERIOD		1000
+#define BND_STRG_AGE_TIME		600000	/* orig 150000 */
+#define BND_STRG_HOLD_TIME		3000	/* orig 90000 */
+#define BND_STRG_CHECK_TIME_5G		6000	/* orig 30000 */
+#define BND_STRG_RSSI_DIFF		15
+#define BND_STRG_RSSI_LOW		-88
+
+#define BND_STRG_AUTO_ONOFF_THRD 	4000
 #define P_BND_STRG_TABLE	(&pAd->ApCfg.BndStrgTable)
 
 #define BND_STRG_DBG
@@ -65,7 +68,7 @@ typedef struct _BND_STRG_CLI_TABLE{
 	UINT32 Size;
 	BND_STRG_ALG_CONTROL AlgCtrl;
 	BND_STRG_CLI_ENTRY Entry[BND_STRG_MAX_TABLE_SIZE];
-	PBND_STRG_CLI_ENTRY Hash[HASH_TABLE_SIZE];
+	PBND_STRG_CLI_ENTRY Hash[BND_HASH_TABLE_SIZE];
 	NDIS_SPIN_LOCK Lock;
 	struct _BNDSTRG_OPS *Ops;
 	VOID *priv;
@@ -73,7 +76,7 @@ typedef struct _BND_STRG_CLI_TABLE{
 	BOOLEAN b5GInfReady;
 	CHAR	RssiDiff;	/* if Rssi2.4G > Rssi5G by RssiDiff, then allow client to connect 2.4G */
 	CHAR	RssiLow;	/* if Rssi5G < RssiLow, then this client cannot connect to 5G */
-	UINT32	AgeTime;		/* Entry Age Time (ms) */
+	UINT32	AgeTime;			/* Entry Age Time (ms) */
 	UINT32	HoldTime;		/* Time for holding 2.4G connection rsp (ms) */
 	UINT32	CheckTime_5G;	/* Time for deciding if a client is 2.4G only (ms) */
 	RALINK_TIMER_STRUCT Timer;
@@ -82,6 +85,7 @@ typedef struct _BND_STRG_CLI_TABLE{
 #endif /* BND_STRG_DBG */
 	UINT8		Band;
 	UINT32 AutoOnOffThrd;   /* Threshold to auto turn bndstrg on/off by 2.4G false CCA */
+	UINT32          DaemonPid;
 	BOOLEAN bDaemonReady;
 } BND_STRG_CLI_TABLE, *PBND_STRG_CLI_TABLE;
 
@@ -122,6 +126,7 @@ enum BND_STRG_CONDITION_CHECK_FLAGS {
 	fBND_STRG_CND_2G_PERSIST		= (1 << 1),
 	fBND_STRG_CND_HT_SUPPORT		= (1 << 2),
 	fBND_STRG_CND_5G_RSSI			= (1 << 3),
+	fBND_STRG_CND_NONE			= (1 << 4),
 };
 
 #define OID_BNDSTRG_MSG				0x0950
@@ -130,18 +135,23 @@ enum BND_STRG_CONDITION_CHECK_FLAGS {
 typedef struct _BNDSTRG_MSG{
 	UINT8	 Action;
 	UINT8	 ReturnCode;
-	UINT8	 TalbeIndex;
+	UINT32	 TalbeIndex;
 	BOOLEAN OnOff;
 	UINT8	Band;
 	BOOLEAN b2GInfReady;
+	UINT8	uc2GIfName[32];
 	BOOLEAN b5GInfReady;
-	CHAR 	Rssi[3];
+	UINT8	uc5GIfName[32];
+	CHAR 	Rssi[4];
 	CHAR 	RssiDiff;
 	CHAR 	RssiLow;
 	UINT8	FrameType;
 	UINT32	Time;
 	UINT32	ConditionCheck;
 	UCHAR 	Addr[MAC_ADDR_LEN];
+	BOOLEAN bAllowStaConnectInHt;
+	UINT32  Control_Flags;
+	UINT32  elapsed_time; /* ms */
 } BNDSTRG_MSG, *PBNDSTRG_MSG;
 
 typedef struct _BNDSTRG_CLI_EVENT{
@@ -160,6 +170,7 @@ typedef struct _BNDSTRG_PROBE_EVENT{
 enum ACTION_CODE{
 	CONNECTION_REQ = 1,
 	CLI_ADD,
+	CLI_UPDATE,
 	CLI_DEL,
 	CLI_AGING_REQ,
 	CLI_AGING_RSP,
@@ -176,6 +187,7 @@ enum ACTION_CODE{
 	SET_CHECK_TIME,
 	SET_MNT_ADDR,
 	SET_CHEK_CONDITIONS,
+	INF_STATUS_RSP_DBDC,
 };
 
 
@@ -205,7 +217,8 @@ typedef struct _BNDSTRG_OPS {
 			struct _RTMP_ADAPTER *pAd,
 			PUCHAR pSrcAddr,
 			UINT8 FrameType,
-			PCHAR Rssi);
+			PCHAR Rssi,
+			BOOLEAN bAllowStaConnectInHt);
 
 	INT (*SetEnable)(
 			PBND_STRG_CLI_TABLE table,

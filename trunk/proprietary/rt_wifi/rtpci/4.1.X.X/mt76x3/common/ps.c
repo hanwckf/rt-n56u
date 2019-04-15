@@ -115,11 +115,11 @@ VOID RtmpCleanupPsQueue(RTMP_ADAPTER *pAd, QUEUE_HEADER *pQueue)
 	QUEUE_ENTRY *pQEntry;
 	PNDIS_PACKET pPacket;
 
-	DBGPRINT(RT_DEBUG_TRACE, ("RtmpCleanupPsQueue (0x%08lx)...\n", (ULONG)pQueue));
+	DBGPRINT(RT_DEBUG_INFO, ("RtmpCleanupPsQueue (0x%08lx)...\n", (ULONG)pQueue));
 
 	while (pQueue->Head)
 	{
-		DBGPRINT(RT_DEBUG_TRACE,
+		DBGPRINT(RT_DEBUG_INFO,
 					("RtmpCleanupPsQueue %d...\n",pQueue->Number));
 
 		pQEntry = RemoveHeadQueue(pQueue);
@@ -127,7 +127,7 @@ VOID RtmpCleanupPsQueue(RTMP_ADAPTER *pAd, QUEUE_HEADER *pQueue)
 		pPacket = QUEUE_ENTRY_TO_PACKET(pQEntry);
 		RELEASE_NDIS_PACKET(pAd, pPacket, NDIS_STATUS_FAILURE);
 
-		DBGPRINT(RT_DEBUG_TRACE, ("RtmpCleanupPsQueue pkt = %lx...\n", (ULONG)pPacket));
+		DBGPRINT(RT_DEBUG_INFO, ("RtmpCleanupPsQueue pkt = %lx...\n", (ULONG)pPacket));
 	}
 }
 

@@ -148,8 +148,8 @@ static inline unsigned int DlListLen(struct _DL_LIST *List)
 }
 
 
-#ifndef Offsetof
-#define Offsetof(type, member) ((long) &((type *) 0)->member)
+#ifndef offsetof
+#define offsetof(type, member) ((long) &((type *) 0)->member)
 #endif
 
 #define DlListEntry(item, type, member) \

@@ -84,7 +84,7 @@ static inline VOID AutoChBssEntrySet(
 	IN CHAR Rssi)
 {
 	COPY_MAC_ADDR(pBss->Bssid, pBssid);
-	if (SsidLen > 0)
+	if (SsidLen > 0 && SsidLen <= MAX_LEN_OF_SSID)
 	{
 		/* 
 			For hidden SSID AP, it might send beacon with SSID len equal to 0,
@@ -137,7 +137,7 @@ VOID UpdateChannelInfo(
 	if(pAd->pChannelInfo != NULL)
 	{
 		UINT32 BusyTime;
-		if (Alg == ChannelAlgCCA || Alg == ChannelAlgCombined)
+		if (Alg == ChannelAlgCCA)
 		{
 			UINT32 cca_cnt = AsicGetCCACnt(pAd);
 
@@ -280,7 +280,7 @@ static inline UCHAR SelectClearChannelRandom(
 		if (ch == 0)
 			ch = FirstChannel(pAd);
 	}
-	DBGPRINT(RT_DEBUG_TRACE,("%s(): Select Channel %d\n", __FUNCTION__, ch));
+	printk("Select Channel %d\n", ch);
 	return ch;
 
 }
@@ -387,7 +387,7 @@ static inline UCHAR SelectClearChannelCCA(
 			/* check neighbor channel */
 			for (loop=(channel_idx-1); loop >= (channel_idx-BelowBound); loop--)
 			{
-				if (loop < 0)
+				if (loop < 0 || loop >= MAX_NUM_OF_CHANNELS)
 					break;
 
 				if (pAd->ChannelList[loop+1].Channel - pAd->ChannelList[loop].Channel > 4)
@@ -475,9 +475,9 @@ static inline UCHAR SelectClearChannelCCA(
 				else
 				{
 					if ((pAd->CommonCfg.RegTransmitSetting.field.BW == BW_40))
-					{						
+					{
 						if (((channel_idx - 4) >=0) && ((channel_idx - 4) < pAd->ChannelListNum))
-						{							
+						{
 
 							if ((pChannelInfo->FalseCCA[channel_idx-1] > CCA_THRESHOLD) ||
 								(pChannelInfo->FalseCCA[channel_idx-2] > CCA_THRESHOLD) ||
@@ -491,7 +491,7 @@ static inline UCHAR SelectClearChannelCCA(
  												pChannelInfo->dirtyness[channel_idx-4];
 						}
 						if (((channel_idx + 4) >=0) && ((channel_idx + 4) < pAd->ChannelListNum))
-						{							
+						{
 
 							if ((pChannelInfo->FalseCCA[channel_idx+1] > CCA_THRESHOLD) ||
 								(pChannelInfo->FalseCCA[channel_idx+2] > CCA_THRESHOLD) ||
@@ -801,7 +801,7 @@ static inline UCHAR SelectClearChannelApCnt(
 
 				for (ll = channel_index - 1; ll > (channel_index - ChanOffset - 1); ll--)
 				{
-					if (ll >= 0)
+					if (ll >= 0 && ll < MAX_NUM_OF_CHANNELS+1)
 						pChannelInfo->dirtyness[ll]++;
 				}
 			}
@@ -959,13 +959,13 @@ ULONG AutoChBssInsertEntry(
 		if (pBssInfoTab->BssNr >= MAX_LEN_OF_BSS_TABLE)
 			return BSS_NOT_FOUND;
 		Idx = pBssInfoTab->BssNr;
-		AutoChBssEntrySet(&pBssInfoTab->BssEntry[Idx], pBssid, Ssid, SsidLen,
+		AutoChBssEntrySet(&pBssInfoTab->BssEntry[Idx % MAX_LEN_OF_BSS_TABLE], pBssid, Ssid, SsidLen,
 							ChannelNo, ExtChOffset, Rssi);
 		pBssInfoTab->BssNr++;
 	} 
 	else
 	{
-		AutoChBssEntrySet(&pBssInfoTab->BssEntry[Idx], pBssid, Ssid, SsidLen,
+		AutoChBssEntrySet(&pBssInfoTab->BssEntry[Idx % MAX_LEN_OF_BSS_TABLE], pBssid, Ssid, SsidLen,
 							ChannelNo, ExtChOffset, Rssi);
 	}
 

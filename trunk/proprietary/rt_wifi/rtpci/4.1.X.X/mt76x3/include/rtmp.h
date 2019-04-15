@@ -164,7 +164,9 @@ typedef struct _RTMP_CHIP_CAP RTMP_CHIP_CAP;
 
 /*+++Used for merge MiniportMMRequest() and MiniportDataMMRequest() into one function */
 #define MGMT_USE_QUEUE_FLAG	0x80
+#ifdef CONFIG_HOTSPOT_R2
 #define MGMT_USE_PS_FLAG	0x40
+#endif /* CONFIG_HOTSPOT_R2 */
 /*---Used for merge MiniportMMRequest() and MiniportDataMMRequest() into one function */
 /* The number of channels for per-channel Tx power offset */
 
@@ -234,7 +236,6 @@ extern UCHAR WAPI_OUI[];
 extern UCHAR WME_INFO_ELEM[];
 extern UCHAR WME_PARM_ELEM[];
 extern UCHAR RALINK_OUI[];
-extern UCHAR PowerConstraintIE[];
 
 struct _RX_BLK;
 struct raw_rssi_info;
@@ -431,6 +432,9 @@ typedef union _CAPTURE_MODE_PACKET_BUFFER {
 #define SQ_ENQ_RESERVE_PERAC 	(SQ_ENQ_NORMAL_MAX/2)
 
 #ifdef DATA_QUEUE_RESERVE
+/*
+	This value must small than MAX_PACKETS_IN_QUEUE
+*/
 #define FIFO_RSV_FOR_HIGH_PRIORITY 	64
 #endif /* DATA_QUEUE_RESERVE */
 
@@ -823,7 +827,6 @@ typedef struct _COUNTER_DRS {
 	/* to record the each TX rate's quality. 0 is best, the bigger the worse. */
 	USHORT TxQuality[MAX_TX_RATE_INDEX+1];
 	UCHAR PER[MAX_TX_RATE_INDEX+1];
-	UCHAR TxRateUpPenalty;	/* extra # of second penalty due to last unstable condition */
 	/*BOOLEAN         fNoisyEnvironment; */
 	BOOLEAN fLastSecAccordingRSSI;
 	UCHAR LastSecTxRateChangeAction;	/* 0: no change, 1:rate UP, 2:rate down */
@@ -1744,6 +1747,23 @@ typedef struct _BSS_STRUCT {
 	CHAR RssiOfRcvdReplayAttack;
 #endif /* IDS_SUPPORT */
 
+	/* YF@20120417: Avoid connecting to AP in Poor Env, value 0 fOr disable. */
+	CHAR AssocReqFailRssiThreshold;
+	CHAR AssocReqNoRspRssiThreshold;
+	CHAR AuthFailRssiThreshold;
+	CHAR AuthNoRspRssiThreshold;
+	CHAR RssiLowForStaKickOut;
+	CHAR RssiLowForStaKickOutPSM;
+	CHAR RssiLowForStaKickOutFT;
+	UCHAR RssiLowForStaKickOutDelay;
+	CHAR ProbeRspRssiThreshold;
+
+	UCHAR TmpBlockAfterKickTimes;
+	UCHAR TmpBlockAfterKickCount;
+	UCHAR TmpBlockAfterKickMac[MAC_ADDR_LEN];
+
+	CHAR ProbeRspTimes;
+
 #ifdef DOT11R_FT_SUPPORT
 	FT_CFG FtCfg;
 #endif /* DOT11R_FT_SUPPORT */
@@ -1759,11 +1779,6 @@ typedef struct _BSS_STRUCT {
 #ifdef DOT11W_PMF_SUPPORT
 	PMF_CFG PmfCfg;
 #endif /* DOT11W_PMF_SUPPORT */
-
-
-	/* YF@20120417: Avoid connecting to AP in Poor Env, value 0 fOr disable. */
-	CHAR AssocReqRssiThreshold;
-	CHAR RssiLowForStaKickOut;
 
 #ifdef CONFIG_DOT11U_INTERWORKING
 	GAS_CTRL GASCtrl;
@@ -1873,9 +1888,9 @@ typedef struct _COMMON_CONFIG {
 	ULONG BasicRateBitmapOld;	/* backup basic ratebitmap */
 
 	BOOLEAN bInServicePeriod;
-
+#if defined (CONFIG_WIFI_PKT_FWD)
 	UCHAR EtherTrafficBand;
-
+#endif
 	BOOLEAN bAPSDAC_BE;
 	BOOLEAN bAPSDAC_BK;
 	BOOLEAN bAPSDAC_VI;
@@ -1897,7 +1912,6 @@ typedef struct _COMMON_CONFIG {
 	UCHAR MaxSPLength;
 
 	BOOLEAN bNeedSendTriggerFrame;
-	BOOLEAN bAPSDForcePowerSave;	/* Force power save mode, should only use in APSD-STAUT */
 	ULONG TriggerTimerCount;
 	UCHAR BBPCurrentBW;	/* BW_10, BW_20, BW_40, BW_80 */
 	REG_TRANSMIT_SETTING RegTransmitSetting;	/*registry transmit setting. this is for reading registry setting only. not useful. */
@@ -2186,6 +2200,9 @@ typedef struct _COMMON_CONFIG {
 
     PROTECTION_STRUCT RestoreProtection;
 
+#ifdef DOT11K_RRM_SUPPORT
+	BOOLEAN RRMFirstScan;
+#endif /* DOT11K_RRM_SUPPORT */
 } COMMON_CONFIG, *PCOMMON_CONFIG;
 
 #ifdef DBG_CTRL_SUPPORT
@@ -2396,8 +2413,8 @@ typedef struct _STA_TR_ENTRY{
 #ifdef CONFIG_AP_SUPPORT
 	LARGE_INTEGER TxPackets;
 	LARGE_INTEGER RxPackets;
-	ULONG TxBytes;
-	ULONG RxBytes;
+	UINT64 TxBytes;
+	UINT64 RxBytes;
 #endif /* CONFIG_AP_SUPPORT */
  /* 
  	Used to ignore consecutive PS poll.
@@ -2459,7 +2476,7 @@ typedef struct _MAC_TABLE_ENTRY {
 	SST Sst;
 	AUTH_STATE AuthState;	/* for SHARED KEY authentication state machine used only */
 
-
+	UCHAR RssiLowStaKickOutDelayCount;
 
 	/* Rx status related parameters */
 	RSSI_SAMPLE RssiSample;
@@ -2487,6 +2504,10 @@ typedef struct _MAC_TABLE_ENTRY {
 	UCHAR R_Counter[LEN_KEY_DESC_REPLAY];
 	UCHAR PTK[64];
 	UCHAR ReTryCounter;
+	BOOLEAN AllowInsPTK;
+	UCHAR LastGroupKeyId;
+	UCHAR LastGTK[MAX_LEN_GTK];
+	UCHAR LastTK[LEN_TK];
 	RALINK_TIMER_STRUCT RetryTimer;
 	NDIS_802_11_AUTHENTICATION_MODE AuthMode;	/* This should match to whatever microsoft defined */
 	NDIS_802_11_WEP_STATUS WepStatus;
@@ -2583,13 +2604,14 @@ typedef struct _MAC_TABLE_ENTRY {
 	UCHAR CurrTxRateIndex;
 	UCHAR lastRateIdx;
 	UCHAR *pTable;	/* Pointer to this entry's Tx Rate Table */
+#ifdef MCS_LUT_SUPPORT
+	UCHAR LowestTxRateIndex;
+#endif /* MCS_LUT_SUPPORT */
 
 	UCHAR ucMaxTxRetryCnt;
 
-	BOOLEAN fgDisableCCK;
 #ifdef NEW_RATE_ADAPT_SUPPORT
 	UCHAR lowTrafficCount;
-	UCHAR fewPktsCnt;
 	BOOLEAN perThrdAdj;
 	UCHAR mcsGroup;/* the mcs group to be tried */
 	UINT8 TrafficLoading; /* Zero Traffic / Low Traffic / High Traffic */
@@ -2608,8 +2630,6 @@ typedef struct _MAC_TABLE_ENTRY {
 	ULONG LastTxOkCount; /* TxSuccess count in last Rate Adaptation interval */
 	UCHAR LastTxPER;	/* Tx PER in last Rate Adaptation interval */
 	UCHAR PER[MAX_TX_RATE_INDEX + 1];
-	UINT32 CurrTxRateStableTime;	/* # of second in current TX rate */
-	UCHAR TxRateUpPenalty;	/* extra # of second penalty due to last unstable condition */
 
 	UCHAR SupportRateMode; /* 1: CCK 2:OFDM 4: HT, 8:VHT */
 	BOOLEAN SupportCCKMCS[MAX_LEN_OF_CCK_RATES];
@@ -2654,7 +2674,8 @@ typedef struct _MAC_TABLE_ENTRY {
 	UINT32 OneSecTxRetryOkCount;
 	UINT32 OneSecTxFailCount;
 	UINT32 OneSecRxLGICount;		/* unicast-to-me Long GI count */
-	UINT32 OneSecRxSGICount;      	/* unicast-to-me Short GI count */
+	UINT32 OneSecRxSGICount;		/* unicast-to-me Short GI count */
+	UINT32 OneSecBWLimitHoldCount;		/* limit BW hold time */
 
 #ifdef FIFO_EXT_SUPPORT
 	UINT32 fifoTxSucCnt;
@@ -2764,8 +2785,8 @@ typedef struct _MAC_TABLE_ENTRY {
 #ifdef CONFIG_AP_SUPPORT
 	LARGE_INTEGER TxPackets;
 	LARGE_INTEGER RxPackets;
-	ULONG TxBytes;
-	ULONG RxBytes;
+	UINT64 TxBytes;
+	UINT64 RxBytes;
 	ULONG OneSecTxBytes;
 	ULONG OneSecRxBytes;
 #endif /* CONFIG_AP_SUPPORT */
@@ -2801,7 +2822,9 @@ typedef struct _MAC_TABLE_ENTRY {
     RALINK_TIMER_STRUCT	EapReqIdRetryTimer; /* Sometimes EapReqId cannot sendout successfully after associate completed, we need to re-send again. */
 #endif /* WSC_INCLUDED */
 #endif /* MT_MAC */
-
+	UINT64 CCMP_BC_PN[SHARE_KEY_NUM];
+	BOOLEAN Init_CCMP_BC_PN_Passed[SHARE_KEY_NUM];
+	BOOLEAN AllowUpdateRSC;
 } MAC_TABLE_ENTRY, *PMAC_TABLE_ENTRY;
 
 
@@ -2868,6 +2891,7 @@ typedef struct _MAC_TABLE {
 	UINT16 Size;
 	QUEUE_HEADER McastPsQueue;
 	ULONG PsQIdleCount;
+
 	MAC_ENT_STATUS sta_status;
 
 	BOOLEAN fAnyStationInPsm;
@@ -2895,6 +2919,7 @@ typedef struct _MAC_TABLE {
 #endif /* WAPI_SUPPORT */
 
 	USHORT MsduLifeTime; /* life time for PS packet */
+	BOOLEAN fTxBurstRetune;	/* Need retune TxBurst parametrs now */
 } MAC_TABLE, *PMAC_TABLE;
 #ifdef CONFIG_SNIFFER_SUPPORT
 #define MONITOR_MODE_OFF  0
@@ -2943,8 +2968,6 @@ typedef struct _WDS_TABLE_ENTRY {
 	USHORT OneSecTxOkCount;
 	USHORT OneSecTxRetryOkCount;
 	USHORT OneSecTxFailCount;
-	ULONG CurrTxRateStableTime;	/* # of second in current TX rate */
-	UCHAR TxRateUpPenalty;	/* extra # of second penalty due to last unstable condition */
 } WDS_TABLE_ENTRY, *PWDS_TABLE_ENTRY;
 
 
@@ -3081,8 +3104,8 @@ typedef struct _APCLI_STRUCT {
 	ULONG WpaPskCurrState;
 
 #ifdef APCLI_AUTO_CONNECT_SUPPORT
-	USHORT	ProbeReqCnt;
-	BOOLEAN AutoConnectFlag;
+		USHORT	ProbeReqCnt;
+		BOOLEAN AutoConnectFlag;
 #endif /* APCLI_AUTO_CONNECT_SUPPORT */
 	USHORT AuthReqCnt;
 	USHORT AssocReqCnt;
@@ -3315,7 +3338,7 @@ typedef struct _AP_ADMIN_CONFIG {
 		This is used to let user config band steering on/off by profile.
 		0: OFF / 1: ON / 2: Auto ONOFF
 	*/
-	BOOLEAN BandSteering; 
+	UCHAR BandSteering; 
 	BND_STRG_CLI_TABLE BndStrgTable;
 #endif /* BAND_STEERING */
 
@@ -3847,10 +3870,6 @@ typedef struct rtmp_phy_ctrl{
 
 	   Command: "iwpriv ra0 qload show".
 	 */
-
-/* provide busy time alarm mechanism */
-/* use the function to avoid to locate in some noise environments */
-#define QLOAD_FUNC_BUSY_TIME_ALARM
 
 #ifdef QLOAD_FUNC_BUSY_TIME_STATS
 #define QLOAD_BUSY_INTERVALS	20	/* partition TBTT to QLOAD_BUSY_INTERVALS */
@@ -4796,7 +4815,7 @@ MONITOR_STRUCT monitor_ctrl;
 	UINT ed_false_cca_cnt;
 	BOOLEAN ed_threshold_strict;
 
-	#define ED_STAT_CNT 20
+#define ED_STAT_CNT 20
 	UINT32 ed_stat[ED_STAT_CNT];
 	UINT32 ed_trigger_stat[ED_STAT_CNT];
 	UINT32 ed_silent_stat[ED_STAT_CNT];	
@@ -4814,7 +4833,7 @@ MONITOR_STRUCT monitor_ctrl;
 #ifdef DATA_QUEUE_RESERVE
 	BOOLEAN bQueueRsv;
 	BOOLEAN bDump;
-	UINT dequeu_fail_cnt;
+	UINT dequeu_fail_cnt;	
 #endif /* DATA_QUEUE_RESERVE */
 };
 
@@ -5038,6 +5057,7 @@ typedef struct _RX_BLK
 #ifdef RTMP_PCI_SUPPORT
 	UINT32 PDMALen;
 #endif
+	UINT64 CCMP_PN;
 
 #ifdef FORCE_ANNOUNCE_CRITICAL_AMPDU
 	UCHAR CriticalPkt;
@@ -5816,11 +5836,6 @@ VOID MlmeDELBAAction(
     IN RTMP_ADAPTER *pAd,
     IN MLME_QUEUE_ELEM *Elem);
 
-VOID SendSMPSAction(
-	IN RTMP_ADAPTER *pAd,
-	IN UCHAR Wcid,
-	IN UCHAR smps);
-
 #ifdef CONFIG_AP_SUPPORT
 VOID SendBeaconRequest(
 	IN RTMP_ADAPTER *pAd,
@@ -6329,7 +6344,7 @@ VOID asic_mcs_lut_update(RTMP_ADAPTER *pAd, MAC_TABLE_ENTRY *pEntry);
 VOID AsicRssiUpdate(RTMP_ADAPTER *pAd);
 VOID AsicRcpiReset(RTMP_ADAPTER *pAd, UCHAR ucWcid);
 
-VOID AsicTxCntUpdate(RTMP_ADAPTER *pAd, MAC_TABLE_ENTRY *pEntry, MT_TX_COUNTER *pTxInfo);
+VOID AsicTxCntUpdate(RTMP_ADAPTER *pAd, MAC_TABLE_ENTRY *pEntry, MT_TX_COUNTER *pTxInfo, BOOLEAN softonesecup);
 #endif /* MT_MAC */
 
 #ifdef CONFIG_AP_SUPPORT
@@ -8497,13 +8512,9 @@ BOOLEAN WscGetDataFromPeerByTag(
 
 #endif /* WSC_INCLUDED */
 
-#ifdef DBG
 INT32 ShowRFInfo(RTMP_ADAPTER *pAd, RTMP_STRING *arg);
 INT32 ShowBBPInfo(RTMP_ADAPTER *pAd, RTMP_STRING *arg);
-#endif /* DBG */
 INT32 show_redirect_proc(RTMP_ADAPTER *pAd, RTMP_STRING *arg);
-
-
 
 
 BOOLEAN rtstrmactohex(RTMP_STRING *s1, RTMP_STRING *s2);
@@ -8620,7 +8631,6 @@ void dbQueueEnqueueTxFrame(UCHAR *pTxWI, UCHAR *pDot11Hdr);
 void dbQueueEnqueueRxFrame(UCHAR *pRxWI, UCHAR *pDot11Hdr ULONG flags);
 #endif /* INCLUDE_DEBUG_QUEUE */
 #endif /* DBG_CTRL_SUPPORT */
-#ifdef DBG
 INT Show_DescInfo_Proc(RTMP_ADAPTER *pAd, RTMP_STRING *arg);
 INT Show_MacTable_Proc(RTMP_ADAPTER *pAd, RTMP_STRING *arg);
 
@@ -8652,7 +8662,6 @@ INT show_devinfo_proc(RTMP_ADAPTER *pAd, RTMP_STRING *arg);
 INT show_sysinfo_proc(RTMP_ADAPTER *pAd, RTMP_STRING *arg);
 INT show_trinfo_proc(RTMP_ADAPTER *pAd, RTMP_STRING *arg);
 INT show_txqinfo_proc(RTMP_ADAPTER *pAd, RTMP_STRING *arg);
-#endif /* DBG */
 
 INT	Set_ResetStatCounter_Proc(RTMP_ADAPTER *pAd, RTMP_STRING *arg);
 
@@ -8696,7 +8705,6 @@ INT	SetCommonHT(RTMP_ADAPTER *pAd);
 
 INT	Set_ForceShortGI_Proc(RTMP_ADAPTER *pAd, RTMP_STRING *arg);
 INT	Set_ForceGF_Proc(RTMP_ADAPTER *pAd, RTMP_STRING *arg);
-INT	Set_SendSMPSAction_Proc(RTMP_ADAPTER *pAd, RTMP_STRING *arg);
 
 void convert_reordering_packet_to_preAMSDU_or_802_3_packet(
 	IN RTMP_ADAPTER *pAd,
@@ -8745,13 +8753,11 @@ void build_ext_channel_switch_ie(
 	IN RTMP_ADAPTER *pAd,
 	IN HT_EXT_CHANNEL_SWITCH_ANNOUNCEMENT_IE *pIE);
 
-#ifdef DBG
 void assoc_ht_info_debugshow(
 	IN RTMP_ADAPTER *pAd,
 	IN MAC_TABLE_ENTRY *pEntry,
 	IN UCHAR ht_cap_len,
 	IN HT_CAPABILITY_IE *pHTCapability);
-#endif /* DBG */
 #endif /* DOT11_N_SUPPORT */
 
 BOOLEAN rtmp_rx_done_handle(RTMP_ADAPTER *pAd);
@@ -9282,6 +9288,7 @@ VOID MultiChannelTimerStop(RTMP_ADAPTER *pAd);
 VOID MultiChannelTimerStart(RTMP_ADAPTER *pAd, MAC_TABLE_ENTRY  *pEntry);
 #endif /* CONFIG_MULTI_CHANNEL */
 
+#ifdef CONFIG_STA_SUPPORT
 VOID RtmpPrepareHwNullFrame(
 	IN RTMP_ADAPTER *pAd,
 	IN PMAC_TABLE_ENTRY pEntry,
@@ -9292,7 +9299,7 @@ VOID RtmpPrepareHwNullFrame(
 	IN UCHAR PwrMgmt,
 	IN BOOLEAN bWaitACK,
 	IN CHAR Index);
-
+#endif /* CONFIG_STA_SUPPORT */
 
 VOID dev_rx_mgmt_frm(RTMP_ADAPTER *pAd, RX_BLK *pRxBlk);
 VOID dev_rx_ctrl_frm(RTMP_ADAPTER *pAd, RX_BLK *pRxBlk);
@@ -9462,9 +9469,8 @@ INT set_force_ext_cca(RTMP_ADAPTER *pAd, RTMP_STRING *arg);
 INT SetRF(RTMP_ADAPTER *pAd, RTMP_STRING *Arg);
 int write_reg(RTMP_ADAPTER *ad, UINT32 base, UINT16 offset, UINT32 value);
 int read_reg(struct _RTMP_ADAPTER *ad, UINT32 base, UINT16 offset, UINT32 *value);
-#ifdef DBG
+
 INT show_pwr_info(RTMP_ADAPTER *ad, RTMP_STRING *arg);
-#endif /* DBG */
 
 #ifdef WSC_INCLUDED
 #ifdef WSC_NFC_SUPPORT

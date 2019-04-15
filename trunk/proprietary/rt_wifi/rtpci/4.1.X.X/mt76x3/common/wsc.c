@@ -312,7 +312,9 @@ VOID    WscStateMachineInit(
 			WscInitCommonTimers(pAd, pWScControl);
 			pWScControl->WscUpdatePortCfgTimerRunning = FALSE;
 			WSC_TIMER_INIT(pAd, pWScControl, &pWScControl->WscUpdatePortCfgTimer, pWScControl->WscUpdatePortCfgTimerRunning, WscUpdatePortCfgTimeout);
+#ifdef WSC_V2_SUPPORT
 			WSC_TIMER_INIT(pAd, pWScControl, &pWScControl->WscSetupLockTimer, pWScControl->WscSetupLockTimerRunning, WscSetupLockTimeout);
+#endif
 		}
 
 #ifdef APCLI_SUPPORT
@@ -1489,7 +1491,7 @@ VOID WscEapEnrolleeAction(
             	    	WPS_DH_P_VALUE, sizeof(WPS_DH_P_VALUE),
             	    	pWscControl->RegData.EnrolleeRandom, sizeof(pWscControl->RegData.EnrolleeRandom),
             	    	pWscControl->RegData.Pke, (UINT *) &DH_Len);
-
+				
 			/* Need to prefix zero padding */
 			if((DH_Len != sizeof(pWscControl->RegData.Pke)) &&
 			    (DH_Len < sizeof(pWscControl->RegData.Pke)))
@@ -1597,14 +1599,14 @@ VOID WscEapEnrolleeAction(
 					goto Fail;
 
 				pWscControl->WscStatus = STATUS_WSC_EAP_M2D_RECEIVED;
-
+				
 				if (CurOpMode == AP_MODE)
 				{
 					bReplyNack = TRUE;
 #ifdef APCLI_SUPPORT
 					if (pEntry && !IS_ENTRY_APCLI(pEntry))
 						bReplyNack = TRUE;
-					else
+				else
 						bReplyNack = FALSE;
 #endif
 				}
@@ -5056,17 +5058,17 @@ VOID WscBuildProbeReqIE(
 
 	/* 3. Config method */	
 
-#ifdef APCLI_SUPPORT	
+#ifdef APCLI_SUPPORT
 #ifdef WSC_V2_SUPPORT
 	if (pAd->ApCfg.ApCliTab[0].WscControl.WscV2Info.bEnableWpsV2)
-	{
+			{
 		tempVal = pAd->ApCfg.ApCliTab[0].WscControl.WscConfigMethods;
-	}
-	else
+			}
+			else
 #endif /* WSC_V2_SUPPORT */
-	{
+			{
 		tempVal = (pAd->ApCfg.ApCliTab[0].WscControl.WscConfigMethods & 0x00FF);
-	}
+		}
 #else /* APCLI_SUPPORT */
 #ifdef WSC_V2_SUPPORT
 	if (pAd->StaCfg.WscControl.WscV2Info.bEnableWpsV2)
@@ -5151,7 +5153,7 @@ VOID WscBuildProbeReqIE(
 		pData += templen;
 		Len   += templen;
 
-		/* Version2 */
+		/* Version2 */	
 #ifdef APCLI_SUPPORT		
 		WscGenV2Msg(&pAd->ApCfg.ApCliTab[0].WscControl,
 					FALSE, 

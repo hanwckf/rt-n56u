@@ -1481,8 +1481,11 @@ typedef struct wtbl_entry {
 #define QID_AC_VI               2
 #define QID_AC_VO               3
 #define QID_HCCA                4
+#ifdef USE_BMC
+#define NUM_OF_TX_RING		5
+#else
 #define NUM_OF_TX_RING		4
-/* USB need 5 , PCI only 4 */
+#endif /*USE_BMC*/
 
 #define NUM_OF_WMM1_TX_RING	1
 

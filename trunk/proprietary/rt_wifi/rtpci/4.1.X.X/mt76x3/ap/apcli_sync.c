@@ -171,7 +171,7 @@ static VOID ApCliMlmeProbeReqAction(
 
 #ifdef APCLI_CONNECTION_TRIAL
 	if (pApCliEntry->TrialCh ==0)
-		pApCliEntry->MlmeAux.Channel = pAd->CommonCfg.Channel;
+	pApCliEntry->MlmeAux.Channel = pAd->CommonCfg.Channel;
 	else
 		pApCliEntry->MlmeAux.Channel = pApCliEntry->TrialCh;
 #else
@@ -401,6 +401,12 @@ static VOID ApCliPeerProbeRspAtJoinAction(
 					goto LabelErr;
 				else
 					pApCliEntry->MlmeAux.Rssi = RealRssi;
+
+				if (ie_list->Channel != pApCliEntry->MlmeAux.Channel)
+				{
+					DBGPRINT(RT_DEBUG_TRACE, ("\x1b[33mSYNC - current rootap ie channel=%d, apcli channel=%d! \x1b[m\n", ie_list->Channel, pApCliEntry->MlmeAux.Channel));
+					goto LabelErr;
+				}
 			}
 			else
 			{
@@ -416,6 +422,7 @@ static VOID ApCliPeerProbeRspAtJoinAction(
 			pApCliEntry->MlmeAux.BssType = ie_list->BssType;
 			pApCliEntry->MlmeAux.BeaconPeriod = ie_list->BeaconPeriod;
 			pApCliEntry->MlmeAux.Channel = ie_list->Channel;
+			pApCliEntry->MlmeAux.CentralChannel = ie_list->Channel; /* by default */
 			pApCliEntry->MlmeAux.AtimWin = ie_list->AtimWin;
 			pApCliEntry->MlmeAux.CfpPeriod = ie_list->CfParm.CfpPeriod;
 			pApCliEntry->MlmeAux.CfpMaxDuration = ie_list->CfParm.CfpMaxDuration;
@@ -466,6 +473,7 @@ static VOID ApCliPeerProbeRspAtJoinAction(
 		 			/* Check again the Bandwidth capability of this AP. */
 					CentralChannel = get_cent_ch_by_htinfo(pAd, &ie_list->AddHtInfo,
 														&ie_list->HtCapability);
+					pApCliEntry->MlmeAux.CentralChannel = CentralChannel;
 		 			DBGPRINT(RT_DEBUG_TRACE, ("PeerBeaconAtJoinAction HT===>CentralCh = %d, ControlCh = %d\n",
 									CentralChannel, ie_list->AddHtInfo.ControlChan));
 
@@ -691,8 +699,9 @@ static VOID ApCliEnqueueProbeRequest(
 	UCHAR ssidLen;
 	CHAR ssid[MAX_LEN_OF_SSID];
 	APCLI_STRUCT *pApCliEntry = NULL;
+#ifdef WSC_AP_SUPPORT
 	BOOLEAN bHasWscIe = FALSE;
-
+#endif
 	DBGPRINT(RT_DEBUG_TRACE, ("force out a ProbeRequest ...\n"));
 
 	if (ifIndex >= MAX_APCLI_NUM)

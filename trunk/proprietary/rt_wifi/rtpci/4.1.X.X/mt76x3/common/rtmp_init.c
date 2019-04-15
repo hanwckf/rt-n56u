@@ -907,7 +907,8 @@ VOID RTMPMoveMemory(VOID *pDest, VOID *pSrc, ULONG Length)
 
 	for (Index = 0; Index < Length; Index++)
 	{
-		pMem1[Index] = pMem2[Index];
+		if (pMem1 && pMem2)
+		    pMem1[Index] = pMem2[Index];
 	}
 }
 
@@ -1031,6 +1032,7 @@ VOID UserCfgInit(RTMP_ADAPTER *pAd)
 	pAd->CommonCfg.TxPowerDefault = 0xffffffff; /* AUTO*/
 	pAd->CommonCfg.TxPreamble = Rt802_11PreambleAuto; /* use Long preamble on TX by defaut*/
 	pAd->CommonCfg.bUseZeroToDisableFragment = FALSE;
+	pAd->bDisableRtsProtect = FALSE;
 	pAd->CommonCfg.RtsThreshold = 2347;
 	pAd->CommonCfg.FragmentThreshold = 2346;
 	pAd->CommonCfg.UseBGProtection = 0;    /* 0: AUTO*/
@@ -1087,7 +1089,6 @@ VOID UserCfgInit(RTMP_ADAPTER *pAd)
 #endif /* UAPSD_SUPPORT */
 	pAd->CommonCfg.bNeedSendTriggerFrame = FALSE;
 	pAd->CommonCfg.TriggerTimerCount = 0;
-	pAd->CommonCfg.bAPSDForcePowerSave = FALSE;
 	/*pAd->CommonCfg.bCountryFlag = FALSE;*/
 	pAd->CommonCfg.TxStream = 0;
 	pAd->CommonCfg.RxStream = 0;
@@ -1113,6 +1114,7 @@ VOID UserCfgInit(RTMP_ADAPTER *pAd)
 #endif  /* DOT11N_DRAFT3 */
 
 	pAd->CommonCfg.bRcvBSSWidthTriggerEvents = FALSE;
+	pAd->CommonCfg.DisableOLBCDetect = 1;
 
 	NdisZeroMemory(&pAd->CommonCfg.AddHTInfo, sizeof(pAd->CommonCfg.AddHTInfo));
 	pAd->CommonCfg.BACapability.field.MMPSmode = MMPS_DISABLE;
@@ -1239,6 +1241,17 @@ VOID UserCfgInit(RTMP_ADAPTER *pAd)
 			BSS_STRUCT *mbss = &pAd->ApCfg.MBSSID[j];
 			struct wifi_dev *wdev = &pAd->ApCfg.MBSSID[j].wdev;
 
+			mbss->AssocReqFailRssiThreshold = 0;
+			mbss->AssocReqNoRspRssiThreshold = 0;
+			mbss->AuthFailRssiThreshold = 0;
+			mbss->AuthNoRspRssiThreshold = 0;
+			mbss->RssiLowForStaKickOut = 0;
+			mbss->RssiLowForStaKickOutPSM = 0;
+			mbss->RssiLowForStaKickOutFT = 0;
+			mbss->RssiLowForStaKickOutDelay = 10;
+			mbss->ProbeRspRssiThreshold = 0;
+			mbss->ProbeRspTimes = 3;
+
 			wdev->AuthMode = Ndis802_11AuthModeOpen;
 			wdev->WepStatus = Ndis802_11EncryptionDisabled;
 			wdev->GroupKeyWepStatus = Ndis802_11EncryptionDisabled;
@@ -1259,7 +1272,7 @@ VOID UserCfgInit(RTMP_ADAPTER *pAd)
 			mbss->PreAuth = FALSE;
 
 			/* PMK cache setting*/
-			mbss->PMKCachePeriod = (10 * 60 * OS_HZ); /* unit : tick(default: 10 minute)*/
+			mbss->PMKCachePeriod = (480 * 60 * OS_HZ); /* unit : tick(default: 8hour ~ one work day) */
 			NdisZeroMemory(&mbss->PMKIDCache, sizeof(NDIS_AP_802_11_PMKID));
 
 			/* dot1x related per BSS */
@@ -1387,6 +1400,8 @@ VOID UserCfgInit(RTMP_ADAPTER *pAd)
 
 		pAd->ApCfg.StaIdleTimeout = MAC_TABLE_AGEOUT_TIME;
 
+		pAd->ApCfg.BANClass3Data = FALSE;
+
 #ifdef IDS_SUPPORT
 		/* Default disable IDS threshold and reset all IDS counters*/
 		pAd->ApCfg.IdsEnable = FALSE;
@@ -1448,7 +1463,7 @@ VOID UserCfgInit(RTMP_ADAPTER *pAd)
 
 #ifdef DYNAMIC_VGA_SUPPORT
 	if (IS_MT76x2(pAd)) {
-		pAd->CommonCfg.lna_vga_ctl.bDyncVgaEnable = FALSE;
+		pAd->CommonCfg.lna_vga_ctl.bDyncVgaEnable = TRUE;
 		pAd->CommonCfg.lna_vga_ctl.nFalseCCATh = 800;
 		pAd->CommonCfg.lna_vga_ctl.nLowFalseCCATh = 10;
 	}
@@ -1563,7 +1578,11 @@ VOID UserCfgInit(RTMP_ADAPTER *pAd)
 
 #ifdef CONFIG_AP_SUPPORT
 	IF_DEV_CONFIG_OPMODE_ON_AP(pAd)
+#ifdef DFS_SUPPORT
 		pAd->Dot11_H.RDMode = RD_SILENCE_MODE;
+#else
+		pAd->Dot11_H.RDMode = RD_NORMAL_MODE;
+#endif /* DFS_SUPPORT */
 #endif
 
 	pAd->Dot11_H.ChMovingTime = 65;
@@ -1713,12 +1732,17 @@ VOID UserCfgInit(RTMP_ADAPTER *pAd)
 	pAd->rx_pspoll_filter = 0;
 #endif /* MT_MAC */
 
-	pAd->bPS_Retrieve =1;
+    pAd->bPS_Retrieve =1;
+
 	pAd->CommonCfg.bTXRX_RXV_ON = 0;
-	pAd->CommonCfg.ManualTxop = 0;
-	pAd->CommonCfg.ManualTxopThreshold = 10; // Mbps
-	pAd->CommonCfg.ManualTxopUpBound = 15; // Ratio align with 7628
-	pAd->CommonCfg.ManualTxopLowBound = 5; // Ratio
+
+    pAd->CommonCfg.ManualTxop = 0;
+
+    pAd->CommonCfg.ManualTxopThreshold = 10; // Mbps
+
+    pAd->CommonCfg.ManualTxopUpBound = 15; // Ratio align with 7628
+
+    pAd->CommonCfg.ManualTxopLowBound = 5; // Ratio
 #ifdef CONFIG_SNIFFER_SUPPORT
 	pAd->monitor_ctrl.current_monitor_mode = 0;
 #endif /* CONFIG_SNIFFER_SUPPORT */
@@ -1740,7 +1764,6 @@ VOID UserCfgInit(RTMP_ADAPTER *pAd)
 	pAd->ed_block_tx_threshold = 10;
 	pAd->ed_big_rssi_count = 0;
 #endif /* ED_MONITOR */
-
 #ifdef DATA_QUEUE_RESERVE
 	pAd->bQueueRsv = TRUE;
 #endif /* DATA_QUEUE_RESERVE */
@@ -2056,7 +2079,7 @@ VOID RTMPModTimer(RALINK_TIMER_STRUCT *pTimer, ULONG Value)
 			RTMP_OS_Mod_Timer(&pTimer->TimerObj, Value);
 			RTMP_SEM_UNLOCK(&TimerSemLock);
 		}
-		DBGPRINT(RT_DEBUG_LOUD, ("%s: %lx\n",__FUNCTION__, (ULONG)pTimer));
+		//DBGPRINT(RT_DEBUG_LOUD, ("%s: %lx\n",__FUNCTION__, (ULONG)pTimer));
 	}
 	else
 	{
@@ -2276,7 +2299,7 @@ INT RtmpRaDevCtrlInit(VOID *pAdSrc, RTMP_INF_TYPE infType)
 	DBGPRINT(RT_DEBUG_TRACE, ("pAd->infType=%d\n", pAd->infType));
 
 
-    RTMP_SEM_EVENT_INIT(&(pAd->AutoRateLock), &pAd->RscSemMemList);
+	RTMP_SEM_EVENT_INIT(&(pAd->AutoRateLock), &pAd->RscSemMemList);
 	RTMP_SEM_EVENT_INIT(&(pAd->e2p_read_lock), &pAd->RscSemMemList);
 
 #ifdef MULTIPLE_CARD_SUPPORT
@@ -2314,7 +2337,7 @@ INT RtmpRaDevCtrlInit(VOID *pAdSrc, RTMP_INF_TYPE infType)
 
 #ifdef MCS_LUT_SUPPORT
 	if (pAd->chipCap.asic_caps & fASIC_CAP_MCS_LUT) {
-		if (MAX_LEN_OF_MAC_TABLE < 128) {
+		if (MAX_LEN_OF_MAC_TABLE <= 128) {
 			RTMP_SET_MORE_FLAG(pAd, fASIC_CAP_MCS_LUT);
 		} else {
 			DBGPRINT(RT_DEBUG_WARN, ("%s(): MCS_LUT not used becasue MacTb size(%d) > 128!\n",

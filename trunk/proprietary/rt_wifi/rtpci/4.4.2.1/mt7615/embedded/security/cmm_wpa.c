@@ -4997,7 +4997,7 @@ VOID PeerGroupMsg2Action(
         RTMPSendWirelessEvent(pAd, IW_SET_KEY_DONE_WPA1_EVENT_FLAG, pEntry->Addr, pEntry->wdev->wdev_idx, 0);
     }
 
-    MTWF_LOG(DBG_CAT_SEC, DBG_SUBCAT_ALL, DBG_LVL_OFF, ("AP SETKEYS DONE - AKMMap=%s, PairwiseCipher=%s, GroupCipher=%s from %02X:%02X:%02X:%02X:%02X:%02X\n",
+    MTWF_LOG(DBG_CAT_SEC, DBG_SUBCAT_ALL, DBG_LVL_TRACE, ("AP SETKEYS DONE - AKMMap=%s, PairwiseCipher=%s, GroupCipher=%s from %02X:%02X:%02X:%02X:%02X:%02X\n",
 		GetAuthModeStr(pSecConfig->AKMMap),
 		GetEncryModeStr(pSecConfig->PairwiseCipher),
 		GetEncryModeStr(pSecConfig->GroupCipher),

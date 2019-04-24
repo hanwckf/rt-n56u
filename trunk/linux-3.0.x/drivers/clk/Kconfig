@@ -1,4 +1,0 @@
-
-config CLKDEV_LOOKUP
-	bool
-	select HAVE_CLK

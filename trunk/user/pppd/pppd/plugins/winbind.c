@@ -432,6 +432,7 @@ unsigned int run_ntlm_auth(const char *username,
 
         /* parent */
         if (close(child_out[0]) == -1) {
+                close(child_in[1]);
                 notice("error closing pipe?!? for child OUT[0]");
                 return NOT_AUTHENTICATED;
         }

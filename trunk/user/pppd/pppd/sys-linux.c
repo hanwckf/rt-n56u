@@ -2151,7 +2151,6 @@ int ppp_available(void)
 		}
 	    }
 
-	    close (s);
 	    if (!ok) {
 		slprintf(route_buffer, sizeof(route_buffer),
 			 "Sorry - PPP driver version %d.%d.%d is out of date\n",
@@ -2161,6 +2160,7 @@ int ppp_available(void)
 	    }
 	}
     }
+    close(s);
     return ok;
 }
 
@@ -2639,7 +2639,10 @@ get_pty(master_fdp, slave_fdp, slave_name, uid)
 		warn("Couldn't unlock pty slave %s: %m", pty_name);
 #endif
 	    if ((sfd = open(pty_name, O_RDWR | O_NOCTTY)) < 0)
+	    {
 		warn("Couldn't open pty slave %s: %m", pty_name);
+		close(mfd);
+	    }
 	}
     }
 #endif /* TIOCGPTN */

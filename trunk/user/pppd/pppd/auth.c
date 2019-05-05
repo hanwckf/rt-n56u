@@ -430,6 +430,7 @@ setupapfile(argv)
     euid = geteuid();
     if (seteuid(getuid()) == -1) {
 	option_error("unable to reset uid before opening %s: %m", fname);
+        free(fname);
 	return 0;
     }
     ufile = fopen(fname, "r");
@@ -437,6 +438,7 @@ setupapfile(argv)
 	fatal("unable to regain privileges: %m");
     if (ufile == NULL) {
 	option_error("unable to open user login data file %s", fname);
+        free(fname);
 	return 0;
     }
     check_access(ufile, fname);
@@ -447,6 +449,7 @@ setupapfile(argv)
 	|| fgets(p, MAXSECRETLEN - 1, ufile) == NULL) {
 	fclose(ufile);
 	option_error("unable to read user login data file %s", fname);
+        free(fname);
 	return 0;
     }
     fclose(ufile);
@@ -468,6 +471,7 @@ setupapfile(argv)
 	explicit_passwd = 1;
     }
 
+    free(fname);
     return (1);
 }
 

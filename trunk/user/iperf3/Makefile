@@ -1,4 +1,4 @@
-SRC_NAME = iperf-3.1.3
+SRC_NAME = iperf-3.6
 SRC_URL = https://iperf.fr/download/source/iperf-3.1.3-source.tar.gz
 THISDIR = $(shell pwd)
 

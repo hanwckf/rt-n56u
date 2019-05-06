@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html>
+<html>  
 <head>
 <title><#Web_Title#> - <#menu5_6_3#></title>
 <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
@@ -180,12 +180,12 @@ $j.fn.fileName = function(){
 
                                     <table width="100%" cellpadding="4" cellspacing="0" class="table">
                                         <tr>
-                                            <th width="50%"><#FW_item1#></th>
-                                            <td><input type="text" class="input" value="<% nvram_get_x("", "productid"); %>" readonly="1"></td>
+                                            <th width="40%"><#FW_item1#></th>
+                                            <td ><input style="width: 90%;" type="text" class="input" value="<% nvram_get_x("", "productid"); %>" readonly="1"></td>
                                         </tr>
                                         <tr>
                                             <th><#FW_item2#></th>
-                                            <td><input type="text" name="firmver" class="input" value="<% nvram_get_x("",  "firmver_sub"); %>" readonly="1"></td>
+                                            <td><input style="width: 90%;" type="text" name="firmver" class="input" size="50" value="<% nvram_get_x("",  "firmver_sub"); %>" readonly="1"></td>
                                         </tr>
                                         <tr>
                                             <th><#FW_item5#></th>

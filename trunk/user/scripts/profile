@@ -3,7 +3,7 @@
 # If running interactively, then
 if [ "$PS1" ] ; then
 
-    export PATH=/opt/sbin:/opt/bin:/usr/sbin:/usr/bin:/sbin:/bin
+    export PATH=/opt/sbin:/opt/bin:/usr/sbin:/usr/bin:/sbin:/bin:/etc/storage/bin
     export HOSTNAME=`/bin/hostname`
     export TERMINFO=/usr/share/terminfo
     export TERM=xterm
@@ -17,3 +17,5 @@ alias ps='ps ww'
 alias ls='ls -hF --color=auto'
 alias ll='ls -AlhF --color=auto'
 alias htop='htop -t'
+alias tailf='tail -F'
+alias log='tail -F /tmp/syslog.log'

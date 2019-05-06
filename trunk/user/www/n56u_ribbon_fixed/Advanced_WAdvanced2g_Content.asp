@@ -374,6 +374,15 @@ function done_validating(action){
                                               </select>
                                             </td>
                                         </tr>
+                                        <tr id="low_error_rate"  style="display:none">
+                                            <th>ErrorRateAlg</th>
+                                            <td>
+                                                <select name="rt_LowErrRate" class="input">
+                                                    <option value="0" <% nvram_match_x("","rt_LowErrRate", "0","selected"); %>><#btn_Disable#> (*)</option>
+                                                    <option value="1" <% nvram_match_x("","rt_LowErrRate", "1","selected"); %>><#btn_Enable#></option>
+                                                </select>
+                                            </td>
+                                        </tr>                                        
                                         <tr id="row_turbo_qam" style="display:none">
                                             <th><#WLANConfig11b_x_turbo_qam#></th>
                                             <td>

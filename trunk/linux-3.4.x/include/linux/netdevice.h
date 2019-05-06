@@ -168,29 +168,29 @@ static inline bool dev_xmit_complete(int rc)
  */
 
 struct net_device_stats {
-	unsigned long	rx_packets;
-	unsigned long	tx_packets;
-	unsigned long	rx_bytes;
-	unsigned long	tx_bytes;
-	unsigned long	rx_errors;
-	unsigned long	tx_errors;
-	unsigned long	rx_dropped;
-	unsigned long	tx_dropped;
-	unsigned long	multicast;
-	unsigned long	collisions;
-	unsigned long	rx_length_errors;
-	unsigned long	rx_over_errors;
-	unsigned long	rx_crc_errors;
-	unsigned long	rx_frame_errors;
-	unsigned long	rx_fifo_errors;
-	unsigned long	rx_missed_errors;
-	unsigned long	tx_aborted_errors;
-	unsigned long	tx_carrier_errors;
-	unsigned long	tx_fifo_errors;
-	unsigned long	tx_heartbeat_errors;
-	unsigned long	tx_window_errors;
-	unsigned long	rx_compressed;
-	unsigned long	tx_compressed;
+	unsigned long	long rx_packets;
+	unsigned long	long tx_packets;
+	unsigned long	long rx_bytes;
+	unsigned long	long tx_bytes;
+	unsigned long	long rx_errors;
+	unsigned long	long tx_errors;
+	unsigned long	long rx_dropped;
+	unsigned long	long tx_dropped;
+	unsigned long	long multicast;
+	unsigned long	long collisions;
+	unsigned long	long rx_length_errors;
+	unsigned long	long rx_over_errors;
+	unsigned long	long rx_crc_errors;
+	unsigned long	long rx_frame_errors;
+	unsigned long	long rx_fifo_errors;
+	unsigned long	long rx_missed_errors;
+	unsigned long	long tx_aborted_errors;
+	unsigned long	long tx_carrier_errors;
+	unsigned long	long tx_fifo_errors;
+	unsigned long	long tx_heartbeat_errors;
+	unsigned long	long tx_window_errors;
+	unsigned long	long rx_compressed;
+	unsigned long	long tx_compressed;
 };
 
 #endif  /*  __KERNEL__  */

@@ -57,6 +57,7 @@ Contributors of this project are not responsible for what happens next.
 >- [rtl-sdr](https://github.com/osmocom/rtl-sdr) ```CONFIG_FIRMWARE_INCLUDE_RTL_SDR```
 >- [samba3.6](https://github.com/Linaro1985/padavan-ng/tree/master/trunk/user/samba36) ```CONFIG_FIRMWARE_INCLUDE_SMBD36```
 >- [mtr](https://github.com/traviscross/mtr) ```CONFIG_FIRMWARE_INCLUDE_MTR```
+>- [socat](http://www.dest-unreach.org/socat) ```CONFIG_FIRMWARE_INCLUDE_SOCAT```
 - 已适配除官方适配外的以下机型
 >- WR1200JS (128M,USB)
 >- NEWIFI3(D2) (512M,USB)

@@ -29,7 +29,7 @@ script:
 
 after_script:
     - GIT_VERSION=`git rev-parse --short=7 HEAD 2>/dev/null` && [ -n "$GIT_VERSION" ] && image_name=images_mt7620_$GIT_VERSION || image_name=images_mt7620
-    - cd /opt/images && sudo bash -c "md5sum * > md5sum.txt" && sudo 7z a -mx=9 ${image_name}.7z ./*
+    - cd /opt/images && sudo bash -c "md5sum * |tee md5sum.txt" && sudo 7z a -mx=9 ${image_name}.7z ./*
     - echo $(curl -# --upload-file ./${image_name}.7z https://transfer.sh/${image_name}.7z)
 
 env:

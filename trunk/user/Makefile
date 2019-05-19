@@ -91,6 +91,7 @@ dir_  =
 
 dir_y						+= busybox
 dir_y						+= iptables
+dir_y						+= coremark
 ifneq ($(CONFIG_WITHOUT_KERNEL),y)
 dir_$(CONFIG_FIRMWARE_INCLUDE_IPSET)		+= ipset
 dir_y						+= accel-pptpd

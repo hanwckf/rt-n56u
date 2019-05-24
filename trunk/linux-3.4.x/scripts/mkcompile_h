@@ -38,7 +38,7 @@ else
 fi
 
 if [ -z "$KBUILD_BUILD_TIMESTAMP" ]; then
-	TIMESTAMP=`date`
+	TIMESTAMP=`date "+%Z %Y-%m-%d %H:00:00"`   #%M
 else
 	TIMESTAMP=$KBUILD_BUILD_TIMESTAMP
 fi
@@ -73,8 +73,8 @@ UTS_TRUNCATE="cut -b -$UTS_LEN"
 
   echo \#define UTS_VERSION \"`echo $UTS_VERSION | $UTS_TRUNCATE`\"
 
-  echo \#define LINUX_COMPILE_BY \"padavan\"
-  echo \#define LINUX_COMPILE_HOST \"hms\"
+  echo \#define LINUX_COMPILE_BY \"$KBUILD_BUILD_USER\"
+  echo \#define LINUX_COMPILE_HOST \"$KBUILD_BUILD_HOST\"
 
   echo \#define LINUX_COMPILER \"`$CC -v 2>&1 | tail -n 1`\"
 ) > .tmpcompile
@@ -97,4 +97,5 @@ else
    vecho "  UPD     $TARGET"
    mv -f .tmpcompile $TARGET
 fi
+
 rm -f .tmpver.1 .tmpver.2

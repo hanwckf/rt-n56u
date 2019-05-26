@@ -25,7 +25,7 @@
 #if defined (CONFIG_RT_MAX_CLIENTS)
 #define MAX_NUMBER_OF_MAC	CONFIG_RT_MAX_CLIENTS
 #else
-#define MAX_NUMBER_OF_MAC	32
+#definex MAX_NUMBER_OF_MAC	32
 #endif
 
 #define FIXED_TXMODE_HT		0
@@ -104,6 +104,8 @@ typedef struct _RT_802_11_MAC_ENTRY {
 	char		AvgRssi0;
 	char		AvgRssi1;
 	char		AvgRssi2;
+	//unsigned long long TxBytes;
+	//unsigned long long RxBytes;
 	unsigned int	ConnectedTime;
 	MACHTTRANSMIT_SETTING	TxRate;
 	unsigned int	LastRxRate;

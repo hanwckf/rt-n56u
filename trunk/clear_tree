@@ -4,7 +4,15 @@ ROOTDIR=`pwd`
 export ROOTDIR=$ROOTDIR
 
 if [ ! -f "$ROOTDIR/.config" ] ; then
-	cp -fv "$ROOTDIR/configs/templates/n56u_dlna.config" "$ROOTDIR/.config"
+	echo cp -fv "$ROOTDIR/configs/templates/n56u_dlna.config" "$ROOTDIR/.config"
+fi
+
+if [ -f "$ROOTDIR/linux-3.4.x/.config" ] ; then
+	cp "$ROOTDIR/linux-3.4.x/.config" /tmp/linux-3.4.x-config
+fi
+
+if [ -f "$ROOTDIR/user/busybox/busybox-1.24.x/.config" ] ; then
+	cp "$ROOTDIR/user/busybox/busybox-1.24.x/.config" /tmp/busybox-1.24.x-config
 fi
 
 if [ ! -f "$ROOTDIR/.config" ] ; then
@@ -22,4 +30,12 @@ rm -rfv $ROOTDIR/stage
 . $ROOTDIR/.config
 if [ -d $ROOTDIR/merge/$CONFIG_FIRMWARE_PRODUCT_ID ]; then 
 	sudo rm -rf $ROOTDIR/merge/$CONFIG_FIRMWARE_PRODUCT_ID
+fi
+
+if [ ! -f "$ROOTDIR/linux-3.4.x/.config" ] ; then
+	cp /tmp/linux-3.4.x-config "$ROOTDIR/linux-3.4.x/.config" 
+fi
+
+if [ ! -f "$ROOTDIR/user/busybox/busybox-1.24.x/.config" ] ; then
+	cp /tmp/busybox-1.24.x-config "$ROOTDIR/user/busybox/busybox-1.24.x/.config" 
 fi

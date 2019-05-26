@@ -38,7 +38,7 @@ else
 fi
 
 if [ -z "$KBUILD_BUILD_TIMESTAMP" ]; then
-	TIMESTAMP=`date "+%Z %Y-%m-%d %H:00:00"`   #%M
+	TIMESTAMP=`date "+%Z %Y-%m-%d %H:00:00"`
 else
 	TIMESTAMP=$KBUILD_BUILD_TIMESTAMP
 fi
@@ -97,5 +97,9 @@ else
    vecho "  UPD     $TARGET"
    mv -f .tmpcompile $TARGET
 fi
+
+#echo "$TIMESTAMP"
+#cat  .tmpver.1 .tmpver.2
+#exit 1
 
 rm -f .tmpver.1 .tmpver.2

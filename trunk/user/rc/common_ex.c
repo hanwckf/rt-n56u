@@ -146,7 +146,7 @@ get_eeprom_params(void)
 	char regspec_code[8];
 	char wps_pin[12];
 	char productid[16];
-	char fwver[8], fwver_sub[32];
+	char fwver[8], fwver_sub[64];
 
 #if (BOARD_5G_IN_SOC || !BOARD_HAS_5G_RADIO)
 	i_offset = OFFSET_MAC_ADDR_WSOC;
@@ -328,7 +328,7 @@ get_eeprom_params(void)
 	}
 #endif
 #if defined(FWREVSTR)
-	if (strlen(FWREVSTR) > 0 && strlen(FWREVSTR) <= 8) {
+	if (strlen(FWREVSTR) > 0 && strlen(FWREVSTR) <= 40) {
 		strcat(fwver_sub, "_");
 		strcat(fwver_sub, FWREVSTR);
 	}

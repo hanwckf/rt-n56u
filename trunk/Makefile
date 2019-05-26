@@ -149,11 +149,14 @@ romfs.post:
 
 .PHONY: image
 image:
+	-echo ----------------$(FIRMWARE_BUILDS_REV)  --------------------------------
 	[ -d $(IMAGEDIR) ] || mkdir $(IMAGEDIR)
 	$(MAKEARCH) -C vendors image
 
 .PHONY: linux
 linux:
+	-echo ----------------$(FIRMWARE_BUILDS_REV)  --------------------------------
+
 	$(MAKEARCH_KERNEL) -j$(HOST_NCPU) -C $(LINUXDIR) $(LINUXTARGET) || exit 1
 	if [ -f $(LINUXDIR)/vmlinux ]; then \
 		ln -f $(LINUXDIR)/vmlinux $(LINUXDIR)/linux ; \
@@ -198,6 +201,8 @@ clean:
 	rm -f $(LINUXDIR)/arch/mips/ramdisk/*.gz
 
 %_romfs:
+	-echo ----------------$(FIRMWARE_BUILDS_REV)  --------------------------------
+
 	@case "$(@)" in \
 	*/*) d=`expr $(@) : '\([^/]*\)/.*'`; \
 	     t=`expr $(@) : '[^/]*/\(.*\)'`; \

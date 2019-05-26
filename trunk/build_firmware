@@ -127,11 +127,27 @@ mkdir -p $ROOTDIR/images
 echo --------------------------COPY-CONFIG-----------------------------
 ######################### FOR-ALL-DEVICES #############################
 ln -sf vendors/Ralink/$CONFIG_PRODUCT/config.arch config.arch
-cp -fL "$kernel_cf" "$kernel_tf"
-cp -fL "$uclibc_cf" "$uclibc_tf"
-cp -fL "$busybox_cf" "$busybox_tf"
-cp -fL "$board_mk" "$ROOTDIR/user/shared/board.mk"
-cp -fL "$board_h" "$ROOTDIR/user/shared/include/ralink_board.h"
+
+if [ ! -f "$kernel_tf" ] ; then
+	echo cp -fL "$kernel_cf" "$kernel_tf"
+	cp -fL "$kernel_cf" "$kernel_tf"
+fi
+
+if [ ! -f "$busybox_tf" ] ; then
+	echo cp -fL "$busybox_cf" "$busybox_tf"
+	cp -fL "$busybox_cf" "$busybox_tf"
+fi
+
+if [ ! -f "$uclibc_tf" ] ; then
+	echo cp -fL "$uclibc_cf" "$uclibc_tf"
+	cp -fL "$uclibc_cf" "$uclibc_tf"
+fi
+
+cmp -s  "$board_mk" "$ROOTDIR/user/shared/board.mk" || cp -fL "$board_mk" "$ROOTDIR/user/shared/board.mk" 
+
+cmp -s "$board_h" "$ROOTDIR/user/shared/include/ralink_board.h" || echo "not same. use $ROOTDIR/user/shared/include/ralink_board.h"
+cmp -s "$board_h" "$ROOTDIR/user/shared/include/ralink_board.h" || cp -fL "$board_h" "$ROOTDIR/user/shared/include/ralink_board.h"
+
 ############################# WI-FI ###################################
 dir_wifi_src="$ROOTDIR/proprietary/rt_wifi"
 dir_wifi_dst="$ROOTDIR/$CONFIG_LINUXDIR/drivers/net/wireless/ralink"
@@ -142,8 +158,8 @@ rm -rf "$dir_wifi_dst/rt5392"
 rm -rf "$dir_wifi_dst/rt5592"
 rm -rf "$dir_wifi_dst/rt3593"
 rm -rf "$dir_wifi_dst/mt7610"
-rm -rf "$dir_wifi_dst/mt76x2"
-rm -rf "$dir_wifi_dst/mt76x3"
+echo rm -rf "$dir_wifi_dst/mt76x2"
+echo rm -rf "$dir_wifi_dst/mt76x3"
 rm -rf "$dir_wifi_dst/mt7628"
 if [ -n "$CONFIG_RT2860V2_AP" ] ; then
 	dir_wifi_ver="2.7.X.X"
@@ -199,13 +215,13 @@ if [ -n "$CONFIG_MT7610_AP" ] ; then
 fi
 if [ -n "$CONFIG_MT76X2_AP" ] ; then
 	dir_wifi_ver="3.0.X.X"
-	cp -rfL "$dir_wifi_src/rtpci/$dir_wifi_ver/mt76x2" "$dir_wifi_dst/"
-	cp -rfL "$dir_wifi_src/rtpci/$dir_wifi_ver/mt76x2_ap" "$dir_wifi_dst/"
+	echo cp -rfL "$dir_wifi_src/rtpci/$dir_wifi_ver/mt76x2" "$dir_wifi_dst/"
+	echo cp -rfL "$dir_wifi_src/rtpci/$dir_wifi_ver/mt76x2_ap" "$dir_wifi_dst/"
 fi
 if [ -n "$CONFIG_MT76X3_AP" ] ; then
 	dir_wifi_ver="4.1.X.X"
-	cp -rfL "$dir_wifi_src/rtpci/$dir_wifi_ver/mt76x3" "$dir_wifi_dst/"
-	cp -rfL "$dir_wifi_src/rtpci/$dir_wifi_ver/mt76x3_ap" "$dir_wifi_dst/"
+	echo cp -rfL "$dir_wifi_src/rtpci/$dir_wifi_ver/mt76x3" "$dir_wifi_dst/"
+	echo cp -rfL "$dir_wifi_src/rtpci/$dir_wifi_ver/mt76x3_ap" "$dir_wifi_dst/"
 fi
 if [ -n "$CONFIG_MT7628_AP" ] ; then
 	dir_wifi_ver="4.1.X.X"
@@ -485,5 +501,8 @@ fi
 #######################################################################
 echo --------------------------MAKE-DEP--------------------------------
 make dep
+
+[ -e user/rc/common_ex.o ] && rm user/rc/common_ex.o
+
 echo --------------------------MAKE-ALL--------------------------------
-make
+make $@

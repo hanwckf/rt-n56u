@@ -884,7 +884,7 @@ print_sta_list(webs_t wp, RT_802_11_MAC_TABLE *mp, int num_ss_rx, int ap_idx)
 #endif
 	ret += websWrite(wp, "----------------------------------------\n");
 	ret += websWrite(wp, "%-19s%-8s%-4s%-4s%-4s%-5s%-5s%-6s%-5s%-4s%-12s\n",
-			   "MAC", "PhyMode", " BW", "MCS", "SGI", "LDPC", "STBC", "TRate", "RSSI", "PSM", "Connect Time");
+			   "MAC", "PhyMode", " BW", "MCS", "SGI", "LDPC", "STBC", "TRate", "RSSI", "PSM", "ConnectTime");
 
 	for (i = 0; i < mp->Num; i++) {
 		if ((int)mp->Entry[i].ApIdx != ap_idx)
@@ -1088,8 +1088,8 @@ print_wmode(webs_t wp, unsigned int wmode, unsigned int phy_mode)
 static int
 print_mac_table(webs_t wp, const char *wif_name, int num_ss_rx, int is_guest_on)
 {
-	char mac_table_data[4096];
-	struct iwreq wrq;
+	char mac_table_data[4096]={0};
+	struct iwreq wrq ;
 	RT_802_11_MAC_TABLE *mp;
 	int ret = 0;
 
@@ -1114,6 +1114,10 @@ print_mac_table(webs_t wp, const char *wif_name, int num_ss_rx, int is_guest_on)
 
 	if (wl_ioctl(wif_name, RTPRIV_IOCTL_GET_MAC_TABLE_STRUCT, &wrq) >= 0) {
 		mp = (RT_802_11_MAC_TABLE*)wrq.u.data.pointer;
+
+		ret += websWrite(wp, "IF Name\t\t: %s \n",wif_name);
+		//ret += websWrite(wp, "item num: %d data len %ld RT_802_11_MAC_TABLE:%d RT_802_11_MAC_TABLE:%d\n",
+		//,mp->Num, wrq.u.data.length,sizeof(RT_802_11_MAC_TABLE),sizeof(RT_802_11_MAC_TABLE) );
 #if defined (BOARD_K2P)
 		ret += print_sta_list(wp, mp, num_ss_rx, apidx); 
 #else
@@ -1140,9 +1144,9 @@ print_radio_status(webs_t wp, int is_aband)
 	double freq;
 	char buffer[sizeof(iwrange) * 2];
 	unsigned char mac[8];
-	struct iwreq wrq0;
-	struct iwreq wrq1;
-	struct iwreq wrq2;
+	struct iwreq wrq0={0};
+	struct iwreq wrq1={0};
+	struct iwreq wrq2={0};
 
 	ret = 0;
 

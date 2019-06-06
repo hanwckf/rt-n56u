@@ -1646,7 +1646,8 @@ safe_fork(int infd, int outfd, int errfd)
 	/* Executing in the child */
 	sys_close();
 #ifdef USE_TDB
-	tdb_close(pppdb);
+	if (pppdb != NULL)
+		tdb_close(pppdb);
 #endif
 
 	/* make sure infd, outfd and errfd won't get tromped on below */

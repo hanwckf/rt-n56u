@@ -1,20 +1,26 @@
-SRC_NAME = iperf-3.6
-SRC_URL = https://iperf.fr/download/source/iperf-3.1.3-source.tar.gz
+SRC_NAME = iperf3-github
+SRC_URL = https://github.com/esnet/iperf.git
+#https://iperf.fr/download/source/iperf-3.1.3-source.tar.gz
+#https://github.com/esnet/iperf.git
+
 THISDIR = $(shell pwd)
 
 all: download_test extract_test config_test
 	$(MAKE) -j$(HOST_NCPU) -C $(SRC_NAME)
 
 download_test:
-	( if [ ! -f $(SRC_NAME).tar.gz ]; then \
-		wget -t5 --timeout=20 --no-check-certificate -O $(SRC_NAME).tar.gz $(SRC_URL); \
-	fi )
-
+	#( if [ ! -f $(SRC_NAME).tar.gz ]; then \
+	#	wget -t5 --timeout=20 --no-check-certificate -O $(SRC_NAME).tar.gz $(SRC_URL); \
+	#fi )
+	
 extract_test:
 	( if [ ! -d $(SRC_NAME) ]; then \
-		tar zxf $(SRC_NAME).tar.gz; \
+			git clone $(SRC_URL) $(SRC_NAME); \
+	   else \
+			cd $(SRC_NAME) ; \
+			git pull ;\
 	fi )
-
+	
 config_test:
 	( if [ -f ./config_done ]; then \
 		echo "the same configuration"; \
@@ -31,7 +37,7 @@ configure:
 		--host=$(HOST_TARGET) \
 		--build=$(HOST_BUILD) ; \
 	)
-
+	
 clean:
 	if [ -f $(SRC_NAME)/Makefile ] ; then \
 		$(MAKE) -C $(SRC_NAME) distclean ; \

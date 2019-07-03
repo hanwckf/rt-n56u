@@ -69,16 +69,20 @@ extern char _end;
 #ifdef CONFIG_UBOOT_CMDLINE
 static unsigned int __init prom_get_ramsize(void)
 {
-	char *argptr;
+	char *env_str;
 	unsigned int ramsize = 0;
 
-	argptr = prom_getcmdline();
-
-	if ((argptr = strstr(argptr, "ramsize=")) != NULL) {
-		argptr += strlen("ramsize=");
-		ramsize = simple_strtoul(&argptr[0], NULL, 0);
+	env_str = prom_getenv("memsize");
+	if (env_str == NULL)
+		env_str = prom_getenv("ramsize");
+	
+	if (env_str != NULL)
+	{
+		printk("prom memory:%sMB\n", env_str);
+		ramsize = simple_strtol(env_str, NULL, 0);
+		ramsize = ramsize * 1024 * 1024;
 	}
-
+        
 	return ramsize;
 }
 #endif

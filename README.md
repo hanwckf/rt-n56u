@@ -51,7 +51,6 @@ Contributors of this project are not responsible for what happens next.
 >- [lrzsz](https://ohse.de/uwe/software/lrzsz.html) ```CONFIG_FIRMWARE_INCLUDE_LRZSZ```
 >- [htop](https://hisham.hm/htop/releases/) ```CONFIG_FIRMWARE_INCLUDE_HTOP```
 >- [nano](https://www.nano-editor.org/dist/) ```CONFIG_FIRMWARE_INCLUDE_NANO```
->- [iperf](https://sourceforge.net/projects/iperf2) ```CONFIG_FIRMWARE_INCLUDE_IPERF```
 >- [iperf3](https://iperf.fr/) ```CONFIG_FIRMWARE_INCLUDE_IPERF3```
 >- [dump1090](https://github.com/hanwckf/dump1090) ```CONFIG_FIRMWARE_INCLUDE_DUMP1090```
 >- [rtl-sdr](https://github.com/osmocom/rtl-sdr) ```CONFIG_FIRMWARE_INCLUDE_RTL_SDR```

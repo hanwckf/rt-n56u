@@ -60,12 +60,12 @@ Contributors of this project are not responsible for what happens next.
 >- [srelay](https://socks-relay.sourceforge.io) ```CONFIG_FIRMWARE_INCLUDE_SRELAY```
 - 已适配除官方适配外的以下机型
 >- WR1200JS (128M,USB)
->- NEWIFI3(D2) (512M,USB)
->- K2 / PSG1218 (64M)
+>- NEWIFI3 (512M,USB)
+>- K2/PSG1218 (64M)
 >- K2P (128M,杂交固件)
 >- K2P_DRV/K2P_nano (128M)
 >- MZ-R13 (64M)
->- MZ-R13P (未测试,64M)
+>- MZ-R13P (64M)
 >- HC5661A (128M)
 >- OYE-001 (128M,USB)
 >- MI-MINI (未测试,128M,USB)
@@ -113,5 +113,4 @@ sudo ./build_firmware_modify PSG1218
 ### 请参阅 ###
 - https://www.jianshu.com/p/cb51fb0fb2ac
 - https://www.jianshu.com/p/d76a63a12eae
-- https://www.jianshu.com/p/52282cd07284
 - https://www.jianshu.com/p/6b8403cdea46

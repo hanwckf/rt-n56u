@@ -23,6 +23,7 @@ script:
     - sudo bash ./clear_tree_simple >/dev/null 2>&1 && sudo bash ./build_firmware_nohup K2P_DRV && sudo cp -f images/*.trx /opt/images/K2P_DRV_3.4.3.9-099.trx
     - sudo bash ./clear_tree_simple >/dev/null 2>&1 && sudo bash ./build_firmware_nohup K2P_nano && sudo cp -f images/*.trx /opt/images/K2P_nano_3.4.3.9-099.trx
     - sudo bash ./clear_tree_simple >/dev/null 2>&1 && sudo bash ./build_firmware_nohup JCG-AC860M && sudo cp -f images/*.trx /opt/images
+    - sudo bash ./clear_tree_simple >/dev/null 2>&1 && sudo bash ./build_firmware_nohup DIR-882 && sudo cp -f images/*.trx /opt/images
     - sudo bash ./clear_tree_simple >/dev/null 2>&1 && sudo bash ./build_firmware_nohup WR1200JS && sudo cp -f images/*.trx /opt/images
     - sudo bash ./clear_tree_simple >/dev/null 2>&1 && sudo bash ./build_firmware_nohup NEWIFI3 && sudo cp -f images/*.trx /opt/images
 

@@ -72,6 +72,7 @@ Contributors of this project are not responsible for what happens next.
 >- MI-3 (未测试,128M,USB)
 >- 5K-W20 (未测试,64M,USB)
 >- JCG-AC860M (256M,USB)
+>- DIR-882 (128M,USB)
 
 ***
 

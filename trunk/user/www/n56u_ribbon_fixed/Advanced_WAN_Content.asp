@@ -926,6 +926,13 @@ function simplyMAC(fullMAC){
                                             </td>
                                         </tr>
                                         <tr>
+                                            <th><#PPP_LCP#></th>
+                                            <td>
+                                                <label class="radio inline"><input type="radio" value="1" name="wan_ppp_lcp" class="input" <% nvram_match_x("", "wan_ppp_lcp", "1", "checked"); %>><#checkbox_Yes#></label>
+                                                <label class="radio inline"><input type="radio" value="0" name="wan_ppp_lcp" class="input" <% nvram_match_x("", "wan_ppp_lcp", "0", "checked"); %>><#checkbox_No#></label>
+                                            </td>
+                                        </tr>
+                                        <tr>
                                             <th><#PPP_AdaptiveLCP#></th>
                                             <td>
                                                 <label class="radio inline"><input type="radio" value="1" name="wan_ppp_alcp" class="input" <% nvram_match_x("", "wan_ppp_alcp", "1", "checked"); %>><#checkbox_Yes#></label>

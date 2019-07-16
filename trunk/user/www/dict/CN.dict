@@ -276,6 +276,7 @@ ISP_Authentication_host=认证服务器 IP:
 ISP_Authentication_user=用户名:
 ISP_Authentication_pass=密码:
 PPP_L2TPD=L2TP客户端守护程序:
+PPP_LCP=自动发送LCP请求?
 PPP_AdaptiveLCP=自适应链路控制协议 (LCP) 响应间隔:
 PPP_DefaultGW=使用 VPN 隧道的默认网关?
 MAN_VIPTV_desc=VLAN CPU (IPTV) MAN IP 设置

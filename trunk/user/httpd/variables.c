@@ -390,6 +390,7 @@
 			{"wan_ppp_peer", "", NULL, EVM_RESTART_WAN},
 			{"wan_ppp_auth", "", NULL, EVM_RESTART_WAN},
 			{"wan_ppp_mppe", "", NULL, EVM_RESTART_WAN},
+			{"wan_ppp_lcp", "", NULL, EVM_RESTART_WAN},
 			{"wan_ppp_alcp", "", NULL, EVM_RESTART_WAN},
 			{"wan_ppp_pppd", "", NULL, EVM_RESTART_WAN},
 			{0,0,0,0}

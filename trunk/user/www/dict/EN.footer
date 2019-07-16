@@ -261,6 +261,7 @@ ISP_Authentication_host=Authentication Server IP:
 ISP_Authentication_user=Login:
 ISP_Authentication_pass=Password:
 PPP_L2TPD=L2TP Client Daemon:
+PPP_LCP=Automatically send LCP requests?
 PPP_AdaptiveLCP=Adaptive LCP Echo Interval:
 PPP_DefaultGW=Use Default Gateway from VPN Tunnel?
 MAN_VIPTV_desc=VLAN CPU (IPTV) MAN IP Settings

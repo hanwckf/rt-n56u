@@ -371,7 +371,7 @@ function hideClients_Block(){
 
                                     <table width="100%" align="center" cellpadding="4" cellspacing="0" class="table">
                                         <tr id="row_wds_apc" style="display:none;">
-                                            <th width="50%"><a id="ctl_apc_1" class="help_tooltip" href="javascript:void(0);" onmouseover="openTooltip(this, 0, 1);">STA SSID:</a></th>
+                                            <th width="50%"><a id="ctl_apc_1" class="help_tooltip" href="javascript:void(0);" onmouseover="openTooltip(this, 0, 1);"><#APSTA_SSID#></a></th>
                                             <td>
                                                 <div id="WDSAPList" class="alert alert-info ddown-list"></div>
                                                 <div class="input-append" style="float: left;">

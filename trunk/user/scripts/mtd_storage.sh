@@ -263,6 +263,9 @@ func_fill()
 #drop caches
 sync && echo 3 > /proc/sys/vm/drop_caches
 
+#start iperf3
+/usr/bin/iperf3 -s -D
+
 EOF
 		chmod 755 "$script_started"
 	fi

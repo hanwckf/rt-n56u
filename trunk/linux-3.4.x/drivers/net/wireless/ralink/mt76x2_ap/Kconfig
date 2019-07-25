@@ -60,7 +60,7 @@ config  MT76X2_AP_APCLI_CERT
 	default n
 
 config  MT76X2_AP_APCLI_AUTO_BW
-	bool "AP-Client Auto Bandwidth Support"
+	bool "AP-Client Auto Bandwidth Support(x-should not be select, NOT Support!)"
 	depends on MT76X2_AP
 	depends on MT76X2_AP_APCLI
 	default n

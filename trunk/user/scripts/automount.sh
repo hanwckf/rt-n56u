@@ -77,7 +77,8 @@ if [ "$ID_FS_TYPE" == "msdos" -o "$ID_FS_TYPE" == "vfat" ] ; then
 	kernel_vfat=`modprobe -l | grep vfat`
 	if [ -n "$kernel_vfat" ] ; then
 		func_load_module vfat
-		mount -t vfat "$dev_full" "$dev_mount" -o noatime,umask=0,iocharset=utf8,codepage=866,shortname=winnt
+		#mount -t vfat "$dev_full" "$dev_mount" -o noatime,umask=0,iocharset=utf8,codepage=866,shortname=winnt
+		mount -t vfat "$dev_full" "$dev_mount" -o noatime,umask=0,iocharset=utf8,shortname=winnt
 	else
 		func_load_module exfat
 		mount -t exfat "$dev_full" "$dev_mount" -o noatime,umask=0,iocharset=utf8

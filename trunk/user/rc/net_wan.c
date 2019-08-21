@@ -234,6 +234,7 @@ reset_wan_vars(void)
 		set_wan_unit_param(unit, "ppp_peer");
 		set_wan_unit_param(unit, "ppp_auth");
 		set_wan_unit_param(unit, "ppp_mppe");
+		set_wan_unit_param(unit, "ppp_lcp");
 		set_wan_unit_param(unit, "ppp_alcp");
 		set_wan_unit_param(unit, "ppp_pppd");
 	}

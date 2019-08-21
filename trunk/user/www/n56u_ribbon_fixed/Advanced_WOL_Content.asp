@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
-<title><#Web_Title#> - WoL></title>
+<title><#Web_Title#> - <#menu5_2_6#></title>
 <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
 <meta http-equiv="Pragma" content="no-cache">
 <meta http-equiv="Expires" content="-1">
@@ -195,7 +195,7 @@ $j(document).ready(function() {
 
         $j.each(devices, function(mac, name){
             var vendor = '';
-            var btn = '<button class="btn btn-info btn_wakeup">Wake up</button><div class="wol_response" class="alert"></div>';
+            var btn = '<button class="btn btn-info btn_wakeup"><#WOL_Wake_up#></button><div class="wol_response" class="alert"></div>';
 
             t_body += '<tr>\n';
             t_body += '  <td class="mac">'+mac+'</td>\n';
@@ -293,7 +293,7 @@ $j(document).ready(function() {
                 <div class="row-fluid">
                     <div class="span12">
                         <div class="box well grad_colour_dark_blue">
-                            <h2 class="box_head round_top"><#menu5_2#> - Wake-on-LAN</h2>
+                            <h2 class="box_head round_top"><#menu5_2#> - <#menu5_2_6#></h2>
                             <div class="round_bottom">
                                 <div class="row-fluid">
                                     <div id="tabMenu" class="submenuBlock"></div>
@@ -305,7 +305,7 @@ $j(document).ready(function() {
                                                 <input style="float: left; margin-right: 5px; font-family: monospace" id="wol_mac" type="text" maxlength="17" class="span12 mac" size="15" name="wol_mac" value="<% nvram_get_x("","wol_mac_last"); %>"/>
                                             </td>
                                             <td style="border-top: 0 none; ">
-                                                <input type="button" id="wol_btn" class="btn btn-primary" value="Wake-up" />
+                                                <input type="button" id="wol_btn" class="btn btn-primary" value="<#WOL_Wake_up#>" />
                                                 <div class="wol_response" class="alert"></div>
                                             </td>
                                         </tr>
@@ -315,7 +315,7 @@ $j(document).ready(function() {
                                         <tr>
                                             <th width="25%"><#MAC_Address#></th>
                                             <th width="25%"><#Computer_Name#></th>
-                                            <th width="35%">Vendor</th>
+                                            <th width="35%"><#WOL_Vendor#></th>
                                             <th width="15%">&nbsp;</th>
                                         </tr>
                                     </table>

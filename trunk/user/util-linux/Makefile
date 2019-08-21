@@ -6,18 +6,6 @@ THISDIR = $(shell pwd)
 CFLAGS += -ffunction-sections -fdata-sections
 LDFLAGS += -Wl,--gc-sections
 
-BLKID_ENABLED=n
-
-ifdef CONFIG_MMC_BLOCK
-BLKID_ENABLED=y
-endif
-ifdef CONFIG_BLK_DEV_SD
-BLKID_ENABLED=y
-endif
-ifdef CONFIG_MTD_UBI
-BLKID_ENABLED=y
-endif
-
 all: download_test extract_test config_test
 	$(MAKE) -j$(HOST_NCPU) -C $(SRC_NAME) && \
 	$(MAKE) -C $(SRC_NAME) install DESTDIR=""
@@ -128,8 +116,6 @@ clean:
 	rm -f config_done
 
 romfs:
-	$(ROMFSINST) $(STAGEDIR)/bin/hexdump /usr/bin/hexdump
-ifeq ($(BLKID_ENABLED),y)
 	$(ROMFSINST) $(STAGEDIR)/sbin/blkid /sbin/blkid
 	$(ROMFSINST) $(STAGEDIR)/lib/libblkid.so.1.1.0 /lib/libblkid.so.1.1.0
 	$(ROMFSINST) $(STAGEDIR)/lib/libuuid.so.1.3.0 /lib/libuuid.so.1.3.0
@@ -137,4 +123,3 @@ ifeq ($(BLKID_ENABLED),y)
 	$(ROMFSINST) -s libblkid.so.1.1.0 /lib/libblkid.so.1
 	$(ROMFSINST) -s libuuid.so.1.3.0 /lib/libuuid.so
 	$(ROMFSINST) -s libuuid.so.1.3.0 /lib/libuuid.so.1
-endif

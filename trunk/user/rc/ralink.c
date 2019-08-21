@@ -1275,9 +1275,16 @@ gen_ralink_config(int is_soc_ap, int is_aband, int disable_autoscan)
 			i_VHTBW_MAX = 1;
 		//VHT_BW
 		i_val = nvram_wlan_get_int(is_aband, "HT_BW");
-		i_val = (i_val > 1) ? 1 : 0;
-		if (i_HTBW_MAX == 0 || i_VHTBW_MAX == 0) i_val = 0;
-		fprintf(fp, "VHT_BW=%d\n", i_val);
+#if !defined (BOARD_K2P) && USE_WID_5G==7615
+		if (i_val == 3) //160Mhz
+			fprintf(fp, "VHT_BW=%d\n", 2);
+		else
+#endif
+		{
+			i_val = (i_val > 1) ? 1 : 0;
+			if (i_HTBW_MAX == 0 || i_VHTBW_MAX == 0) i_val = 0;
+			fprintf(fp, "VHT_BW=%d\n", i_val);
+		}
 		
 		//VHT_SGI
 		fprintf(fp, "VHT_SGI=%d\n", 1);

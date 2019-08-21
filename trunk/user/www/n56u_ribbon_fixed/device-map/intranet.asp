@@ -111,7 +111,7 @@ function update_lanip(){
           <option selected="selected"><#MoreConfig#>...</option>
           <option value="../Advanced_APLAN_Content.asp"><#menu5_2_1#></option>
           <option value="../Advanced_Switch_Content.asp"><#menu5_2_5#></option>
-          <option value="../Advanced_WOL_Content.asp">Wake-on-LAN</option>
+          <option value="../Advanced_WOL_Content.asp"><#menu5_2_6#></option>
         </select>
     </td>
   </tr>

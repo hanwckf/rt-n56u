@@ -1,5 +1,5 @@
-SRC_NAME=libsodium-1.0.17
-SRC_URL=https://download.libsodium.org/libsodium/releases/libsodium-1.0.17.tar.gz
+SRC_NAME=libsodium-1.0.18
+SRC_URL=https://download.libsodium.org/libsodium/releases/libsodium-1.0.18.tar.gz
 
 all: download_test extract_test config_test
 	$(MAKE) -j$(HOST_NCPU) -C $(SRC_NAME)

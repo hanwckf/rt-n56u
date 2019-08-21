@@ -42,7 +42,7 @@
 #define BW_20			0
 #define BW_40			1
 #define BW_80			2
-#define BW_BOTH			3
+#define BW_160			3
 #define BW_10			4 // not used
 
 #define WDS_DISABLE_MODE	0

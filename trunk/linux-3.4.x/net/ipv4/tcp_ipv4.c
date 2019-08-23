@@ -2619,6 +2619,7 @@ EXPORT_SYMBOL(tcp_prot);
 
 static int __net_init tcp_sk_init(struct net *net)
 {
+	net->ipv4.sysctl_tcp_min_snd_mss = TCP_MIN_SND_MSS;
 	return inet_ctl_sock_create(&net->ipv4.tcp_sock,
 				    PF_INET, SOCK_RAW, IPPROTO_TCP, net);
 }

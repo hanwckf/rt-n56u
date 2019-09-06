@@ -507,6 +507,7 @@ function insertChannelOption() {
         country == "PA" ||
         country == "PR" ||
         country == "QA" ||
+        country == "CN" ||
         country == "RO" ||
         country == "RU" ||
         country == "SA" ||
@@ -571,7 +572,6 @@ function insertChannelOption() {
     else if (country == "BZ" ||
         country == "BO" ||
         country == "BN" ||
-        country == "CN" ||
         country == "ID" ||
         country == "IR" ||
         country == "PE" ||

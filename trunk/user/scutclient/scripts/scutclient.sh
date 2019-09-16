@@ -20,14 +20,14 @@ func_start(){
 	sysdns=$(nvram get wan_dns1_x | cut -d ' ' -f 1)
 	echo -n "Starting scutclient:..."
 	start-stop-daemon -S -b -x "$scutclient_exec" -- -u "$(nvram get scutclient_username)" -p "$(nvram get scutclient_password)" \
-	-f "$(nvram get wan_ifname)" \
+	-i "$(nvram get wan_ifname)" \
 	-n "${sysdns:-"114.114.114.114"}" \
-	-t "$(nvram get scutclient_hostname)" \
+	-H "$(nvram get scutclient_hostname)" \
 	-s "$(nvram get scutclient_server_auth_ip)" \
 	-c "$(nvram get scutclient_version)" \
 	-h "$(nvram get scutclient_hash)" \
 	-E "${auth_hook:-"echo 0 > /tmp/scutclient_status"}" \
-	-F "${fail_hook:-"echo 1 > /tmp/scutclient_status"}" \
+	-Q "${fail_hook:-"echo 1 > /tmp/scutclient_status"}" \
 	"$(get_arg_debug)"
 
 	if [ $? -eq 0 ] ; then
@@ -41,7 +41,7 @@ func_start(){
 func_stop(){
 	echo -n "Stopping scutclient:..."
 	killall -q -9 $scutclient_exec
-	$scutclient_exec -o -f "$(nvram get wan_ifname)" >/dev/null 2>&1
+	$scutclient_exec -o -i "$(nvram get wan_ifname)" >/dev/null 2>&1
 	echo "[  OK  ]"
 	func_log "Stopped"
 }

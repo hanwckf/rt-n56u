@@ -35,7 +35,7 @@ $j(document).ready(function() {
 <script>
 
 var ipmonitor = [<% get_static_client(); %>];
-var wireless = [<% wl_auth_list(); %>];
+var wireless = {<% wl_auth_list(); %>};
 var m_dhcp = [<% get_nvram_list("LANHostConfig", "ManualDHCPList"); %>];
 
 var mdhcp_ifield = 3;

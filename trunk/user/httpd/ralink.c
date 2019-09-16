@@ -838,6 +838,25 @@ print_apcli_wds_header(webs_t wp, const char *caption)
 }
 
 static int
+get_rssi_from_me(RT_802_11_MAC_ENTRY *me, int num_ss_rx)
+{
+	int rssi;
+
+	rssi = -127;
+	if ((int)me->AvgRssi0 > rssi && me->AvgRssi0 != 0)
+		rssi = (int)me->AvgRssi0;
+	if (num_ss_rx > 1) {
+		if ((int)me->AvgRssi1 > rssi && me->AvgRssi1 != 0)
+			rssi = (int)me->AvgRssi1;
+	}
+	if (num_ss_rx > 2) {
+		if ((int)me->AvgRssi2 > rssi && me->AvgRssi2 != 0)
+			rssi = (int)me->AvgRssi2;
+	}
+	return rssi;
+}
+
+static int
 print_apcli_wds_entry(webs_t wp, RT_802_11_MAC_ENTRY *me, int num_ss_rx)
 {
 	int ret, rssi;
@@ -1367,6 +1386,7 @@ ej_wl_auth_list(int eid, webs_t wp, int argc, char **argv)
 	int i, firstRow = 1, ret = 0;
 	char mac_table_data[4096];
 	char mac[18];
+	int num_ss_rx;
 
 #if BOARD_HAS_5G_RADIO
 	/* query wl for authenticated sta list */
@@ -1377,6 +1397,7 @@ ej_wl_auth_list(int eid, webs_t wp, int argc, char **argv)
 	if (wl_ioctl(IFNAME_5G_MAIN, RTPRIV_IOCTL_GET_MAC_TABLE_STRUCT, &wrq) >= 0)
 	{
 		RT_802_11_MAC_TABLE *mp = (RT_802_11_MAC_TABLE *)wrq.u.data.pointer;
+		num_ss_rx = nvram_wlan_get_int(1, "stream_rx");
 		for (i=0; i<mp->Num; i++)
 		{
 			sprintf(mac, "%02X:%02X:%02X:%02X:%02X:%02X",
@@ -1389,10 +1410,12 @@ ej_wl_auth_list(int eid, webs_t wp, int argc, char **argv)
 			else
 				ret+=websWrite(wp, ", ");
 			
-			ret+=websWrite(wp, "\"%s\"", mac);
+			ret+=websWrite(wp, "\"%s\":%d", mac, get_rssi_from_me(&mp->Entry[i], num_ss_rx));
 		}
 	}
 #endif
+
+	num_ss_rx = nvram_wlan_get_int(0, "stream_rx");
 
 #if defined(USE_RT3352_MII)
 	if (nvram_get_int("inic_disable") == 1)
@@ -1418,7 +1441,7 @@ ej_wl_auth_list(int eid, webs_t wp, int argc, char **argv)
 			else
 				ret+=websWrite(wp, ", ");
 			
-			ret+=websWrite(wp, "\"%s\"", mac);
+			ret+=websWrite(wp, "\"%s\":%d", mac, get_rssi_from_me(&mp->Entry[i], num_ss_rx));
 		}
 	}
 #else
@@ -1442,7 +1465,7 @@ ej_wl_auth_list(int eid, webs_t wp, int argc, char **argv)
 			else
 				ret+=websWrite(wp, ", ");
 			
-			ret+=websWrite(wp, "\"%s\"", mac);
+			ret+=websWrite(wp, "\"%s\":%d", mac, get_rssi_from_me(&mp->Entry[i], num_ss_rx));
 		}
 	}
 #endif

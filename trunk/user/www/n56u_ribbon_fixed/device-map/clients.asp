@@ -19,7 +19,7 @@
 var $j = jQuery.noConflict();
 
 var ipmonitor = [<% get_static_client(); %>];
-var wireless = [<% wl_auth_list(); %>];
+var wireless = {<% wl_auth_list(); %>};
 
 var list_type = '<% nvram_get_x("", "macfilter_enable_x"); %>';
 var list_of_BlockedClient = [<% get_nvram_list("FirewallConfig", "MFList"); %>];
@@ -149,6 +149,29 @@ function update_clients(e) {
 	});
 }
 
+function add_client_row(table, atIndex, client, blocked, j){
+	var row = table.insertRow(atIndex);
+	var typeCell = row.insertCell(0);
+	var nameCell = row.insertCell(1);
+	var ipCell = row.insertCell(2);
+	var macCell = row.insertCell(3);
+	var rssiCell = row.insertCell(4);
+	var blockCell = row.insertCell(5);
+
+	typeCell.style.textAlign = "center";
+	typeCell.innerHTML = "<img title='"+ DEVICE_TYPE[client[5]]+"' src='/bootstrap/img/wl_device/" + client[5] +".gif'>";
+	nameCell.innerHTML = client[0];
+	ipCell.innerHTML = (client[6] == "1") ? "<a href=http://" + client[1] + " target='blank'>" + client[1] + "</a>" : client[1];
+	macCell.innerHTML = "<a target='_blank' href='http://apps.neu.edu.cn/macquery/?mac=" + client[2].substr(0,2) + "%3A" + client[2].substr(2,2) + "%3A" + client[2].substr(4,2) + "'>" + mac_add_delimiters(client[2]) + "</a>";
+	if (client[3] == 10){
+		rssiCell.innerHTML = client[4].toString();
+	}
+	if(list_type != "1" && sw_mode != "3"){
+		blockCell.style.textAlign = "center";
+		blockCell.innerHTML = "<div class='icon icon-" + (blocked ? "plus" : "remove") + "' onClick='" + (blocked ? "unBlock" : "block") + "Client("+j+")' style='cursor:pointer;'></div>\n";
+	}
+}
+
 function show_clients(){
 	var i, j, k;
 	var table1, table2;
@@ -162,60 +185,36 @@ function show_clients(){
 	while (table2.rows.length > 2)
 		table2.deleteRow(-1);
 	
+	var hasBlocked = false;
 	for(j=0, i=0, k=0; j < clients.length; j++){
-		var fMAC = mac_add_delimiters(clients[j][2]);
 		if(clients[j][7] == "u" || sw_mode == "3"){
-			addClient = table1.insertRow(k+2);
-			clientType = addClient.insertCell(0);
-			clientName = addClient.insertCell(1);
-			clientIP = addClient.insertCell(2);
-			clientMAC = addClient.insertCell(3);
-			clientBlock = addClient.insertCell(4);
-			
-			var isWL = (clients[j][3] == 10)?"<br/><strong><#Device_service_Wireless#></strong> YES":"";
-			
-			clientType.style.textAlign = "center";
-			clientType.innerHTML = "<img title='"+ DEVICE_TYPE[clients[j][5]]+"' src='/bootstrap/img/wl_device/" + clients[j][5] +".gif'>";
-			clientName.innerHTML = "<div class='"+(j == 0 ? 'popover_bottom' : 'popover_top' ) + "' data-original-title='<font size=-1><#MAC_Address#>: " + fMAC + isWL + "</font>' data-content='"+("<#Computer_Name#>: " + clients[j][0])+"'>" + clients[j][0] + "</div>";
-			clientIP.innerHTML = (clients[j][6] == "1") ? "<a href=http://" + clients[j][1] + " target='blank'>" + clients[j][1] + "</a>" : clients[j][1];
-			clientMAC.innerHTML = "<a target='_blank' href='http://apps.neu.edu.cn/macquery/?mac=" + clients[j][2].substr(0,2) + "%3A" + clients[j][2].substr(2,2) + "%3A" + clients[j][2].substr(4,2) + "'>" + clients[j][2] + "</a>";
-			if(list_type != "1" && sw_mode != "3"){
-				clientBlock.style.textAlign = "center";
-				clientBlock.innerHTML = "<div class='icon icon-remove' onClick='blockClient("+j+")' style='cursor:pointer;'></div>\n";
-			}
+			add_client_row(table1, k+2, clients[j], false, j);
 			k++;
 		}
 		else if(clients[j][7] == "b"){
-			add_xClient = table2.insertRow(i+2);
-			xClientType = add_xClient.insertCell(0);
-			xClientName = add_xClient.insertCell(1);
-			xClientIP = add_xClient.insertCell(2);
-			xClientMAC = add_xClient.insertCell(3);
-			xClientunBlock = add_xClient.insertCell(4);
-			
-			var isWL = (clients[j][3] == 10)?"<br/><strong><#Device_service_Wireless#></strong> YES":"";
-			
-			xClientType.style.textAlign = "center";
-			xClientType.innerHTML = "<img title='" +DEVICE_TYPE[clients[j][5]]+"' src='/bootstrap/img/wl_device/" + clients[j][5] +".gif'>";
-			xClientName.innerHTML = "<div class='"+(j == 0 ? 'popover_bottom' : 'popover_top' ) + "' data-original-title='<font size=-1><#MAC_Address#>: " + fMAC + isWL + "</font>' data-content='"+("<#Computer_Name#>: " + clients[j][0])+"'>" + clients[j][0] + "</div>";
-			xClientIP.innerHTML = clients[j][1];
-			xClientMAC.innerHTML = "<a target='_blank' href='http://apps.neu.edu.cn/macquery/?mac=" + clients[j][2].substr(0,2) + "%3A" + clients[j][2].substr(2,2) + "%3A" + clients[j][2].substr(4,2) + "'>" + clients[j][2] + "</a>";
-			
-			if(list_type != "1"){
-				xClientunBlock.style.textAlign = "center";
-				xClientunBlock.innerHTML = "<div class='icon icon-plus' onClick='unBlockClient("+j+")' style='cursor:pointer;'></div>\n";
-			}
+			add_client_row(table2, i+2, clients[j], true, j);
+			hasBlocked = true;
 			i++;
 		}
 	}
 
-	var NDRow = "<tr><td colspan='5'><div class='alert alert-info'><#Nodata#></div></td></tr>";
+	table2.style.display = hasBlocked ? "inline" : "none";
+
+	var NDRow = "<tr><td colspan='6'><div class='alert alert-info'><#Nodata#></div></td></tr>";
 
 	if (table1.rows.length < 3)
 		$j("#Clients_table tbody").append(NDRow);
 
 	if (table2.rows.length < 3 && sw_mode != "3")
 		$j("#xClients_table tbody").append(NDRow);
+}
+
+function sort(mode) {
+	sort_mode = (sort_mode > 0) ? (mode * -1) : mode;
+	localStorage.setItem('sortMode', sort_mode);
+	clients = getclients(1,0);
+	prepare_clients();
+	show_clients();
 }
 
 function blockClient(unBlockedClient_order){
@@ -374,11 +373,12 @@ function networkmap_update(s){
             <th colspan="5" style="text-align: center;"><#ConnectedClient#></th>
         </tr>
         <tr>
-            <th width="8%"><#Type#></th>
-            <th id="col_hname" width="50%"><#Computer_Name#></th>
-            <th width="21%"><#LAN_IP#></th>
-            <th width="21%"><#MAC_Address#></th>
-            <th id="col_block"></th>
+            <th width="8%"><a href="javascript:sort(0)"><#Type#></a></th>
+            <th><a href="javascript:sort(1)"><#Computer_Name#></a></th>
+            <th width="20%"><a href="javascript:sort(2)">IP</a></th>
+            <th width="24%"><a href="javascript:sort(3)">MAC</a></th>
+            <th width="8%" id="col_rssi"><a href="javascript:sort(4)">RSSI</a></th>
+            <th width="0%" id="col_block"></th>
         </tr>
     </thead>
     <tbody>
@@ -393,10 +393,11 @@ function networkmap_update(s){
         </tr>
         <tr>
             <th width="8%"><#Type#></th>
-            <th id="col_unhname" width="50%"><#Computer_Name#></th>
-            <th width="21%"><#LAN_IP#></th>
-            <th width="21%"><#MAC_Address#></th>
-            <th id="col_unblock"></th>
+            <th><#Computer_Name#></th>
+            <th width="20%">IP</th>
+            <th width="24%">MAC</th>
+            <th width="8%" id="col_unrssi">RSSI</th>
+            <th width="0%" id="col_unblock"></th>
         </tr>
     </thead>
     <tbody>
@@ -424,9 +425,9 @@ function networkmap_update(s){
 
 <script>
 	if (sw_mode != "3") {
-		if (list_type != "1"){
-			$("col_hname").width = "35%";
-			$("col_unhname").width = "35%";
+		if (list_type != "1") {
+			$("col_block").width = "12%";
+			$("col_unblock").width = "12%";
 			$("col_block").innerHTML = "<#Block#>";
 			$("col_unblock").innerHTML = "<#unBlock#>";
 		}

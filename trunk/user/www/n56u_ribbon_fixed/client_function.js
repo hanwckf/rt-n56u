@@ -1,7 +1,9 @@
 var selectedClientOrder;
 
 // ipmonitor: [[IP, MAC, DeviceName, Type, http, staled], ...]
-// wireless: [MAC, ...]
+// wireless: [MAC, ...] ==Yonsm==> {MAC:RSSI, ...} from ej_wl_auth_list
+
+var sort_mode = parseInt(localStorage.getItem('sortMode'));
 
 function getclients(flag_mac,flag_all){
 	var clients = new Array();
@@ -22,10 +24,11 @@ function getclients(flag_mac,flag_all){
 		clients[j][5] = ipmonitor[i][3];	// TYPE
 		clients[j][6] = ipmonitor[i][4];	// host has a HTTP service
 		clients[j][7] = "u";
-		
-		for(var k = 0; k < wireless.length; ++k){
-			if(clients[j][2] == wireless[k]){
+
+		for(var mac in wireless){
+			if(clients[j][2] == mac){
 				clients[j][3] = 10;	// 10 is meant the client is wireless.
+				clients[j][4] = wireless[mac]; // By Yonsm: Fetch from wireless
 				break;
 			}
 		}
@@ -39,11 +42,23 @@ function getclients(flag_mac,flag_all){
 	}
 
 	clients.sort(function(a,b){
-		var aa = a[1].split(".");
-		var bb = b[1].split(".");
-		var resulta = aa[0]*0x1000000 + aa[1]*0x10000 + aa[2]*0x100 + aa[3]*1;
-		var resultb = bb[0]*0x1000000 + bb[1]*0x10000 + bb[2]*0x100 + bb[3]*1;
-		return resulta-resultb;
+		var ret;
+		if (sort_mode == 1 || sort_mode == -1) { // Name
+			ret = a[0].localeCompare(b[0]);
+		} else if (sort_mode == 3 || sort_mode == -3) { // MAC
+			ret = a[2].localeCompare(b[2]);
+		} else if (sort_mode == 4 || sort_mode == -4) { // RSSI
+			ret = parseInt(a[4])||0 - parseInt(b[4])||0;
+		} else if (sort_mode == 0) { // Type
+			ret = a[5].localeCompare(b[5]);
+		} else  { // IP
+			var aa = a[1].split(".");
+			var bb = b[1].split(".");
+			var resulta = aa[0]*0x1000000 + aa[1]*0x10000 + aa[2]*0x100 + aa[3]*1;
+			var resultb = bb[0]*0x1000000 + bb[1]*0x10000 + bb[2]*0x100 + bb[3]*1;
+			ret = resulta-resultb;
+		}
+		return (sort_mode < 0) ? (ret * -1) : ret;
 	});
 
 	return clients;

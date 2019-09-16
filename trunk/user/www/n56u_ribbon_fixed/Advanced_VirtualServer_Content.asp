@@ -63,7 +63,7 @@ var wItem2 = new Array(new Array("", "", "TCP"),
 var client_ip = login_ip_str();
 
 var ipmonitor = [<% get_static_client(); %>];
-var wireless = [<% wl_auth_list(); %>];
+var wireless = {<% wl_auth_list(); %>};
 
 var clients_info = getclients(0,0);
 

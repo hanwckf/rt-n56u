@@ -28,7 +28,7 @@ var client_mac = login_mac_str();
 var smac = client_mac.split(":");
 
 var ipmonitor = [<% get_static_client(); %>];
-var wireless = [<% wl_auth_list(); %>];
+var wireless = {<% wl_auth_list(); %>};
 
 var clients_info = getclients(1,0);
 

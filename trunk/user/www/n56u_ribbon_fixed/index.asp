@@ -44,6 +44,10 @@ function initial(){
 	show_client_status(ccount);
 	set_default_choice();
 
+	if (!support_2g_radio() && !support_5g_radio()) { // Remove radio row
+		$("row_radio").style.display = "none";
+	}
+
 	if(sw_mode == '3')
 		$("linkInternet").href = "/device-map/intranet.asp"
 
@@ -718,7 +722,7 @@ $j(document).ready(function(){
                                             <div class="arrow-right" id="arrow-internet"><img src="/bootstrap/img/arrow-right.png"></div>
                                         </td>
                                     </tr>
-                                    <tr>
+                                    <tr id="row_radio">
                                         <td width="30%">
                                             <a href="device-map/router2g.asp" target="statusframe" style="outline:0;"><div id="iconRouter" class="big-icons big-icons-router" onclick="clickEvent(this);"></div></a>
                                             <div style="position: absolute; margin-top: -47px; margin-left: 50px;"><div id="wl_securitylevel_span" style="padding-right: 3px;"></div></div>

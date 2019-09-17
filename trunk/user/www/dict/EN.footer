@@ -1792,3 +1792,5 @@ ConClients=Connected Clients
 IPLocal=IP (local)
 IPRemote=IP (remote)
 Login=Login
+BTN_SHUTDOWN=Shutdown
+JS_shutdown=You need manually power on after shutdown!!! Continue to shutdown?

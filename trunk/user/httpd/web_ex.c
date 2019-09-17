@@ -3141,6 +3141,12 @@ apply_cgi(const char *url, webs_t wp)
 		sys_reboot();
 		return 0;
 	}
+	else if (!strcmp(value, " Shutdown "))
+	{
+		system("shutdown");
+		websRedirect(wp, current_url);
+		return 0;
+	}
 	else if (!strcmp(value, " RestoreNVRAM "))
 	{
 		websApply(wp, "Restarting.asp");

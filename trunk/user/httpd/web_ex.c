@@ -2416,6 +2416,7 @@ ej_firmware_caps_hook(int eid, webs_t wp, int argc, char **argv)
 		"function support_ephy_w1000() { return %d;}\n"
 		"function support_ephy_l1000() { return %d;}\n"
 		"function support_2g_inic_mii() { return %d;}\n"
+		"function support_2g_radio() { return %d;}\n"
 		"function support_5g_radio() { return %d;}\n"
 		"function support_5g_11ac() { return %d;}\n"
 		"function support_5g_wid() { return %d;}\n"
@@ -2451,6 +2452,7 @@ ej_firmware_caps_hook(int eid, webs_t wp, int argc, char **argv)
 		BOARD_HAS_EPHY_W1000,
 		BOARD_HAS_EPHY_L1000,
 		has_inic_mii,
+		BOARD_HAS_2G_RADIO,
 		BOARD_HAS_5G_RADIO,
 		has_5g_vht,
 		wid_5g,
@@ -2918,11 +2920,16 @@ void get_wifidata(struct wifi_stats *st, int is_5ghz)
 	}
 	else
 	{
+#if BOARD_HAS_2G_RADIO
 		st->radio = (nvram_get_int("mlme_radio_rt")) ? 1 : 0;
 		if (st->radio)
 			st->ap_guest = is_interface_up(IFNAME_2G_GUEST);
 		else
 			st->ap_guest = 0;
+#else
+		st->radio = 0;
+		st->ap_guest = 0;
+#endif
 	}
 }
 

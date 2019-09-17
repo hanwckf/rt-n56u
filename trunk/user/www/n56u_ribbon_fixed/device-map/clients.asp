@@ -424,6 +424,12 @@ function networkmap_update(s){
 </form>
 
 <script>
+	if (!support_2g_radio() && !support_5g_radio()) {
+		$("col_rssi").width = "0%";
+		$("col_rssi").innerHTML = "";
+		$("col_unrssi").width = "0%";
+		$("col_unrssi").innerText = "";
+	}
 	if (sw_mode != "3") {
 		if (list_type != "1") {
 			$("col_block").width = "12%";

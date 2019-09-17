@@ -48,7 +48,7 @@ function getclients(flag_mac,flag_all){
 		} else if (sort_mode == 3 || sort_mode == -3) { // MAC
 			ret = a[2].localeCompare(b[2]);
 		} else if (sort_mode == 4 || sort_mode == -4) { // RSSI
-			ret = parseInt(a[4])||0 - parseInt(b[4])||0;
+			ret = (parseInt(a[4])||0) - (parseInt(b[4])||0);
 		} else if (sort_mode == 0) { // Type
 			ret = a[5].localeCompare(b[5]);
 		} else  { // IP

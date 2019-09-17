@@ -1807,3 +1807,6 @@ ConClients=已连接设备
 IPLocal=IP 地址 (本地)
 IPRemote=IP 地址 (远程)
 Login=登录
+BTN_SHUTDOWN=关机
+JS_shutdown=关机后需要手动断电接电才能启动路由!!!\n确定要关机吗？
+

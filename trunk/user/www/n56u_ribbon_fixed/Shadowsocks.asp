@@ -308,7 +308,8 @@ function fill_ss_tunnel_status(status_code){
                                             <td>
                                                 <select name="ss_mode" class="input" style="width: 145px;">   
                                                     <option value="0" ><#menu5_16_11#></option>
-                                                    <option value="1" >Chnroute</option>
+                                                    <option value="1" ><#ChnRoute#></option>
+                                                    <option value="2" ><#GfwList#></option>
                                                 </select>
                                             </td>
                                         </tr>
@@ -421,7 +422,7 @@ function fill_ss_tunnel_status(status_code){
                                             </td>
                                         </tr>
 
-                                        <tr> <th colspan="2" style="background-color: #E3E3E3;">Chnroute</th> </tr>
+                                        <tr> <th colspan="2" style="background-color: #E3E3E3;"><#ChnRoute#></th> </tr>
 
                                         <tr>
                                             <th width="50%"><#menu5_17_1#>&nbsp;&nbsp;&nbsp;&nbsp;<span class="label label-info" style="padding: 5px 5px 5px 5px;" id="chnroute_count"></span></th>
@@ -445,7 +446,7 @@ function fill_ss_tunnel_status(status_code){
                                             </td>
                                         </tr>
 
-                                        <tr> <th colspan="2" style="background-color: #E3E3E3;">gfwlist</th> </tr>
+                                        <tr> <th colspan="2" style="background-color: #E3E3E3;"><#GfwList#></th> </tr>
 
                                         <tr>
                                             <th width="50%"><#menu5_17_1#>&nbsp;&nbsp;&nbsp;&nbsp;<span class="label label-info" style="padding: 5px 5px 5px 5px;" id="gfwlist_count"></span></th>

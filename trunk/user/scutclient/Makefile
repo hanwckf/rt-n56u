@@ -1,5 +1,4 @@
-SRC_NAME = scutclient-upstream
-ARCHIVE_NAME = scutclient-fefe3862bfe3f0ddc130cd9795346c4cd06e46cb
+SRC_NAME = scutclient-3.1.2-1
 #https://github.com/hanwckf/scutclient.git
 THISDIR = $(shell pwd)
 
@@ -8,7 +7,7 @@ all: extract_test config_test
 
 extract_test:
 	( if [ ! -d $(THISDIR)/$(SRC_NAME) ]; then \
-		unzip -qq $(ARCHIVE_NAME).zip; \
+		unzip -qq $(SRC_NAME).zip; \
 	fi )
 
 config_test:

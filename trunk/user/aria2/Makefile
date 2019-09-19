@@ -1,8 +1,8 @@
 SRC_NAME=aria2-1.17.1
 BIN_DIR_NAME=aria2-1.34.0
 
-SRC_ARIA_NG_NAME=AriaNg-1.0.3-AllInOne
-SRC_ARIA_NG_URL=https://github.com/mayswind/AriaNg/releases/download/1.0.3/AriaNg-1.0.3-AllInOne.zip
+SRC_ARIA_NG_NAME=AriaNg-1.1.3-AllInOne
+SRC_ARIA_NG_URL=https://github.com/mayswind/AriaNg/releases/download/1.1.3/AriaNg-1.1.3-AllInOne.zip
 
 CFLAGS  += -ffunction-sections -fdata-sections
 CXXFLAGS += -ffunction-sections -fdata-sections

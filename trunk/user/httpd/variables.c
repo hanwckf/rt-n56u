@@ -292,6 +292,7 @@
 			{"wan_auth_pass", "", NULL, EVM_RESTART_WAN},
 			{"wan_auth_host", "", NULL, EVM_RESTART_WAN},
 			{"wan_ttl_fix", "", NULL, EVM_RESTART_FIREWALL},
+			{"wan_ttl_value", "", NULL, EVM_RESTART_FIREWALL},
 			{"viptv_mode", "", NULL, EVM_RESTART_WAN},
 			{"viptv_ipaddr", "", NULL, EVM_RESTART_WAN},
 			{"viptv_netmask", "", NULL, EVM_RESTART_WAN},

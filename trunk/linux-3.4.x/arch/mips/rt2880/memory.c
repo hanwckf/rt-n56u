@@ -66,7 +66,6 @@
 /* References to section boundaries */
 extern char _end;
 
-#ifdef CONFIG_UBOOT_CMDLINE
 static unsigned int __init prom_get_ramsize(void)
 {
 	char *env_str;
@@ -85,15 +84,15 @@ static unsigned int __init prom_get_ramsize(void)
         
 	return ramsize;
 }
-#endif
+
 
 void __init prom_meminit(void)
 {
 	phys_t ramsize = 0;
 
-#ifdef CONFIG_UBOOT_CMDLINE
+
 	ramsize = (phys_t)prom_get_ramsize();
-#endif
+
 	if (ramsize < RAM_SIZE_MIN || ramsize > RAM_SIZE_MAX)
 		ramsize = RAM_SIZE;
 

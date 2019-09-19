@@ -62,7 +62,6 @@ u32 surfboard_sysclk;
 u32 ralink_asic_rev_id;
 EXPORT_SYMBOL(ralink_asic_rev_id);
 
-#ifdef CONFIG_UBOOT_CMDLINE
 /* Environment variable */
 typedef struct {
 	char *name;
@@ -77,11 +76,9 @@ int *_prom_argv, *_prom_envp;
  * This macro take care of sign extension, if running in 64-bit mode.
  */
 #define prom_envp(index) ((char *)(((int *)(int)_prom_envp)[(index)]))
-#endif
 
 char *prom_getenv(char *envname)
 {
-#ifdef CONFIG_UBOOT_CMDLINE
 	/*
 	 * Return a pointer to the given environment variable.
 	 * In 64-bit mode: we're using 64-bit pointers, but all pointers
@@ -102,7 +99,7 @@ char *prom_getenv(char *envname)
 		}
 		index++;
 	}
-#endif
+
 	return NULL;
 }
 
@@ -843,11 +840,9 @@ void __init prom_init(void)
 {
 	mips_machtype = MACH_RALINK_ROUTER;
 
-#ifdef CONFIG_UBOOT_CMDLINE
 	prom_argc = fw_arg0;
 	_prom_argv = (int*) fw_arg1;
 	_prom_envp = (int*) fw_arg2;
-#endif
 
 	set_io_port_base(KSEG1);
 

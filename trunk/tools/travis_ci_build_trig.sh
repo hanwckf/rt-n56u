@@ -7,7 +7,7 @@ git config --global user.email "my375229675@gmail.com"
 
 for repo in $TRIGS ; do
 	cd /opt
-	git clone --depth=1 https://github.com/hanwckf/$repo.git && cd $repo
+	git clone --depth=1 https://hanwckf:$GITHUB_KEY@github.com/hanwckf/$repo.git && cd $repo
 	echo $(LANG=C date) >> Build.log
 	[ -f /opt/$repo.yml ] && cp -f /opt/$repo.yml .travis.yml
 	git add .

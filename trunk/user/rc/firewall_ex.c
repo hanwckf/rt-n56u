@@ -1711,10 +1711,10 @@ ip6t_disable_filter(void)
 		return;
 
 	fprintf(fp, "*%s\n", "filter");
-	fprintf(fp, ":%s %s [0:0]\n", "INPUT", "ACCEPT");
 	fprintf(fp, ":%s %s [0:0]\n", "FORWARD", "ACCEPT");
 	fprintf(fp, ":%s %s [0:0]\n", "OUTPUT", "ACCEPT");
-	fprintf(fp, "-F\n");
+	fprintf(fp, "-F %s\n","FORWARD");
+	fprintf(fp, "-F %s\n","OUTPUT");
 
 	fprintf(fp, "COMMIT\n\n");
 	fclose(fp);

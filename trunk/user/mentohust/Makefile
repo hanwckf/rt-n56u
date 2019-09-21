@@ -3,6 +3,8 @@ ARCHIVE_NAME := mentohust-6a6da8d
 #https://github.com/hanwckf/mentohust
 THISDIR = $(shell pwd)
 
+LDFLAGS += -L$(STAGEDIR) -liconv
+
 all: extract_test config_test
 	$(MAKE) -C $(SRC_NAME)
 
@@ -22,6 +24,7 @@ config_test:
 configure:
 	( cd $(SRC_NAME) ; \
 	autoreconf -fi ; \
+	am_cv_func_iconv=no \
 	./configure \
 		--prefix=/usr \
 		--with-pcap=dylib \

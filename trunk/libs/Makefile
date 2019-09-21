@@ -183,6 +183,10 @@ ifeq ($(CONFIG_FIRMWARE_INCLUDE_MTR),y)
 LIBS_INCLUDE_NCURSES=y
 endif
 
+ifeq ($(CONFIG_FIRMWARE_INCLUDE_MENTOHUST),y)
+LIBS_INCLUDE_LIBPCAP=y
+endif
+
 dir_y						+= libz
 dir_$(LIBS_INCLUDE_NCURSES)			+= libncurses
 dir_$(LIBS_INCLUDE_LIBLZO)			+= liblzo

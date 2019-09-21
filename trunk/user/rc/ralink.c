@@ -760,9 +760,9 @@ gen_ralink_config(int is_soc_ap, int is_aband, int disable_autoscan)
 
 	//AutoChannelSkipList
 	if (!is_aband)
-		sprintf(list, "%d;%d", 12, 13);
+		sprintf(list, "%d", 14);
 	else
-		sprintf(list, "%d", 165);
+		sprintf(list, "%d;%d;%d;%d", 52, 56, 60, 64);
 	fprintf(fp, "AutoChannelSkipList=%s\n", list);
 
 	//BasicRate

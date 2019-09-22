@@ -7,6 +7,9 @@ language: c
 compiler:
     - gcc
 
+env:
+    - targets="PSG1218 MI-MINI MI-3 5K-W20 OYE-001"
+
 install:
     - sudo apt-get update -qq
     - sudo apt-get install -qq p7zip-full autoconf automake bison build-essential flex gawk gettext gperf libtool pkg-config zlib1g-dev libgmp3-dev libmpc-dev libmpfr-dev texinfo python-docutils libncurses5-dev autopoint curl libltdl-dev cmake
@@ -17,15 +20,10 @@ before_script:
     - sudo rm -rf toolchain-mipsel/
     - sudo mv -f * .[^.]* /opt/rt-n56u
     - cd /opt/rt-n56u && sudo git clone --depth=1 https://github.com/hanwckf/padavan-toolchain.git toolchain-mipsel && sudo chmod u+x ./toolchain-mipsel/toolchain-3.4.x/bin/*
-    - ls -Alh /opt/rt-n56u
-    - cd /opt/rt-n56u/trunk/
+    - ls -Alh /opt/rt-n56u && cd /opt/rt-n56u/trunk/
 
 script:
-    - sudo bash ./build_firmware_nohup PSG1218 && sudo cp -f images/*.trx /opt/images
-    - sudo bash ./clear_tree_simple >/dev/null 2>&1 && sudo bash ./build_firmware_nohup MI-MINI && sudo cp -f images/*.trx /opt/images
-    - sudo bash ./clear_tree_simple >/dev/null 2>&1 && sudo bash ./build_firmware_nohup MI-3 && sudo cp -f images/*.trx /opt/images
-    - sudo bash ./clear_tree_simple >/dev/null 2>&1 && sudo bash ./build_firmware_nohup 5K-W20 && sudo cp -f images/*.trx /opt/images
-    - sudo bash ./clear_tree_simple >/dev/null 2>&1 && sudo bash ./build_firmware_nohup OYE-001 && sudo cp -f images/*.trx /opt/images
+    - sudo sh -c "for m in $targets; do ./build_firmware_nohup $m && cp -f images/*.trx /opt/images/$m.trx; ./clear_tree_simple >/dev/null 2>&1; done"
 
 after_script:
     - GIT_VERSION=`git rev-parse --short=7 HEAD 2>/dev/null` && [ -n "$GIT_VERSION" ] && image_name=images_mt7620_$GIT_VERSION || image_name=images_mt7620

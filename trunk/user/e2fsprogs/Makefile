@@ -1,5 +1,5 @@
-SRC_NAME=e2fsprogs-1.44.5
-SRC_URL=https://www.kernel.org/pub/linux/kernel/people/tytso/e2fsprogs/v1.44.5/e2fsprogs-1.44.5.tar.xz
+SRC_NAME=e2fsprogs-1.45.3
+SRC_URL=https://mirrors.edge.kernel.org/pub/linux/kernel/people/tytso/e2fsprogs/v1.45.3/e2fsprogs-1.45.3.tar.xz
 
 THISDIR = $(shell pwd)
 
@@ -29,7 +29,7 @@ config_test:
 
 configure:
 	( cd $(SRC_NAME) ; \
-	autoreconf -vi ; \
+	autoreconf -fi ; \
 	PKG_CONFIG_PATH=$(STAGEDIR)/lib/pkgconfig \
 	./configure \
 		--prefix= \
@@ -50,7 +50,6 @@ configure:
 		--disable-tls \
 		--disable-libuuid \
 		--disable-libblkid \
-		--disable-threads \
 		--enable-symlink-build \
 		--enable-verbose-makecmds \
 		--enable-elf-shlibs \

@@ -3964,9 +3964,9 @@ BOOLEAN WpaMessageSanity(
 			RTMPSendWirelessEvent(pAd, IW_MIC_DIFF_EVENT_FLAG, pEntry->Addr, pEntry->wdev->wdev_idx, 0);
 
 			if (MsgType < EAPOL_GROUP_MSG_1)
-				MTWF_LOG(DBG_CAT_SEC, DBG_SUBCAT_ALL, DBG_LVL_ERROR, ("MIC Different in pairwise msg %d of 4-way handshake!\n", MsgType));
+				MTWF_LOG(DBG_CAT_SEC, DBG_SUBCAT_ALL, DBG_LVL_TRACE, ("MIC Different in pairwise msg %d of 4-way handshake!\n", MsgType));
 			else
-				MTWF_LOG(DBG_CAT_SEC, DBG_SUBCAT_ALL, DBG_LVL_ERROR, ("MIC Different in group msg %d of 2-way handshake!\n", (MsgType - EAPOL_PAIR_MSG_4)));
+				MTWF_LOG(DBG_CAT_SEC, DBG_SUBCAT_ALL, DBG_LVL_TRACE, ("MIC Different in group msg %d of 2-way handshake!\n", (MsgType - EAPOL_PAIR_MSG_4)));
 
 #ifdef VENDOR_FEATURE7_SUPPORT
 			{

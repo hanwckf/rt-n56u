@@ -239,10 +239,48 @@ choice
 	bool "MT7615E PCIe"
 endchoice
 
-config  RT_THIRD_CARD
+config RT_THIRD_CARD
 	int
 	default 0    if RT_THIRD_IF_NONE
 	default 7615 if RT_THIRD_IF_MT7615E
+
+choice
+	prompt "Range of 3rd Wireless Interface"
+	depends on !RT_THIRD_IF_NONE
+
+	config RT_THIRD_IF_RANGE_2GHZ
+	bool "2.4GHz"
+
+	config RT_THIRD_IF_RANGE_5GHZ
+	bool "5GHz"
+endchoice
+
+choice
+	prompt "EEPROM Type of 3rd Wireless Interface"
+	depends on !(RT_THIRD_IF_NONE)
+
+	config RT_THIRD_IF_EEPROM_FLASH
+	bool "FLASH partition"
+
+	config RT_THIRD_IF_EEPROM_EFUSE
+	bool "eFUSE on-die"
+
+	config RT_THIRD_IF_EEPROM_PROM
+	bool "EEPROM chip"
+endchoice
+
+config RT_THIRD_IF_RF_OFFSET
+	hex "EEPROM FLASH Offset of 3rd Wireless Interface"
+	depends on RT_THIRD_IF_EEPROM_FLASH
+	default 0x50000
+
+config RT_THIRD_CARD_EEPROM
+	string
+	depends on !RT_THIRD_IF_NONE
+	default "prom" if RT_THIRD_IF_EEPROM_PROM
+	default "efuse" if RT_THIRD_IF_EEPROM_EFUSE
+	default "flash" if RT_THIRD_IF_EEPROM_FLASH
+
 
 comment "Wireless drivers settings"
 	depends on (!RT_FIRST_IF_NONE || !RT_SECOND_IF_NONE)

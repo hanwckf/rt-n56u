@@ -4375,7 +4375,6 @@ VOID RTMPIoctlGetMacTableStaInfo(
 	IN RTMP_IOCTL_INPUT_STRUCT *wrq)
 {
 	INT i;
-	BOOLEAN need_send = FALSE;
 	RT_802_11_MAC_TABLE *pMacTab = NULL;
 	PRT_802_11_MAC_ENTRY pDst;
 	MAC_TABLE_ENTRY *pEntry;
@@ -4392,20 +4391,7 @@ VOID RTMPIoctlGetMacTableStaInfo(
 	for (i = 0; VALID_UCAST_ENTRY_WCID(pAd, i); i++) {
 		pEntry = &(pAd->MacTab.Content[i]);
 
-		if (pEntry->wdev != NULL) {
-			if (!strcmp(wrq->ifr_ifrn.ifrn_name, "ra0")) {
-				if (!memcmp(pEntry->wdev->if_dev->name, "rax", 3))
-					need_send = FALSE;
-				else
-					need_send = TRUE;
-			} else if (!strcmp(wrq->ifr_ifrn.ifrn_name, "rax0")) {
-				if (!memcmp(pEntry->wdev->if_dev->name, "rax", 3))
-					need_send = TRUE;
-				else
-					need_send = FALSE;
-			}
-		}
-		if (IS_ENTRY_CLIENT(pEntry) && (pEntry->Sst == SST_ASSOC) && (need_send == TRUE)) {
+		if (IS_ENTRY_CLIENT(pEntry) && (pEntry->Sst == SST_ASSOC)) {
 			pDst = &pMacTab->Entry[pMacTab->Num];
 			pDst->ApIdx = pEntry->func_tb_idx;
 			COPY_MAC_ADDR(pDst->Addr, &pEntry->Addr);

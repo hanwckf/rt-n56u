@@ -739,7 +739,7 @@
 #if defined(USE_MT76X2_AP)
 			{"wl_VgaClamp", "", NULL, EVM_RESTART_WIFI5},
 #endif
-#if defined(USE_MT7615_AP)
+#if defined (USE_WID_5G) && USE_WID_5G==7615
 			{"wl_band_steering", "", NULL, EVM_RESTART_WIFI5},
 			{"wl_mumimo", "", NULL, EVM_RESTART_WIFI5},
 #endif
@@ -882,7 +882,7 @@
 #if defined(USE_MT76X2_AP)
 			{"rt_VgaClamp", "", NULL, EVM_RESTART_WIFI2},
 #endif
-#if defined(USE_MT7615_AP)
+#if defined (USE_WID_2G) && USE_WID_2G==7615
 			{"rt_turbo_qam", "", NULL, EVM_RESTART_WIFI2},
 			{"rt_airtimefairness", "", NULL, EVM_RESTART_WIFI2},
 #endif

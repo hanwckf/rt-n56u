@@ -107,10 +107,6 @@ typedef struct _RT_802_11_MAC_ENTRY {
 	unsigned int	ConnectedTime;
 	MACHTTRANSMIT_SETTING	TxRate;
 	unsigned int	LastRxRate;
-#if defined (USE_MT7615_AP) && !defined (WITHOUT_KERNEL)
-	signed short	StreamSnr[3];
-	signed short	SoundingRespSnr[3];
-#endif
 } RT_802_11_MAC_ENTRY, *PRT_802_11_MAC_ENTRY;
 
 typedef struct _RT_802_11_MAC_TABLE {

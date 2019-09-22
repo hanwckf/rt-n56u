@@ -7,6 +7,9 @@ language: c
 compiler:
     - gcc
 
+env:
+    - targets="K2P K2P_nano K2P_nano-5.0 JCG-AC860M JCG-AC860M-5.0 DIR-882 WR1200JS NEWIFI3"
+
 install:
     - sudo apt-get update -qq
     - sudo apt-get install -qq p7zip-full autoconf automake bison build-essential flex gawk gettext gperf libtool pkg-config zlib1g-dev libgmp3-dev libmpc-dev libmpfr-dev texinfo python-docutils libncurses5-dev autopoint curl libltdl-dev cmake
@@ -15,16 +18,10 @@ before_script:
     - cd /opt && sudo mkdir images && sudo git clone --depth=1 https://github.com/hanwckf/rt-n56u.git
     - cd rt-n56u && sudo rm -rf toolchain-mipsel/
     - sudo git clone --depth=1 https://github.com/hanwckf/padavan-toolchain.git toolchain-mipsel && sudo chmod u+x ./toolchain-mipsel/toolchain-3.4.x/bin/*
-    - ls -Alh /opt/rt-n56u
-    - cd /opt/rt-n56u/trunk/
+    - ls -Alh /opt/rt-n56u && cd /opt/rt-n56u/trunk/
 
 script:
-    - sudo bash ./build_firmware_nohup K2P && sudo cp -f images/*.trx /opt/images
-    - sudo bash ./clear_tree_simple >/dev/null 2>&1 && sudo bash ./build_firmware_nohup K2P_nano && sudo cp -f images/*.trx /opt/images/K2P_nano_3.4.3.9-099.trx
-    - sudo bash ./clear_tree_simple >/dev/null 2>&1 && sudo bash ./build_firmware_nohup JCG-AC860M && sudo cp -f images/*.trx /opt/images
-    - sudo bash ./clear_tree_simple >/dev/null 2>&1 && sudo bash ./build_firmware_nohup DIR-882 && sudo cp -f images/*.trx /opt/images
-    - sudo bash ./clear_tree_simple >/dev/null 2>&1 && sudo bash ./build_firmware_nohup WR1200JS && sudo cp -f images/*.trx /opt/images
-    - sudo bash ./clear_tree_simple >/dev/null 2>&1 && sudo bash ./build_firmware_nohup NEWIFI3 && sudo cp -f images/*.trx /opt/images
+    - sudo sh -c "for m in $targets; do ./build_firmware_nohup $m && cp -f images/*.trx /opt/images/$m.trx; ./clear_tree_simple >/dev/null 2>&1; done"
 
 after_script:
     - GIT_VERSION=`git rev-parse --short=7 HEAD 2>/dev/null` && [ -n "$GIT_VERSION" ] && image_name=images_mt7621_$GIT_VERSION || image_name=images_mt7621

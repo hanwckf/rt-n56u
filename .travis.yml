@@ -7,9 +7,6 @@ language: c
 compiler:
     - gcc
 
-env:
-    - targets="PSG1218 MI-MINI MI-3 5K-W20 OYE-001"
-
 install:
     - sudo apt-get update -qq
     - sudo apt-get install -qq p7zip-full autoconf automake bison build-essential flex gawk gettext gperf libtool pkg-config zlib1g-dev libgmp3-dev libmpc-dev libmpfr-dev texinfo python-docutils libncurses5-dev autopoint curl libltdl-dev cmake
@@ -32,7 +29,8 @@ after_script:
 
 env:
     global:
-        secure: "2Y1oWw402b4hR2rNFJaPLS65bZgvL7R+U6twk7LKBY4P2NEmsPzt6Lui8jlp10oz0LFayLKccdcJNdUsLikZ26i2oiMQ9pf+PtNiV1+qpP5oGW5sqZOCj7DRIkNQJzfhdlq38+vkcQYOKvDGmgAeQ/cXC3BeLSPZgOOvyo4j6S7921btBxQ4lSwAdYIqw1vqDcNfjhXHltAq8nbWx8RQErh7fuplNNr/NJTlX54oKZyZqdHppTNigwP5zUUzTt6KnFAFb4YRMk9/H6HYbWv7RmyOH6sLbaaNjk5iNdfKN8MJWKJjW+9pQKuUkV2XyKZ68Nd3DtTa6MSqZZQT+Xe6ARxVv8RuN0pvZBbOLL1e1HOjwUKtukCp/Q4cKJelVLu9oTnb2/CcTMUwXpDWcXO6lHmahFTZtzUZ6HalagZnhrGcUjSKAHsyudAp3VPAUiWCYkNOHBbjbHkmqVSu2uI0KIHsEt5+/fw9D3wJC71B5fTlAPZ+ceDTdAGvX3jTzKs6tlTwDb4XHBUsDAjxNVdzmSMW+/JobTXjeBkhhlr3bU21COrQI5rEWOAwfxmSwxYHuGy4pcsz/wUSf1tHVacV6oop9TfXh/C9Bi6Cgsa2y+g3EZ+ZvBo+rb0fC3dkPQ+Mo2SKOsOGjFHcNWqHybZ6BtgrALrCL1BSmtALNxmDzDo="
+      - targets="PSG1218 MI-MINI MI-3 5K-W20 OYE-001"
+      - secure: "2Y1oWw402b4hR2rNFJaPLS65bZgvL7R+U6twk7LKBY4P2NEmsPzt6Lui8jlp10oz0LFayLKccdcJNdUsLikZ26i2oiMQ9pf+PtNiV1+qpP5oGW5sqZOCj7DRIkNQJzfhdlq38+vkcQYOKvDGmgAeQ/cXC3BeLSPZgOOvyo4j6S7921btBxQ4lSwAdYIqw1vqDcNfjhXHltAq8nbWx8RQErh7fuplNNr/NJTlX54oKZyZqdHppTNigwP5zUUzTt6KnFAFb4YRMk9/H6HYbWv7RmyOH6sLbaaNjk5iNdfKN8MJWKJjW+9pQKuUkV2XyKZ68Nd3DtTa6MSqZZQT+Xe6ARxVv8RuN0pvZBbOLL1e1HOjwUKtukCp/Q4cKJelVLu9oTnb2/CcTMUwXpDWcXO6lHmahFTZtzUZ6HalagZnhrGcUjSKAHsyudAp3VPAUiWCYkNOHBbjbHkmqVSu2uI0KIHsEt5+/fw9D3wJC71B5fTlAPZ+ceDTdAGvX3jTzKs6tlTwDb4XHBUsDAjxNVdzmSMW+/JobTXjeBkhhlr3bU21COrQI5rEWOAwfxmSwxYHuGy4pcsz/wUSf1tHVacV6oop9TfXh/C9Bi6Cgsa2y+g3EZ+ZvBo+rb0fC3dkPQ+Mo2SKOsOGjFHcNWqHybZ6BtgrALrCL1BSmtALNxmDzDo="
 
 git:
     depth: 3

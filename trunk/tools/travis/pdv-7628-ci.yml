@@ -21,7 +21,7 @@ before_script:
     - ls -Alh /opt/rt-n56u && cd /opt/rt-n56u/trunk/
 
 script:
-    - for m in "$targets"; do sudo ./build_firmware_nohup $m && sudo cp -f images/*.trx /opt/images/$m.trx; sudo ./clear_tree_simple >/dev/null 2>&1; done
+    - for m in $targets; do sudo ./build_firmware_nohup $m && sudo cp -f images/*.trx /opt/images/$m.trx; sudo ./clear_tree_simple >/dev/null 2>&1; done
 
 after_script:
     - GIT_VERSION=`git rev-parse --short=7 HEAD 2>/dev/null` && [ -n "$GIT_VERSION" ] && image_name=images_mt7628_$GIT_VERSION || image_name=images_mt7628

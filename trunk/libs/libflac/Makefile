@@ -25,7 +25,7 @@ config_test:
 
 configure:
 	( cd $(SRC_NAME) ; \
-	./autogen.sh ; \
+	autoreconf -fi ; \
 	./configure \
 		--prefix=$(STAGEDIR) \
 		$(if $(LIBS_BUILD_SHARED),--disable-static,--enable-static) \

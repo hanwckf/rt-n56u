@@ -8,7 +8,7 @@ compiler:
     - gcc
 
 env:
-    - targets="K2P K2P_nano K2P_nano-5.0 JCG-AC860M JCG-AC860M-5.0 DIR-882 WR1200JS NEWIFI3"
+    - targets="K2P K2P_nano K2P_nano-5.0 JCG-AC860M JCG-AC860M-5.0 DIR-882 DIR-882-5.0 WR1200JS NEWIFI3"
 
 install:
     - sudo apt-get update -qq

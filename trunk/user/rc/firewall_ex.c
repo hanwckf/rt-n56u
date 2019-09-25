@@ -1704,22 +1704,8 @@ ip6t_mangle_rules(char *man_if)
 static void
 ip6t_disable_filter(void)
 {
-	FILE *fp;
-	const char *ipt_file = "/tmp/ip6t_disable_filter.rules";
-
-	if (!(fp=fopen(ipt_file, "w")))
-		return;
-
-	fprintf(fp, "*%s\n", "filter");
-	fprintf(fp, ":%s %s [0:0]\n", "FORWARD", "ACCEPT");
-	fprintf(fp, ":%s %s [0:0]\n", "OUTPUT", "ACCEPT");
-	fprintf(fp, "-F %s\n","FORWARD");
-	fprintf(fp, "-F %s\n","OUTPUT");
-
-	fprintf(fp, "COMMIT\n\n");
-	fclose(fp);
-
-	doSystem("ip6tables-restore %s", ipt_file);
+	doSystem("ip6tables -P FORWARD ACCEPT");
+	doSystem("ip6tables -F FORWARD");
 }
 #endif
 #endif

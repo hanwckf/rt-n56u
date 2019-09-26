@@ -123,7 +123,7 @@ int test_if_dir(const char *dir) {
 
 int test_if_System_folder(const char *const dirname) {
 	char *MS_System_folder[] = {"SYSTEM VOLUME INFORMATION", "RECYCLER", "RECYCLED", "$RECYCLE.BIN", NULL};
-	char *Linux_System_folder[] = {"lost+found", NULL};
+	char *Linux_System_folder[] = {"lost+found", "opt", "aria", "transmission", NULL};
 	int i;
 	
 	for (i = 0; MS_System_folder[i] != NULL; ++i) {

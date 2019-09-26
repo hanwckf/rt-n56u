@@ -349,8 +349,8 @@ int initial_one_var_file_in_mount_path(const char *const account, const char *co
 	}
 
 	// get the samba right and ftp right
-	if (strcmp(account, FTP_ANONYMOUS_USER) == 0) {
-		samba_right = 1;
+	if (strcmp(account, FTP_ANONYMOUS_USER) == 0/* || strcmp(account, SMB_GUEST_USER) == 0*/) {
+		samba_right = 0;
 		ftp_right = 1;
 	}
 	else {

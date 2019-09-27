@@ -76,6 +76,7 @@ Contributors of this project are not responsible for what happens next.
 >- DIR-882 (128M,USB)
 >- RT-AC1200GU (128M,USB)
 >- XY-C1 (512M,USB)
+>- NEWIFI-MINI (128M,USB)
 
 ***
 

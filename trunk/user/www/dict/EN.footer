@@ -404,6 +404,7 @@ StorageFTPD=FTP Server
 StorageNFSD=NFS Server
 StorageEnableNFSD=Enable NFS Server?
 StorageAllowOptw=Allow Run Optware?
+WebControl=Web Control
 StorageFFly=iTunes Media Server (Firefly)
 StorageEnableFFly=Enable iTunes Media Server?
 StorageTorrent=Torrent Transmission

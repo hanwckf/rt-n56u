@@ -269,6 +269,8 @@ write_smb_conf(void)
 	fprintf(fp, "dos filemode = yes\n");
 	fprintf(fp, "dos filetimes = yes\n");
 	fprintf(fp, "dos filetime resolution = yes\n");
+	fprintf(fp, "access based share enum = yes\n");
+	fprintf(fp, "veto files = /Thumbs.db/.DS_Store/._.DS_Store/.apdisk/.TemporaryItems/");
 	fprintf(fp, "\n");
 
 	disks_info = read_disk_data();
@@ -341,6 +343,8 @@ write_smb_conf(void)
 					int i, right, first;
 					char share[256];
 					
+					int guest_right = get_permission(SMB_GUEST_USER, follow_partition->mount_point, folder_list[n], "cifs");
+
 					memset(share, 0, 256);
 					strcpy(share, folder_list[n]);
 					
@@ -362,10 +366,16 @@ write_smb_conf(void)
 					fprintf(fp, "[%s]\n", share);
 					fprintf(fp, "comment = %s\n", folder_list[n]);
 					fprintf(fp, "path = %s/%s\n", follow_partition->mount_point, folder_list[n]);
-					fprintf(fp, "writeable = no\n");
+					fprintf(fp, /*(guest_right == 2) ? "writeable = yes\n" : */"writeable = no\n");
+					if (guest_right >= 1)
+						fprintf(fp, "guest ok = yes\n");
 					
 					fprintf(fp, "valid users = ");
 					first = 1;
+					if (guest_right >= 1) {
+						first = 0;
+						fprintf(fp, "%s", "nobody");
+					}
 					for (i = 0; i < acc_num; ++i) {
 						right = get_permission(account_list[i], follow_partition->mount_point, folder_list[n], "cifs");
 						if (first == 1)
@@ -395,6 +405,10 @@ write_smb_conf(void)
 					
 					fprintf(fp, "read list = ");
 					first = 1;
+					if (guest_right >= 1) {
+						first = 0;
+						fprintf(fp, "%s", "nobody");
+					}
 					for (i = 0; i < acc_num; ++i) {
 						right = get_permission(account_list[i], follow_partition->mount_point, folder_list[n], "cifs");
 						if (right < 1)
@@ -411,6 +425,10 @@ write_smb_conf(void)
 					
 					fprintf(fp, "write list = ");
 					first = 1;
+					if (guest_right >= 2) {
+						first = 0;
+						fprintf(fp, "%s", "nobody");
+					}
 					for (i = 0; i < acc_num; ++i) {
 						right = get_permission(account_list[i], follow_partition->mount_point, folder_list[n], "cifs");
 						if (right < 2)

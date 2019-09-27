@@ -663,6 +663,12 @@ ej_get_all_accounts(int eid, webs_t wp, int argc, char **argv)
 			first = 0;
 			websWrite(wp, "\"%s\"", FTP_ANONYMOUS_USER);
 		}
+	} else if (strcmp(acc_mode, "cifs") == 0) {
+		int st_samba_mode = nvram_get_int("st_samba_mode");
+		if (st_samba_mode == 4) {
+			first = 0;
+			websWrite(wp, "\"%s\"", SMB_GUEST_USER);
+		}
 	}
 
 	get_account_list(&acc_num, &account_list);
@@ -739,6 +745,10 @@ ej_get_permissions_of_account(int eid, webs_t wp, int argc, char **argv)
 		int st_ftp_mode = nvram_get_int("st_ftp_mode");
 		if (st_ftp_mode == 3 || st_ftp_mode == 4)
 			anonym = 1;
+	} else if (strcmp(acc_mode, "cifs") == 0) {
+		int st_samba_mode = nvram_get_int("st_samba_mode");
+		if (st_samba_mode == 4)
+			anonym = 1;
 	}
 
 	if ((acc_num + anonym) <= 0)
@@ -756,7 +766,7 @@ ej_get_permissions_of_account(int eid, webs_t wp, int argc, char **argv)
 		if (i < acc_num)
 			acc_value = account_list[i];
 		else
-			acc_value = FTP_ANONYMOUS_USER;
+			acc_value = /*strcmp(acc_mode, "ftp") ? SMB_GUEST_USER : */FTP_ANONYMOUS_USER;
 
 		websWrite(wp, "if (account == \"%s\") {\n", acc_value);
 

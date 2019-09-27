@@ -293,7 +293,7 @@ function onEvent(){
 		$("createAccountBtn").title = (accounts.length < 50)?"<#AddAccountTitle#>":"<#account_overflow#>";
 	}
 	
-	if(this.accounts.length > 0 && this.selectedAccount.length > 0){
+	if(this.accounts.length > 0 && this.selectedAccount.length > 0 && this.selectedAccount != "anonymous"){
 		changeActionButton($("deleteAccountBtn"), 'User', 'Del', 0);
 		changeActionButton($("modifyAccountBtn"), 'User', 'Mod', 0);
 		

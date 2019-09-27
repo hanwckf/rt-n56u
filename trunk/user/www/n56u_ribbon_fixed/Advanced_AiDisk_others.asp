@@ -127,8 +127,8 @@ var window_params="toolbar=yes,location=yes,directories=no,status=yes,menubar=ye
 
 function on_aria_link(){
 	var aria_url="http";
-	var http_url=lan_ipaddr;
-	if (http_proto=='1'){
+	var http_url=location.hostname;
+	if (http_proto!='0'){
 		aria_url+="s";
 		if (https_port!='443')
 			http_url+=":"+https_port;
@@ -141,19 +141,19 @@ function on_aria_link(){
 }
 
 function on_rpc_link(){
-	var rpc_url="http://" + lan_ipaddr + ":" + document.form.trmd_rport.value;
+	var rpc_url="http://" + location.hostname + ":" + document.form.trmd_rport.value;
 	window_rpc = window.open(rpc_url, "Transmission", window_params);
 	window_rpc.focus();
 }
 
 function on_dms_link(){
-	var dms_url="http://" + lan_ipaddr + ":8200";
+	var dms_url="http://" + location.hostname + ":8200";
 	window_dms = window.open(dms_url, "Minidlna", window_params);
 	window_dms.focus();
 }
 
 function on_ffly_link(){
-	var ffly_url="http://" + lan_ipaddr + ":3689";
+	var ffly_url="http://" + location.hostname + ":3689";
 	window_ffly = window.open(ffly_url, "Firefly", window_params);
 	window_ffly.focus();
 }
@@ -752,7 +752,7 @@ function done_validating(action){
                                                 </div>
                                             </td>
                                             <td width="15%">
-                                                <a href="javascript:on_ffly_link();" id="web_ffly_link">Web control</a>
+                                                <a href="javascript:on_ffly_link();" id="web_ffly_link"><#WebControl#></a>
                                             </td>
                                         </tr>
                                     </table>
@@ -794,7 +794,7 @@ function done_validating(action){
                                                <input type="text" maxlength="5" size="5" name="trmd_rport" class="input" value="<% nvram_get_x("", "trmd_rport"); %>" onkeypress="return is_number(this,event);"/>
                                             </td>
                                             <td>
-                                               <a href="javascript:on_rpc_link();" id="web_rpc_link">Web control</a>
+                                               <a href="javascript:on_rpc_link();" id="web_rpc_link"><#WebControl#></a>
                                             </td>
                                         </tr>
                                     </table>
@@ -836,7 +836,7 @@ function done_validating(action){
                                                <input type="text" maxlength="5" size="5" name="aria_rport" class="input" value="<% nvram_get_x("", "aria_rport"); %>" onkeypress="return is_number(this,event);"/>
                                             </td>
                                             <td>
-                                               <a href="javascript:on_aria_link();" id="web_aria_link">Web control</a>
+                                               <a href="javascript:on_aria_link();" id="web_aria_link"><#WebControl#></a>
                                             </td>
                                         </tr>
                                     </table>

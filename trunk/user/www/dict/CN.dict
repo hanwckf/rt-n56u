@@ -419,6 +419,7 @@ StorageFTPD=FTP 服务器
 StorageNFSD=NFS 服务器
 StorageEnableNFSD=启用 NFS 服务器
 StorageAllowOptw=启用 Optware
+WebControl=控制台
 StorageFFly=iTunes 媒体服务器 (Firefly)
 StorageEnableFFly=启用 iTunes 媒体服务器:
 StorageTorrent=Torrent Transmission

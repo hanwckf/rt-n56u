@@ -29,7 +29,8 @@ func_start()
 	fi
 
 	DIR_CFG="${DIR_LINK}/config"
-	DIR_DL1="${DIR_LINK}/downloads"
+	DIR_DL1="`cd \"$DIR_LINK\"; dirname \"$(pwd -P)\"`/Downloads"
+	[ ! -d "$DIR_DL1" ] && DIR_DL1="${DIR_LINK}/downloads"
 
 	[ ! -d "$DIR_CFG" ] && mkdir -p "$DIR_CFG"
 
@@ -67,8 +68,8 @@ max-overall-download-limit=0
 disable-ipv6=false
 
 ### File
-file-allocation=trunc
-#file-allocation=falloc
+#file-allocation=trunc
+file-allocation=falloc
 #file-allocation=none
 no-file-allocation-limit=10M
 allow-overwrite=false
@@ -164,9 +165,16 @@ EOF
 		svc_user=" -c nobody"
 	fi
 
+	if [ "`nvram get http_proto`" != "0" ]; then
+		chmod 644 /etc/storage/https/server.crt /etc/storage/https/server.key
+		SSL_OPT="--rpc-secure=true --rpc-certificate=/etc/storage/https/server.crt --rpc-private-key=/etc/storage/https/server.key"
+	else
+		SSL_OPT=
+	fi
+
 	start-stop-daemon -S -N $SVC_PRIORITY$svc_user -x $SVC_PATH -- \
 		-D --enable-rpc=true --conf-path="$FILE_CONF" --input-file="$FILE_LIST" --save-session="$FILE_LIST" \
-		--rpc-listen-port="$aria_rport" --listen-port="$aria_pport" --dht-listen-port="$aria_pport"
+		--rpc-listen-port="$aria_rport" --listen-port="$aria_pport" --dht-listen-port="$aria_pport" $SSL_OPT
 
 	if [ $? -eq 0 ] ; then
 		echo "[  OK  ]"

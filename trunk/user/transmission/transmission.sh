@@ -28,7 +28,8 @@ func_start()
 	fi
 	
 	DIR_CFG="${DIR_LINK}/config"
-	DIR_DL1="${DIR_LINK}/downloads"
+	DIR_DL1="`cd \"$DIR_LINK\"; dirname \"$(pwd -P)\"`/Downloads"
+	[ ! -d "$DIR_DL1" ] && DIR_DL1="${DIR_LINK}/downloads"
 	DIR_DL2="${DIR_LINK}/incomplete"
 	DIR_DL3="${DIR_LINK}/watch"
 	

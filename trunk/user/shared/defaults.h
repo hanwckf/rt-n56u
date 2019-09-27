@@ -47,7 +47,7 @@
 #define DEF_ROOT_PASSWORD	"admin"
 #define DEF_SMB_WORKGROUP	"WORKGROUP"
 #define DEF_TIMEZONE		"CST-8"
-#define DEF_NTP_SERVER0		"time1.aliyun.com"
+#define DEF_NTP_SERVER0		"ntp1.aliyun.com"
 #define DEF_NTP_SERVER1		"2001:470:0:50::2"
 #define DEF_HTTPS_CIPH_LIST	"DH+AESGCM:DH+AES256:DH+AES:DH+3DES:RSA+AES:RSA+3DES:!ADH:!MD5:!DSS"
 

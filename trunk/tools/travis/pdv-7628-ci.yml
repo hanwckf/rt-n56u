@@ -8,7 +8,7 @@ compiler:
     - gcc
 
 env:
-    - targets="MZ-R13 MZ-R13P HC5661A"
+    - targets="HC5861B MZ-R13 MZ-R13P HC5661A"
 
 install:
     - sudo apt-get update -qq

@@ -77,6 +77,7 @@ Contributors of this project are not responsible for what happens next.
 >- RT-AC1200GU (128M,USB)
 >- XY-C1 (512M,USB)
 >- NEWIFI-MINI (128M,USB)
+>- HC5861B (128M)
 
 ***
 

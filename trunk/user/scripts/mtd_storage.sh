@@ -92,15 +92,16 @@ func_save()
 		mtd_write write $tbz $mtd_part_name
 		if [ $? -eq 0 ] ; then
 			echo "Done."
+			logger -t "StorageSave" "Write $tbz to MTD partition: $mtd_part_dev OK."
 		else
 			result=1
 			echo "Error! MTD write FAILED"
-			logger -t "Storage save" "Error write to MTD partition: $mtd_part_dev"
+			logger -t "StorageSave" "Error write to MTD partition: $mtd_part_dev"
 		fi
 	else
 		result=1
 		echo "Error! Invalid storage final data size: $fsz"
-		logger -t "Storage save" "Invalid storage final data size: $fsz"
+		logger -t "StorageSave" "Invalid storage final data size: $fsz"
 	fi
 	rm -f $tmp
 	rm -f $tbz
@@ -112,7 +113,7 @@ func_backup()
 	bzip2 -9 $tmp 2>/dev/null
 	if [ $? -ne 0 ] ; then
 		result=1
-		logger -t "Storage backup" "Cannot create BZ2 file!"
+		logger -t "StorageBackup" "Cannot create BZ2 file!"
 	fi
 	rm -f $tmp
 }
@@ -127,7 +128,7 @@ func_restore()
 	if [ -z "$fsz" ] || [ $fsz -lt 16 ] || [ $fsz -gt $mtd_part_size ] ; then
 		result=1
 		rm -f $tbz
-		logger -t "Storage restore" "Invalid BZ2 file size: $fsz"
+		logger -t "StorageRestore" "Invalid BZ2 file size: $fsz"
 		return 1
 	fi
 

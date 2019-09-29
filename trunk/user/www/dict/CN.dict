@@ -876,6 +876,7 @@ menu5_4_desc=配置 USB 设备以及在内网或外网共享文件。
 menu5_5_desc=配置防火墙和防护机制以保护你的网络。
 menu5_6_desc=配置系统以及升级 ZVMODELVZ 的固件。
 menu5_7_desc=监控路由器状态以及查看系统日志。
+menu7=打赏
 statusTitle_System=ZVMODELVZ
 statusTitle_Internet=外部网络状态
 statusTitle_Intranet=内部网络状态
@@ -1206,7 +1207,7 @@ OP_desc1=ZVMODELVZ 支持多种满足不同需求的操作模式。请选择能�
 PASS_new=新密码:
 PASS_retype=再次输入新密码:
 FW_desc1=请按以下步骤进行操作:
-FW_desc2=打开 <a href="ZVDWURLVZ" target="blank">ASUS RT-N56U 固件定制网站</a> 查看是否有固件更新。
+FW_desc2=打开 <a href="ZVDWURLVZ" target="blank">我的百度网盘</a> 查看是否有固件更新(提取码：b5ml)。
 FW_desc3=下载最新版本的固件。
 FW_desc4=在 [固件文件] 选项中选择已下载的固件。
 FW_desc5=点击 [上传] 将文件上传到路由器。

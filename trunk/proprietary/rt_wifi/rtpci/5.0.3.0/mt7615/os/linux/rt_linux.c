@@ -48,7 +48,8 @@
 #endif /* MEM_ALLOC_INFO_SUPPORT */
 
 #ifdef CONFIG_FAST_NAT_SUPPORT
-#include <net/ra_nat.h>
+#include "../../../../../../net/nat/hw_nat/ra_nat.h"
+#include "../../../../../../net/nat/hw_nat/frame_engine.h"
 #endif /*CONFIG_FAST_NAT_SUPPORT*/
 
 /* TODO */
@@ -2398,7 +2399,7 @@ VOID RtmpOsPktNatMagicTag(IN PNDIS_PACKET pNetPkt)
 {
 	struct sk_buff *pRxPkt = RTPKT_TO_OSPKT(pNetPkt);
 
-	FOE_MAGIC_TAG(pRxPkt) = FOE_MAGIC_WLAN;
+	FOE_MAGIC_TAG(pRxPkt) = FOE_MAGIC_EXTIF;
 }
 #endif /*CONFIG_FAST_NAT_SUPPORT*/
 

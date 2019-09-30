@@ -6023,7 +6023,7 @@ INT set_hnat_register(RTMP_ADAPTER *pAd, RTMP_STRING *arg)
 			MTWF_LOG(DBG_CAT_CFG, DBG_SUBCAT_ALL, DBG_LVL_OFF, ("\tWDEV %02d:, Name:%s, Wdev(list) Idx:%d\n",
 					 idx, RTMP_OS_NETDEV_GET_DEVNAME(wdev->if_dev), wdev->wdev_idx));
 			MTWF_LOG(DBG_CAT_CFG, DBG_SUBCAT_ALL, DBG_LVL_OFF, ("\t\t Idx:%d\n", RtmpOsGetNetIfIndex(wdev->if_dev)));
-#if defined(CONFIG_FAST_NAT_SUPPORT)
+#if 0
 
 			if (ppe_dev_unregister_hook != NULL &&
 				ppe_dev_register_hook != NULL) {

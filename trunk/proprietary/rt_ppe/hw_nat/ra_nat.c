@@ -2439,6 +2439,28 @@ void PpeSetDstPort(uint32_t Ebl)
 #endif
 #endif
 
+#if defined (HWNAT_USE_IF_DBDC)
+		DstPort[DP_RAX0] = ra_dev_get_by_name("rax0");
+#if defined (HWNAT_USE_IF_MBSS)
+		DstPort[DP_RAX1] = ra_dev_get_by_name("rax1");
+		DstPort[DP_RAX2] = ra_dev_get_by_name("rax2");
+		DstPort[DP_RAX3] = ra_dev_get_by_name("rax3");
+		DstPort[DP_RAX4] = ra_dev_get_by_name("rax4");
+		DstPort[DP_RAX5] = ra_dev_get_by_name("rax5");
+		DstPort[DP_RAX6] = ra_dev_get_by_name("rax6");
+		DstPort[DP_RAX7] = ra_dev_get_by_name("rax7");
+#endif
+#if defined (HWNAT_USE_IF_WDS)
+		DstPort[DP_WDSX0] = ra_dev_get_by_name("wdsx0");
+		DstPort[DP_WDSX1] = ra_dev_get_by_name("wdsx1");
+		DstPort[DP_WDSX2] = ra_dev_get_by_name("wdsx2");
+		DstPort[DP_WDSX3] = ra_dev_get_by_name("wdsx3");
+#endif
+#if defined (HWNAT_USE_IF_APCLI)
+		DstPort[DP_APCLIX0] = ra_dev_get_by_name("apclix0");
+#endif
+#endif
+
 		DstPort[DP_GMAC1] = ra_dev_get_by_name("eth2");
 #if defined (CONFIG_RAETH_BOTH_GMAC)
 		DstPort[DP_GMAC2] = ra_dev_get_by_name("eth3");

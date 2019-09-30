@@ -178,7 +178,7 @@ INT wdev_tx_pkts(NDIS_HANDLE dev_hnd, PPNDIS_PACKET pkt_list, UINT pkt_cnt, stru
 				unsigned long flags;
 		
 				RTMP_IRQ_LOCK(&pAd->page_lock, flags);
-				ra_sw_nat_hook_tx(pPacket);
+				ra_sw_nat_hook_tx(pPacket, 0);
 				RTMP_IRQ_UNLOCK(&pAd->page_lock, flags);
 			}
 #endif

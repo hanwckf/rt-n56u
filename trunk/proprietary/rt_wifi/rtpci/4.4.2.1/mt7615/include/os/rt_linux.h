@@ -1327,7 +1327,7 @@ do {	\
 
 #ifdef CONFIG_RAETH
 #if !defined(CONFIG_RA_NAT_NONE)
-extern int (*ra_sw_nat_hook_tx)(VOID *skb);
+extern int (*ra_sw_nat_hook_tx)(VOID *skb, int gmac_no);
 extern int (*ra_sw_nat_hook_rx)(VOID *skb);
 #if defined (CONFIG_RA_HW_NAT_WIFI_NEW_ARCH)
 extern void (*ppe_dev_register_hook) (VOID  *dev);

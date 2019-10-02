@@ -64,7 +64,7 @@ Contributors of this project are not responsible for what happens next.
 >- WR1200JS (128M,USB)
 >- NEWIFI3 (512M,USB)
 >- K2/PSG1218 (64M)
->- K2P_DRV/K2P_nano (128M)
+>- K2P/K2P_nano (128M)
 >- MZ-R13 (64M)
 >- MZ-R13P (64M)
 >- HC5661A (128M)

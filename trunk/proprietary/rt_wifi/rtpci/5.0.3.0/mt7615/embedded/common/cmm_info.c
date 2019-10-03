@@ -4114,12 +4114,12 @@ max_len += OWETRANSIE_LINE_LEN;
 	sprintf(msg, "\n");
 //	sprintf(msg + strlen(msg), "Total=%-4d", pAdapter->ScanTab.BssNr);
 //	sprintf(msg + strlen(msg), "\n");
-	sprintf(msg + strlen(msg), "%-4s%-4s%-33s%-20s%-23s%-9s%-9s%-7s%-3s\n",
-			"No", "Ch", "SSID", "BSSID", "Security", "Signal(%)", "W-Mode", " ExtCH", " NT");
+	sprintf(msg + strlen(msg), "%-4s%-33s%-20s%-23s%-9s%-9s%-7s%-3s\n",
+			"Ch", "SSID", "BSSID", "Security", "Signal(%)", "W-Mode", " ExtCH", " NT");
 #ifdef WSC_INCLUDED
 	sprintf(msg + strlen(msg) - 1, "%-4s%-5s\n", " WPS", " DPID");
 #endif /* WSC_INCLUDED */
-	sprintf(msg + strlen(msg) - 1, "%-8s\n", " BcnRept");
+	//sprintf(msg + strlen(msg) - 1, "%-8s\n", " BcnRept");
 #ifdef APCLI_OWE_SUPPORT
 		sprintf(msg + strlen(msg) - 1, "%-10s\n", " OWETranIe");
 #endif /* APCLI_OWE_SUPPORT */
@@ -4147,7 +4147,7 @@ max_len += OWETRANSIE_LINE_LEN;
 			break;
 
 		/*No*/
-		sprintf(msg + strlen(msg), "%-4d", i);
+		//sprintf(msg + strlen(msg), "%-4d", i);
 		RTMPCommSiteSurveyData(msg, pBss, TotalLen);
 #ifdef WSC_INCLUDED
 
@@ -4165,7 +4165,7 @@ max_len += OWETRANSIE_LINE_LEN;
 			sprintf(msg + strlen(msg), "%-5s", " ");
 
 #endif /* WSC_INCLUDED */
-		sprintf(msg + strlen(msg), "%-8s", pBss->FromBcnReport ? " YES" : " NO");
+		//sprintf(msg + strlen(msg), "%-8s", pBss->FromBcnReport ? " YES" : " NO");
 
 #ifdef APCLI_OWE_SUPPORT
 	if (pBss->bhas_owe_trans_ie)

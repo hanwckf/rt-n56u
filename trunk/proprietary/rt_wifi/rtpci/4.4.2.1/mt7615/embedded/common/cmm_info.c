@@ -3152,6 +3152,7 @@ VOID RTMPIoctlGetSiteSurvey(
 
 #ifndef MWDS
 	//	sprintf(msg+strlen(msg),"%-8s\n", pBss->FromBcnReport ? " YES" : " NO");
+		sprintf(msg+strlen(msg),"\n");
 #else
 		sprintf(msg+strlen(msg),"%-7s", pBss->FromBcnReport ? " YES" : " NO");
 

@@ -808,7 +808,7 @@ VOID ap_cmm_peer_assoc_req_action(
 #endif /* DOT1X_SUPPORT */	
 #ifdef DOT11R_FT_SUPPORT
 	PFT_CFG pFtCfg = NULL;
-	FT_INFO FtInfoBuf;
+	PFT_INFO pFtInfoBuf = NULL;             /*Wframe-larger-than=1024 warning  removal*/
 #endif /* DOT11R_FT_SUPPORT */
 	struct wifi_dev *wdev;
 	MULTISSID_STRUCT *pMbss;
@@ -818,14 +818,31 @@ VOID ap_cmm_peer_assoc_req_action(
     BOOLEAN bAssocSkip = FALSE;
 	BOOLEAN bAssocNoRsp = FALSE;
 	CHAR rssi;
+#ifdef DOT11R_FT_SUPPORT
+	UCHAR zeroFT[LEN_TK];
+#endif
 #ifdef RT_BIG_ENDIAN
 	UINT32 tmp_1;
 	UINT64 tmp_2;
 #endif /*RT_BIG_ENDIAN*/
 
+#ifdef DOT11R_FT_SUPPORT
+	os_alloc_mem(NULL, (UCHAR **)&pFtInfoBuf, sizeof(FT_INFO));
+	if (pFtInfoBuf == NULL) {
+		DBGPRINT(RT_DEBUG_ERROR, 
+					("%s(): pFtInfoBuf mem alloc failed\n", __FUNCTION__));
+		return;
+	}
+	NdisZeroMemory(pFtInfoBuf, sizeof(FT_INFO));
+#endif /* DOT11R_FT_SUPPORT */
+
 	/* allocate memory */
 	os_alloc_mem(NULL, (UCHAR **)&ie_list, sizeof(IE_LISTS));
 	if (ie_list == NULL) {
+#ifdef DOT11R_FT_SUPPORT
+		if (pFtInfoBuf != NULL)
+			os_free_mem(NULL, pFtInfoBuf);
+#endif /* DOT11R_FT_SUPPORT */
 		DBGPRINT(RT_DEBUG_ERROR, ("%s(): mem alloc failed\n", __FUNCTION__));
 		return;
 	}
@@ -867,7 +884,14 @@ VOID ap_cmm_peer_assoc_req_action(
 			break;
 		}
 	}
-    
+
+	/* drop this assoc req by silencely discard this frame */
+	if (FlgIs11bSta == 1 && (pAd->LatchRfRegs.Channel > 14 || !WMODE_EQUAL(PhyMode, WMODE_B))) {
+		DBGPRINT(RT_DEBUG_ERROR, ("%s():pEntry is 11b only STA and AP do not support 11B rates\n",
+					__FUNCTION__));
+		goto LabelOK;
+	}
+
 #ifdef DOT11W_PMF_SUPPORT
         if ((pEntry->PortSecured == WPA_802_1X_PORT_SECURED)
                 && (CLIENT_STATUS_TEST_FLAG(pEntry, fCLIENT_STATUS_PMF_CAPABLE)))
@@ -876,9 +900,16 @@ VOID ap_cmm_peer_assoc_req_action(
                 goto SendAssocResponse;
         }
 #endif /* DOT11W_PMF_SUPPORT */
-    
-	/* clear the previous Pairwise key table */
+
+#ifdef DOT11R_FT_SUPPORT
+    NdisZeroMemory(zeroFT, LEN_TK);
+#endif
+
+    /* clear the previous Pairwise key table */
     if(pEntry->Aid != 0 &&
+#ifdef DOT11R_FT_SUPPORT
+	(pEntry->AllowInsPTK == TRUE || !IS_FT_STA(pEntry) || (IS_FT_STA(pEntry) && (NdisEqualMemory(&pEntry->PTK[OFFSET_OF_PTK_TK], zeroFT, LEN_TK) || !NdisEqualMemory(&pEntry->PTK[OFFSET_OF_PTK_TK], pEntry->LastTK, LEN_TK)))) &&
+#endif
 	(pEntry->WepStatus >= Ndis802_11TKIPEnable 
 #ifdef DOT1X_SUPPORT
 	|| wdev->IEEE8021X
@@ -1011,6 +1042,12 @@ VOID ap_cmm_peer_assoc_req_action(
 	/* 2. qualify this STA's auth_asoc status in the MAC table, decide StatusCode */
 	StatusCode = APBuildAssociation(pAd, pEntry, ie_list, MaxSupportedRate, &Aid);
 
+	/* drop this assoc req and send reject */
+	if (StatusCode == MLME_ASSOC_REJ_DATA_RATE || StatusCode == MLME_UNSPECIFY_FAIL) {
+		//RTMPSendWirelessEvent(pAd, IW_STA_MODE_EVENT_FLAG, pEntry->Addr, pEntry->apidx, 0);
+		goto SendAssocResponse;
+	}
+
 #ifdef DOT11R_FT_SUPPORT
 	if (pEntry->apidx < pAd->ApCfg.BssidNum)
 	{
@@ -1018,7 +1055,7 @@ VOID ap_cmm_peer_assoc_req_action(
 		if ((pFtCfg->FtCapFlag.Dot11rFtEnable)
 			&& (StatusCode == MLME_SUCCESS))
 			StatusCode = FT_AssocReqHandler(pAd, isReassoc, pFtCfg, pEntry,
-							&ie_list->FtInfo, &FtInfoBuf);
+							&ie_list->FtInfo, pFtInfoBuf);
 
 		/* just silencely discard this frame */
 		if (StatusCode == 0xFFFF)
@@ -1050,12 +1087,8 @@ VOID ap_cmm_peer_assoc_req_action(
 	}
 #endif /* DOT11_VHT_AC */
 
-	if (StatusCode == MLME_ASSOC_REJ_DATA_RATE)
-		RTMPSendWirelessEvent(pAd, IW_STA_MODE_EVENT_FLAG, pEntry->Addr, pEntry->apidx, 0);
-
-#ifdef DOT11W_PMF_SUPPORT
 SendAssocResponse:
-#endif /* DOT11W_PMF_SUPPORT */
+
 	/* 3. send Association Response */
 	NStatus = MlmeAllocateMemory(pAd, &pOutBuffer);
 	if (NStatus != NDIS_STATUS_SUCCESS)
@@ -1202,11 +1235,11 @@ SendAssocResponse:
 		UINT8   ricie_len = 0;
 				
 		/* Insert RSNIE if necessary */
-		if (FtInfoBuf.RSNIE_Len != 0)
+		if (pFtInfoBuf->RSNIE_Len != 0)
 		{ 
 	        ULONG TmpLen;
 	        MakeOutgoingFrame(pOutBuffer+FrameLen,      &TmpLen, 
-							  FtInfoBuf.RSNIE_Len,		FtInfoBuf.RSN_IE,
+							  pFtInfoBuf->RSNIE_Len,		pFtInfoBuf->RSN_IE,
 	                          END_OF_ARGS);
 	        FrameLen += TmpLen;
 	    }	
@@ -1215,34 +1248,34 @@ SendAssocResponse:
 		mdie_ptr = pOutBuffer+FrameLen;
 		mdie_len = 5;
 		FT_InsertMdIE(pAd, pOutBuffer+FrameLen, &FrameLen,
-				FtInfoBuf.MdIeInfo.MdId, FtInfoBuf.MdIeInfo.FtCapPlc);
+				pFtInfoBuf->MdIeInfo.MdId, pFtInfoBuf->MdIeInfo.FtCapPlc);
 
 		/* Insert FTIE. */
-		if (FtInfoBuf.FtIeInfo.Len != 0)
+		if (pFtInfoBuf->FtIeInfo.Len != 0)
 		{
 			ftie_ptr = pOutBuffer+FrameLen;
-			ftie_len = (2 + FtInfoBuf.FtIeInfo.Len);
+			ftie_len = (2 + pFtInfoBuf->FtIeInfo.Len);
 			FT_InsertFTIE(pAd, pOutBuffer+FrameLen, &FrameLen,
-				FtInfoBuf.FtIeInfo.Len, FtInfoBuf.FtIeInfo.MICCtr,
-				FtInfoBuf.FtIeInfo.MIC, FtInfoBuf.FtIeInfo.ANonce,
-				FtInfoBuf.FtIeInfo.SNonce);
+				pFtInfoBuf->FtIeInfo.Len, pFtInfoBuf->FtIeInfo.MICCtr,
+				pFtInfoBuf->FtIeInfo.MIC, pFtInfoBuf->FtIeInfo.ANonce,
+				pFtInfoBuf->FtIeInfo.SNonce);
 		}
 		/* Insert R1KH IE into FTIE. */
-		if (FtInfoBuf.FtIeInfo.R1khIdLen!= 0)
+		if (pFtInfoBuf->FtIeInfo.R1khIdLen!= 0)
 			FT_FTIE_InsertKhIdSubIE(pAd, pOutBuffer+FrameLen, &FrameLen,
-					FT_R1KH_ID, FtInfoBuf.FtIeInfo.R1khId,
-					FtInfoBuf.FtIeInfo.R1khIdLen);
+					FT_R1KH_ID, pFtInfoBuf->FtIeInfo.R1khId,
+					pFtInfoBuf->FtIeInfo.R1khIdLen);
 
 		/* Insert GTK Key info into FTIE. */
-		if (FtInfoBuf.FtIeInfo.GtkLen!= 0)
+		if (pFtInfoBuf->FtIeInfo.GtkLen!= 0)
 	 		FT_FTIE_InsertGTKSubIE(pAd, pOutBuffer+FrameLen, &FrameLen,
-	 			FtInfoBuf.FtIeInfo.GtkSubIE, FtInfoBuf.FtIeInfo.GtkLen);
+	 			pFtInfoBuf->FtIeInfo.GtkSubIE, pFtInfoBuf->FtIeInfo.GtkLen);
 
 		/* Insert R0KH IE into FTIE. */
-		if (FtInfoBuf.FtIeInfo.R0khIdLen!= 0)
+		if (pFtInfoBuf->FtIeInfo.R0khIdLen!= 0)
 			FT_FTIE_InsertKhIdSubIE(pAd, pOutBuffer+FrameLen, &FrameLen,
-					FT_R0KH_ID, FtInfoBuf.FtIeInfo.R0khId,
-					FtInfoBuf.FtIeInfo.R0khIdLen);
+					FT_R0KH_ID, pFtInfoBuf->FtIeInfo.R0khId,
+					pFtInfoBuf->FtIeInfo.R0khIdLen);
 
 		/* Insert RIC. */
 		if (ie_list->FtInfo.RicInfo.Len)
@@ -1260,7 +1293,7 @@ SendAssocResponse:
 		}
 
 		/* Calculate the FT MIC for FT procedure */
-		if (FtInfoBuf.FtIeInfo.MICCtr.field.IECnt)
+		if (pFtInfoBuf->FtIeInfo.MICCtr.field.IECnt)
 		{
 			UINT8	ft_mic[FT_MIC_LEN];
 			PFT_FTIE	pFtIe;
@@ -1269,8 +1302,8 @@ SendAssocResponse:
 							wdev->bssid, 
 							pEntry->PTK, 
 							6, 
-							FtInfoBuf.RSN_IE, 
-							FtInfoBuf.RSNIE_Len, 
+							pFtInfoBuf->RSN_IE, 
+							pFtInfoBuf->RSNIE_Len, 
 							mdie_ptr, 
 							mdie_len, 
 							ftie_ptr, 
@@ -1283,11 +1316,18 @@ SendAssocResponse:
 			pFtIe = (PFT_FTIE)(ftie_ptr + 2);
 			NdisMoveMemory(pFtIe->MIC, ft_mic, FT_MIC_LEN);
 
-			/* Install pairwise key */
-			WPAInstallPairwiseKey(pAd, pEntry->apidx, pEntry, TRUE);
+			/* Only first allow install from assoc, later or rekey or install from auth (backward compatability with not patched clients) */
+			if(pEntry->AllowInsPTK == TRUE
+#ifdef DOT11R_FT_SUPPORT
+			    || !IS_FT_STA(pEntry) || (IS_FT_STA(pEntry) && (NdisEqualMemory(&pEntry->PTK[OFFSET_OF_PTK_TK], zeroFT, LEN_TK) || !NdisEqualMemory(&pEntry->PTK[OFFSET_OF_PTK_TK], pEntry->LastTK, LEN_TK)))
+#endif
+			) {
+			    WPAInstallPairwiseKey(pAd, pEntry->apidx, pEntry, TRUE);
+			    NdisMoveMemory(pEntry->LastTK, &pEntry->PTK[OFFSET_OF_PTK_TK], LEN_TK);
+			    pEntry->AllowInsPTK = FALSE;
+			}
 
-			/* Update status and set Port as Secured */
-			pEntry->WpaState = AS_PTKINITDONE;
+			/* set Port as Secured */
 			pEntry->PrivacyFilter = Ndis802_11PrivFilterAcceptAll;
 		    pEntry->PortSecured = WPA_802_1X_PORT_SECURED;
 		}
@@ -2012,7 +2052,12 @@ LabelOK:
 	if (ie_list != NULL)
 		os_free_mem(NULL, ie_list);
 
-	return;	
+#ifdef DOT11R_FT_SUPPORT
+	if (pFtInfoBuf != NULL)
+		os_free_mem(NULL, pFtInfoBuf);
+#endif /* DOT11R_FT_SUPPORT */
+
+	return;
 }
 
 

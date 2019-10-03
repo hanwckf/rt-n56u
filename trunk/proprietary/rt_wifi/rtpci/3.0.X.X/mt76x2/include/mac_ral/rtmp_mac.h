@@ -1686,7 +1686,8 @@ typedef union _AUTO_RSP_CFG_STRUC {
 #define TX_SEC_CNT0		0x1500
 #define RX_SEC_CNT0		0x1504
 #define CCMP_FC_MUTE	0x1508
-
+#define PN_PAD_MODE 	0x150C
+#define PN_PAD_MODE_OFFSET 0x1
 
 /*  4.6 HCCA/PSMP (offset:0x1600) */
 #define TXOP_HLDR_ADDR0		0x1600		 

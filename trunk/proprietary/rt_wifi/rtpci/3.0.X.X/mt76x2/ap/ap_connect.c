@@ -305,8 +305,6 @@ VOID APMakeBssBeacon(RTMP_ADAPTER *pAd, INT apidx)
 	}
 #endif /* DOT11R_FT_SUPPORT */
 
-	BeaconTransmit.word = 0;
-
 #ifdef SPECIFIC_TX_POWER_SUPPORT
         /* Specific Power for Long-Range Beacon */
 	if ((pAd->ApCfg.MBSSID[apidx].TxPwrAdj != -1) /* && 
@@ -315,6 +313,8 @@ VOID APMakeBssBeacon(RTMP_ADAPTER *pAd, INT apidx)
 		TxPwrAdj = pAd->ApCfg.MBSSID[apidx].TxPwrAdj;
 	}
 #endif /* SPECIFIC_TX_POWER_SUPPORT */
+
+	BeaconTransmit.word = 0;
 
 	RTMPWriteTxWI(pAd, &pAd->BeaconTxWI, FALSE, FALSE, TRUE, FALSE, FALSE, TRUE, 0, BSS0Mcast_WCID, 
 					FrameLen, PID_MGMT, 0, 0,IFS_HTTXOP, &BeaconTransmit);

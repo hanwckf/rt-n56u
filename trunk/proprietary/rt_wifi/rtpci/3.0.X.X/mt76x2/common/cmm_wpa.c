@@ -1225,6 +1225,10 @@ VOID PeerPairMsg1Action(
 		
 	/* Generate random SNonce*/
 	GenRandom(pAd, (UCHAR *)pCurrentAddr, pEntry->SNonce);
+	pEntry->AllowInsPTK = TRUE;
+	pEntry->LastGroupKeyId = 0;
+	pEntry->AllowUpdateRSC = FALSE;
+	NdisZeroMemory(pEntry->LastGTK, MAX_LEN_GTK);
 
 #ifdef DOT11R_FT_SUPPORT	
 	if (IS_FT_RSN_STA(pEntry))
@@ -1779,6 +1783,8 @@ VOID PeerPairMsg3Action(
 	USHORT ifIndex = (USHORT)(Elem->Priv);
 	UCHAR CliIdx = 0xFF;
 #endif /* MAC_REPEATER_SUPPORT */
+	UCHAR idx = 0;
+	BOOLEAN bWPA2 = FALSE;
 
 	DBGPRINT(RT_DEBUG_TRACE, ("===> PeerPairMsg3Action \n"));
 	
@@ -1839,6 +1845,18 @@ VOID PeerPairMsg3Action(
 	if (PeerWpaMessageSanity(pAd, pMsg3, MsgLen, EAPOL_PAIR_MSG_3, pEntry) == FALSE)
 		return;
 	
+	if (group_cipher == Ndis802_11AESEnable)
+		bWPA2 = TRUE;
+	if ((pEntry->AllowInsPTK == TRUE) && bWPA2) {
+		pEntry->CCMP_BC_PN = 0;
+		pEntry->init_ccmp_bc_pn_passed = FALSE;
+		for (idx = 0; idx < LEN_KEY_DESC_RSC; idx++)
+			pEntry->CCMP_BC_PN += (pMsg3->KeyDesc.KeyRsc[idx] << (idx*8));
+		pEntry->AllowUpdateRSC = FALSE;
+		DBGPRINT(RT_DEBUG_OFF, ("%s(%d): update CCMP_BC_PN to %llu\n",
+			__func__, pEntry->wcid, pEntry->CCMP_BC_PN ));		
+	}
+	
 	/* Save Replay counter, it will use construct message 4*/
 	NdisMoveMemory(pEntry->R_Counter, pMsg3->KeyDesc.ReplayCounter, LEN_KEY_DESC_REPLAY);
 
@@ -1877,9 +1895,17 @@ VOID PeerPairMsg3Action(
 #ifdef CONFIG_AP_SUPPORT
 	IF_DEV_CONFIG_OPMODE_ON_AP(pAd)
 	{
-#ifdef APCLI_SUPPORT	
-		if (IS_ENTRY_APCLI(pEntry))	
-		 	APCliInstallPairwiseKey(pAd, pEntry);
+#ifdef APCLI_SUPPORT
+		if (IS_ENTRY_APCLI(pEntry)) {
+			if(pEntry->AllowInsPTK == TRUE) {
+				APCliInstallPairwiseKey(pAd, pEntry);
+				pEntry->AllowInsPTK = FALSE;
+				pEntry->AllowUpdateRSC = TRUE;
+			} else {
+				DBGPRINT(RT_DEBUG_ERROR, ("!!!%s : the M3 reinstall attack, skip install key\n",
+						__func__));
+			}
+		}
 #endif /* APCLI_SUPPORT */
 	}
 #endif /* CONFIG_AP_SUPPORT */
@@ -2392,6 +2418,7 @@ VOID	PeerGroupMsg1Action(
 	UCHAR CliIdx = 0xFF;
 #endif /* MAC_REPEATER_SUPPORT */
 	
+	UCHAR idx = 0;
 	DBGPRINT(RT_DEBUG_TRACE, ("===> PeerGroupMsg1Action \n"));
 
 	if ((!pEntry) || (!IS_ENTRY_CLIENT(pEntry) && !IS_ENTRY_APCLI(pEntry)))
@@ -2446,6 +2473,15 @@ VOID	PeerGroupMsg1Action(
 	/* Sanity Check peer group message 1 - Replay Counter, MIC, RSNIE*/
 	if (PeerWpaMessageSanity(pAd, pGroup, MsgLen, EAPOL_GROUP_MSG_1, pEntry) == FALSE)
 		return;
+	if (pEntry->AllowUpdateRSC == TRUE) {
+		pEntry->CCMP_BC_PN = 0;
+		pEntry->init_ccmp_bc_pn_passed = FALSE;
+		for (idx = 0; idx < LEN_KEY_DESC_RSC; idx++)
+			pEntry->CCMP_BC_PN += (pGroup->KeyDesc.KeyRsc[idx] << (idx*8)); 
+		pEntry->AllowUpdateRSC = FALSE;
+		DBGPRINT(RT_DEBUG_TRACE, ("%s(%d): update CCMP_BC_PN to %llu\n",
+			__func__, pEntry->wcid, pEntry->CCMP_BC_PN ));
+	}
 
 	/* delete retry timer*/
 #ifdef CONFIG_AP_SUPPORT
@@ -4639,10 +4675,20 @@ BOOLEAN RTMPParseEapolKeyData(
 #ifdef APCLI_SUPPORT		
 		if (IS_ENTRY_APCLI(pEntry))
 		{
-			/* Set Group key material, TxMic and RxMic for AP-Client*/
-			if (!APCliInstallSharedKey(pAd, GTK, GTKLEN, DefaultIdx, pEntry))
-			{		
-				return FALSE;
+			/* Prevent the GTK reinstall key attack */
+			if (pEntry->LastGroupKeyId != DefaultIdx ||
+				!NdisEqualMemory(pEntry->LastGTK, GTK, MAX_LEN_GTK)) {
+				/* Set Group key material, TxMic and RxMic for AP-Client*/
+				if (!APCliInstallSharedKey(pAd, GTK, GTKLEN, DefaultIdx, pEntry))
+				{
+					return FALSE;
+				}
+				pEntry->LastGroupKeyId = DefaultIdx;
+				NdisMoveMemory(pEntry->LastGTK, GTK, MAX_LEN_GTK);
+				pEntry->AllowUpdateRSC = TRUE;
+			} else {
+				DBGPRINT(RT_DEBUG_ERROR, ("!!!%s : the Group reinstall attack, skip install key\n",
+						__func__));
 			}
 		}
 #endif /* APCLI_SUPPORT */

@@ -3115,7 +3115,6 @@ VOID RTMPIoctlGetSiteSurvey(
 	BSS_ENTRY *pBss;
 	UINT32 TotalLen, BufLen = IW_SCAN_MAX_DATA;
 	BSS_TABLE *pScanTab;
-	pScanTab = &pAdapter->ScanTab;
 #ifdef AIRPLAY_SUPPORT
 	UCHAR TargetSsid[MAX_LEN_OF_SSID+1];
 	UCHAR TargetSsidLen = 0;
@@ -3206,6 +3205,7 @@ VOID RTMPIoctlGetSiteSurvey(
 	while ((ScanRunning(pAdapter) == TRUE) && (WaitCnt++ < 200))
 		OS_WAIT(500);	
 
+	pScanTab = &pAdapter->ScanTab;
 	BssTableSortByRssi(pScanTab,FALSE);
 
 	for(i=0; i<pAdapter->ScanTab.BssNr ;i++)

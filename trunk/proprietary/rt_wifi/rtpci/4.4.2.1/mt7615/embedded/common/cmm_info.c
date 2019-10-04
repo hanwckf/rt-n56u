@@ -2976,6 +2976,8 @@ VOID RTMPIoctlGetSiteSurvey(
 	UINT32		bss_start_idx;
 	BSS_ENTRY *pBss;
 	UINT32 TotalLen, BufLen = IW_SCAN_MAX_DATA;
+	BSS_TABLE *pScanTab;
+	pScanTab = &pAdapter->ScanTab;
 #if defined(CONFIG_AP_SUPPORT) || defined(CONFIG_STA_SUPPORT) 
     POS_COOKIE pObj = (POS_COOKIE)pAdapter->OS_Cookie;
 	INT allow_2G_entry = 0;
@@ -3103,6 +3105,8 @@ VOID RTMPIoctlGetSiteSurvey(
 
 	while ((ScanRunning(pAdapter) == TRUE) && (WaitCnt++ < 200))
 		OS_WAIT(500);
+
+	BssTableSortByRssi(pScanTab,FALSE);
 
 	for(i=0; i < pAdapter->ScanTab.BssNr ;i++)
 	{

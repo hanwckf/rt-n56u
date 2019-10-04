@@ -1,4 +1,6 @@
 #!/bin/sh
+echo "======================= BUILD_CI $1 ======================="
+
 ./build_firmware_modify $1 > build.log 2>&1 &
 
 while true ;do

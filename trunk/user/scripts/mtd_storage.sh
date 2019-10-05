@@ -77,6 +77,7 @@ func_save()
 {
 	local fsz
 
+	logger -t "Storage save" "Save storage files to MTD partition \"$mtd_part_dev\""
 	echo "Save storage files to MTD partition \"$mtd_part_dev\""
 	rm -f $tbz
 	md5sum -c -s $hsh 2>/dev/null
@@ -92,6 +93,7 @@ func_save()
 		mtd_write write $tbz $mtd_part_name
 		if [ $? -eq 0 ] ; then
 			echo "Done."
+			logger -t "Storage save" "Done."
 		else
 			result=1
 			echo "Error! MTD write FAILED"

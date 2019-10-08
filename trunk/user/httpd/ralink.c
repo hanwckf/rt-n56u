@@ -812,7 +812,7 @@ is_mac_in_sta_list(const unsigned char* p_mac)
 		RT_802_11_MAC_TABLE *mp = (RT_802_11_MAC_TABLE *)wrq.u.data.pointer;
 		for (i = 0; i < mp->Num; i++) {
 			if (memcmp(mp->Entry[i].Addr, p_mac, ETHER_ADDR_LEN) == 0)
-#if defined (BOARD_K2P)
+#if defined (BOARD_MT7615_DBDC)
 				return (mp->Entry[i].ApIdx == 2) ? 1 : 2;
 #else
 				return (mp->Entry[i].ApIdx == 0) ? 1 : 2;
@@ -898,7 +898,7 @@ print_sta_list(webs_t wp, RT_802_11_MAC_TABLE *mp, int num_ss_rx, int ap_idx)
 
 	ret = 0;
 
-#if defined (BOARD_K2P)
+#if defined (BOARD_MT7615_DBDC)
 	ret += websWrite(wp, "\nAP %s Stations List\n", (ap_idx == 0 || ap_idx == 2) ? "Main" : "Guest");
 #else
 	ret += websWrite(wp, "\nAP %s Stations List\n", (ap_idx == 0) ? "Main" : "Guest");
@@ -1114,7 +1114,7 @@ print_mac_table(webs_t wp, const char *wif_name, int num_ss_rx, int is_guest_on)
 	RT_802_11_MAC_TABLE *mp;
 	int ret = 0;
 
-#if defined (BOARD_K2P)
+#if defined (BOARD_MT7615_DBDC)
 /*
 	5g main ra0: apidx=0
 	5g guest ra1: apidx=1
@@ -1135,13 +1135,13 @@ print_mac_table(webs_t wp, const char *wif_name, int num_ss_rx, int is_guest_on)
 
 	if (wl_ioctl(wif_name, RTPRIV_IOCTL_GET_MAC_TABLE_STRUCT, &wrq) >= 0) {
 		mp = (RT_802_11_MAC_TABLE*)wrq.u.data.pointer;
-#if defined (BOARD_K2P)
+#if defined (BOARD_MT7615_DBDC)
 		ret += print_sta_list(wp, mp, num_ss_rx, apidx); 
 #else
 		ret += print_sta_list(wp, mp, num_ss_rx, 0); 
 #endif
 		if (is_guest_on)
-#if defined (BOARD_K2P)
+#if defined (BOARD_MT7615_DBDC)
 			ret += print_sta_list(wp, mp, num_ss_rx, apidx_guest);
 #else
 			ret += print_sta_list(wp, mp, num_ss_rx, 1);

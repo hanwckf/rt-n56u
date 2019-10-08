@@ -680,7 +680,7 @@ restart_wifi_wl(int radio_on, int need_reload_conf)
 	stop_8021x_wl();
 
 	stop_wifi_all_wl();
-#if defined (BOARD_K2P)
+#if defined (BOARD_MT7615_DBDC)
 	if (need_reload_conf) {
 		stop_8021x_rt();
 		stop_wifi_all_rt();
@@ -696,7 +696,7 @@ restart_wifi_wl(int radio_on, int need_reload_conf)
 	start_wifi_apcli_wl(radio_on);
 
 	start_8021x_wl();
-#if defined (BOARD_K2P)
+#if defined (BOARD_MT7615_DBDC)
 	if (need_reload_conf) {
 		int rt_radio_on = get_enabled_radio_rt();
 		if (rt_radio_on)
@@ -728,7 +728,7 @@ restart_wifi_rt(int radio_on, int need_reload_conf)
 	stop_8021x_rt();
 
 	stop_wifi_all_rt();
-#if defined (BOARD_K2P)
+#if defined (BOARD_MT7615_DBDC)
 	if (need_reload_conf) {
 		stop_8021x_wl();
 		stop_wifi_all_wl();
@@ -744,7 +744,7 @@ restart_wifi_rt(int radio_on, int need_reload_conf)
 	start_wifi_apcli_rt(radio_on);
 
 	start_8021x_rt();
-#if defined (BOARD_K2P)
+#if defined (BOARD_MT7615_DBDC)
 	if (need_reload_conf) {
 		int wl_radio_on = get_enabled_radio_wl();
 		if (wl_radio_on)

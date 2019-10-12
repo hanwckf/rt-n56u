@@ -3,7 +3,7 @@ THISDIR = $(shell pwd)
 
 all:
 ifeq ($(CONFIG_WITHOUT_KERNEL),y)
-	@echo "shortcut-fe build done"
+	@echo "shortcut-fe would not build!"
 else
 	$(MAKE) -C $(SRC_NAME)
 endif

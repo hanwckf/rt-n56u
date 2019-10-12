@@ -3,7 +3,7 @@ THISDIR = $(shell pwd)
 
 all:
 ifeq ($(CONFIG_WITHOUT_KERNEL),y)
-	@echo "napt66 build done"
+	@echo "napt66 would not build!"
 else
 	$(MAKE) -C $(SRC_NAME)
 endif

@@ -42,6 +42,12 @@ if [ "$CONFIG_FIRMWARE_INCLUDE_SFE" = "y" ] ; then
 	cp -f "$sfe_dir/"*.ko "${INSTALL_MOD_PATH}/lib/modules/${KERNELRELEASE}/kernel/sfe"
 fi
 
+if [ "$CONFIG_FIRMWARE_INCLUDE_ANTFS" = "y" ] ; then
+	antfs_dir="${ROOTDIR}/user/antfs"
+	mkdir -p "${INSTALL_MOD_PATH}/lib/modules/${KERNELRELEASE}/kernel/antfs"
+	cp -f "$antfs_dir/"antfs.ko "${INSTALL_MOD_PATH}/lib/modules/${KERNELRELEASE}/kernel/antfs"
+fi
+
 # call depmod
 sudo $depmod_bin -ae -F System.map -b "${INSTALL_MOD_PATH}" -r ${KERNELRELEASE}
 

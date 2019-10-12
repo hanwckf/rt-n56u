@@ -90,7 +90,11 @@ elif [ "$ID_FS_TYPE" == "ntfs" ] ; then
 		/sbin/chkntfs -a -f --verbose "$dev_full" > "/tmp/chkntfs_result_$1" 2>&1
 	fi
 	kernel_ufsd=`modprobe -l | grep ufsd`
-	if [ -n "$kernel_ufsd" ] ; then
+	kernel_antfs=`modprobe -l | grep antfs`
+	if [ -n "$kernel_antfs" ]; then
+		func_load_module antfs
+		mount -t antfs "$dev_full" "$dev_mount" -o utf8,umask=0
+	elif [ -n "$kernel_ufsd" ] ; then
 		func_load_module ufsd
 		mount -t ufsd "$dev_full" "$dev_mount" -o noatime,sparse,nls=utf8,force
 	elif [ -x /sbin/ntfs-3g ] ; then

@@ -2973,6 +2973,9 @@ typedef struct _MAC_TABLE_ENTRY {
 	UCHAR R_Counter[LEN_KEY_DESC_REPLAY];
 	UCHAR PTK[64];
 	UCHAR ReTryCounter;
+	BOOLEAN AllowInsPTK;
+	UCHAR LastGroupKeyId;
+	UCHAR LastGTK[MAX_LEN_GTK];
 	RALINK_TIMER_STRUCT RetryTimer;
 	NDIS_802_11_AUTHENTICATION_MODE AuthMode;	/* This should match to whatever microsoft defined */
 	NDIS_802_11_WEP_STATUS WepStatus;

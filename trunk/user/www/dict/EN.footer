@@ -1198,7 +1198,7 @@ OP_desc1=Router supports three operation modes to meet different requirements. P
 PASS_new=New Password:
 PASS_retype=Retype New Password:
 FW_desc1=Follow instructions listed below:
-FW_desc2=Check if any new version of firmware is available on <a href="ZVDWURLVZ" target="blank">ASUS RT-N56U custom firmware website</a>.
+FW_desc2=Check if any new version of firmware is available on <a href="ZVDWURLVZ" target="blank">ASUS RT-N56U custom firmware website</a> or <a href="ZVMODWURLVZ" target="blank">here</a>.
 FW_desc3=Download a proper version to your local machine.
 FW_desc4=Specify the path of and name of the downloaded file in the [New Firmware File].
 FW_desc5=Click [Upload] to upload the file to router. Uploading process takes about 2-3 minutes.

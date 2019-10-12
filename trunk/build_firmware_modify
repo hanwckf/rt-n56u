@@ -160,21 +160,6 @@ rm -rf "$dir_wifi_dst/mt7615"
 mkdir -p "$dir_wifi_dst/mt7615/embedded"
 cp -f "$dir_wifi_src/rtpci/4.4.2.1/mt7615/embedded/Kconfig" "$dir_wifi_dst/mt7615/embedded/Kconfig"
 
-PATCH_DIR="${ROOTDIR}/PROMETHEUS/wifi_patch"
-if [ "$CONFIG_APPLY_PROMETHEUS_WIFI_DRIVER_PATCH" = "y" ] && [ ! -f "$dir_wifi_src/.patched_by_PROMETHEUS" ] ; then
-	for p in $(ls ${PATCH_DIR} |sort -n) ; do
-		echo "apply PROMETHEUS wifi patch: $p"
-		patch -p2 -i "${PATCH_DIR}/$p"
-	done
-	touch "$dir_wifi_src/.patched_by_PROMETHEUS"
-elif [ "$CONFIG_APPLY_PROMETHEUS_WIFI_DRIVER_PATCH" != "y" ] && [ -f "$dir_wifi_src/.patched_by_PROMETHEUS" ] ; then
-	for p in $(ls ${PATCH_DIR} |sort -rn) ; do
-		echo "revert PROMETHEUS wifi patch: $p"
-		patch -Rp2 -i "${PATCH_DIR}/$p"
-	done
-	rm -f "$dir_wifi_src/.patched_by_PROMETHEUS"
-fi
-
 if [ -n "$CONFIG_RT2860V2_AP" ] ; then
 	dir_wifi_ver="2.7.X.X"
 	if [ "$CONFIG_RALINK_RT3883" = "y" ] && [ "$CONFIG_FIRMWARE_WIFI5_DRIVER" = "2.4" ] ; then

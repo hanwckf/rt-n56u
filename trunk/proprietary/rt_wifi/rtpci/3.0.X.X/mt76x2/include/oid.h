@@ -83,17 +83,6 @@
 #define MAX_LENGTH_OF_SUPPORT_RATES		12	/* 1, 2, 5.5, 11, 6, 9, 12, 18, 24, 36, 48, 54 */
 #define MAX_NUMBER_OF_DLS_ENTRY			4
 
-
-#ifdef CUSTOMER_DCC_FEATURE
-#ifdef MEMORY_OPTIMIZATION
-#define MAX_LEN_OF_BSS_TABLE			1
-#define MAX_REORDERING_MPDU_NUM			256
-#else
-#define MAX_LEN_OF_BSS_TABLE			64
-#define MAX_REORDERING_MPDU_NUM			512
-#endif
-#endif
-
 #define RT_QUERY_SIGNAL_CONTEXT				0x0402
 #define RT_SET_IAPP_PID                 	0x0404
 #define RT_SET_APD_PID						0x0405

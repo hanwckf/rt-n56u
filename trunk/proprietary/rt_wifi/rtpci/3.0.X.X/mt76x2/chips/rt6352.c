@@ -696,6 +696,9 @@ static VOID NICInitRT6352MacRegisters(
 {
 	UINT32 IdReg;
 	UINT32 Value = 0;
+#ifdef APCLI_SUPPORT
+	UINT32 pn_mode_value = 0;
+#endif /* APCLI_SUPPORT */
 #ifdef DESC_32B_SUPPORT
 	WPDMA_GLO_CFG_STRUC	GloCfg;
 #endif /* DESC_32B_SUPPORT */
@@ -730,7 +733,15 @@ static VOID NICInitRT6352MacRegisters(
 	RTMP_IO_READ32(pAd, TX_ALG_CFG_1, &Value);
 	Value = Value & (~0x80000000);
 	RTMP_IO_WRITE32(pAd, TX_ALG_CFG_1, Value);
-
+#ifdef APCLI_SUPPORT
+	/*
+	*bit 0 :  R/W PN_PAD_MODE Padding IV/EIV in RX MPDU when packet is decrypted
+	*0 : Disable                             1: Enable
+	*/
+	RTMP_IO_READ32(pAd, PN_PAD_MODE, &pn_mode_value);
+	pn_mode_value |= PN_PAD_MODE_OFFSET;
+	RTMP_IO_WRITE32(pAd, PN_PAD_MODE, pn_mode_value);
+#endif /* APCLI_SUPPORT */
 #ifdef DESC_32B_SUPPORT
 	RTMP_IO_READ32(pAd, WPDMA_GLO_CFG , &GloCfg.word);
 	GloCfg.field.Desc32BEn =1;

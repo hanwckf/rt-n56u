@@ -1935,7 +1935,7 @@ VOID	RTMPCommSiteSurveyData(
 	{
 		INT idx = 0;
 		sprintf(Ssid, "0x");
-		for (idx = 0; (idx < 14) && (idx < pBss->SsidLen); idx++)
+		for (idx = 0; (idx < 15) && (idx < pBss->SsidLen); idx++)
 			sprintf(Ssid + 2 + (idx*2), "%02X", (UCHAR)pBss->Ssid[idx]);
 	}
 	sprintf(msg+strlen(msg),"%-33s", Ssid);      
@@ -2058,19 +2058,19 @@ VOID	RTMPCommSiteSurveyData(
 		wireless_mode = NetworkTypeInUseSanity(pBss);
 		if (wireless_mode == Ndis802_11FH ||
 			wireless_mode == Ndis802_11DS)
-			sprintf(msg+strlen(msg),"%-7s", "11b");
+			sprintf(msg+strlen(msg),"%-9s", "11b");
 		else if (wireless_mode == Ndis802_11OFDM5)
-			sprintf(msg+strlen(msg),"%-7s", "11a");
+			sprintf(msg+strlen(msg),"%-9s", "11a");
 		else if (wireless_mode == Ndis802_11OFDM5_N)
-			sprintf(msg+strlen(msg),"%-7s", "11a/n");
+			sprintf(msg+strlen(msg),"%-9s", "11a/n");
 		else if (wireless_mode == Ndis802_11OFDM5_AC)
-			sprintf(msg+strlen(msg),"%-7s", "11a/n/ac");
+			sprintf(msg+strlen(msg),"%-9s", "11a/n/ac");
 		else if (wireless_mode == Ndis802_11OFDM24)
-			sprintf(msg+strlen(msg),"%-7s", "11b/g");
+			sprintf(msg+strlen(msg),"%-9s", "11b/g");
 		else if (wireless_mode == Ndis802_11OFDM24_N)
-			sprintf(msg+strlen(msg),"%-7s", "11b/g/n");
+			sprintf(msg+strlen(msg),"%-9s", "11b/g/n");
 		else
-			sprintf(msg+strlen(msg),"%-7s", "unknow");
+			sprintf(msg+strlen(msg),"%-9s", "unknow");
 
 		/* Ext Channel*/
 		if (pBss->AddHtInfoLen > 0)
@@ -2110,6 +2110,8 @@ VOID RTMPIoctlGetSiteSurvey(
 	INT		max_len = LINE_LEN;
 	PBSS_ENTRY	pBss;
 	UINT32 TotalLen, BufLen = IW_SCAN_MAX_DATA;
+	BSS_TABLE *pScanTab;
+	pScanTab = &pAdapter->ScanTab;
 
 	TotalLen = sizeof(CHAR)*((MAX_LEN_OF_BSS_TABLE)*max_len) + 100;
 
@@ -2129,7 +2131,7 @@ VOID RTMPIoctlGetSiteSurvey(
 	memset(msg, 0 , TotalLen);
 	sprintf(msg,"%s","\n");
 
-	sprintf(msg+strlen(msg),"%-4s%-33s%-20s%-23s%-9s%-7s%-7s%-3s\n",
+	sprintf(msg+strlen(msg),"%-4s%-33s%-20s%-23s%-9s%-9s%-7s%-3s\n",
 	    "Ch", "SSID", "BSSID", "Security", "Signal(%)", "W-Mode", " ExtCH"," NT");	
 
 #ifdef WSC_INCLUDED
@@ -2141,6 +2143,8 @@ VOID RTMPIoctlGetSiteSurvey(
 
 	while ((ScanRunning(pAdapter) == TRUE) && (WaitCnt++ < 200))
 		OS_WAIT(500);	
+
+	BssTableSortByRssi(pScanTab,FALSE);
 
 	for(i=0; i<pAdapter->ScanTab.BssNr ;i++)
 	{

@@ -31,7 +31,7 @@ Contributors of this project are not responsible for what happens next.
 - [aria2](https://github.com/aria2/aria2)可选使用较新版本的预编译程序 ```CONFIG_FIRMWARE_INCLUDE_ARIA2_NEW_PREBUILD_BIN```
 - aria2前端更换为[AriaNg](https://github.com/mayswind/AriaNg)
 - [curl](https://github.com/curl/curl)可选编译可执行程序```CONFIG_FIRMWARE_INCLUDE_CURL```
-- 使用了[PROMETHEUS](http://pm.freize.net/index.html)提供的部分补丁，包括新版本的类库、软件包和WIFI驱动补丁```CONFIG_APPLY_PROMETHEUS_WIFI_DRIVER_PATCH```
+- 使用了[PROMETHEUS](http://pm.freize.net/index.html)提供的部分补丁，包括新版本的类库、软件包和WIFI驱动补丁
 - 使用了[Linaro1985/padavan-ng](https://github.com/Linaro1985/padavan-ng)的部分软件包
 - 集成以下软件
 >- [scutclient](https://github.com/hanwckf/scutclient) ```CONFIG_FIRMWARE_INCLUDE_SCUTCLIENT```
@@ -64,7 +64,7 @@ Contributors of this project are not responsible for what happens next.
 >- WR1200JS (128M,USB)
 >- NEWIFI3 (512M,USB)
 >- K2/PSG1218 (64M)
->- K2P_DRV/K2P_nano (128M)
+>- K2P/K2P_nano (128M)
 >- MZ-R13 (64M)
 >- MZ-R13P (64M)
 >- HC5661A (128M)

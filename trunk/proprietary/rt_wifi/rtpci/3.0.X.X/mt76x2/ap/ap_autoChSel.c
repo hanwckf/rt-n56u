@@ -1096,13 +1096,13 @@ ULONG AutoChBssInsertEntry(
 		if (pBssInfoTab->BssNr >= MAX_LEN_OF_BSS_TABLE)
 			return BSS_NOT_FOUND;
 		Idx = pBssInfoTab->BssNr;
-		AutoChBssEntrySet(&pBssInfoTab->BssEntry[Idx], pBssid, Ssid, SsidLen,
+		AutoChBssEntrySet(&pBssInfoTab->BssEntry[Idx % MAX_LEN_OF_BSS_TABLE], pBssid, Ssid, SsidLen,
 							ChannelNo, ExtChOffset, Rssi);
 		pBssInfoTab->BssNr++;
 	} 
 	else
 	{
-		AutoChBssEntrySet(&pBssInfoTab->BssEntry[Idx], pBssid, Ssid, SsidLen,
+		AutoChBssEntrySet(&pBssInfoTab->BssEntry[Idx % MAX_LEN_OF_BSS_TABLE], pBssid, Ssid, SsidLen,
 							ChannelNo, ExtChOffset, Rssi);
 	}
 

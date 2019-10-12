@@ -744,7 +744,7 @@ gen_ralink_config(int is_soc_ap, int is_aband, int disable_autoscan)
 
 	}
 #endif
-#if defined (BOARD_K2P)
+#if defined (BOARD_MT7615_DBDC)
 	fprintf(fp, "DBDC_MODE=%d\n", 1);
 #endif
 
@@ -891,7 +891,7 @@ gen_ralink_config(int is_soc_ap, int is_aband, int disable_autoscan)
 	fprintf(fp, "NoForwardingMBCast=%d;%d\n", i_val_mbss[0], i_val_mbss[1]);
 
 	//NoForwardingBTNBSSID
-#if defined(BOARD_K2P)
+#if defined(BOARD_MT7615_DBDC)
 	fprintf(fp, "NoForwardingBTNBSSID=%d\n", 0);
 #else
 	i_val = nvram_wlan_get_int(is_aband, "guest_lan_isolate");
@@ -1275,7 +1275,7 @@ gen_ralink_config(int is_soc_ap, int is_aband, int disable_autoscan)
 			i_VHTBW_MAX = 1;
 		//VHT_BW
 		i_val = nvram_wlan_get_int(is_aband, "HT_BW");
-#if !defined (BOARD_K2P) && USE_WID_5G==7615
+#if !defined (BOARD_MT7615_DBDC) && USE_WID_5G==7615
 		if (i_val == 3) //160Mhz
 			fprintf(fp, "VHT_BW=%d\n", 2);
 		else

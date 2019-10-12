@@ -566,6 +566,13 @@ SendAuth:
 							pFtInfoBuf->RSN_IE, pFtInfoBuf->RSNIE_Len);
 
 				os_free_mem(NULL, pFtInfoBuf);
+				if (result == MLME_SUCCESS) {
+					/* Install pairwise key */
+					WPAInstallPairwiseKey(pAd, pEntry->func_tb_idx, pEntry, TRUE);
+					/* Update status */
+					pEntry->WpaState = AS_PTKINITDONE;
+					pEntry->GTKState = REKEY_ESTABLISHED;
+				}				
 			}
 		}
 		return;

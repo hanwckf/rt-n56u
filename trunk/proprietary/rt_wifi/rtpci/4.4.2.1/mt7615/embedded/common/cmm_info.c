@@ -2976,6 +2976,7 @@ VOID RTMPIoctlGetSiteSurvey(
 	UINT32		bss_start_idx;
 	BSS_ENTRY *pBss;
 	UINT32 TotalLen, BufLen = IW_SCAN_MAX_DATA;
+	BSS_TABLE *pScanTab;
 #if defined(CONFIG_AP_SUPPORT) || defined(CONFIG_STA_SUPPORT) 
     POS_COOKIE pObj = (POS_COOKIE)pAdapter->OS_Cookie;
 	INT allow_2G_entry = 0;
@@ -3085,14 +3086,14 @@ VOID RTMPIoctlGetSiteSurvey(
 	sprintf(msg,"%s","\n");
 //	sprintf(msg+strlen(msg),"Total=%-4d, 2G=%d, 5G=%d",pAdapter->ScanTab.BssNr,bss_2G_cnt,bss_5G_cnt);
 //	sprintf(msg+strlen(msg),"%s","\n");
-	sprintf(msg+strlen(msg),"%-4s%-4s%-33s%-20s%-23s%-9s%-9s%-7s%-3s\n",
-	    "No","Ch", "SSID", "BSSID", "Security", "Siganl(%)", "W-Mode", " ExtCH"," NT");
+	sprintf(msg+strlen(msg),"%-4s%-33s%-20s%-23s%-9s%-9s%-7s%-3s\n",
+	    "Ch", "SSID", "BSSID", "Security", "Signal(%)", "W-Mode", " ExtCH"," NT");
 
 #ifdef WSC_INCLUDED
 	sprintf(msg+strlen(msg)-1,"%-4s%-5s\n", " WPS", " DPID");
 #endif /* WSC_INCLUDED */
 
-	sprintf(msg+strlen(msg)-1,"%-8s\n", " BcnRept");
+//	sprintf(msg+strlen(msg)-1,"%-8s\n", " BcnRept");
 
 #ifdef MWDS
 	sprintf(msg+strlen(msg)-1,"%-8s\n", " MWDSCap");
@@ -3103,6 +3104,9 @@ VOID RTMPIoctlGetSiteSurvey(
 
 	while ((ScanRunning(pAdapter) == TRUE) && (WaitCnt++ < 200))
 		OS_WAIT(500);
+
+	pScanTab = &pAdapter->ScanTab;
+	BssTableSortByRssi(pScanTab,FALSE);
 
 	for(i=0; i < pAdapter->ScanTab.BssNr ;i++)
 	{
@@ -3130,7 +3134,7 @@ VOID RTMPIoctlGetSiteSurvey(
 			continue;
 		}
 		/*No*/
-		sprintf(msg+strlen(msg),"%-4d", output_no);
+		//sprintf(msg+strlen(msg),"%-4d", output_no);
 		output_no++;
 
 		RTMPCommSiteSurveyData(msg, pBss, TotalLen);
@@ -3151,7 +3155,8 @@ VOID RTMPIoctlGetSiteSurvey(
 #endif /* WSC_INCLUDED */
 
 #ifndef MWDS
-		sprintf(msg+strlen(msg),"%-8s\n", pBss->FromBcnReport ? " YES" : " NO");
+	//	sprintf(msg+strlen(msg),"%-8s\n", pBss->FromBcnReport ? " YES" : " NO");
+		sprintf(msg+strlen(msg),"\n");
 #else
 		sprintf(msg+strlen(msg),"%-7s", pBss->FromBcnReport ? " YES" : " NO");
 

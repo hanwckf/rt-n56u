@@ -2312,7 +2312,7 @@ ej_firmware_caps_hook(int eid, webs_t wp, int argc, char **argv)
 	int has_5g_mumimo = 1;
 	int has_5g_txbf = 1;
 	int has_5g_band_steering = 1;
-#if defined (BOARD_K2P)
+#if defined (BOARD_MT7615_DBDC)
 	int has_5g_160mhz = 0;
 #else
 	int has_5g_160mhz = 1;
@@ -2345,7 +2345,7 @@ ej_firmware_caps_hook(int eid, webs_t wp, int argc, char **argv)
 #else
 	int has_sfe = 0;
 #endif
-#if defined (BOARD_K2P)
+#if defined (BOARD_MT7615_DBDC)
 	int has_lan_ap_isolate = 0;
 #else
 	int has_lan_ap_isolate = 1;

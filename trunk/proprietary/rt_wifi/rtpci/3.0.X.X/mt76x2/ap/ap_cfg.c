@@ -4326,7 +4326,7 @@ INT RTMPAPQueryInformation(
     INT	Status = NDIS_STATUS_SUCCESS, i;
     POS_COOKIE pObj = (POS_COOKIE) pAd->OS_Cookie;
     STRING	driverVersion[16];
-	struct wifi_dev *wdev;
+	struct wifi_dev *wdev __maybe_unused;
 #if defined(DBG) || defined(WSC_AP_SUPPORT) || defined(BB_SOC) || defined(LLTD_SUPPORT)
 	UCHAR	apidx = pObj->ioctl_if;
 #endif

@@ -7,9 +7,9 @@
 #define BOARD_VENDOR_URL	"http://luyou.360.cn"
 #define BOARD_MODEL_URL		"http://luyou.360.cn"
 #define BOARD_BOOT_TIME		20
-#define BOARD_FLASH_TIME	120
+#define BOARD_FLASH_TIME		120
 #define BOARD_GPIO_BTN_RESET	38
-#define BOARD_GPIO_BTN_FN1	39
+#undef BOARD_GPIO_BTN_FN1
 #undef BOARD_GPIO_BTN_WPS
 #undef  BOARD_GPIO_BTN_ROUTER
 #undef  BOARD_GPIO_LED_ALL

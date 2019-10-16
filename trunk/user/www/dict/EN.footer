@@ -276,6 +276,10 @@ WAN_TTL_Fix=Don't Decrement the TTL after Routing:
 WAN_TTL_Item0=No, Always Decremented
 WAN_TTL_Item1=For All Packets
 WAN_TTL_Item2=For Multicast IPTV Packets
+WAN_TTL_Value=TTL Value
+WAN_TTL_Value_Item0=Default
+WAN_TTL_Value_Item1=64(Unix)
+WAN_TTL_Value_Item2=128(Windows)
 DDNS_SVR=DDNS Server (FQDN or IP):
 DDNS_URL=URL path for update:
 DDNS_Second=Second DDNS Service
@@ -1795,3 +1799,5 @@ IPRemote=IP (remote)
 Login=Login
 BTN_SHUTDOWN=Shutdown
 JS_shutdown=You need manually power on after shutdown!!! Continue to shutdown?
+
+

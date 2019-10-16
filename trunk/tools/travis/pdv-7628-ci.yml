@@ -1,7 +1,5 @@
 dist: xenial
 
-sudo: required
-
 language: c
 
 compiler:

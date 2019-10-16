@@ -19,5 +19,5 @@ size2=`expr $offset2 - $offset1`
 dd if="$TARGET" of="$UNPACK_TRX_DIR/kernel.bin" bs=1 ibs=1 skip=64 count=$((offset1-64))
 dd if="$TARGET" of="$UNPACK_TRX_DIR/secondchunk.bin" bs=1 ibs=1 count="$size2" skip="$offset1"
 
-sudo $UNSQSHFS_TOOL -d "$ROOTFS" "$UNPACK_TRX_DIR/secondchunk.bin"
+$UNSQSHFS_TOOL -d "$ROOTFS" "$UNPACK_TRX_DIR/secondchunk.bin"
 rm -f "$UNPACK_TRX_DIR/secondchunk.bin"

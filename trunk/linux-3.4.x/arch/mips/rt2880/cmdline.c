@@ -66,7 +66,7 @@ char rt2880_cmdline[] = CONFIG_CMDLINE;
 char rt2880_cmdline[]="console=ttyS0," TTY_BAUDRATE "" MTD_UBI_MTD " root=" MTD_ROOTFS_DEV "";
 #endif
 
-#ifdef CONFIG_UBOOT_CMDLINE
+#if 0 /*ifdef CONFIG_UBOOT_CMDLINE*/
 extern int prom_argc;
 extern int *_prom_argv;
 
@@ -86,13 +86,13 @@ char * __init prom_getcmdline(void)
 
 void  __init prom_init_cmdline(void)
 {
-#ifdef CONFIG_UBOOT_CMDLINE
+#if 0 /*ifdef CONFIG_UBOOT_CMDLINE*/
 	int actr=1; /* Always ignore argv[0] */
 #endif
 	char *cp;
 
 	cp = &(arcs_cmdline[0]);
-#ifdef CONFIG_UBOOT_CMDLINE
+#if 0 /*ifdef CONFIG_UBOOT_CMDLINE*/
 	if (prom_argc > 1) {
 		while(actr < prom_argc) {
 			strcpy(cp, prom_argv(actr));

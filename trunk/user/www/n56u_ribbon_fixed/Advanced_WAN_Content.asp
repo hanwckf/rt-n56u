@@ -1034,6 +1034,8 @@ function simplyMAC(fullMAC){
                                                     <option value="2" <% nvram_match_x("", "wan_ttl_fix", "2", "selected"); %>><#WAN_TTL_Item2#></option>
                                                 </select>
                                             </td>
+                                        </tr>
+                                        <tr>
                                             <th><#WAN_TTL_Value#></th>
                                             <td>
                                                 <select name="wan_ttl_value" class="input">

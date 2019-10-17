@@ -1,4 +1,6 @@
 [![Build Status](https://travis-ci.org/hanwckf/rt-n56u.svg?branch=master)](https://travis-ci.org/hanwckf/rt-n56u)
+![GitHub All Releases](https://img.shields.io/github/downloads/hanwckf/rt-n56u/total)
+[![release](https://img.shields.io/github/release/hanwckf/rt-n56u.svg)](https://github.com/hanwckf/rt-n56u/releases)
 
 # README #
 

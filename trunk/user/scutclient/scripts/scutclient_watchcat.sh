@@ -1,6 +1,7 @@
 #!/bin/sh
 pidfile="/var/scutclient_watchcat.pid"
 net="202.38.193.188 114.114.114.114 119.29.29.29"
+auth_flag="/tmp/scutclient_status"
 
 [ -f $pidfile ] && kill -9 "$(cat $pidfile)" || echo "$$" > $pidfile
 
@@ -9,26 +10,31 @@ go_exit(){
 	exit 0
 }
 
-if [ "$(nvram get scutclient_watchcat)" != "1" ] || [ "$(nvram get scutclient_enable)" != "1" ]; then
-	go_exit
-fi
-
-if [ "$(mtk_esw 11)" = "WAN ports link state: 0" ]; then
-#	logger -t "scutclient_watchcat" "WAN has no link!"
-	go_exit
-fi
-
-for n in $net; do
-	/bin/ping -c 3 "$n" -w 5 >/dev/null 2>&1
-	if [ "$?" = "0" ]; then
-		go_exit
+auth(){
+	if [ $(date '+%H') -lt 6 ]; then
+		/usr/bin/scutclient.sh restart nolog > /dev/null 2>&1
+	else
+		logger -t "scutclient_watchcat" "Connection failed ($1), restart scutclient!"
+		/usr/bin/scutclient.sh restart > /dev/null 2>&1
 	fi
-done
+	go_exit
+}
 
-if [ $(date '+%H') -lt 6 ]; then
-	/usr/bin/scutclient.sh restart nolog > /dev/null 2>&1
+if [ "$(nvram get scutclient_watchcat)" = "1" ] && \
+  [ "$(nvram get scutclient_enable)" = "1" ] && \
+  [ "$(mtk_esw 11)" != "WAN ports link state: 0" ]; then
+
+	if [ -f $auth_flag ] && [ "$(cat $auth_flag)" = "1" ]; then
+		auth "flag"
+	fi
+
+	for n in $net; do
+		/bin/ping -c 3 "$n" -w 5 >/dev/null 2>&1
+		if [ "$?" = "0" ]; then
+			go_exit
+		fi
+	done
+	auth "ping"
 else
-	logger -t "scutclient_watchcat" "Connection failed, restart scutclient!"
-	/usr/bin/scutclient.sh restart > /dev/null 2>&1
+	go_exit
 fi
-go_exit

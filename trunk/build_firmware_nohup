@@ -6,7 +6,7 @@ echo "======================= BUILD_CI $1 ======================="
 while true ;do
 	sleep 10
 	echo "===================================================================================================="
-	process_status="$(pgrep build_firmware_modify)"
+	process_status="$(pgrep -f build_firmware_modify)"
 
 	if [ -z "$process_status" ] ;then
 		echo "Build script exited"

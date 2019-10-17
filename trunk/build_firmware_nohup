@@ -6,12 +6,16 @@ echo "======================= BUILD_CI $1 ======================="
 while true ;do
 	sleep 10
 	echo "===================================================================================================="
-	process_status=$(ps aux |grep build_firmware_modify |grep -v "grep")
+	process_status="$(pgrep build_firmware_modify)"
 
 	if [ -z "$process_status" ] ;then
 		echo "Build script exited"
 		if [ "$(tail -1 build.log)" = "make[1]: Leaving directory '/opt/rt-n56u/trunk/vendors'" ]; then
 			tail -20 build.log && exit 0
+		elif [ "$rebuild" != "1" ] && tail -10 build.log |grep -q libssl ; then
+			echo "openssl parallel make bug, rebuild..."
+			tail -30 build.log && rebuild=1
+			./build_firmware_modify $1 > build.log 2>&1 &
 		else
 			tail -60 build.log && exit 1
 		fi

@@ -478,7 +478,6 @@ init_main_loop(void)
 	init_time();
 #if BOARD_RAM_SIZE > 32
 	system("dev_init.sh");
-#endif
 #else
 	system("dev_init.sh -l");
 #endif

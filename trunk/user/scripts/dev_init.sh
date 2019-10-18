@@ -6,15 +6,11 @@ mount -t sysfs sysfs /sys
 
 size_tmp="24M"
 size_var="4M"
+size_etc="6M"
+
 if [ "$1" == "-l" ] ; then
 	size_tmp="8M"
 	size_var="1M"
-fi
-
-if [ "$1" == "-b" ] ; then
-	size_etc="10M"
-else
-	size_etc="5M"
 fi
 
 mount -t tmpfs tmpfs /dev   -o size=8K

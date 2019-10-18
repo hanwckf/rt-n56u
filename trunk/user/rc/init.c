@@ -477,9 +477,6 @@ init_main_loop(void)
 	/* Basic initialization */
 	init_time();
 #if BOARD_RAM_SIZE > 32
-#if defined (BOARD_K2P) || BOARD_RAM_SIZE > 128
-	system("dev_init.sh -b");
-#else
 	system("dev_init.sh");
 #endif
 #else

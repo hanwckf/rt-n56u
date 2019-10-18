@@ -1,6 +1,8 @@
 #!/bin/sh
 echo "======================= BUILD_CI $1 ======================="
 
+basedir="/opt/rt-n56u"
+rm -f $basedir/trunk/images/*.trx
 ./build_firmware_modify $1 > build.log 2>&1 &
 
 while true ;do
@@ -9,8 +11,8 @@ while true ;do
 	process_status="$(pgrep -f build_firmware_modify)"
 
 	if [ -z "$process_status" ] ;then
-		echo "Build script exited"
-		if [ "$(tail -1 build.log)" = "make[1]: Leaving directory '/opt/rt-n56u/trunk/vendors'" ]; then
+		echo "Build script is exited"
+		if [ -f $basedir/trunk/images/*.trx ]; then
 			tail -20 build.log && exit 0
 		elif [ "$rebuild" != "1" ] && tail -10 build.log |grep -q libssl ; then
 			echo "openssl parallel make bug, rebuild..."

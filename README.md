@@ -61,6 +61,8 @@ Contributors of this project are not responsible for what happens next.
 >- [socat](http://www.dest-unreach.org/socat) ```CONFIG_FIRMWARE_INCLUDE_SOCAT```
 >- [srelay](https://socks-relay.sourceforge.io) ```CONFIG_FIRMWARE_INCLUDE_SRELAY```
 >- [mentohust](https://github.com/hanwckf/mentohust) ```CONFIG_FIRMWARE_INCLUDE_MENTOHUST```
+>- [frpc](https://github.com/fatedier/frp) ```CONFIG_FIRMWARE_INCLUDE_FRPC```
+>- [frps](https://github.com/fatedier/frp) ```CONFIG_FIRMWARE_INCLUDE_FRPS```
 
 - 已适配除官方适配外的以下机型
 >- WR1200JS (128M,USB)

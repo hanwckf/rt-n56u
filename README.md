@@ -65,24 +65,27 @@ Contributors of this project are not responsible for what happens next.
 >- [frps](https://github.com/fatedier/frp) ```CONFIG_FIRMWARE_INCLUDE_FRPS```
 
 - 已适配除官方适配外的以下机型
->- WR1200JS (128M,USB)
->- NEWIFI3 (512M,USB)
->- K2/PSG1218 (64M)
->- K2P/K2P_nano (128M)
->- MZ-R13 (64M)
->- MZ-R13P (64M)
->- HC5661A (128M)
->- OYE-001 (128M,USB)
->- MI-MINI (128M,USB)
->- MI-3 (128M,USB)
->- 5K-W20 (64M,USB)
->- JCG-AC860M (256M,USB)
->- DIR-882 (128M,USB)
->- RT-AC1200GU (128M,USB)
->- XY-C1 (512M,USB)
->- NEWIFI-MINI (128M,USB)
->- HC5861B (128M)
->- 360P2 (128M,USB)
+>- WR1200JS (USB)
+>- NEWIFI3 (USB)
+>- PSG1218
+>- K2P
+>- K2P-USB (USB)
+>- MZ-R13
+>- MZ-R13P
+>- HC5661A
+>- OYE-001 (USB)
+>- MI-MINI (USB)
+>- MI-3 (USB)
+>- 5K-W20 (USB)
+>- JCG-AC860M (USB)
+>- JCG-836PRO (USB)
+>- DIR-882 (USB)
+>- RT-AC1200GU (USB)
+>- XY-C1 (USB)
+>- NEWIFI-MINI (USB)
+>- HC5861B
+>- 360P2 (USB)
+>- MR2600 (USB)
 
 ***
 

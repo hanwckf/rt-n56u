@@ -2910,6 +2910,13 @@ VOID CMDHandler(RTMP_ADAPTER *pAd)
                 }
                 break;
 #endif /* CONFIG_STA_SUPPORT */		
+
+				case CMDTHREAD_MLME_PERIOIDC_EXEC:
+				{
+					MlmePeriodicExec(pAd, cmdqelmt);
+				}
+				break;
+
 				default:
 					MTWF_LOG(DBG_CAT_ALL, DBG_SUBCAT_ALL, DBG_LVL_ERROR, ("--> Control Thread !! ERROR !! Unknown(cmdqelmt->command=0x%x) !! \n", cmdqelmt->command));
 					break;

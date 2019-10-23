@@ -124,7 +124,7 @@ void rtmp_timer_##_func(unsigned long data)										\
 }
 #endif /* RTMP_TIMER_TASK_SUPPORT */
 
-DECLARE_TIMER_FUNCTION(MlmePeriodicExec);
+DECLARE_TIMER_FUNCTION(MlmePeriodicExecTimer);
 DECLARE_TIMER_FUNCTION(MlmeRssiReportExec);
 DECLARE_TIMER_FUNCTION(AsicRxAntEvalTimeout);
 DECLARE_TIMER_FUNCTION(APSDPeriodicExec);

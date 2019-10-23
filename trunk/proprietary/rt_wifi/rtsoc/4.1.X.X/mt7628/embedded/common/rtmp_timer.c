@@ -32,7 +32,7 @@
 #include "rt_config.h"
 
 
-BUILD_TIMER_FUNCTION(MlmePeriodicExec);
+BUILD_TIMER_FUNCTION(MlmePeriodicExecTimer);
 /*BUILD_TIMER_FUNCTION(MlmeRssiReportExec);*/
 BUILD_TIMER_FUNCTION(AsicRxAntEvalTimeout);
 BUILD_TIMER_FUNCTION(APSDPeriodicExec);

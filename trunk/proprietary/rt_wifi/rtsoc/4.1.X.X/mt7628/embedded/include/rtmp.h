@@ -8067,11 +8067,13 @@ INT AsicAutoFallbackInit(RTMP_ADAPTER *pAd);
 
 
 
-VOID  MlmePeriodicExec(
+VOID  MlmePeriodicExecTimer(
 	IN PVOID SystemSpecific1,
 	IN PVOID FunctionContext,
 	IN PVOID SystemSpecific2,
 	IN PVOID SystemSpecific3);
+
+VOID MlmePeriodicExec(IN PRTMP_ADAPTER pAd, IN PCmdQElmt CMDQelmt);
 
 VOID LinkDownExec(
 	IN PVOID SystemSpecific1,

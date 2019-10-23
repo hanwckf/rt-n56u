@@ -1274,7 +1274,7 @@ NDIS_STATUS MlmeInit(RTMP_ADAPTER *pAd)
 		ActionStateMachineInit(pAd, &pAd->Mlme.ActMachine, pAd->Mlme.ActFunc);
 
 		/* Init mlme periodic timer*/
-		RTMPInitTimer(pAd, &pAd->Mlme.PeriodicTimer, GET_TIMER_FUNCTION(MlmePeriodicExec), pAd, TRUE);
+		RTMPInitTimer(pAd, &pAd->Mlme.PeriodicTimer, GET_TIMER_FUNCTION(MlmePeriodicExecTimer), pAd, TRUE);
 
 		/* Set mlme periodic timer*/
 		RTMPSetTimer(&pAd->Mlme.PeriodicTimer, MLME_TASK_EXEC_INTV);
@@ -1510,6 +1510,17 @@ VOID MlmeResetRalinkCounters(RTMP_ADAPTER *pAd)
 }
 
 
+VOID MlmePeriodicExecTimer(
+	IN PVOID SystemSpecific1, 
+	IN PVOID FunctionContext, 
+	IN PVOID SystemSpecific2, 
+	IN PVOID SystemSpecific3) 
+{
+	RTMP_ADAPTER *pAd = (RTMP_ADAPTER *)FunctionContext;
+	RTEnqueueInternalCmd(pAd, CMDTHREAD_MLME_PERIOIDC_EXEC, NULL, 0);
+}
+
+
 /*
 	==========================================================================
 	Description:
@@ -1527,15 +1538,9 @@ VOID MlmeResetRalinkCounters(RTMP_ADAPTER *pAd)
 	==========================================================================
  */
 #define ADHOC_BEACON_LOST_TIME		(8*OS_HZ)  /* 8 sec*/
-VOID MlmePeriodicExec(
-	IN PVOID SystemSpecific1, 
-	IN PVOID FunctionContext, 
-	IN PVOID SystemSpecific2, 
-	IN PVOID SystemSpecific3) 
+VOID MlmePeriodicExec(IN PRTMP_ADAPTER pAd, IN PCmdQElmt CMDQelmt)
 {
 	ULONG TxTotalCnt;
-	RTMP_ADAPTER *pAd = (RTMP_ADAPTER *)FunctionContext;
-
 
 	/* No More 0x84 MCU CMD from v.30 FW*/
 

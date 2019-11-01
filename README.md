@@ -80,12 +80,14 @@ Contributors of this project are not responsible for what happens next.
 >- JCG-AC860M (USB)
 >- JCG-836PRO (USB)
 >- DIR-882 (USB)
+>- DIR-878
 >- RT-AC1200GU (USB)
 >- XY-C1 (USB)
 >- NEWIFI-MINI (USB)
 >- HC5861B
 >- 360P2 (USB)
 >- MR2600 (USB)
+>- PSG1208
 
 ***
 
@@ -117,7 +119,7 @@ nano /opt/rt-n56u/trunk/configs/templates/PSG1218.config
 ```shell
 cd /opt/rt-n56u/trunk
 sudo ./clear_tree
-sudo ./build_firmware_modify PSG1218
+fakeroot ./build_firmware_modify PSG1218
 #脚本第一个参数为路由型号，在trunk/configs/templates/中
 #编译好的固件在trunk/images里
 ```

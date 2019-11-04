@@ -173,7 +173,7 @@ webstr_save(const void *ip, const struct xt_entry_match *match)
 {
 	struct xt_webstr_info *stringinfo = (struct xt_webstr_info *)match->data;
 
-	printf("--"); print_type(stringinfo->type);
+	printf(" --"); print_type(stringinfo->type);
 	print_string(stringinfo->string, stringinfo->invert, 0);
 }
 

@@ -24,8 +24,10 @@ if [ "$(nvram get scutclient_watchcat)" = "1" ] && \
   [ "$(nvram get scutclient_enable)" = "1" ] && \
   [ "$(mtk_esw 11)" != "WAN ports link state: 0" ]; then
 
-	if [ -f $auth_flag ] && [ "$(cat $auth_flag)" = "1" ]; then
-		auth "flag"
+	if [ "$(nvram get scutclient_wdg_flag)" = "1" ]; then
+		if [ -f $auth_flag ] && [ "$(cat $auth_flag)" = "1" ]; then
+			auth "flag"
+		fi
 	fi
 
 	for n in $net; do

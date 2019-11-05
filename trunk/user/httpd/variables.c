@@ -787,6 +787,7 @@
 			{"scutclient_hash","",NULL,EVM_RESTART_SCUT },
 			{"scutclient_hostname","",NULL,EVM_RESTART_SCUT },
 			{"scutclient_watchcat","",NULL,FALSE},
+			{"scutclient_skip_udp_hb","",NULL,EVM_RESTART_SCUT},
 			{0,0,0,0}
 	};
 #endif

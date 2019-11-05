@@ -1,5 +1,6 @@
-SRC_NAME = scutclient-3857f08268a0522b17e337217b3da173c4653ba1
-#https://github.com/hanwckf/scutclient.git
+# https://github.com/hanwckf/scutclient.git
+SRC_NAME := scutclient-upstream
+SRC_FILE := scutclient-a58996875c61d0cdf8ec435057befc1c87bd6863
 THISDIR = $(shell pwd)
 
 all: extract_test config_test
@@ -7,7 +8,7 @@ all: extract_test config_test
 
 extract_test:
 	( if [ ! -d $(THISDIR)/$(SRC_NAME) ]; then \
-		tar -xf $(SRC_NAME).tar.gz; \
+		tar -xf $(SRC_FILE).tar.gz; \
 	fi )
 
 config_test:

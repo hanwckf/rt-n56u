@@ -776,6 +776,7 @@ menu5_13_hash=DrAuthSvr.dll hash value:
 menu5_13_debug=Enable debug mode
 menu5_13_watchcat=Enable watchcat
 menu5_13_log=Log
+menu5_13_udpHB=Skip UDP Heartbeat check
 menu5_14=ChinaDNS
 menu5_14_1=Enable ChinaDNS
 menu5_14_2=Bind Address:

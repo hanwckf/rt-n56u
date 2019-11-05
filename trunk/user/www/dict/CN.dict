@@ -791,6 +791,7 @@ menu5_13_hash=DrAuthSvr.dll哈希值:
 menu5_13_debug=启用Debug模式
 menu5_13_watchcat=启用watchcat
 menu5_13_log=日志
+menu5_13_udpHB=忽略UDP心跳包检查
 menu5_14=ChinaDNS
 menu5_14_1=启用ChinaDNS
 menu5_14_2=监听地址:

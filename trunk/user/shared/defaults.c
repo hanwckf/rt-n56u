@@ -484,6 +484,7 @@ struct nvram_pair router_defaults[] = {
 	{ "scutclient_debug", "0" },
 	{ "scutclient_hostname", "Lenovo-PC" },
 	{ "scutclient_server_auth_ip", "202.38.210.131" },
+	{ "scutclient_skip_udp_hb", "0" },
 	{ "scutclient_version", "4472434f4d0096022a" },
 	{ "scutclient_hash", "2ec15ad258aee9604b18f2f8114da38db16efd00" },
 	{ "scutclient_username", "" },

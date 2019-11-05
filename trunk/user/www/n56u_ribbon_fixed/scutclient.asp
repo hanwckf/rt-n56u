@@ -30,6 +30,7 @@ $j(document).ready(function(){
 	init_itoggle('scutclient_enable');
 	init_itoggle('scutclient_debug');
 	init_itoggle('scutclient_watchcat');
+	init_itoggle('scutclient_skip_udp_hb');
 	fill_status(scutclient_status());
 });
 
@@ -225,6 +226,21 @@ function fill_status(status_code){
                                                 <div style="position: absolute; margin-left: -10000px;">
                                                     <input type="radio" value="1" name="scutclient_watchcat" id="scutclient_watchcat_1" <% nvram_match_x("", "scutclient_watchcat", "1", "checked"); %>><#checkbox_Yes#>
                                                     <input type="radio" value="0" name="scutclient_watchcat" id="scutclient_watchcat_0" <% nvram_match_x("", "scutclient_watchcat", "0", "checked"); %>><#checkbox_No#>
+                                                </div>
+                                            </td>
+                                        </tr>
+
+                                        <tr> <th><#menu5_13_udpHB#></th>
+                                            <td>
+                                                <div class="main_itoggle">
+                                                    <div id="scutclient_skip_udp_hb_on_of">
+                                                        <input type="checkbox" id="scutclient_skip_udp_hb_fake" <% nvram_match_x("", "scutclient_skip_udp_hb", "1", "value=1 checked"); %><% nvram_match_x("", "scutclient_skip_udp_hb", "0", "value=0"); %>>
+                                                    </div>
+                                                </div>
+
+                                                <div style="position: absolute; margin-left: -10000px;">
+                                                    <input type="radio" value="1" name="scutclient_skip_udp_hb" id="scutclient_skip_udp_hb_1" <% nvram_match_x("", "scutclient_skip_udp_hb", "1", "checked"); %>><#checkbox_Yes#>
+                                                    <input type="radio" value="0" name="scutclient_skip_udp_hb" id="scutclient_skip_udp_hb_0" <% nvram_match_x("", "scutclient_skip_udp_hb", "0", "checked"); %>><#checkbox_No#>
                                                 </div>
                                             </td>
                                         </tr>

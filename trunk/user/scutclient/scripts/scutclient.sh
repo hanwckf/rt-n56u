@@ -30,9 +30,9 @@ func_start(){
 	-s "$(nvram get scutclient_server_auth_ip)" \
 	-c "$(nvram get scutclient_version)" \
 	-h "$(nvram get scutclient_hash)" \
+	"$(get_arg_debug)" "$(get_arg_skip_udp_hb)" \
 	-E "${auth_hook:-"echo 0 > /tmp/scutclient_status"}" \
-	-Q "${fail_hook:-"echo 1 > /tmp/scutclient_status"}" \
-	"$(get_arg_debug) $(get_arg_skip_udp_hb)"
+	-Q "${fail_hook:-"echo 1 > /tmp/scutclient_status"}"
 
 	if [ $? -eq 0 ] ; then
 		echo "[  OK  ]"

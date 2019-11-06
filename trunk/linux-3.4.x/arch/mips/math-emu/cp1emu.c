@@ -191,7 +191,7 @@ static inline int cop1_64bit(struct pt_regs *xcp)
 #define SIFROMREG(si, x) ((si) = cop1_64bit(xcp) || !(x & 1) ? \
 			(int)ctx->fpr[x] : (int)(ctx->fpr[x & ~1] >> 32))
 
-#define SITOREG(si, x)	(ctx->fpr[x & ~(cop1_64bit(xcp) == 0)] = \
+#define SITOREG(si, x)	(ctx->fpr[x & ~(cop1_64bit(xcp) ^ 1)] = \
 			cop1_64bit(xcp) || !(x & 1) ? \
 			ctx->fpr[x & ~1] >> 32 << 32 | (u32)(si) : \
 			ctx->fpr[x & ~1] << 32 >> 32 | (u64)(si) << 32)
@@ -200,8 +200,8 @@ static inline int cop1_64bit(struct pt_regs *xcp)
 #define SITOHREG(si, x)		(ctx->fpr[x] = \
 				ctx->fpr[x] << 32 >> 32 | (u64)(si) << 32)
 
-#define DIFROMREG(di, x) ((di) = ctx->fpr[x & ~(cop1_64bit(xcp) == 0)])
-#define DITOREG(di, x)	(ctx->fpr[x & ~(cop1_64bit(xcp) == 0)] = (di))
+#define DIFROMREG(di, x) ((di) = ctx->fpr[x & ~(cop1_64bit(xcp) ^ 1)])
+#define DITOREG(di, x)	(ctx->fpr[x & ~(cop1_64bit(xcp) ^ 1)] = (di))
 
 #define SPFROMREG(sp, x) SIFROMREG((sp).bits, x)
 #define SPTOREG(sp, x)	SITOREG((sp).bits, x)

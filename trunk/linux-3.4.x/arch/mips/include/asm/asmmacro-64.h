@@ -14,6 +14,8 @@
 #include <asm/mipsregs.h>
 
 	.macro	fpu_save_16even thread tmp=t0
+	.set	push
+	SET_HARDFLOAT
 	cfc1	\tmp, fcr31
 	sdc1	$f0,  THREAD_FPR0(\thread)
 	sdc1	$f2,  THREAD_FPR2(\thread)
@@ -32,9 +34,12 @@
 	sdc1	$f28, THREAD_FPR28(\thread)
 	sdc1	$f30, THREAD_FPR30(\thread)
 	sw	\tmp, THREAD_FCR31(\thread)
+	.set	pop
 	.endm
 
 	.macro	fpu_save_16odd thread
+	.set	push
+	SET_HARDFLOAT
 	sdc1	$f1,  THREAD_FPR1(\thread)
 	sdc1	$f3,  THREAD_FPR3(\thread)
 	sdc1	$f5,  THREAD_FPR5(\thread)
@@ -51,6 +56,7 @@
 	sdc1	$f27, THREAD_FPR27(\thread)
 	sdc1	$f29, THREAD_FPR29(\thread)
 	sdc1	$f31, THREAD_FPR31(\thread)
+	.set	pop
 	.endm
 
 	.macro	fpu_save_double thread status tmp
@@ -62,6 +68,8 @@
 	.endm
 
 	.macro	fpu_restore_16even thread tmp=t0
+	.set	push
+	SET_HARDFLOAT
 	lw	\tmp, THREAD_FCR31(\thread)
 	ldc1	$f0,  THREAD_FPR0(\thread)
 	ldc1	$f2,  THREAD_FPR2(\thread)
@@ -80,9 +88,12 @@
 	ldc1	$f28, THREAD_FPR28(\thread)
 	ldc1	$f30, THREAD_FPR30(\thread)
 	ctc1	\tmp, fcr31
+	.set	pop
 	.endm
 
 	.macro	fpu_restore_16odd thread
+	.set	push
+	SET_HARDFLOAT
 	ldc1	$f1,  THREAD_FPR1(\thread)
 	ldc1	$f3,  THREAD_FPR3(\thread)
 	ldc1	$f5,  THREAD_FPR5(\thread)
@@ -99,6 +110,7 @@
 	ldc1	$f27, THREAD_FPR27(\thread)
 	ldc1	$f29, THREAD_FPR29(\thread)
 	ldc1	$f31, THREAD_FPR31(\thread)
+	.set	pop
 	.endm
 
 	.macro	fpu_restore_double thread status tmp

@@ -15700,7 +15700,6 @@ INT Set_Enable_Channel_Timer_Proc(RTMP_ADAPTER *pAd, PSTRING arg)
 	UCHAR timer_enable;
 	UCHAR bbp_val;
 	UINT32 mac_val;
-	mac_val &= (~0x01);
 
 	DBGPRINT(RT_DEBUG_OFF, ("--> %s()\n", __FUNCTION__));
 	

@@ -188,7 +188,7 @@ int __compute_return_epc_for_insn(struct pt_regs *regs,
 	case cop1_op:
 		preempt_disable();
 		if (is_fpu_owner())
-			asm volatile("cfc1\t%0,$31" : "=r" (fcr31));
+			fcr31 = read_32bit_cp1_register(CP1_STATUS);
 		else
 			fcr31 = current->thread.fpu.fcr31;
 		preempt_enable();

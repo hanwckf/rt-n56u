@@ -1145,17 +1145,26 @@ do {									\
 /*
  * Macros to access the floating point coprocessor control registers
  */
-#define read_32bit_cp1_register(source)                         \
+#define _read_32bit_cp1_register(source, gas_hardfloat)         \
 ({ int __res;                                                   \
 	__asm__ __volatile__(                                   \
 	".set\tpush\n\t"					\
 	".set\treorder\n\t"					\
 	/* gas fails to assemble cfc1 for some archs (octeon).*/ \
 	".set\tmips1\n\t"					\
+	""STR(gas_hardfloat)"\n\t"				\
         "cfc1\t%0,"STR(source)"\n\t"                            \
 	".set\tpop"						\
         : "=r" (__res));                                        \
         __res;})
+
+#ifdef GAS_HAS_SET_HARDFLOAT
+#define read_32bit_cp1_register(source)					\
+	_read_32bit_cp1_register(source, .set hardfloat)
+#else
+#define read_32bit_cp1_register(source)					\
+	_read_32bit_cp1_register(source, )
+#endif
 
 #define rddsp(mask)							\
 ({									\

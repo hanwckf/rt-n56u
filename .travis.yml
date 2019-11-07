@@ -15,9 +15,8 @@ addons:
 before_script:
     - mkdir -p /opt/rt-n56u/toolchain-mipsel/toolchain-3.4.x && mkdir -p /opt/images/
     - cp -f ./trunk/tools/travis/* /opt && ./trunk/tools/travis_ci_build_trig.sh
-    - rm -rf toolchain-mipsel/ && wget $toolchain_url
-    - mv -f * .[^.]* /opt/rt-n56u
-    - tar -xf mipsel-linux-uclibc.tar.xz -C /opt/rt-n56u/toolchain-mipsel/toolchain-3.4.x
+    - rm -rf toolchain-mipsel/ && mv -f * .[^.]* /opt/rt-n56u
+    - wget $toolchain_url && tar -xf mipsel-linux-uclibc.tar.xz -C /opt/rt-n56u/toolchain-mipsel/toolchain-3.4.x
     - ls -Alh /opt/rt-n56u && cd /opt/rt-n56u/trunk/
 
 script:

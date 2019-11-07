@@ -1,0 +1,23 @@
+commit 3f512ca79fda7854da188df0585e71467119206e
+Author: Brett Neumeier <brett@neumeier.us>
+Date:   Mon Aug 31 15:27:21 2015 -0700
+
+    Fix non-v9 32-bit sparc build.
+    
+    	[BZ #18870]
+    	* sysdeps/sparc/sparc32/sem_open.c: Add missing #include
+
+---
+ sysdeps/sparc/sparc32/sem_open.c |    1 +
+ 1 file changed, 1 insertion(+)
+
+--- a/sysdeps/sparc/sparc32/sem_open.c
++++ b/sysdeps/sparc/sparc32/sem_open.c
+@@ -29,6 +29,7 @@
+ #include <sys/mman.h>
+ #include <sys/stat.h>
+ #include "semaphoreP.h"
++#include <futex-internal.h>
+ #include <shm-directory.h>
+ 
+ 

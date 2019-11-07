@@ -1,0 +1,41 @@
+---
+ ldso/ldso/Makefile.in |    5 +++++
+ ldso/ldso/dl-elf.c    |   13 +++++++++++++
+ 2 files changed, 18 insertions(+)
+
+--- a/ldso/ldso/dl-elf.c
++++ b/ldso/ldso/dl-elf.c
+@@ -284,6 +284,19 @@
+ 		}
+ 	}
+ #endif
++
++#ifdef LDSO_MULTILIB_DIR
++	/* If multilib directory is selected, search it before falling back to
++	   standard lib directories. */
++	_dl_if_debug_dprint("\tsearching multilib lib path list\n");
++	tpnt1 = search_for_named_library(libname, rflags,
++					UCLIBC_RUNTIME_PREFIX LDSO_MULTILIB_DIR ":"
++					UCLIBC_RUNTIME_PREFIX "usr" LDSO_MULTILIB_DIR,
++					rpnt);
++	if (tpnt1 != NULL)
++		return tpnt1;
++#endif
++
+ #if defined SHARED && defined __LDSO_SEARCH_INTERP_PATH__
+ 	/* Look for libraries wherever the shared library loader
+ 	 * was installed */
+--- a/ldso/ldso/Makefile.in
++++ b/ldso/ldso/Makefile.in
+@@ -30,6 +30,11 @@
+ 
+ CFLAGS-ldso.c := -DLDSO_ELFINTERP=\"$(TARGET_ARCH)/elfinterp.c\" $(CFLAGS-ldso)
+ 
++# Search non-default multilib directories
++ifneq ($(MULTILIB_DIR),lib)
++CFLAGS-ldso.c	+= -DLDSO_MULTILIB_DIR=\"$(MULTILIB_DIR)\"
++endif
++
+ LDFLAGS-$(UCLIBC_FORMAT_DSBT_ELF)-$(UCLIBC_LDSO_NAME).so := -Wl,--dsbt-index=1
+ ifneq ($(SUPPORT_LD_DEBUG),y)
+ LDFLAGS-$(UCLIBC_LDSO_NAME).so := $(LDFLAGS)

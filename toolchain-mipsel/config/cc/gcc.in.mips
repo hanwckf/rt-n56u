@@ -1,0 +1,34 @@
+# MIPS specific options for gcc
+
+config CC_GCC_HAS_ARCH_OPTIONS
+    default y
+
+config CC_GCC_mips_llsc
+    tristate
+    prompt "Use llsc"
+    default m
+    help
+      This configures how gcc will emit load-link, store-conditional and
+      sync opcodes. Normally, you'd set this to 'M', and configure will do
+      the correct thing (ie. enable llsc for Linux-based targets, disable
+      for others). If you know better, you can force either using llsc or
+      not using it (resp. 'Y' or 'N').
+
+config CC_GCC_mips_synci
+    tristate
+    prompt "Use synci"
+    default m
+    help
+      This configures how gcc will emit the synci opcode. Normally, you'd
+      set this to 'M', and configure will do the correct thing (ie. disable).
+      If you know better, you can force using synci (say 'Y'), or not using
+      it (say 'N').
+
+config CC_GCC_mips_plt
+    bool
+    prompt "Use copy relocations & PLTs"
+    help
+      This configures gcc to use copy relocations & PLTs. These are
+      extensions to the traditional SVR4-based MIPS ABIs and require
+      support from GNU binutils and the runtime C library.
+      Say 'N' to keep the default and not use them, say 'Y' to use them.

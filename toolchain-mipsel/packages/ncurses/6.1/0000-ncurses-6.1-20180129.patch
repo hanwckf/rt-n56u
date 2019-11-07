@@ -1,0 +1,153 @@
+# ncurses 6.1 - patch 20180129 - Thomas E. Dickey
+#
+# ------------------------------------------------------------------------------
+#
+# Ncurses 6.1 is at
+# 	ftp.gnu.org:/pub/gnu
+#
+# Patches for ncurses 6.1 can be found at
+# 	ftp://ftp.invisible-island.net/ncurses/6.0
+#	http://invisible-mirror.net/archives/ncurses/6.1 
+#
+# ------------------------------------------------------------------------------
+# ftp://ftp.invisible-island.net/ncurses/6.0/ncurses-6.1-20180129.patch.gz
+# patch by Thomas E. Dickey <dickey@invisible-island.net>
+# created  Tue Jan 30 01:18:41 UTC 2018
+# ------------------------------------------------------------------------------
+# NEWS                             |    7 ++++++-
+# VERSION                          |    2 +-
+# dist.mk                          |    4 ++--
+# package/debian-mingw/changelog   |    4 ++--
+# package/debian-mingw64/changelog |    4 ++--
+# package/debian/changelog         |    4 ++--
+# package/mingw-ncurses.nsi        |    4 ++--
+# package/mingw-ncurses.spec       |    2 +-
+# package/ncurses.spec             |    2 +-
+# 9 files changed, 19 insertions(+), 14 deletions(-)
+# ------------------------------------------------------------------------------
+--- a/NEWS
++++ b/NEWS
+@@ -25,7 +25,7 @@
+ -- sale, use or other dealings in this Software without prior written        --
+ -- authorization.                                                            --
+ -------------------------------------------------------------------------------
+--- $Id: NEWS,v 1.3069 2018/01/27 15:28:53 tom Exp $
++-- $Id: NEWS,v 1.3071 2018/01/30 00:35:11 tom Exp $
+ -------------------------------------------------------------------------------
+ 
+ This is a log of changes that ncurses has gone through since Zeyd started
+@@ -45,6 +45,11 @@
+ Changes through 1.9.9e did not credit all contributions;
+ it is not possible to add this information.
+ 
++20180129
++	+ update "VERSION" file, used in shared-library naming.
++
++20180127 6.1 release for upload to ftp.gnu.org
++
+ 20180127
+ 	+ updated release notes
+ 	+ amend a warning message from tic which should have flagged misuse
+--- a/VERSION
++++ b/VERSION
+@@ -1 +1 @@
+-5:0:9	6.0	20180127
++5:0:10	6.1	20180129
+--- a/dist.mk
++++ b/dist.mk
+@@ -25,7 +25,7 @@
+ # use or other dealings in this Software without prior written               #
+ # authorization.                                                             #
+ ##############################################################################
+-# $Id: dist.mk,v 1.1207 2018/01/22 11:42:46 tom Exp $
++# $Id: dist.mk,v 1.1208 2018/01/30 00:32:36 tom Exp $
+ # Makefile for creating ncurses distributions.
+ #
+ # This only needs to be used directly as a makefile by developers, but
+@@ -37,7 +37,7 @@
+ # These define the major/minor/patch versions of ncurses.
+ NCURSES_MAJOR = 6
+ NCURSES_MINOR = 1
+-NCURSES_PATCH = 20180127
++NCURSES_PATCH = 20180129
+ 
+ # We don't append the patch to the version, since this only applies to releases
+ VERSION = $(NCURSES_MAJOR).$(NCURSES_MINOR)
+--- a/package/debian-mingw/changelog
++++ b/package/debian-mingw/changelog
+@@ -1,8 +1,8 @@
+-ncurses6 (6.1+20180127) unstable; urgency=low
++ncurses6 (6.1+20180129) unstable; urgency=low
+ 
+   * latest weekly patch
+ 
+- -- Thomas E. Dickey <dickey@invisible-island.net>  Mon, 22 Jan 2018 20:01:38 -0500
++ -- Thomas E. Dickey <dickey@invisible-island.net>  Mon, 29 Jan 2018 19:32:37 -0500
+ 
+ ncurses6 (5.9-20131005) unstable; urgency=low
+ 
+--- a/package/debian-mingw64/changelog
++++ b/package/debian-mingw64/changelog
+@@ -1,8 +1,8 @@
+-ncurses6 (6.1+20180127) unstable; urgency=low
++ncurses6 (6.1+20180129) unstable; urgency=low
+ 
+   * latest weekly patch
+ 
+- -- Thomas E. Dickey <dickey@invisible-island.net>  Mon, 22 Jan 2018 20:01:38 -0500
++ -- Thomas E. Dickey <dickey@invisible-island.net>  Mon, 29 Jan 2018 19:32:37 -0500
+ 
+ ncurses6 (5.9-20131005) unstable; urgency=low
+ 
+--- a/package/debian/changelog
++++ b/package/debian/changelog
+@@ -1,8 +1,8 @@
+-ncurses6 (6.1+20180127) unstable; urgency=low
++ncurses6 (6.1+20180129) unstable; urgency=low
+ 
+   * latest weekly patch
+ 
+- -- Thomas E. Dickey <dickey@invisible-island.net>  Mon, 22 Jan 2018 20:01:38 -0500
++ -- Thomas E. Dickey <dickey@invisible-island.net>  Mon, 29 Jan 2018 19:32:37 -0500
+ 
+ ncurses6 (5.9-20120608) unstable; urgency=low
+ 
+--- a/package/mingw-ncurses.nsi
++++ b/package/mingw-ncurses.nsi
+@@ -1,4 +1,4 @@
+-; $Id: mingw-ncurses.nsi,v 1.254 2018/01/23 01:01:38 tom Exp $
++; $Id: mingw-ncurses.nsi,v 1.255 2018/01/30 00:32:37 tom Exp $
+ 
+ ; TODO add examples
+ ; TODO bump ABI to 6
+@@ -10,7 +10,7 @@
+ !define VERSION_MAJOR "6"
+ !define VERSION_MINOR "1"
+ !define VERSION_YYYY  "2018"
+-!define VERSION_MMDD  "0127"
++!define VERSION_MMDD  "0129"
+ !define VERSION_PATCH ${VERSION_YYYY}${VERSION_MMDD}
+ 
+ !define MY_ABI   "5"
+--- a/package/mingw-ncurses.spec
++++ b/package/mingw-ncurses.spec
+@@ -3,7 +3,7 @@
+ Summary: shared libraries for terminal handling
+ Name: mingw32-ncurses6
+ Version: 6.1
+-Release: 20180127
++Release: 20180129
+ License: X11
+ Group: Development/Libraries
+ Source: ncurses-%{version}-%{release}.tgz
+--- a/package/ncurses.spec
++++ b/package/ncurses.spec
+@@ -1,7 +1,7 @@
+ Summary: shared libraries for terminal handling
+ Name: ncurses6
+ Version: 6.1
+-Release: 20180127
++Release: 20180129
+ License: X11
+ Group: Development/Libraries
+ Source: ncurses-%{version}-%{release}.tgz

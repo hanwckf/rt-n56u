@@ -1,0 +1,22 @@
+commit 778a9ef107f51544d583f110e92b75f4d9d79117
+Author: Dmitry Moskalchuk <dm@crystax.net>
+Date:   Thu Aug 20 19:11:07 2015 +0300
+
+    [android] Don't use PIE copyrelocs for x86/x86_64
+    
+    Signed-off-by: Dmitry Moskalchuk <dm@crystax.net>
+
+---
+ gcc/config/i386/i386.c |    1 +
+ 1 file changed, 1 insertion(+)
+
+--- a/gcc/config/i386/i386.c
++++ b/gcc/config/i386/i386.c
+@@ -16116,6 +16116,7 @@
+ 	  else if (!SYMBOL_REF_FAR_ADDR_P (op0)
+ 		   && (SYMBOL_REF_LOCAL_P (op0)
+ 		       || (HAVE_LD_PIE_COPYRELOC
++		       && !TARGET_HAS_BIONIC
+ 			   && flag_pie
+ 			   && !SYMBOL_REF_WEAK (op0)
+ 			   && !SYMBOL_REF_FUNCTION_P (op0)))

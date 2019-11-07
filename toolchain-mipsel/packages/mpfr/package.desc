@@ -1,0 +1,8 @@
+repository='svn https://scm.gforge.inria.fr/anonscm/svn/mpfr'
+# TBD: meta-package autoconf-archive to install extra m4's
+bootstrap='wget -O m4/ax_pthread.m4 \\"http://git.savannah.gnu.org/gitweb/?p=autoconf-archive.git;a=blob_plain;f=m4/ax_pthread.m4\\" && ./autogen.sh'
+mirrors='http://www.mpfr.org/mpfr-${CT_MPFR_VERSION} $(CT_Mirrors GNU mpfr)'
+relevantpattern='*.*|.'
+archive_formats='.tar.xz .tar.bz2 .tar.gz .zip'
+signature_format='packed/.asc'
+milestones='3.0.0 4.0.0'

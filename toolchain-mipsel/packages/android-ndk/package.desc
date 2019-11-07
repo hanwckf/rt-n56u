@@ -1,0 +1,5 @@
+# We don't support building bionic (yet) so no official repository
+mirrors='https://dl.google.com/android/repository'
+relevantpattern='r*|[a-z]'
+archive_filename='@{pkg_name}-@{version}-linux-x86_64'
+archive_formats='.zip'

@@ -1,0 +1,306 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml"><head><title>Creative Commons Deed</title>
+
+
+
+<meta http-equiv="content-type" content="text/html;charset=utf-8">
+<link rel="stylesheet" type="text/css" href="deed_files/deeds.css">
+<link rel="alternate" type="application/rdf+xml" href="http://creativecommons.org/licenses/by-sa/2.5/rdf"> 
+
+<script language="javascript">
+function setCookie(name, value, expires, path, domain, secure) {
+    document.cookie= name + "=" + escape(value) +
+        ((expires) ? "; expires=" + expires.toGMTString() : "") +
+        ((path) ? "; path=" + path : "") +
+        ((domain) ? "; domain=" + domain : "") +
+        ((secure) ? "; secure" : "");
+}
+var expiry = new Date();
+expiry.setTime(expiry.getTime()+(5*365*24*60*60*1000));
+setCookie('lang','en', expiry, '/');
+</script></head><body>
+
+<!--
+
+<rdf:RDF xmlns="http://web.resource.org/cc/" xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"><License rdf:about="http://creativecommons.org/licenses/by-sa/2.5/"><permits rdf:resource="http://web.resource.org/cc/Reproduction"/><permits rdf:resource="http://web.resource.org/cc/Distribution"/><requires rdf:resource="http://web.resource.org/cc/Notice"/><requires rdf:resource="http://web.resource.org/cc/Attribution"/><permits rdf:resource="http://web.resource.org/cc/DerivativeWorks"/><requires
+    rdf:resource="http://web.resource.org/cc/ShareAlike"/></License></rdf:RDF>
+
+
+-->
+
+<p align="center"><a href="http://creativecommons.org/">Creative Commons</a></p>
+
+
+
+<div style="width: 620px; margin-left: auto; margin-right: auto;"><div style="text-align: center;">
+This page is available in the following languages:
+<br>
+
+
+
+<a href="http://creativecommons.org/licenses/by-sa/2.5/deed.bg" title="български" hreflang="bg" rel="alternate" lang="bg">български</a>
+
+
+
+
+<a href="http://creativecommons.org/licenses/by-sa/2.5/deed.ca" title="Català" hreflang="ca" rel="alternate" lang="ca">Català</a>
+
+
+
+
+<a href="http://creativecommons.org/licenses/by-sa/2.5/deed.da" title="Dansk" hreflang="da" rel="alternate" lang="da">Dansk</a>
+
+
+
+
+<a href="http://creativecommons.org/licenses/by-sa/2.5/deed.de" title="Deutsch" hreflang="de" rel="alternate" lang="de">Deutsch</a>
+
+
+
+
+<a href="http://creativecommons.org/licenses/by-sa/2.5/deed.en" title="English" hreflang="en" rel="alternate" lang="en">English</a>
+
+
+
+
+<a href="http://creativecommons.org/licenses/by-sa/2.5/deed.en_CA" title="English (CA)" hreflang="en_CA" rel="alternate" lang="en_CA">English (CA)</a>
+
+
+
+
+<a href="http://creativecommons.org/licenses/by-sa/2.5/deed.en_GB" title="English (GB)" hreflang="en_GB" rel="alternate" lang="en_GB">English (GB)</a>
+
+
+
+
+<a href="http://creativecommons.org/licenses/by-sa/2.5/deed.es" title="Castellano" hreflang="es" rel="alternate" lang="es">Castellano</a>
+
+
+
+
+<a href="http://creativecommons.org/licenses/by-sa/2.5/deed.es_AR" title="Spanish (AR)" hreflang="es_AR" rel="alternate" lang="es_AR">Castellano (AR)</a>
+
+
+
+
+<a href="http://creativecommons.org/licenses/by-sa/2.5/deed.es_CL" title="Spanish (CL)" hreflang="es_CL" rel="alternate" lang="es_CL">Español (CL)</a>
+
+
+
+
+<a href="http://creativecommons.org/licenses/by-sa/2.5/deed.es_MX" title="Spanish (MX)" hreflang="es_MX" rel="alternate" lang="es_MX">Castellano (MX)</a>
+
+
+
+
+<a href="http://creativecommons.org/licenses/by-sa/2.5/deed.eu" title="Euskara" hreflang="eu" rel="alternate" lang="eu">Euskara</a>
+
+
+
+
+<a href="http://creativecommons.org/licenses/by-sa/2.5/deed.fi" title="Suomeksi" hreflang="fi" rel="alternate" lang="fi">Suomeksi</a>
+
+
+
+
+<a href="http://creativecommons.org/licenses/by-sa/2.5/deed.fr" title="français" hreflang="fr" rel="alternate" lang="fr">français</a>
+
+
+
+
+<a href="http://creativecommons.org/licenses/by-sa/2.5/deed.fr_CA" title="French (CA)" hreflang="fr_CA" rel="alternate" lang="fr_CA">français (CA)</a>
+
+
+
+
+<a href="http://creativecommons.org/licenses/by-sa/2.5/deed.gl" title="Galego" hreflang="gl" rel="alternate" lang="gl">Galego</a>
+
+
+
+
+<a href="http://creativecommons.org/licenses/by-sa/2.5/deed.he" title="עברית" hreflang="he" rel="alternate" lang="he">עברית</a>
+
+
+
+
+<a href="http://creativecommons.org/licenses/by-sa/2.5/deed.hr" title="hrvatski" hreflang="hr" rel="alternate" lang="hr">hrvatski</a>
+
+
+
+
+<a href="http://creativecommons.org/licenses/by-sa/2.5/deed.hu" title="Magyar" hreflang="hu" rel="alternate" lang="hu">Magyar</a>
+
+
+
+
+<a href="http://creativecommons.org/licenses/by-sa/2.5/deed.it" title="Italiano" hreflang="it" rel="alternate" lang="it">Italiano</a>
+
+
+
+
+<a href="http://creativecommons.org/licenses/by-sa/2.5/deed.ja" title="日本語" hreflang="ja" rel="alternate" lang="ja">日本語</a>
+
+
+
+
+<a href="http://creativecommons.org/licenses/by-sa/2.5/deed.ko" title="한국어" hreflang="ko" rel="alternate" lang="ko">한국어</a>
+
+
+
+
+<a href="http://creativecommons.org/licenses/by-sa/2.5/deed.ms" title="Melayu" hreflang="ms" rel="alternate" lang="ms">Melayu</a>
+
+
+
+
+<a href="http://creativecommons.org/licenses/by-sa/2.5/deed.nl" title="Nederlands" hreflang="nl" rel="alternate" lang="nl">Nederlands</a>
+
+
+
+
+<a href="http://creativecommons.org/licenses/by-sa/2.5/deed.pl" title="polski" hreflang="pl" rel="alternate" lang="pl">polski</a>
+
+
+
+
+<a href="http://creativecommons.org/licenses/by-sa/2.5/deed.pt" title="Português" hreflang="pt" rel="alternate" lang="pt">Português</a>
+
+
+
+
+<a href="http://creativecommons.org/licenses/by-sa/2.5/deed.pt_PT" hreflang="pt_PT" rel="alternate" lang="pt_PT">Português (PT)</a>
+
+
+
+
+<a href="http://creativecommons.org/licenses/by-sa/2.5/deed.se" title="svenska" hreflang="se" rel="alternate" lang="se">svenska</a>
+
+
+
+
+<a href="http://creativecommons.org/licenses/by-sa/2.5/deed.sl" title="slovenski jezik" hreflang="sl" rel="alternate" lang="sl">slovenski jezik</a>
+
+
+
+
+<a href="http://creativecommons.org/licenses/by-sa/2.5/deed.zh" title="简体中文" hreflang="zh" rel="alternate" lang="zh">简体中文</a>
+
+
+
+
+<a href="http://creativecommons.org/licenses/by-sa/2.5/deed.zh_TW" title="Chinese (Taiwan)" hreflang="zh_TW" rel="alternate" lang="zh_TW">華語 (台灣)</a>
+
+
+</div></div>
+
+
+
+
+<div id="deed">
+
+	<div align="center">
+
+	<img src="deed_files/logo_deed.gif" alt="Creative Commons Deed" border="0" height="79" vspace="14" width="280">
+
+	<p><b>Attribution-ShareAlike 2.5 </b></p>
+
+
+
+	<div class="text">
+
+        
+
+		<p><strong>You are free:</strong></p>
+
+			<ul>
+
+				<li>to copy, distribute, display, and perform the work</li>
+
+				<li>to make derivative works</li>
+
+				<li>to make commercial use of the work</li>
+
+			</ul>
+
+
+
+		<p><strong>Under the following conditions:</strong></p>
+
+	        <div align="center"><table class="draft" border="0" cellpadding="4" cellspacing="0" width="500">
+
+		<tbody>
+
+                <tr>
+                   <td>
+                     <img src="deed_files/deed.gif" alt="by" align="left" border="0" hspace="4">
+                   </td>
+                   <td align="left">
+                      <div class="tiny"><strong>Attribution</strong>. 
+                             You must attribute the work in the manner specified by the author or licensor.</div>
+                   </td>
+                </tr>
+                <tr>
+                   <td>
+                     <img src="deed_files/deed_002.gif" alt="sa" align="left" border="0" hspace="4">
+                   </td>
+                   <td align="left">
+                      <div class="tiny"><strong>Share Alike</strong>.
+If you alter, transform, or build upon this work, you may distribute
+the resulting work only under a license identical to this one.</div>
+                   </td>
+                </tr>
+
+                </tbody></table></div>
+
+		
+
+    <ul>
+
+    <li>For any reuse or distribution, you must make clear to others the license terms of this work.</li>
+
+    <li>Any of these conditions can be waived if you get permission from the copyright holder.</li>
+
+    </ul>
+
+
+
+<p style="margin-top: 40px;" align="center"><strong>Your fair use and other rights are in no way affected by the above.</strong></p>
+
+
+
+		
+
+		<p align="center">
+
+                
+                This is a human-readable summary of the <a href="http://creativecommons.org/licenses/by-sa/2.5/legalcode" class="fulltext">Legal Code (the full license)</a>.
+
+                </p>
+
+
+
+                        
+
+			<div align="center">
+
+<a href="http://creativecommons.org/licenses/disclaimer-popup?lang=en" onclick="window.open('/licenses/disclaimer-popup?lang=en', 'characteristic_help', 'width=375,height=300,scrollbars=yes,resizable=yes,toolbar=no,directories=no,location=yes,menubar=no,status=yes'); return false;">Disclaimer</a> 
+<a href="http://creativecommons.org/licenses/disclaimer-popup?lang=en" onclick="window.open('/licenses/disclaimer-popup?lang=en', 'characteristic_help', 'width=375,height=300,scrollbars=yes,resizable=yes,toolbar=no,directories=no,location=yes,menubar=no,status=yes'); return false;"><img src="deed_files/popup.gif" alt="disclaimer" border="0" height="13" width="15"></a></div>
+
+			<p>&nbsp;</p>
+
+		</div>
+
+	</div>
+
+</div>
+
+<p>
+
+<a href="http://creativecommons.org/about/licenses">Learn how to distribute your work using this license</a>
+
+</p>
+
+
+
+
+</body></html>

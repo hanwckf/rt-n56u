@@ -1,0 +1,197 @@
+commit 9dd346ff431fc761f1b748bd4da8bb59f7652094
+Author: Joseph Myers <joseph@codesourcery.com>
+Date:   Tue Oct 20 11:54:09 2015 +0000
+
+    Convert 113 more function definitions to prototype style (files with assertions).
+    
+    This mostly automatically-generated patch converts 113 function
+    definitions in glibc from old-style K&R to prototype-style.  Following
+    my other recent such patches, this one deals with the case of function
+    definitions in files that either contain assertions or where grep
+    suggested they might contain assertions - and thus where it isn't
+    possible to use a simple object code comparison as a sanity check on
+    the correctness of the patch, because line numbers are changed.
+    
+    A few such automatically-generated changes needed to be supplemented
+    by manual changes for the result to compile.  openat64 had a prototype
+    declaration with "..." but an old-style definition in
+    sysdeps/unix/sysv/linux/dl-openat64.c, and "..." needed adding to the
+    generated prototype in the definition (I've filed
+    <https://gcc.gnu.org/bugzilla/show_bug.cgi?id=68024> for diagnosing
+    such cases in GCC; the old state was undefined behavior not requiring
+    a diagnostic, but one seems a good idea).  In addition, as Florian has
+    noted regparm attribute mismatches between declaration and definition
+    are only diagnosed for prototype definitions, and five functions
+    needed internal_function added to their definitions (in the case of
+    __pthread_mutex_cond_lock, via the macro definition of
+    __pthread_mutex_lock) to compile on i386.
+    
+    After this patch is in, remaining old-style definitions are probably
+    most readily fixed manually before we can turn on
+    -Wold-style-definition for all builds.
+    
+    Tested for x86_64 and x86 (testsuite).
+    
+            * crypt/md5-crypt.c (__md5_crypt_r): Convert to prototype-style
+            function definition.
+            * crypt/sha256-crypt.c (__sha256_crypt_r): Likewise.
+            * crypt/sha512-crypt.c (__sha512_crypt_r): Likewise.
+            * debug/backtracesyms.c (__backtrace_symbols): Likewise.
+            * elf/dl-minimal.c (_itoa): Likewise.
+            * hurd/hurdmalloc.c (malloc): Likewise.
+            (free): Likewise.
+            (realloc): Likewise.
+            * inet/inet6_option.c (inet6_option_space): Likewise.
+            (inet6_option_init): Likewise.
+            (inet6_option_append): Likewise.
+            (inet6_option_alloc): Likewise.
+            (inet6_option_next): Likewise.
+            (inet6_option_find): Likewise.
+            * io/ftw.c (FTW_NAME): Likewise.
+            (NFTW_NAME): Likewise.
+            (NFTW_NEW_NAME): Likewise.
+            (NFTW_OLD_NAME): Likewise.
+            * libio/iofwide.c (_IO_fwide): Likewise.
+            * libio/strops.c (_IO_str_init_static_internal): Likewise.
+            (_IO_str_init_static): Likewise.
+            (_IO_str_init_readonly): Likewise.
+            (_IO_str_overflow): Likewise.
+            (_IO_str_underflow): Likewise.
+            (_IO_str_count): Likewise.
+            (_IO_str_seekoff): Likewise.
+            (_IO_str_pbackfail): Likewise.
+            (_IO_str_finish): Likewise.
+            * libio/wstrops.c (_IO_wstr_init_static): Likewise.
+            (_IO_wstr_overflow): Likewise.
+            (_IO_wstr_underflow): Likewise.
+            (_IO_wstr_count): Likewise.
+            (_IO_wstr_seekoff): Likewise.
+            (_IO_wstr_pbackfail): Likewise.
+            (_IO_wstr_finish): Likewise.
+            * locale/programs/localedef.c (normalize_codeset): Likewise.
+            * locale/programs/locarchive.c (add_locale_to_archive): Likewise.
+            (add_locales_to_archive): Likewise.
+            (delete_locales_from_archive): Likewise.
+            * malloc/malloc.c (__libc_mallinfo): Likewise.
+            * math/gen-auto-libm-tests.c (init_fp_formats): Likewise.
+            * misc/tsearch.c (__tfind): Likewise.
+            * nptl/pthread_attr_destroy.c (__pthread_attr_destroy): Likewise.
+            * nptl/pthread_attr_getdetachstate.c
+            (__pthread_attr_getdetachstate): Likewise.
+            * nptl/pthread_attr_getguardsize.c (pthread_attr_getguardsize):
+            Likewise.
+            * nptl/pthread_attr_getinheritsched.c
+            (__pthread_attr_getinheritsched): Likewise.
+            * nptl/pthread_attr_getschedparam.c
+            (__pthread_attr_getschedparam): Likewise.
+            * nptl/pthread_attr_getschedpolicy.c
+            (__pthread_attr_getschedpolicy): Likewise.
+            * nptl/pthread_attr_getscope.c (__pthread_attr_getscope):
+            Likewise.
+            * nptl/pthread_attr_getstack.c (__pthread_attr_getstack):
+            Likewise.
+            * nptl/pthread_attr_getstackaddr.c (__pthread_attr_getstackaddr):
+            Likewise.
+            * nptl/pthread_attr_getstacksize.c (__pthread_attr_getstacksize):
+            Likewise.
+            * nptl/pthread_attr_init.c (__pthread_attr_init_2_1): Likewise.
+            (__pthread_attr_init_2_0): Likewise.
+            * nptl/pthread_attr_setdetachstate.c
+            (__pthread_attr_setdetachstate): Likewise.
+            * nptl/pthread_attr_setguardsize.c (pthread_attr_setguardsize):
+            Likewise.
+            * nptl/pthread_attr_setinheritsched.c
+            (__pthread_attr_setinheritsched): Likewise.
+            * nptl/pthread_attr_setschedparam.c
+            (__pthread_attr_setschedparam): Likewise.
+            * nptl/pthread_attr_setschedpolicy.c
+            (__pthread_attr_setschedpolicy): Likewise.
+            * nptl/pthread_attr_setscope.c (__pthread_attr_setscope):
+            Likewise.
+            * nptl/pthread_attr_setstack.c (__pthread_attr_setstack):
+            Likewise.
+            * nptl/pthread_attr_setstackaddr.c (__pthread_attr_setstackaddr):
+            Likewise.
+            * nptl/pthread_attr_setstacksize.c (__pthread_attr_setstacksize):
+            Likewise.
+            * nptl/pthread_condattr_setclock.c (pthread_condattr_setclock):
+            Likewise.
+            * nptl/pthread_create.c (__find_in_stack_list): Likewise.
+            * nptl/pthread_getattr_np.c (pthread_getattr_np): Likewise.
+            * nptl/pthread_mutex_cond_lock.c (__pthread_mutex_lock): Define to
+            use internal_function.
+            * nptl/pthread_mutex_init.c (__pthread_mutex_init): Convert to
+            prototype-style function definition.
+            * nptl/pthread_mutex_lock.c (__pthread_mutex_lock): Likewise.
+            (__pthread_mutex_cond_lock_adjust): Likewise.  Use
+            internal_function.
+            * nptl/pthread_mutex_timedlock.c (pthread_mutex_timedlock):
+            Convert to prototype-style function definition.
+            * nptl/pthread_mutex_trylock.c (__pthread_mutex_trylock):
+            Likewise.
+            * nptl/pthread_mutex_unlock.c (__pthread_mutex_unlock_usercnt):
+            Likewise.
+            (__pthread_mutex_unlock): Likewise.
+            * nptl_db/td_ta_clear_event.c (td_ta_clear_event): Likewise.
+            * nptl_db/td_ta_set_event.c (td_ta_set_event): Likewise.
+            * nptl_db/td_thr_clear_event.c (td_thr_clear_event): Likewise.
+            * nptl_db/td_thr_event_enable.c (td_thr_event_enable): Likewise.
+            * nptl_db/td_thr_set_event.c (td_thr_set_event): Likewise.
+            * nss/makedb.c (process_input): Likewise.
+            * posix/fnmatch.c (__strchrnul): Likewise.
+            (__wcschrnul): Likewise.
+            (fnmatch): Likewise.
+            * posix/fnmatch_loop.c (FCT): Likewise.
+            * posix/glob.c (globfree): Likewise.
+            (__glob_pattern_type): Likewise.
+            (__glob_pattern_p): Likewise.
+            * posix/regcomp.c (re_compile_pattern): Likewise.
+            (re_set_syntax): Likewise.
+            (re_compile_fastmap): Likewise.
+            (regcomp): Likewise.
+            (regerror): Likewise.
+            (regfree): Likewise.
+            * posix/regexec.c (regexec): Likewise.
+            (re_match): Likewise.
+            (re_search): Likewise.
+            (re_match_2): Likewise.
+            (re_search_2): Likewise.
+            (re_search_stub): Likewise.  Use internal_function
+            (re_copy_regs): Likewise.
+            (re_set_registers): Convert to prototype-style function
+            definition.
+            (prune_impossible_nodes): Likewise.  Use internal_function.
+            * resolv/inet_net_pton.c (inet_net_pton): Convert to
+            prototype-style function definition.
+            (inet_net_pton_ipv4): Likewise.
+            * stdlib/strtod_l.c (____STRTOF_INTERNAL): Likewise.
+            * sysdeps/pthread/aio_cancel.c (aio_cancel): Likewise.
+            * sysdeps/pthread/aio_suspend.c (aio_suspend): Likewise.
+            * sysdeps/pthread/timer_delete.c (timer_delete): Likewise.
+            * sysdeps/unix/sysv/linux/dl-openat64.c (openat64): Likewise.
+            Make variadic.
+            * time/strptime_l.c (localtime_r): Convert to prototype-style
+            function definition.
+            * wcsmbs/mbsnrtowcs.c (__mbsnrtowcs): Likewise.
+            * wcsmbs/mbsrtowcs_l.c (__mbsrtowcs_l): Likewise.
+            * wcsmbs/wcsnrtombs.c (__wcsnrtombs): Likewise.
+            * wcsmbs/wcsrtombs.c (__wcsrtombs): Likewise.
+
+---
+ sysdeps/unix/sysv/linux/dl-openat64.c |    5 +----
+ 1 file changed, 1 insertion(+), 4 deletions(-)
+
+--- a/sysdeps/unix/sysv/linux/dl-openat64.c
++++ b/sysdeps/unix/sysv/linux/dl-openat64.c
+@@ -24,10 +24,7 @@
+ 
+ 
+ int
+-openat64 (dfd, file, oflag)
+-     int dfd;
+-     const char *file;
+-     int oflag;
++openat64 (int dfd, const char *file, int oflag, ...)
+ {
+   assert ((oflag & O_CREAT) == 0);
+ 

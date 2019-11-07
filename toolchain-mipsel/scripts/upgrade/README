@@ -1,0 +1,23 @@
+Upgrade scripts for specific versions of the config file.
+Each script must define a function `upgrade` that can
+assume `${opt}` and `${val}` variables set on input. On
+output, if `${opt}` is unset - so will be the corresponding
+option.
+
+One thing to keep in mind is that this script may be invoked
+on full config - or on a defconfig. Do not assume that all
+options will be present! If an option is not specified, use
+the value it had as a default for the fallback; to check if
+it has been specified, use `$selected_opts` associative
+array to check if it has been present in the config file
+(otherwise, you an option not being set after sourcing the
+previous version of the config is ambiguous - it could be
+that the option is called out as `# CT_FOO is not set` (i.e.
+selected as false) or not present at all (i.e. selected as
+default).
+
+If it is not possible to determine the settings of an option
+because a different controlling option is not set, either
+err out (see CT_LIBC_UCLIBC_CUSTOM in v0 for an example)
+or select a sane default and issue a warning (see CT_GDB_CUSTOM
+in v0 for an example).

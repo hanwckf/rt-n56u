@@ -1,0 +1,4 @@
+repository='git https://github.com/strace/strace.git'
+bootstrap='./bootstrap'
+mirrors='https://strace.io/files/${CT_STRACE_VERSION}'
+archive_formats='.tar.xz'

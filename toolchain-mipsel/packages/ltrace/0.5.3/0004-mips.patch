@@ -1,0 +1,40 @@
+This patch is courtesy of OpenEmbedded, by Khem Raj <raj.khem@gmail.com>
+
+http://cgit.openembedded.org/cgit.cgi/openembedded/commit/?id=b85b779688f0abc389e3c25d06b54de8b86385c1
+
+---
+ handle_event.c                  |    3 ++-
+ sysdeps/linux-gnu/mipsel/plt.c  |    2 +-
+ sysdeps/linux-gnu/mipsel/regs.c |    1 -
+ 3 files changed, 3 insertions(+), 3 deletions(-)
+
+--- a/sysdeps/linux-gnu/mipsel/plt.c
++++ b/sysdeps/linux-gnu/mipsel/plt.c
+@@ -1,4 +1,4 @@
+-#include <debug.h>
++#include "debug.h"
+ #include <gelf.h>
+ #include <sys/ptrace.h>
+ #include "common.h"
+--- a/sysdeps/linux-gnu/mipsel/regs.c
++++ b/sysdeps/linux-gnu/mipsel/regs.c
+@@ -4,7 +4,6 @@
+ #include <sys/types.h>
+ #include <sys/ptrace.h>
+ #include <asm/ptrace.h>
+-#include <linux/user.h>
+ 
+ #include "common.h"
+ #include "mipsel.h"
+--- a/handle_event.c
++++ b/handle_event.c
+@@ -573,7 +573,8 @@
+ 			void *old_addr;
+ 			struct library_symbol *sym= event->proc->callstack[i].c_un.libfunc;
+ 			assert(sym);
+-			old_addr = dict_find_entry(event->proc->breakpoints, sym2addr(event->proc, sym))->addr;
++			struct Breakpoint *tbp = dict_find_entry(event->proc->breakpoints, sym2addr(event->proc, sym));
++			old_addr = tbp->addr;
+ 			addr=sym2addr(event->proc,sym);
+ 			assert(old_addr !=0 && addr !=0);
+ 			if(addr != old_addr){

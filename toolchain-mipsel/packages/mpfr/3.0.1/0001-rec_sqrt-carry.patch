@@ -1,0 +1,80 @@
+---
+ PATCHES    |    1 +
+ VERSION    |    2 +-
+ mpfr.h     |    2 +-
+ rec_sqrt.c |   21 +++++++++++++++++++--
+ version.c  |    2 +-
+ 5 files changed, 23 insertions(+), 5 deletions(-)
+
+--- a/PATCHES
++++ b/PATCHES
+@@ -1 +1,2 @@
++rec_sqrt-carry
+ asin_exprange
+--- a/VERSION
++++ b/VERSION
+@@ -1 +1 @@
+-3.0.1-p1
++3.0.1-p2
+--- a/mpfr.h
++++ b/mpfr.h
+@@ -27,7 +27,7 @@
+ #define MPFR_VERSION_MAJOR 3
+ #define MPFR_VERSION_MINOR 0
+ #define MPFR_VERSION_PATCHLEVEL 1
+-#define MPFR_VERSION_STRING "3.0.1-p1"
++#define MPFR_VERSION_STRING "3.0.1-p2"
+ 
+ /* Macros dealing with MPFR VERSION */
+ #define MPFR_VERSION_NUM(a,b,c) (((a) << 16L) | ((b) << 8) | (c))
+--- a/rec_sqrt.c
++++ b/rec_sqrt.c
+@@ -375,20 +375,37 @@
+       MPFR_ASSERTD(un == ln + 1 || un == ln + 2);
+       /* the high un-ln limbs of u will overlap the low part of {x+ln,xn},
+          we need to add or subtract the overlapping part {u + ln, un - ln} */
++      /* Warning! th may be 0, in which case the mpn_add_1 and mpn_sub_1
++         below (with size = th) mustn't be used. In such a case, the limb
++         (carry) will be 0, so that this is semantically a no-op, but if
++         mpn_add_1 and mpn_sub_1 are used, GMP (currently) still does a
++         non-atomic read/write in a place that is not always allocated,
++         with the possible consequences: a crash if the corresponding
++         address is not mapped, or (rather unlikely) memory corruption
++         if another process/thread writes at the same place; things may
++         be worse with future GMP versions. Hence the tests carry != 0. */
+       if (neg == 0)
+         {
+           if (ln > 0)
+             MPN_COPY (x, u, ln);
+           cy = mpn_add (x + ln, x + ln, xn, u + ln, un - ln);
+           /* add cu at x+un */
+-          cy += mpn_add_1 (x + un, x + un, th, cu);
++          if (cu != 0)
++            {
++              MPFR_ASSERTD (th != 0);
++              cy += mpn_add_1 (x + un, x + un, th, cu);
++            }
+         }
+       else /* negative case */
+         {
+           /* subtract {u+ln, un-ln} from {x+ln,un} */
+           cy = mpn_sub (x + ln, x + ln, xn, u + ln, un - ln);
+           /* carry cy is at x+un, like cu */
+-          cy = mpn_sub_1 (x + un, x + un, th, cy + cu); /* n - un = th */
++          if (cy + cu != 0)
++            {
++              MPFR_ASSERTD (th != 0);
++              cy = mpn_sub_1 (x + un, x + un, th, cy + cu); /* n - un = th */
++            }
+           /* cy cannot be zero, since the most significant bit of Xh is 1,
+              and the correction is bounded by 2^{-h+3} */
+           MPFR_ASSERTD(cy == 0);
+--- a/version.c
++++ b/version.c
+@@ -25,5 +25,5 @@
+ const char *
+ mpfr_get_version (void)
+ {
+-  return "3.0.1-p1";
++  return "3.0.1-p2";
+ }

@@ -1,0 +1,111 @@
+# C library options
+
+menu "C-library"
+
+source "config/gen/libc.in"
+
+config LIBC_SUPPORT_THREADS_ANY
+    bool
+
+config LIBC_SUPPORT_THREADS_NATIVE
+    bool
+    select LIBC_SUPPORT_THREADS_ANY
+
+config LIBC_SUPPORT_THREADS_LT
+    bool
+    select LIBC_SUPPORT_THREADS_ANY
+
+config LIBC_SUPPORT_THREADS_POSIX
+    bool
+    select LIBC_SUPPORT_THREADS_ANY
+
+config LIBC_SUPPORT_THREADS_NONE
+    bool
+
+config LIBC_PROVIDES_CXA_ATEXIT
+    bool
+
+# C libraries should provide other values
+config THREADS
+    string
+    default "none" if THREADS_NONE
+
+if ! LIBC_NONE
+
+comment "Common C library options"
+
+choice
+    bool
+    prompt "Threading implementation to use:"
+    default THREADS_NATIVE         if LIBC_SUPPORT_THREADS_NATIVE
+    default THREADS_LT             if LIBC_SUPPORT_THREADS_LT
+    default THREADS_POSIX          if LIBC_SUPPORT_THREADS_POSIX
+    default THREADS_NONE
+
+config THREADS_NATIVE
+    bool
+    prompt "native"
+    depends on LIBC_SUPPORT_THREADS_NATIVE
+    help
+      This selects the native threads implementation for the selected
+      system and C library.
+
+      For example, on Linux with glibc, this is NPTL; on Windows with
+      mingw, this is win32.
+
+config THREADS_LT
+    bool
+    prompt "linuxthreads"
+    depends on LIBC_SUPPORT_THREADS_LT
+
+config THREADS_POSIX
+    bool
+    prompt "posix"
+    depends on LIBC_SUPPORT_THREADS_POSIX
+
+config THREADS_NONE
+    bool
+    prompt "none"
+    depends on LIBC_SUPPORT_THREADS_NONE
+
+endchoice
+
+config CREATE_LDSO_CONF
+    bool "Create /etc/ld.so.conf file"
+    depends on SHARED_LIBS
+    default y if MULTILIB
+    help
+      Create /etc/ld.so.conf file in the sysroot directory for the
+      target.
+
+      Note that Buildroot errors out if it sees /etc/ld.so.conf.
+
+config LDSO_CONF_EXTRA_DIRS_ARRAY
+    string "Extra directories to add to /etc/ld.so.conf"
+    depends on CREATE_LDSO_CONF
+    help
+      Extra directories to include in /etc/ld.so.conf. The directories
+      will be augmented per compiler's multilib specification,
+      if applicable. For example, if the compiler's multilibs include
+      /lib and /lib64, and you specify /usr/local/lib here, ld.so.conf
+      will have both /usr/local/lib and /usr/local/lib64.
+
+config LIBC_XLDD
+    bool
+    prompt "Install a cross ldd-like helper"
+    depends on SHARED_LIBS
+    depends on ! BARE_METAL
+    default y
+    help
+      Say 'Y' here if you want to have a ldd-like helper that
+      you can run on your build system, and that will (try to)
+      resolve shared libraries dependencies as if run on the
+      target.
+      
+      Note that the cross-ldd helper is not a full replacement
+      for the native ldd. Please see the help, by running it
+      with '--help' for more explanations.
+
+endif # ! LIBC_NONE
+
+endmenu

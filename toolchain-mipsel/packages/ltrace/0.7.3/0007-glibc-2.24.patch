@@ -1,0 +1,31 @@
+---
+ sysdeps/linux-gnu/proc.c |   16 ++++++++++------
+ 1 file changed, 10 insertions(+), 6 deletions(-)
+
+--- a/sysdeps/linux-gnu/proc.c
++++ b/sysdeps/linux-gnu/proc.c
+@@ -240,14 +240,18 @@
+ 	size_t alloc = 0;
+ 
+ 	while (1) {
+-		struct dirent entry;
+ 		struct dirent *result;
+-		if (readdir_r(d, &entry, &result) != 0) {
+-			free(tasks);
+-			return -1;
+-		}
+-		if (result == NULL)
++
++		errno = 0;
++		result = readdir(d);
++		if (result == NULL) {
++			if (errno) {
++				free(tasks);
++				closedir(d);
++				return -1;
++			}
+ 			break;
++		}
+ 		if (result->d_type == DT_DIR && all_digits(result->d_name)) {
+ 			pid_t npid = atoi(result->d_name);
+ 			if (n >= alloc) {

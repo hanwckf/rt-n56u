@@ -1,0 +1,6 @@
+GNU (which is a recursive acronym for "GNU's Not Unix") provides GNU binutils,
+GNU C Compiler (gcc), GNU debugger (gdb) and many other utilities. GNU is
+considered the master source for these packages.
+
+You should select "GNU" here unless you definitely know that you need some version
+from another source.

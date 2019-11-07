@@ -1,0 +1,13 @@
+---
+ config/mt-d30v |    4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+--- a/config/mt-d30v
++++ b/config/mt-d30v
+@@ -1,4 +1,4 @@
+ # Build libraries optimizing for space, not speed.
+ # Turn off warnings about symbols named the same as registers
+- CFLAGS_FOR_TARGET = -g -Os -Wa,-C
+- CXXFLAGS_FOR_TARGET = -g -Os -Wa,-C
++ CFLAGS_FOR_TARGET += -g -Os -Wa,-C
++ CXXFLAGS_FOR_TARGET += -g -Os -Wa,-C

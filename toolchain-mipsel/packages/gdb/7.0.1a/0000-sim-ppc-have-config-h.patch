@@ -1,0 +1,186 @@
+Fix for canadian cross build of sim/ppc
+
+Orignal patch info see: http://sources.redhat.com/bugzilla/show_bug.cgi?id=9638
+
+---
+ sim/ppc/Makefile.in       |    6 +++---
+ sim/ppc/basics.h          |    2 ++
+ sim/ppc/debug.c           |    2 ++
+ sim/ppc/dgen.c            |    2 ++
+ sim/ppc/filter.c          |    2 ++
+ sim/ppc/filter_filename.c |    2 ++
+ sim/ppc/igen.c            |    2 ++
+ sim/ppc/inline.c          |    2 ++
+ sim/ppc/lf.c              |    2 ++
+ sim/ppc/misc.c            |    2 ++
+ sim/ppc/misc.h            |    2 ++
+ sim/ppc/sim-endian.c      |    2 ++
+ sim/ppc/table.c           |    2 ++
+ 13 files changed, 27 insertions(+), 3 deletions(-)
+
+--- a/sim/ppc/Makefile.in
++++ b/sim/ppc/Makefile.in
+@@ -62,7 +62,7 @@
+ AR = @AR@
+ AR_FLAGS = rc
+ CC = @CC@
+-CFLAGS = @CFLAGS@
++CFLAGS = @CFLAGS@ -DHAVE_CONFIG_H
+ CC_FOR_BUILD = @CC_FOR_BUILD@
+ CFLAGS_FOR_BUILD = @CFLAGS_FOR_BUILD@
+ BISON = bison
+@@ -116,8 +116,8 @@
+   $(DEVZERO_CFLAGS)
+ SIM_FPU_CFLAGS = @sim_fpu_cflags@
+ 
+-STD_CFLAGS	= $(CFLAGS) $(INLINE_CFLAGS) $(CONFIG_CFLAGS) $(WARNING_CFLAGS) $(SIM_CFLAGS) $(HDEFINES) $(TDEFINES) $(INCLUDES) $(INTL_CFLAGS) $(SIM_FPU_CFLAGS)
+-NOWARN_CFLAGS	= $(CFLAGS) $(INLINE_CFLAGS) $(CONFIG_CFLAGS) $(SIM_CFLAGS) $(HDEFINES) $(TDEFINES) $(INCLUDES)  $(SIM_FPU_CFLAGS)
++STD_CFLAGS	= $(CFLAGS) -DHAVE_CONFIG_H $(INLINE_CFLAGS) $(CONFIG_CFLAGS) $(WARNING_CFLAGS) $(SIM_CFLAGS) $(HDEFINES) $(TDEFINES) $(INCLUDES) $(INTL_CFLAGS) $(SIM_FPU_CFLAGS)
++NOWARN_CFLAGS	= $(CFLAGS) -DHAVE_CONFIG_H $(INLINE_CFLAGS) $(CONFIG_CFLAGS) $(SIM_CFLAGS) $(HDEFINES) $(TDEFINES) $(INCLUDES)  $(SIM_FPU_CFLAGS)
+ BUILD_CFLAGS	= $(CFLAGS_FOR_BUILD) $(INCLUDES) $(WARNING_CFLAGS)
+ 
+ BUILD_LDFLAGS	=
+--- a/sim/ppc/basics.h
++++ b/sim/ppc/basics.h
+@@ -86,7 +86,9 @@
+ 
+ /* Basic configuration */
+ 
++#ifdef HAVE_CONFIG_H
+ #include "config.h"
++#endif
+ #include "ppc-config.h"
+ #include "inline.h"
+ 
+--- a/sim/ppc/debug.c
++++ b/sim/ppc/debug.c
+@@ -22,7 +22,9 @@
+ #ifndef _DEBUG_C_
+ #define _DEBUG_C_
+ 
++#ifdef HAVE_CONFIG_H
+ #include "config.h"
++#endif
+ #include "basics.h"
+ 
+ #ifdef HAVE_STDLIB_H
+--- a/sim/ppc/dgen.c
++++ b/sim/ppc/dgen.c
+@@ -27,7 +27,9 @@
+ #include <ctype.h>
+ #include <stdarg.h>
+ 
++#ifdef HAVE_CONFIG_H
+ #include "config.h"
++#endif
+ #include "misc.h"
+ #include "lf.h"
+ #include "table.h"
+--- a/sim/ppc/filter.c
++++ b/sim/ppc/filter.c
+@@ -21,7 +21,9 @@
+ 
+ #include <stdio.h>
+ 
++#ifdef HAVE_CONFIG_H
+ #include "config.h"
++#endif
+ 
+ #ifdef HAVE_STRING_H
+ #include <string.h>
+--- a/sim/ppc/filter_filename.c
++++ b/sim/ppc/filter_filename.c
+@@ -18,7 +18,9 @@
+  
+     */
+ 
++#ifdef HAVE_CONFIG_H
+ #include "config.h"
++#endif
+ #include "ppc-config.h"
+ #include "filter_filename.h"
+ 
+--- a/sim/ppc/igen.c
++++ b/sim/ppc/igen.c
+@@ -25,7 +25,9 @@
+ #include "misc.h"
+ #include "lf.h"
+ #include "table.h"
++#ifdef HAVE_CONFIG_H
+ #include "config.h"
++#endif
+ 
+ #include "filter.h"
+ 
+--- a/sim/ppc/inline.c
++++ b/sim/ppc/inline.c
+@@ -22,7 +22,9 @@
+ #ifndef _INLINE_C_
+ #define _INLINE_C_
+ 
++#ifdef HAVE_CONFIG_H
+ #include "config.h"
++#endif
+ #include "ppc-config.h"
+ 
+ #include "inline.h"
+--- a/sim/ppc/lf.c
++++ b/sim/ppc/lf.c
+@@ -23,7 +23,9 @@
+ #include <stdarg.h>
+ #include <ctype.h>
+ 
++#ifdef HAVE_CONFIG_H
+ #include "config.h"
++#endif
+ #include "misc.h"
+ #include "lf.h"
+ 
+--- a/sim/ppc/misc.c
++++ b/sim/ppc/misc.c
+@@ -23,7 +23,9 @@
+ #include <stdarg.h>
+ #include <ctype.h>
+ 
++#ifdef HAVE_CONFIG_H
+ #include "config.h"
++#endif
+ #include "misc.h"
+ 
+ #ifdef HAVE_STDLIB_H
+--- a/sim/ppc/misc.h
++++ b/sim/ppc/misc.h
+@@ -21,7 +21,9 @@
+ 
+ /* Frustrating header junk */
+ 
++#ifdef HAVE_CONFIG_H
+ #include "config.h"
++#endif
+ 
+ #include <stdio.h>
+ #include <ctype.h>
+--- a/sim/ppc/sim-endian.c
++++ b/sim/ppc/sim-endian.c
+@@ -22,7 +22,9 @@
+ #ifndef _SIM_ENDIAN_C_
+ #define _SIM_ENDIAN_C_
+ 
++#ifdef HAVE_CONFIG_H
+ #include "config.h"
++#endif
+ #include "basics.h"
+ 
+ 
+--- a/sim/ppc/table.c
++++ b/sim/ppc/table.c
+@@ -25,7 +25,9 @@
+ #include <fcntl.h>
+ #include <ctype.h>
+ 
++#ifdef HAVE_CONFIG_H
+ #include "config.h"
++#endif
+ #include "misc.h"
+ #include "lf.h"
+ #include "table.h"

@@ -1,0 +1,33 @@
+From: Juan Cespedes <cespedes@debian.org>
+Description: Fix compile warning
+Last-Update: 2014-01-02
+Forwarded: not-needed
+
+
+---
+ lens_default.c |    2 +-
+ value.c        |    2 +-
+ 2 files changed, 2 insertions(+), 2 deletions(-)
+
+--- a/value.c
++++ b/value.c
+@@ -284,7 +284,7 @@
+ 
+ 	/* We need "long" to be long enough to hold platform
+ 	 * pointers.  */
+-	typedef char assert__long_enough_long[-(sizeof(l) < sizeof(void *))];
++	(void)sizeof(char[1 - 2*(sizeof(l) < sizeof(void *))]);
+ 
+ 	value_common_init(ret_val, valp->inferior, valp,
+ 			  valp->type->u.ptr_info.info, 0);
+--- a/lens_default.c
++++ b/lens_default.c
+@@ -344,7 +344,7 @@
+ {
+ 	/* We need "long" to be long enough to cover the whole address
+ 	 * space.  */
+-	typedef char assert__long_enough_long[-(sizeof(long) < sizeof(void *))];
++	(void)sizeof(char[1 - 2*(sizeof(long) < sizeof(void *))]);
+ 	long l;
+ 	if (expr_eval_word(length, value, arguments, &l) < 0)
+ 		return -1;

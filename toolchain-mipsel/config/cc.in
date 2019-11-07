@@ -1,0 +1,131 @@
+# Compiler options
+
+menu "C compiler"
+
+config CC_CORE_PASSES_NEEDED
+    bool
+    select CC_CORE_PASS_1_NEEDED
+    select CC_CORE_PASS_2_NEEDED
+
+config CC_CORE_PASS_1_NEEDED
+    bool
+
+config CC_CORE_PASS_2_NEEDED
+    bool
+
+config CC_SUPPORT_CXX
+    bool
+
+config CC_SUPPORT_FORTRAN
+    bool
+
+config CC_SUPPORT_JAVA
+    bool
+
+config CC_SUPPORT_ADA
+    bool
+
+config CC_SUPPORT_OBJC
+    bool
+
+config CC_SUPPORT_OBJCXX
+    bool
+
+config CC_SUPPORT_GOLANG
+    bool
+
+source "config/gen/cc.in"
+
+comment "Additional supported languages:"
+
+config CC_LANG_CXX
+    bool
+    prompt "C++"
+    depends on CC_SUPPORT_CXX
+    help
+      Enable building a C++ compiler.
+
+      Only select this if you know that your specific version of the
+      compiler supports this language.
+
+config CC_LANG_FORTRAN
+    bool
+    prompt "Fortran"
+    depends on CC_SUPPORT_FORTRAN
+    help
+      Enable building a FORTRAN compiler.
+
+      Only select this if you know that your specific version of the
+      compiler supports this language.
+
+if ! BARE_METAL
+
+config CC_LANG_JAVA
+    bool
+    prompt "Java"
+    depends on CC_SUPPORT_JAVA
+    help
+      Enable building a Java compiler.
+
+      Only select this if you know that your specific version of the
+      compiler supports this language.
+
+config CC_LANG_ADA
+    bool
+    prompt "ADA (EXPERIMENTAL)"
+    depends on CC_SUPPORT_ADA
+    depends on EXPERIMENTAL
+    help
+      Enable building an Ada compiler.
+
+      Only select this if you know that your specific version of the
+      compiler supports this language.
+
+config CC_LANG_OBJC
+    bool
+    prompt "Objective-C (EXPERIMENTAL)"
+    depends on CC_SUPPORT_OBJC
+    depends on EXPERIMENTAL
+    help
+      Enable building an Objective C compiler.
+
+      Only select this if you know that your specific version of the
+      compiler supports this language.
+
+config CC_LANG_OBJCXX
+    bool
+    prompt "Objective-C++ (EXPERIMENTAL)"
+    depends on EXPERIMENTAL
+    depends on CC_SUPPORT_OBJCXX
+    help
+      Enable building an Objective C++ compiler.
+
+      Only select this if you know that your specific version of the
+      compiler supports this language.
+
+config CC_LANG_GOLANG
+    bool
+    prompt "Go (EXPERIMENTAL)"
+    depends on EXPERIMENTAL
+    depends on CC_SUPPORT_GOLANG
+    help
+      Enable building a Go compiler.
+
+      Only select this if you know that your specific version of the
+      compiler supports this language.
+
+endif # ! BARE_METAL
+
+config CC_LANG_OTHERS
+    string
+    prompt "Other languages (EXPERIMENTAL)"
+    default ""
+    depends on EXPERIMENTAL
+    help
+      Enter here a comma-separated list of languages that you know your compiler
+      supports, besides those listed above.
+
+      Eg. gcc-4.1+ has a toy programming language, treelang. As it is not useful
+      in real life, it is not available in the selection above.
+
+endmenu

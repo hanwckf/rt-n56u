@@ -1,0 +1,7 @@
+master='glibc'
+origin='Linaro'
+repository='git https://git.linaro.org/toolchain/glibc.git'
+relevantpattern='*|-'
+mirrors='$(CT_Mirrors Linaro glibc ${CT_GLIBC_LINARO_VERSION})'
+experimental='yes'
+archive_formats='.tar.xz'

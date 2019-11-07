@@ -1,0 +1,149 @@
+# Companion libraries config options
+# Those libraries are required for different versions of gcc,
+# and can be used by binutils and gdb (maybe others as well).
+
+menu "Companion libraries"
+
+config COMPLIBS_CHECK
+    bool
+    prompt "Check the companion libraries builds (!!! READ HELP!!!)"
+    help
+      It is highly recommended to check the newly built companion libraries.
+      Unfortunately, this is a very intensive task, and takes a loooong time.
+      
+      Checking the newly built companion libraries is thus disabled by default,
+      but it is suggested that you check them at least once on your machine,
+      and if they work, disable the check on subsequent builds.
+      
+      If you suspect that one (or more) of your companion libraries is the
+      cause for incorrectly generated code, you should answer 'Y' here.
+      Note however that this will take a really long time.
+
+source "config/gen/comp_libs.in"
+
+# FIXME this needs to have a list of options
+# [ ] libfoo for build
+# [ ] libfoo for host (if canadian)
+# [ ] libfoo for target
+#     libfoo options -->
+#
+# Then have other packages *set default* for build/host
+# (but not select, so that user can utilize build's or host's system library)
+# and *select* the target (so that we build it if we must, and let user optionally
+# build it if he wants). Upon any of these options LIBFOO_{BUILD,HOST,TARGET}
+# being set, set LIBFOO_ENABLED and use that as a qualifier for submenu.
+# For now, LIBFOO_NEEDED symbol may or may not user-selectable, and COMP_LIBS_LIBFOO
+# determines whether it is actually built. LIBFOO_NEEDED is currently for build/host
+# and LIBFOO_TARGET (if exists) is for target.
+
+config LIBICONV_NEEDED
+    bool "Build local libiconv"
+    default y if CANADIAN || CROSS_NATIVE
+    select COMP_LIBS_LIBICONV
+
+config GETTEXT_NEEDED
+    bool "Build local gettext"
+    default y if CANADIAN || CROSS_NATIVE
+    select LIBICONV_NEEDED
+    select NCURSES_NEEDED
+    select COMP_LIBS_GETTEXT
+
+config GMP_NEEDED
+    def_bool y
+    select COMP_LIBS_GMP
+
+config MPFR_NEEDED
+    def_bool y
+    select GMP_NEEDED
+    select COMP_LIBS_MPFR
+
+config ISL_NEEDED
+    bool
+    select GMP_NEEDED
+    select COMP_LIBS_ISL
+
+config CLOOG_NEEDED
+    bool
+    select GMP_NEEDED
+    select COMP_LIBS_CLOOG
+
+config MPC_NEEDED
+    def_bool y
+    select GMP_NEEDED
+    select MPFR_NEEDED
+    select COMP_LIBS_MPC
+
+config LIBELF_NEEDED
+    bool
+    select COMP_LIBS_LIBELF
+
+config LIBELF_TARGET
+    bool
+    select COMP_LIBS_LIBELF
+
+config EXPAT_NEEDED
+    bool
+    select COMP_LIBS_EXPAT
+
+config EXPAT_TARGET
+    bool
+    select COMP_LIBS_EXPAT
+
+config NCURSES_NEEDED
+    bool
+    select COMP_LIBS_NCURSES
+
+config NCURSES_TARGET
+    bool
+    select COMP_LIBS_NCURSES
+
+config ZLIB_NEEDED
+    bool "Build local zlib"
+    select COMP_LIBS_ZLIB
+
+# FIXME remove these legacy knobs
+config LIBICONV
+    def_bool y
+    depends on LIBICONV_NEEDED
+
+config GETTEXT
+    def_bool y
+    depends on GETTEXT_NEEDED
+
+config GMP
+    def_bool y
+    depends on GMP_NEEDED
+
+config MPFR
+    def_bool y
+    depends on MPFR_NEEDED
+
+config ISL
+    def_bool y
+    depends on ISL_NEEDED
+
+config CLOOG
+    def_bool y
+    depends on CLOOG_NEEDED
+
+config MPC
+    def_bool y
+    depends on MPC_NEEDED
+
+config LIBELF
+    def_bool y
+    depends on LIBELF_NEEDED
+
+config EXPAT
+    def_bool y
+    depends on EXPAT_NEEDED
+
+config NCURSES
+    def_bool y
+    depends on NCURSES_NEEDED
+
+config ZLIB
+    def_bool y
+    depends on ZLIB_NEEDED
+
+endmenu

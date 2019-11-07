@@ -1,0 +1,557 @@
+# ncurses 6.0 - patch 20150926 - Thomas E. Dickey
+#
+# ------------------------------------------------------------------------------
+#
+# Ncurses 6.0 is at
+# 	ftp.gnu.org:/pub/gnu
+#
+# Patches for ncurses 6.0 can be found at
+# 	ftp://invisible-island.net/ncurses/6.0
+#	http://invisible-mirror.net/archives/ncurses/6.0 
+#
+# ------------------------------------------------------------------------------
+# ftp://invisible-island.net/ncurses/6.0/ncurses-6.0-20150926.patch.gz
+# patch by Thomas E. Dickey <dickey@invisible-island.net>
+# created  Sun Sep 27 01:08:16 UTC 2015
+# ------------------------------------------------------------------------------
+# INSTALL                          |    5 ++++-
+# NEWS                             |    8 +++++++-
+# VERSION                          |    2 +-
+# aclocal.m4                       |    6 +++---
+# configure                        |    2 +-
+# dist.mk                          |    4 ++--
+# doc/html/man/captoinfo.1m.html   |    2 +-
+# doc/html/man/clear.1.html        |    2 +-
+# doc/html/man/curs_attr.3x.html   |    2 +-
+# doc/html/man/form.3x.html        |    2 +-
+# doc/html/man/infocmp.1m.html     |    2 +-
+# doc/html/man/infotocap.1m.html   |    2 +-
+# doc/html/man/menu.3x.html        |    2 +-
+# doc/html/man/ncurses.3x.html     |    2 +-
+# doc/html/man/panel.3x.html       |    2 +-
+# doc/html/man/resizeterm.3x.html  |   17 ++++++++++++++++-
+# doc/html/man/tabs.1.html         |    2 +-
+# doc/html/man/terminfo.5.html     |    2 +-
+# doc/html/man/tic.1m.html         |    2 +-
+# doc/html/man/toe.1m.html         |    2 +-
+# doc/html/man/tput.1.html         |    2 +-
+# doc/html/man/tset.1.html         |    2 +-
+# doc/html/man/wresize.3x.html     |   13 +++++++++++--
+# man/resizeterm.3x                |   15 ++++++++++++++-
+# man/wresize.3x                   |   10 ++++++++--
+# package/debian-mingw/changelog   |    4 ++--
+# package/debian-mingw64/changelog |    4 ++--
+# package/debian/changelog         |    4 ++--
+# package/debian/rules             |    1 +
+# package/mingw-ncurses.nsi        |    4 ++--
+# package/mingw-ncurses.spec       |    2 +-
+# package/ncurses.spec             |    2 +-
+# 32 files changed, 93 insertions(+), 40 deletions(-)
+# ------------------------------------------------------------------------------
+--- a/INSTALL
++++ b/INSTALL
+@@ -25,7 +25,7 @@
+ -- sale, use or other dealings in this Software without prior written        --
+ -- authorization.                                                            --
+ -------------------------------------------------------------------------------
+--- $Id: INSTALL,v 1.192 2015/08/15 20:11:48 tom Exp $
++-- $Id: INSTALL,v 1.193 2015/09/26 21:34:14 tom Exp $
+ ---------------------------------------------------------------------
+              How to install Ncurses/Terminfo on your system
+ ---------------------------------------------------------------------
+@@ -1093,6 +1093,9 @@
+ 	Specify a search-list of terminfo directories which will be compiled
+ 	into the ncurses library (default: DATADIR/terminfo)
+ 
++	This is a colon-separated list, like the TERMINFO_DIRS environment
++	variable.
++
+     --with-termlib[=XXX]
+ 	When building the ncurses library, organize this as two parts:  the
+ 	curses library (libncurses) and the low-level terminfo library
+--- a/NEWS
++++ b/NEWS
+@@ -25,7 +25,7 @@
+ -- sale, use or other dealings in this Software without prior written        --
+ -- authorization.                                                            --
+ -------------------------------------------------------------------------------
+--- $Id: NEWS,v 1.2496 2015/09/19 23:04:21 tom Exp $
++-- $Id: NEWS,v 1.2499 2015/09/26 21:58:14 tom Exp $
+ -------------------------------------------------------------------------------
+ 
+ This is a log of changes that ncurses has gone through since Zeyd started
+@@ -45,6 +45,12 @@
+ Changes through 1.9.9e did not credit all contributions;
+ it is not possible to add this information.
+ 
++20150926
++	+ change makefile rule for removing resulting.map to distclean rather
++	  than clean.
++	+ add /lib/terminfo to terminfo-dirs in ".deb" test-package.
++	+ add note on portability of resizeterm and wresize to manual pages.
++
+ 20150919
+ 	+ clarify in resizeterm.3x how KEY_RESIZE is pushed onto the input
+ 	  stream.
+--- a/VERSION
++++ b/VERSION
+@@ -1 +1 @@
+-5:0:9	6.0	20150919
++5:0:9	6.0	20150926
+--- a/aclocal.m4
++++ b/aclocal.m4
+@@ -28,7 +28,7 @@
+ dnl
+ dnl Author: Thomas E. Dickey 1995-on
+ dnl
+-dnl $Id: aclocal.m4,v 1.767 2015/09/12 20:00:59 tom Exp $
++dnl $Id: aclocal.m4,v 1.768 2015/09/26 21:56:12 tom Exp $
+ dnl Macros used in NCURSES auto-configuration script.
+ dnl
+ dnl These macros are maintained separately from NCURSES.  The copyright on
+@@ -3228,7 +3228,7 @@
+ 	AC_SUBST(LIB_PREFIX)
+ ])dnl
+ dnl ---------------------------------------------------------------------------
+-dnl CF_LIB_RULES version: 83 updated: 2015/08/05 20:44:28
++dnl CF_LIB_RULES version: 84 updated: 2015/09/26 17:54:46
+ dnl ------------
+ dnl Append definitions and rules for the given models to the subdirectory
+ dnl Makefiles, and the recursion rule for the top-level Makefile.  If the
+@@ -3301,7 +3301,7 @@
+ resulting.map: $UNALTERED_SYMS
+ 	sed $cf_sed_options < $UNALTERED_SYMS >\[$]@
+ 
+-clean::
++distclean::
+ 	rm -f resulting.map
+ CF_EOF
+ 		fi
+--- a/configure
++++ b/configure
+@@ -23555,7 +23555,7 @@
+ resulting.map: $UNALTERED_SYMS
+ 	sed $cf_sed_options < $UNALTERED_SYMS >\$@
+ 
+-clean::
++distclean::
+ 	rm -f resulting.map
+ CF_EOF
+ 		fi
+--- a/dist.mk
++++ b/dist.mk
+@@ -25,7 +25,7 @@
+ # use or other dealings in this Software without prior written               #
+ # authorization.                                                             #
+ ##############################################################################
+-# $Id: dist.mk,v 1.1071 2015/09/19 19:40:14 tom Exp $
++# $Id: dist.mk,v 1.1072 2015/09/26 18:50:05 tom Exp $
+ # Makefile for creating ncurses distributions.
+ #
+ # This only needs to be used directly as a makefile by developers, but
+@@ -37,7 +37,7 @@
+ # These define the major/minor/patch versions of ncurses.
+ NCURSES_MAJOR = 6
+ NCURSES_MINOR = 0
+-NCURSES_PATCH = 20150919
++NCURSES_PATCH = 20150926
+ 
+ # We don't append the patch to the version, since this only applies to releases
+ VERSION = $(NCURSES_MAJOR).$(NCURSES_MINOR)
+--- a/doc/html/man/captoinfo.1m.html
++++ b/doc/html/man/captoinfo.1m.html
+@@ -205,7 +205,7 @@
+ <H2><a name="h2-SEE-ALSO">SEE ALSO</a></H2><PRE>
+        <STRONG><A HREF="infocmp.1m.html">infocmp(1m)</A></STRONG>, <STRONG><A HREF="ncurses.3x.html">curses(3x)</A></STRONG>, <STRONG><A HREF="terminfo.5.html">terminfo(5)</A></STRONG>
+ 
+-       This describes <STRONG>ncurses</STRONG> version 6.0 (patch 20150919).
++       This describes <STRONG>ncurses</STRONG> version 6.0 (patch 20150926).
+ 
+ 
+ </PRE>
+--- a/doc/html/man/clear.1.html
++++ b/doc/html/man/clear.1.html
+@@ -71,7 +71,7 @@
+ <H2><a name="h2-SEE-ALSO">SEE ALSO</a></H2><PRE>
+        <STRONG><A HREF="tput.1.html">tput(1)</A></STRONG>, <STRONG><A HREF="terminfo.5.html">terminfo(5)</A></STRONG>
+ 
+-       This describes <STRONG>ncurses</STRONG> version 6.0 (patch 20150919).
++       This describes <STRONG>ncurses</STRONG> version 6.0 (patch 20150926).
+ 
+ 
+ 
+--- a/doc/html/man/curs_attr.3x.html
++++ b/doc/html/man/curs_attr.3x.html
+@@ -27,7 +27,7 @@
+   * sale, use or other dealings in this Software without prior written       *
+   * authorization.                                                           *
+   ****************************************************************************
+-  * @Id: curs_attr.3x,v 1.40 2015/07/20 23:35:38 tom Exp @
++  * @Id: curs_attr.3x,v 1.41 2015/09/05 21:13:25 tom Exp @
+ -->
+ <!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01//EN">
+ <HTML>
+--- a/doc/html/man/form.3x.html
++++ b/doc/html/man/form.3x.html
+@@ -245,7 +245,7 @@
+        <STRONG><A HREF="ncurses.3x.html">curses(3x)</A></STRONG> and related pages whose names begin "form_" for
+        detailed descriptions of the entry points.
+ 
+-       This describes <STRONG>ncurses</STRONG> version 6.0 (patch 20150919).
++       This describes <STRONG>ncurses</STRONG> version 6.0 (patch 20150926).
+ 
+ 
+ 
+--- a/doc/html/man/infocmp.1m.html
++++ b/doc/html/man/infocmp.1m.html
+@@ -487,7 +487,7 @@
+ 
+        http://invisible-island.net/ncurses/tctest.html
+ 
+-       This describes <STRONG>ncurses</STRONG> version 6.0 (patch 20150919).
++       This describes <STRONG>ncurses</STRONG> version 6.0 (patch 20150926).
+ 
+ 
+ </PRE>
+--- a/doc/html/man/infotocap.1m.html
++++ b/doc/html/man/infotocap.1m.html
+@@ -94,7 +94,7 @@
+ <H2><a name="h2-SEE-ALSO">SEE ALSO</a></H2><PRE>
+        <STRONG><A HREF="ncurses.3x.html">curses(3x)</A></STRONG>, <STRONG><A HREF="tic.1m.html">tic(1m)</A></STRONG>, <STRONG><A HREF="infocmp.1m.html">infocmp(1m)</A></STRONG>, <STRONG><A HREF="terminfo.5.html">terminfo(5)</A></STRONG>
+ 
+-       This describes <STRONG>ncurses</STRONG> version 6.0 (patch 20150919).
++       This describes <STRONG>ncurses</STRONG> version 6.0 (patch 20150926).
+ 
+ 
+ </PRE>
+--- a/doc/html/man/menu.3x.html
++++ b/doc/html/man/menu.3x.html
+@@ -227,7 +227,7 @@
+        <STRONG><A HREF="ncurses.3x.html">curses(3x)</A></STRONG> and related pages whose names begin "menu_" for
+        detailed descriptions of the entry points.
+ 
+-       This describes <STRONG>ncurses</STRONG> version 6.0 (patch 20150919).
++       This describes <STRONG>ncurses</STRONG> version 6.0 (patch 20150926).
+ 
+ 
+ 
+--- a/doc/html/man/ncurses.3x.html
++++ b/doc/html/man/ncurses.3x.html
+@@ -63,7 +63,7 @@
+        sonable optimization.  This implementation is "new curses"
+        (ncurses) and is the approved replacement for 4.4BSD clas-
+        sic  curses,  which has been discontinued.  This describes
+-       <STRONG>ncurses</STRONG> version 6.0 (patch 20150919).
++       <STRONG>ncurses</STRONG> version 6.0 (patch 20150926).
+ 
+        The <STRONG>ncurses</STRONG> library emulates the curses library of  System
+        V  Release  4  UNIX,  and  XPG4 (X/Open Portability Guide)
+--- a/doc/html/man/panel.3x.html
++++ b/doc/html/man/panel.3x.html
+@@ -218,7 +218,7 @@
+ <H2><a name="h2-SEE-ALSO">SEE ALSO</a></H2><PRE>
+        <STRONG><A HREF="ncurses.3x.html">curses(3x)</A></STRONG>, <STRONG><A HREF="curs_variables.3x.html">curs_variables(3x)</A></STRONG>,
+ 
+-       This describes <STRONG>ncurses</STRONG> version 6.0 (patch 20150919).
++       This describes <STRONG>ncurses</STRONG> version 6.0 (patch 20150926).
+ 
+ 
+ </PRE>
+--- a/doc/html/man/resizeterm.3x.html
++++ b/doc/html/man/resizeterm.3x.html
+@@ -27,7 +27,7 @@
+   * authorization.                                                           *
+   ****************************************************************************
+   * Author: Thomas E. Dickey 1996-on
+-  * @Id: resizeterm.3x,v 1.20 2015/09/19 22:53:26 tom Exp @
++  * @Id: resizeterm.3x,v 1.21 2015/09/26 19:55:32 tom Exp @
+ -->
+ <!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01//EN">
+ <HTML>
+@@ -144,6 +144,20 @@
+ 
+ 
+ </PRE>
++<H2><a name="h2-PORTABILITY">PORTABILITY</a></H2><PRE>
++       It is possible to resize the screen with SVr4 curses, by
++
++       <STRONG>o</STRONG>   exiting curses with <STRONG><A HREF="endwin.3x.html">endwin(3x)</A></STRONG> and
++
++       <STRONG>o</STRONG>   resuming using <STRONG><A HREF="refresh.3x.html">refresh(3x)</A></STRONG>.
++
++       Doing that clears the screen and is visually distracting.
++
++       This extension of ncurses was introduced in mid-1995.   It
++       was adopted in NetBSD curses (2001) and PDCurses (2003).
++
++
++</PRE>
+ <H2><a name="h2-SEE-ALSO">SEE ALSO</a></H2><PRE>
+        <STRONG><A HREF="curs_getch.3x.html">curs_getch(3x)</A></STRONG>, <STRONG><A HREF="curs_variables.3x.html">curs_variables(3x)</A></STRONG>, <STRONG><A HREF="wresize.3x.html">wresize(3x)</A></STRONG>.
+ 
+@@ -170,6 +184,7 @@
+ </li>
+ <li><a href="#h2-RETURN-VALUE">RETURN VALUE</a></li>
+ <li><a href="#h2-NOTES">NOTES</a></li>
++<li><a href="#h2-PORTABILITY">PORTABILITY</a></li>
+ <li><a href="#h2-SEE-ALSO">SEE ALSO</a></li>
+ <li><a href="#h2-AUTHOR">AUTHOR</a></li>
+ </ul>
+--- a/doc/html/man/tabs.1.html
++++ b/doc/html/man/tabs.1.html
+@@ -168,7 +168,7 @@
+ <H2><a name="h2-SEE-ALSO">SEE ALSO</a></H2><PRE>
+        <STRONG><A HREF="tset.1.html">tset(1)</A></STRONG>, <STRONG><A HREF="infocmp.1m.html">infocmp(1m)</A></STRONG>, <STRONG><A HREF="ncurses.3x.html">curses(3x)</A></STRONG>, <STRONG><A HREF="terminfo.5.html">terminfo(5)</A></STRONG>.
+ 
+-       This describes <STRONG>ncurses</STRONG> version 6.0 (patch 20150919).
++       This describes <STRONG>ncurses</STRONG> version 6.0 (patch 20150926).
+ 
+ 
+ 
+--- a/doc/html/man/terminfo.5.html
++++ b/doc/html/man/terminfo.5.html
+@@ -78,7 +78,7 @@
+        nals by giving a set of capabilities which they  have,  by
+        specifying how to perform screen operations, and by speci-
+        fying padding requirements and  initialization  sequences.
+-       This describes <STRONG>ncurses</STRONG> version 6.0 (patch 20150919).
++       This describes <STRONG>ncurses</STRONG> version 6.0 (patch 20150926).
+ 
+        Entries in <EM>terminfo</EM> consist of a sequence of `,' separated
+        fields (embedded commas may be escaped with a backslash or
+--- a/doc/html/man/tic.1m.html
++++ b/doc/html/man/tic.1m.html
+@@ -408,7 +408,7 @@
+        <STRONG><A HREF="infocmp.1m.html">infocmp(1m)</A></STRONG>,    <STRONG><A HREF="captoinfo.1m.html">captoinfo(1m)</A></STRONG>,   <STRONG><A HREF="infotocap.1m.html">infotocap(1m)</A></STRONG>,   <STRONG><A HREF="toe.1m.html">toe(1m)</A></STRONG>,
+        <STRONG><A HREF="ncurses.3x.html">curses(3x)</A></STRONG>, <STRONG><A HREF="term.5.html">term(5)</A></STRONG>.  <STRONG><A HREF="terminfo.5.html">terminfo(5)</A></STRONG>.
+ 
+-       This describes <STRONG>ncurses</STRONG> version 6.0 (patch 20150919).
++       This describes <STRONG>ncurses</STRONG> version 6.0 (patch 20150926).
+ 
+ 
+ </PRE>
+--- a/doc/html/man/toe.1m.html
++++ b/doc/html/man/toe.1m.html
+@@ -122,7 +122,7 @@
+        <STRONG><A HREF="tic.1m.html">tic(1m)</A></STRONG>,   <STRONG><A HREF="infocmp.1m.html">infocmp(1m)</A></STRONG>,   <STRONG><A HREF="captoinfo.1m.html">captoinfo(1m)</A></STRONG>,    <STRONG><A HREF="infotocap.1m.html">infotocap(1m)</A></STRONG>,
+        <STRONG><A HREF="ncurses.3x.html">curses(3x)</A></STRONG>, <STRONG><A HREF="terminfo.5.html">terminfo(5)</A></STRONG>.
+ 
+-       This describes <STRONG>ncurses</STRONG> version 6.0 (patch 20150919).
++       This describes <STRONG>ncurses</STRONG> version 6.0 (patch 20150926).
+ 
+ 
+ 
+--- a/doc/html/man/tput.1.html
++++ b/doc/html/man/tput.1.html
+@@ -338,7 +338,7 @@
+ <H2><a name="h2-SEE-ALSO">SEE ALSO</a></H2><PRE>
+        <STRONG><A HREF="clear.1.html">clear(1)</A></STRONG>, <STRONG>stty(1)</STRONG>, <STRONG><A HREF="tabs.1.html">tabs(1)</A></STRONG>, <STRONG><A HREF="terminfo.5.html">terminfo(5)</A></STRONG>, <STRONG><A HREF="curs_termcap.3x.html">curs_termcap(3x)</A></STRONG>.
+ 
+-       This describes <STRONG>ncurses</STRONG> version 6.0 (patch 20150919).
++       This describes <STRONG>ncurses</STRONG> version 6.0 (patch 20150926).
+ 
+ 
+ 
+--- a/doc/html/man/tset.1.html
++++ b/doc/html/man/tset.1.html
+@@ -319,7 +319,7 @@
+        <STRONG>csh(1)</STRONG>,   <STRONG>sh(1)</STRONG>,   <STRONG>stty(1)</STRONG>,   <STRONG><A HREF="curs_terminfo.3x.html">curs_terminfo(3x)</A></STRONG>,   <STRONG>tty(4)</STRONG>,
+        <STRONG><A HREF="terminfo.5.html">terminfo(5)</A></STRONG>, <STRONG>ttys(5)</STRONG>, <STRONG>environ(7)</STRONG>
+ 
+-       This describes <STRONG>ncurses</STRONG> version 6.0 (patch 20150919).
++       This describes <STRONG>ncurses</STRONG> version 6.0 (patch 20150926).
+ 
+ 
+ 
+--- a/doc/html/man/wresize.3x.html
++++ b/doc/html/man/wresize.3x.html
+@@ -1,6 +1,6 @@
+ <!-- 
+   ****************************************************************************
+-  * Copyright (c) 1998-2006,2010 Free Software Foundation, Inc.              *
++  * Copyright (c) 1998-2010,2015 Free Software Foundation, Inc.              *
+   *                                                                          *
+   * Permission is hereby granted, free of charge, to any person obtaining a  *
+   * copy of this software and associated documentation files (the            *
+@@ -27,7 +27,7 @@
+   * authorization.                                                           *
+   ****************************************************************************
+   * Author: Thomas E. Dickey 1996
+-  * @Id: wresize.3x,v 1.13 2010/12/04 18:40:45 tom Exp @
++  * @Id: wresize.3x,v 1.14 2015/09/26 19:57:24 tom Exp @
+ -->
+ <!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01//EN">
+ <HTML>
+@@ -86,6 +86,14 @@
+ 
+ 
+ </PRE>
++<H2><a name="h2-PORTABILITY">PORTABILITY</a></H2><PRE>
++       It is not possible to resize windows with SVr4 curses.
++
++       This  extension of ncurses was introduced in mid-1995.  It
++       was adopted in NetBSD curses (2001) and PDCurses (2003).
++
++
++</PRE>
+ <H2><a name="h2-SEE-ALSO">SEE ALSO</a></H2><PRE>
+        <STRONG><A HREF="resizeterm.3x.html">resizeterm(3x)</A></STRONG>.
+ 
+@@ -106,6 +114,7 @@
+ <li><a href="#h2-DESCRIPTION">DESCRIPTION</a></li>
+ <li><a href="#h2-RETURN-VALUE">RETURN VALUE</a></li>
+ <li><a href="#h2-NOTES">NOTES</a></li>
++<li><a href="#h2-PORTABILITY">PORTABILITY</a></li>
+ <li><a href="#h2-SEE-ALSO">SEE ALSO</a></li>
+ <li><a href="#h2-AUTHOR">AUTHOR</a></li>
+ </ul>
+--- a/man/resizeterm.3x
++++ b/man/resizeterm.3x
+@@ -28,7 +28,7 @@
+ .\"
+ .\" Author: Thomas E. Dickey 1996-on
+ .\"
+-.\" $Id: resizeterm.3x,v 1.20 2015/09/19 22:53:26 tom Exp $
++.\" $Id: resizeterm.3x,v 1.21 2015/09/26 19:55:32 tom Exp $
+ .TH resizeterm 3X ""
+ .de bP
+ .IP \(bu 4
+@@ -108,6 +108,19 @@
+ the operating system.
+ Thus, even if a SIGWINCH is received,
+ no screen size change may be recorded.
++.SH PORTABILITY
++.PP
++It is possible to resize the screen with SVr4 curses,
++by
++.bP
++exiting curses with \fBendwin\fP(3X) and
++.bP
++resuming using \fBrefresh\fP(3X).
++.PP
++Doing that clears the screen and is visually distracting.
++.PP
++This extension of ncurses was introduced in mid-1995.
++It was adopted in NetBSD curses (2001) and PDCurses (2003).
+ .SH SEE ALSO
+ \fBcurs_getch\fR(3X),
+ \fBcurs_variables\fR(3X),
+--- a/man/wresize.3x
++++ b/man/wresize.3x
+@@ -1,5 +1,5 @@
+ .\"***************************************************************************
+-.\" Copyright (c) 1998-2006,2010 Free Software Foundation, Inc.              *
++.\" Copyright (c) 1998-2010,2015 Free Software Foundation, Inc.              *
+ .\"                                                                          *
+ .\" Permission is hereby granted, free of charge, to any person obtaining a  *
+ .\" copy of this software and associated documentation files (the            *
+@@ -28,7 +28,7 @@
+ .\"
+ .\" Author: Thomas E. Dickey 1996
+ .\"
+-.\" $Id: wresize.3x,v 1.13 2010/12/04 18:40:45 tom Exp $
++.\" $Id: wresize.3x,v 1.14 2015/09/26 19:57:24 tom Exp $
+ .TH wresize 3X ""
+ .SH NAME
+ \fBwresize\fR \- resize a curses window
+@@ -53,6 +53,12 @@
+ simplify the logic of \fBresizeterm\fR.
+ The caller must ensure that the window's dimensions fit within the
+ actual screen dimensions.
++.SH PORTABILITY
++.PP
++It is not possible to resize windows with SVr4 curses.
++.PP
++This extension of ncurses was introduced in mid-1995.
++It was adopted in NetBSD curses (2001) and PDCurses (2003).
+ .SH SEE ALSO
+ \fBresizeterm\fR(3X).
+ .SH AUTHOR
+--- a/package/debian-mingw/changelog
++++ b/package/debian-mingw/changelog
+@@ -1,8 +1,8 @@
+-ncurses6 (6.0+20150919) unstable; urgency=low
++ncurses6 (6.0+20150926) unstable; urgency=low
+ 
+   * latest weekly patch
+ 
+- -- Thomas E. Dickey <dickey@invisible-island.net>  Sat, 19 Sep 2015 15:40:14 -0400
++ -- Thomas E. Dickey <dickey@invisible-island.net>  Sat, 26 Sep 2015 14:50:05 -0400
+ 
+ ncurses6 (5.9-20131005) unstable; urgency=low
+ 
+--- a/package/debian-mingw64/changelog
++++ b/package/debian-mingw64/changelog
+@@ -1,8 +1,8 @@
+-ncurses6 (6.0+20150919) unstable; urgency=low
++ncurses6 (6.0+20150926) unstable; urgency=low
+ 
+   * latest weekly patch
+ 
+- -- Thomas E. Dickey <dickey@invisible-island.net>  Sat, 19 Sep 2015 15:40:14 -0400
++ -- Thomas E. Dickey <dickey@invisible-island.net>  Sat, 26 Sep 2015 14:50:05 -0400
+ 
+ ncurses6 (5.9-20131005) unstable; urgency=low
+ 
+--- a/package/debian/changelog
++++ b/package/debian/changelog
+@@ -1,8 +1,8 @@
+-ncurses6 (6.0+20150919) unstable; urgency=low
++ncurses6 (6.0+20150926) unstable; urgency=low
+ 
+   * latest weekly patch
+ 
+- -- Thomas E. Dickey <dickey@invisible-island.net>  Sat, 19 Sep 2015 15:40:14 -0400
++ -- Thomas E. Dickey <dickey@invisible-island.net>  Sat, 26 Sep 2015 14:50:05 -0400
+ 
+ ncurses6 (5.9-20120608) unstable; urgency=low
+ 
+--- a/package/debian/rules
++++ b/package/debian/rules
+@@ -78,6 +78,7 @@
+ 		--with-ticlib \
+ 		--with-trace \
+ 		--with-cxx-shared \
++		--with-terminfo-dirs=/lib/terminfo:/usr/share/terminfo \
+ 		--with-versioned-syms \
+ 		--with-xterm-kbs=DEL \
+ 		--without-ada \
+--- a/package/mingw-ncurses.nsi
++++ b/package/mingw-ncurses.nsi
+@@ -1,4 +1,4 @@
+-; $Id: mingw-ncurses.nsi,v 1.124 2015/09/19 19:40:14 tom Exp $
++; $Id: mingw-ncurses.nsi,v 1.125 2015/09/26 18:50:05 tom Exp $
+ 
+ ; TODO add examples
+ ; TODO bump ABI to 6
+@@ -10,7 +10,7 @@
+ !define VERSION_MAJOR "6"
+ !define VERSION_MINOR "0"
+ !define VERSION_YYYY  "2015"
+-!define VERSION_MMDD  "0919"
++!define VERSION_MMDD  "0926"
+ !define VERSION_PATCH ${VERSION_YYYY}${VERSION_MMDD}
+ 
+ !define MY_ABI   "5"
+--- a/package/mingw-ncurses.spec
++++ b/package/mingw-ncurses.spec
+@@ -3,7 +3,7 @@
+ Summary: shared libraries for terminal handling
+ Name: mingw32-ncurses6
+ Version: 6.0
+-Release: 20150919
++Release: 20150926
+ License: X11
+ Group: Development/Libraries
+ Source: ncurses-%{version}-%{release}.tgz
+--- a/package/ncurses.spec
++++ b/package/ncurses.spec
+@@ -1,7 +1,7 @@
+ Summary: shared libraries for terminal handling
+ Name: ncurses6
+ Version: 6.0
+-Release: 20150919
++Release: 20150926
+ License: X11
+ Group: Development/Libraries
+ Source: ncurses-%{version}-%{release}.tgz

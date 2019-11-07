@@ -1,0 +1,148 @@
+---
+ Makefile.am    |   14 ++++++++++++--
+ Makefile.in    |   14 ++++++++++++--
+ ioctl_iocdef.c |   43 +++++++++++++++++++++++++++++++++++++++++++
+ ioctlsort.c    |    3 ++-
+ 4 files changed, 69 insertions(+), 5 deletions(-)
+
+--- /dev/null
++++ b/ioctl_iocdef.c
+@@ -0,0 +1,43 @@
++/*
++ * Copyright (c) 2017 Alexey Neyman <stilor@att.net>
++ * All rights reserved.
++ *
++ * Redistribution and use in source and binary forms, with or without
++ * modification, are permitted provided that the following conditions
++ * are met:
++ * 1. Redistributions of source code must retain the above copyright
++ *    notice, this list of conditions and the following disclaimer.
++ * 2. Redistributions in binary form must reproduce the above copyright
++ *    notice, this list of conditions and the following disclaimer in the
++ *    documentation and/or other materials provided with the distribution.
++ * 3. The name of the author may not be used to endorse or promote products
++ *    derived from this software without specific prior written permission.
++ *
++ * THIS SOFTWARE IS PROVIDED BY THE AUTHOR ``AS IS'' AND ANY EXPRESS OR
++ * IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES
++ * OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED.
++ * IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR ANY DIRECT, INDIRECT,
++ * INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT
++ * NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
++ * DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
++ * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
++ * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF
++ * THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
++ */
++
++/*
++ * This file is *PREPROCESSED*, not *COMPILED* for host and the result
++ * is included into ioctlsort (which is compiled for build). Since some
++ * of these values are used in structure initializers, they cannot be
++ * defined as 'const unsigned int' - instead, they have to be macros.
++ * Hence, the result of preprocessing will be run through sed to change
++ * 'DEFINE' into '#define'
++ */
++#include <linux/ioctl.h>
++
++DEFINE HOST_IOC_NONE _IOC_NONE
++DEFINE HOST_IOC_READ _IOC_READ
++DEFINE HOST_IOC_WRITE _IOC_WRITE
++
++DEFINE HOST_IOC_SIZESHIFT _IOC_SIZESHIFT
++DEFINE HOST_IOC_DIRSHIFT _IOC_DIRSHIFT
+--- a/ioctlsort.c
++++ b/ioctlsort.c
+@@ -33,7 +33,8 @@
+ #include <stdio.h>
+ #include <stdlib.h>
+ #include <string.h>
+-#include <linux/ioctl.h>
++
++#include "ioctl_iocdef.h"
+ 
+ struct ioctlent {
+ 	const char *info;
+--- a/Makefile.am
++++ b/Makefile.am
+@@ -274,6 +274,7 @@
+ 	debian/watch			\
+ 	errnoent.sh			\
+ 	generate_sen.sh			\
++	ioctl_iocdef.c			\
+ 	ioctlsort.c			\
+ 	linux/32/ioctls_inc.h		\
+ 	linux/32/ioctls_inc_align32.h	\
+@@ -712,10 +713,19 @@
+ ioctlent%.h: ioctlsort%
+ 	./$< > $@
+ 
++# Need to pick up <linux/ioctl.h> definitions *for host* while compiling
++# ioctlsort *for build*, hence this magic.
++ioctl_iocdef.i: $(srcdir)/ioctl_iocdef.c
++	$(CPP) -P $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) \
++		$(strace_CPPFLAGS) $(CPPFLAGS) $< -o $@
++
++ioctl_iocdef.h: ioctl_iocdef.i
++	sed -n 's/^DEFINE HOST/#define /p' $< > $@
++
+ ioctlsort%$(BUILD_EXEEXT): ioctlsort%.o
+ 	$(ioctlsort_CC) $(ioctlsort_CFLAGS) $(ioctlsort_LDFLAGS) $< -o $@
+ 
+-ioctlsort%.o: ioctls_all%.h $(srcdir)/ioctlsort.c
++ioctlsort%.o: ioctls_all%.h ioctl_iocdef.h $(srcdir)/ioctlsort.c
+ 	$(ioctlsort_CC) $(ioctlsort_DEFS) $(ioctlsort_INCLUDES) $(ioctlsort_CPPFLAGS) $(ioctlsort_CFLAGS) -DIOCTLSORT_INC=\"$<\" -c -o $@ $(srcdir)/ioctlsort.c
+ 
+ ioctls_all%.h: $(srcdir)/$(OS)/$(ARCH)/ioctls_inc%.h $(srcdir)/$(OS)/$(ARCH)/ioctls_arch%.h
+@@ -723,7 +733,7 @@
+ 
+ BUILT_SOURCES = $(ioctl_redefs_h) $(ioctlent_h) \
+ 		native_printer_decls.h native_printer_defs.h printers.h sen.h sys_func.h .version
+-CLEANFILES    = $(ioctl_redefs_h) $(ioctlent_h) $(mpers_preproc_files) \
++CLEANFILES    = $(ioctl_redefs_h) $(ioctlent_h) ioctl_iocdef.h $(mpers_preproc_files) \
+ 		native_printer_decls.h native_printer_defs.h printers.h sen.h sys_func.h
+ DISTCLEANFILES = gnu/stubs-32.h gnu/stubs-x32.h
+ 
+--- a/Makefile.in
++++ b/Makefile.in
+@@ -952,6 +952,7 @@
+ 	debian/watch			\
+ 	errnoent.sh			\
+ 	generate_sen.sh			\
++	ioctl_iocdef.c			\
+ 	ioctlsort.c			\
+ 	linux/32/ioctls_inc.h		\
+ 	linux/32/ioctls_inc_align32.h	\
+@@ -1351,7 +1352,7 @@
+ BUILT_SOURCES = $(ioctl_redefs_h) $(ioctlent_h) native_printer_decls.h \
+ 	native_printer_defs.h printers.h sen.h sys_func.h .version \
+ 	$(am__append_7) $(am__append_11)
+-CLEANFILES = $(ioctl_redefs_h) $(ioctlent_h) $(mpers_preproc_files) \
++CLEANFILES = $(ioctl_redefs_h) $(ioctlent_h) octl_iocdef.h $(mpers_preproc_files) \
+ 	native_printer_decls.h native_printer_defs.h printers.h sen.h \
+ 	sys_func.h $(am__append_8) $(am__append_12)
+ DISTCLEANFILES = gnu/stubs-32.h gnu/stubs-x32.h
+@@ -5506,13 +5507,22 @@
+ 	rm -f $<-t
+ 	mv $@-t $@
+ 
++# Need to pick up <linux/ioctl.h> definitions *for host* while compiling
++# ioctlsort *for build*, hence this magic.
++ioctl_iocdef.i: $(srcdir)/ioctl_iocdef.c
++	$(CPP) -P $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) \
++		$(strace_CPPFLAGS) $(CPPFLAGS) $< -o $@
++
++ioctl_iocdef.h: ioctl_iocdef.i
++	sed -n 's/^DEFINE HOST/#define /p' $< > $@
++
+ ioctlent%.h: ioctlsort%
+ 	./$< > $@
+ 
+ ioctlsort%$(BUILD_EXEEXT): ioctlsort%.o
+ 	$(ioctlsort_CC) $(ioctlsort_CFLAGS) $(ioctlsort_LDFLAGS) $< -o $@
+ 
+-ioctlsort%.o: ioctls_all%.h $(srcdir)/ioctlsort.c
++ioctlsort%.o: ioctls_all%.h ioctl_iocdef.h $(srcdir)/ioctlsort.c
+ 	$(ioctlsort_CC) $(ioctlsort_DEFS) $(ioctlsort_INCLUDES) $(ioctlsort_CPPFLAGS) $(ioctlsort_CFLAGS) -DIOCTLSORT_INC=\"$<\" -c -o $@ $(srcdir)/ioctlsort.c
+ 
+ ioctls_all%.h: $(srcdir)/$(OS)/$(ARCH)/ioctls_inc%.h $(srcdir)/$(OS)/$(ARCH)/ioctls_arch%.h

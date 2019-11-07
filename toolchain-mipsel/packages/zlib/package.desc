@@ -1,0 +1,4 @@
+repository='git https://github.com/madler/zlib.git'
+mirrors='http://downloads.sourceforge.net/project/libpng/zlib/${CT_ZLIB_VERSION}'
+archive_formats='.tar.xz .tar.gz'
+signature_format='packed/.asc'

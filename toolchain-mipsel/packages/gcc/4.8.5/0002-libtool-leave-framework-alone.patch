@@ -1,0 +1,18 @@
+---
+ libtool-ldflags |    5 +++++
+ 1 file changed, 5 insertions(+)
+
+--- a/libtool-ldflags
++++ b/libtool-ldflags
+@@ -36,6 +36,11 @@
+ for arg
+ do
+     case $arg in
++	-framework)
++	    # libtool handles this option. It should not be prefixed with
++	    # -Xcompiler, as that would split it from the argument that
++	    # follows.
++	    ;;
+ 	-f*|--*)
+ 	    # Libtool does not ascribe any special meaning options
+ 	    # that begin with -f or with a double-dash.  So, it will

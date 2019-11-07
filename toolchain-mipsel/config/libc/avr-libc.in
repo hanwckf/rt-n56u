@@ -1,0 +1,21 @@
+# avr-libc options
+
+# Do not canonicalize the target tuple: avr-libc requires a non-canonical "avr" target.
+#
+## depends on ARCH_AVR
+## depends on BARE_METAL
+##
+## select LIBC_SUPPORT_THREADS_NONE
+## select OMIT_TARGET_VENDOR
+## select TARGET_SKIP_CONFIG_SUB
+##
+## help The AVR Libc package provides a subset of the standard C library for
+## help Atmel AVR 8-bit RISC microcontrollers. In addition, the library
+## help provides the basic startup code needed by most applications.
+
+config LIBC_AVR_LIBC_EXTRA_CONFIG_ARRAY
+    string
+    prompt "Extra config for avr-libc"
+    default ""
+    help
+      Extra flags to pass onto ./configure when configuring the avr-libc.

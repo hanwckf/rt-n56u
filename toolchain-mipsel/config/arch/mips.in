@@ -1,0 +1,52 @@
+# MIPS specific config options
+
+## no-package
+## select ARCH_SUPPORTS_32
+## select ARCH_SUPPORTS_64
+## select ARCH_DEFAULT_32
+## select ARCH_USE_MMU
+## select ARCH_SUPPORTS_EITHER_ENDIAN
+## select ARCH_DEFAULT_BE
+## select ARCH_SUPPORTS_WITH_ARCH
+## select ARCH_SUPPORTS_WITH_TUNE
+## select ARCH_SUPPORTS_WITH_FLOAT
+
+## help The MIPS architecture, as defined by:
+## help     http://www.mips.com/
+
+choice
+    bool
+    prompt "ABI"
+
+config ARCH_mips_o32
+    bool
+    prompt "o32"
+    depends on (ARCH_32 || MULTILIB)
+    help
+      This is the -mabi=32 gcc option.
+
+config ARCH_mips_n32
+    bool
+    prompt "n32"
+    depends on ARCH_64
+    help
+      This is the -mabi=n32 gcc option.
+
+config ARCH_mips_n64
+    bool
+    prompt "n64"
+    depends on ARCH_64
+    help
+      This is the -mabi=64 gcc option.
+
+# Not supported on Linux:
+# o64   : seems related to *BSD
+# eabi  : seems related to bare-metal
+
+endchoice
+
+config ARCH_mips_ABI
+    string
+    default "32"    if ARCH_mips_o32
+    default "n32"   if ARCH_mips_n32
+    default "64"    if ARCH_mips_n64

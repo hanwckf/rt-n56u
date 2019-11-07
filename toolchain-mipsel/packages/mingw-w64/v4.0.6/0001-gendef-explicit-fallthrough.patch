@@ -1,0 +1,44 @@
+commit b4416f9a54ca0f27adc4a5a2d576779ec1288047
+Author: sezero <sezero@users.sourceforge.net>
+Date:   Thu Jun 15 09:50:00 2017 +0300
+
+    gendef.c (getMemonic): add /* fallthru */ comments in the switch to avoid -Wimplicit-fallthrough
+
+---
+ mingw-w64-tools/gendef/src/gendef.c |   10 +++++-----
+ 1 file changed, 5 insertions(+), 5 deletions(-)
+
+--- a/mingw-w64-tools/gendef/src/gendef.c
++++ b/mingw-w64-tools/gendef/src/gendef.c
+@@ -832,7 +832,7 @@
+       if (!sz || code == c_ill)
+         {
+           PRDEBUG(" %s = 0x08%x ILL (%u) at least one==%d\n",name,
+-	 	  (unsigned int) pc, (unsigned int) sz,atleast_one[0]);
++		  (unsigned int) pc, (unsigned int) sz,atleast_one[0]);
+ #if ENABLE_DEBUG == 1
+       {
+         unsigned char *ppc = (unsigned char *) map_va (pc);
+@@ -1027,10 +1027,10 @@
+     PRDEBUG(" 0x%x illegal ", (unsigned int) b);
+ #endif
+     *aCode=c_ill; return 0;
+-  case c_4: sz++;
+-  case c_3: sz++;
++  case c_4: sz++;/* fallthru */
++  case c_3: sz++;/* fallthru */
+   case c_lb:
+-  case c_2: sz++;
++  case c_2: sz++;/* fallthru */
+   case c_retn: case c_retf:
+   case c_iret: case c_int3:
+   case c_ad: case c_op:
+@@ -1057,7 +1057,7 @@
+           p = (unsigned char *) map_va (pc + sz);
+           if (!p) { *aCode=c_ill; return 0; }
+ #if ENABLE_DEBUG == 1
+-    enter_save_insn(lw,p[0]);
++	  enter_save_insn(lw,p[0]);
+ #endif
+           b&=~0x7; b|=(p[0]&7);
+ 	  sz+=1;

@@ -1,0 +1,19 @@
+# RISC-V specific config options
+
+## no-package
+## depends on EXPERIMENTAL
+##
+## select ARCH_SUPPORTS_32
+## select ARCH_SUPPORTS_64
+## select ARCH_DEFAULT_32
+## select ARCH_SUPPORTS_BOTH_MMU
+## select ARCH_SUPPORTS_WITH_ABI
+## select ARCH_SUPPORTS_WITH_ARCH
+## select ARCH_SUPPORTS_WITH_TUNE
+## select GCC_REQUIRE_7_or_later
+## select BINUTILS_REQUIRE_2_28_or_later
+## select GDB_REQUIRE_8_0_or_later if DEBUG_GDB
+## select GLIBC_REQUIRE_2_29_or_later if LIBC_GLIBC
+
+## help The RISC-V architecture, as defined by:
+## help     http://www.riscv.org/

@@ -1,0 +1,26 @@
+commit 9fabe086c9f5c3896297f7f35491d785ba6f49a0
+Author: Alexey Neyman <stilor@att.net>
+Date:   Mon Sep 24 22:50:11 2018 -0700
+
+    Fix build with ISL 0.20
+    
+            * gcc/graphite.h: Include <isl/id.h> and <isl/space.h>; these
+            headers are no longer pulled in by <isl/val.h>.
+    
+    Signed-off-by: Alexey Neyman <stilor@att.net>
+
+---
+ gcc/graphite.h |    2 ++
+ 1 file changed, 2 insertions(+)
+
+--- a/gcc/graphite.h
++++ b/gcc/graphite.h
+@@ -26,6 +26,8 @@
+ #include <isl/options.h>
+ #include <isl/ctx.h>
+ #include <isl/val.h>
++#include <isl/id.h>
++#include <isl/space.h>
+ #include <isl/set.h>
+ #include <isl/union_set.h>
+ #include <isl/map.h>

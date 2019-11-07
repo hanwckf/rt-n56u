@@ -1,0 +1,39 @@
+Original patch modified: Removed ChangeLog and NEWS sections, ajdust for configure.in
+KS
+
+From: Marc-Antoine Perennou <Marc-Antoine@Perennou.com>
+Date: Thu, 31 Oct 2013 02:37:50 +0000 (+1000)
+Subject: Accept make versions 4.0 and greater
+X-Git-Tag: glibc-2.19~556
+X-Git-Url: https://sourceware.org/git/?p=glibc.git;a=commitdiff_plain;h=28d708c44bc47b56f6551ff285f78edcf61c208a;hp=a56ee40b176d0a3f47f2a7eb75208f2e3763c9fd
+
+Accept make versions 4.0 and greater
+---
+
+---
+ configure    |    2 +-
+ configure.in |    2 +-
+ 2 files changed, 2 insertions(+), 2 deletions(-)
+
+--- a/configure
++++ b/configure
+@@ -4772,7 +4772,7 @@
+   ac_prog_version=`$MAKE --version 2>&1 | sed -n 's/^.*GNU Make[^0-9]*\([0-9][0-9.]*\).*$/\1/p'`
+   case $ac_prog_version in
+     '') ac_prog_version="v. ?.??, bad"; ac_verc_fail=yes;;
+-    3.79* | 3.[89]*)
++    3.79* | 3.[89]* | [4-9].* | [1-9][0-9]*)
+        ac_prog_version="$ac_prog_version, ok"; ac_verc_fail=no;;
+     *) ac_prog_version="$ac_prog_version, bad"; ac_verc_fail=yes;;
+ 
+--- a/configure.in
++++ b/configure.in
+@@ -989,7 +989,7 @@
+   critic_missing="$critic_missing gcc")
+ AC_CHECK_PROG_VER(MAKE, gnumake gmake make, --version,
+   [GNU Make[^0-9]*\([0-9][0-9.]*\)],
+-  [3.79* | 3.[89]*], critic_missing="$critic_missing make")
++  [3.79* | 3.[89]* | [4-9].* | [1-9][0-9]*], critic_missing="$critic_missing make")
+ 
+ AC_CHECK_PROG_VER(MSGFMT, gnumsgfmt gmsgfmt msgfmt, --version,
+   [GNU gettext.* \([0-9]*\.[0-9.]*\)],

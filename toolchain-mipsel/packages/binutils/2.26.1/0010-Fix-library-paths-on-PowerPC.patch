@@ -1,0 +1,37 @@
+From 1b967f3cb0682dd05128ef13495c2dca2a04dc4e Mon Sep 17 00:00:00 2001
+From: Alexey Neyman <stilor@att.net>
+Date: Sat, 11 Mar 2017 17:27:09 -0800
+Subject: [PATCH] Fix library paths on PowerPC
+
+First, need to match against just the CPU name, not the whole triplet.
+Otherwise, the test picks up "*le-*" pattern from x86_64-apple-darwin
+triplet.
+
+Second, it should be testing for $target, not $host. Host may be
+little endian by default, and the sysroot directory layout shouldn't
+depend on whether it is built on LE or BE machine.
+
+Signed-off-by: Alexey Neyman <stilor@att.net>
+---
+ ld/emulparams/elf32ppccommon.sh |   10 +++++-----
+ 1 file changed, 5 insertions(+), 5 deletions(-)
+
+--- a/ld/emulparams/elf32ppccommon.sh
++++ b/ld/emulparams/elf32ppccommon.sh
+@@ -44,11 +44,11 @@
+ 
+ # Look for 64 bit target libraries in /lib64, /usr/lib64 etc., first.
+ # Similarly, look for 32 bit libraries in /lib32, /usr/lib32 etc.
+-case "$host":"$EMULATION_NAME" in
+-  *le-*:*64lppc*) LIBPATH_SUFFIX=64 ;;
+-  *le-*:*32lppc*) LIBPATH_SUFFIX=32 ;;
+-  *le-*:*64*) LIBPATH_SUFFIX=64be ;;
+-  *le-*:*32*) LIBPATH_SUFFIX=32be ;;
++case `echo "$target" | sed -e 's/-.*//'`:"$EMULATION_NAME" in
++  *le:*64lppc*) LIBPATH_SUFFIX=64 ;;
++  *le:*32lppc*) LIBPATH_SUFFIX=32 ;;
++  *le:*64*) LIBPATH_SUFFIX=64be ;;
++  *le:*32*) LIBPATH_SUFFIX=32be ;;
+   *:*64lppc*) LIBPATH_SUFFIX=64le ;;
+   *:*32lppc*) LIBPATH_SUFFIX=32le ;;
+   *:*64*) LIBPATH_SUFFIX=64 ;;

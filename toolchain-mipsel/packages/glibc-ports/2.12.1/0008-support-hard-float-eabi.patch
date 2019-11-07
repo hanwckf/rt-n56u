@@ -1,0 +1,25 @@
+---
+ sysdeps/arm/preconfigure   |    2 +-
+ sysdeps/arm/shlib-versions |    4 ++--
+ 2 files changed, 3 insertions(+), 3 deletions(-)
+
+--- a/sysdeps/arm/preconfigure
++++ b/sysdeps/arm/preconfigure
+@@ -2,7 +2,7 @@
+ arm*)
+ 	base_machine=arm
+ 	case $config_os in
+-	linux-gnueabi)
++	linux-gnueabi*)
+ 		machine=arm/eabi/$machine
+ 		;;
+ 	*)
+--- a/sysdeps/arm/shlib-versions
++++ b/sysdeps/arm/shlib-versions
+@@ -1,4 +1,4 @@
+-arm.*-.*-linux-gnueabi	DEFAULT			GLIBC_2.4
++arm.*-.*-linux-gnueabi.*	DEFAULT			GLIBC_2.4
+ 
+-arm.*-.*-linux-gnueabi	ld=ld-linux.so.3
++arm.*-.*-linux-gnueabi.*	ld=ld-linux.so.3
+ arm.*-.*-linux.*	ld=ld-linux.so.2

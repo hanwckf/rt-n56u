@@ -1,0 +1,50 @@
+From 319583d37ce649221ca4ff48a0b194bdbbf2ace1 Mon Sep 17 00:00:00 2001
+From: Alexey Neyman <stilor@att.net>
+Date: Sun, 11 Feb 2018 11:59:22 -0800
+Subject: [PATCH] uClibc-ng does not implement name_to_handle_at
+
+... so don't declare it. Otherwise, eudev finds it declared and tries
+to link with it - and fails.
+
+Signed-off-by: Alexey Neyman <stilor@att.net>
+---
+ libc/sysdeps/linux/aarch64/bits/fcntl.h |   21 ---------------------
+ 1 file changed, 21 deletions(-)
+
+--- a/libc/sysdeps/linux/aarch64/bits/fcntl.h
++++ b/libc/sysdeps/linux/aarch64/bits/fcntl.h
+@@ -242,15 +242,6 @@
+ 					      file to zeros.  */
+ 
+ 
+-/* File handle structure.  */
+-struct file_handle
+-{
+-  unsigned int handle_bytes;
+-  int handle_type;
+-  /* File identifier.  */
+-  unsigned char f_handle[0];
+-};
+-
+ /* Maximum handle size (for now).  */
+ # define MAX_HANDLE_SZ	128
+ #endif
+@@ -315,18 +306,6 @@
+ # endif
+ 
+ 
+-/* Map file name to file handle.  */
+-extern int name_to_handle_at (int __dfd, const char *__name,
+-			      struct file_handle *__handle, int *__mnt_id,
+-			      int __flags) __THROW;
+-
+-/* Open file using the file handle.
+-
+-   This function is a possible cancellation point and therefore not
+-   marked with __THROW.  */
+-extern int open_by_handle_at (int __mountdirfd, struct file_handle *__handle,
+-			      int __flags);
+-
+ #endif	/* use GNU */
+ 
+ __END_DECLS

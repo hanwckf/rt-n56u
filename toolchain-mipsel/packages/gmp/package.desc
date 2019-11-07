@@ -1,0 +1,7 @@
+repository='hg https://gmplib.org/repo/gmp/'
+bootstrap='./.bootstrap'
+mirrors='https://gmplib.org/download/gmp https://gmplib.org/download/gmp/archive $(CT_Mirrors GNU gmp)'
+relevantpattern='*.*|.'
+milestones='5.0.0 5.1.0'
+archive_formats='.tar.xz .tar.lz .tar.bz2'
+signature_format='packed/.sig'

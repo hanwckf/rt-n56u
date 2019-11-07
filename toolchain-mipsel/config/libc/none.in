@@ -1,0 +1,20 @@
+# Dummy config file to not use a C library *at all*
+
+## no-package
+## depends on BARE_METAL
+##
+## help Do not use a C library.
+## help
+## help This is useful if your project is self-contained, does not rely on
+## help an external C library, and provides all the necessary bits.
+## help
+## help Most probably useful to bootloaders, as they generally don't depend
+## help on the C library.
+## help
+## help If unsure: do *not* choose that, and use another option in the choice.
+
+# The no-threads is usually set in the main libc.in config file.
+# But since the "none" C library does not show the threads choice,
+# we have to define the no-threads value ourselves here:
+config THREADS
+    default "none"

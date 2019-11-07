@@ -1,0 +1,407 @@
+# This file contains the common configuration options
+# that apply to both glibc.
+
+## depends on ! WINDOWS && ! BARE_METAL && ARCH_USE_MMU
+## select LIBC_SUPPORT_THREADS_NATIVE
+## select CC_CORE_PASSES_NEEDED
+# TBD: select GETTEXT for build only, not for host
+## select GETTEXT_NEEDED
+## select BINUTILS_FORCE_LD_BFD_DEFAULT
+
+## help The de-facto standard for Linux distributions.
+## help Feature-rich, but large...  Most useful for desktop-like systems.
+
+# GLIBC and kernel are special when it comes to obsoletion. Users
+# of crosstool-ng depend on the ability to build new toolchains matching
+# the kernel/libc versions of a particular target system, and LTS releases
+# are still using quite ancient versions. Please do not retire versions
+# (including versions in between) until the EOL dates indicated in version.desc.
+
+if GLIBC_USE_PORTS_EXTERNAL
+source "config/versions/glibc-ports.in"
+endif
+
+# Glibc has some dependencies on the kernel headers:
+config GLIBC_DEP_KERNEL_HEADERS_VERSION
+    def_bool y
+    select LINUX_REQUIRE_3_2_or_later if GLIBC_2_24_or_later
+
+# Glibc 2.26 requires at least binutils 2.25.
+# Also, binutils 2.30 fail while compiling aarch64 glibc; fixed in 2.27
+# and backported to 2.26. For other versions, require binutils older than
+# 2.30 (if the patch is backported, binutils 2.23 will break).
+config GLIBC_DEP_BINUTILS
+    def_bool y
+    select BINUTILS_REQUIRE_2_25_or_later if GLIBC_2_26_or_later
+    select BINUTILS_REQUIRE_older_than_2_30 if GLIBC_older_than_2_26 && ARCH_ARM && ARCH_64
+
+# Glibc 2.29 requires GCC5+ or, for ppc64le, GCC6.2+. We only support the latest
+# release on GCC6 branch, so just assume it is newer than 6.2
+config GLIBC_DEP_GCC
+    def_bool y
+    select GCC_REQUIRE_5_or_later if GLIBC_2_29_or_later
+    select GCC_REQUIRE_6_or_later if GLIBC_2_29_or_later && ARCH_POWERPC && ARCH_64 && ARCH_LE
+
+# Glibc 2.29 requires bison 2.7 or later. All versions in ct-ng satisfy that
+# version requirement.
+config GLIBC_DEP_BISON
+    def_bool y
+    depends on GLIBC_2_29_or_later && !CONFIGURE_has_bison_2_7_or_newer
+    select COMP_TOOLS_BISON
+
+# Glibc 2.29 now requires Python 3.4 or later, and make 4.0 or later. Ensure
+# we build 'make' as a companion tool if host's make isn't new enough.
+config GLIBC_DEP_PYTHON
+    def_bool y
+    select GLIBC_REQUIRE_older_than_2_29 if !CONFIGURE_has_python_3_4_or_newer
+
+config GLIBC_DEP_MAKE_4_0
+    def_bool y
+    depends on GLIBC_2_29_or_later && !CONFIGURE_has_make_4_0_or_newer
+    select COMP_TOOLS_MAKE
+    select MAKE_REQUIRE_4_0_or_later
+    select MAKE_GNUMAKE_SYMLINK # Override old host make in .build/tools/bin
+
+config GLIBC_DEP_GCC
+    def_bool y
+    select GCC_REQUIRE_4_9_or_later if GLIBC_2_26_or_later
+
+config THREADS
+    default "nptl"
+
+config GLIBC_BUILD_SSP
+    def_bool y
+    depends on GLIBC_2_25_or_later
+
+# Known add-ons and when they exist(ed)
+#   crypt           external in 2.1, no longer an add-on since 2.2
+#   libidn          external in 2.3.4 .. 2.10, still an add-on
+#   linuxthreads    external in 2.0.1 .. 2.5,  no longer available since 2.6 [*]
+#   localedata      external in 2.0.1 .. 2.0.6, no longer an add-on since 2.1 [*]
+#   ports           external in 2.3.4 .. 2.16, no longer an add-on since 2.20
+#   nptl            never external, no longer an add-on since 2.20
+#
+# Given the list of currently supported glibc releases, we only need to worry about
+# 'libidn', 'ports' and 'nptl' add-ons. Of these, only 'ports' can be an external
+# tarball; and only 'libidn' is user-selectable ('ports' & 'nptl' are selected
+# by crosstool-NG, as dictated by the architecture and thread model).
+#
+# I had trouble locating the sources in the repository for some of the released
+# versions. E.g., there is a 2.5 version of linuxthreads, but the tag for 2.5 in Git
+# does not have the linuxthreads directory at all. Similarly, 2.0.6 tag did not have
+# localedata. Since these releases are no longer supported by crosstool-NG, this is
+# of pure historical interest now, however.
+
+config GLIBC_HAS_NPTL_ADDON
+    def_bool y
+    depends on !GLIBC_2_20_or_later
+
+config GLIBC_HAS_PORTS_ADDON
+    def_bool y
+    depends on !GLIBC_2_20_or_later
+
+config GLIBC_HAS_PORTS_ADDON_EXTERNAL
+    def_bool y
+    depends on !GLIBC_2_17_or_later
+
+# In case it folds into main distribution in some future release, too
+config GLIBC_HAS_LIBIDN_ADDON
+    def_bool y
+
+# Some architectures require the ports addon. List them one by one here:
+# This list must be carefully in sync with the architectures names
+# we can find in config/arch/*
+config GLIBC_USE_PORTS_ADDON
+    def_bool y
+    depends on ARCH_ALPHA || ARCH_ARM || ARCH_M68K || ARCH_MIPS || ARCH_POWERPC
+    depends on GLIBC_HAS_PORTS_ADDON
+
+config GLIBC_USE_PORTS_EXTERNAL
+    def_bool y
+    depends on GLIBC_USE_PORTS_ADDON && GLIBC_HAS_PORTS_ADDON_EXTERNAL
+
+config GLIBC_USE_NPTL_ADDON
+    def_bool y
+    depends on THREADS_NATIVE && GLIBC_HAS_NPTL_ADDON
+
+config GLIBC_USE_LIBIDN_ADDON
+    bool "Build libidn add-on"
+    help
+      Enables the libidn add-on in GNU libc.
+
+# SPARCv8 support retired in 2.23
+config GLIBC_NO_SPARC_V8
+    def_bool y
+    depends on GLIBC_2_23_or_later
+
+# 2.14 obsoleted Sun RPC code, making it unavailable *at all* for compiling/linking
+# (only remained as versioned symbols for previously linked binaries). They backpedaled
+# in 2.16, adding an option to enable that code. Crosstool-NG backports that code
+# to 2.14/2.15, but there is no harm in throwing this option even if that patch
+# is not applied.
+config GLIBC_HAS_OBSOLETE_RPC
+    def_bool y
+    depends on GLIBC_2_14_or_later
+
+config GLIBC_EXTRA_CONFIG_ARRAY
+    string
+    prompt "extra config"
+    default ""
+    help
+      Extra flags to pass onto ./configure when configuring.
+
+      You can enter multiple arguments here, and arguments can contain spaces
+      if they are properly quoted (or escaped, but prefer quotes). Eg.:
+          --with-foo="1st arg with 4 spaces" --with-bar=2nd-arg-without-space
+
+config GLIBC_CONFIGPARMS
+    string
+    prompt "Extra config params (READ HELP)"
+    default "" if ! ARCH_SH
+    default "no-z-defs=yes" if ARCH_SH
+    help
+      Some architectures need to set options in the file configparms.
+      This is the case for sh3/4, which really need to set configparms
+      to "no-z-defs=yes" as of gcc-3.4/glibc-2.3.2.
+      
+      Unless you are building a toolchain for sh3/4, you should leave that empty.
+      
+      Note: If you need to pass more than one value, separate them with
+            '\n'. Eg.:  var1=val1\nvar2=val2
+
+config GLIBC_EXTRA_CFLAGS
+    string
+    prompt "extra target CFLAGS"
+    default ""
+    help
+      Extra target CFLAGS to use when building.
+
+config GLIBC_ENABLE_OBSOLETE_RPC
+    bool "Enable obsolete (Sun) RPC"
+    default y
+    depends on GLIBC_HAS_OBSOLETE_RPC
+    help
+      Allow building applications using obsolete (Sun) RPC.
+
+config GLIBC_ENABLE_FORTIFIED_BUILD
+    bool
+    prompt "Enable fortified build (EXPERIMENTAL)"
+    depends on EXPERIMENTAL
+    help
+      If you say 'y' here, then glibc will be using fortified versions
+      of functions with format arguments (eg. vsyslog, printf...), and
+      do a sanity check on the format at runtime, to avoid some of the
+      common format string attacks.
+      
+      This is currently not supported, and will most probably result in
+      a broken build, with an error message like:
+        ../misc/syslog.c: In function '__vsyslog_chk':
+        ../misc/syslog.c:123: sorry, unimplemented: inlining failed in
+        call to 'syslog': function body not available
+      
+      If you are brave enough and want to debug the issue, then say 'y'
+      here. Otherwise, be still and say 'n' (the default). ;-)
+
+
+config GLIBC_DISABLE_VERSIONING
+    bool
+    prompt "Disable symbols versioning"
+    help
+      Do not include versioning information in the library objects.
+
+config GLIBC_OLDEST_ABI
+    string
+    prompt "Oldest supported ABI"
+    default ""
+    help
+      Set the oldest ABI supported by the C library.
+      
+      Setting this option, for example, to 2.2 will provide ABI support
+      back to (e)glibc-2.2.
+
+      If this option is not set, (e)glibc will choose for you.
+
+config GLIBC_FORCE_UNWIND
+    bool
+    prompt "Force unwind support (READ HELP!)"
+    default y
+    help
+      If your toolchain fails building while building the C library
+      start files, or the complete C library, with a message like:
+        configure: error: forced unwind support is required
+      
+      then you may try changing this option. Otherwise, leave it to
+      the default 'y'.
+      
+      The issue seems to be related to building NPTL on old versions
+      of glibc on some architectures
+      (seen on s390, s390x and x86_64).
+
+config GLIBC_LOCALES
+    bool
+    prompt "Build and install locales"
+    help
+      Whether to build and install the libc locale files for the target,
+      which is required in order to support internationalization.
+
+if LIBC_GLIBC && GLIBC_LOCALES
+comment "WARNING!                                                      "
+comment "|  The built locales will be usable if and only if the build  "
+comment "|  machine and the target:                                    "
+comment "|   - have the same endianness,                               "
+comment "|   - and have the same alignment requirements for uint32_t.  "
+comment "|  You will have to check by yourself (for now).              "
+comment "WARNING!                                                      "
+comment "|  Building GLIBC locales requires that GLIBC supports        "
+comment "|  the build machine as the target.                           "
+endif # LIBC_GLIBC && GLIBC_LOCALES
+
+if KERNEL_LINUX
+
+choice GLIBC_SUPPORTED_KERNEL
+    bool
+    prompt "Minimum supported kernel version"
+    default GLIBC_KERNEL_VERSION_AS_HEADERS
+
+config GLIBC_KERNEL_VERSION_NONE
+    bool
+    prompt "Let ./configure decide"
+    help
+      Let ./configure decide what minimum kernel version glibc will be
+      able to run against.
+      
+      This will include legacy compatibility code for older kernels in
+      the C library, thus ensuring that it will run on a large number
+      of old kernels.
+      
+      The minimum kernel version supported will be dependent upon the
+      target you build for. For example:
+        alpha*-*-linux-gnu      Requires Linux 2.6.9 for NPTL
+        sh[34]-*-linux-gnu      Requires Linux 2.6.11
+        powerpc*                Requires Linux 2.4.19
+        arm*-*-linux-*gnueabi   Requires Linux 2.6.16
+
+config GLIBC_KERNEL_VERSION_AS_HEADERS
+    bool
+    prompt "Same as kernel headers (default)"
+    help
+      Normally, you'll want glibc to run against the same kernel
+      version as the one used for the headers.
+      
+      This is the default.
+      
+      If enabled, crosstool-ng will use the chosen version of kernel
+      headers for the glibc minimum kernel version supported, which is
+      what gets passed to "--enable-kernel=" when configuring glibc.
+      
+      Enabling this will ensure that no legacy compatibility code for
+      older kernels is built into your C libraries, but it will
+      be unable to run on kernel versions older than whichever kernel
+      headers version you've built the toolchain for.
+      
+      If you know for sure that your toolchain will never need to build
+      applications that will run under a kernel version older than your
+      chosen kernel headers version (CT_KERNEL_VERSION), you can choose
+      "y" here.
+
+config GLIBC_KERNEL_VERSION_CHOSEN
+    bool
+    prompt "Specific kernel version"
+    help
+      Specify the earliest Linux kernel version you want glibc to
+      include support for.  This does not have to match the kernel
+      headers version used for your toolchain.  This controls what is
+      passed to the "--enable-kernel=" option to the glibc configure
+      script.
+
+      If you want to be able to statically link programs with your
+      toolchain's C library, make sure this kernel version is lower than
+      all kernels you wish to support to avoid "FATAL: kernel too old"
+      errors.  The higher the version you specify, the less legacy code
+      will be built into libc.
+
+      Most people can leave this at the default value of "2.6.9".
+
+if GLIBC_KERNEL_VERSION_CHOSEN
+
+config GLIBC_MIN_KERNEL_VERSION
+    string
+    prompt "Minimum kernel version to support"
+    default "2.6.9"
+    help
+      Enter here the lowest kernel version glibc will be able to run against.
+      
+      The minimum kernel version supported will be dependent upon the
+      target you build for. For example:
+        alpha*-*-linux-gnu      Requires Linux 2.6.9 for NPTL
+        sh[34]-*-linux-gnu      Requires Linux 2.6.11
+        powerpc*                Requires Linux 2.4.19
+        arm*-*-linux-*gnueabi   Requires Linux 2.6.16
+      
+      Note that no sanity check is performed by crosstool-NG to ensure
+      that the value you enter here is appropriate for your target.
+
+endif # GLIBC_KERNEL_VERSION_CHOSEN
+
+endchoice
+
+config GLIBC_MIN_KERNEL
+    string
+    default ""                            if GLIBC_KERNEL_VERSION_NONE
+    default LINUX_VERSION                 if GLIBC_KERNEL_VERSION_AS_HEADERS
+    default GLIBC_MIN_KERNEL_VERSION      if GLIBC_KERNEL_VERSION_CHOSEN
+
+if GLIBC_BUILD_SSP
+choice
+    bool "Stack-smashing protection (SSP) in glibc"
+    default GLIBC_SSP_DEFAULT
+
+config GLIBC_SSP_DEFAULT
+    bool "default"
+    help
+      Glibc's configure script determines the stack protection level.
+
+config GLIBC_SSP_NO
+    bool "no"
+    help
+      Glibc functions are not protected against stack-smashing.
+
+config GLIBC_SSP_YES
+    bool "yes"
+    help
+      Glibc is compiled with -fstack-protector option.
+
+config GLIBC_SSP_ALL
+    bool "all"
+    help
+      Glibc is compiled with -fstack-protector-all option.
+
+config GLIBC_SSP_STRONG
+    bool "strong"
+    help
+      Glibc is compiled with -fstack-protector-strong option.
+
+endchoice
+
+config GLIBC_SSP
+    string
+    default "no" if GLIBC_SSP_NO
+    default "yes" if GLIBC_SSP_YES
+    default "all" if GLIBC_SSP_ALL
+    default "strong" if GLIBC_SSP_STRONG
+
+# All supported versions of glibc build cleanly with GCC7 and earlier.
+# GCC8-related fixes were only available in glibc 2.27.
+config GLIBC_ENABLE_WERROR
+    bool "Enable -Werror during the build"
+    default y if GCC_7_or_older
+    default y if GCC_8_or_later && GLIBC_2_27_or_later
+    help
+      By default, glibc enables strict warning checks during the build.
+      However, older version of glibc may not build with newer versions
+      of the compiler than there were available at the time of a glibc
+      release (because newer compilers typically have better diagnostics).
+
+endif
+
+endif # KERNEL_LINUX

@@ -1,0 +1,9 @@
+# GNU make
+
+## default y if !CONFIGURE_has_make_3_81_or_newer
+
+config MAKE_GMAKE_SYMLINK
+    bool "Create 'gmake' symlink"
+
+config MAKE_GNUMAKE_SYMLINK
+    bool "Create 'gnumake' symlink"

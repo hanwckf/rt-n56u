@@ -1,0 +1,75 @@
+---
+ PATCHES         |    1 +
+ VERSION         |    2 +-
+ mpfr-longlong.h |   21 +++++++++++++++++++--
+ mpfr.h          |    2 +-
+ version.c       |    2 +-
+ 5 files changed, 23 insertions(+), 5 deletions(-)
+
+--- a/PATCHES
++++ b/PATCHES
+@@ -1 +1,2 @@
++longlong.h
+ sin_cos_underflow
+--- a/VERSION
++++ b/VERSION
+@@ -1 +1 @@
+-2.4.2-p1
++2.4.2-p2
+--- a/mpfr-longlong.h
++++ b/mpfr-longlong.h
+@@ -1011,7 +1011,15 @@
+ #endif /* __m88000__ */
+ 
+ #if defined (__mips) && W_TYPE_SIZE == 32
+-#if __GNUC__ > 2 || __GNUC_MINOR__ >= 7
++#if (__GNUC__ >= 5) || (__GNUC__ >= 4 && __GNUC_MINOR__ >= 4)
++#define umul_ppmm(w1, w0, u, v) \
++  do {									\
++    UDItype _r;							\
++    _r = (UDItype) u * v;						\
++    (w1) = _r >> 32;							\
++    (w0) = (USItype) _r;						\
++  } while (0)
++#elif __GNUC__ > 2 || __GNUC_MINOR__ >= 7
+ #define umul_ppmm(w1, w0, u, v) \
+   __asm__ ("multu %2,%3" : "=l" (w0), "=h" (w1) : "d" (u), "d" (v))
+ #else
+@@ -1024,7 +1032,16 @@
+ #endif /* __mips */
+ 
+ #if (defined (__mips) && __mips >= 3) && W_TYPE_SIZE == 64
+-#if __GNUC__ > 2 || __GNUC_MINOR__ >= 7
++#if (__GNUC__ >= 5) || (__GNUC__ >= 4 && __GNUC_MINOR__ >= 4)
++typedef unsigned int UTItype __attribute__ ((mode (TI)));
++#define umul_ppmm(w1, w0, u, v) \
++  do {									\
++    UTItype _r;							\
++    _r = (UTItype) u * v;						\
++    (w1) = _r >> 64;							\
++    (w0) = (UDItype) _r;						\
++  } while (0)
++#elif __GNUC__ > 2 || __GNUC_MINOR__ >= 7
+ #define umul_ppmm(w1, w0, u, v) \
+   __asm__ ("dmultu %2,%3" : "=l" (w0), "=h" (w1) : "d" (u), "d" (v))
+ #else
+--- a/mpfr.h
++++ b/mpfr.h
+@@ -27,7 +27,7 @@
+ #define MPFR_VERSION_MAJOR 2
+ #define MPFR_VERSION_MINOR 4
+ #define MPFR_VERSION_PATCHLEVEL 2
+-#define MPFR_VERSION_STRING "2.4.2-p1"
++#define MPFR_VERSION_STRING "2.4.2-p2"
+ 
+ /* Macros dealing with MPFR VERSION */
+ #define MPFR_VERSION_NUM(a,b,c) (((a) << 16L) | ((b) << 8) | (c))
+--- a/version.c
++++ b/version.c
+@@ -25,5 +25,5 @@
+ const char *
+ mpfr_get_version (void)
+ {
+-  return "2.4.2-p1";
++  return "2.4.2-p2";
+ }

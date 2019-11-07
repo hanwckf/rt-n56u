@@ -1,0 +1,49 @@
+#!@CONFIG_SHELL@
+
+# GNU install takes the program to run to strip a binary via a --strip-program=
+# argument. Fallback script, install-sh, chokes on any unknown option and takes
+# the program name via $STRIPPROG variable - but that variable is ignored by
+# GNU install. BSD install uses $STRIPBIN.
+#
+# If using GNU install, convert to the command line option. In any case, set
+# STRIPPROG and STRIPBIN - they're either supported or harmless.
+if [ -n "${STRIPPROG}" ]; then
+    if [ "@INSTALL_WITH_STRIP_PROGRAM@" = "y" ]; then
+        __strip_opt="--strip-program=${STRIPPROG}"
+    fi
+    export STRIPBIN="${STRIPPROG}"
+fi
+
+# Do the most common case first
+if [ -z "${__PORTAGE_HELPER_PATH}" ]; then
+    exec @TOOL_PATH@ ${__strip_opt} "$@"
+fi
+
+# Not so simple case: Gentoo uses *two* wrappers around install script
+# to deal with extended attributes:
+#  - /usr/lib/portage/python*/ebuild-helpers/xattr/install
+#    This sets __PORTAGE_HELPER_PATH (see the check above) and
+#    invokes either C- or Python-based wrapper (they do the same
+#    thing anyway). E.g., let it be /usr/bin/install-xattrs...
+#  - /usr/bin/install-xattrs
+#    This now analyzes $PATH and invokes 'install' in the first directory
+#    in $PATH where it is found, but not the __PORTAGE_HELPER_PATH
+# This scheme breaks if we interject another install wrapper, resulting
+# in a fork bomb. Hence, if we detected a loop, we need to remove our
+# own directory from $PATH and try again. Ironically, the very code below
+# based on that portage helper.
+IFS=:
+set -f
+path=
+for x in ${PATH}; do
+    case "${x}" in
+    @TOOLS_OVERRIDE_DIR@/bin) continue;;
+    esac
+    if test -n "${path}"; then
+        path="${path}:${x}"
+    else
+        path="${x}"
+    fi
+done
+PATH="${path}"
+exec @TOOL_PATH@ ${__strip_opt} "$@"

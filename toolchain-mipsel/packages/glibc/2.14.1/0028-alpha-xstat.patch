@@ -1,0 +1,18 @@
+---
+ sysdeps/unix/sysv/linux/kernel-features.h |    5 +++++
+ 1 file changed, 5 insertions(+)
+
+--- a/sysdeps/unix/sysv/linux/kernel-features.h
++++ b/sysdeps/unix/sysv/linux/kernel-features.h
+@@ -386,6 +386,11 @@
+ # define __ASSUME_GETDENTS32_D_TYPE	1
+ #endif
+ 
++/* Starting with version 2.6.4, alpha stat64 syscalls are available.  */
++#if __LINUX_KERNEL_VERSION >= 0x020604 && defined __alpha__
++# define __ASSUME_STAT64_SYSCALL	1
++#endif
++
+ /* Starting with version 2.5.3, the initial location returned by `brk'
+    after exec is always rounded up to the next page.  */
+ #if __LINUX_KERNEL_VERSION >= 132355

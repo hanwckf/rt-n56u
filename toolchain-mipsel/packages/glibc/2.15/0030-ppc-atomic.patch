@@ -1,0 +1,412 @@
+sniped from suse
+
+---
+ sysdeps/powerpc/bits/atomic.h           |   66 ++++++++++-----------
+ sysdeps/powerpc/powerpc32/bits/atomic.h |   16 ++---
+ sysdeps/powerpc/powerpc64/bits/atomic.h |   98 ++++++++++++++++----------------
+ 3 files changed, 90 insertions(+), 90 deletions(-)
+
+--- a/sysdeps/powerpc/bits/atomic.h
++++ b/sysdeps/powerpc/bits/atomic.h
+@@ -85,14 +85,14 @@
+       __typeof (*(mem)) __tmp;						      \
+       __typeof (mem)  __memp = (mem);					      \
+       __asm __volatile (						      \
+-		        "1:	lwarx	%0,0,%1" MUTEX_HINT_ACQ "\n"	      \
++		        "1:	lwarx	%0,%y1" MUTEX_HINT_ACQ "\n"	      \
+ 		        "	cmpw	%0,%2\n"			      \
+ 		        "	bne	2f\n"				      \
+-		        "	stwcx.	%3,0,%1\n"			      \
++		        "	stwcx.	%3,%y1\n"			      \
+ 		        "	bne-	1b\n"				      \
+ 		        "2:	" __ARCH_ACQ_INSTR			      \
+-		        : "=&r" (__tmp)					      \
+-		        : "b" (__memp), "r" (oldval), "r" (newval)	      \
++		        : "=&r" (__tmp), "+Z" (*__memp)			      \
++		        : "r" (oldval), "r" (newval)			      \
+ 		        : "cr0", "memory");				      \
+       __tmp;								      \
+   })
+@@ -102,14 +102,14 @@
+       __typeof (*(mem)) __tmp;						      \
+       __typeof (mem)  __memp = (mem);					      \
+       __asm __volatile (__ARCH_REL_INSTR "\n"				      \
+-		        "1:	lwarx	%0,0,%1" MUTEX_HINT_REL "\n"	      \
++		        "1:	lwarx	%0,%y1" MUTEX_HINT_REL "\n"	      \
+ 		        "	cmpw	%0,%2\n"			      \
+ 		        "	bne	2f\n"				      \
+-		        "	stwcx.	%3,0,%1\n"			      \
++		        "	stwcx.	%3,%y1\n"			      \
+ 		        "	bne-	1b\n"				      \
+ 		        "2:	"					      \
+-		        : "=&r" (__tmp)					      \
+-		        : "b" (__memp), "r" (oldval), "r" (newval)	      \
++		        : "=&r" (__tmp), "+Z" (__memp)			      \
++		        : "r" (oldval), "r" (newval)			      \
+ 		        : "cr0", "memory");				      \
+       __tmp;								      \
+   })
+@@ -118,12 +118,12 @@
+   ({									      \
+     __typeof (*mem) __val;						      \
+     __asm __volatile (							      \
+-		      "1:	lwarx	%0,0,%2" MUTEX_HINT_ACQ "\n"	      \
+-		      "		stwcx.	%3,0,%2\n"			      \
++		      "1:	lwarx	%0,%y1" MUTEX_HINT_ACQ "\n"	      \
++		      "		stwcx.	%2,%y1\n"			      \
+ 		      "		bne-	1b\n"				      \
+ 		      "   " __ARCH_ACQ_INSTR				      \
+-		      : "=&r" (__val), "=m" (*mem)			      \
+-		      : "b" (mem), "r" (value), "m" (*mem)		      \
++		      : "=&r" (__val), "+Z" (*mem)			      \
++		      : "r" (value)					      \
+ 		      : "cr0", "memory");				      \
+     __val;								      \
+   })
+@@ -132,11 +132,11 @@
+   ({									      \
+     __typeof (*mem) __val;						      \
+     __asm __volatile (__ARCH_REL_INSTR "\n"				      \
+-		      "1:	lwarx	%0,0,%2" MUTEX_HINT_REL "\n"	      \
+-		      "		stwcx.	%3,0,%2\n"			      \
++		      "1:	lwarx	%0,%y1" MUTEX_HINT_REL "\n"	      \
++		      "		stwcx.	%2,%y1\n"			      \
+ 		      "		bne-	1b"				      \
+-		      : "=&r" (__val), "=m" (*mem)			      \
+-		      : "b" (mem), "r" (value), "m" (*mem)		      \
++		      : "=&r" (__val), "+Z" (*mem)			      \
++		      : "r" (value)					      \
+ 		      : "cr0", "memory");				      \
+     __val;								      \
+   })
+@@ -144,12 +144,12 @@
+ #define __arch_atomic_exchange_and_add_32(mem, value) \
+   ({									      \
+     __typeof (*mem) __val, __tmp;					      \
+-    __asm __volatile ("1:	lwarx	%0,0,%3\n"			      \
+-		      "		add	%1,%0,%4\n"			      \
+-		      "		stwcx.	%1,0,%3\n"			      \
++    __asm __volatile ("1:	lwarx	%0,%y2\n"			      \
++		      "		add	%1,%0,%3\n"			      \
++		      "		stwcx.	%1,%y2\n"			      \
+ 		      "		bne-	1b"				      \
+-		      : "=&b" (__val), "=&r" (__tmp), "=m" (*mem)	      \
+-		      : "b" (mem), "r" (value), "m" (*mem)		      \
++		      : "=&b" (__val), "=&r" (__tmp), "+Z" (*mem)	      \
++		      : "r" (value)					      \
+ 		      : "cr0", "memory");				      \
+     __val;								      \
+   })
+@@ -157,12 +157,12 @@
+ #define __arch_atomic_increment_val_32(mem) \
+   ({									      \
+     __typeof (*(mem)) __val;						      \
+-    __asm __volatile ("1:	lwarx	%0,0,%2\n"			      \
++    __asm __volatile ("1:	lwarx	%0,%y1\n"			      \
+ 		      "		addi	%0,%0,1\n"			      \
+-		      "		stwcx.	%0,0,%2\n"			      \
++		      "		stwcx.	%0,%y1\n"			      \
+ 		      "		bne-	1b"				      \
+-		      : "=&b" (__val), "=m" (*mem)			      \
+-		      : "b" (mem), "m" (*mem)				      \
++		      : "=&b" (__val), "+Z" (*mem)			      \
++		      :							      \
+ 		      : "cr0", "memory");				      \
+     __val;								      \
+   })
+@@ -170,27 +170,27 @@
+ #define __arch_atomic_decrement_val_32(mem) \
+   ({									      \
+     __typeof (*(mem)) __val;						      \
+-    __asm __volatile ("1:	lwarx	%0,0,%2\n"			      \
++    __asm __volatile ("1:	lwarx	%0,%y1\n"			      \
+ 		      "		subi	%0,%0,1\n"			      \
+-		      "		stwcx.	%0,0,%2\n"			      \
++		      "		stwcx.	%0,%y1\n"			      \
+ 		      "		bne-	1b"				      \
+-		      : "=&b" (__val), "=m" (*mem)			      \
+-		      : "b" (mem), "m" (*mem)				      \
++		      : "=&b" (__val), "+Z" (*mem)			      \
++		      :							      \
+ 		      : "cr0", "memory");				      \
+     __val;								      \
+   })
+ 
+ #define __arch_atomic_decrement_if_positive_32(mem) \
+   ({ int __val, __tmp;							      \
+-     __asm __volatile ("1:	lwarx	%0,0,%3\n"			      \
++     __asm __volatile ("1:	lwarx	%0,%y2\n"			      \
+ 		       "	cmpwi	0,%0,0\n"			      \
+ 		       "	addi	%1,%0,-1\n"			      \
+ 		       "	ble	2f\n"				      \
+-		       "	stwcx.	%1,0,%3\n"			      \
++		       "	stwcx.	%1,%y2\n"			      \
+ 		       "	bne-	1b\n"				      \
+ 		       "2:	" __ARCH_ACQ_INSTR			      \
+-		       : "=&b" (__val), "=&r" (__tmp), "=m" (*mem)	      \
+-		       : "b" (mem), "m" (*mem)				      \
++		       : "=&b" (__val), "=&r" (__tmp), "+Z" (*mem)	      \
++		       :						      \
+ 		       : "cr0", "memory");				      \
+      __val;								      \
+   })
+--- a/sysdeps/powerpc/powerpc32/bits/atomic.h
++++ b/sysdeps/powerpc/powerpc32/bits/atomic.h
+@@ -44,14 +44,14 @@
+ ({									      \
+   unsigned int __tmp;							      \
+   __asm __volatile (							      \
+-		    "1:	lwarx	%0,0,%1" MUTEX_HINT_ACQ "\n"		      \
++		    "1:	lwarx	%0,%y1" MUTEX_HINT_ACQ "\n"		      \
+ 		    "	subf.	%0,%2,%0\n"				      \
+ 		    "	bne	2f\n"					      \
+-		    "	stwcx.	%3,0,%1\n"				      \
++		    "	stwcx.	%3,%y1\n"				      \
+ 		    "	bne-	1b\n"					      \
+ 		    "2:	" __ARCH_ACQ_INSTR				      \
+-		    : "=&r" (__tmp)					      \
+-		    : "b" (mem), "r" (oldval), "r" (newval)		      \
++		    : "=&r" (__tmp), "+Z" (*(mem))			      \
++		    : "r" (oldval), "r" (newval)			      \
+ 		    : "cr0", "memory");					      \
+   __tmp != 0;								      \
+ })
+@@ -60,14 +60,14 @@
+ ({									      \
+   unsigned int __tmp;							      \
+   __asm __volatile (__ARCH_REL_INSTR "\n"				      \
+-		    "1:	lwarx	%0,0,%1" MUTEX_HINT_REL "\n"		      \
++		    "1:	lwarx	%0,%y1" MUTEX_HINT_REL "\n"		      \
+ 		    "	subf.	%0,%2,%0\n"				      \
+ 		    "	bne	2f\n"					      \
+-		    "	stwcx.	%3,0,%1\n"				      \
++		    "	stwcx.	%3,%y1\n"				      \
+ 		    "	bne-	1b\n"					      \
+ 		    "2:	"						      \
+-		    : "=&r" (__tmp)					      \
+-		    : "b" (mem), "r" (oldval), "r" (newval)		      \
++		    : "=&r" (__tmp), "+Z" (*(mem))			      \
++		    : "r" (oldval), "r" (newval)			      \
+ 		    : "cr0", "memory");					      \
+   __tmp != 0;								      \
+ })
+--- a/sysdeps/powerpc/powerpc64/bits/atomic.h
++++ b/sysdeps/powerpc/powerpc64/bits/atomic.h
+@@ -44,14 +44,14 @@
+ ({									      \
+   unsigned int __tmp, __tmp2;						      \
+   __asm __volatile ("   clrldi  %1,%1,32\n"				      \
+-		    "1:	lwarx	%0,0,%2" MUTEX_HINT_ACQ "\n"	 	      \
++		    "1:	lwarx	%0,%y2" MUTEX_HINT_ACQ "\n"	 	      \
+ 		    "	subf.	%0,%1,%0\n"				      \
+ 		    "	bne	2f\n"					      \
+-		    "	stwcx.	%4,0,%2\n"				      \
++		    "	stwcx.	%4,%y2\n"				      \
+ 		    "	bne-	1b\n"					      \
+ 		    "2:	" __ARCH_ACQ_INSTR				      \
+-		    : "=&r" (__tmp), "=r" (__tmp2)			      \
+-		    : "b" (mem), "1" (oldval), "r" (newval)		      \
++		    : "=&r" (__tmp), "=r" (__tmp2), "+Z" (*(mem))	      \
++		    : "1" (oldval), "r" (newval)			      \
+ 		    : "cr0", "memory");					      \
+   __tmp != 0;								      \
+ })
+@@ -61,14 +61,14 @@
+   unsigned int __tmp, __tmp2;						      \
+   __asm __volatile (__ARCH_REL_INSTR "\n"				      \
+ 		    "   clrldi  %1,%1,32\n"				      \
+-		    "1:	lwarx	%0,0,%2" MUTEX_HINT_REL "\n"		      \
++		    "1:	lwarx	%0,%y2" MUTEX_HINT_REL "\n"		      \
+ 		    "	subf.	%0,%1,%0\n"				      \
+ 		    "	bne	2f\n"					      \
+-		    "	stwcx.	%4,0,%2\n"				      \
++		    "	stwcx.	%4,%y2\n"				      \
+ 		    "	bne-	1b\n"					      \
+ 		    "2:	"						      \
+-		    : "=&r" (__tmp), "=r" (__tmp2)			      \
+-		    : "b" (mem), "1" (oldval), "r" (newval)		      \
++		    : "=&r" (__tmp), "=r" (__tmp2), "+Z" (*(mem))	      \
++		    : "1" (oldval), "r" (newval)			      \
+ 		    : "cr0", "memory");					      \
+   __tmp != 0;								      \
+ })
+@@ -82,14 +82,14 @@
+ ({									      \
+   unsigned long	__tmp;							      \
+   __asm __volatile (							      \
+-		    "1:	ldarx	%0,0,%1" MUTEX_HINT_ACQ "\n"		      \
++		    "1:	ldarx	%0,%y1" MUTEX_HINT_ACQ "\n"		      \
+ 		    "	subf.	%0,%2,%0\n"				      \
+ 		    "	bne	2f\n"					      \
+-		    "	stdcx.	%3,0,%1\n"				      \
++		    "	stdcx.	%3,%y1\n"				      \
+ 		    "	bne-	1b\n"					      \
+ 		    "2:	" __ARCH_ACQ_INSTR				      \
+-		    : "=&r" (__tmp)					      \
+-		    : "b" (mem), "r" (oldval), "r" (newval)		      \
++		    : "=&r" (__tmp), "+Z" (*(mem))			      \
++		    : "r" (oldval), "r" (newval)			      \
+ 		    : "cr0", "memory");					      \
+   __tmp != 0;								      \
+ })
+@@ -98,14 +98,14 @@
+ ({									      \
+   unsigned long	__tmp;							      \
+   __asm __volatile (__ARCH_REL_INSTR "\n"				      \
+-		    "1:	ldarx	%0,0,%2" MUTEX_HINT_REL "\n"		      \
++		    "1:	ldarx	%0,%y1" MUTEX_HINT_REL "\n"		      \
+ 		    "	subf.	%0,%2,%0\n"				      \
+ 		    "	bne	2f\n"					      \
+-		    "	stdcx.	%3,0,%1\n"				      \
++		    "	stdcx.	%3,%y1\n"				      \
+ 		    "	bne-	1b\n"					      \
+ 		    "2:	"						      \
+-		    : "=&r" (__tmp)					      \
+-		    : "b" (mem), "r" (oldval), "r" (newval)		      \
++		    : "=&r" (__tmp), "+Z" (*(mem))			      \
++		    : "r" (oldval), "r" (newval)			      \
+ 		    : "cr0", "memory");					      \
+   __tmp != 0;								      \
+ })
+@@ -115,14 +115,14 @@
+       __typeof (*(mem)) __tmp;						      \
+       __typeof (mem)  __memp = (mem);					      \
+       __asm __volatile (						      \
+-		        "1:	ldarx	%0,0,%1" MUTEX_HINT_ACQ "\n"	      \
++		        "1:	ldarx	%0,%y1" MUTEX_HINT_ACQ "\n"	      \
+ 		        "	cmpd	%0,%2\n"			      \
+ 		        "	bne	2f\n"				      \
+-		        "	stdcx.	%3,0,%1\n"			      \
++		        "	stdcx.	%3,%y1\n"			      \
+ 		        "	bne-	1b\n"				      \
+ 		        "2:	" __ARCH_ACQ_INSTR			      \
+-		        : "=&r" (__tmp)					      \
+-		        : "b" (__memp), "r" (oldval), "r" (newval)	      \
++		        : "=&r" (__tmp), "+Z" (*__memp)			      \
++		        : "r" (oldval), "r" (newval)			      \
+ 		        : "cr0", "memory");				      \
+       __tmp;								      \
+   })
+@@ -132,14 +132,14 @@
+       __typeof (*(mem)) __tmp;						      \
+       __typeof (mem)  __memp = (mem);					      \
+       __asm __volatile (__ARCH_REL_INSTR "\n"				      \
+-		        "1:	ldarx	%0,0,%1" MUTEX_HINT_REL "\n"	      \
++		        "1:	ldarx	%0,%y1" MUTEX_HINT_REL "\n"	      \
+ 		        "	cmpd	%0,%2\n"			      \
+ 		        "	bne	2f\n"				      \
+-		        "	stdcx.	%3,0,%1\n"			      \
++		        "	stdcx.	%3,%y1\n"			      \
+ 		        "	bne-	1b\n"				      \
+ 		        "2:	"					      \
+-		        : "=&r" (__tmp)					      \
+-		        : "b" (__memp), "r" (oldval), "r" (newval)	      \
++		        : "=&r" (__tmp), "+Z" (*__memp)			      \
++		        : "r" (oldval), "r" (newval)			      \
+ 		        : "cr0", "memory");				      \
+       __tmp;								      \
+   })
+@@ -148,12 +148,12 @@
+     ({									      \
+       __typeof (*mem) __val;						      \
+       __asm __volatile (__ARCH_REL_INSTR "\n"				      \
+-			"1:	ldarx	%0,0,%2" MUTEX_HINT_ACQ "\n"	      \
+-			"	stdcx.	%3,0,%2\n"			      \
++			"1:	ldarx	%0,%y1" MUTEX_HINT_ACQ "\n"	      \
++			"	stdcx.	%2,%y1\n"			      \
+ 			"	bne-	1b\n"				      \
+ 		  " " __ARCH_ACQ_INSTR					      \
+-			: "=&r" (__val), "=m" (*mem)			      \
+-			: "b" (mem), "r" (value), "m" (*mem)		      \
++			: "=&r" (__val), "+Z" (*(mem))			      \
++			: "r" (value)					      \
+ 			: "cr0", "memory");				      \
+       __val;								      \
+     })
+@@ -162,11 +162,11 @@
+     ({									      \
+       __typeof (*mem) __val;						      \
+       __asm __volatile (__ARCH_REL_INSTR "\n"				      \
+-			"1:	ldarx	%0,0,%2" MUTEX_HINT_REL "\n"	      \
+-			"	stdcx.	%3,0,%2\n"			      \
++			"1:	ldarx	%0,%y1" MUTEX_HINT_REL "\n"	      \
++			"	stdcx.	%2,%y1\n"			      \
+ 			"	bne-	1b"				      \
+-			: "=&r" (__val), "=m" (*mem)			      \
+-			: "b" (mem), "r" (value), "m" (*mem)		      \
++			: "=&r" (__val), "+Z" (*(mem))			      \
++			: "r" (value)					      \
+ 			: "cr0", "memory");				      \
+       __val;								      \
+     })
+@@ -174,12 +174,12 @@
+ #define __arch_atomic_exchange_and_add_64(mem, value) \
+     ({									      \
+       __typeof (*mem) __val, __tmp;					      \
+-      __asm __volatile ("1:	ldarx	%0,0,%3\n"			      \
+-			"	add	%1,%0,%4\n"			      \
+-			"	stdcx.	%1,0,%3\n"			      \
++      __asm __volatile ("1:	ldarx	%0,%y2\n"			      \
++			"	add	%1,%0,%3\n"			      \
++			"	stdcx.	%1,%y2\n"			      \
+ 			"	bne-	1b"				      \
+-			: "=&b" (__val), "=&r" (__tmp), "=m" (*mem)	      \
+-			: "b" (mem), "r" (value), "m" (*mem)		      \
++			: "=&b" (__val), "=&r" (__tmp), "+Z" (*(mem))	      \
++			: "r" (value)					      \
+ 			: "cr0", "memory");				      \
+       __val;								      \
+     })
+@@ -187,12 +187,12 @@
+ #define __arch_atomic_increment_val_64(mem) \
+     ({									      \
+       __typeof (*(mem)) __val;						      \
+-      __asm __volatile ("1:	ldarx	%0,0,%2\n"			      \
++      __asm __volatile ("1:	ldarx	%0,%y1\n"			      \
+ 			"	addi	%0,%0,1\n"			      \
+-			"	stdcx.	%0,0,%2\n"			      \
++			"	stdcx.	%0,%y1\n"			      \
+ 			"	bne-	1b"				      \
+-			: "=&b" (__val), "=m" (*mem)			      \
+-			: "b" (mem), "m" (*mem)				      \
++			: "=&b" (__val), "+Z" (*(mem))			      \
++			:						      \
+ 			: "cr0", "memory");				      \
+       __val;								      \
+     })
+@@ -200,27 +200,27 @@
+ #define __arch_atomic_decrement_val_64(mem) \
+     ({									      \
+       __typeof (*(mem)) __val;						      \
+-      __asm __volatile ("1:	ldarx	%0,0,%2\n"			      \
++      __asm __volatile ("1:	ldarx	%0,%y1\n"			      \
+ 			"	subi	%0,%0,1\n"			      \
+-			"	stdcx.	%0,0,%2\n"			      \
++			"	stdcx.	%0,%y1\n"			      \
+ 			"	bne-	1b"				      \
+-			: "=&b" (__val), "=m" (*mem)			      \
+-			: "b" (mem), "m" (*mem)				      \
++			: "=&b" (__val), "+Z" (*(mem))			      \
++			:						      \
+ 			: "cr0", "memory");				      \
+       __val;								      \
+     })
+ 
+ #define __arch_atomic_decrement_if_positive_64(mem) \
+   ({ int __val, __tmp;							      \
+-     __asm __volatile ("1:	ldarx	%0,0,%3\n"			      \
++     __asm __volatile ("1:	ldarx	%0,%y2\n"			      \
+ 		       "	cmpdi	0,%0,0\n"			      \
+ 		       "	addi	%1,%0,-1\n"			      \
+ 		       "	ble	2f\n"				      \
+-		       "	stdcx.	%1,0,%3\n"			      \
++		       "	stdcx.	%1,%y2\n"			      \
+ 		       "	bne-	1b\n"				      \
+ 		       "2:	" __ARCH_ACQ_INSTR			      \
+-		       : "=&b" (__val), "=&r" (__tmp), "=m" (*mem)	      \
+-		       : "b" (mem), "m" (*mem)				      \
++		       : "=&b" (__val), "=&r" (__tmp), "+Z" (*(mem))	      \
++		       :						      \
+ 		       : "cr0", "memory");				      \
+      __val;								      \
+   })

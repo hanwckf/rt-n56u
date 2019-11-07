@@ -1,0 +1,139 @@
+# Options specific to crosstool-NG overall behavior
+
+comment "crosstool-NG behavior"
+
+config OBSOLETE
+    bool
+    prompt "Use obsolete features"
+    help
+      If you set this to Y, you will be able to select obsolete features.
+      
+      Such obsolete features are the use of old kernel headers, old gcc
+      versions, etc... for which maintaining support in crosstool-NG
+      would be very costly.
+      
+      It does not however mean that the specific feature or version has been
+      marked obsolete by the upstream team.
+
+config EXPERIMENTAL
+    bool
+    prompt "Try features marked as EXPERIMENTAL"
+    help
+      If you set this to Y, then you will be able to try very experimental
+      features.
+      
+      Experimental features can be one of:
+        - working, in which case you should tell me it is!
+        - buggy, in which case you could try patching and send me the result
+        - unfinished, in which case you could try hacking it and send me the result
+        - non-existant, in which case you could also try hacking it in and send me
+          the result
+
+config ALLOW_BUILD_AS_ROOT
+    bool
+    prompt "Allow building as root user (READ HELP!)"
+    depends on EXPERIMENTAL
+    help
+      You normally do *not* need to be root to build a toolchain using
+      crosstool-NG. In fact, it is *VERY* dangerous to run as root, as
+      crosstool-NG will, as part of the build process, remove a few
+      directories. If anything goes wrong, running as root can ruin
+      your host distribution.
+      
+      I can't stress it enough:  DO  NOT  RUN  AS  ROOT  !!
+      
+      Do not run as root, you've been warned.
+      Do not come whining, if it nukes your host system.
+      Do not come whining, if you lose any data.
+      Do not run as root.
+      
+      Do not run as root, you've been warned.
+      Do not come whining, if the Earth stops rotating.
+      Do not come whining, if kittens are smashed.
+      Do not run as root.
+      
+      Do not run as root, do not run as root!
+      (ad libitum)
+
+config ALLOW_BUILD_AS_ROOT_SURE
+    bool
+    prompt "Are you sure?"
+    depends on ALLOW_BUILD_AS_ROOT
+
+config DEBUG_CT
+    bool
+    prompt "Debug crosstool-NG"
+    help
+      Say 'y' here to get some options regarding debugging crosstool-NG.
+
+if DEBUG_CT
+
+config DEBUG_PAUSE_STEPS
+    bool
+    prompt "Pause between every steps"
+    help
+      Say 'y' if you intend to attend the build, and want to investigate
+      the result of each steps before running the next one.
+
+config DEBUG_CT_SAVE_STEPS
+    bool
+    prompt "Save intermediate steps"
+    help
+      If you say 'y' here, then you will be able to restart crosstool-NG at
+      any step.
+      
+      It is not currently possible to restart at any of the debug facilities.
+      They are treated as a whole.
+      
+      To get the full list os steps, run: ct-ng list-steps
+
+config DEBUG_CT_SAVE_STEPS_GZIP
+    bool
+    prompt "gzip saved states"
+    default y
+    depends on DEBUG_CT_SAVE_STEPS
+    help
+      If you are tight on space, then you can ask to gzip the saved states
+      tarballs. On the other hand, this takes some longer time...
+      
+      To lose as less time as possible, the gzip process is done with a low
+      compression ratio (-3), which gives roughly 70% gain in size. Going
+      further doesn't gain much, and takes far more time (believe me, I've
+      got figures here! :-) ).
+
+config NO_OVERRIDE_LC_MESSAGES
+    bool
+    prompt "Do *not* overide LC_MESSAGES (EXPERIMENTAL)"
+    depends on EXPERIMENTAL
+    help
+      By default, crosstool-NG sets and exports LC_ALL=C so that the
+      build.log file contains english messages, that can be read by
+      people most likely to help interpret the logs. If you say N here,
+      and your locale is not an english language, then dissecting your
+      log file will be difficult for most people but you.
+      
+      If you say Y here, then your current locale settings will be used
+      to print messages, instead of plain english.
+      
+      Say N, please.
+
+config DEBUG_INTERACTIVE
+    bool
+    prompt "Interactive shell on failed commands"
+    help
+      If you say 'y' here, then an interactive shell will be spawned for
+      each failed command.
+      
+      This shell will have the same environment that the failed command
+      was run with, and the working directory will be set to the directory
+      the failed command was run in.
+      
+      After you fix the issue, you can exit the interactive shell with any
+      of these exit codes:
+        1  the issue was fixed, continue the build with the next command
+        2  the issue was fixed, re-run the failed command
+        3  abort the build
+      
+      Note: '2' is only possible for commands run via CT_DoExecLog, though.
+
+endif

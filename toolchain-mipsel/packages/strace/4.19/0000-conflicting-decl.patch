@@ -1,0 +1,36 @@
+commit d45f27147f7d95eb209463dc03dc039ea3f15b59
+Author: Baruch Siach <baruch@tkos.co.il>
+Date:   Fri Sep 8 12:12:57 2017 +0300
+
+    error_prints: fix potential program_invocation_name type conflict
+    
+    uClibc-ng declares program_invocation_name as const.
+    This causes the build failure below:
+    
+    error_prints.c:40:14: error: conflicting types for ‘program_invocation_name’
+     extern char *program_invocation_name;
+                  ^~~~~~~~~~~~~~~~~~~~~~~
+    In file included from error_prints.c:32:0:
+    .../output/host/x86_64-buildroot-linux-uclibc/sysroot/usr/include/errno.h:54:20: note: previous declaration of ‘program_invocation_name’ was here
+     extern const char *program_invocation_name, *program_invocation_short_name;
+                        ^~~~~~~~~~~~~~~~~~~~~~~
+    
+    * error_prints.c (program_invocation_name): Declare only in case
+    of [!HAVE_PROGRAM_INVOCATION_NAME].
+
+---
+ error_prints.c |    2 ++
+ 1 file changed, 2 insertions(+)
+
+--- a/error_prints.c
++++ b/error_prints.c
+@@ -37,7 +37,9 @@
+ 
+ #include "error_prints.h"
+ 
++#ifndef HAVE_PROGRAM_INVOCATION_NAME
+ extern char *program_invocation_name;
++#endif
+ 
+ static void
+ verror_msg(int err_no, const char *fmt, va_list p)

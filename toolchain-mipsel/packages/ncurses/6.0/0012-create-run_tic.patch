@@ -1,0 +1,25 @@
+---
+ configure    |    1 -
+ configure.in |    1 -
+ 2 files changed, 2 deletions(-)
+
+--- a/configure
++++ b/configure
+@@ -22254,7 +22254,6 @@
+ fi
+ 
+ ################################################################################
+-test "x$use_database" = xyes && \
+ SUB_MAKEFILES="$SUB_MAKEFILES misc/run_tic.sh:misc/run_tic.in"
+ 
+ SUB_MAKEFILES="$SUB_MAKEFILES misc/ncurses-config:misc/ncurses-config.in"
+--- a/configure.in
++++ b/configure.in
+@@ -2032,7 +2032,6 @@
+ CF_SUBST_IF(["x$ac_cv_header_termios_h" = xyes], HAVE_TERMIOS_H, 1, 0)
+ 
+ ################################################################################
+-test "x$use_database" = xyes && \
+ SUB_MAKEFILES="$SUB_MAKEFILES misc/run_tic.sh:misc/run_tic.in"
+ 
+ SUB_MAKEFILES="$SUB_MAKEFILES misc/ncurses-config:misc/ncurses-config.in"

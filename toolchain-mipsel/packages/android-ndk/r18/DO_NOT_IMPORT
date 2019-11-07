@@ -1,0 +1,2 @@
+r18 removed the support for GCC and is therefore useless in
+crosstool-NG (unless clang is supported).

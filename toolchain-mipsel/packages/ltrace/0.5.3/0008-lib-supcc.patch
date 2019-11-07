@@ -1,0 +1,18 @@
+---
+ configure |    5 ++++-
+ 1 file changed, 4 insertions(+), 1 deletion(-)
+
+--- a/configure
++++ b/configure
+@@ -78,7 +78,10 @@
+ rm -f conftest.c a.out
+ 
+ CFLAGS='-g -O2'
+-LIBS='-lelf -lsupc++ -liberty '
++LIBS='-lelf'
++[ -n "$HAVE_LIBSUPC__" ] && LIBS="$LIBS -lsupc++"
++[ -n "$HAVE_LIBIBERTY" ] && LIBS="$LIBS -liberty"
++
+ INSTALL='install -c'
+ iquote='-iquote '
+ iquoteend=''

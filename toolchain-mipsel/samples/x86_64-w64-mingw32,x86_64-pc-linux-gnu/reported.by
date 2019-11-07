@@ -1,0 +1,3 @@
+reporter_name="Ray Donnelly"
+reporter_url="https://github.com/crosstool-ng/crosstool-ng"
+reporter_comment="Tested as Canadian Cross with build of GNU/Linux-x86_64 and Cygwin-x86_64"

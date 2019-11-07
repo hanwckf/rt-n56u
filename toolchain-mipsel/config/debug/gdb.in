@@ -1,0 +1,42 @@
+# GDB menu
+
+## help gdb is the GNU debugger
+
+source "config/debug/gdb.in.cross"
+source "config/debug/gdb.in.native"
+
+config GDB_HAS_PKGVERSION_BUGURL
+    bool
+    default y if GDB_7_0_or_later
+
+config GDB_HAS_PYTHON
+    bool
+    default y if GDB_7_0_or_later
+
+config GDB_INSTALL_GDBINIT
+    bool
+    default y if GDB_7_0_or_later
+
+# GDB 8.0 now requires C++ for build. GDB 7.12 offered a configure
+# switch to fall back to C. We want to use that option because
+# the conversion in 7.12 was incomplete and had some breakages.
+config GDB_HAS_DISABLE_CXX_BUILD
+    def_bool y
+    depends on GDB_7_12_or_later && !GDB_8_0_or_later
+
+# GDB 8.0 requires not just any C++, but recent enough to support C++11.
+# Yes, in 2019 there are still LTS systems still lacking such support.
+# I am looking at you, CentOS 6: no cookie for you, use an older GDB.
+config GDB_DEP_CXX11
+    def_bool y
+    depends on !CONFIGURE_has_cxx11
+    select GDB_REQUIRE_older_than_8_0
+
+config GDB_HAS_IPA_LIB
+    def_bool y
+    depends on GDB_7_2_or_later
+
+# Does GDB need ps_get_thread_area with const qualifier?
+config GDB_CONST_GET_THREAD_AREA
+    bool
+    default y if GDB_older_than_7_12

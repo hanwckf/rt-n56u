@@ -1,0 +1,49 @@
+commit 95336102eb836ba69a2b51a3bbe733abd63bbe77
+Author: Andreas Schwab <schwab@suse.de>
+Date:   Thu Mar 12 16:47:38 2015 +0100
+
+    tests/select.test: handle architectures using pselect6 syscall
+    
+    * tests/select.awk (BEGIN): Update regexps to match both select
+    and pselect6 syscalls.
+    * tests/select.test: Probe for both select and pselect6 syscall.
+
+---
+ tests/select.awk  |    6 +++---
+ tests/select.test |    7 +++++--
+ 2 files changed, 8 insertions(+), 5 deletions(-)
+
+--- a/tests/select.awk
++++ b/tests/select.awk
+@@ -1,7 +1,7 @@
+ BEGIN {
+-	r[1] = "^select\\(2, \\[0 1\\], \\[0 1\\], \\[0 1\\], NULL\\) += 1 \\(\\)$"
+-	r[2] = "^select\\(-1, NULL, 0x[0-9a-f]+, NULL, NULL\\) += -1 "
+-	r[3] = "^select\\(1025, \\[0\\], \\[\\], NULL, \\{0, 100\\}\\) += 0 \\(Timeout\\)$"
++	r[1] = "^p?select6?\\(2, \\[0 1\\], \\[0 1\\], \\[0 1\\], NULL(, 0)?\\) += 1 \\(\\)$"
++	r[2] = "^p?select6?\\(-1, NULL, 0x[0-9a-f]+, NULL, NULL(, 0)?\\) += -1 "
++	r[3] = "^p?select6?\\(1025, \\[0\\], \\[\\], NULL, \\{0, 100(000)?\\}(, 0)?\\) += 0 \\(Timeout\\)$"
+ 	r[4] = "^\\+\\+\\+ exited with 0 \\+\\+\\+$"
+ 	lines = 4
+ 	fail = 0
+--- a/tests/select.test
++++ b/tests/select.test
+@@ -6,13 +6,16 @@
+ 
+ check_prog awk
+ 
+-$STRACE -eselect -h > /dev/null ||
++syscall=
++$STRACE -epselect6 -h > /dev/null && syscall=$syscall,pselect6
++$STRACE -eselect -h > /dev/null && syscall=$syscall,select
++test -n "$syscall" ||
+ 	skip_ 'select syscall is not supported on this architecture'
+ 
+ ./select ||
+ 	framework_skip_ 'select syscall does not behave as expected'
+ 
+-args='-eselect ./select'
++args="-e$syscall ./select"
+ $STRACE -o "$LOG" $args || {
+ 	cat "$LOG"
+ 	fail_ "$STRACE $args failed"

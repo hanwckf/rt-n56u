@@ -1,0 +1,22 @@
+---
+ Rules.mak |    2 ++
+ 1 file changed, 2 insertions(+)
+
+--- a/Rules.mak
++++ b/Rules.mak
+@@ -226,6 +226,7 @@
+ 
+ OPTIMIZATION:=
+ # Use '-Os' optimization if available, else use -O2, allow Config to override
++ifneq ($(TARGET_ARCH),m68k)
+ $(eval $(call check-gcc-var,-Os))
+ ifneq ($(CFLAG_-Os),)
+ OPTIMIZATION += $(CFLAG_-Os)
+@@ -233,6 +234,7 @@
+ $(eval $(call check-gcc-var,-O2))
+ OPTIMIZATION += $(CFLAG_-O2)
+ endif
++endif
+ # Use the gcc 3.4 -funit-at-a-time optimization when available
+ $(eval $(call check-gcc-var,-funit-at-a-time))
+ OPTIMIZATION += $(CFLAG_-funit-at-a-time)

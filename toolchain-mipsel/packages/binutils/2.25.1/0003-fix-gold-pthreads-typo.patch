@@ -1,0 +1,18 @@
+---
+ gold/gold-threads.cc |    4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+--- a/gold/gold-threads.cc
++++ b/gold/gold-threads.cc
+@@ -102,9 +102,9 @@
+   if (err != 0)
+     gold_fatal(_("pthead_mutextattr_init failed: %s"), strerror(err));
+ #ifdef PTHREAD_MUTEX_ADAPTIVE_NP
+-  err = pthread_mutextattr_settype(&attr, PTHREAD_MUTEX_ADAPTIVE_NP);
++  err = pthread_mutexattr_settype(&attr, PTHREAD_MUTEX_ADAPTIVE_NP);
+   if (err != 0)
+-    gold_fatal(_("pthread_mutextattr_settype failed: %s"), strerror(err));
++    gold_fatal(_("pthread_mutexattr_settype failed: %s"), strerror(err));
+ #endif
+ 
+   err = pthread_mutex_init(&this->mutex_, &attr);

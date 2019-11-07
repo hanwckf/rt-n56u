@@ -1,0 +1,85 @@
+[As applied to 2.15]
+
+commit 3857022a761ea7251f8e5c0e45d382ebc3e34cf9
+Author: Ulrich Drepper <drepper@gmail.com>
+Date:   Sun Jan 8 09:21:09 2012 -0500
+
+     No need for test for __builtin_expect
+
+---
+ configure    |   32 --------------------------------
+ configure.in |   22 ----------------------
+ 2 files changed, 54 deletions(-)
+
+--- a/configure
++++ b/configure
+@@ -7185,38 +7185,6 @@
+ fi
+ fi
+ 
+-{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for __builtin_expect" >&5
+-$as_echo_n "checking for __builtin_expect... " >&6; }
+-if ${libc_cv_gcc_builtin_expect+:} false; then :
+-  $as_echo_n "(cached) " >&6
+-else
+-  cat > conftest.c <<EOF
+-#line $LINENO "configure"
+-int foo (int a)
+-{
+-  a = __builtin_expect (a, 10);
+-  return a == 10 ? 0 : 1;
+-}
+-EOF
+-if { ac_try='${CC-cc} $CFLAGS $CPPFLAGS $LDFLAGS -nostdlib -nostartfiles
+-			    -o conftest conftest.c -lgcc >&5'
+-  { { eval echo "\"\$as_me\":${as_lineno-$LINENO}: \"$ac_try\""; } >&5
+-  (eval $ac_try) 2>&5
+-  ac_status=$?
+-  $as_echo "$as_me:${as_lineno-$LINENO}: \$? = $ac_status" >&5
+-  test $ac_status = 0; }; }; then
+-  libc_cv_gcc_builtin_expect=yes
+-else
+-  libc_cv_gcc_builtin_expect=no
+-fi
+-rm -f conftest*
+-fi
+-{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $libc_cv_gcc_builtin_expect" >&5
+-$as_echo "$libc_cv_gcc_builtin_expect" >&6; }
+-if test "$libc_cv_gcc_builtin_expect" = no; then
+-  as_fn_error $? "support for __builtin_expect needed" "$LINENO" 5
+-fi
+-
+ { $as_echo "$as_me:${as_lineno-$LINENO}: checking for __builtin_memset" >&5
+ $as_echo_n "checking for __builtin_memset... " >&6; }
+ if ${libc_cv_gcc_builtin_memset+:} false; then :
+--- a/configure.in
++++ b/configure.in
+@@ -2098,28 +2098,6 @@
+ fi
+ fi
+ 
+-dnl Check whether compiler understands __builtin_expect.
+-AC_CACHE_CHECK(for __builtin_expect, libc_cv_gcc_builtin_expect,
+-[cat > conftest.c <<EOF
+-#line $LINENO "configure"
+-int foo (int a)
+-{
+-  a = __builtin_expect (a, 10);
+-  return a == 10 ? 0 : 1;
+-}
+-EOF
+-dnl No \ in command here because it ends up inside ''.
+-if AC_TRY_COMMAND([${CC-cc} $CFLAGS $CPPFLAGS $LDFLAGS -nostdlib -nostartfiles
+-			    -o conftest conftest.c -lgcc >&AS_MESSAGE_LOG_FD]); then
+-  libc_cv_gcc_builtin_expect=yes
+-else
+-  libc_cv_gcc_builtin_expect=no
+-fi
+-rm -f conftest*])
+-if test "$libc_cv_gcc_builtin_expect" = no; then
+-  AC_MSG_ERROR([support for __builtin_expect needed])
+-fi
+-
+ AC_CACHE_CHECK(for __builtin_memset, libc_cv_gcc_builtin_memset, [dnl
+ cat > conftest.c <<\EOF
+ void zero (void *x)

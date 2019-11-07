@@ -1,0 +1,7 @@
+repository='git https://git.savannah.gnu.org/git/make.git'
+bootstrap='autoreconf -i'
+mirrors='$(CT_Mirrors GNU make)'
+relevantpattern='*.*|.'
+archive_formats='.tar.bz2 .tar.gz'
+signature_format='packed/.sig'
+milestones='4.0'

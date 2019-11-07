@@ -1,0 +1,6 @@
+repository='git git://git.savannah.gnu.org/libtool.git'
+bootstrap='./bootstrap'
+mirrors='$(CT_Mirrors GNU libtool)'
+relevantpattern='*.*|.'
+archive_formats='.tar.xz .tar.gz'
+signature_format='packed/.sig'

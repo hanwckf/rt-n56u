@@ -1,0 +1,44 @@
+---
+ Makefile.in         |    3 +++
+ extra/config/conf.c |    4 +++-
+ 2 files changed, 6 insertions(+), 1 deletion(-)
+
+--- a/extra/config/conf.c
++++ b/extra/config/conf.c
+@@ -435,6 +435,7 @@
+ 	const char *name;
+ 	const char *configname = conf_get_configname();
+ 	struct stat tmpstat;
++	int olddefconfig = 0;
+ 
+ 	setlocale(LC_ALL, "");
+ 	bindtextdomain(PACKAGE, LOCALEDIR);
+@@ -451,6 +452,7 @@
+ 			break;
+ 		case 'd':
+ 			input_mode = set_default;
++			olddefconfig = 1;
+ 			break;
+ 		case 'D':
+ 			input_mode = set_default;
+@@ -514,7 +516,7 @@
+ 	switch (input_mode) {
+ 	case set_default:
+ 		if (!defconfig_file)
+-			defconfig_file = conf_get_default_confname();
++			defconfig_file = olddefconfig ? NULL : conf_get_default_confname();
+ 		if (conf_read(defconfig_file)) {
+ 			printf(_("***\n"
+ 				"*** Can't find default configuration \"%s\"!\n"
+--- a/Makefile.in
++++ b/Makefile.in
+@@ -460,6 +460,9 @@
+ allnoconfig: $(conf)
+ 	$(Q)$< -n extra/Configs/Config.in
+ 
++olddefconfig: $(conf)
++	$(Q)$< -d extra/Configs/Config.in
++
+ defconfig: $(conf)
+ 	$(Q)$< -D extra/Configs/defconfigs/$(ARCH)/$@ extra/Configs/Config.in
+ 

@@ -1,0 +1,48 @@
+This patch is to ensure the proper ARCH is selected when cross compiling.  Make
+sure to call the configure script with, e.g., HOST=arm ./configure to select 
+the arm sysdeps.
+
+	Joachim Nilsson <jocke@vmlinux.org>
+
+---
+ Makefile.in                |    6 ++++--
+ configure                  |    2 +-
+ sysdeps/linux-gnu/Makefile |    2 +-
+ 3 files changed, 6 insertions(+), 4 deletions(-)
+
+--- a/configure
++++ b/configure
+@@ -110,7 +110,7 @@
+ #
+ # Makefile.in -> Makefile
+ #
+-x_subst_vars='PACKAGE_VERSION HOST_OS INSTALL CC CPPFLAGS CFLAGS LDFLAGS LIBS iquote iquoteend prefix sysconfdir mandir docdir'
++x_subst_vars='PACKAGE_VERSION HOST HOST_OS INSTALL CC CPPFLAGS CFLAGS LDFLAGS LIBS iquote iquoteend prefix sysconfdir mandir docdir'
+ 
+ for i in $x_subst_vars
+ do
+--- a/Makefile.in
++++ b/Makefile.in
+@@ -1,10 +1,12 @@
+ #
+ # ltrace's Makefile.in
+ #
+-
++MY_TARGET       = @HOST@
++ifdef MY_TARGET
++ARCH            = $(MY_TARGET)
++endif
+ #OS		:= $(shell uname -s)
+ OS		:= @HOST_OS@
+-
+ TOPDIR		= $(shell pwd)
+ 
+ prefix		= @prefix@
+--- a/sysdeps/linux-gnu/Makefile
++++ b/sysdeps/linux-gnu/Makefile
+@@ -1,4 +1,4 @@
+-ARCH		:=	$(shell uname -m | sed \
++ARCH		?=	$(shell uname -m | sed \
+ 				-e s/i.86/i386/ \
+ 				-e s/sun4u/sparc64/ \
+ 				-e s/sparc64/sparc/ \

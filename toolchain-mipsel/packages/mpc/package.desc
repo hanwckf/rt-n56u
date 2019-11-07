@@ -1,0 +1,7 @@
+repository='git https://scm.gforge.inria.fr/anonscm/git/mpc/mpc.git'
+bootstrap='autoreconf -i'
+mirrors='http://www.multiprecision.org/downloads $(CT_Mirrors GNU mpc)'
+relevantpattern='*.*|.'
+archive_formats='.tar.gz'
+signature_format='packed/.sig'
+milestones='1.1.0'

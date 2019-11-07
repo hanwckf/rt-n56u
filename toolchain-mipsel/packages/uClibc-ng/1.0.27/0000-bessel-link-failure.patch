@@ -1,0 +1,43 @@
+commit c69db851309995c525b3993a10dc13dabdeb7b33
+Author: Ronald Wahl <ronald.wahl@raritan.com>
+Date:   Tue Nov 28 19:20:45 2017 +0100
+
+    Fix build regression with DO_XSI_MATH disabled
+    
+    Commit ea38f4d89 (math: add exception handling functionality) adds a
+    regression so that build configurations that have DO_C99_MATH enabled
+    and DO_XSI_MATH disabled will not link. This commit moves the files with
+    the bessel functions from DO_C99_MATH to DO_XSI_MATH. It looks like they
+    are not even contained in C99.
+    
+    Signed-off-by: Ronald Wahl <ronald.wahl@raritan.com>
+
+---
+ libm/Makefile.in |    9 +++++----
+ 1 file changed, 5 insertions(+), 4 deletions(-)
+
+--- a/libm/Makefile.in
++++ b/libm/Makefile.in
+@@ -74,9 +74,6 @@
+ 	w_exp.c w_expf.c w_expl.c \
+ 	w_exp2.c w_exp2f.c w_exp2l.c \
+ 	w_exp10.c w_exp10f.c w_exp10l.c \
+-	w_j0.c w_j0f.c w_j0l.c \
+-	w_j1.c w_j1f.c w_j1l.c \
+-	w_jn.c w_jnf.c w_jnl.c \
+ 	w_lgamma_r.c w_lgammaf_r.c w_lgammal_r.c \
+ 	w_lgamma.c w_lgammaf.c w_lgammal.c \
+ 	w_tgamma.c w_tgammaf.c w_tgammal.c \
+@@ -267,7 +264,11 @@
+ endif
+ 
+ ifeq ($(DO_XSI_MATH),y)
+-libm_CSRC += e_j0.c e_j1.c e_jn.c
++libm_CSRC += \
++	e_j0.c e_j1.c e_jn.c \
++	w_j0.c w_j0f.c w_j0l.c \
++	w_j1.c w_j1f.c w_j1l.c \
++	w_jn.c w_jnf.c w_jnl.c
+ endif
+ 
+ # assume that arch specific versions are provided as single sources/objects

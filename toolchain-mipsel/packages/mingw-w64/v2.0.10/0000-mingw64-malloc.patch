@@ -1,0 +1,30 @@
+---
+ mingw-w64-tools/genidl/src/genidl_cfg.h     |    2 ++
+ mingw-w64-tools/genidl/src/genidl_typinfo.c |    3 +++
+ 2 files changed, 5 insertions(+)
+
+--- a/mingw-w64-tools/genidl/src/genidl_cfg.h
++++ b/mingw-w64-tools/genidl/src/genidl_cfg.h
+@@ -51,7 +51,9 @@
+ #include <stdio.h>
+ #include <stdlib.h>
+ #include <string.h>
++#if defined(HAVE_MALLOC_H)
+ #include <malloc.h>
++#endif
+ #include <memory.h>
+ #include <stdarg.h>
+ #include <stdint.h>
+--- a/mingw-w64-tools/genidl/src/genidl_typinfo.c
++++ b/mingw-w64-tools/genidl/src/genidl_typinfo.c
+@@ -46,7 +46,10 @@
+ #include "genidl_cfg.h"
+ #include "genidl_typeinfo.h"
+ #include "genidl_typinfo.h"
++#if defined(HAVE_MALLOC_H)
+ #include <malloc.h>
++#endif
++#include <stdlib.h>
+ #include <string.h>
+ #include <memory.h>
+ 

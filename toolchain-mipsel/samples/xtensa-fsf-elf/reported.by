@@ -1,0 +1,4 @@
+reporter_name="Anton Maklakov"
+reporter_url=""
+reporter_comment="Modified from the configuration reported in #985 to not include
+overlays."

@@ -1,0 +1,16 @@
+---
+ sysdeps/unix/sysv/linux/kernel-features.h |    3 ++-
+ 1 file changed, 2 insertions(+), 1 deletion(-)
+
+--- a/sysdeps/unix/sysv/linux/kernel-features.h
++++ b/sysdeps/unix/sysv/linux/kernel-features.h
+@@ -437,7 +437,8 @@
+    the code.  On PPC they were introduced in 2.6.17-rc1,
+    on SH in 2.6.19-rc1.  */
+ #if __LINUX_KERNEL_VERSION >= 0x020611 \
+-    && (!defined __sh__ || __LINUX_KERNEL_VERSION >= 0x020613)
++    && (!defined __sh__ || __LINUX_KERNEL_VERSION >= 0x020613) \
++    && (!defined __alpha__)
+ # define __ASSUME_ATFCTS	1
+ #endif
+ 

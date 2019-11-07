@@ -1,0 +1,353 @@
+From d4ecf6f15ad7a428786df2efdc88b03be0a4fdbb Mon Sep 17 00:00:00 2001
+From: Daiki Ueno <ueno@gnu.org>
+Date: Thu, 17 Jan 2013 18:33:40 +0900
+Subject: [PATCH] Fix Woe32 link errors when compiling with -O0.
+
+---
+ gettext-tools/src/Makefile.am                  |   18 +++-
+ gettext-tools/src/Makefile.in                  |  108 ++++++++++++++++++-------
+ gettext-tools/src/color.c                      |    1 
+ gettext-tools/woe32dll/c++color.cc             |    1 
+ gettext-tools/woe32dll/c++file-ostream.cc      |    2 
+ gettext-tools/woe32dll/c++html-ostream.cc      |    1 
+ gettext-tools/woe32dll/c++styled-ostream.cc    |    1 
+ gettext-tools/woe32dll/c++term-ostream.cc      |    1 
+ gettext-tools/woe32dll/c++write-catalog.cc     |    1 
+ gettext-tools/woe32dll/c++write-po.cc          |    1 
+ gettext-tools/woe32dll/c++write-properties.cc  |    1 
+ gettext-tools/woe32dll/c++write-stringtable.cc |    1 
+ gnulib-local/modules/file-ostream              |    4 
+ gnulib-local/modules/html-ostream              |    4 
+ gnulib-local/modules/ostream                   |    4 
+ gnulib-local/modules/styled-ostream            |    4 
+ gnulib-local/modules/term-ostream              |    4 
+ 17 files changed, 126 insertions(+), 31 deletions(-)
+ create mode 100644 gettext-tools/woe32dll/c++color.cc
+ create mode 100644 gettext-tools/woe32dll/c++file-ostream.cc
+ create mode 100644 gettext-tools/woe32dll/c++html-ostream.cc
+ create mode 100644 gettext-tools/woe32dll/c++styled-ostream.cc
+ create mode 100644 gettext-tools/woe32dll/c++term-ostream.cc
+ create mode 100644 gettext-tools/woe32dll/c++write-catalog.cc
+ create mode 100644 gettext-tools/woe32dll/c++write-po.cc
+ create mode 100644 gettext-tools/woe32dll/c++write-properties.cc
+ create mode 100644 gettext-tools/woe32dll/c++write-stringtable.cc
+
+Additional fix (COLOR_SOURCE) by Ray Donnelly <mingw.android@gmail.com>
+
+--- a/gettext-tools/src/Makefile.am
++++ b/gettext-tools/src/Makefile.am
+@@ -146,10 +146,26 @@
+   format-lua.c \
+   format-javascript.c
+ 
++if !WOE32DLL
++COLOR_SOURCE = color.c
++OUTPUT_SOURCE = \
++  write-catalog.c \
++  write-properties.c \
++  write-stringtable.c \
++  write-po.c
++else
++COLOR_SOURCE = ../woe32dll/c++color.cc
++OUTPUT_SOURCE = \
++  ../woe32dll/c++write-catalog.cc \
++  ../woe32dll/c++write-properties.cc \
++  ../woe32dll/c++write-stringtable.cc \
++  ../woe32dll/c++write-po.cc
++endif
++
+ # libgettextsrc contains all code that is needed by at least two programs.
+ libgettextsrc_la_SOURCES = \
+ $(COMMON_SOURCE) read-catalog.c \
+-color.c write-catalog.c write-properties.c write-stringtable.c write-po.c \
++$(COLOR_SOURCE) $(OUTPUT_SOURCE) \
+ msgl-ascii.c msgl-iconv.c msgl-equal.c msgl-cat.c msgl-header.c msgl-english.c \
+ msgl-check.c file-list.c msgl-charset.c po-time.c plural-exp.c plural-eval.c \
+ plural-table.c quote.h sentence.h sentence.c \
+--- a/gettext-tools/src/Makefile.in
++++ b/gettext-tools/src/Makefile.in
+@@ -402,19 +402,22 @@
+ am__libgettextsrc_la_SOURCES_DIST = message.c po-error.c po-xerror.c \
+ 	read-catalog-abstract.c po-lex.c po-gram-gen.y po-charset.c \
+ 	read-po.c read-properties.c read-stringtable.c open-catalog.c \
+-	dir-list.c str-list.c read-catalog.c color.c write-catalog.c \
+-	write-properties.c write-stringtable.c write-po.c msgl-ascii.c \
+-	msgl-iconv.c msgl-equal.c msgl-cat.c msgl-header.c \
+-	msgl-english.c msgl-check.c file-list.c msgl-charset.c \
+-	po-time.c plural-exp.c plural-eval.c plural-table.c quote.h \
+-	sentence.h sentence.c format.c format-invalid.h format-c.c \
+-	format-c-parse.h format-sh.c format-python.c \
+-	format-python-brace.c format-lisp.c format-elisp.c \
+-	format-librep.c format-scheme.c format-java.c format-csharp.c \
+-	format-awk.c format-pascal.c format-ycp.c format-tcl.c \
+-	format-perl.c format-perl-brace.c format-php.c \
+-	format-gcc-internal.c format-gfc-internal.c format-qt.c \
+-	format-qt-plural.c format-kde.c format-kde-kuit.c \
++	dir-list.c str-list.c read-catalog.c color.c \
++	../woe32dll/c++color.cc write-catalog.c write-properties.c \
++	write-stringtable.c write-po.c ../woe32dll/c++write-catalog.cc \
++	../woe32dll/c++write-properties.cc \
++	../woe32dll/c++write-stringtable.cc ../woe32dll/c++write-po.cc \
++	msgl-ascii.c msgl-iconv.c msgl-equal.c msgl-cat.c \
++	msgl-header.c msgl-english.c msgl-check.c file-list.c \
++	msgl-charset.c po-time.c plural-exp.c plural-eval.c \
++	plural-table.c quote.h sentence.h sentence.c \
++	format.c format-invalid.h format-c.c format-c-parse.h \
++	format-sh.c format-python.c format-python-brace.c \
++	format-lisp.c format-elisp.c format-librep.c format-scheme.c \
++	format-java.c format-csharp.c format-awk.c format-pascal.c \
++	format-ycp.c format-tcl.c format-perl.c format-perl-brace.c \
++	format-php.c format-gcc-internal.c format-gfc-internal.c \
++	format-qt.c format-qt-plural.c format-kde.c format-kde-kuit.c \
+ 	format-boost.c format-lua.c format-javascript.c \
+ 	../woe32dll/c++format.cc read-desktop.c locating-rule.c its.c \
+ 	../woe32dll/gettextsrc-exports.c
+@@ -428,7 +431,18 @@
+ 	libgettextsrc_la-open-catalog.lo libgettextsrc_la-dir-list.lo \
+ 	libgettextsrc_la-str-list.lo
+ am__dirstamp = $(am__leading_dot)dirstamp
+-@WOE32DLL_FALSE@am__objects_2 = libgettextsrc_la-format.lo \
++@WOE32DLL_FALSE@am__objects_2 = libgettextsrc_la-color.lo
++@WOE32DLL_TRUE@am__objects_2 =  \
++@WOE32DLL_TRUE@	../woe32dll/libgettextsrc_la-c++color.lo
++@WOE32DLL_FALSE@am__objects_3 = libgettextsrc_la-write-catalog.lo \
++@WOE32DLL_FALSE@	libgettextsrc_la-write-properties.lo \
++@WOE32DLL_FALSE@	libgettextsrc_la-write-stringtable.lo \
++@WOE32DLL_FALSE@	libgettextsrc_la-write-po.lo
++@WOE32DLL_TRUE@am__objects_3 = ../woe32dll/libgettextsrc_la-c++write-catalog.lo \
++@WOE32DLL_TRUE@	../woe32dll/libgettextsrc_la-c++write-properties.lo \
++@WOE32DLL_TRUE@	../woe32dll/libgettextsrc_la-c++write-stringtable.lo \
++@WOE32DLL_TRUE@	../woe32dll/libgettextsrc_la-c++write-po.lo
++@WOE32DLL_FALSE@am__objects_4 = libgettextsrc_la-format.lo \
+ @WOE32DLL_FALSE@	libgettextsrc_la-format-c.lo \
+ @WOE32DLL_FALSE@	libgettextsrc_la-format-sh.lo \
+ @WOE32DLL_FALSE@	libgettextsrc_la-format-python.lo \
+@@ -455,7 +469,7 @@
+ @WOE32DLL_FALSE@	libgettextsrc_la-format-boost.lo \
+ @WOE32DLL_FALSE@	libgettextsrc_la-format-lua.lo \
+ @WOE32DLL_FALSE@	libgettextsrc_la-format-javascript.lo
+-@WOE32DLL_TRUE@am__objects_2 =  \
++@WOE32DLL_TRUE@am__objects_4 =  \
+ @WOE32DLL_TRUE@	../woe32dll/libgettextsrc_la-c++format.lo \
+ @WOE32DLL_TRUE@	libgettextsrc_la-format-c.lo \
+ @WOE32DLL_TRUE@	libgettextsrc_la-format-sh.lo \
+@@ -483,13 +497,10 @@
+ @WOE32DLL_TRUE@	libgettextsrc_la-format-boost.lo \
+ @WOE32DLL_TRUE@	libgettextsrc_la-format-lua.lo \
+ @WOE32DLL_TRUE@	libgettextsrc_la-format-javascript.lo
+-@WOE32DLL_TRUE@am__objects_3 = ../woe32dll/libgettextsrc_la-gettextsrc-exports.lo
++@WOE32DLL_TRUE@am__objects_5 = ../woe32dll/libgettextsrc_la-gettextsrc-exports.lo
+ am_libgettextsrc_la_OBJECTS = $(am__objects_1) \
+-	libgettextsrc_la-read-catalog.lo libgettextsrc_la-color.lo \
+-	libgettextsrc_la-write-catalog.lo \
+-	libgettextsrc_la-write-properties.lo \
+-	libgettextsrc_la-write-stringtable.lo \
+-	libgettextsrc_la-write-po.lo libgettextsrc_la-msgl-ascii.lo \
++	libgettextsrc_la-read-catalog.lo $(am__objects_2) \
++	$(am__objects_3) libgettextsrc_la-msgl-ascii.lo \
+ 	libgettextsrc_la-msgl-iconv.lo libgettextsrc_la-msgl-equal.lo \
+ 	libgettextsrc_la-msgl-cat.lo libgettextsrc_la-msgl-header.lo \
+ 	libgettextsrc_la-msgl-english.lo \
+@@ -497,9 +508,9 @@
+ 	libgettextsrc_la-msgl-charset.lo libgettextsrc_la-po-time.lo \
+ 	libgettextsrc_la-plural-exp.lo libgettextsrc_la-plural-eval.lo \
+ 	libgettextsrc_la-plural-table.lo libgettextsrc_la-sentence.lo \
+-	$(am__objects_2) libgettextsrc_la-read-desktop.lo \
++	$(am__objects_4) libgettextsrc_la-read-desktop.lo \
+ 	libgettextsrc_la-locating-rule.lo libgettextsrc_la-its.lo \
+-	$(am__objects_3)
++	$(am__objects_5)
+ libgettextsrc_la_OBJECTS = $(am_libgettextsrc_la_OBJECTS)
+ PROGRAMS = $(bin_PROGRAMS) $(noinst_PROGRAMS)
+ am_cldr_plurals_OBJECTS = cldr_plurals-cldr-plural.$(OBJEXT) \
+@@ -2250,15 +2261,28 @@
+ @WOE32DLL_TRUE@	format-qt.c format-qt-plural.c format-kde.c \
+ @WOE32DLL_TRUE@	format-kde-kuit.c format-boost.c format-lua.c \
+ @WOE32DLL_TRUE@	format-javascript.c
++@WOE32DLL_FALSE@COLOR_SOURCE = color.c
++@WOE32DLL_TRUE@COLOR_SOURCE = ../woe32dll/c++color.cc
++@WOE32DLL_FALSE@OUTPUT_SOURCE = \
++@WOE32DLL_FALSE@  write-catalog.c \
++@WOE32DLL_FALSE@  write-properties.c \
++@WOE32DLL_FALSE@  write-stringtable.c \
++@WOE32DLL_FALSE@  write-po.c
++
++@WOE32DLL_TRUE@OUTPUT_SOURCE = \
++@WOE32DLL_TRUE@  ../woe32dll/c++write-catalog.cc \
++@WOE32DLL_TRUE@  ../woe32dll/c++write-properties.cc \
++@WOE32DLL_TRUE@  ../woe32dll/c++write-stringtable.cc \
++@WOE32DLL_TRUE@  ../woe32dll/c++write-po.cc
++
+ 
+ # libgettextsrc contains all code that is needed by at least two programs.
+-libgettextsrc_la_SOURCES = $(COMMON_SOURCE) read-catalog.c color.c \
+-	write-catalog.c write-properties.c write-stringtable.c \
+-	write-po.c msgl-ascii.c msgl-iconv.c msgl-equal.c msgl-cat.c \
+-	msgl-header.c msgl-english.c msgl-check.c file-list.c \
+-	msgl-charset.c po-time.c plural-exp.c plural-eval.c \
+-	plural-table.c quote.h sentence.h sentence.c $(FORMAT_SOURCE) \
+-	read-desktop.c locating-rule.c its.c $(am__append_1)
++libgettextsrc_la_SOURCES = $(COMMON_SOURCE) read-catalog.c \
++	$(COLOR_SOURCE) $(OUTPUT_SOURCE) msgl-ascii.c msgl-iconv.c \
++	msgl-equal.c msgl-cat.c msgl-header.c msgl-english.c \
++	msgl-check.c file-list.c msgl-charset.c po-time.c plural-exp.c \
++	plural-eval.c plural-table.c quote.h sentence.h sentence.c \
++	$(FORMAT_SOURCE) read-desktop.c locating-rule.c its.c $(am__append_1)
+ 
+ # msggrep needs pattern matching.
+ LIBGREP = ../libgrep/libgrep.a
+@@ -2620,6 +2644,15 @@
+ ../woe32dll/$(am__dirstamp):
+ 	@$(MKDIR_P) ../woe32dll
+ 	@: > ../woe32dll/$(am__dirstamp)
++../woe32dll/libgettextsrc_la-c++color.lo: ../woe32dll/$(am__dirstamp)
++../woe32dll/libgettextsrc_la-c++write-catalog.lo:  \
++	../woe32dll/$(am__dirstamp)
++../woe32dll/libgettextsrc_la-c++write-properties.lo:  \
++	../woe32dll/$(am__dirstamp)
++../woe32dll/libgettextsrc_la-c++write-stringtable.lo:  \
++	../woe32dll/$(am__dirstamp)
++../woe32dll/libgettextsrc_la-c++write-po.lo:  \
++	../woe32dll/$(am__dirstamp)
+ ../woe32dll/libgettextsrc_la-c++format.lo:  \
+ 	../woe32dll/$(am__dirstamp)
+ ../woe32dll/libgettextsrc_la-gettextsrc-exports.lo:  \
+@@ -3422,6 +3455,21 @@
+ .cc.lo:
+ 	$(AM_V_CXX)$(LTCXXCOMPILE) -c -o $@ $<
+ 
++../woe32dll/libgettextsrc_la-c++color.lo: ../woe32dll/c++color.cc
++	$(AM_V_CXX)$(LIBTOOL) $(AM_V_lt) --tag=CXX $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libgettextsrc_la_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o ../woe32dll/libgettextsrc_la-c++color.lo `test -f '../woe32dll/c++color.cc' || echo '$(srcdir)/'`../woe32dll/c++color.cc
++
++../woe32dll/libgettextsrc_la-c++write-catalog.lo: ../woe32dll/c++write-catalog.cc
++	$(AM_V_CXX)$(LIBTOOL) $(AM_V_lt) --tag=CXX $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libgettextsrc_la_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o ../woe32dll/libgettextsrc_la-c++write-catalog.lo `test -f '../woe32dll/c++write-catalog.cc' || echo '$(srcdir)/'`../woe32dll/c++write-catalog.cc
++
++../woe32dll/libgettextsrc_la-c++write-properties.lo: ../woe32dll/c++write-properties.cc
++	$(AM_V_CXX)$(LIBTOOL) $(AM_V_lt) --tag=CXX $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libgettextsrc_la_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o ../woe32dll/libgettextsrc_la-c++write-properties.lo `test -f '../woe32dll/c++write-properties.cc' || echo '$(srcdir)/'`../woe32dll/c++write-properties.cc
++
++../woe32dll/libgettextsrc_la-c++write-stringtable.lo: ../woe32dll/c++write-stringtable.cc
++	$(AM_V_CXX)$(LIBTOOL) $(AM_V_lt) --tag=CXX $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libgettextsrc_la_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o ../woe32dll/libgettextsrc_la-c++write-stringtable.lo `test -f '../woe32dll/c++write-stringtable.cc' || echo '$(srcdir)/'`../woe32dll/c++write-stringtable.cc
++
++../woe32dll/libgettextsrc_la-c++write-po.lo: ../woe32dll/c++write-po.cc
++	$(AM_V_CXX)$(LIBTOOL) $(AM_V_lt) --tag=CXX $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libgettextsrc_la_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o ../woe32dll/libgettextsrc_la-c++write-po.lo `test -f '../woe32dll/c++write-po.cc' || echo '$(srcdir)/'`../woe32dll/c++write-po.cc
++
+ ../woe32dll/libgettextsrc_la-c++format.lo: ../woe32dll/c++format.cc
+ 	$(AM_V_CXX)$(LIBTOOL) $(AM_V_lt) --tag=CXX $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libgettextsrc_la_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o ../woe32dll/libgettextsrc_la-c++format.lo `test -f '../woe32dll/c++format.cc' || echo '$(srcdir)/'`../woe32dll/c++format.cc
+ 
+--- a/gettext-tools/src/color.c
++++ b/gettext-tools/src/color.c
+@@ -28,6 +28,7 @@
+ #include <sys/types.h>
+ #include <sys/stat.h>
+ 
++#include "ostream.h"
+ #include "term-ostream.h"
+ #include "xalloc.h"
+ #include "relocatable.h"
+--- /dev/null
++++ b/gettext-tools/woe32dll/c++color.cc
+@@ -0,0 +1 @@
++#include "../src/color.c"
+--- /dev/null
++++ b/gettext-tools/woe32dll/c++file-ostream.cc
+@@ -0,0 +1,2 @@
++#include "../gnulib-lib/file-ostream.c"
++
+--- /dev/null
++++ b/gettext-tools/woe32dll/c++html-ostream.cc
+@@ -0,0 +1 @@
++#include "../gnulib-lib/html-ostream.c"
+--- /dev/null
++++ b/gettext-tools/woe32dll/c++styled-ostream.cc
+@@ -0,0 +1 @@
++#include "../gnulib-lib/styled-ostream.c"
+--- /dev/null
++++ b/gettext-tools/woe32dll/c++term-ostream.cc
+@@ -0,0 +1 @@
++#include "../gnulib-lib/term-ostream.c"
+--- /dev/null
++++ b/gettext-tools/woe32dll/c++write-catalog.cc
+@@ -0,0 +1 @@
++#include "../src/write-catalog.c"
+--- /dev/null
++++ b/gettext-tools/woe32dll/c++write-po.cc
+@@ -0,0 +1 @@
++#include "../src/write-po.c"
+--- /dev/null
++++ b/gettext-tools/woe32dll/c++write-properties.cc
+@@ -0,0 +1 @@
++#include "../src/write-properties.c"
+--- /dev/null
++++ b/gettext-tools/woe32dll/c++write-stringtable.cc
+@@ -0,0 +1 @@
++#include "../src/write-stringtable.c"
+--- a/gnulib-local/modules/file-ostream
++++ b/gnulib-local/modules/file-ostream
+@@ -12,7 +12,11 @@
+ configure.ac:
+ 
+ Makefile.am:
++if !WOE32DLL
+ lib_SOURCES += file-ostream.c
++else
++lib_SOURCES += ../woe32dll/c++file-ostream.cc
++endif
+ # This is a Makefile rule that generates multiple files at once; see the
+ # automake documentation, node "Multiple Outputs", for details.
+ file-ostream.h : $(top_srcdir)/build-aux/moopp file-ostream.oo.h file-ostream.oo.c ostream.oo.h
+--- a/gnulib-local/modules/html-ostream
++++ b/gnulib-local/modules/html-ostream
+@@ -15,7 +15,11 @@
+ configure.ac:
+ 
+ Makefile.am:
++if !WOE32DLL
+ lib_SOURCES += html-ostream.c
++else
++lib_SOURCES += ../woe32dll/c++html-ostream.cc
++endif
+ # This is a Makefile rule that generates multiple files at once; see the
+ # automake documentation, node "Multiple Outputs", for details.
+ html-ostream.h : $(top_srcdir)/build-aux/moopp html-ostream.oo.h html-ostream.oo.c ostream.oo.h
+--- a/gnulib-local/modules/ostream
++++ b/gnulib-local/modules/ostream
+@@ -11,7 +11,11 @@
+ configure.ac:
+ 
+ Makefile.am:
++if !WOE32DLL
+ lib_SOURCES += ostream.c
++else
++lib_SOURCES += ../woe32dll/c++ostream.cc
++endif
+ # This is a Makefile rule that generates multiple files at once; see the
+ # automake documentation, node "Multiple Outputs", for details.
+ ostream.h : $(top_srcdir)/build-aux/moopp ostream.oo.h ostream.oo.c
+--- a/gnulib-local/modules/styled-ostream
++++ b/gnulib-local/modules/styled-ostream
+@@ -11,7 +11,11 @@
+ configure.ac:
+ 
+ Makefile.am:
++if !WOE32DLL
+ lib_SOURCES += styled-ostream.c
++else
++lib_SOURCES += ../woe32dll/c++styled-ostream.cc
++endif
+ # This is a Makefile rule that generates multiple files at once; see the
+ # automake documentation, node "Multiple Outputs", for details.
+ styled-ostream.h : $(top_srcdir)/build-aux/moopp styled-ostream.oo.h styled-ostream.oo.c ostream.oo.h
+--- a/gnulib-local/modules/term-ostream
++++ b/gnulib-local/modules/term-ostream
+@@ -22,7 +22,11 @@
+ gl_TERM_OSTREAM
+ 
+ Makefile.am:
++if !WOE32DLL
+ lib_SOURCES += term-ostream.c
++else
++lib_SOURCES += ../woe32dll/c++term-ostream.cc
++endif
+ # This is a Makefile rule that generates multiple files at once; see the
+ # automake documentation, node "Multiple Outputs", for details.
+ term-ostream.h : $(top_srcdir)/build-aux/moopp term-ostream.oo.h term-ostream.oo.c ostream.oo.h

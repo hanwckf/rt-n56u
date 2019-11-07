@@ -1,0 +1,5 @@
+repository='git git://git.kernel.org/pub/scm/utils/dtc/dtc.git'
+mirrors='$(CT_Mirrors kernel.org dtc)'
+relevantpattern='*.*|.'
+archive_formats='.tar.xz .tar.gz'
+signature_format='unpacked/.sign'

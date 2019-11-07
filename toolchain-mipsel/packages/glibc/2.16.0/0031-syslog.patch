@@ -1,0 +1,15 @@
+---
+ misc/syslog.c |    2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+--- a/misc/syslog.c
++++ b/misc/syslog.c
+@@ -150,7 +150,7 @@
+ #define	INTERNALLOG	LOG_ERR|LOG_CONS|LOG_PERROR|LOG_PID
+ 	/* Check for invalid bits. */
+ 	if (pri & ~(LOG_PRIMASK|LOG_FACMASK)) {
+-		syslog(INTERNALLOG,
++		__syslog(INTERNALLOG,
+ 		    "syslog: unknown facility/priority: %x", pri);
+ 		pri &= LOG_PRIMASK|LOG_FACMASK;
+ 	}

@@ -1,0 +1,163 @@
+---
+ config/gcc-plugin.m4 |   18 +++++++++++++-----
+ gcc/configure        |   22 +++++++++++++++-------
+ libcc1/configure     |   22 +++++++++++++++-------
+ 3 files changed, 43 insertions(+), 19 deletions(-)
+
+--- a/config/gcc-plugin.m4
++++ b/config/gcc-plugin.m4
+@@ -20,6 +20,9 @@
+ 
+    pluginlibs=
+ 
++   PICFLAG="-fPIC"
++   UNDEFINEDPREAMBLE="extern int X;"
++   UNDEFINEDCODE="return X == 0;"
+    case "${host}" in
+      *-*-darwin*)
+        if test x$build = x$host; then
+@@ -30,6 +33,11 @@
+ 	 export_sym_check=
+        fi
+      ;;
++     *-*-mingw*|*-*-cygwin*|*-*-msys*)
++       PICFLAG=""
++       UNDEFINEDPREAMBLE=""
++       UNDEFINEDCODE=""
++     ;;
+      *)
+        if test x$build = x$host; then
+ 	 export_sym_check="objdump${exeext} -T"
+@@ -81,17 +89,17 @@
+      case "${host}" in
+        *-*-darwin*)
+ 	 CFLAGS=`echo $CFLAGS | sed s/-mdynamic-no-pic//g`
+-	 CFLAGS="$CFLAGS -fPIC"
++	 CFLAGS="$CFLAGS ${PICFLAG}"
+ 	 LDFLAGS="$LDFLAGS -shared -undefined dynamic_lookup"
+        ;;
+        *)
+-	 CFLAGS="$CFLAGS -fPIC"
+-	 LDFLAGS="$LDFLAGS -fPIC -shared"
++	 CFLAGS="$CFLAGS ${PICFLAG}"
++	 LDFLAGS="$LDFLAGS ${PICFLAG} -shared"
+        ;;
+      esac
+-     AC_MSG_CHECKING([for -fPIC -shared])
++     AC_MSG_CHECKING([for ${PICFLAG} -shared])
+      AC_TRY_LINK(
+-       [extern int X;],[return X == 0;],
++       [${UNDEFINEDPREAMBLE}],[${UNDEFINEDCODE}],
+        [AC_MSG_RESULT([yes]); have_pic_shared=yes],
+        [AC_MSG_RESULT([no]); have_pic_shared=no])
+      if test x"$have_pic_shared" != x"yes" -o x"$ac_cv_search_dlopen" = x"no"; then
+--- a/gcc/configure
++++ b/gcc/configure
+@@ -29520,6 +29520,9 @@
+ 
+    pluginlibs=
+ 
++   PICFLAG="-fPIC"
++   UNDEFINEDPREAMBLE="extern int X;"
++   UNDEFINEDCODE="return X == 0;"
+    case "${host}" in
+      *-*-darwin*)
+        if test x$build = x$host; then
+@@ -29530,6 +29533,11 @@
+ 	 export_sym_check=
+        fi
+      ;;
++     *-*-mingw*|*-*-cygwin*|*-*-msys*)
++       PICFLAG=""
++       UNDEFINEDPREAMBLE=""
++       UNDEFINEDCODE=""
++     ;;
+      *)
+        if test x$build = x$host; then
+ 	 export_sym_check="objdump${exeext} -T"
+@@ -29642,23 +29650,23 @@
+      case "${host}" in
+        *-*-darwin*)
+ 	 CFLAGS=`echo $CFLAGS | sed s/-mdynamic-no-pic//g`
+-	 CFLAGS="$CFLAGS -fPIC"
++	 CFLAGS="$CFLAGS ${PICFLAG}"
+ 	 LDFLAGS="$LDFLAGS -shared -undefined dynamic_lookup"
+        ;;
+        *)
+-	 CFLAGS="$CFLAGS -fPIC"
+-	 LDFLAGS="$LDFLAGS -fPIC -shared"
++	 CFLAGS="$CFLAGS ${PICFLAG}"
++	 LDFLAGS="$LDFLAGS ${PICFLAG} -shared"
+        ;;
+      esac
+-     { $as_echo "$as_me:${as_lineno-$LINENO}: checking for -fPIC -shared" >&5
+-$as_echo_n "checking for -fPIC -shared... " >&6; }
++     { $as_echo "$as_me:${as_lineno-$LINENO}: checking for ${PICFLAG} -shared" >&5
++$as_echo_n "checking for ${PICFLAG} -shared... " >&6; }
+      cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+ /* end confdefs.h.  */
+-extern int X;
++${UNDEFINEDPREAMBLE}
+ int
+ main ()
+ {
+-return X == 0;
++${UNDEFINEDCODE}
+   ;
+   return 0;
+ }
+--- a/libcc1/configure
++++ b/libcc1/configure
+@@ -14553,6 +14553,9 @@
+ 
+    pluginlibs=
+ 
++   PICFLAG="-fPIC"
++   UNDEFINEDPREAMBLE="extern int X;"
++   UNDEFINEDCODE="return X == 0;"
+    case "${host}" in
+      *-*-darwin*)
+        if test x$build = x$host; then
+@@ -14563,6 +14566,11 @@
+ 	 export_sym_check=
+        fi
+      ;;
++     *-*-mingw*|*-*-cygwin*|*-*-msys*)
++       PICFLAG=""
++       UNDEFINEDPREAMBLE=""
++       UNDEFINEDCODE=""
++     ;;
+      *)
+        if test x$build = x$host; then
+ 	 export_sym_check="objdump${exeext} -T"
+@@ -14675,23 +14683,23 @@
+      case "${host}" in
+        *-*-darwin*)
+ 	 CFLAGS=`echo $CFLAGS | sed s/-mdynamic-no-pic//g`
+-	 CFLAGS="$CFLAGS -fPIC"
++	 CFLAGS="$CFLAGS ${PICFLAG}"
+ 	 LDFLAGS="$LDFLAGS -shared -undefined dynamic_lookup"
+        ;;
+        *)
+-	 CFLAGS="$CFLAGS -fPIC"
+-	 LDFLAGS="$LDFLAGS -fPIC -shared"
++	 CFLAGS="$CFLAGS ${PICFLAG}"
++	 LDFLAGS="$LDFLAGS ${PICFLAG} -shared"
+        ;;
+      esac
+-     { $as_echo "$as_me:${as_lineno-$LINENO}: checking for -fPIC -shared" >&5
+-$as_echo_n "checking for -fPIC -shared... " >&6; }
++     { $as_echo "$as_me:${as_lineno-$LINENO}: checking for ${PICFLAG} -shared" >&5
++$as_echo_n "checking for ${PICFLAG} -shared... " >&6; }
+      cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+ /* end confdefs.h.  */
+-extern int X;
++${UNDEFINEDPREAMBLE}
+ int
+ main ()
+ {
+-return X == 0;
++${UNDEFINEDCODE}
+   ;
+   return 0;
+ }

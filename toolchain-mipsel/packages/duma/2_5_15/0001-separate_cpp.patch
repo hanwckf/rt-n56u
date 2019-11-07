@@ -1,0 +1,22 @@
+---
+ GNUmakefile |    8 ++++++--
+ 1 file changed, 6 insertions(+), 2 deletions(-)
+
+--- a/GNUmakefile
++++ b/GNUmakefile
+@@ -289,9 +289,13 @@
+ 	dumatest.c tstheap.c thread-test.c testmt.c dumatestpp.cpp testoperators.cpp \
+ 	createconf.c
+ 
+-OBJECTS=dumapp.o duma.o sem_inc.o print.o
++OBJECTS = duma.o sem_inc.o print.o
++SO_OBJECTS = duma_so.o sem_inc_so.o print_so.o
+ 
+-SO_OBJECTS=dumapp_so.o duma_so.o sem_inc_so.o print_so.o
++ifeq ($(DUMA_CPP),1)
++OBJECTS += dumapp.o
++SO_OBJECTS += dumapp_so.o
++endif
+ 
+ # Make all the top-level targets the makefile knows about.
+ all:	libduma.a tstheap$(EXEPOSTFIX) dumatest$(EXEPOSTFIX) thread-test$(EXEPOSTFIX) testmt$(EXEPOSTFIX) dumatestpp$(EXEPOSTFIX) testoperators$(EXEPOSTFIX) $(DUMA_DYN_DEPS)

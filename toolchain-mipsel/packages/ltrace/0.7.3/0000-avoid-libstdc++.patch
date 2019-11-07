@@ -1,0 +1,48 @@
+From: Juan Cespedes <cespedes@debian.org>
+Description: avoid warning from dpkg-shlibdeps:
+  package could avoid a useless dependency if ltrace was not
+  linked against libstdc++.so.6 (it uses none of the library's symbols)
+Last-Update: 2013-12-30
+
+ 
+---
+ configure    |    9 +++++++++
+ configure.ac |    9 +++++++++
+ 2 files changed, 18 insertions(+)
+
+--- a/configure.ac
++++ b/configure.ac
+@@ -113,6 +113,15 @@
+ 	libstdcxx_LIBS=""])
+ AC_SUBST(libstdcxx_LIBS)
+ 
++if test "x$liberty_LIBS" != "x"
++then
++  libsupcxx_LIBS=""
++  libstdcxx_LIBS=""
++elif test "x$libsupcxx_LIBS" != "x"
++then
++  libstdcxx_LIBS=""
++fi
++
+ 
+ dnl Check security_get_boolean_active availability.
+ AC_CHECK_HEADERS(selinux/selinux.h)
+--- a/configure
++++ b/configure
+@@ -11750,6 +11750,15 @@
+ 
+ 
+ 
++if test "x$liberty_LIBS" != "x"
++then
++  libsupcxx_LIBS=""
++  libstdcxx_LIBS=""
++elif test "x$libsupcxx_LIBS" != "x"
++then
++  libstdcxx_LIBS=""
++fi
++
+ 
+ for ac_header in selinux/selinux.h
+ do :

@@ -1,0 +1,14 @@
+---
+ sysdeps/sparc/sparc32/sem_trywait.c |    1 +
+ 1 file changed, 1 insertion(+)
+
+--- a/sysdeps/sparc/sparc32/sem_trywait.c
++++ b/sysdeps/sparc/sparc32/sem_trywait.c
+@@ -22,6 +22,7 @@
+ #include <lowlevellock.h>
+ #include <internaltypes.h>
+ #include <semaphore.h>
++#include <sparc-nptl.h>
+ 
+ #include <shlib-compat.h>
+ 

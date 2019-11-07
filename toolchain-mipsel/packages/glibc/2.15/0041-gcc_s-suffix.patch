@@ -1,0 +1,111 @@
+[As applied to 2.15]
+commit 3a533ca370725b68b516e6b74adf4727d17ed28a
+Author: Joseph Myers <joseph@codesourcery.com>
+Date:   Tue Apr 24 10:22:45 2012 +0000
+
+    Don't handle libgcc_s suffixes.
+
+---
+ Makeconfig     |    2 +-
+ config.make.in |    1 -
+ configure      |   21 +--------------------
+ configure.in   |   16 +---------------
+ 4 files changed, 3 insertions(+), 37 deletions(-)
+
+--- a/config.make.in
++++ b/config.make.in
+@@ -50,7 +50,6 @@
+ have-initfini = @libc_cv_have_initfini@
+ have-Bgroup = @libc_cv_Bgroup@
+ have-as-needed = @libc_cv_as_needed@
+-libgcc_s_suffix = @libc_cv_libgcc_s_suffix@
+ need-nopic-initfini = @nopic_initfini@
+ with-fp = @with_fp@
+ old-glibc-headers = @old_glibc_headers@
+--- a/configure
++++ b/configure
+@@ -654,7 +654,6 @@
+ libc_cv_z_combreloc
+ ASFLAGS_config
+ libc_cv_as_needed
+-libc_cv_libgcc_s_suffix
+ libc_cv_Bgroup
+ libc_cv_cc_with_libunwind
+ VERSIONING
+@@ -6465,24 +6464,6 @@
+ $as_echo "$libc_cv_Bgroup" >&6; }
+ 
+ 
+-  { $as_echo "$as_me:${as_lineno-$LINENO}: checking for libgcc_s suffix" >&5
+-$as_echo_n "checking for libgcc_s suffix... " >&6; }
+-if ${libc_cv_libgcc_s_suffix+:} false; then :
+-  $as_echo_n "(cached) " >&6
+-else
+-    cat > conftest.c <<EOF
+-int main (void) { return 0; }
+-EOF
+-  libc_cv_libgcc_s_suffix=`${CC-cc} $CFLAGS $CPPFLAGS $LDFLAGS \
+-			   -fPIC -shared -shared-libgcc -o conftest.so \
+-			   conftest.c -v 2>&1 >/dev/null \
+-			   | sed -n 's/^.* -lgcc_s\([^ ]*\) .*$/\1/p'`
+-  rm -f conftest*
+-fi
+-{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $libc_cv_libgcc_s_suffix" >&5
+-$as_echo "$libc_cv_libgcc_s_suffix" >&6; }
+-
+-
+   { $as_echo "$as_me:${as_lineno-$LINENO}: checking for --as-needed option" >&5
+ $as_echo_n "checking for --as-needed option... " >&6; }
+ if ${libc_cv_as_needed+:} false; then :
+@@ -6493,7 +6474,7 @@
+ EOF
+   if { ac_try='${CC-cc} $CFLAGS $CPPFLAGS $LDFLAGS
+ 			      -fPIC -shared -o conftest.so conftest.c
+-			      -lgcc_s$libc_cv_libgcc_s_suffix -Wl,--as-needed
++			      -lgcc_s -Wl,--as-needed
+ 			      -nostdlib 1>&5'
+   { { eval echo "\"\$as_me\":${as_lineno-$LINENO}: \"$ac_try\""; } >&5
+   (eval $ac_try) 2>&5
+--- a/configure.in
++++ b/configure.in
+@@ -1639,20 +1639,6 @@
+   rm -f conftest*])
+   AC_SUBST(libc_cv_Bgroup)
+ 
+-  AC_CACHE_CHECK(for libgcc_s suffix,
+-		 libc_cv_libgcc_s_suffix, [dnl
+-  cat > conftest.c <<EOF
+-int main (void) { return 0; }
+-EOF
+-changequote(,)dnl
+-  libc_cv_libgcc_s_suffix=`${CC-cc} $CFLAGS $CPPFLAGS $LDFLAGS \
+-			   -fPIC -shared -shared-libgcc -o conftest.so \
+-			   conftest.c -v 2>&1 >/dev/null \
+-			   | sed -n 's/^.* -lgcc_s\([^ ]*\) .*$/\1/p'`
+-changequote([,])dnl
+-  rm -f conftest*])
+-  AC_SUBST(libc_cv_libgcc_s_suffix)
+-
+   AC_CACHE_CHECK(for --as-needed option,
+ 		 libc_cv_as_needed, [dnl
+   cat > conftest.c <<EOF
+@@ -1660,7 +1646,7 @@
+ EOF
+   if AC_TRY_COMMAND([${CC-cc} $CFLAGS $CPPFLAGS $LDFLAGS
+ 			      -fPIC -shared -o conftest.so conftest.c
+-			      -lgcc_s$libc_cv_libgcc_s_suffix -Wl,--as-needed
++			      -lgcc_s -Wl,--as-needed
+ 			      -nostdlib 1>&AS_MESSAGE_LOG_FD])
+   then
+     libc_cv_as_needed=yes
+--- a/Makeconfig
++++ b/Makeconfig
+@@ -565,7 +565,7 @@
+ ifneq ($(have-as-needed),yes)
+  libgcc_eh := -lgcc_eh $(libunwind)
+ else
+- libgcc_eh := -Wl,--as-needed -lgcc_s$(libgcc_s_suffix) $(libunwind) -Wl,--no-as-needed
++ libgcc_eh := -Wl,--as-needed -lgcc_s $(libunwind) -Wl,--no-as-needed
+ endif
+ gnulib := -lgcc $(libgcc_eh)
+ static-gnulib := -lgcc -lgcc_eh $(libunwind)

@@ -1,0 +1,19 @@
+http://git.frugalware.org/gitweb/gitweb.cgi?p=frugalware-current.git;a=blob_plain;f=source/base/glibc/make-3.82-fix.patch;hb=8217c32ecc2e14962847ba3d8a272eb64a3dba4f
+
+---
+ manual/Makefile |    4 +++-
+ 1 file changed, 3 insertions(+), 1 deletion(-)
+
+--- a/manual/Makefile
++++ b/manual/Makefile
+@@ -237,7 +237,9 @@
+ .PHONY: stubs
+ stubs: $(objpfx)stubs
+ endif
+-$(objpfx)stubs ../po/manual.pot $(objpfx)stamp%:
++$(objpfx)stubs ../po/manual.pot:
++	touch $@
++$(objpfx)stamp%:
+ 	$(make-target-directory)
+ 	touch $@
+ 

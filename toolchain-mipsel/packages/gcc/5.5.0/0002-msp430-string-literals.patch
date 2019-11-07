@@ -1,0 +1,81 @@
+commit 9d247a3d78b97c004e7ca5e7d6cc9964dba870c7
+Author: jason <jason@138bc75d-0d04-0410-961f-82ee72b054a4>
+Date:   Wed May 13 01:11:13 2015 +0000
+
+    gcc/
+            * config/mmix/mmix.c, config/msp430/msp430.c: Add space between
+            string literal and macro name.
+    gcc/ada/
+            * sigtramp-vxworks.c: Add space between string literal and macro
+            name.
+    
+    git-svn-id: svn+ssh://gcc.gnu.org/svn/gcc/trunk@223106 138bc75d-0d04-0410-961f-82ee72b054a4
+
+---
+ gcc/ada/sigtramp-vxworks.c |    6 +++---
+ gcc/config/mmix/mmix.c     |    6 +++---
+ gcc/config/msp430/msp430.c |    2 +-
+ 3 files changed, 7 insertions(+), 7 deletions(-)
+
+--- a/gcc/ada/sigtramp-vxworks.c
++++ b/gcc/ada/sigtramp-vxworks.c
+@@ -342,16 +342,16 @@
+ TCR("# Allocate frame and save the non-volatile") \
+ TCR("# registers we're going to modify") \
+ TCR("mov	ip, sp") \
+-TCR("stmfd	sp!, {r"S(CFA_REG)", fp, ip, lr, pc}") \
++TCR("stmfd	sp!, {r" S(CFA_REG)", fp, ip, lr, pc}") \
+ TCR("# Setup CFA_REG = context, which we'll retrieve as our CFA value") \
+-TCR("ldr	r"S(CFA_REG)", [ip]") \
++TCR("ldr	r" S(CFA_REG)", [ip]") \
+ TCR("")                 \
+ TCR("# Call the real handler. The signo, siginfo and sigcontext") \
+ TCR("# arguments are the same as those we received in r0, r1 and r2") \
+ TCR("sub	fp, ip, #4") \
+ TCR("blx	r3") \
+ TCR("# Restore our callee-saved items, release our frame and return") \
+-TCR("ldmfd	sp, {r"S(CFA_REG)", fp, sp, pc}")
++TCR("ldmfd	sp, {r" S(CFA_REG)", fp, sp, pc}")
+ 
+ #else
+ Not_implemented;
+--- a/gcc/config/mmix/mmix.c
++++ b/gcc/config/mmix/mmix.c
+@@ -2521,7 +2521,7 @@
+   if (! mmix_shiftable_wyde_value (value))
+     {
+       char s[sizeof ("0xffffffffffffffff")];
+-      sprintf (s, "%#"PRIx64, value);
++      sprintf (s, "%#" PRIx64, value);
+       internal_error ("MMIX Internal: %s is not a shiftable int", s);
+     }
+ 
+@@ -2563,7 +2563,7 @@
+     fprintf (stream, "#" HOST_WIDE_INT_PRINT_HEX_PURE,
+ 	     (HOST_WIDE_INT) value);
+   else /* Need to avoid the hex output; there's no ...WIDEST...HEX_PURE.  */
+-    fprintf (stream, "%"PRIu64, value);
++    fprintf (stream, "%" PRIu64, value);
+ 
+   if (do_begin_end)
+     fprintf (stream, "\n");
+@@ -2580,7 +2580,7 @@
+   if (! mmix_shiftable_wyde_value (value))
+     {
+       char s[16+2+1];
+-      sprintf (s, "%#"PRIx64, value);
++      sprintf (s, "%#" PRIx64, value);
+       internal_error ("MMIX Internal: %s is not a shiftable int", s);
+     }
+ 
+--- a/gcc/config/msp430/msp430.c
++++ b/gcc/config/msp430/msp430.c
+@@ -1902,7 +1902,7 @@
+ }
+   const_shift_helpers[] =
+ {
+-#define CSH(N,C,X,G) { "__mspabi_"N, C, X, gen_##G }
++#define CSH(N,C,X,G) { "__mspabi_" N, C, X, gen_##G }
+ 
+   CSH ("slli", 1, 1, slli_1),
+   CSH ("slll", 1, 1, slll_1),

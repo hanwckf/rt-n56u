@@ -1,0 +1,8 @@
+# Even though this is the "master" package, we really want to steer the users
+# towards uClibc-ng, as the original uClibc is no longer maintained.
+preferred='uClibc-ng'
+origin='uclibc.org'
+repository='git git://git.busybox.net/uClibc'
+mirrors='http://www.uclibc.org/downloads http://www.uclibc.org/downloads/old-releases'
+milestones='0.9.33.2 1.0.0 1.0.15 1.0.21 1.0.23'
+archive_formats='.tar.xz .tar.bz2'

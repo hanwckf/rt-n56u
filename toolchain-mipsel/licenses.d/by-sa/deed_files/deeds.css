@@ -1,0 +1,54 @@
+body {
+	margin: 0px;
+	padding: 0px;
+	font-family: verdana, arial, helvetica, sans-serif;
+	color: black;
+	background-color: white;
+	text-align: center;
+	font-size:11px;
+	/* part 1 of 2 centering hack */
+	}
+
+#deed {
+	width: 620px; 
+	padding: 15px;
+	margin-top: 20px;
+	margin-bottom: 20px;
+	margin-right: auto;
+	margin-left: auto; 	
+	/* opera does not like 'margin:20px auto' */
+	background: #ffc;
+	border: 3px groove #333;
+	text-align:left; 
+	/* part 2 of 2 centering hack */
+	width: 620px; /* ie5win fudge begins */
+	voice-family: "\"}\"";
+	voice-family:inherit;
+	width: 584px;
+	}
+	
+html>body #content {
+	width: 584px; /* ie5win fudge ends */
+	}
+	
+.fineprint {
+	border:1px solid black; 
+	padding:8px; 
+	background:#ffffff;
+	text-align:justify;
+}
+
+.text, li {
+	font-family:verdana, sans-serif;
+	font-size:11px;
+	margin-left:20px;
+	margin-right:20px;
+	line-height:140%;
+	text-align:left;
+}
+
+.tiny {
+	font-family:verdana, sans-serif;
+	font-size:11px;
+	margin-bottom:10px;
+}

@@ -1,0 +1,52 @@
+# Linux kernel options
+
+## depends on !ARCH_AVR && !ARCH_MSP430 && !ARCH_MOXIE
+## select KERNEL_SUPPORTS_SHARED_LIBS
+
+## help Build a toolchain targeting systems running Linux as a kernel.
+
+# GLIBC and kernel are special when it comes to obsoletion. Users
+# of crosstool-ng depend on the ability to build new toolchains matching
+# the kernel/libc versions of a particular target system, and LTS releases
+# are still using quite ancient versions. Please do not retire versions
+# (including versions in between) until the EOL dates indicated below.
+# Such pinned versions are indicated in version.desc files with a comment.
+
+choice
+    bool
+    prompt "Kernel verbosity:"
+    default KERNEL_LINUX_VERBOSITY_0
+
+config KERNEL_LINUX_VERBOSITY_0
+    bool
+    prompt "Simplified"
+    help
+      Print simplified command lines.
+
+config KERNEL_LINUX_VERBOSITY_1
+    bool
+    prompt "Full commands"
+    help
+      Print full command lines.
+
+config KERNEL_LINUX_VERBOSITY_2
+    bool
+    prompt "Exec reasons"
+    help
+      Print the reasons why a make target is rebuild.
+
+endchoice
+
+config KERNEL_LINUX_VERBOSE_LEVEL
+    int
+    default 0 if KERNEL_LINUX_VERBOSITY_0
+    default 1 if KERNEL_LINUX_VERBOSITY_1
+    default 2 if KERNEL_LINUX_VERBOSITY_2
+
+config KERNEL_LINUX_INSTALL_CHECK
+    bool
+    prompt "Check installed headers"
+    default y
+    help
+      If you are in doubt that installed headers are buggy, say 'Y'
+      here to have an extra check passed onto the headers.

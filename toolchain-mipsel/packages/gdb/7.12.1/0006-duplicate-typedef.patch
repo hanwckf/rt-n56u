@@ -1,0 +1,18 @@
+diff -urpN gdb-7.12.1.orig/gdb/event-loop.h gdb-7.12.1/gdb/event-loop.h
+--- gdb-7.12.1.orig/gdb/event-loop.h	2017-01-21 05:46:46.000000000 -0800
++++ gdb-7.12.1/gdb/event-loop.h	2019-03-14 11:55:56.280325742 -0700
+@@ -66,6 +66,8 @@
+    infinite loop.
+ 
+    Corollary tasks are the creation and deletion of event sources.  */
++#ifndef _EVENT_LOOP_H_
++#define _EVENT_LOOP_H_
+ 
+ typedef void *gdb_client_data;
+ struct async_signal_handler;
+@@ -127,3 +129,5 @@ extern void mark_async_event_handler (st
+ extern void clear_async_event_handler (struct async_event_handler *handler);
+ 
+ extern void initialize_async_signal_handlers (void);
++
++#endif

@@ -1,0 +1,57 @@
+# Powerpc specific configuration file
+
+## no-package
+## select ARCH_SUPPORTS_32
+## select ARCH_SUPPORTS_64
+## select ARCH_DEFAULT_32
+## select ARCH_SUPPORTS_EITHER_ENDIAN
+## select ARCH_DEFAULT_BE
+## select ARCH_USE_MMU
+## select ARCH_SUPPORTS_WITH_ABI
+## select ARCH_SUPPORTS_WITH_CPU
+## select ARCH_SUPPORTS_WITH_TUNE
+## select ARCH_SUPPORTS_WITH_FLOAT
+##
+## help The PowerPC architecture, as defined by:
+## help     http://www.ibm.com/developerworks/eserver/articles/archguide.html
+
+config ARCH_powerpc_ABI
+    string
+    default ""     if ARCH_powerpc_ABI_DEFAULT
+    default "eabi" if ARCH_powerpc_ABI_EABI
+    default "spe"  if ARCH_powerpc_ABI_SPE
+
+choice
+    bool
+    prompt "ABI"
+    default ARCH_powerpc_ABI_DEFAULT
+
+config ARCH_powerpc_ABI_DEFAULT
+    bool
+    prompt "default"
+    help
+      The default ABI (System V.4).
+
+config ARCH_powerpc_ABI_EABI
+    bool
+    prompt "EABI"
+    depends on BARE_METAL
+    help
+      The Embedded ABI (stack alignment of 8 bytes, etc).
+
+config ARCH_powerpc_ABI_SPE
+    bool
+    prompt "SPE"
+    help
+      Add support for the Signal Processing Engine.  This will set up
+      the toolchain so that it supports the SPE ABI extensions. This
+      mainly targets Freescale e500 processors.
+      
+      Setting this option will append "spe" to the end of your target
+      tuple name (e.g., powerpc-e500v2-linux-gnuspe) so that the gcc
+      configure/build system will know to include SPE ABI support. It
+      will also automatically add "-mabi=spe -mspe" to your TARGET_CFLAGS,
+      and "--enable-e500_double" to your CC_EXTRA_CONFIG_ARRAY, so you
+      do not need to explicitly add them.
+
+endchoice

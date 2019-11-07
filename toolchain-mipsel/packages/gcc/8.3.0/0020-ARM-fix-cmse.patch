@@ -1,0 +1,62 @@
+From 8155b998a328748ca3d2cd1d012feb5c8286cd65 Mon Sep 17 00:00:00 2001
+From: hainque <hainque@138bc75d-0d04-0410-961f-82ee72b054a4>
+Date: Thu, 17 May 2018 16:36:36 +0000
+Subject: [PATCH] 2018-05-17  Jerome Lambourg  <lambourg@adacore.com>
+
+	gcc/
+	* config/arm/arm_cmse.h (cmse_nsfptr_create, cmse_is_nsfptr): Remove
+	#include <stdint.h>.  Replace intptr_t with __INTPTR_TYPE__.
+
+	libgcc/
+	* config/arm/cmse.c (cmse_check_address_range): Replace
+	UINTPTR_MAX with __UINTPTR_MAX__ and uintptr_t with __UINTPTR_TYPE__.
+
+git-svn-id: svn+ssh://gcc.gnu.org/svn/gcc/trunk@260330 138bc75d-0d04-0410-961f-82ee72b054a4
+---
+ gcc/config/arm/arm_cmse.h |    5 ++---
+ libgcc/config/arm/cmse.c  |    5 +++--
+ 2 files changed, 5 insertions(+), 5 deletions(-)
+
+--- a/gcc/config/arm/arm_cmse.h
++++ b/gcc/config/arm/arm_cmse.h
+@@ -35,7 +35,6 @@
+ #if __ARM_FEATURE_CMSE & 1
+ 
+ #include <stddef.h>
+-#include <stdint.h>
+ 
+ #ifdef __ARM_BIG_ENDIAN
+ 
+@@ -174,9 +173,9 @@
+ #define CMSE_MPU_NONSECURE	16
+ #define CMSE_NONSECURE		18
+ 
+-#define cmse_nsfptr_create(p) ((typeof ((p))) ((intptr_t) (p) & ~1))
++#define cmse_nsfptr_create(p) ((typeof ((p))) ((__INTPTR_TYPE__) (p) & ~1))
+ 
+-#define cmse_is_nsfptr(p) (!((intptr_t) (p) & 1))
++#define cmse_is_nsfptr(p) (!((__INTPTR_TYPE__) (p) & 1))
+ 
+ #endif /* __ARM_FEATURE_CMSE & 2 */
+ 
+--- a/libgcc/config/arm/cmse.c
++++ b/libgcc/config/arm/cmse.c
+@@ -36,7 +36,7 @@
+   char *pb = (char *) p, *pe;
+ 
+   /* Check if the range wraps around.  */
+-  if (UINTPTR_MAX - (uintptr_t) p < size)
++  if (__UINTPTR_MAX__ - (__UINTPTR_TYPE__) p < size)
+     return NULL;
+ 
+   /* Check if an unknown flag is present.  */
+@@ -51,7 +51,8 @@
+ 
+   /* Execute the right variant of the TT instructions.  */
+   pe = pb + size - 1;
+-  const int singleCheck = (((uintptr_t) pb ^ (uintptr_t) pe) < 32);
++  const int singleCheck
++    = (((__UINTPTR_TYPE__) pb ^ (__UINTPTR_TYPE__) pe) < 32);
+   switch (flags & known_secure_level)
+     {
+     case 0:

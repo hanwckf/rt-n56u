@@ -1,0 +1,37 @@
+2007-02-15  Khem Raj  <kraj@xxxxxxxxxx>
+
+       * sysdeps/unix/sysv/linux/i386/sysdep.h: Re-define __i686.
+       * nptl/sysdeps/pthread/pt-initfini.c: Ditto.
+
+---
+ nptl/sysdeps/pthread/pt-initfini.c    |    5 +++++
+ sysdeps/unix/sysv/linux/i386/sysdep.h |    4 ++++
+ 2 files changed, 9 insertions(+)
+
+--- a/nptl/sysdeps/pthread/pt-initfini.c
++++ b/nptl/sysdeps/pthread/pt-initfini.c
+@@ -45,6 +45,11 @@
+ /* Embed an #include to pull in the alignment and .end directives. */
+ asm ("\n#include \"defs.h\"");
+ 
++asm ("\n#if defined __i686 && defined __ASSEMBLER__");
++asm ("\n#undef __i686");
++asm ("\n#define __i686 __i686");
++asm ("\n#endif");
++
+ /* The initial common code ends here. */
+ asm ("\n/*@HEADER_ENDS*/");
+ 
+--- a/sysdeps/unix/sysv/linux/i386/sysdep.h
++++ b/sysdeps/unix/sysv/linux/i386/sysdep.h
+@@ -29,6 +29,10 @@
+ #include <dl-sysdep.h>
+ #include <tls.h>
+ 
++#if defined __i686 && defined __ASSEMBLER__
++#undef __i686
++#define __i686 __i686
++#endif
+ 
+ /* For Linux we can use the system call table in the header file
+ 	/usr/include/asm/unistd.h

@@ -1,0 +1,298 @@
+#!/bin/sh
+# This script will populate the root directory with libs from the sysroot.
+# (C) 2007 Yann E. MORIN
+# Licensed under the GPL v2
+set -e
+
+# Use the tools discovered by crosstool-NG's ./configure:
+install="@@CT_install@@"
+grep="@@CT_grep@@"
+sed="@@CT_sed@@"
+awk="@@CT_awk@@"
+
+# Detect where the toolchain is:
+CT_PREFIX_DIR="$(cd "$(dirname "$0")/.."; pwd)"
+CT_GCC="${0%-populate}-gcc"
+CT_READELF="${0%-populate}-readelf"
+CT_CFG_PREFIX_DIR="$("${CT_GCC}" -v 2>&1            \
+                     |tr ' ' '\n'                   \
+                     |"${grep}" -E -- '--prefix='   \
+                     |cut -d = -f 2-
+                    )"
+CT_CFG_SYSROOT_DIR="$("${CT_GCC}" -v 2>&1                   \
+                      |tr ' ' '\n'                          \
+                      |"${grep}" -E -- '--with-sysroot='    \
+                      |cut -d = -f 2-
+                     )"
+CT_SYSROOT_DIR="$(printf "${CT_CFG_SYSROOT_DIR}\n"                              \
+                  |"${sed}" -r -e "s:^${CT_CFG_PREFIX_DIR}:${CT_PREFIX_DIR}:;"  \
+                  |"${sed}" -r -e 's,/+,/,g;'                                   \
+                 )"
+
+myname=$(basename "$0")
+
+doHelp() {
+    cat <<_EOF_
+NAME
+    $myname - populate the target root file system
+
+SYNOPSIS
+    $myname OPTIONS -s source_root -d destination_root
+
+DESCRIPTION
+    This script will 'populate' your target root file system 'source_root'
+    with libraries from the toolchain (eg. libc.so...), storing the result
+    into 'dst_dir'.
+
+OPTIONS
+    -s src_dir
+        Use 'src_dir' as the un-populated (source) root directory.
+
+    -d dst_dir
+        Use 'dst_dir' as the place to put the populated root directory.
+        See the -f and -m options, below, on the required (non-)existence
+        of this directory.
+
+    -r sysroot_dir
+        Use 'sysroot_dir' as the sysroot instead of the toolchain default.
+
+    -l name1[:name2[...]]
+        Always add the specified shared library/ies name1, name2... from the
+        toolchain (in the sysroot). Actual library names are searched as
+        follows (where 'name' is replaced with the given name) in the
+        sysroot directory:
+          - libname.so
+          - name.so
+          - name
+        If the file is found, then the SONAME of the library is used, and the
+        library is copied with that name. If the library was not found, this
+        yields an error (unless -f was given).
+
+    -L file
+        Read 'file' for a list of shared libraries to always add from the
+        toolchain. The file should contain one library name per line; text
+        after a # is ignored until the end of the line; spaces are ignored;
+        empty lines are ignored. Libraries are searched for as with -l.
+
+    -f  Force execution: if destination directory already exists, it will be
+        removed first; if a specified library (above) was not found, continue.
+        Note: if using -m and the destination directory already exists, it
+        is *not* removed, see below.
+
+    -m  Merge the source root directory with the destination root directory.
+        If the latter does not exist, it is created, and -m is ignored.
+        If the destination root directory exists, then the content of the
+        source root directory is copied in there, and the result is populated
+        as usual.
+        It can be useful if constructing a rootfs incrementally from many
+        smaller source root directories, or if your destination root directory
+        is an NFS export that your target mounts as / (and you don't want to
+        re-run exportfs -av everytime). USE WITH CARE!
+
+    -v  Be verbose. By default, populate is absolutely silent.
+
+_EOF_
+}
+
+CT_ROOT_SRC_DIR=
+CT_ROOT_DST_DIR=
+CT_LIB_LIST=
+CT_LIB_FILE=
+CT_MERGE=
+CT_FORCE=
+CT_PRINTF=:
+OPTIND=1
+while getopts ":s:d:r:l:L:fmvh" CT_OPT; do
+    case "${CT_OPT}" in
+        s)  CT_ROOT_SRC_DIR="${OPTARG}";;
+        d)  CT_ROOT_DST_DIR="${OPTARG}";;
+        r)  CT_SYSROOT_DIR="${OPTARG}";;
+        l)  CT_LIB_LIST="${CT_LIB_LIST}:${OPTARG}";;
+        L)  CT_LIB_FILE="${OPTARG}";;
+        f)  CT_FORCE=y;;
+        m)  CT_MERGE=y;;
+        v)  CT_PRINTF=printf;;
+        h)  doHelp
+            exit 0
+            ;;
+        :)  printf "$myname: '-${OPTARG}' takes exactly one argument.\n"
+            exit 1
+            ;;
+        ?)  printf "$myname: unknown option '-${OPTARG}'.\n"
+            exit 1
+            ;;
+    esac
+done
+
+# Sanity checks
+if [ -z "${CT_ROOT_SRC_DIR}" -o -z "${CT_ROOT_DST_DIR}" ]; then
+    doHelp
+    exit 1
+fi
+if [ ! -d "${CT_ROOT_SRC_DIR}" ]; then
+    printf "$myname: '${CT_ROOT_SRC_DIR}': no such file or directory\n"
+    exit 1
+fi
+if [ ! -d "${CT_SYSROOT_DIR}" ]; then
+    printf "$myname: '${CT_SYSROOT_DIR}': no such file or directory\n"
+    exit 1
+fi
+# If the dest dir does not exist, all is well
+# If merging, we accept an existing dest directory
+# If forcing and not merging, we remove an exiting dest directory
+# If not forcing and not merging, we do not accept an exiting dest directory
+if [ -d "${CT_ROOT_DST_DIR}" ]; then
+    case "${CT_FORCE}:${CT_MERGE}" in
+        *:y)    ;;
+        y:)     rm -rf "${CT_ROOT_DST_DIR}";;
+        :)      printf "$myname: '${CT_ROOT_DST_DIR}': already exists\n"
+                exit 1
+                ;;
+    esac
+fi
+src_inode=$(ls -1id "${CT_ROOT_SRC_DIR}/." |${awk} '{ print $1 }')
+dst_inode=$(ls -1id "${CT_ROOT_DST_DIR}/." 2>/dev/null |${awk} '{ print $1 }')
+if [ "${src_inode}" -eq "$((dst_inode+0))" ]; then
+    printf "$myname: source and destination are the same!\n"
+    exit 1
+fi
+
+# Check existence of the forced libraries file
+if [ -n "${CT_LIB_FILE}" -a ! \( -f "${CT_LIB_FILE}" -a -r "${CT_LIB_FILE}" \) ]; then
+    printf "$myname: forced libraries file '${CT_LIB_FILE}' not found!\n"
+    exit 1
+fi
+
+# Create the working copy, no issue if already existing
+mkdir -p "${CT_ROOT_DST_DIR}"
+
+# Make all path absolute
+CT_ROOT_SRC_DIR=$(cd "${CT_ROOT_SRC_DIR}"; pwd)
+CT_ROOT_DST_DIR=$(cd "${CT_ROOT_DST_DIR}"; pwd)
+CT_SYSROOT_DIR=$(cd "${CT_SYSROOT_DIR}"; pwd)
+
+# Populate the destination directory with files from the source directory
+cd "${CT_ROOT_SRC_DIR}"
+cp -a . "${CT_ROOT_DST_DIR}"
+cd - >/dev/null
+
+# A function do search for a library
+# Usage: do_add_lib libname
+# returns: 0 if library was found and added, !0 otherwise
+do_add_lib() {
+    local libname="$1"
+    local true_libname
+    local dir
+    local mode
+
+    for dir in lib usr/lib usr/lib/gconv; do
+        if [ -e "${dir}/${libname}" ]; then
+            ${CT_PRINTF} "    already present\n"
+            return 0
+        fi
+    done
+    for dir in lib usr/lib usr/lib/gconv; do
+        ${CT_PRINTF} "    trying in '%s'" "${dir}"
+        libfile="${CT_SYSROOT_DIR}/${dir}/${libname}"
+        ${CT_PRINTF} ": '%s'\n" "${libfile}"
+        if [ -e "${libfile}" ]; then
+            mkdir -p "${dir}"
+            true_libname=$("${CT_READELF}" -d "${libfile}"          \
+                           |"${grep}" "Library soname:"             \
+                           |"${sed}" -r -e 's,.+\[(.+)\] *$,\1,;'   \
+                          )
+            case "${libfile}" in
+                */ld*)  mode=0755;;
+                *)      mode=0644;;
+            esac
+            ${CT_PRINTF} "      installing as '%s/%s', mode='%s'\n" "${dir}" "${true_libname}" "${mode}"
+            ${install} -m "${mode}" "${libfile}" "${dir}/${true_libname}"
+            do_resolve_deps "${dir}/${true_libname}"
+            return 0
+        fi
+    done
+    return 1
+}
+
+# A function to resolve all NEEDED entries for the given file, relative
+# to the working directory (eg. dst_dir)
+# Usage: do_resolve_deps some/where/some/file
+# Returns: 0, meaning all dependencies were found
+# If not all dependencies could be found, exists with error code 1
+# (unless forced)
+do_resolve_deps() {
+    local file="${1}"
+    local libname
+    
+    for libname in $("${CT_READELF}" -d "${file}"                           \
+                     |"${grep}" -E '\(NEEDED\)[[:space:]]+Shared library:'  \
+                     |"${sed}" -r -e 's,.+\[(.+)\] *$,\1,;'                 \
+                    ); do
+        [ -n "${libname}" ] || continue
+        ${CT_PRINTF} "Searching for '%s' needed by '%s'\n" "${libname}" "${file}"
+        if ! do_add_lib "${libname}"; then
+            printf "$myname: library '${libname}' not found!\n"
+            [ "${CT_FORCE}" = "y" ] || exit 1
+        fi
+    done
+}
+
+# We'll work in the copied rootfs
+cd "${CT_ROOT_DST_DIR}"
+
+# First of, copy the forced libraries into the working copy
+lib_list=
+if [ -n "${CT_LIB_FILE}" ]; then
+    lib_list=$("${sed}" -r -e ':loop; s/#.*//;'         \
+                           -e 's/[[:space:]]+//g;'      \
+                           -e 's/([^:])$/\1:/;'         \
+                           -e '/$/N; s/\n//; tloop;'    \
+                        "${CT_LIB_FILE}"
+              )
+fi
+CT_LIB_LIST=$(printf "${CT_LIB_LIST}:${lib_list}\n"         \
+              |"${sed}" -r -e 's/^:+//; s/:+$//; s/:+/ /g;' \
+             )
+if [ -n "${CT_LIB_LIST}" ]; then
+    for name in ${CT_LIB_LIST}; do
+        [ -z "${name}" ] && continue
+        found=0
+        for libname in "lib${name}.so" "${name}.so" "${name}"; do
+            ${CT_PRINTF} "Searching for forced library '%s'\n" "${libname}"
+            if do_add_lib "${libname}"; then
+                found=1
+                break
+            fi
+        done
+        if [ ${found} -eq 0 ]; then
+            printf "$myname: library '${libname}' not found!\n"
+            [ "${CT_FORCE}" = "y" ] || exit 1
+        fi
+    done
+fi
+
+# Create a temporary place where to store... temp files.
+rand="$( dd if=/dev/urandom bs=1024 count=1 2>/dev/null \
+         |md5sum                                        \
+         |${awk} '{ print $1; }'
+       )"
+CT_TMP_DIR="${TMPDIR:-/tmp}/populate-${rand}-${$}"
+( umask 0077; mkdir "${CT_TMP_DIR}" ) || { printf "Could not create temporary directory\n"; exit 1; }
+trap "rm -rf ${CT_TMP_DIR}" EXIT
+
+# List all ELF (executables|shared objects)...
+find . -type f -exec file {} \;                                             \
+|"${grep}" -E ': ELF [[:digit:]]+-bit (L|M)SB +(executable|shared object),' \
+|cut -d ":" -f 1                                                            \
+>"${CT_TMP_DIR}/files.list"
+
+# ... and use that list to find missing dependencies
+while read file; do
+    do_resolve_deps "${file}"
+done <"${CT_TMP_DIR}/files.list"
+
+rm -rf "${CT_TMP_DIR}"
+trap - EXIT
+
+# OK, we're done. Back off.
+cd - >/dev/null

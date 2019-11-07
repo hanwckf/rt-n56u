@@ -1,0 +1,293 @@
+commit 44a81ebb7698dac41ffa7acd5e0cc1578e5ab1fd
+Author: H.J. Lu <hongjiu.lu@intel.com>
+Date:   Mon Apr 14 15:59:47 2014 -0700
+
+    [android] Always enable --eh-frame-hdr for static executable
+    
+    See 5e6cdf76af295c9a39b695ca228cff675e8ff4ae and
+    23e3137ee2897464b051599b85a09f130d3ad05d
+    
+    Change-Id: Ibda473188e5a10f2a0592f2494ad00ad1f91e04b
+    Signed-off-by: Dmitry Moskalchuk <dm@crystax.net>
+
+---
+ gcc/config.in                          |    6 +++++
+ gcc/config/alpha/elf.h                 |    4 +++
+ gcc/config/freebsd.h                   |    4 +++
+ gcc/config/gnu-user.h                  |    4 +++
+ gcc/config/openbsd.h                   |    4 +++
+ gcc/config/rs6000/sysv4.h              |    6 ++++-
+ gcc/config/sol2.h                      |    4 +++
+ gcc/configure                          |   36 +++++++++++++++++++++++++++++++++
+ gcc/configure.ac                       |   29 ++++++++++++++++++++++++++
+ gcc/testsuite/g++.dg/eh/spec3-static.C |   25 ++++++++++++++++++++++
+ libgcc/crtstuff.c                      |   11 ++++++----
+ 11 files changed, 128 insertions(+), 5 deletions(-)
+
+--- a/gcc/config.in
++++ b/gcc/config.in
+@@ -2150,6 +2150,12 @@
+ #endif
+ 
+ 
++/* Define if your system supports PT_GNU_EH_FRAME for static executable. */
++#ifndef USED_FOR_TARGET
++#undef USE_EH_FRAME_HDR_FOR_STATIC
++#endif
++
++
+ /* Define to 1 if the 'long long' type is wider than 'long' but still
+    efficiently supported by the host hardware. */
+ #ifndef USED_FOR_TARGET
+--- a/gcc/config/alpha/elf.h
++++ b/gcc/config/alpha/elf.h
+@@ -168,5 +168,9 @@
+    I imagine that other systems will catch up.  In the meantime, it
+    doesn't harm to make sure that the data exists to be used later.  */
+ #if defined(HAVE_LD_EH_FRAME_HDR)
++#ifdef USE_EH_FRAME_HDR_FOR_STATIC
++#define LINK_EH_SPEC "--eh-frame-hdr "
++#else
+ #define LINK_EH_SPEC "%{!static:--eh-frame-hdr} "
+ #endif
++#endif
+--- a/gcc/config/freebsd.h
++++ b/gcc/config/freebsd.h
+@@ -45,8 +45,12 @@
+ #define LIB_SPEC FBSD_LIB_SPEC
+ 
+ #if defined(HAVE_LD_EH_FRAME_HDR)
++#ifdef USE_EH_FRAME_HDR_FOR_STATIC
++#define LINK_EH_SPEC "--eh-frame-hdr "
++#else
+ #define LINK_EH_SPEC "%{!static:--eh-frame-hdr} "
+ #endif
++#endif
+ 
+ #ifdef TARGET_LIBC_PROVIDES_SSP
+ #define LINK_SSP_SPEC "%{fstack-protector|fstack-protector-all" \
+--- a/gcc/config/gnu-user.h
++++ b/gcc/config/gnu-user.h
+@@ -132,8 +132,12 @@
+ #define LIB_SPEC GNU_USER_TARGET_LIB_SPEC
+ 
+ #if defined(HAVE_LD_EH_FRAME_HDR)
++#ifdef USE_EH_FRAME_HDR_FOR_STATIC
++#define LINK_EH_SPEC "--eh-frame-hdr "
++#else
+ #define LINK_EH_SPEC "%{!static:--eh-frame-hdr} "
+ #endif
++#endif
+ 
+ #undef LINK_GCC_C_SEQUENCE_SPEC
+ #define LINK_GCC_C_SEQUENCE_SPEC \
+--- a/gcc/config/openbsd.h
++++ b/gcc/config/openbsd.h
+@@ -136,8 +136,12 @@
+ #define LIB_SPEC OBSD_LIB_SPEC
+ 
+ #if defined(HAVE_LD_EH_FRAME_HDR)
++#ifdef USE_EH_FRAME_HDR_FOR_STATIC
++#define LINK_EH_SPEC "--eh-frame-hdr "
++#else
+ #define LINK_EH_SPEC "%{!static:--eh-frame-hdr} "
+ #endif
++#endif
+ 
+ #undef LIB_SPEC
+ #define LIB_SPEC OBSD_LIB_SPEC
+--- a/gcc/config/rs6000/sysv4.h
++++ b/gcc/config/rs6000/sysv4.h
+@@ -810,7 +810,11 @@
+   -dynamic-linker " GNU_USER_DYNAMIC_LINKER "}}"
+ 
+ #if defined(HAVE_LD_EH_FRAME_HDR)
+-# define LINK_EH_SPEC "%{!static:--eh-frame-hdr} "
++# ifdef USE_EH_FRAME_HDR_FOR_STATIC
++#  define LINK_EH_SPEC "--eh-frame-hdr "
++# else
++#  define LINK_EH_SPEC "%{!static:--eh-frame-hdr} "
++# endif
+ #endif
+ 
+ #define CPP_OS_LINUX_SPEC "-D__unix__ -D__gnu_linux__ -D__linux__ \
+--- a/gcc/config/sol2.h
++++ b/gcc/config/sol2.h
+@@ -347,7 +347,11 @@
+ /* Solaris 11 build 135+ implements dl_iterate_phdr.  GNU ld needs
+    --eh-frame-hdr to create the required .eh_frame_hdr sections.  */
+ #if defined(HAVE_LD_EH_FRAME_HDR) && defined(TARGET_DL_ITERATE_PHDR)
++#ifdef USE_EH_FRAME_HDR_FOR_STATIC
++#define LINK_EH_SPEC "--eh-frame-hdr "
++#else
+ #define LINK_EH_SPEC "%{!static:--eh-frame-hdr} "
++#endif
+ #endif /* HAVE_LD_EH_FRAME && TARGET_DL_ITERATE_PHDR */
+ #endif
+ 
+--- a/gcc/configure
++++ b/gcc/configure
+@@ -934,6 +934,7 @@
+ enable_fix_cortex_a53_843419
+ with_glibc_version
+ enable_gnu_unique_object
++enable_eh_frame_hdr_for_static
+ enable_linker_build_id
+ enable_default_ssp
+ with_long_double_128
+@@ -1670,6 +1671,9 @@
+   --enable-gnu-unique-object
+                           enable the use of the @gnu_unique_object ELF
+                           extension on glibc systems
++  --enable-eh-frame-hdr-for-static
++                          enable linker PT_GNU_EH_FRAME support for static
++                          executable
+   --enable-linker-build-id
+                           compiler will always pass --build-id to linker
+   --enable-default-ssp    enable Stack Smashing Protection as default
+@@ -27825,6 +27829,38 @@
+ 
+ $as_echo "#define HAVE_LD_EH_FRAME_HDR 1" >>confdefs.h
+ 
++  # Check whether --enable-eh-frame-hdr-for-static was given.
++if test "${enable_eh_frame_hdr_for_static+set}" = set; then :
++  enableval=$enable_eh_frame_hdr_for_static; case $enable_eh_frame_hdr_for_static in
++    yes | no) ;;
++    *) as_fn_error "'$enable_eh_frame_hdr_for_static' is an invalid
++value for --enable-eh-frame-hdr-for-static.
++Valid choices are 'yes' and 'no'." "$LINENO" 5 ;;
++    esac
++else
++  # Only support for glibc 2.3.0 or higher with AT_PHDR/AT_PHNUM from
++# Linux kernel.
++   if test x$host = x$build -a x$host = x$target &&
++       ldd --version 2>&1 >/dev/null &&
++       glibcver=`ldd --version 2>/dev/null | sed 's/.* //;q'`; then
++      glibcmajor=`expr "$glibcver" : "\([0-9]*\)"`
++      glibcminor=`expr "$glibcver" : "[2-9]*\.\([0-9]*\)"`
++      glibcnum=`expr $glibcmajor \* 1000 + $glibcminor`
++      if test "$glibcnum" -ge 2003 ; then
++	auvx=`LD_SHOW_AUXV=1 ldd 2>/dev/null`
++	if echo "$auvx" | grep AT_PHDR > /dev/null &&
++	   echo "$auvx" | grep AT_PHNUM > /dev/null; then
++	  enable_eh_frame_hdr_for_static=yes
++	fi
++      fi
++    fi
++fi
++
++  if test x$enable_eh_frame_hdr_for_static = xyes; then
++
++$as_echo "#define USE_EH_FRAME_HDR_FOR_STATIC 1" >>confdefs.h
++
++  fi
+ fi
+ { $as_echo "$as_me:${as_lineno-$LINENO}: result: $gcc_cv_ld_eh_frame_hdr" >&5
+ $as_echo "$gcc_cv_ld_eh_frame_hdr" >&6; }
+--- a/gcc/configure.ac
++++ b/gcc/configure.ac
+@@ -4874,6 +4874,35 @@
+ if test x"$gcc_cv_ld_eh_frame_hdr" = xyes; then
+ 	AC_DEFINE(HAVE_LD_EH_FRAME_HDR, 1,
+ [Define if your linker supports .eh_frame_hdr.])
++  AC_ARG_ENABLE(eh-frame-hdr-for-static,
++   [AS_HELP_STRING([--enable-eh-frame-hdr-for-static],
++     [enable linker PT_GNU_EH_FRAME support for static executable])],
++   [case $enable_eh_frame_hdr_for_static in
++    yes | no) ;;
++    *) AC_MSG_ERROR(['$enable_eh_frame_hdr_for_static' is an invalid
++value for --enable-eh-frame-hdr-for-static.
++Valid choices are 'yes' and 'no'.]) ;;
++    esac],
++# Only support for glibc 2.3.0 or higher with AT_PHDR/AT_PHNUM from
++# Linux kernel.
++   [[if test x$host = x$build -a x$host = x$target &&
++       ldd --version 2>&1 >/dev/null &&
++       glibcver=`ldd --version 2>/dev/null | sed 's/.* //;q'`; then
++      glibcmajor=`expr "$glibcver" : "\([0-9]*\)"`
++      glibcminor=`expr "$glibcver" : "[2-9]*\.\([0-9]*\)"`
++      glibcnum=`expr $glibcmajor \* 1000 + $glibcminor`
++      if test "$glibcnum" -ge 2003 ; then
++	auvx=`LD_SHOW_AUXV=1 ldd 2>/dev/null`
++	if echo "$auvx" | grep AT_PHDR > /dev/null &&
++	   echo "$auvx" | grep AT_PHNUM > /dev/null; then
++	  enable_eh_frame_hdr_for_static=yes
++	fi
++      fi
++    fi]])
++  if test x$enable_eh_frame_hdr_for_static = xyes; then
++    AC_DEFINE(USE_EH_FRAME_HDR_FOR_STATIC, 1,
++[Define if your system supports PT_GNU_EH_FRAME for static executable.])
++  fi
+ fi
+ AC_MSG_RESULT($gcc_cv_ld_eh_frame_hdr)
+ 
+--- /dev/null
++++ b/gcc/testsuite/g++.dg/eh/spec3-static.C
+@@ -0,0 +1,25 @@
++// PR c++/4381
++// Test that exception-specs work properly for classes with virtual bases.
++
++// { dg-do run }
++// { dg-options "-static" }
++
++class Base {};
++
++struct A : virtual public Base
++{
++  A() {}
++};
++
++struct B {};
++
++void func() throw (B,A)
++{
++  throw A();
++}
++
++int main(void)
++{
++  try {	func(); }
++  catch (A& a) { }
++}
+--- a/libgcc/crtstuff.c
++++ b/libgcc/crtstuff.c
+@@ -88,7 +88,8 @@
+ #if defined(OBJECT_FORMAT_ELF) \
+     && !defined(OBJECT_FORMAT_FLAT) \
+     && defined(HAVE_LD_EH_FRAME_HDR) \
+-    && !defined(inhibit_libc) && !defined(CRTSTUFFT_O) \
++    && !defined(inhibit_libc) \
++    && (defined(USE_EH_FRAME_HDR_FOR_STATIC) || !defined(CRTSTUFFT_O)) \
+     && defined(BSD_DL_ITERATE_PHDR_AVAILABLE)
+ #include <link.h>
+ # define USE_PT_GNU_EH_FRAME
+@@ -97,7 +98,8 @@
+ #if defined(OBJECT_FORMAT_ELF) \
+     && !defined(OBJECT_FORMAT_FLAT) \
+     && defined(HAVE_LD_EH_FRAME_HDR) && defined(TARGET_DL_ITERATE_PHDR) \
+-    && !defined(inhibit_libc) && !defined(CRTSTUFFT_O) \
++    && !defined(inhibit_libc) \
++    && (defined(USE_EH_FRAME_HDR_FOR_STATIC) || !defined(CRTSTUFFT_O)) \
+     && defined(__sun__) && defined(__svr4__)
+ #include <link.h>
+ # define USE_PT_GNU_EH_FRAME
+@@ -106,7 +108,8 @@
+ #if defined(OBJECT_FORMAT_ELF) \
+     && !defined(OBJECT_FORMAT_FLAT) \
+     && defined(HAVE_LD_EH_FRAME_HDR) \
+-    && !defined(inhibit_libc) && !defined(CRTSTUFFT_O) \
++    && !defined(inhibit_libc) \
++    && (defined(USE_EH_FRAME_HDR_FOR_STATIC) || !defined(CRTSTUFFT_O)) \
+     && defined(__GLIBC__) && __GLIBC__ >= 2
+ #include <link.h>
+ /* uClibc pretends to be glibc 2.2 and DT_CONFIG is defined in its link.h.
+@@ -121,7 +124,7 @@
+ #if defined(OBJECT_FORMAT_ELF) \
+     && !defined(OBJECT_FORMAT_FLAT) \
+     && defined(HAVE_LD_EH_FRAME_HDR) \
+-    && !defined(CRTSTUFFT_O) \
++    && (defined(USE_EH_FRAME_HDR_FOR_STATIC) || !defined(CRTSTUFFT_O)) \
+     && defined(inhibit_libc) \
+     && (defined(__GLIBC__) || defined(__gnu_linux__) || defined(__GNU__))
+ /* On systems using glibc, an inhibit_libc build of libgcc is only

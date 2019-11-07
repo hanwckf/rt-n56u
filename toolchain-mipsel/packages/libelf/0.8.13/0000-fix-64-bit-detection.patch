@@ -1,0 +1,27 @@
+---
+ configure    |    2 +-
+ configure.in |    2 +-
+ 2 files changed, 2 insertions(+), 2 deletions(-)
+
+--- a/configure
++++ b/configure
+@@ -1595,7 +1595,7 @@
+   echo $ac_n "(cached) $ac_c" 1>&6
+ else
+   if test "$cross_compiling" = yes; then
+-  ac_cv_sizeof_long_long=0
++  ac_cv_sizeof_long_long=8
+ else
+   cat > conftest.$ac_ext <<EOF
+ #line 1602 "configure"
+--- a/configure.in
++++ b/configure.in
+@@ -90,7 +90,7 @@
+ AC_CHECK_SIZEOF(short,2)
+ AC_CHECK_SIZEOF(int,4)
+ AC_CHECK_SIZEOF(long,4)
+-AC_CHECK_SIZEOF(long long,0)
++AC_CHECK_SIZEOF(long long,8)
+ # Windows port
+ AC_CHECK_SIZEOF(__int64, 0)
+ 

@@ -1,0 +1,62 @@
+commit 5874510faaf3cbd0bb112aaacab9f225002beed1
+Author: Joseph Myers <joseph@codesourcery.com>
+Date:   Tue Nov 8 23:44:51 2016 +0000
+
+    Fix rpcgen buffer overrun (bug 20790).
+    
+    Building with GCC 7 produces an error building rpcgen:
+    
+    rpc_parse.c: In function 'get_prog_declaration':
+    rpc_parse.c:543:25: error: may write a terminating nul past the end of the destination [-Werror=format-length=]
+         sprintf (name, "%s%d", ARGNAME, num); /* default name of argument */
+                         ~~~~^
+    rpc_parse.c:543:5: note: format output between 5 and 14 bytes into a destination of size 10
+         sprintf (name, "%s%d", ARGNAME, num); /* default name of argument */
+         ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    
+    That buffer overrun is for the case where the .x file declares a
+    program with a million arguments.  The strcpy two lines above can
+    generate a buffer overrun much more simply for a long argument name.
+    
+    The limit on length of line read by rpcgen (MAXLINESIZE == 1024)
+    provides a bound on the buffer size needed, so this patch just changes
+    the buffer size to MAXLINESIZE to avoid both possible buffer
+    overruns.  A testcase is added that rpcgen does not crash with a
+    500-character argument name, where it previously crashed.
+    
+    It would not at all surprise me if there are many other ways of
+    crashing rpcgen with either valid or invalid input; fuzz testing would
+    likely find various such bugs, though I don't think they are that
+    important to fix (rpcgen is not that likely to be used with untrusted
+    .x files as input).  (As well as fuzz-findable bugs there are probably
+    also issues when various int variables get overflowed on very large
+    input.)  The test infrastructure for rpcgen-not-crashing tests would
+    need extending if tests are to be added for cases where rpcgen should
+    produce an error, as opposed to cases where it should succeed.
+    
+    Tested for x86_64 and x86.
+    
+            [BZ #20790]
+            * sunrpc/rpc_parse.c (get_prog_declaration): Increase buffer size
+            to MAXLINESIZE.
+            * sunrpc/bug20790.x: New file.
+            * sunrpc/Makefile [$(run-built-tests) = yes] (rpcgen-tests): New
+            variable.
+            [$(run-built-tests) = yes] (tests-special): Add $(rpcgen-tests).
+            [$(run-built-tests) = yes] ($(rpcgen-tests)): New rule.
+
+---
+ sunrpc/rpc_parse.c |    2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+--- a/sunrpc/rpc_parse.c
++++ b/sunrpc/rpc_parse.c
+@@ -520,7 +520,7 @@
+ get_prog_declaration (declaration * dec, defkind dkind, int num /* arg number */ )
+ {
+   token tok;
+-  char name[10];		/* argument name */
++  char name[MAXLINESIZE];		/* argument name */
+ 
+   if (dkind == DEF_PROGRAM)
+     {

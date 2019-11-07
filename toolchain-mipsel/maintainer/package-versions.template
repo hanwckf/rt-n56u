@@ -1,0 +1,13 @@
+#!foreach fork
+#!foreach version
+run_pkgversion \
+    master=@@master@@ \
+    masterpfx=@@master|@@ \
+    originpfx=@@origin|@@ \
+    pkg_name=@@pkg_name@@ \
+    pfx=@@fork|@@ \
+    versionlocked=@@versionlocked|@@ \
+    ver=@@ver@@ \
+    kcfg=@@ver_sel|@@
+#!end-foreach
+#!end-foreach

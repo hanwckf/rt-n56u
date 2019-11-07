@@ -1,0 +1,427 @@
+# GCC options
+
+## select CC_SUPPORT_CXX if !LIBC_NONE
+## select CC_SUPPORT_FORTRAN
+## select CC_SUPPORT_JAVA if !GCC_7_or_later && OBSOLETE
+## select CC_SUPPORT_ADA
+## select CC_SUPPORT_OBJC
+## select CC_SUPPORT_OBJCXX
+## select CC_SUPPORT_GOLANG
+# GCC7 requires ISL 0.15+
+## select ISL_REQUIRE_0_15_or_later if ISL_NEEDED && GCC_7_or_later
+# GCC6 requires ISL 0.14+ (it says 0.14-0.16, but accepts newer ISL as well)
+## select ISL_REQUIRE_0_14_or_later if ISL_NEEDED && GCC_6_or_later
+# GCC5 requires ISL 0.12+ (again, it says 0.12-0.16, but also accepts newer ISL up to 0.18;
+# fails to compile with 0.19+)
+## select ISL_REQUIRE_0_12_or_later if ISL_NEEDED && GCC_5_or_later
+## select ISL_REQUIRE_0_18_or_older if ISL_NEEDED && GCC_5_or_later && !GCC_6_or_later
+# GCC4.9 requires ISL 0.10..0.15
+# GCC4.8 requires ISL 0.10..0.14
+## select ISL_REQUIRE_0_10_or_later if ISL_NEEDED && GCC_4_8_or_later
+## select ISL_REQUIRE_0_15_or_older if ISL_NEEDED && GCC_4_9_or_later && !GCC_5_or_later
+## select ISL_REQUIRE_0_14_or_older if ISL_NEEDED && GCC_4_8_or_later && !GCC_4_9_or_later
+
+## help gcc is the full-blown GNU compiler. This is what most people will choose.
+## help
+## help gcc supports many languages, a powerful code parser, optimised binary
+## help output, and lots of other features.
+
+# Only enable gcc's support for plugins if binutils has it as well
+# They are useful only when doing LTO, but it does no harm enabling
+# them even without LTO.
+config CC_GCC_ENABLE_PLUGINS
+    def_bool y
+    depends on BINUTILS_PLUGINS
+    depends on ! STATIC_TOOLCHAIN
+
+# If binutils installs gold, enable support for gold in gcc
+config CC_GCC_GOLD
+    def_bool y
+    depends on BINUTILS_GOLD_INSTALLED
+
+config CC_GCC_HAS_LIBMPX
+    def_bool y
+    depends on GCC_5_or_later
+
+config CC_LANG_JAVA_USE_ECJ
+    def_bool y
+    depends on CC_LANG_JAVA
+
+config CC_GCC_ENABLE_CXX_FLAGS
+    string "Flags to pass to --enable-cxx-flags"
+    default ""
+    help
+      Enter here the value of the gcc's ./configure option --enable-cxx-flags.
+      Leave empty if you don't know better.
+      
+      Note: just pass in the option _value_, that is only the part that goes
+      after the '=' sign.
+
+config CC_GCC_CORE_EXTRA_CONFIG_ARRAY
+    string "Core gcc extra config"
+    default ""
+    depends on CC_CORE_PASS_1_NEEDED || CC_CORE_PASS_2_NEEDED
+    help
+      Extra flags to pass onto ./configure when configuring the core gcc.
+      
+      The core gcc is a stripped down, C-only compiler needed to build
+      the C library. Kinda bootstrap gcc, if you wish.
+      
+      You can enter multiple arguments here, and arguments can contain spaces
+      if they are properly quoted (or escaped, but prefer quotes). Eg.:
+          --with-foo="1st arg with 4 spaces" --with-bar=2nd-arg-without-space
+
+config CC_GCC_EXTRA_CONFIG_ARRAY
+    string "gcc extra config"
+    default ""
+    help
+      Extra flags to pass onto ./configure when configuring gcc.
+      
+      You can enter multiple arguments here, and arguments can contain spaces
+      if they are properly quoted (or escaped, but prefer quotes). Eg.:
+          --with-foo="1st arg with 4 spaces" --with-bar=2nd-arg-without-space
+
+config CC_GCC_MULTILIB_LIST
+    string "List of multilib variants"
+    depends on MULTILIB
+    help
+      Architecture-specific option of expanding or restricting the list of
+      the multilib variants to be built. Refer to GCC installation manual
+      for the format of this option for a particular architecture.
+      Leave empty to use the default list for this architecture.
+
+config STATIC_TOOLCHAIN
+    bool
+    select CC_GCC_STATIC_LIBSTDCXX
+
+config CC_GCC_STATIC_LIBSTDCXX
+    bool "Link libstdc++ statically into the gcc binary"
+    default y
+    depends on CONFIGURE_has_static_link || CANADIAN || CROSS_NATIVE
+    select WANTS_STATIC_LINK if CROSS || NATIVE
+    select WANTS_STATIC_LINK_CXX if CROSS || NATIVE
+    help
+      Newer gcc versions require some c++ libraries. So statically
+      linking libstdc++ increases the likeliness that the gcc binary will
+      run on machines other than the one which it was built on, without
+      having to worry about distributing the matching version of libstdc++
+      along with it.
+
+config CC_GCC_SYSTEM_ZLIB
+    bool "Use system zlib"
+    help
+      Do not use bundled zlib, and use the zlib already available for
+      the host (eg. the system library).
+
+      If zlib is built as a companion library, selecting this option
+      will use it.
+      
+      If you want to build a static toolchain, you will need to also
+      install the static version of zlib for your host.
+      
+      If unsure, say 'n'.
+
+config CC_GCC_CONFIG_TLS
+    tristate
+    prompt "Configure TLS (Thread Local Storage)"
+    default m
+    help
+      Specify that the target supports TLS (Thread Local Storage). Usually
+      configure can correctly determine if TLS is supported. In cases where
+      it guesses incorrectly, TLS can be explicitly enabled or disabled.
+      This can happen if the assembler supports TLS but the C library does
+      not, or if the assumptions made by the configure test are incorrect.
+
+       Option  | TLS use            | Associated ./configure switch
+      ---------+--------------------+--------------------------------
+         Y     | forcibly used      | --enable-tls
+         M     | auto               | (none, ./configure decides)
+         N     | forcibly not used  | --disable-tls
+      
+      If unsure, say 'M'.
+
+#-----------------------------------------------------------------------------
+# Optimisation features
+
+comment "Optimisation features"
+
+# Defined in config/cc/gcc.in
+# For graphite: gcc needs cloog and isl
+# In >= gcc-5.x, cloog is no longer needed, but isl is.
+config CC_GCC_USE_GRAPHITE
+    bool "Enable GRAPHITE loop optimisations"
+    default y
+    select CLOOG_NEEDED if !GCC_5_or_later
+    select ISL_NEEDED
+    help
+      Enable the GRAPHITE loop optimsations.
+      
+      On some systems (eg. Cygwin), CLooG and ISL (required to enable
+      GRAPHITE) may not build properly (yet), so you'll have to say 'N'
+      here (or help debug the issues)
+
+      TODO: Is this still true on Cygwin?
+
+# The way LTO works is a bit twisted.
+# See: http://gcc.gnu.org/wiki/LinkTimeOptimization#Requirements
+# Basically:
+#   - if binutils has plugins: LTO is handled by ld/gold by loading
+#     the plugin when linking
+#   - if binutils does not have plugins: LTO is handled by collect2
+# In any case, LTO support does not depend on plugins, but takes
+# advantage of it
+config CC_GCC_USE_LTO
+    bool "Enable LTO"
+    default y
+    depends on ! STATIC_TOOLCHAIN
+    select ZLIB_NEEDED
+    help
+      Enable the Link Time Optimisations.
+
+#-----------------------------------------------------------------------------
+comment "Settings for libraries running on target"
+
+config CC_GCC_ENABLE_TARGET_OPTSPACE
+    bool
+    prompt "Optimize gcc libs for size"
+    default y
+    help
+      Pass --enable-target-optspace to crossgcc's configure.
+      
+      This will compile crossgcc's libs with -Os.
+
+config CC_GCC_LIBMUDFLAP
+    bool
+    prompt "Compile libmudflap"
+    help
+      libmudflap is a pointer-use checking tool, which can detect
+      various mis-usages of pointers in C and (to some extents) C++.
+      
+      You should say 'N' here, as libmduflap generates instrumented
+      code (thus it is a bit bigger and a bit slower) and requires
+      re-compilation and re-link, while it exists better run-time
+      alternatives (eg. DUMA, dmalloc...) that need neither re-
+      compilation nor re-link.
+
+config CC_GCC_LIBGOMP
+    bool
+    prompt "Compile libgomp"
+    depends on !THREADS_NONE
+    help
+      libgomp is "the GNU implementation of the OpenMP Application Programming
+      Interface (API) for multi-platform shared-memory parallel programming in
+      C/C++ and Fortran". See:
+        http://gcc.gnu.org/onlinedocs/libgomp/
+
+      GNU OpenMP support requires threading.
+
+      The default is 'N'. Say 'Y' if you need it, and report success/failure.
+
+config CC_GCC_LIBSSP
+    bool
+    prompt "Compile libssp"
+    help
+      libssp is the run-time Stack-Smashing Protection library.
+      
+      The default is 'N'. Say 'Y' if you need it, and report success/failure.
+
+config CC_GCC_LIBQUADMATH
+    bool
+    prompt "Compile libquadmath"
+    help
+      libquadmath is a library which provides quad-precision mathematical
+      functions on targets supporting the __float128 datatype. See:
+        http://gcc.gnu.org/onlinedocs/libquadmath/
+      
+      The default is 'N'. Say 'Y' if you need it, and report success/failure.
+
+config CC_GCC_LIBSANITIZER
+    bool
+    prompt "Compile libsanitizer"
+    depends on THREADS_NATIVE
+    depends on !LIBC_UCLIBC && !LIBC_MUSL # Currently lacks required headers (like netrom.h)
+    help
+      libsanitizer is a library which provides run-time sanitising of either
+      or both of:
+        - memory access patterns (out-of-bonds, use-after-free)
+        - racy data accesses (in multi-threaded programs)
+
+      The default is 'N'. Say 'Y' if you need it, and report success/failure.
+
+config CC_GCC_LIBMPX
+    bool
+    default y
+    prompt "Compile libmpx"
+    depends on CC_GCC_HAS_LIBMPX
+    depends on ARCH_X86
+    # MUSL does not define libc types that GCC requires. Mingw lacks certain headers.
+    depends on !LIBC_MUSL && !LIBC_MINGW_W64
+    help
+      Enable GCC support for Intel Memory Protection Extensions (MPX).
+
+#-----------------------------------------------------------------------------
+
+comment "Misc. obscure options."
+
+config CC_CXA_ATEXIT
+    bool
+    prompt "Use __cxa_atexit"
+    default y
+    depends on ! BARE_METAL || LIBC_PROVIDES_CXA_ATEXIT
+    help
+      If you get the missing symbol "__cxa_atexit" when building C++ programs,
+      you might want to try disabling this option.
+
+config CC_GCC_DISABLE_PCH
+    bool
+    prompt "Do not build PCH"
+    help
+      Say 'y' here to not use Pre-Compiled Headers in the resulting toolchain.
+      at the expense of speed when compiling C++ code.
+      
+      For some configurations (most notably canadian?), PCH are broken, and
+      need to be disabled. Please see:
+        http://gcc.gnu.org/bugzilla/show_bug.cgi?id=40974
+
+config CC_GCC_SJLJ_EXCEPTIONS
+    tristate
+    prompt "Use sjlj for exceptions"
+    depends on ! BARE_METAL
+    default m
+    help
+      'sjlj' is short for setjmp/longjmp.
+      
+      On some architectures, stack unwinding during exception handling
+      works perfectly well without using sjlj, while on some others,
+      use of sjlj is required for proper stack unwinding.
+      
+       Option  | sjlj use           | Associated ./configure switch
+      ---------+--------------------+--------------------------------
+         Y     | forcibly used      | --enable-sjlj-exceptions
+         M     | auto               | (none, ./configure decides)
+         N     | forcibly not used  | --disable-sjlj-exceptions
+      
+      It should be safe to say 'M' or 'N'.
+      
+      It can happen that ./configure is wrong in some cases. Known
+      case is for ARM big endian, where you should say 'N'.
+
+config CC_GCC_LDBL_128
+    tristate
+    prompt "Enable 128-bit long doubles"
+    default m
+    help
+      Saying 'Y' will force gcc to use 128-bit wide long doubles
+      Saying 'N' will force gcc to use 64-bit wide long doubles
+      Saying 'M' will let gcc choose (default is 128-bit for
+                 glibc >= 2.4, 64-bit otherwise)
+      
+      If in doubt, keep the default, ie. 'M'.
+
+config CC_GCC_BUILD_ID
+    bool
+    prompt "Enable build-id"
+    help
+      Tells GCC to pass --build-id option to the linker for all final
+      links (links performed without the -r or --relocatable option),
+      if the linker supports it. If you say 'y' here, but your linker
+      does not support --build-id option, a warning is issued and this
+      option is ignored.
+      
+      The default is off.
+
+choice CC_GCC_LNK_HASH_STYLE_CHOICE
+    bool
+    prompt "linker hash style"
+    depends on BINUTILS_HAS_HASH_STYLE
+
+config CC_GCC_LNK_HASH_STYLE_DEFAULT
+    bool
+    prompt "Default"
+    help
+      Do not specify any value, and use the default value (sysv).
+
+config CC_GCC_LNK_HASH_STYLE_SYSV
+    bool
+    prompt "sysv"
+    help
+      Force use of the SYSV hash style.
+
+config CC_GCC_LNK_HASH_STYLE_GNU
+    bool
+    prompt "gnu"
+    help
+      Force use of the GNU hash style.
+
+config CC_GCC_LNK_HASH_STYLE_BOTH
+    bool
+    prompt "both"
+    help
+      Force use of both hash styles.
+
+endchoice # CC_GCC_LNK_HASH_STYLE_CHOICE
+
+config CC_GCC_LNK_HASH_STYLE
+    string
+    default ""      if CC_GCC_LNK_HASH_STYLE_DEFAULT
+    default "sysv"  if CC_GCC_LNK_HASH_STYLE_SYSV
+    default "gnu"   if CC_GCC_LNK_HASH_STYLE_GNU
+    default "both"  if CC_GCC_LNK_HASH_STYLE_BOTH
+
+choice CC_GCC_DEC_FLOATS_CHOICE
+    bool "Decimal floats"
+    default CC_GCC_DEC_FLOATS_AUTO
+    help
+      Choose what type of decimal floats to support.
+      
+      Note that using decimal floats requires a C library that provides
+      support for fenv (namely, the fenv.h header).  This is the case
+      for (e)glibc, and uClibc on x86/32.  For other C libraries, or
+      uClibc on other archs, this might not be the case, so you should
+      disable support for decimal floats.
+      
+      The default is to let ./configure decide.
+
+config CC_GCC_DEC_FLOAT_AUTO
+    bool "auto"
+    help
+      Let ./configure decide. If you say 'y' here, gcc will default to:
+        - 'bid' for x86 (32- and 64-bit)
+        - 'dpd' for powerpc
+        - 'no' for the other architectures
+
+config CC_GCC_DEC_FLOAT_BID
+    bool "bid"
+    help
+      Use the 'binary integer decimal' format for decimal floats.
+
+config CC_GCC_DEC_FLOAT_DPD
+    bool "dpd"
+    help
+      Use the 'densely packed decimal' for decimal floats.
+
+config CC_GCC_DEC_FLOATS_NO
+    bool "no"
+    help
+      Do not support decimal floats. The default.
+
+endchoice # CC_GCC_DEC_FLOATS_CHOICE
+
+config CC_GCC_DEC_FLOATS
+    string
+    default ""      if CC_GCC_DEC_FLOATS_AUTO
+    default "bid"   if CC_GCC_DEC_FLOATS_BID
+    default "dpd"   if CC_GCC_DEC_FLOATS_DPD
+    default "no"    if CC_GCC_DEC_FLOATS_NO
+
+#-----------------------------------------------------------------------------
+
+config CC_GCC_HAS_ARCH_OPTIONS
+    bool
+
+comment "archictecture-specific options"
+    depends on CC_GCC_HAS_ARCH_OPTIONS
+
+if ARCH_MIPS
+source "config/cc/gcc.in.mips"
+endif # ARCH_MIPS

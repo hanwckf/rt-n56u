@@ -1,0 +1,19 @@
+This patch is courtesy of OpenEmbedded, by Khem Raj <raj.khem@gmail.com>
+
+http://cgit.openembedded.org/cgit.cgi/openembedded/commit/?id=b85b779688f0abc389e3c25d06b54de8b86385c1
+
+---
+ Makefile.in |    2 ++
+ 1 file changed, 2 insertions(+)
+
+--- a/Makefile.in
++++ b/Makefile.in
+@@ -39,6 +39,8 @@
+ libltrace.a: 	sysdeps/sysdep.o $(OBJ)
+ 		$(AR) rcv $@ $^
+ 
++$(OBJ):		sysdeps/sysdep.o
++
+ sysdeps/sysdep.o: dummy
+ 		$(MAKE) -C sysdeps/$(OS)
+ 

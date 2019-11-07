@@ -1,0 +1,26 @@
+From 7f8eacbb468575fb67db7fd1155a3aedaa91911b Mon Sep 17 00:00:00 2001
+From: Max Filippov <jcmvbkbc@gmail.com>
+Date: Sun, 7 Jun 2015 23:15:39 +0300
+Subject: [PATCH] WIP: *end of prologue* detection hack
+
+see
+  http://www.esp8266.com/viewtopic.php?p=18461#p18461
+  http://www.esp8266.com/viewtopic.php?p=19026#p19026
+  http://www.esp8266.com/viewtopic.php?p=19683#p19683
+
+Signed-off-by: Max Filippov <jcmvbkbc@gmail.com>
+---
+ gdb/xtensa-tdep.c |    2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+--- a/gdb/xtensa-tdep.c
++++ b/gdb/xtensa-tdep.c
+@@ -2401,7 +2401,7 @@
+   /* Find out, if we have an information about the prologue from DWARF.  */
+   prologue_sal = find_pc_line (start, 0);
+   if (prologue_sal.line != 0) /* Found debug info.  */
+-    body_pc = prologue_sal.end;
++    body_pc = prologue_sal.end + 40;
+ 
+   /* If we are going to analyze the prologue in general without knowing about
+      the current PC, make the best assumtion for the end of the prologue.  */

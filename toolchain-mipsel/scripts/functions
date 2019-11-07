@@ -1,0 +1,2506 @@
+# -*- mode: sh; tab-width: 4 -*-
+# vi: ts=4:sw=4:sts=4:et
+# vim: filetype=sh :
+# This file contains some useful common functions
+# Copyright 2007 Yann E. MORIN
+# Licensed under the GPL v2. See COPYING in the root of this package
+
+CT_LoadConfig() {
+    local o oldvals vals
+
+    # Parse the configuration file
+    # It has some info about the logging facility, so include it early
+    # It also sets KERNEL/ARCH/... for file inclusion below. Does not handle
+    # recursive definitions yet. We don't need arrays at this point.
+    CT_TestOrAbort "Configuration file not found. Please create one." -r .config
+    . ./.config # Prefixing with ./ prevents Bash from searching $PATH
+
+    # Include sub-scripts instead of calling them: that way, we do not have to
+    # export any variable, nor re-parse the configuration and functions files.
+    . "${CT_LIB_DIR}/scripts/build/internals.sh"
+    . "${CT_LIB_DIR}/scripts/build/arch.sh"
+    . "${CT_LIB_DIR}/scripts/build/companion_tools.sh"
+    . "${CT_LIB_DIR}/scripts/build/kernel/${CT_KERNEL}.sh"
+    . "${CT_LIB_DIR}/scripts/build/companion_libs.sh"
+    . "${CT_LIB_DIR}/scripts/build/binutils/${CT_BINUTILS}.sh"
+    . "${CT_LIB_DIR}/scripts/build/libc.sh"
+    . "${CT_LIB_DIR}/scripts/build/cc/${CT_CC}.sh"
+    . "${CT_LIB_DIR}/scripts/build/debug.sh"
+    . "${CT_LIB_DIR}/scripts/build/test_suite.sh"
+
+    # Target tuple: CT_TARGET needs a little love:
+    CT_DoBuildTargetTuple
+
+    # Kludge: If any of the configured options needs CT_TARGET,
+    # then rescan the options file now. This also handles recursive variables;
+    # but we don't want to loop forever if there's a circular reference.
+    oldvals=""
+    try=0
+    while [ "$try" -le 10 ]; do
+        . ./.config # Prefixing with ./ prevents Bash from searching $PATH
+        vals=`set | ${grep} -E '^CT_'`
+        if [ "$oldvals" = "$vals" ]; then
+            break
+        fi
+        oldvals="$vals"
+        try=$[ try + 1 ]
+    done
+    if [ "$try" -gt 10 ]; then
+        CT_Abort "Variables in .config recurse too deep."
+    fi
+    # Double eval: first eval substitutes option name, second eval unescapes quotes
+    # and whitespace.
+    for o in `set | ${sed} -rn 's/^(CT_[A-Za-z0-9_]*_ARRAY)=.*/\1/p'`; do
+        eval "eval $o=(\"\$$o\")"
+    done
+}
+
+# Prepare the fault handler
+CT_OnError() {
+    local ret=$?
+    local result
+    local old_trap
+    local intro
+    local file line func
+    local step step_depth
+
+    # To avoid printing the backtace for each sub-shell
+    # up to the top-level, just remember we've dumped it
+    if [ ! -f "${CT_WORK_DIR}/backtrace" ]; then
+        [ -d "${CT_WORK_DIR}" ] && touch "${CT_WORK_DIR}/backtrace"
+
+        # Print steps backtrace
+        step_depth=${CT_STEP_COUNT}
+        CT_STEP_COUNT=1     # To have a zero-indentation
+        CT_DoLog ERROR ""
+        CT_DoLog ERROR ">>"
+        intro="Build failed"
+        for((step=step_depth; step>0; step--)); do
+            CT_DoLog ERROR ">>  ${intro} in step '${CT_STEP_MESSAGE[${step}]}'"
+            intro="      called"
+        done
+
+        # Print functions backtrace
+        intro="Error happened in"
+        CT_DoLog ERROR ">>"
+        for((depth=1; ${BASH_LINENO[$((${depth}-1))]}>0; depth++)); do
+            file="${BASH_SOURCE[${depth}]#${CT_LIB_DIR}/}"
+            func="${FUNCNAME[${depth}]}"
+            line="@${BASH_LINENO[${depth}-1]:-?}"
+            CT_DoLog ERROR ">>  ${intro}: ${func}[${file}${line}]"
+            intro="      called from"
+        done
+
+        # If the user asked for interactive debugging, dump him/her to a shell
+        if [ "${CT_DEBUG_INTERACTIVE}" = "y" ]; then
+            # We do not want this sub-shell exit status to be caught, because
+            # it is absolutely legit that it exits with non-zero.
+            # Save the trap handler to restore it after our debug-shell
+            old_trap="$(trap -p ERR)"
+            trap -- ERR
+            (
+                CT_LogDisable # In this subshell
+                printf "\r         \n\nCurrent command"
+                if [ -n "${cur_cmd}" ]; then
+                    printf ":\n  %s\n" "${cur_cmd}"
+                else
+                    printf " (unknown), "
+                fi
+                printf "exited with error code: %d\n" ${ret}
+                printf "Please fix it up and finish by exiting the shell with one of these values:\n"
+                printf "    1  fixed, continue with next build command\n"
+                if [ -n "${cur_cmd}" ]; then
+                    printf "    2  repeat this build command\n"
+                fi
+                printf "    3  abort build\n\n"
+                while true; do
+                    ${bash} --rcfile <(printf "PS1='ct-ng:\w> '\nPROMPT_COMMAND=''\n") -i
+                    result=$?
+                    case $result in
+                        1)  printf "\nContinuing past the failed command.\n\n"
+                            break
+                            ;;
+                        2)  if [ -n "${cur_cmd}" ]; then
+                                printf "\nRe-trying last command.\n\n"
+                                break
+                            fi
+                            ;;
+                        3)  break;;
+                    esac
+                    printf "\nPlease exit with one of these values:\n"
+                    printf "    1  fixed, continue with next build command\n"
+                    if [ -n "${cur_cmd}" ]; then
+                        printf "    2  repeat this build command\n"
+                    fi
+                    printf "    3  abort build\n"
+                done
+                exit $result
+            )
+            result=$?
+            # Restore the trap handler
+            eval "${old_trap}"
+            case "${result}" in
+                1)  rm -f "${CT_WORK_DIR}/backtrace"; touch "${CT_BUILD_DIR}/skip"; return;;
+                2)  rm -f "${CT_WORK_DIR}/backtrace"; touch "${CT_BUILD_DIR}/repeat"; return;;
+                # 3 is an abort, continue...
+            esac
+        fi
+    fi
+
+    # And finally, in top-level shell, print some hints
+    if [ ${BASH_SUBSHELL} -eq 0 ]; then
+        # Help diagnose the error
+        CT_STEP_COUNT=1     # To have a zero-indentation
+        CT_DoLog ERROR ">>"
+        if [ "${CT_LOG_TO_FILE}" = "y" ]; then
+            CT_DoLog ERROR ">>  For more info on this error, look at the file: '${CT_BUILD_LOG#${CT_TOP_DIR}/}'"
+        fi
+        CT_DoLog ERROR ">>  There is a list of known issues, some with workarounds, in:"
+        if [ -r "${CT_DOC_DIR}/manual/B_Known_issues.md" ]; then
+            CT_DoLog ERROR ">>      '${CT_DOC_DIR#${CT_TOP_DIR}/}/manual/B_Known_issues.md'"
+        else
+            CT_DoLog ERROR ">>      https://crosstool-ng.github.io/docs/known-issues/"
+        fi
+        CT_DoLog ERROR ">>"
+        if [ -n "${CT_EXPERIMENTAL}" ]; then
+            CT_DoLog ERROR ">> NOTE: Your configuration includes features marked EXPERIMENTAL."
+            CT_DoLog ERROR ">> Before submitting a bug report, try to reproduce it without enabling"
+            CT_DoLog ERROR ">> any experimental features. Otherwise, you'll need to debug it"
+            CT_DoLog ERROR ">> and present an explanation why it is a bug in crosstool-NG - or"
+            CT_DoLog ERROR ">> preferably, a fix."
+            CT_DoLog ERROR ">>"
+        fi
+        if [ "${CT_PATCH_ORDER}" != "bundled" ]; then
+            CT_DoLog ERROR ">> NOTE: You configuration uses non-default patch sets. Please"
+            CT_DoLog ERROR ">> select 'bundled' as the set of patches applied and attempt"
+            CT_DoLog ERROR ">> to reproduce this issue. Issues reported with other patch"
+            CT_DoLog ERROR ">> set selections (none, local, bundled+local) are going to be"
+            CT_DoLog ERROR ">> closed without explanation."
+            CT_DoLog ERROR ">>"
+        fi
+        CT_DoLog ERROR ">>  If you feel this is a bug in crosstool-NG, report it at:"
+        CT_DoLog ERROR ">>      https://github.com/crosstool-ng/crosstool-ng/issues/"
+        CT_DoLog ERROR ">>"
+        CT_DoLog ERROR ">>  Make sure your report includes all the information pertinent to this issue."
+        CT_DoLog ERROR ">>  Read the bug reporting guidelines here:"
+        CT_DoLog ERROR ">>      http://crosstool-ng.github.io/support/"
+
+        CT_DoLog ERROR ""
+        CT_DoEnd ERROR
+        rm -f "${CT_WORK_DIR}/backtrace"
+    fi
+    exit $ret
+}
+
+# Install the fault handler
+trap CT_OnError ERR
+
+# Inherit the fault handler in subshells and functions
+set -E
+
+# Make pipes fail on the _first_ failed command
+# Not supported on bash < 3.x, but we need it, so drop the obsolete bash-2.x
+set -o pipefail
+
+# Don't hash commands' locations, and search every time it is requested.
+# This is slow, but needed because of the static/shared core gcc which shall
+# always match to shared if it exists, and only fallback to static if the
+# shared is not found
+set +o hashall
+
+# Log policy:
+#  - first of all, save stdout so we can see the live logs: fd #6
+#    (also save stdin and stderr for use by CT_DEBUG_INTERACTIVE)
+#    FIXME: it doesn't look like anyone is overriding stdin/stderr. Do we need
+#    to save/restore them?
+CT_LogEnable() {
+	local clean=no
+	local arg
+
+	for arg in "$@"; do eval "$arg"; done
+	exec 6>&1 7>&2 8<&0
+	CT_BUILD_LOG="${CT_TOP_DIR}/build.log"
+	CT_LOG_ENABLED=y
+    if [ "$clean" = "yes" ]; then
+		rm -f "${CT_BUILD_LOG}"
+	fi
+	exec >>"${CT_BUILD_LOG}"
+}
+
+# Restore original stdout, stderr and stdin
+CT_LogDisable() {
+	exec >&6 2>&7 <&8
+	CT_LOG_ENABLED=
+}
+
+# The different log levels:
+CT_LOG_LEVEL_ERROR=0
+CT_LOG_LEVEL_WARN=1
+CT_LOG_LEVEL_INFO=2
+CT_LOG_LEVEL_EXTRA=3
+CT_LOG_LEVEL_CFG=4
+CT_LOG_LEVEL_FILE=5
+CT_LOG_LEVEL_STATE=6
+CT_LOG_LEVEL_ALL=7
+CT_LOG_LEVEL_DEBUG=8
+
+# Make it easy to use \n and !
+CR=$(printf "\n")
+BANG='!'
+
+# A function to log what is happening
+# Different log level are available:
+#   - ERROR:   A serious, fatal error occurred
+#   - WARN:    A non fatal, non serious error occurred, take your responsbility with the generated build
+#   - INFO:    Informational messages
+#   - EXTRA:   Extra informational messages
+#   - CFG:     Output of various "./configure"-type scripts
+#   - FILE:    File / archive unpacking.
+#   - STATE:   State save & restore
+#   - ALL:     Component's build messages
+#   - DEBUG:   Internal debug messages
+# Usage: CT_DoLog <level> [message]
+# If message is empty, then stdin will be logged.
+CT_DoLog() {
+    local max_level LEVEL level cur_l cur_L
+    local l
+    eval max_level="\${CT_LOG_LEVEL_${CT_LOG_LEVEL_MAX}}"
+    # Set the maximum log level to DEBUG if we have none
+    [ -z "${max_level}" ] && max_level=${CT_LOG_LEVEL_DEBUG}
+
+    LEVEL="$1"; shift
+    eval level="\${CT_LOG_LEVEL_${LEVEL}}"
+
+    if [ $# -eq 0 ]; then
+        cat -
+    else
+        echo -e "${*}"
+    fi |( IFS="${CR}" # We want the full lines, even leading spaces
+          _prog_bar_cpt=0
+          _prog_bar[0]='/'
+          _prog_bar[1]='-'
+          _prog_bar[2]='\'
+          _prog_bar[3]='|'
+          indent=$((2*CT_STEP_COUNT))
+          while read line; do
+              case "${CT_LOG_SEE_TOOLS_WARN:-n},${line}" in
+                  y,*[[:space:]][Ww]arning:*|y,[Ww]arning:*|y,*[[:space:]]WARNING:*|y,WARNING:*)
+                      cur_L=WARN; cur_l=${CT_LOG_LEVEL_WARN};;
+                  *[[:space:]][Ee]rror:*|[yn],[Ee]rror:*)
+                      cur_L=ERROR; cur_l=${CT_LOG_LEVEL_ERROR};;
+                  *"make["*"]: ***"*)
+                      cur_L=ERROR; cur_l=${CT_LOG_LEVEL_ERROR};;
+                  *)
+                      cur_L="${LEVEL}"; cur_l="${level}";;
+              esac
+              # There will always be a log file (stdout, fd #1), be it /dev/null
+              if [ -n "${CT_LOG_ENABLED}" ]; then
+                  printf "[%-5s]%*s%s%s\n" "${cur_L}" "${indent}" " " "${line}"
+                  # If log file has been set up, fd#6 is console and it only
+                  # gets the most important messages.
+                  if [ ${cur_l} -le ${max_level} ]; then
+                      # Only print to console (fd #6) if log level is high enough.
+                      printf "${CT_LOG_PROGRESS_BAR:+\r}[%-5s]%*s%s%s\n" "${cur_L}" "${indent}" " " "${line}" >&6
+                  fi
+                  if [ "${CT_LOG_PROGRESS_BAR}" = "y" ]; then
+                      printf "\r[%02d:%02d] %s " $((SECONDS/60)) $((SECONDS%60)) "${_prog_bar[$((_prog_bar_cpt/10))]}" >&6
+                      _prog_bar_cpt=$(((_prog_bar_cpt+1)%40))
+                  fi
+              elif [ ${cur_l} -le ${CT_LOG_LEVEL_WARN} ]; then
+                  printf "[%-5s]%*s%s%s\n" "${cur_L}" "${indent}" " " "${line}" >&2
+              fi
+          done
+        )
+
+    return 0
+}
+
+# Execute an action, and log its messages
+# It is possible to even log local variable assignments (a-la: var=val ./cmd opts)
+# Usage: CT_DoExecLog <level> [VAR=val...] <command> [parameters...]
+CT_DoExecLog() {
+    local level="$1"
+    local cur_cmd
+    local ret
+    local cmd_seen
+    shift
+
+    (
+    for i in "$@"; do
+        case "${i}" in
+        *=*)
+            if [ -z "${cmd_seen}" ]; then
+                cur_cmd+=" ${i%%=*}='${i#*=}'"
+            else
+                cur_cmd+=" '${i}'"
+            fi
+            ;;
+        *)
+            cur_cmd+=" '${i}'"
+            cmd_seen=y
+            ;;
+        esac
+    done
+    while true; do
+        case "${1}" in
+            *=*)    eval export "'${1}'"; shift;;
+            *)      break;;
+        esac
+    done
+    # This while-loop goes hand-in-hand with the ERR trap handler:
+    # - if the command terminates successfully, then we hit the break
+    #   statement, and we exit the loop
+    # - if the command terminates in error, then the ERR handler kicks
+    #   in, then:
+    #     - if the user did *not* ask for interactive debugging, the ERR
+    #       handler exits, and we hit the end of the sub-shell
+    #     - if the user did ask for interactive debugging, the ERR handler
+    #       spawns a shell. Upon termination of this shell, the ERR handler
+    #       examines the exit status of the shell:
+    #         - if 1, the ERR handler returns; then we hit the else statement,
+    #           then the break, and we exit the 'while' loop, to continue the
+    #           build;
+    #         - if 2, the ERR handler touches the repeat file, and returns;
+    #           then we hit the if statement, and we loop for one more
+    #           iteration;
+    #         - if 3, the ERR handler exits with the command's exit status,
+    #           and we're dead;
+    #         - for any other exit status of the shell, the ERR handler
+    #           prints an informational message, and respawns the shell
+    #
+    # This allows a user to get an interactive shell that has the same
+    # environment (PATH and so on) that the failed command was ran with.
+    while true; do
+        rm -f "${CT_BUILD_DIR}/repeat"
+        CT_DoLog DEBUG "==> Executing: ${cur_cmd}"
+        "${@}" 2>&1 |CT_DoLog "${level}"
+        ret="${?}"
+        if [ -f "${CT_BUILD_DIR}/repeat" ]; then
+            rm -f "${CT_BUILD_DIR}/repeat"
+            continue
+        elif [ -f "${CT_BUILD_DIR}/skip" ]; then
+            rm -f "${CT_BUILD_DIR}/skip"
+            ret=0
+            break
+        else
+            break
+        fi
+    done
+    CT_DoLog DEBUG "==> Return status ${ret}"
+    exit ${ret}
+    )
+    # Catch failure of the sub-shell
+    [ $? -eq 0 ]
+}
+
+# Tail message to be logged whatever happens
+# Usage: CT_DoEnd <level>
+CT_DoEnd()
+{
+    local level="$1"
+    CT_STOP_DATE=$(CT_DoDate +%s%N)
+    CT_STOP_DATE_HUMAN=$(CT_DoDate +%Y%m%d.%H%M%S)
+    if [ "${level}" != "ERROR" ]; then
+        CT_DoLog "${level:-INFO}" "Build completed at ${CT_STOP_DATE_HUMAN}"
+    fi
+    elapsed=$((CT_STOP_DATE-CT_STAR_DATE))
+    elapsed_min=$((elapsed/(60*1000*1000*1000)))
+    elapsed_sec=$(printf "%02d" $(((elapsed%(60*1000*1000*1000))/(1000*1000*1000))))
+    elapsed_csec=$(printf "%02d" $(((elapsed%(1000*1000*1000))/(10*1000*1000))))
+    CT_DoLog ${level:-INFO} "(elapsed: ${elapsed_min}:${elapsed_sec}.${elapsed_csec})"
+}
+
+# Remove entries referring to . and other relative paths
+# Usage: CT_SanitizePath
+CT_SanitizePath() {
+    local new
+    local p
+    local IFS=:
+    for p in $PATH; do
+        # Only accept absolute paths;
+        # Note: as a special case the empty string in PATH is equivalent to .
+        if [ -n "${p}" -a -z "${p%%/*}" ]; then
+            new="${new}${new:+:}${p}"
+        fi
+    done
+    PATH="${new}"
+}
+
+# Sanitize the directory name contained in the variable passed as argument:
+# - remove duplicate /
+# - remove . (current dir) at the beginning, in the middle or at the end
+# - resolve .. (parent dir) if there is a previous component
+# - remove .. (parent dir) if at the root
+#
+# Usage: CT_SanitizeVarDir CT_PREFIX_DIR
+CT_SanitizeVarDir() {
+    local var
+    local old_dir
+    local new_dir tmp
+
+    for var in "$@"; do
+        eval "old_dir=\"\${${var}}\""
+        new_dir=$( echo "${old_dir}" | ${awk} '
+{
+    isabs = $1 == "" # Started with a slash
+    trail = $NF == "" # Ending with a slash
+    ncomp = 0 # Components in a path so far
+    for (i = 1; i <= NF; i++) {
+        # Double-slash or current dir? Ignore
+        if ($i == "" || $i == ".") {
+            continue;
+        }
+        # .. pops the last component unless it is at the beginning
+        if ($i == ".." && ncomp != 0 && comps[ncomp] != "..") {
+            ncomp--;
+            continue;
+        }
+        comps[++ncomp] = $i;
+    }
+    seencomp = 0
+    for (i = 1; i <= ncomp; i++) {
+        if (comps[i] == ".." && isabs) {
+            # /../ at the beginning is equivalent to /
+            continue;
+        }
+        printf "%s%s", isabs || i != 1 ? "/" : "", comps[i];
+        seencomp = 1;
+    }
+    if (!seencomp && !isabs && !trail) {
+        # Eliminated all components, but no trailing slash -
+        # if the result is appended with /foo, must not become absolute
+        printf ".";
+    }
+    if ((!seencomp && isabs) || (seencomp && trail)) {
+        printf "/";
+    }
+}' FS=/ )
+        eval "${var}=\"${new_dir}\""
+        CT_DoLog DEBUG "Sanitized '${var}': '${old_dir}' -> '${new_dir}'"
+    done
+}
+
+# Abort the execution with an error message
+# Usage: CT_Abort <message>
+CT_Abort() {
+    CT_DoLog ERROR "$1"
+    false
+}
+
+# Test a condition, and print a message if satisfied
+# Usage: CT_Test <message> <tests>
+CT_Test() {
+    local ret
+    local m="$1"
+    shift
+    CT_DoLog DEBUG "Testing '! ( $* )'"
+    test "$@" && CT_DoLog WARN "$m"
+    return 0
+}
+
+# Test a condition, and abort with an error message if satisfied
+# Usage: CT_TestAndAbort <message> <tests>
+CT_TestAndAbort() {
+    local m="$1"
+    shift
+    CT_DoLog DEBUG "Testing '! ( $* )'"
+    test "$@" && CT_Abort "$m"
+    return 0
+}
+
+# Test a condition, and abort with an error message if not satisfied
+# Usage: CT_TestAndAbort <message> <tests>
+CT_TestOrAbort() {
+    local m="$1"
+    shift
+    CT_DoLog DEBUG "Testing '$*'"
+    test "$@" || CT_Abort "$m"
+    return 0
+}
+
+# Test the presence of a tool, or abort if not found
+# Usage: CT_HasOrAbort <tool>
+CT_HasOrAbort() {
+    CT_TestAndAbort "'${1}' not found and needed for successful toolchain build." -z "$(CT_Which "${1}")"
+    return 0
+}
+
+# Search a program: wrap "which" for those system where "which"
+# verbosely says there is no match (such as on Mandriva).
+# Usage: CT_Which <filename>
+CT_Which() {
+  which "$1" 2>/dev/null || true
+}
+
+# Get current date with nanosecond precision
+# On those system not supporting nanosecond precision, faked with rounding down
+# to the highest entire second
+# Usage: CT_DoDate <fmt>
+CT_DoDate() {
+    date "$1" |${sed} -r -e 's/%?N$/000000000/;'
+}
+
+CT_STEP_COUNT=1
+CT_STEP_MESSAGE[${CT_STEP_COUNT}]="(top-level)"
+# Memorise a step being done so that any error is caught
+# Usage: CT_DoStep <loglevel> <message>
+CT_DoStep() {
+    local start=$(CT_DoDate +%s%N)
+    CT_DoLog "$1" "================================================================="
+    CT_DoLog "$1" "$2"
+    CT_STEP_COUNT=$((CT_STEP_COUNT+1))
+    CT_STEP_LEVEL[${CT_STEP_COUNT}]="$1"; shift
+    CT_STEP_START[${CT_STEP_COUNT}]="${start}"
+    CT_STEP_MESSAGE[${CT_STEP_COUNT}]="$1"
+    return 0
+}
+
+# End the step just being done
+# Usage: CT_EndStep
+CT_EndStep() {
+    local stop=$(CT_DoDate +%s%N)
+    local duration=$(printf "%032d" $((stop-${CT_STEP_START[${CT_STEP_COUNT}]})) \
+                     |${sed} -r -e 's/([[:digit:]]{2})[[:digit:]]{7}$/\.\1/; s/^0+//; s/^\./0\./;'
+                    )
+    local elapsed=$(printf "%02d:%02d" $((SECONDS/60)) $((SECONDS%60)))
+    local level="${CT_STEP_LEVEL[${CT_STEP_COUNT}]}"
+    local message="${CT_STEP_MESSAGE[${CT_STEP_COUNT}]}"
+    CT_STEP_COUNT=$((CT_STEP_COUNT-1))
+    CT_DoLog "${level}" "${message}: done in ${duration}s (at ${elapsed})"
+    return 0
+}
+
+# Pushes into a directory, and pops back
+CT_Pushd() {
+    CT_DoLog DEBUG "Entering '$1'"
+    pushd "$1" >/dev/null 2>&1
+}
+CT_Popd() {
+    local dir=`dirs +0`
+
+    CT_DoLog DEBUG "Leaving '${dir}'"
+    popd >/dev/null 2>&1
+}
+
+# Create a dir and pushd into it
+# Usage: CT_mkdir_pushd <dir/to/create>
+CT_mkdir_pushd()
+{
+    local dir="${1}"
+
+    mkdir -p "${dir}"
+    CT_Pushd "${dir}"
+}
+
+# Creates a temporary directory
+# $1: variable to assign to
+# Usage: CT_MktempDir foo
+CT_MktempDir()
+{
+    # Some mktemp do not allow more than 6 Xs
+    eval "$1"=$(mktemp -q -d "${CT_BUILD_DIR}/tmp.XXXXXX")
+    CT_TestOrAbort "Could not make temporary directory" -n "${!1}" -a -d "${!1}"
+    CT_DoLog DEBUG "Made temporary directory '${!1}'"
+    return 0
+}
+
+# Removes one or more directories, even if it is read-only, or its parent is
+# Usage: CT_DoForceRmdir dir [...]
+CT_DoForceRmdir()
+{
+    local dir
+    local cnt
+
+    for dir in "${@}"; do
+        [ -e "${dir}" ] || continue
+        CT_TestOrAbort "Cannot remove '${dir}': not a directory" -d "${dir}"
+        CT_DoExecLog ALL chmod -R u+w "${dir}" || :;
+        if CT_DoExecLog ALL rm -rf "${dir}"; then
+            continue
+        fi
+        # If we succeeded in removing the whole directory, good. If not,
+        # but only the top level directory remains - it is fine, too, because
+        # this function is used to remove the directories that are going to be
+        # re-created. Hence, verify we at least succeeded in verifying the
+        # contents of this directory.
+        if [ -d "${dir}" ]; then
+            cnt=$(ls -a "${dir}" | { grep -v '^\.\{1,2\}$' || :; } | wc -l)
+            if [ "${cnt}" != "0" ]; then
+                CT_Abort "Failed to remove '${dir}'"
+            fi
+        fi
+    done
+}
+
+# Add the specified directory to LD_LIBRARY_PATH, and export it
+# If the specified patch is already present, just export
+# $1: path to add
+# $2: add as 'first' or 'last' path, 'first' is assumed if $2 is empty
+# Usage CT_SetLibPath /some/where/lib [first|last]
+CT_SetLibPath()
+{
+    local path="$1"
+    local pos="$2"
+
+    case ":${LD_LIBRARY_PATH}:" in
+        *:"${path}":*)  ;;
+        *)  case "${pos}" in
+                last)
+                    CT_DoLog DEBUG "Adding '${path}' at end of LD_LIBRARY_PATH"
+                    LD_LIBRARY_PATH="${LD_LIBRARY_PATH:+${LD_LIBRARY_PATH}:}${path}"
+                    ;;
+                first|"")
+                    CT_DoLog DEBUG "Adding '${path}' at start of LD_LIBRARY_PATH"
+                    LD_LIBRARY_PATH="${path}${LD_LIBRARY_PATH:+:${LD_LIBRARY_PATH}}"
+                    ;;
+                *)
+                    CT_Abort "Incorrect position '${pos}' to add '${path}' to LD_LIBRARY_PATH"
+                    ;;
+            esac
+            ;;
+    esac
+    CT_DoLog DEBUG "==> LD_LIBRARY_PATH='${LD_LIBRARY_PATH}'"
+    export LD_LIBRARY_PATH
+}
+
+# Build up the list of allowed tarball extensions
+# Add them in the prefered order; most preferred comes first
+CT_DoListTarballExt()
+{
+    printf ".tar.xz\n"
+    printf ".tar.lzma\n"
+    if [ "${CT_CONFIGURE_has_lzip}" = "y" ]; then
+        printf ".tar.lz\n"
+    fi
+    printf ".tar.bz2\n"
+    printf ".tar.gz\n.tgz\n"
+    printf ".tar\n"
+    printf ".zip\n"
+}
+
+# Get the file name extension of a component
+# Usage: CT_GetFileExtension <component_name-component_version> [extension]
+# If found, echoes the extension to stdout, and return 0
+# If not found, echoes nothing on stdout, and return !0.
+CT_GetFileExtension()
+{
+    local ext
+    local file="$1"
+
+    for ext in $(CT_DoListTarballExt); do
+        if [ -e "${file}${ext}" -o -L "${file}${ext}" ]; then
+            echo "${ext}"
+            exit 0
+        fi
+    done
+    exit 1
+}
+
+# Get file's basename by stripping supported archive extensions
+CT_GetFileBasename()
+{
+    local bn="${1}"
+    local ext
+
+    for ext in $(CT_DoListTarballExt); do
+        if [ "${bn%${ext}}" != "${bn}" ]; then
+            echo "${bn%${ext}}"
+            exit 0
+        fi
+    done
+}
+
+# Try to retrieve the specified URL (HTTP or FTP)
+# Usage: CT_DoGetFile <URL>
+# This functions always returns true (0), as it can be legitimate not
+# to find the requested URL (think about snapshots, different layouts
+# for different gcc versions, etc...).
+CT_DoGetFile()
+{
+    local url="${1}"
+    local dest="${CT_TARBALLS_DIR}/${url##*/}"
+    local tmp="${dest}.tmp-dl"
+    local ok
+    local T
+
+    # Remove potential left-over from a previous run
+    rm -f "${tmp}"
+
+    # Replace a special value of '-1' with empty string
+    if [ ${CT_CONNECT_TIMEOUT} != -1 ]; then
+        T="${CT_CONNECT_TIMEOUT}"
+    fi
+
+    CT_DoLog DEBUG "Trying '${url}'"
+    if [ "${CT_DOWNLOAD_AGENT_WGET}" = "y" ]; then
+        if CT_DoExecLog ALL wget ${CT_DOWNLOAD_WGET_OPTIONS} \
+                                 ${T:+-T ${T}}               \
+                                 -O "${tmp}"                 \
+                                 "${url}"; then
+            ok=y
+        fi
+    elif [ "${CT_DOWNLOAD_AGENT_CURL}" = "y" ]; then
+        if CT_DoExecLog ALL curl ${CT_DOWNLOAD_CURL_OPTIONS}  \
+                                 ${T:+--connect-timeout ${T}} \
+                                 -o "${tmp}"                  \
+                                 "${url}"; then
+            ok=y
+        fi
+    fi
+
+    if [ "${ok}" = "y" ]; then
+        # Success, we got it, good!
+        mv "${tmp}" "${dest}"
+        CT_DoLog DEBUG "Got it from: \"${url}\""
+        return 0
+    else
+        # Whoops...
+        rm -f "${tmp}"
+        CT_DoLog DEBUG "Not at this location: \"${url}\""
+        return 1
+    fi
+}
+
+# This function saves the specified to local storage if possible,
+# and if so, symlinks it for later usage. This function is called from
+# the `if' condition (via the CT_GetFile) and therefore must return
+# on error rather than relying on the shell's ERR trap to catch it.
+# Usage: CT_SaveLocal </full/path/file.name> <subdirectory>
+CT_SaveLocal()
+{
+    local file="$1"
+    local savedir="${CT_LOCAL_TARBALLS_DIR}${CT_TARBALLS_BUILDROOT_LAYOUT:+/$2}"
+    local basename="${file##*/}"
+
+    if [ "${CT_SAVE_TARBALLS}" = "y" ]; then
+        CT_DoLog EXTRA "Saving '${basename}' to local storage"
+        # The subdirectory for this package may not exist yet; create it
+        if [ ! -d "${savedir}" ]; then
+            CT_DoExecLog ALL mkdir -p "${savedir}"
+        fi
+        # The file may already exist if downloads are forced: remove it first
+        if ! CT_DoExecLog ALL rm -f "${savedir}/${basename}"; then
+            return 1
+        fi
+        if ! CT_DoExecLog ALL mv -f "${file}" "${savedir}"; then
+            # Move may have failed if the local tarball storage is on a different
+            # filesystem. Fallback to copy+delete.
+            if ! CT_DoExecLog ALL cp -f "${file}" "${savedir}"; then
+                return 1
+            fi
+            if ! CT_DoExecLog ALL rm -f "${file}"; then
+                return 1
+            fi
+        fi
+        if ! CT_DoExecLog ALL ln -s "${savedir}/${basename}" "${file}"; then
+            return 1
+        fi
+    fi
+}
+
+# Verify the file against a known digest.
+# Usage: CT_DoVerifyDigest <local-file-path> <package-directory>
+CT_DoVerifyDigest()
+{
+    local path="$1"
+    local file="${path##*/}"
+    local dir="${path%/*}"
+    local pkgdir="$2"
+    local alg="${CT_VERIFY_DOWNLOAD_DIGEST_ALG}"
+    local chksum a f c
+
+    if [ ! -r "${pkgdir}/chksum" ]; then
+        CT_DoLog WARN "Not verifying '${file}': digest missing"
+        return 0
+    fi
+    CT_DoLog EXTRA "Verifying ${alg^^} checksum for '${file}'"
+    chksum=`"${alg}sum" "${path}"`
+    chksum="${chksum%%[[:space:]]*}"
+    while read a f c; do
+        if [ "${a}" != "${alg}" -o "${f}" != "${file}" ]; then
+            continue
+        fi
+        if [ "${c}" = "${chksum}" ]; then
+            CT_DoLog DEBUG "Correct ${alg} digest for ${file}: ${chksum}"
+            return 0
+        else
+            CT_DoLog ERROR "Bad ${alg} digest for ${file}: ${chksum}, expect ${c}"
+            return 1
+        fi
+    done < "${pkgdir}/chksum"
+    CT_DoLog WARN "Downloaded file ${file} reference digest not available"
+    return 0
+}
+
+# Decompress a file to stdout
+CT_ZCat()
+{
+    local file="$1"
+
+    case "${file}" in
+    *.tar.xz)
+        xz -fdc "${file}"
+        ;;
+    *.tar.lzma)
+        xz -fdc --format=lzma "${file}"
+        ;;
+    *.tar.lz)
+        lzip -fdc "${file}"
+        ;;
+    *.tar.bz2)
+        bzip2 -dc "${file}"
+        ;;
+    *.tar.gz|*.tgz)
+        gzip -dc "${file}"
+        ;;
+    *.tar)
+        cat "${file}"
+        ;;
+    *)
+        CT_Abort "Unsupported archive file name '${file}'"
+    esac
+}
+
+# Verify the file against a detached signature.
+# Fetched from the URL, or obtained from the package directory.
+# Usage: CT_DoVerifySignature <local-file-path> <URL-used-for-download> <signature-format> <save-subdirectory>
+CT_DoVerifySignature()
+{
+    local path="$1"
+    local file="${path##*/}"
+    local dir="${path%/*}"
+    local url="$2"
+    local urldir="${url%/*}"
+    local format="$3"
+    local method="${format%/*}"
+    local ext="${format#*/}"
+    local save_subdir="$4"
+    local sigfile
+    local cat
+
+    CT_DoLog EXTRA "Verifying detached signature for '${file}'"
+    case "${method}" in
+    packed)
+        # Typical case: release is packed, then signed
+        sigfile="${file}"
+        cat=cat
+        ;;
+    unpacked)
+        # Linux kernel: uncompressed tarball is signed, them compressed by various methods
+        case "${file}" in
+        *.tar.*)
+            sigfile="${file%.tar.*}.tar"
+            cat=CT_ZCat
+            ;;
+        *)
+            CT_Abort "'unpacked' signature method only supported for tar archives"
+            ;;
+        esac
+        ;;
+    *)
+        CT_Abort "Unsupported signature method ${method}"
+        ;;
+    esac
+
+    # No recursion, as we don't pass signature_format argument
+    if ! CT_DoGetFile "${urldir}/${sigfile}${ext}"; then
+        CT_DoLog WARN "Failed to download the signature '${sigfile}${ext}'"
+        return 1
+    fi
+
+    CT_Pushd "${dir}"
+    if ! ${cat} "${file}" | CT_DoExecLog ALL gpg --verify "${sigfile}${ext}" -; then
+        # Remove the signature so it's re-downloaded next time
+        CT_DoExecLog ALL rm "${sigfile}${ext}"
+        CT_Popd
+        return 1
+    fi
+    CT_Popd
+
+    # If we get here, verification succeeded.
+    if ! CT_SaveLocal "${CT_TARBALLS_DIR}/${sigfile}${ext}" "${save_subdir}"; then
+        CT_Popd
+        return 1
+    fi
+
+    return 0
+}
+
+# Download the file from one of the URLs passed as argument
+CT_GetFile()
+{
+    local -a argnames=(
+        package             # Name of the package
+        pkg_dir             # Directory with package's auxiliary files
+        dir_name            # Package's directory name in downloads dir
+        basename            # Base name of file/archive
+        extensions          # Extension(s) for the file/archive
+        digest              # If 'y', verify the digest
+        signature_format    # Format of the signature
+        mirrors             # Mirrors to download from
+    )
+    local dl_dir
+    local -a URLS
+    local ext url
+
+    for arg in "${argnames[@]/%/=}" "$@"; do
+        eval "local ${arg//[[:space:]]/\\ }"
+    done
+
+    CT_TestOrAbort "Internal error: dir_name not set" -n "${dir_name}"
+    dl_dir="${CT_LOCAL_TARBALLS_DIR:+${CT_LOCAL_TARBALLS_DIR}${CT_TARBALLS_BUILDROOT_LAYOUT:+/${dir_name}}}"
+
+    # Does any of the requested files exist localy?
+    for ext in ${extensions}; do
+        # Do we already have it in *our* tarballs dir?
+        if [ -r "${CT_TARBALLS_DIR}/${basename}${ext}" ]; then
+            CT_DoLog DEBUG "Already have '${CT_TARBALLS_DIR}/${basename}${ext}'"
+            return 0
+        fi
+
+        if [ "${CT_FORCE_DOWNLOAD}" != "y" ]; then
+            if [ -n "${dl_dir}" -a -r "${dl_dir}/${basename}${ext}" ]; then
+                CT_DoLog DEBUG "Got '${basename}' from local storage"
+                CT_DoExecLog ALL ln -s "${dl_dir}/${basename}${ext}" \
+                        "${CT_TARBALLS_DIR}/${basename}${ext}"
+                return 0
+            elif [ -n "${CT_LOCAL_TARBALLS_DIR}" -a -r "${CT_LOCAL_TARBALLS_DIR}/${basename}${ext}" ]; then
+                # Only different if we're using new buildroot layout
+                CT_DoLog DEBUG "Got '${basename}' from local storage"
+                CT_DoLog INFO "Moving the ${basename}${ext} into ${dir_name}/${basename}${ext}"
+                if [ ! -d "${dl_dir}" ]; then
+                    CT_DoExecLog ALL mkdir -p "${dl_dir}"
+                fi
+                CT_DoExecLog ALL mv "${CT_LOCAL_TARBALLS_DIR}/${basename}${ext}" "${dl_dir}/${basename}${ext}"
+                CT_DoExecLog ALL ln -s "${dl_dir}/${basename}${ext}" \
+                        "${CT_TARBALLS_DIR}/${basename}${ext}"
+                return 0
+            fi
+        fi
+    done
+
+    # No, it does not...  If not allowed to download from the Internet, don't.
+    if [ "${CT_FORBID_DOWNLOAD}" = "y" ]; then
+        CT_DoLog DEBUG "Not allowed to download from the Internet, aborting ${basename} download"
+        return 1
+    fi
+
+    # Try to retrieve the file
+    CT_DoLog EXTRA "Retrieving '${basename}'"
+
+    # Add URLs on the LAN mirror
+    if [ "${CT_USE_MIRROR}" = "y" ]; then
+        CT_TestOrAbort "Please set the mirror base URL" -n "${CT_MIRROR_BASE_URL}"
+        if [ -n "${package}" ]; then
+            URLS+=( "${CT_MIRROR_BASE_URL}/${package}" )
+        fi
+        URLS+=( "${CT_MIRROR_BASE_URL}" )
+    fi
+
+    if [ "${CT_FORCE_MIRROR}" != "y" ]; then
+        URLS+=( ${mirrors} )
+    fi
+
+    # Scan all URLs in turn, and try to grab a tarball from there
+    for ext in ${extensions}; do
+        # Try all urls in turn
+        for url in "${URLS[@]}"; do
+            [ -n "${url}" ] || continue
+            if [ "${url}" = "-unknown-" ]; then
+                CT_Abort "Don't know how to download ${basename}"
+            fi
+            if CT_DoGetFile "${url}/${basename}${ext}"; then
+                if [ -n "${digest}" -a -n "${pkg_dir}" ] && ! CT_DoVerifyDigest \
+                            "${CT_TARBALLS_DIR}/${basename}${ext}" \
+                            "${CT_LIB_DIR}/packages/${pkg_dir}"; then
+                    CT_DoLog ERROR "Digest verification failed; removing the download"
+                    CT_DoExecLog ALL rm "${CT_TARBALLS_DIR}/${basename}${ext}"
+                    return 1
+                fi
+                if [ -n "${signature_format}" ] && ! CT_DoVerifySignature \
+                            "${CT_TARBALLS_DIR}/${basename}${ext}" \
+                            "${url}/${basename}${ext}" \
+                            "${signature_format}"; then
+                    CT_DoLog ERROR "Signature verification failed; removing the download"
+                    CT_DoExecLog ALL rm "${CT_TARBALLS_DIR}/${basename}${ext}"
+                    return 1
+                fi
+                if ! CT_SaveLocal "${CT_TARBALLS_DIR}/${basename}${ext}" "${dir_name}"; then
+                    return 1
+                fi
+                return 0
+            fi
+        done
+    done
+
+    # Just return error: CT_DoFetch will check it and will handle it appropriately.
+    return 1
+}
+
+# TBD these should not be needed if config.sub/guess is a package
+# Two wrappers to call config.(guess|sub) either from CT_TOP_DIR or CT_LIB_DIR.
+# Those from CT_TOP_DIR, if they exist, will be be more recent than those from CT_LIB_DIR.
+CT_DoConfigGuess() {
+    if [ -r "${CT_TOP_DIR}/scripts/config.guess" ]; then
+        "${CT_CONFIG_SHELL}" "${CT_TOP_DIR}/scripts/config.guess"
+    else
+        "${CT_CONFIG_SHELL}" "${CT_LIB_DIR}/scripts/config.guess"
+    fi
+}
+
+CT_DoConfigSub() {
+    if [ -r "${CT_TOP_DIR}/scripts/config.sub" ]; then
+        "${CT_CONFIG_SHELL}" "${CT_TOP_DIR}/scripts/config.sub" "$@"
+    else
+        "${CT_CONFIG_SHELL}" "${CT_LIB_DIR}/scripts/config.sub" "$@"
+    fi
+}
+
+# Normally, each step is executed in a sub-shell and thus cannot modify the
+# environment for the next step(s). When this is needed, it can do so by
+# invoking this function.
+# Usage: CT_EnvModify [export] VAR VALUE
+CT_EnvModify() {
+    local e
+    if [ "$1" = "export" ]; then
+        shift
+        e="export "
+    fi
+    eval "${e}${1}=\"${2}\""
+    echo "${e}${1}=\"${2}\"" >> "${CT_BUILD_DIR}/env.modify.sh"
+}
+
+# Compute the target tuple from what is provided by the user
+# Usage: CT_DoBuildTargetTuple
+# In fact this function takes the environment variables to build the target
+# tuple. It is needed both by the normal build sequence, as well as the
+# sample saving sequence.
+CT_DoBuildTargetTuple() {
+    # Set the endianness suffix, and the default endianness gcc option
+    target_endian_eb=
+    target_endian_be=
+    target_endian_el=
+    target_endian_le=
+    case "${CT_ARCH_ENDIAN}" in
+        big)
+            target_endian_eb=eb
+            target_endian_be=be
+            CT_ARCH_ENDIAN_CFLAG="-mbig-endian"
+            CT_ARCH_ENDIAN_LDFLAG="-Wl,-EB"
+            ;;
+        little)
+            target_endian_el=el
+            target_endian_le=le
+            CT_ARCH_ENDIAN_CFLAG="-mlittle-endian"
+            CT_ARCH_ENDIAN_LDFLAG="-Wl,-EL"
+            ;;
+        # big,little and little,big do not need to pass the flags;
+        # gcc is expected to be configured for that as default.
+        big,little)
+            target_endian_eb=eb
+            target_endian_be=be
+            ;;
+        little,big)
+            target_endian_el=el
+            target_endian_le=le
+            ;;
+    esac
+
+    # Set the bitness suffix
+    case "${CT_ARCH_BITNESS}" in
+        32)
+            target_bits_32=32
+            target_bits_64=
+            ;;
+        64)
+            target_bits_32=
+            target_bits_64=64
+            ;;
+    esac
+
+    # Build the default architecture tuple part
+    CT_TARGET_ARCH="${CT_ARCH}${CT_ARCH_SUFFIX}"
+
+    # Set defaults for the system part of the tuple; only C libraries that
+    # support multiple architectures. Can be overriden by architecture-specific
+    # values.
+    case "${CT_LIBC}" in
+        glibc)       CT_TARGET_SYS=gnu;;
+        uClibc)      CT_TARGET_SYS=uclibc;;
+        musl)        CT_TARGET_SYS=musl;;
+        bionic)      CT_TARGET_SYS=android;;
+        none|newlib) CT_TARGET_SYS=elf;;
+        *)
+            # Keep empty for the libraries like mingw or avr-libc
+            CT_TARGET_SYS=
+            ;;
+    esac
+
+    # Set the default values for ARCH, ABI, CPU, TUNE, FPU and FLOAT
+    unset CT_ARCH_ARCH_CFLAG CT_ARCH_ABI_CFLAG CT_ARCH_CPU_CFLAG CT_ARCH_TUNE_CFLAG CT_ARCH_FPU_CFLAG CT_ARCH_FLOAT_CFLAG
+    unset CT_ARCH_WITH_ARCH CT_ARCH_WITH_ABI CT_ARCH_WITH_CPU CT_ARCH_WITH_TUNE CT_ARCH_WITH_FPU CT_ARCH_WITH_FLOAT CT_ARCH_WITH_ENDIAN
+    [ "${CT_ARCH_ARCH}"     ] && { CT_ARCH_ARCH_CFLAG="-march=${CT_ARCH_ARCH}";  CT_ARCH_WITH_ARCH="--with-arch=${CT_ARCH_ARCH}"; }
+    [ "${CT_ARCH_ABI}"      ] && { CT_ARCH_ABI_CFLAG="-mabi=${CT_ARCH_ABI}";     CT_ARCH_WITH_ABI="--with-abi=${CT_ARCH_ABI}";    }
+    [ "${CT_ARCH_CPU}"      ] && { CT_ARCH_CPU_CFLAG="-mcpu=${CT_ARCH_CPU}";     CT_ARCH_WITH_CPU="--with-cpu=${CT_ARCH_CPU}";    }
+    [ "${CT_ARCH_TUNE}"     ] && { CT_ARCH_TUNE_CFLAG="-mtune=${CT_ARCH_TUNE}";  CT_ARCH_WITH_TUNE="--with-tune=${CT_ARCH_TUNE}"; }
+    [ "${CT_ARCH_FPU}"      ] && { CT_ARCH_FPU_CFLAG="-mfpu=${CT_ARCH_FPU}";     CT_ARCH_WITH_FPU="--with-fpu=${CT_ARCH_FPU}";    }
+
+    case "${CT_ARCH_FLOAT}" in
+        hard)
+            CT_ARCH_FLOAT_CFLAG="-mhard-float"
+            CT_ARCH_WITH_FLOAT="--with-float=hard"
+            ;;
+        soft)
+            CT_ARCH_FLOAT_CFLAG="-msoft-float"
+            CT_ARCH_WITH_FLOAT="--with-float=soft"
+            ;;
+        softfp)
+            CT_ARCH_FLOAT_CFLAG="-mfloat-abi=softfp"
+            CT_ARCH_WITH_FLOAT="--with-float=softfp"
+            ;;
+    esac
+
+    if [ "${CT_ARCH_SUPPORTS_WITH_ENDIAN}" = "y" ]; then
+        CT_ARCH_WITH_ENDIAN="--with-endian=${CT_ARCH_ENDIAN}"
+    fi
+
+    # Build the default kernel tuple part
+    CT_TARGET_KERNEL="${CT_KERNEL}"
+
+    # Overide the default values with the components specific settings
+    CT_DoArchTupleValues
+    CT_DoKernelTupleValues
+
+    # Finish the target tuple construction
+    if [ -z "${CT_OMIT_TARGET_ARCH}" ]; then
+        CT_TARGET="${CT_TARGET_ARCH}"
+    fi
+    if [ -z "${CT_OMIT_TARGET_VENDOR}" -a -n "${CT_TARGET_VENDOR}" ]; then
+        CT_TARGET="${CT_TARGET:+${CT_TARGET}-}${CT_TARGET_VENDOR}"
+    fi
+    if [ -n "${CT_TARGET_KERNEL}" ]; then
+        CT_TARGET="${CT_TARGET:+${CT_TARGET}-}${CT_TARGET_KERNEL}"
+    fi
+    if [ -n "${CT_TARGET_SYS}" ]; then
+        CT_TARGET="${CT_TARGET:+${CT_TARGET}-}${CT_TARGET_SYS}"
+    fi
+
+    # Sanity checks
+    __sed_alias=""
+    if [ -n "${CT_TARGET_ALIAS_SED_EXPR}" ]; then
+        __sed_alias=$(echo "${CT_TARGET}" |${sed} -r -e "${CT_TARGET_ALIAS_SED_EXPR}")
+    fi
+    case ":${CT_TARGET_VENDOR}:${CT_TARGET_ALIAS}:${__sed_alias}:" in
+      :*" "*:*:*:) CT_Abort "Don't use spaces in the vendor string, it breaks things.";;
+      :*"-"*:*:*:) CT_Abort "Don't use dashes in the vendor string, it breaks things.";;
+      :*:*" "*:*:) CT_Abort "Don't use spaces in the target alias, it breaks things.";;
+      :*:*:*" "*:) CT_Abort "Don't use spaces in the target sed transform, it breaks things.";;
+    esac
+
+    # Canonicalise it
+    if [ "${CT_TARGET_SKIP_CONFIG_SUB}" != "y" ]; then
+        CT_TARGET=$(CT_DoConfigSub "${CT_TARGET}")
+
+        if [ -n "${CT_OMIT_TARGET_VENDOR}" ]; then
+            # config.sub always returns a 3- or 4-part tuple, with vendor
+            # always being the 2nd part.
+            CT_TARGET="${CT_TARGET%%-*}-${CT_TARGET#*-*-}"
+        fi
+    fi
+
+    # Prepare the target CFLAGS
+    CT_ARCH_TARGET_CFLAGS="${CT_ARCH_TARGET_CFLAGS} ${CT_ARCH_ENDIAN_CFLAG}"
+    CT_ARCH_TARGET_CFLAGS="${CT_ARCH_TARGET_CFLAGS} ${CT_ARCH_ARCH_CFLAG}"
+    CT_ARCH_TARGET_CFLAGS="${CT_ARCH_TARGET_CFLAGS} ${CT_ARCH_ABI_CFLAG}"
+    CT_ARCH_TARGET_CFLAGS="${CT_ARCH_TARGET_CFLAGS} ${CT_ARCH_CPU_CFLAG}"
+    CT_ARCH_TARGET_CFLAGS="${CT_ARCH_TARGET_CFLAGS} ${CT_ARCH_TUNE_CFLAG}"
+    CT_ARCH_TARGET_CFLAGS="${CT_ARCH_TARGET_CFLAGS} ${CT_ARCH_FPU_CFLAG}"
+    CT_ARCH_TARGET_CFLAGS="${CT_ARCH_TARGET_CFLAGS} ${CT_ARCH_FLOAT_CFLAG}"
+
+    # Now on for the target LDFLAGS
+    CT_ARCH_TARGET_LDFLAGS="${CT_ARCH_TARGET_LDFLAGS} ${CT_ARCH_ENDIAN_LDFLAG}"
+
+    # Now, a multilib quirk. We may not be able to pass CT_ARCH_TARGET_CFLAGS
+    # and CT_ARCH_TARGET_LDFLAGS to gcc: even though GCC build appends the multilib
+    # flags afterwards, on some architectures the build breaks because some
+    # flags do not completely override each other. For example, on mips target,
+    # 'gcc -mabi=32' and 'gcc -mabi=n32' both work, but 'gcc -mabi=32 -mabi=n32'
+    # triggers an internal linker error. Likely a bug in GNU binutils, but we
+    # have to work it around for now: *do not pass the CT_ARCH_TARGET_ flags*.
+    # Instead, save them into a different variable here. Then, after the first
+    # core pass, we'll know which of them vary with multilibs (i.e. must be
+    # filtered out).
+    if [ -n "${CT_MULTILIB}" ]; then
+        CT_ARCH_TARGET_CFLAGS_MULTILIB="${CT_ARCH_TARGET_CFLAGS}"
+        CT_ARCH_TARGET_CFLAGS=
+        CT_ARCH_TARGET_LDFLAGS_MULTILIB="${CT_ARCH_TARGET_LDFLAGS}"
+        CT_ARCH_TARGET_LDFLAGS=
+    else
+        CT_ALL_TARGET_CFLAGS="${CT_ARCH_TARGET_CFLAGS} ${CT_TARGET_CFLAGS}"
+        CT_ALL_TARGET_LDFLAGS="${CT_ARCH_TARGET_LDFLAGS} ${CT_TARGET_LDFLAGS}"
+    fi
+}
+
+# This function does pause the build until the user strikes "Return"
+# Usage: CT_DoPause [optional_message]
+CT_DoPause() {
+    local foo
+    local message="${1:-Pausing for your pleasure}"
+    CT_DoLog INFO "${message}"
+    read -p "Press 'Enter' to continue, or Ctrl-C to stop..." foo >&6
+    return 0
+}
+
+# This function sets up trapping export/unset operations so that saving/restoring
+# the state can restore status of environment exactly.
+CT_TrapEnvExport()
+{
+    unset()
+    {
+        eval "builtin unset $*"
+        CT_ENVVAR_UNSET="${CT_ENVVAR_UNSET} $*"
+    }
+
+    export()
+    {
+        local v
+
+        for v in "$@"; do
+            eval "builtin export \"${v}\""
+            case "${CT_ENVVAR_EXPORTED} " in
+                *" ${v%%=*} "*) continue;;
+            esac
+            CT_ENVVAR_EXPORTED="${CT_ENVVAR_EXPORTED} ${v%%=*}"
+        done
+    }
+}
+
+# This function creates a tarball of the specified directory, but
+# only if it exists
+# Usage: CT_DoTarballIfExists <dir> <tarball_basename> [extra_tar_options [...]]
+CT_DoTarballIfExists() {
+    local dir="$1"
+    local tarball="$2"
+    shift 2
+    local -a extra_tar_opts=( "$@" )
+    local -a compress
+
+    case "${CT_DEBUG_CT_SAVE_STEPS_GZIP}" in
+        y)  compress=( gzip -c -3 - ); tar_ext=.gz;;
+        *)  compress=( cat - );        tar_ext=;;
+    esac
+
+    if [ -d "${dir}" ]; then
+        CT_DoLog DEBUG "  Saving '${dir}'"
+        { tar c -C "${dir}" -v -f - "${extra_tar_opts[@]}" .    \
+          |"${compress[@]}" >"${tarball}.tar${tar_ext}"         ;
+        } 2>&1 |${sed} -r -e 's/^/    /;' |CT_DoLog STATE
+    else
+        CT_DoLog STATE "  Not saving '${dir}': does not exist"
+    fi
+}
+
+# This function extracts a tarball to the specified directory, but
+# only if the tarball exists
+# Usage: CT_DoExtractTarballIfExists <tarball_basename> <dir> [extra_tar_options [...]]
+CT_DoExtractTarballIfExists() {
+    local tarball="$1"
+    local dir="$2"
+    shift 2
+    local -a extra_tar_opts=( "$@" )
+    local -a uncompress
+
+    case "${CT_DEBUG_CT_SAVE_STEPS_GZIP}" in
+        y)  uncompress=( gzip -c -d ); tar_ext=.gz;;
+        *)  uncompress=( cat );        tar_ext=;;
+    esac
+
+    if [ -f "${tarball}.tar${tar_ext}" ]; then
+        CT_DoLog DEBUG "  Restoring '${dir}'"
+        CT_DoForceRmdir "${dir}"
+        CT_DoExecLog DEBUG mkdir -p "${dir}"
+        { "${uncompress[@]}" "${tarball}.tar${tar_ext}"     \
+          |tar x -C "${dir}" -v -f - "${extra_tar_opts[@]}" ;
+        } 2>&1 |${sed} -r -e 's/^/    /;' |CT_DoLog STATE
+    else
+        CT_DoLog STATE "  Not restoring '${dir}': does not exist"
+    fi
+}
+
+# This function saves the state of the toolchain to be able to restart
+# at any one point
+# Usage: CT_DoSaveState <next_step_name>
+CT_DoSaveState() {
+	[ "${CT_DEBUG_CT_SAVE_STEPS}" = "y" ] || return 0
+    local state_name="$1"
+    local state_dir="${CT_STATE_DIR}/${state_name}"
+    local v
+
+    CT_DoLog INFO "Saving state to restart at step '${state_name}'..."
+
+    rm -rf "${state_dir}"
+    mkdir -p "${state_dir}"
+
+    # Save only environment variables, not functions.
+    # Limit saving to our variables (CT_*) and exported variables.
+    # Also unset variables that have been removed from the environment.
+    # This generated script will be sourced from a function, so make
+    # all the definitions global by adding -g. Hope we don't have
+    # a multi-line variable that has a line starting with "declare"
+    # (or we'll need to run sed on each variable separately, only on
+    # the first line of it).
+    CT_DoLog STATE "  Saving environment and aliases"
+    {
+        for v in "${!CT_@}" ${CT_ENVVAR_EXPORTED}; do
+            # Check if it is still set
+            [ -n "${!v+set}" ] && declare -p "${v}"
+        done | ${sed} 's/^declare /declare -g /'
+        echo "builtin unset ${CT_ENVVAR_UNSET}"
+    } >"${state_dir}/env.sh"
+
+    # Save .config to check it hasn't changed when resuming.
+    CT_DoExecLog STATE cp ".config" "${state_dir}/config"
+
+    CT_DoTarballIfExists "${CT_BUILDTOOLS_PREFIX_DIR}" "${state_dir}/buildtools_dir"
+    CT_DoTarballIfExists "${CT_SRC_DIR}" "${state_dir}/src_dir"
+    CT_DoTarballIfExists "${CT_PREFIX_DIR}" "${state_dir}/prefix_dir" --exclude '*.log'
+
+    CT_DoLog STATE "  Saving log file"
+    CT_LogDisable
+    case "${CT_DEBUG_CT_SAVE_STEPS_GZIP}" in
+        y)  gzip -3 -c "${CT_BUILD_LOG}"  >"${state_dir}/log.gz";;
+        *)  cat "${CT_BUILD_LOG}" >"${state_dir}/log";;
+    esac
+    CT_LogEnable
+}
+
+# This function restores a previously saved state
+# Usage: CT_DoLoadState <state_name>
+CT_DoLoadState(){
+    local state_name="$1"
+    local state_dir="${CT_STATE_DIR}/${state_name}"
+    local old_RESTART="${CT_RESTART}"
+    local old_STOP="${CT_STOP}"
+
+    CT_TestOrAbort "The previous build did not reach the point where it could be restarted at '${CT_RESTART}'" -d "${state_dir}"
+    if ! cmp ".config" "${state_dir}/config" >/dev/null 2>&1; then
+        CT_Abort "The configuration file has changed between two runs"
+    fi
+
+    CT_DoLog INFO "Restoring state at step '${state_name}', as requested."
+
+    CT_DoExtractTarballIfExists "${state_dir}/prefix_dir" "${CT_PREFIX_DIR}"
+    CT_DoExtractTarballIfExists "${state_dir}/src_dir" "${CT_SRC_DIR}"
+    CT_DoExtractTarballIfExists "${state_dir}/buildtools_dir" "${CT_BUILDTOOLS_PREFIX_DIR}"
+
+    # Restore the environment, discarding any error message
+    # (for example, read-only bash internals)
+    CT_DoLog STATE "  Restoring environment"
+    . "${state_dir}/env.sh" >/dev/null 2>&1 || true
+
+    # Restore the new RESTART and STOP steps
+    CT_RESTART="${old_RESTART}"
+    CT_STOP="${old_STOP}"
+
+    CT_DoLog STATE "  Restoring log file"
+    CT_LogDisable
+    mv "${CT_BUILD_LOG}" "${CT_BUILD_LOG}.tail"
+    case "${CT_DEBUG_CT_SAVE_STEPS_GZIP}" in
+        y)  gzip -dc "${state_dir}/log.gz" >"${CT_BUILD_LOG}";;
+        *)  cat "${state_dir}/log" >"${CT_BUILD_LOG}";;
+    esac
+    cat "${CT_BUILD_LOG}.tail" >>"${CT_BUILD_LOG}"
+    CT_LogEnable
+    rm -f "${CT_BUILD_LOG}.tail"
+}
+
+# This function sets a kconfig option to a specific value in a .config file
+# Usage: CT_KconfigSetOption <option> <value> <file>
+CT_KconfigSetOption() {
+    local option="$1"
+    local value="$2"
+    local file="$3"
+
+    CT_DoLog DEBUG "${file}: set ${option}=${value}"
+    ${grep} -E -q "^${option}=.*" "${file}" && \
+        ${sed} -i -r -e "s;^${option}=.*$;${option}=${value};" "${file}" || \
+    ${grep} -E -q "^# ${option} is not set$" "${file}" && \
+        ${sed} -i -r -e "s;^# ${option} is not set$;${option}=${value};" "${file}" || \
+    echo "${option}=${value}" >> "${file}"
+}
+
+# This function enables a kconfig option to '=y' in a .config file
+# Usage: CT_KconfigEnableOption <option> <file>
+CT_KconfigEnableOption() {
+    local option="$1"
+    local file="$2"
+
+    CT_KconfigSetOption "${option}" "y" "${file}"
+}
+
+# This function disables a kconfig option in a .config file
+# Usage: CT_KconfigDisableOption <option> <file>
+CT_KconfigDisableOption() {
+    local option="${1}"
+    local file="${2}"
+
+    CT_DoLog DEBUG "${file}: disable ${option}"
+    ${grep} -E -q "^# ${option} is not set$" "${file}" || \
+    ${grep} -E -q "^${option}=.*$" "${file}" && \
+        ${sed} -i -r -e "s;^${option}=.*$;# ${option} is not set;" "${file}" || \
+    echo "# ${option} is not set" >> "${file}"
+}
+
+# This function deletes a kconfig option in a .config file, no matter if it
+# is set or commented out.
+# Usage: CT_KconfigDeleteOption <option> <file>
+CT_KconfigDeleteOption() {
+    local option="${1}"
+    local file="${2}"
+
+    CT_DoLog DEBUG "${file}: delete ${option}"
+    ${grep} -E -q "^# ${option} is not set$" "${file}" && \
+        ${sed} -i -r -e "/^# ${option} is not set$/d" "${file}" || \
+    ${grep} -E -q "^${option}=.*$" "${file}" && \
+        ${sed} -i -r -e "/^${option}=.*$/d" "${file}" || true
+}
+
+# Multilib iterator. The caller should be in a directory where the directories
+# will be created, one per multilib, and the specified command will be run in
+# each of them. The following arguments will be passed to the invoked command:
+#   multi_flags       CFLAGS for this multilib
+#   multi_dir         GCC internal library location for the multilib
+#   multi_os_dir      OS library location for the multilib
+#   multi_os_dir_gcc  Same as multi_os_dir, preserved from GCC output
+#   multi_root        Sysroot for this multilib
+#   multi_target      Target tuple, either as reported by GCC or by our guesswork
+#   multi_count       Total number of multilibs
+#   multi_index       Index of the current multilib
+# Any additional arguments passed to this function will be forwarded to the called
+# function as well.
+# Usage: CT_IterateMultilibs <function> <prefix> <additional-args...>
+CT_IterateMultilibs() {
+    local func="${1}"
+    local prefix="${2}"
+    local -a multilibs
+    local multi_dir multi_os_dir multi_os_dir_gcc multi_root multi_flags multi_index multi_target
+    local root_suffix
+    local dir_postfix
+    local v
+
+    # Name used internally below
+    if [ "${prefix}" = "sysroot-check" ]; then
+        CT_Abort "Bad prefix used in CT_IterateMultilibs"
+    fi
+
+    # Drop mandatory arguments
+    shift 2
+
+    # If gcc is not configured for multilib, it still prints a single line
+    # for the default settings
+    multilibs=( $("${CT_TARGET}-${CT_CC}" -print-multi-lib 2>/dev/null) )
+    CT_DoExecLog ALL rm -rf "sysroot-check"
+    for multilib in "${multilibs[@]}"; do
+        # GCC makes the distinction between:
+        #   multilib (-print-multi-lib or -print-multi-directory) and
+        #   multilib-os (--print-multi-os-directory)
+        # as the gcc library and gcc sysroot library paths, respectively.
+        # For example, on x86_64:
+        #   multilib:    -m32=32      -m64=.
+        #   multilib-os: -m32=../lib  -m64=../lib64
+        # Moreover, while some multilibs can coexist in the same sysroot (e.g.
+        # on x86), some have a "sysroot suffix" to separate incompatible variants.
+        # Such sysroot suffixes combine with multilib-os directories, e.g.
+        # on sh4 with -m4a multilib, the search order in sysroot is (dropping some
+        # directories for brevity:
+        #   <sysroot>/m4a/lib/m4a/
+        #   <sysroot>/m4a/usr/lib/m4a/
+        #   <sysroot>/m4a/lib/
+        #   <sysroot>/m4a/usr/lib/
+        # The problem is that while GCC itself is aware of these subtleties, the
+        # binutils (notably, ld) it invokes under the hood are not. For example,
+        # if a shared library libfoo.so.1 requires libbar.so.1, ld will only search
+        # for libbar.so.1 in <sysroot>/m4a/usr/lib, but not in <sysroot>/m4a/usr/lib/m4a.
+        # In other words, 'gcc -lfoo -lbar' will work for both the default and -m4a
+        # cases, and 'gcc -lfoo' will work for the default, but not for -m4a. To
+        # address this, we first try to determine if the sysroot alone makes the
+        # configuration sufficiently unique. If there are no multilibs within the
+        # same suffixed sysroot, we can drop the multi_os_dir and both gcc and ld
+        # will work. If not, we'll supply both multi_root/multi_os_dir (which will
+        # likely break later, e.g. while building final GCC with C++ support). But,
+        # we've done all we can.
+        # We do supply original multi_os_dir for consumers that need to look inside
+        # GCC's directories (e.g. to locate the libraries), under the name of
+        # multi_os_dir_gcc.
+        multi_flags=$( echo "${multilib#*;}" | ${sed} -r -e 's/@/ -/g;' )
+        multi_dir="${multilib%%;*}"
+        multi_os_dir=$( "${CT_TARGET}-${CT_CC}" -print-multi-os-directory ${multi_flags} )
+        multi_root=$( "${CT_TARGET}-${CT_CC}" -print-sysroot ${multi_flags} )
+        root_suffix="${multi_root#${CT_SYSROOT_DIR}}"
+        CT_DoExecLog ALL mkdir -p "sysroot-check${root_suffix}"
+        if [ -e "sysroot-check${root_suffix}/seen" ]; then
+            CT_DoExecLog ALL rm -f "sysroot-check${root_suffix}/unique"
+        else
+            CT_DoExecLog ALL touch "sysroot-check${root_suffix}/seen" \
+                "sysroot-check${root_suffix}/unique"
+        fi
+    done
+
+    # Now, actual iteration.
+    # This uses either GCC's multiarch feature (if supported; if not,
+    # GCC prints nothing and exits with status 0), falling back to calling
+    # the architecture-specific functions.
+    multi_index=1
+    for multilib in "${multilibs[@]}"; do
+        multi_flags=$( echo "${multilib#*;}" | ${sed} -r -e 's/@/ -/g;' )
+        multi_dir="${multilib%%;*}"
+        multi_os_dir=$( "${CT_TARGET}-${CT_CC}" -print-multi-os-directory ${multi_flags} )
+        multi_os_dir_gcc="${multi_os_dir}"
+        multi_root=$( "${CT_TARGET}-${CT_CC}" -print-sysroot ${multi_flags} )
+        multi_target=$( "${CT_TARGET}-${CT_CC}" -print-multiarch ${multi_flags} )
+        root_suffix="${multi_root#${CT_SYSROOT_DIR}}"
+
+        # If GCC did not report the target tuple (i.e. this configuration is not
+        # multiarch-capable), fall back to our guesswork.
+        if [ -z "${multi_target}" ]; then
+            multi_target="${CT_TARGET}"
+            CT_DoArchMultilibTarget multi_target ${multi_flags}
+        fi
+
+        # Avoid multi_os_dir if it's the only directory in this sysroot.
+        if [ -e "sysroot-check${root_suffix}/unique" ]; then
+            multi_os_dir=.
+        fi
+
+        # Brain-dead Cygwin hack: Cygwin cannot run a binary if there is a directory
+        # component in the path that ends with a dot. Unfortunately, that's the case
+        # for the default library name with GCC.
+        dir_postfix=_${multi_dir//\//_}
+        dir_postfix=${dir_postfix%_.}
+        CT_mkdir_pushd "${prefix}${dir_postfix}"
+        CT_DoLog DEBUG "Multilib iterator: call function '${func}' in '${prefix}${dir_postfix}'"
+        for v in multi_dir multi_os_dir multi_os_dir_gcc multi_flags multi_root multi_target multi_index; do
+            CT_DoLog DEBUG "  ${v}=${!v}"
+        done
+
+        $func multi_dir="${multi_dir}"               \
+              multi_os_dir="${multi_os_dir}"         \
+              multi_os_dir_gcc="${multi_os_dir_gcc}" \
+              multi_flags="${multi_flags}"           \
+              multi_root="${multi_root}"             \
+              multi_target="${multi_target}"         \
+              multi_index="${multi_index}"           \
+              multi_count="${#multilibs[@]}"         \
+              "$@"
+        CT_Popd
+        multi_index=$((multi_index+1))
+    done
+}
+
+# Create symbolic links in buildtools for binutils using a different
+# target name.
+# Usage:
+#   CT_SymlinkTools BIN-DIR SRC-DIR NEW-PREFIX SED-EXPR
+CT_SymlinkTools()
+{
+    local bindir="$1"
+    local srcdir="$2"
+    local newpfx="$3"
+    local sedexpr="$4"
+    local dirpfx
+    local t _t
+
+    # if bindir==srcdir, create symlinks just with the filename
+    if [ "${bindir}" != "${srcdir}" ]; then
+        dirpfx="${srcdir}/"
+    fi
+
+    CT_Pushd "${srcdir}"
+    for t in "${CT_TARGET}-"*; do
+        if [ "${t}" = "${CT_TARGET}-*" ]; then
+            # No matching files
+            break
+        fi
+        if [ -n "${newpfx}" -a \( "${newpfx}" != "${CT_TARGET}" -o "${bindir}" != "${srcdir}" \) ]; then
+            _t="${newpfx}-${t#${CT_TARGET}-}"
+            CT_DoExecLog ALL ln -sfv "${dirpfx}${t}" "${bindir}/${_t}"
+        fi
+        if [ -n "${sedexpr}" ]; then
+            _t=$( echo "${t}" | sed -r -e "${sedexpr}" )
+            if [ "${_t}" = "${t}" ]; then
+                CT_DoLog WARN "The sed expression '${sedexpr}' has no effect on '${t}'"
+            else
+                CT_DoExecLog ALL ln -sfv "${dirpfx}${t}" "${bindir}/${_t}"
+            fi
+        fi
+    done
+    CT_Popd
+}
+
+# Create symbolic links for multilib iterator. Expects ${multi_target}
+# variable to indicate the desired triplet for the tools.
+CT_SymlinkToolsMultilib()
+{
+    # Make configure detect ${target}-tool binaries even if it is different
+    # from configured tuple. Only symlink to final tools if they're executable
+    # on build.
+    CT_SymlinkTools "${CT_BUILDTOOLS_PREFIX_DIR}/bin" \
+        "${CT_BUILDTOOLS_PREFIX_DIR}/bin" "${multi_target}"
+    case "${CT_TOOLCHAIN_TYPE}" in
+        native|cross)
+            CT_SymlinkTools "${CT_BUILDTOOLS_PREFIX_DIR}/bin" \
+                "${CT_PREFIX_DIR}/bin" "${multi_target}"
+            ;;
+    esac
+}
+
+# Helper (iterator) for CT_MultilibFixupLDSO
+CT__FixupLDSO()
+{
+    local multi_dir multi_os_dir multi_root multi_flags multi_index multi_count multi_target
+    local binary
+    local ldso ldso_l ldso_f ldso_d ldso_u multilib_dir
+
+    for arg in "$@"; do
+        eval "${arg// /\\ }"
+    done
+
+    CT_DoLog EXTRA "Checking dynamic linker for multilib '${multi_flags}'"
+
+    multilib_dir="/lib/${multi_os_dir}"
+    CT_SanitizeVarDir multilib_dir
+
+    CT_DoExecLog ALL "${CT_TARGET}-${CT_CC}" -o test-ldso ../test-ldso.c ${multi_flags}
+    if [ -r "test-ldso.gdb" ]; then
+        binary="test-ldso.gdb"
+    else
+        binary="test-ldso"
+    fi
+    if ${CT_TARGET}-readelf -Wl "${binary}" | grep -q 'Requesting program interpreter: '; then
+        ldso=$( ${CT_TARGET}-readelf -Wl "${binary}" | \
+            grep 'Requesting program interpreter: ' | \
+            sed -e 's,.*: ,,' -e 's,\].*,,' )
+    fi
+    CT_DoLog DEBUG "Detected dynamic linker for multilib '${multi_flags}': '${ldso}'"
+
+    # Create symlink if GCC produced a dynamically linked executable.
+    if [ -z "${ldso}" ]; then
+        return # Probably, we're building a static toolchain.
+    fi
+
+    ldso_d="${ldso%/ld*.so.*}"
+    ldso_f="${ldso##*/}"
+
+    # Convert ldso_d to "how many levels we need to go up" and remove
+    # leading slash.
+    ldso_u=$( echo "${ldso_d#/}" | sed 's,[^/]\+,..,g' )
+
+    # If the requested dynamic linker exists, but is a symlink - check that it is either
+    # relative (in which case, if it is readable, we trust libc to have created it properly)
+    # or otherwise, convert it from absolute (target) path to a relative path that works on
+    # both host & target.
+    if [ -L "${multi_root}${ldso}" ]; then
+        ldso_l=`readlink "${multi_root}${ldso}"`
+        case "${ldso_l}" in
+            /*) # Absolute, convert to relative
+                if [ -r "${multi_root}${ldso_l}" ]; then
+                    CT_DoExecLog ALL ln -sfv "${ldso_u}${ldso_l}" "${multi_root}${ldso}"
+                else
+                    CT_DoLog WARN "Compiler selects '${ldso}' as dynamic linker for '${multi_flags}'"
+                    CT_DoLog WARN "but '${ldso}' is a symlink to '${ldso_l}' which is not valid on target."
+                fi
+                ;;
+            *) # Relative, must be readable
+                if [ ! -r "${multi_root}${ldso}" ]; then
+                    CT_DoLog WARN "Compiler selects '${ldso}' as dynamic linker for '${multi_flags}'"
+                    CT_DoLog WARN "but '${ldso}' is a symlink to '${ldso_l}' which is invalid relative symlink."
+                fi
+                ;;
+        esac
+        return
+    elif [ -r "${multi_root}${ldso}" ]; then
+        return # Not a symlink but readable - looks like libc installed a real executable.
+    fi
+
+    # Is it requesting a linker not in the current directory? uClibc case.
+    if [ "${ldso_d}" != "${multilib_dir}" ]; then
+        CT_DoExecLog ALL ln -sfv "${ldso_u}${multilib_dir}/${ldso_f}" \
+            "${multi_root}${ldso}"
+    fi
+}
+
+# Go over multilib variants and check that the requested dynamic linker
+# is present and resolves on both target and host.
+CT_MultilibFixupLDSO()
+{
+    CT_DoStep INFO "Checking dynamic linker symlinks"
+    CT_mkdir_pushd "${CT_BUILD_DIR}/build-libc-check-ldso"
+    echo "int main(void) { return 0; }" > test-ldso.c
+    CT_IterateMultilibs CT__FixupLDSO ldso_fixup
+    CT_Popd
+    CT_EndStep
+}
+
+# List the download mirrors. Usage:
+#   CT_Mirrors ORGANIZATION PROJECT [...]
+# Important: this function should not call CT_Abort. Instead, print a special string,
+# -unknown-, to indicate that a certain combination of ORGANIZATION/PROJECT is not handled.
+# The reason is that this function is evaluated when config file is loaded - before ct-ng
+# determines if it needs to download anything at all. On the other hand, if a component
+# comes from a local source directory, it may have a version like "very new" or "very old"
+# which will confuse, for example, Linux mirror selection below.
+CT_Mirrors()
+{
+    local org="${1}"
+    local project="${2}"
+
+    case "${org}" in
+    GNU)
+        echo "https://ftpmirror.gnu.org/gnu/${project}"
+        echo "http://ftpmirror.gnu.org/gnu/${project}"
+        echo "https://ftp.gnu.org/gnu/${project}"
+        echo "http://ftp.gnu.org/gnu/${project}"
+        echo "ftp://ftp.gnu.org/gnu/${project}"
+        ;;
+    sourceware)
+        echo "ftp://sourceware.org/pub/${project}"
+        echo "http://mirrors.kernel.org/sourceware/${project}"
+        echo "http://gcc.gnu.org/pub/${project}"
+        ;;
+    Linaro)
+        local version="${3}"
+        local base yymm
+        base="${version%%-*}"
+        yymm="${version##*-??}"
+        yymm="${yymm%%-*}"
+        echo "https://releases.linaro.org/components/toolchain/${project}-linaro/${version}"
+        echo "https://releases.linaro.org/archive/${yymm}/components/toolchain/${project}-linaro/${base}"
+        echo "https://releases.linaro.org/archive/${yymm}/components/toolchain/${project}-linaro"
+        ;;
+    kernel.org)
+        # TBD move to linux.sh and dtc.sh?
+        case "${project}" in
+        linux)
+            local version="${CT_LINUX_VERSION}"
+            case "${version}" in
+            '')
+                # Ignore, this happens before .config is fully evaluated
+                ;;
+            [34].*)
+                echo "http://www.kernel.org/pub/linux/kernel/v${version%%.*}.x"
+                ;;
+            2.6.*)
+                echo "http://www.kernel.org/pub/linux/kernel/v2.6"
+                case "${version}" in
+                2.6.*.*)
+                    echo "http://www.kernel.org/pub/linux/kernel/v2.6/longterm"
+                    echo "http://www.kernel.org/pub/linux/kernel/v2.6/longterm/v${version%.*}"
+                    ;;
+                esac
+                ;;
+            *)
+                echo "-unknown-"
+                ;;
+            esac
+            ;;
+        dtc)
+            echo "https://mirrors.edge.kernel.org/pub/software/utils/dtc"
+            ;;
+        *)
+            echo "-unknown-"
+            ;;
+        esac
+        ;;
+    *)
+        echo "-unknown-"
+        ;;
+    esac
+}
+
+# Get most recent version for CVS check-out.
+# CVS does not have a repository-wide identifier for a commit, so we must
+# use date. Variables are set by CT_PackageRun
+CT_GetVersion_cvs()
+{
+    # If date is not given, use current. Otherwise, check if format is correct.
+    # We don't support fancy CVS specifications like "1 day ago", as we'll need
+    # to convert them to some stable representation like 20170617231304.
+    if [ -z "${devel_revision}" ]; then
+        devel_revision=`LANG=C TZ=UTC date '+%Y/%m/%d %H:%M:%S'`
+    else
+        case "${devel_revision}" in
+        [12][0-9][0-9][0-9]/[01][0-9]/[0-3][0-9]\ [0-2][0-9]:[0-5][0-9]:[0-5][0-9])
+            ;;
+        *)
+            CT_Abort "${pkg_name}: invalid date format ${devel_revision}"
+            ;;
+        esac
+    fi
+    unique_id="${devel_branch:-trunk}-${devel_revision//[^0-9]/}"
+}
+
+# Check out sources from CVS. Variables are set by CT_PackageRun.
+CT_Download_cvs()
+{
+    local pserver="${devel_url%% *}"
+    local module="${devel_url##* }"
+
+    # CVS has no name for "main" branch, so use -r only if non-default
+    # TBD try -'d ${basename}', with/without -N
+    CT_DoExecLog ALL cvs -z 9 -d "${pserver}" co -P ${devel_branch:+-r ${devel_branch}} \
+            -D "${devel_revision} UTC" "${module}"
+    if [ "${module}" != "${pkg_name}" ]; then
+        CT_DoExecLog ALL mv "${module}" "${pkg_name}"
+    fi
+}
+
+# Find the most recent version from Subversion.
+CT_GetVersion_svn()
+{
+    devel_branch="${devel_branch:-/trunk}"
+
+    # If revision is not given, find the most recent
+    if [ -z "${devel_revision}" ]; then
+        devel_revision=`svn info "${devel_url}${devel_branch}" | sed -n 's/^Last Changed Rev: //p'`
+    fi
+
+    # Construct unique ID from branch/revision
+    unique_id="${devel_branch//\//_}"
+    unique_id="${unique_id#_}"
+    unique_id="${unique_id%_}"
+    unique_id="${unique_id}-${devel_revision}"
+}
+
+# Retrieve sources from Subversion.
+CT_Download_svn()
+{
+    CT_DoExecLog ALL svn export -r "${devel_revision}" "${devel_url}${devel_branch}" "${pkg_name}"
+}
+
+# Find the most recent version from Mercurial.
+CT_GetVersion_hg()
+{
+    if [ -n "${devel_branch}" -a -n "${devel_revision}" ]; then
+        CT_Abort "${pkg_name}: cannot specify both branch and changeset for Mercurial"
+    fi
+
+    # Mercurial cannot query remote branches except the default, so we'll have
+    # to clone if cset is not known and a branch is given.
+    if [ -z "${devel_revision}" ]; then
+        if [ -z "${devel_branch}" ]; then
+            devel_revision=`hg identify "${devel_url}"`
+        else
+            CT_DoLog WARN "${pkg_name}: Mercurial cannot query non-default branch, will clone"
+            devel_revision="to.be.determined"
+        fi
+    fi
+    unique_id="${devel_revision}"
+}
+
+# Retrieve sources from Mercurial.
+CT_Download_hg()
+{
+    CT_DoExecLog ALL hg clone "${devel_url}" "${pkg_name}"
+    CT_Pushd "${pkg_name}"
+    if [ -n "${devel_branch}" ]; then
+        CT_DoExecLog ALL hg update "${devel_branch}"
+    fi
+    if [ "${devel_revision}" = "to.be.determined" ]; then
+        # Report what we found out (as common message lacks the revision)
+        devel_revision=`hg identify -i`
+        unique_id="${devel_revision}"
+        CT_DoLog EXTRA "Retrieved revision ${devel_revision}"
+    else
+        CT_DoExecLog ALL hg update "${devel_revision}"
+    fi
+    CT_DoExecLog ALL rm -rf .hg
+    CT_Popd
+}
+
+# Get the most recent version from Git.
+CT_GetVersion_git()
+{
+    if [ -n "${devel_branch}" -a -n "${devel_revision}" ]; then
+        CT_Abort "${pkg_name}: cannot specify both branch and changeset for Git"
+    fi
+
+    # Do not modify devel_branch so that we can check if it has been set by user
+    # in CT_Download_git.
+    local branch="${devel_branch:-master}"
+
+    if [ -z "${devel_revision}" ]; then
+        local matches=`git ls-remote --exit-code "${devel_url}" --refs "${branch}" \
+            || echo "not found"`
+        local best using ref
+
+        # Cannot test $?, setting a trap on ERR prevents bash from returning the
+        # status code.
+        if [ "${matches}" = "not found" ]; then
+            CT_Abort "Failed to find git ref ${branch} at ${devel_url}"
+        fi
+        if [ `echo "${matches}" | wc -l` -gt 1 ]; then
+            if echo "${matches}" | grep '[[:space:]]\(refs/heads/\)\?'"${branch}\$" >/dev/null; then
+                # Try exact match, or prepended with "refs/heads". Some projects (e.g. binutils)
+                # have refs/original/refs/heads/master as well as refs/heads/master, and
+                # `git ls-remote refs/heads/master` prints both.
+                best=`echo "${matches}" | grep '[[:space:]]\(refs/heads/\)\?'"${branch}\$"`
+                using="best match"
+            else
+                best=`echo "${matches}" | head -n1`
+                using="first"
+            fi
+            ref=`echo "${best}" | sed 's/.*[[:space:]]//'`
+            CT_DoLog WARN "Ambiguous ref ${branch} at ${devel_url}, using ${using} (${ref})"
+        else
+            best="${matches}"
+        fi
+        # Similarly, do not modify the devel_revision, we'll need to know if it
+        # has been set by the user in CT_Download_git.
+        unique_id=`echo "${best}" | cut -c1-8`
+        CT_DoLog DEBUG "ref ${branch} at ${devel_url} has cset of ${unique_id}"
+    else
+        unique_id=`echo "${devel_revision}" | cut -c1-8`
+    fi
+}
+
+# Retrieve sources from Git.
+CT_Download_git()
+{
+    local new_unique_id fetched=n shallow_id
+
+    # Some of these operations are part of a `git clone`, but fetching a specific commit
+    # (if it is supported by the server) is not expressable as a `git clone`.
+    CT_mkdir_pushd "${pkg_name}"
+    CT_DoExecLog ALL git init
+    CT_DoExecLog ALL git remote add origin "${devel_url}"
+
+    if [ -z "${devel_revision}" ]; then
+        # Configuration didn't care about a specific commit; we'll use the most recent
+        # commit on the branch and will update the unique_id (and warn the user) if it
+        # differs from what we've previously determined.
+        shallow_id="${devel_branch:-master}"
+    else
+        local tmp=`echo "${devel_revision}" | sed 's/^[0-9a-z]\{40\}//'`
+
+        if [ -z "${tmp}" ]; then
+            shallow_id="${devel_revision}"
+        else
+            CT_DoLog WARN "Git only allows full 40-character SHA-1 hashes to identify a commit for shallow clone."
+        fi
+    fi
+
+    if [ -n "${shallow_id}" ]; then
+        if CT_DoExecLog ALL git fetch --quiet --depth 1 origin "${shallow_id}"; then
+            CT_DoExecLog ALL git checkout --quiet FETCH_HEAD --
+        else
+            # Git 2.15 and newer (which must be the case on both the client and the server)
+            # allows fetching a single commit so long as the server is configured
+            # to allow it (by having uploadpack.allowReachableSHA1InWant=true set
+            # in its config).
+            CT_DoLog WARN "Shallow clone failed (likely disallowed on the server)."
+            shallow_id=
+        fi
+    fi
+
+    if [ -z "${shallow_id}" ]; then
+        # In this case, we already determined the changeset we need
+        CT_DoLog WARN "Falling back to full clone; may take some time..."
+        CT_DoExecLog ALL git fetch --quiet origin
+        CT_DoExecLog ALL git checkout --quiet "${unique_id}" --
+    fi
+
+    new_unique_id=`git rev-parse HEAD | cut -c1-8`
+    if [ "${new_unique_id}" != "${unique_id}" ]; then
+        CT_DoLog EXTRA "Revision being fetched changed to ${new_unique_id}; source repository had more revisions pushed?"
+        unique_id="${new_unique_id}"
+    fi
+
+    CT_DoExecLog ALL rm -rf .git
+    CT_Popd
+}
+
+# Helper: run another action after setting local variables
+CT_PackageRun()
+{
+    local sym="${1}"
+    local run="${2}"
+    local src_dir="/unknown-src-dir"
+    local v
+
+    # Get rid of our arguments
+    shift 2
+
+    # Variables that are per-project
+    for v in use dir_name; do
+        eval "local ${v}=\${CT_${sym}_${v^^}}"
+    done
+
+    # If $use is not set, we only have one fork to handle
+    use="${use:-${sym}}"
+
+    # Variables that are per-fork
+    for v in basename pkg_name version pkg_dir \
+            src_release mirrors archive_filename archive_dirname archive_formats signature_format \
+            src_devel devel_vcs devel_url devel_branch devel_revision devel_subdir devel_bootstrap \
+            src_custom custom_location patch_order; do
+        eval "CT_DoLog DEBUG \"Package iterator: set ${v}='\${CT_${use}_${v^^}}'\""
+        eval "local ${v}=\${CT_${use}_${v^^}}"
+    done
+
+    if [ -z "${pkg_name}" ]; then
+        CT_Abort "Internal ct-ng error: '${sym}' not defined, please report a bug"
+    fi
+
+    for v in archive_filename archive_dirname; do
+        # kconfig and shell have different quoting rules, so it seems impossible to make
+        # kconfig quote '$' properly for eval (i.e. not have it expanded when loading the
+        # .config). Therefore, use '@' instead of '$' in kconfig files and substitute it
+        # here for select variables.
+        eval "eval ${v}=\${${v}//@/$}"
+    done
+
+    CT_DoLog DEBUG "Package iterator: run ${run} $*"
+    ${run} "$@"
+
+    # Save certain variables that may be modified by the callback.
+    # Fetching the sources is run in the main process, so no need to
+    # use CT_EnvModify.
+    for v in devel_branch devel_revision basename src_dir pkg_dir; do
+        eval "[ \"\${${v}}\" != \"\${CT_${use}_${v^^}}\" ] || continue"
+        eval "CT_${use}_${v^^}=\${${v}}"
+        eval "CT_DoLog DEBUG \"Package iterator: override CT_${use}_${v^^}=\${CT_${use}_${v^^}}\""
+    done
+}
+
+# Closure for fetching the sources
+CT_DoFetch()
+{
+    local tmp_dir
+    local extensions e a
+
+    if [ "${src_release}" = "y" ]; then
+        # Some packages do not contain any directory level at all
+        if [ "${archive_dirname}" != "." ]; then
+            basename="${archive_dirname}"
+        else
+            basename="${pkg_name}-${version}"
+        fi
+        pkg_dir="${pkg_name}/${version}"
+        # Check which extensions we are allowed to fetch
+        for a in ${archive_formats}; do
+            for e in $(CT_DoListTarballExt); do
+                if [ "${a}" = "${e}" ]; then
+                    extensions="${extensions} ${a}"
+                    break
+                fi
+            done
+        done
+        if ! CT_GetFile package="${pkg_name}" pkg_dir="${pkg_dir}" dir_name="${dir_name}" \
+                basename="${archive_filename}" extensions="${extensions}" \
+                digest="${CT_VERIFY_DOWNLOAD_DIGEST}" \
+                signature_format="${CT_VERIFY_DOWNLOAD_SIGNATURE:+${signature_format}}" \
+                mirrors="${mirrors}"; then
+            CT_Abort "${pkg_name}: download failed"
+        fi
+
+    elif [ "${src_devel}" = "y" ]; then
+        local unique_id
+
+        if [ -z "${devel_revision}" -a "${CT_FORBID_DOWNLOAD}" = "y" ]; then
+            CT_Abort "${pkg_name}: cannot find most recent revisions with downloads prohibited"
+        fi
+
+        # Each VCS backend must provide two methods:
+        # - CT_GetVersion_xxx that sets the base name for the package (package name
+        #   and some unique identifier for the version)
+        # - CT_Download_xxx that retrieves the sources into the directory named as
+        #   ${pkg_name}
+        # Both these methods can also modify devel_branch/devel_revision. Typically,
+        # this would override empty (default) values with "default branch name" and
+        # "most current revision", respectively.
+
+        CT_GetVersion_${devel_vcs}
+        if [ -z "${unique_id}" ]; then
+            CT_Abort "${pkg_name}: ${devel_vcs} did not set unique ID for branch/revision"
+        fi
+        basename="${pkg_name}-${devel_vcs}-${unique_id}"
+        pkg_dir="${pkg_name}/${devel_vcs}-${unique_id}"
+
+        # Try getting the tarball with empty list of URLs: it will only
+        # attempt getting it from local storage or from the mirror if configured.
+        # Bzip2 offers a reasonable compromise between compression speed and size.
+        if [ "${unique_id}" != "to.be.determined" ] && \
+                CT_GetFile package="${pkg_name}" dir_name="${dir_name}" \
+                        basename="${basename}" extensions='.tar.bz2'; then
+            return 0
+        fi
+
+        if [ "${CT_FORBID_DOWNLOAD}" = "y" ]; then
+            CT_DoLog WARN "Downloads forbidden, not trying ${devel_vcs} retrieval"
+            CT_Abort "${pkg_name}: cannot check out"
+        fi
+
+        CT_DoLog EXTRA "Checking out '${basename}' (${devel_vcs} ${devel_url}${devel_branch:+, branch ${devel_branch}}${devel_revision:+, revision ${devel_revision}})"
+        CT_MktempDir tmp_dir
+        CT_Pushd "${tmp_dir}"
+        CT_Download_${devel_vcs}
+
+        # First setting above may not have determined the version (e.g. with Mercurial)
+        # Set the final, downloaded version.
+        basename="${pkg_name}-${devel_vcs}-${unique_id}"
+        pkg_dir="${pkg_name}/${devel_vcs}-${unique_id}"
+
+        CT_DoExecLog ALL mv "${pkg_name}${devel_subdir:+/${devel_subdir}}" "${basename}"
+        CT_DoExecLog ALL tar cjf "${CT_TARBALLS_DIR}/${basename}.tar.bz2" "${basename}"
+        if ! CT_SaveLocal "${CT_TARBALLS_DIR}/${basename}.tar.bz2" "${dir_name}"; then
+            CT_Abort "${pkg_name}: failed to save to local storage"
+        fi
+        CT_Popd
+        CT_DoExecLog ALL rm -rf "${tmp_dir}"
+
+    elif [ "${src_custom}" = "y" ]; then
+        # Will be handled during extraction/patching
+        basename="${dir_name}"
+        :;
+    else
+        CT_Abort "No known source for ${pkg_name}"
+    fi
+}
+
+# Obtain the sources for a component, either from a tarball, version control system
+# or a custom location.
+CT_Fetch()
+{
+    CT_PackageRun "${1}" CT_DoFetch
+}
+
+# Unpack an archive.
+CT_Extract()
+{
+    local file="${1}"
+    local dir="${2}"
+    local components="${3}"
+
+    CT_DoExecLog ALL mkdir -p "${dir}"
+    case "${file}" in
+        *.tar.*|*.tar)
+            CT_ZCat "${file}" | CT_DoExecLog FILE tar x -v -f - -C "${dir}" ${components}
+            ;;
+        *.zip)
+            CT_Pushd "${dir}"
+            CT_DoExecLog FILE unzip "${file}" ${components}
+            CT_Popd
+            ;;
+        *)
+            CT_Abort "Don't know how to handle ${file}: unknown extension"
+            ;;
+    esac
+}
+
+# Closure for unpacking/patching the sources. There are two source directories:
+# - CT_COMMON_SRC_DIR stores common sources, such as released tarballs (including
+#   bundled or local patches, if necessary) or checked out  working copies.
+#   Custom sources cannot be placed here, as they may have similarly named
+#   packages coming from different origins.
+# - CT_SRC_DIR stores per-configuration sources. These are either symlinks back
+#   to CT_ORIG_SRC_DIR sources, or a copy from the custom source, or a copy
+#   from CT_ORIG_SRC_DIR + target-specific overrides.
+CT_DoExtractPatch()
+{
+    local patchfunc="${1}"
+    local archive ext
+    local -a patch_dirs
+    local bundled_patch_dir
+    local local_patch_dir
+    local overlay
+
+    # Inherit global value if requested
+    if [ "${patch_order}" = "global" ]; then
+        patch_order="${CT_PATCH_ORDER}"
+    fi
+
+    # If using overlay, prepare it first - we need to determine where to unpack
+    # this component.
+    if [ "${CT_TARGET_USE_OVERLAY}" = "y" -a ! -d "${CT_BUILD_DIR}/overlay" ]; then
+        CT_DoExecLog ALL mkdir -p "${CT_BUILD_DIR}/overlay"
+        overlay="${CT_OVERLAY_LOCATION}/${CT_ARCH}_${CT_OVERLAY_NAME:-overlay}"
+        if [ -d "${overlay}" ]; then
+            CT_DoExecLog ALL cp -av "${overlay}/." "${CT_BUILD_DIR}/overlay"
+        else
+            if ! ext=`CT_GetFileExtension "${overlay}"`; then
+                CT_Abort "Overlay ${overlay} not found"
+            fi
+            CT_Extract "${overlay}${ext}" "${CT_BUILD_DIR}/overlay"
+        fi
+    fi
+
+    # Can use common location only if using non-custom source, only bundled patches
+    # and no overlays. Otherwise, this source directory is custom-tailored for this
+    # particular configuration and cannot be reused by different configurations.
+    if [ "${src_custom}" != "y" -a \
+            "${patch_order}" = "bundled" -a \
+            ! -d "${CT_BUILD_DIR}/overlay/${dir_name}" ]; then
+        src_dir="${CT_COMMON_SRC_DIR}"
+    else
+        src_dir="${CT_SRC_DIR}"
+    fi
+
+    if [ "${src_custom}" != "y" ]; then
+        # Non-custom: extract to shared location
+        # If the previous extraction/patching was aborted, clean up.
+        if [ -r "${src_dir}/.${basename}.extracting" -o \
+                -r "${src_dir}/.${basename}.patching" ]; then
+            CT_DoLog WARN "Sources for ${basename} were partially extracted/patched, cleaning up"
+            CT_DoExecLog ALL rm -rf "${src_dir}/${basename}"
+            CT_DoExecLog ALL rm -f "${src_dir}/.${basename}".*
+        fi
+
+        if [ -f "${src_dir}/.${basename}.extracted" ]; then
+            CT_DoLog DEBUG "Already extracted ${basename}"
+        else
+            CT_DoLog EXTRA "Extracting ${basename}"
+            CT_DoExecLog ALL touch "${src_dir}/.${basename}.extracting"
+            if [ "${src_release}" = "y" ]; then
+                archive="${archive_filename}"
+            else
+                archive="${basename}"
+            fi
+            # TBD save/discover the extension while fetching
+            ext=`CT_GetFileExtension "${CT_TARBALLS_DIR}/${archive}"`
+            if [ "${archive_dirname}" = "." ]; then
+                CT_mkdir_pushd "${src_dir}/${basename}"
+                CT_Extract "${CT_TARBALLS_DIR}/${archive}${ext}" "${src_dir}/${basename}"
+                CT_Popd
+            else
+                CT_Extract "${CT_TARBALLS_DIR}/${archive}${ext}" "${src_dir}"
+            fi
+            CT_DoExecLog ALL touch "${src_dir}/.${basename}.extracted"
+            CT_DoExecLog ALL rm -f "${src_dir}/.${basename}.extracting"
+        fi
+
+        if [ -f "${src_dir}/.${basename}.patched" ]; then
+            CT_DoLog DEBUG "Already patched ${basename}"
+        else
+            CT_DoLog EXTRA "Patching ${basename}"
+            CT_DoExecLog ALL touch "${src_dir}/.${basename}.patching"
+
+            bundled_patch_dir="${CT_LIB_DIR}/packages/${pkg_dir}"
+            local_patch_dir="${CT_LOCAL_PATCH_DIR}/${pkg_dir}"
+
+            case "${patch_order}" in
+                bundled)        patch_dirs=("${bundled_patch_dir}");;
+                local)          patch_dirs=("${local_patch_dir}");;
+                bundled,local)  patch_dirs=("${bundled_patch_dir}" "${local_patch_dir}");;
+                local,bundled)  patch_dirs=("${local_patch_dir}" "${bundled_patch_dir}");;
+                none)           patch_dirs=;;
+            esac
+
+            CT_Pushd "${src_dir}/${basename}"
+            for d in "${patch_dirs[@]}"; do
+                CT_DoLog DEBUG "Looking for patches in '${d}'..."
+                if [ -n "${d}" -a -d "${d}" ]; then
+                    for p in "${d}"/*.patch; do
+                        if [ -f "${p}" ]; then
+                            CT_DoExecLog ALL ${patch} --no-backup-if-mismatch -g0 -F1 -p1 -f -i "${p}"
+                        fi
+                    done
+                fi
+            done
+
+            # TBD create meta-package for config.sub/config.guess with replacement script
+            if [ "${CT_OVERRIDE_CONFIG_GUESS_SUB}" = "y" ]; then
+                CT_DoLog ALL "Overiding config.guess and config.sub"
+                for cfg in config.guess config.sub; do
+                    # Can't use CT_DoExecLog because of the '{} \;' to be passed un-mangled to find
+                    find . -type f -name "${cfg}" \
+                        -exec chmod -v u+w {} \; \
+                        -exec cp -v "${CT_LIB_DIR}/scripts/${cfg}" {} \; |CT_DoLog ALL
+                done
+            fi
+
+            # FIXME: This currently means we end up using host's autotools,
+            # but changing this requires reworking the order of operations in crosstool-NG:
+            # we'd need to defer the download/extraction/patching of a package until after
+            # the companion tools are built.
+            if [ -n "${devel_bootstrap}" ]; then
+                CT_DoExecLog ALL "${CT_CONFIG_SHELL}" -c "${devel_bootstrap}"
+            fi
+
+            # Fix up the timestamps on the file we may be patching: otherwise, we may
+            # have a circular dependency. For example, we need make to build autoconf
+            # and automake companion tools, but we need autoconf and automake to regenerate
+            # aclocal.m4 or config.h.in after the patch touches configure.ac. Instead,
+            # assume the patch fixes all the files it needs.
+            find . -type f -name "aclocal.m4" \
+                    -exec touch {} \; -exec echo touch {} \; | CT_DoLog ALL
+            find . -type f -name "config.h.in" \
+                    -exec touch {} \; -exec echo touch {} \; | CT_DoLog ALL
+            find . -type f -name "Makefile.in" \
+                    -exec touch {} \; -exec echo touch {} \; | CT_DoLog ALL
+            find . -type f -name "configure" \
+                    -exec touch {} \; -exec echo touch {} \; | CT_DoLog ALL
+
+            if [ -n "${patchfunc}" ]; then
+                ${patchfunc}
+            fi
+
+            CT_Popd
+
+            CT_DoExecLog ALL touch "${src_dir}/.${basename}.patched"
+            CT_DoExecLog ALL rm -f "${src_dir}/.${basename}.patching"
+        fi
+    else
+        CT_DoLog WARN "${pkg_name}: using custom location, no patches applied"
+    fi
+
+    # Symlink/move/copy into per-target source directory
+    if [ "${src_custom}" = "y" ]; then
+        # Custom sources: unpack or copy into per-target directory. Note that
+        # ${src_dir} is never ${CT_COMMON_SRC_DIR} in this case.
+        if [ -d "${custom_location}" ]; then
+            CT_DoExecLog ALL cp -av "${custom_location}" "${src_dir}/${dir_name}"
+        elif [ -f "${custom_location}" ]; then
+            # Assume "foo.tar.gz" (or likes) contain the "foo" directory
+            local bn
+
+            CT_Extract "${custom_location}" "${src_dir}"
+            bn=`CT_GetFileBasename "${custom_location##*/}"`
+            CT_TestOrAbort "Unknown file extension: ${custom_location}" -n "${bn}"
+            CT_DoExecLog ALL mv -v "${src_dir}/${bn%${ext}}" "${src_dir}/${dir_name}"
+        else
+            CT_Abort "Neither file nor directory: ${custom_location}"
+        fi
+    elif [ "${src_dir}" = "${CT_SRC_DIR}" ]; then
+        # Sources specific to this target, just move (if we use overlay, symlinks
+        # would be overwritten and overlayed files will end up in a separate dir).
+        CT_DoExecLog ALL mv "${src_dir}/${basename}" "${CT_SRC_DIR}/${dir_name}"
+    else
+        # Common source, just symlink
+        CT_DoExecLog ALL ln -s "${src_dir}/${basename}" "${CT_SRC_DIR}/${dir_name}"
+    fi
+
+    # Check if it has overlays and if it has, apply
+    if [ "${CT_TARGET_USE_OVERLAY}" = "y" -a \
+            -d "${CT_BUILD_DIR}/overlay/${dir_name}" ]; then
+        tar cf - -C "${CT_BUILD_DIR}/overlay" "${dir_name}" | \
+                CT_DoExecLog FILE tar xvf - -C "${src_dir}"
+    fi
+
+}
+
+# Extract/copy the sources to the shared source directory, then either symlink
+# or copy the sources into a private source directory and apply target-specific
+# changes (such as xtensa overrides).
+CT_ExtractPatch()
+{
+    local pkg="${1}"
+
+    shift
+    CT_PackageRun "${pkg}" CT_DoExtractPatch "$@"
+}
+
+# Set the specified variable to the version of the package (main or fork)
+# Usage: CT_GetPkgVersion PKG VAR
+CT_GetPkgVersion()
+{
+    local rv
+    __do_GetPkgVersion() { rv="${version}"; }
+    CT_PackageRun "${1}" __do_GetPkgVersion
+    eval "${2}=\"${rv}\""
+}
+
+# Get a package version selected to build. May return an empty string.
+# Usage: CT_GetPkgBuildVersion PKG VAR
+# where PKG may refer to a specific package (e.g. GCC) or package choice
+# (e.g. LIBC).
+CT_GetPkgBuildVersion()
+{
+    local category="${1}"
+    local component="${2}"
+    local var="${3}"
+    local choicename tmp pkg build_version
+
+    # If it is for a choice, not a menu, get the choice name
+    eval "choicename=\${CT_${category}}"
+
+    # Find the associated package
+    eval "pkg=\${CT_${category}_${component}_PKG_KSYM}"
+    if [ -z "${pkg}" ]; then
+        # This component does not have an associated package,
+        # return the component name.
+        if [ -n "${choicename}" ]; then
+            eval "${var}=\"${choicename}\""
+        fi
+        return
+    fi
+
+    __do_GetPkgBuildVersion() {
+        tmp="${pkg_name}"
+        if [ "${version}" != "unknown" ]; then
+            tmp+="-${version}"
+        fi
+        if [ "${src_devel}" = "y" ]; then
+            tmp+="-${devel_vcs}"
+            if [ -n "${devel_revision}" ]; then
+                tmp+="-${devel_revision}"
+            fi
+        elif [ "${src_custom}" = "y" ]; then
+            tmp+="-custom"
+        fi
+        if [ -n "${choicename}" -a "${pkg}" != "${component}" ]; then
+            tmp+=" (${choicename})"
+        fi
+    }
+
+    CT_PackageRun "${pkg}" __do_GetPkgBuildVersion
+    eval "${var}=\"${tmp}\""
+}
+
+# Finally, load paths.sh. For --enable-local build, it is located in
+# the current directory (CT_TOP_DIR) while the rest of the scripts are
+# in the source directory (CT_LIB_DIR). For other setups, paths.sh
+# is in CT_LIB_DIR.
+if [ -r "${CT_LIB_DIR}/paths.sh" ]; then
+    paths_sh_location="${CT_LIB_DIR}/paths.sh"
+elif [ -r "${CT_TOP_DIR}/paths.sh" ]; then
+    paths_sh_location="${CT_TOP_DIR}/paths.sh"
+else
+    CT_Error "Not found: paths.sh"
+fi
+. "${paths_sh_location}"
+
+CT_InstallCopyingInformation()
+{
+    local licfile
+    local dstdir
+
+    CT_DoLog EXTRA "Collect license information from: ${CT_SRC_DIR}"
+    CT_DoLog EXTRA "Put the license information to: ${CT_PREFIX_DIR}/share/licenses"
+
+    for licfile in $( find "${CT_SRC_DIR}" -follow -type f -a \( -name "COPYING*" -o -name "LICENSE*" \) ); do
+        dstdir="${licfile%/*}"
+        dstdir="${CT_PREFIX_DIR}/share/licenses${dstdir#${CT_SRC_DIR}}"
+        mkdir -p "${dstdir}"
+        CT_DoExecLog ALL cp -av "${licfile}" "${dstdir}/"
+    done
+
+    # Also add crosstool's information
+    for licfile in ${CT_LIB_DIR}/{COPYING*,LICENSE*,licenses.d}; do
+        dstdir="${CT_PREFIX_DIR}/share/licenses/crosstool-ng"
+        mkdir -p "${dstdir}"
+        CT_DoExecLog ALL cp -av "${licfile}" "${dstdir}/"
+    done
+
+    shopt -u nullglob
+}
+
+CT_InstallConfigurationFile()
+{
+    local path="${1}"
+    local suffix="${2}"
+
+    CT_DoExecLog ALL mkdir -p "${CT_PREFIX_DIR}/bin"
+    CT_DoExecLog DEBUG ${install} -m 0755 "${CT_LIB_DIR}/scripts/toolchain-config.in" "${CT_PREFIX_DIR}/bin/${CT_TARGET}-${suffix}.config"
+    CT_DoExecLog DEBUG ${sed} -i -e 's,@@grep@@,"'"${grep}"'",;' "${CT_PREFIX_DIR}/bin/${CT_TARGET}-${suffix}.config"
+    bzip2 -c -9 "${path}" >>"${CT_PREFIX_DIR}/bin/${CT_TARGET}-${suffix}.config"
+}

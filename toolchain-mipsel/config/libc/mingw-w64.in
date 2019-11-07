@@ -1,0 +1,42 @@
+# mingw options
+
+## depends on WINDOWS
+##
+## select LIBC_SUPPORT_THREADS_NATIVE
+## select LIBC_SUPPORT_THREADS_POSIX
+## select CC_CORE_PASS_2_NEEDED
+## select BINUTILS_FORCE_LD_BFD_DEFAULT
+##
+## help The de-facto standard for Mingw distributions.
+
+config MINGW_W64_REQUIRES_W64_VENDOR
+	bool
+	default y if MINGW_W64_V4_or_later
+
+config THREADS
+    default "win32"  if THREADS_NATIVE
+    default "posix"  if THREADS_POSIX
+
+config MINGW_SECURE_API
+    bool "Expose secure API prototypes"
+    default y
+
+config MINGW_DIRECTX
+    bool "Include DirectX development files"
+
+config MINGW_DDK
+    bool "Include DDK development files"
+
+config MINGW_TOOLS
+    bool "Include the companion tools"
+    default y
+    help
+      Build the companion tools with mingw such as widl, gendef,
+      and genpeimg.
+
+config MINGW_TOOL_LIST_ARRAY
+    string "List of mingw-w64 tools to build"
+    default "gendef genidl genlib genpeimg widl"
+    depends on MINGW_TOOLS
+    help
+      List of mingw-w64 tools to build.

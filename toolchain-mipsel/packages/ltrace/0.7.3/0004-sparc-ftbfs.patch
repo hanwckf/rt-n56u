@@ -1,0 +1,36 @@
+From: Juan Cespedes <cespedes@debian.org>
+Description: fixes compilation on sparc
+Last-Update: 2014-01-02
+
+
+---
+ sysdeps/linux-gnu/sparc/plt.c   |    3 ++-
+ sysdeps/linux-gnu/sparc/trace.c |    2 ++
+ 2 files changed, 4 insertions(+), 1 deletion(-)
+
+--- a/sysdeps/linux-gnu/sparc/plt.c
++++ b/sysdeps/linux-gnu/sparc/plt.c
+@@ -19,8 +19,9 @@
+  */
+ 
+ #include <gelf.h>
++
+ #include "proc.h"
+-#include "common.h"
++#include "library.h"
+ 
+ GElf_Addr
+ arch_plt_sym_val(struct ltelf *lte, size_t ndx, GElf_Rela * rela) {
+--- a/sysdeps/linux-gnu/sparc/trace.c
++++ b/sysdeps/linux-gnu/sparc/trace.c
+@@ -26,8 +26,10 @@
+ #include <sys/wait.h>
+ #include <signal.h>
+ #include <string.h>
++
+ #include "ptrace.h"
+ #include "proc.h"
++#include "backend.h"
+ #include "common.h"
+ 
+ void

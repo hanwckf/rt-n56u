@@ -1,0 +1,16 @@
+# ARC specific configuration file
+
+## no-package
+## select ARCH_SUPPORTS_32
+## select ARCH_DEFAULT_32
+## select ARCH_SUPPORTS_BOTH_MMU
+## select ARCH_DEFAULT_HAS_MMU
+## select ARCH_SUPPORTS_EITHER_ENDIAN
+## select ARCH_DEFAULT_LE
+## select ARCH_SUPPORTS_WITH_CPU
+## select GCC_REQUIRE_7_or_later
+## select BINUTILS_REQUIRE_2_30_or_later
+## select LINUX_REQUIRE_4_8_or_later if KERNEL_LINUX
+##
+## help The Synopsys DesignWare ARC architecture, see more info here:
+## help     https://www.synopsys.com/designware-ip/processor-solutions/arc-processors.html

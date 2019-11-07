@@ -1,0 +1,83 @@
+
+Helper Makefile for testing gcc toolchains using the gcc-testsuite
+==================================================================
+
+Requirements
+------------
+
+* DejaGnu 'runtest' v1.4.4+
+* Make v3.81+
+
+
+Configuration
+-------------
+
+Edit default.cfg to reflect your toolchain and target configuration.
+
+Alternatively, override configuration variables on the command line.
+
+Available config variables:
+
+DG_TOOLNAME
+  The name of the tool you want to test.
+  Currently supported: gcc or g++
+  Default: gcc
+
+DG_TARGET_HOSTNAME
+  The hostname or IP of the machine to execute run-tests
+  Default: 127.0.0.1
+
+DG_TARGET_USERNAME
+  Execute the run-test as this user on DG_TARGET_HOSTNAME
+  Default: root
+
+DG_C_TESTS
+DG_CPP_TESTS
+  The C/C++ tests you want to check
+  Default: (empty, means all tests)
+
+
+Run examples
+------------
+
+The first two examples require a networked target with ssh access and automatic
+ssh login (see section below). Target SW should be compiled with the toolchain 
+to be tested.
+
+Run default gcc compile/execution tests:
+$ make DG_TOOLNAME=gcc DG_TARGET_HOSTNAME=192.168.17.93 DG_TARGET_USERNAME=root
+
+Run default g++ compile/execution tests:
+$ make DG_TOOLNAME=g++ DG_TARGET_HOSTNAME=192.168.17.93 DG_TARGET_USERNAME=root
+
+Run selected gcc compile only tests (no target required):
+$ make DG_TOOLNAME=gcc DG_C_TESTS="compile.exp noncompile.exp" 
+
+
+SSH automatic login configuration example
+-----------------------------------------
+
+On host do: 
+ssh-keygen -t rsa (then simply press enter thru all steps)
+ssh-copy-id -i ~/.ssh/id_rsa.pub <username>@<target IP>
+
+Now automatic ssh login should work - test by doing a simple ssh session to target.
+
+Note: The procedure might be slightly different for your particular target.
+
+
+Getting rid of the test-suite
+-----------------------------
+
+If you no longer have a need for the test-suite, then you can remove it altogether
+from your toolchain. Just delete the test-suite/ dub-dir.
+
+
+Author
+------
+Martin Lund <mgl@doredevelopment.dk>
+  Initial content
+
+"Yann E. MORIN" <yann.morin.1998@free.fr>
+  Getting rid of the test-suite
+  Minor fixes

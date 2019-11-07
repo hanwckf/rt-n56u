@@ -1,0 +1,15 @@
+---
+ bfd/sysdep.h |    2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+--- a/bfd/sysdep.h
++++ b/bfd/sysdep.h
+@@ -131,7 +131,7 @@
+ extern PTR realloc ();
+ #endif
+ 
+-#if !HAVE_DECL_STPCPY
++#if !HAVE_DECL_STPCPY && !defined(stpcpy)
+ extern char *stpcpy (char *__dest, const char *__src);
+ #endif
+ 

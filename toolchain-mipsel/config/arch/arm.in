@@ -1,0 +1,117 @@
+# ARM specific configuration file
+
+## no-package
+## select ARCH_SUPPORTS_32
+## select ARCH_SUPPORTS_64
+## select ARCH_DEFAULT_32
+## select ARCH_SUPPORTS_BOTH_MMU
+## select ARCH_DEFAULT_HAS_MMU
+## select ARCH_SUPPORTS_FLAT_FORMAT
+## select ARCH_SUPPORTS_EITHER_ENDIAN
+## select ARCH_DEFAULT_LE
+## select ARCH_SUPPORTS_WITH_ARCH
+## select ARCH_SUPPORTS_WITH_CPU
+## select ARCH_EXCLUSIVE_WITH_CPU
+## select ARCH_SUPPORTS_WITH_TUNE
+## select ARCH_SUPPORTS_WITH_FLOAT if ARCH_32
+## select ARCH_SUPPORTS_WITH_FPU if ARCH_32
+## select ARCH_SUPPORTS_SOFTFP if ARCH_32
+## select LINUX_REQUIRE_3_7_or_later if ARCH_64 && KERNEL_LINUX
+
+## help The ARM architecture, as defined by:
+## help     http://www.arm.com/
+
+if ARCH_32
+config ARCH_ARM_MODE
+    string
+    default "arm"   if ARCH_ARM_MODE_ARM
+    default "thumb" if ARCH_ARM_MODE_THUMB
+
+choice
+    bool
+    prompt "Default instruction set mode"
+    default ARCH_ARM_MODE_ARM
+
+config ARCH_ARM_MODE_ARM
+    bool
+    prompt "arm"
+    help
+      Defaults to emitting instructions in the ARM mode.
+
+config ARCH_ARM_MODE_THUMB
+    bool
+    prompt "thumb"
+    help
+      Defaults to emitting instructions in the THUMB mode.
+
+endchoice
+
+config ARCH_ARM_INTERWORKING
+    bool
+    prompt "Use Thumb-interworking (READ HELP)"
+    help
+      Excerpt from the gcc manual:
+      
+      > Generate code which supports calling between the ARM and Thumb
+      > instruction sets. Without this option the two instruction sets
+      > cannot be reliably used inside one program. The default is
+      > [not to use interwork], since slightly larger code is generated
+      > when [interwork] is specified.
+      
+      NOTE: Interworking in crosstool-NG is not sell-tested. Use at your
+            own risks, and report success and/or failure.
+
+# Until we only support EABI:
+config ARCH_ARM_ABI_OK
+    def_bool y
+    depends on ! ARCH_ARM_EABI
+    select ARCH_SUPPORTS_WITH_ABI
+
+# Little trick to force EABI *and* always show the prompt
+config ARCH_ARM_EABI_FORCE
+    bool
+    default y if ! OBSOLETE
+    select ARCH_ARM_EABI
+
+config ARCH_ARM_EABI
+    bool
+    prompt "Use EABI"
+    default y
+    help
+      Set up the toolchain so that it generates EABI-compliant binaries.
+      
+      If you say 'n' here, then the toolchain will generate OABI binaries.
+      OABI has long been deprecated, and is now considered legacy.
+
+config ARCH_ARM_TUPLE_USE_EABIHF
+    bool
+    prompt "append 'hf' to the tuple (EXPERIMENTAL)"
+    depends on ARCH_FLOAT_HW
+    depends on ARCH_ARM_EABI    # Until we only support that...
+    default y
+    help
+      Is you say 'y' here, then the tuple for the toolchain will end
+      up with *eabihf, instead of the usual *eabi.
+
+      *eabihf is used to denote that the toolchain *is* using the
+      hard-float ABI, while *eabi is just an indication of using the
+      soft-float ABI.
+
+      Ie. all one can say is:  *eabihf ⊢ hard-float ABI
+
+      Saying 'n' here does *not* impact the ability of the toolchain to
+      generate hard-float instructions with the hard-float ABI. It is a
+      purely cosmetic thing, used by distros to differentiate their
+      hard-float-ABI-using ports from their soft-float-ABI-using ports.
+      (eg. Debian Wheezy and above).
+
+      This is an option, as not all versions of gcc/binutils do support
+      such tuple, and fail to build with *eabihf. Stock gcc version up
+      to, and including 4.7.2 have an issue or another with *eabihf.
+
+      This option is here for the future.
+
+      Say 'n', unless you are trying to fix gcc to properly recognise
+      the *eabihf tuples.
+
+endif

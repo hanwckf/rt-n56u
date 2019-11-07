@@ -1,189 +1,27 @@
-#!/bin/sh
+#!/bin/bash
 
-DIR=`pwd`
+unset LD_LIBRARY_PATH
 
-. "$DIR/versions.inc"
+echo "================ START BUILDING TOOLCHAIN =============="
 
-KERNELVER="3.4.x"
-if [ "$1" = "--kernel-3_0" ] ; then
-    KERNELVER="3.0.x"
+if [ ! -f configure ]; then
+	./bootstrap || exit 1
+fi
+if [ ! -f Makefile ]; then
+	./configure --enable-local || exit 1
+fi
+if [ ! -f ct-ng ]; then
+	make || exit 1
+fi
+if [ ! -d dl ]; then
+	echo "============= CREATE LOCAL TARBALLS DIR ================"
+	mkdir dl
+fi
+if [ -d .build ]; then
+	echo "============== CLEANING OLD BUILD TREE ================="
+	./ct-ng clean
 fi
 
-DO_UNPACK=YES
-DO_HEADERS=YES
-DO_BINUTILS=YES
-DO_GCC=YES
-DO_UCLIBC=YES
-DO_GCCCPP=YES
+(./ct-ng mipsel-linux-uclibc && ./ct-ng build) || exit 1
 
-HOST_NCPU=1
-if [ -f /proc/cpuinfo ] ; then
-    HOST_NCPU=`grep -c processor /proc/cpuinfo`
-    [ $HOST_NCPU -lt 1 ] && HOST_NCPU=1
-fi
-
-ID_BINUTILS="binutils-$BINUTILSVER"
-ID_GCC="gcc-$GCCVER"
-ID_UCLIBC="uClibc-$UCLIBCVER"
-ID_TOOLCHAIN="toolchain-$KERNELVER"
-
-export LANGUAGE=en_US.UTF-8:en
-export LANG=en_US.UTF-8
-
-export TARGET="mipsel-linux-uclibc"
-export TARGET_DIR="$DIR/src/$TARGET-toolchain"
-export ROOTDIR="$DIR"
-export PREFIX="$DIR/$ID_TOOLCHAIN"
-export PATH="${PATH}:$PREFIX/bin:$PREFIX/lib"
-export CC=gcc
-
-##################################TUNE FOR CURRENT VERSION HOST GCC BUILD###############################
-
-HOSTCFLAGS="-O2 -Wno-pointer-sign -Wno-trigraphs"
-HOSTGCCVER=`gcc --version | grep "gcc" | awk {' print $3 '} | cut -f -2 -d '.'`
-echo "Host GCC version=$HOSTGCCVER"
-if [ "$HOSTGCCVER" != "4.3" ] && [ "$HOSTGCCVER" != "4.4" ]; then
-    HOSTCFLAGS="$HOSTCFLAGS -Wno-format-security"
-    if [ "$HOSTGCCVER" != "4.5" ]; then
-        HOSTCFLAGS="$HOSTCFLAGS -Wno-unused-but-set-variable -Wno-sizeof-pointer-memaccess"
-        HOSTCFLAGS="$HOSTCFLAGS -fno-delete-null-pointer-checks"
-    fi
-    if [ "$HOSTGCCVER" \> "5.0" ]; then
-        HOSTCFLAGS="$HOSTCFLAGS -fgnu89-inline"
-    fi
-fi
-export CFLAGS="$HOSTCFLAGS"
-
-##################################TUNE FOR CURRENT VERSION TARGET GCC BUILD#############################
-
-GCCMJ=`echo $GCCVER | cut -f -2 -d '.'`
-echo "Target GCC version=$GCCMJ"
-EXT_OPT="--disable-sanity-checks --disable-werror"
-EXT_OPT="$EXT_OPT --disable-lto --enable-ld=yes --enable-gold=no"
-if [ "$GCCMJ" = "4.6" ] || [ "$GCCMJ" = "4.7" ] || [ "$GCCMJ" = "4.8" ] || [ "$GCCMJ" = "4.9" ]; then
-    EXT_OPT="$EXT_OPT --disable-biendian --disable-softfloat"
-    EXT_OPT="$EXT_OPT --disable-libquadmath --disable-libquadmath-support"
-fi
-if [ "$GCCMJ" = "4.8" ] || [ "$GCCMJ" = "4.9" ]; then
-    EXT_OPT="$EXT_OPT --disable-libatomic --with-pic"
-fi
-
-#####################################CHECK TLS SUPPORT FOR UCLIBC#######################################
-
-UCLIBCMJ=`echo $UCLIBCVER | cut -f3 -d '.' `
-
-TLS_OPT="--disable-tls --disable-threads"
-eval `grep \^UCLIBC_HAS_TLS= "$TARGET_DIR/${ID_UCLIBC}.config"`
-[ "$UCLIBC_HAS_TLS" = "y" ] && TLS_OPT="--enable-tls --enable-threads=posix"
-
-#########################################################################################################
-
-mkdir -p "$PREFIX"
-cd "$TARGET_DIR"
-
-if [ "$DO_UNPACK" = "YES" ]; then
-    echo "=================REMOVE-OLD-BUILD-TREE=================="
-    rm -rf build-*
-    echo "=================EXTRACT-KERNEL-HEADERS================="
-    rm -rf include
-    tar xjf kernel-headers-${KERNELVER}.tar.bz2
-    echo "====================EXTRACT-BINUTILS===================="
-    rm -rf $ID_BINUTILS
-    tar xjf $ID_BINUTILS.tar.bz2
-    echo "=====================EXTRACT-UCLIBC====================="
-    rm -rf $ID_UCLIBC
-    tar xjf $ID_UCLIBC.tar.bz2
-    echo "======================EXTRACT-GCC======================="
-    rm -rf $ID_GCC
-    tar xjf $ID_GCC.tar.bz2
-    echo "===================PATCHING-BINUTILS===================="
-    cd $ID_BINUTILS
-    for i in `ls ../patches/${ID_BINUTILS}/*.patch 2>/dev/null` ; do
-        [ -f ${i} ] && patch -p1 < ${i}
-    done
-    cd ..
-    echo "=====================PATCHING-GCC======================="
-    cd $ID_GCC
-    for i in `ls ../patches/${ID_GCC}/*.patch 2>/dev/null` ; do
-        [ -f ${i} ] && patch -p1 < ${i}
-    done
-    cd ..
-    echo "====================PATCHING-UCLIBC====================="
-    cd $ID_UCLIBC
-    for i in `ls ../patches/${ID_UCLIBC}/*.patch 2>/dev/null` ; do
-        [ -f ${i} ] && patch -p1 < ${i}
-    done
-    cd ..
-fi
-
-if [ "$DO_HEADERS" = "YES" ]; then
-    echo "=====================BUILD-C-HEADERS===================="
-    rm -rf "$PREFIX/include"
-    rm -rf "$PREFIX/usr/include"
-    cp -rf "$TARGET_DIR/include" "$PREFIX/include"
-    cp -fv ${ID_UCLIBC}.config $ID_UCLIBC/.config
-    make -C $ID_UCLIBC install_headers
-    mkdir -p "$PREFIX/usr"
-    ln -sf ../include "$PREFIX/usr/include"
-fi
-
-if [ "$DO_BINUTILS" = "YES" ]; then
-    echo "=====================BUILD-BINUTILS====================="
-    mkdir -p build-binutils && cd build-binutils
-    (../$ID_BINUTILS/configure --target=$TARGET --prefix="$PREFIX" \
-        --with-sysroot="$PREFIX" --with-build-sysroot="$PREFIX" \
-        --disable-nls --disable-werror --disable-multilib &&
-    make -j${HOST_NCPU} && \
-    make install) || exit 1
-    cd ..
-fi
-
-if [ "$DO_GCC" = "YES" ]; then
-    echo "=====================BUILD-GCC-C========================"
-    mkdir -p build-gcc-bootstrap && cd build-gcc-bootstrap
-    (../$ID_GCC/configure \
-        --target=$TARGET --prefix="$PREFIX" \
-        --with-gnu-ld --with-gnu-as \
-        --disable-shared --disable-multilib \
-        $TLS_OPT --disable-libmudflap --disable-libssp $EXT_OPT \
-        --disable-libgomp --disable-nls \
-        --with-sysroot="$PREFIX" \
-        --enable-languages=c && \
-    make -j${HOST_NCPU} && \
-    make install) || exit 1
-    cd ..
-fi
-
-if [ "$DO_UCLIBC" = "YES" ]; then
-    echo "=====================BUILD-UCLIBC======================="
-    cp -fv ${ID_UCLIBC}.config $ID_UCLIBC/.config
-    cd $ID_UCLIBC
-    (make -j${HOST_NCPU} && \
-     make install) || exit 1
-    cd ..
-fi
-
-if [ "$DO_GCCCPP" = "YES" ]; then
-    echo "====================BUILD-GCC-CPP======================="
-    mkdir -p build-gcc-bootstrap-cpp && cd build-gcc-bootstrap-cpp
-    (../$ID_GCC/configure \
-        --target=$TARGET --prefix="$PREFIX" \
-        --with-gnu-ld --with-gnu-as \
-        --disable-shared --disable-multilib \
-        $TLS_OPT --disable-libmudflap --disable-libssp $EXT_OPT \
-        --disable-libgomp --disable-nls \
-        --with-sysroot="$PREFIX" \
-        --enable-languages=c++ && \
-    make -j${HOST_NCPU} all-host all-target-libgcc all-target-libstdc++-v3 && \
-    make install-host install-target-libgcc install-target-libstdc++-v3) || exit 1
-    cd ..
-fi
-
-# sanity
-if [ "$GCCMJ" = "4.4" ] ; then
-	cp -rf "$PREFIX/man" "$PREFIX/share" && rm -rf "$PREFIX/man"
-	cp -rf "$PREFIX/info" "$PREFIX/share" && rm -rf "$PREFIX/info"
-fi
-
-echo "======================All IS DONE!========================="
-
+echo "====================All IS DONE!========================"

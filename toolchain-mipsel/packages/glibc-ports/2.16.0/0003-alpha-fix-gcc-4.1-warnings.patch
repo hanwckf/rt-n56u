@@ -1,0 +1,54 @@
+2006-05-30  Falk Hueffner <falk@debian.org>
+
+	* sysdeps/unix/sysv/linux/alpha/ioperm.c: force the architecture
+	  to ev6 in assembly code.
+
+{standard input}: Assembler messages:
+{standard input}:341: Error: macro requires $at register while noat in effect
+{standard input}:374: Error: macro requires $at register while noat in effect
+{standard input}:438: Error: macro requires $at register while noat in effect
+{standard input}:471: Error: macro requires $at register while noat in effect
+make[3]: *** [/tmp/buildd/glibc-2.3.6/build-tree/alpha-libc/misc/ioperm.o] Error 1
+
+Hrm. gcc puts .arch ev4 into the .s, and this overrides -mev6 for as.
+I cannot really think of anything better than
+
+ sysdeps/unix/sysv/linux/alpha/ioperm.c |    8 ++++----
+ 1 file changed, 4 insertions(+), 4 deletions(-)
+
+--- a/sysdeps/unix/sysv/linux/alpha/ioperm.c
++++ b/sysdeps/unix/sysv/linux/alpha/ioperm.c
+@@ -177,13 +177,13 @@
+ static inline void
+ stb_mb(unsigned char val, unsigned long addr)
+ {
+-  __asm__("stb %1,%0; mb" : "=m"(*(vucp)addr) : "r"(val));
++  __asm__(".arch ev6; stb %1,%0; mb" : "=m"(*(vucp)addr) : "r"(val));
+ }
+ 
+ static inline void
+ stw_mb(unsigned short val, unsigned long addr)
+ {
+-  __asm__("stw %1,%0; mb" : "=m"(*(vusp)addr) : "r"(val));
++  __asm__(".arch ev6; stw %1,%0; mb" : "=m"(*(vusp)addr) : "r"(val));
+ }
+ 
+ static inline void
+@@ -355,7 +355,7 @@
+   unsigned long int addr = dense_port_to_cpu_addr (port);
+   unsigned char r;
+ 
+-  __asm__ ("ldbu %0,%1" : "=r"(r) : "m"(*(vucp)addr));
++  __asm__ (".arch ev6; ldbu %0,%1" : "=r"(r) : "m"(*(vucp)addr));
+   return r;
+ }
+ 
+@@ -365,7 +365,7 @@
+   unsigned long int addr = dense_port_to_cpu_addr (port);
+   unsigned short r;
+ 
+-  __asm__ ("ldwu %0,%1" : "=r"(r) : "m"(*(vusp)addr));
++  __asm__ (".arch ev6; ldwu %0,%1" : "=r"(r) : "m"(*(vusp)addr));
+   return r;
+ }
+ 

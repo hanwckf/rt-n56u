@@ -1,0 +1,24 @@
+Prevent erroneous inline optimization of initfini.s on PowerPC64.
+
+The problem and the fix was reported there:
+http://sourceware.org/ml/libc-alpha/2012-01/msg00195.html
+Git commit:
+commit 1fe05ea95e1460e5e1cf1568a8ce3982f0f02de6
+Author: Ryan S. Arnold <rsa@us.ibm.com>
+Date: Tue May 3 17:26:17 2011 -0500
+
+---
+ sysdeps/powerpc/powerpc64/Makefile |    2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+--- a/sysdeps/powerpc/powerpc64/Makefile
++++ b/sysdeps/powerpc/powerpc64/Makefile
+@@ -31,7 +31,7 @@
+ ifneq ($(elf),no)
+ # The initfini generation code doesn't work in the presence of -fPIC, so
+ # we use -fpic instead which is much better.
+-CFLAGS-initfini.s += -fpic -O1
++CFLAGS-initfini.s += -fpic -O1 -fno-inline
+ endif
+ endif
+ 

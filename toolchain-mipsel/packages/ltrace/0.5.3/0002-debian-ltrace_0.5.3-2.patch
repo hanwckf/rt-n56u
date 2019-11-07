@@ -1,0 +1,86 @@
+Debian patch courtesy of the Debian ltrace maintainer Juan Cespedes <cespedes@debian.org>
+
+---
+ sysdeps/linux-gnu/arm/breakpoint.c  |    7 +------
+ sysdeps/linux-gnu/breakpoint.c      |    5 +++--
+ sysdeps/linux-gnu/ia64/breakpoint.c |    5 +----
+ sysdeps/linux-gnu/ia64/plt.c        |    1 +
+ sysdeps/linux-gnu/ia64/regs.c       |    1 -
+ 5 files changed, 6 insertions(+), 13 deletions(-)
+
+--- a/sysdeps/linux-gnu/breakpoint.c
++++ b/sysdeps/linux-gnu/breakpoint.c
+@@ -6,8 +6,6 @@
+ #include "common.h"
+ #include "arch.h"
+ 
+-static unsigned char break_insn[] = BREAKPOINT_VALUE;
+-
+ #ifdef ARCH_HAVE_ENABLE_BREAKPOINT
+ extern void arch_enable_breakpoint(pid_t, Breakpoint *);
+ void
+@@ -20,6 +18,9 @@
+ 	arch_enable_breakpoint(pid, sbp);
+ }
+ #else
++
++static unsigned char break_insn[] = BREAKPOINT_VALUE;
++
+ void
+ enable_breakpoint(pid_t pid, Breakpoint *sbp) {
+ 	unsigned int i, j;
+--- a/sysdeps/linux-gnu/arm/breakpoint.c
++++ b/sysdeps/linux-gnu/arm/breakpoint.c
+@@ -24,10 +24,7 @@
+ 
+ #include <sys/ptrace.h>
+ #include "config.h"
+-#include "arch.h"
+-#include "options.h"
+-#include "output.h"
+-#include "debug.h"
++#include "common.h"
+ 
+ void
+ arch_enable_breakpoint(pid_t pid, Breakpoint *sbp) {
+@@ -59,8 +56,6 @@
+ void
+ arch_disable_breakpoint(pid_t pid, const Breakpoint *sbp) {
+ 	unsigned int i, j;
+-	const unsigned char break_insn[] = BREAKPOINT_VALUE;
+-	const unsigned char thumb_break_insn[] = THUMB_BREAKPOINT_VALUE;
+ 
+ 	debug(1, "arch_disable_breakpoint(%d,%p)", pid, sbp->addr);
+ 
+--- a/sysdeps/linux-gnu/ia64/plt.c
++++ b/sysdeps/linux-gnu/ia64/plt.c
+@@ -1,4 +1,5 @@
+ #include <gelf.h>
++#include <sys/ptrace.h>
+ #include "common.h"
+ 
+ /* A bundle is 128 bits */
+--- a/sysdeps/linux-gnu/ia64/breakpoint.c
++++ b/sysdeps/linux-gnu/ia64/breakpoint.c
+@@ -6,10 +6,7 @@
+ 
+ #include <sys/ptrace.h>
+ #include <string.h>
+-#include "arch.h"
+-#include "options.h"
+-#include "output.h"
+-#include "debug.h"
++#include "common.h"
+ 
+ static long long
+ extract_bit_field(char *bundle, int from, int len) {
+--- a/sysdeps/linux-gnu/ia64/regs.c
++++ b/sysdeps/linux-gnu/ia64/regs.c
+@@ -7,7 +7,6 @@
+ #include <asm/rse.h>
+ 
+ #include <stddef.h>
+-#include "debug.h"
+ #include "common.h"
+ 
+ void *

@@ -1,0 +1,4 @@
+Linaro is maintaining some advanced/more stable/experimental versions
+of binutils, gcc, glibc and gdb, especially for the ARM architecture.
+These versions contain some changes that are not (yet?) merged into
+their respective upstream repositories.

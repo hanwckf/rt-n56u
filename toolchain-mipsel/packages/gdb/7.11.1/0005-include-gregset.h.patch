@@ -1,0 +1,73 @@
+commit 31925464a80970e37c06192a0c49f8948a2f5da0
+Author: Matthew Wahab <matthew.wahab@arm.com>
+Date:   Mon Aug 15 13:09:04 2016 +0100
+
+    [GDB] Fix builds broken by proc-service changes.
+    
+    GLIBC BZ#20311 introduced a change to install proc_service.h so that gdb
+    didn't have to use the version it embeds in gdb_proc_service.h. The
+    embedded version is guarded by HAVE_PROC_SERVICE_H and
+    gdb_proc_service.h has a number other of includes and definitions, all
+    of which are uncondional except for an include for gregset.h. This is
+    only included if HAVE_PROC_SERIVCE_H is not defined.
+    
+    This causes a build failure when cross compiling gdb with the latest
+    glibc because type definitions in gregset are used independently of
+    HAVE_PROC_SERIVCE_H. In particular, they are used in gdb_proc_service.h
+    when PRFPREGSET_T_BROKEN is set.
+    
+    The error messages on the failure are
+    ----
+    binutils-gdb/gdb/gdb_proc_service.h:173:9: error: ‘gdb_fpregset_t’ does
+    not name a type; did you mean ‘elf_fpregset_t’?
+     typedef gdb_fpregset_t gdb_prfpregset_t;
+             ^~~~~~~~~~~~~~
+             elf_fpregset_t
+    
+    binutils-gdb/gdb/gdb_proc_service.h:173:9: error: ‘gdb_fpregset_t’ does
+    not name a type; did you mean ‘elf_fpregset_t’?
+     typedef gdb_fpregset_t gdb_prfpregset_t;
+             ^~~~~~~~~~~~~~
+             elf_fpregset_t
+    
+    binutils-gdb/gdb/proc-service.c:218:15: error: ‘gdb_prfpregset_t’ does
+    not name a type; did you mean ‘gdb_fpregset_t’?
+             const gdb_prfpregset_t *fpregset)
+                   ^~~~~~~~~~~~~~~~
+                   gdb_fpregset_t
+    ----
+    
+    This patch moves the include for gregset.h to before the code guarded by
+    HAVE_PROC_SERIVCE_H, so that it is always included. This is enough to
+    fix the build.
+    
+    2016-08-15  Matthew Wahab  <matthew.wahab@arm.com>
+    
+            PR gdb/20457
+            * gdb_proc_service.h: Add an include of gregset.h
+            [!HAVE_PROC_SERVICE_H]: Remove the include of gregset.h.
+
+---
+ gdb/gdb_proc_service.h |    4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+--- a/gdb/gdb_proc_service.h
++++ b/gdb/gdb_proc_service.h
+@@ -21,6 +21,8 @@
+ 
+ #include <sys/types.h>
+ 
++#include "gregset.h"
++
+ #ifdef HAVE_PROC_SERVICE_H
+ 
+ /* glibc's proc_service.h doesn't wrap itself with extern "C".  Need
+@@ -60,8 +62,6 @@
+ #include <sys/procfs.h>
+ #endif
+ 
+-#include "gregset.h"
+-
+ EXTERN_C_PUSH
+ 
+ /* Functions in this interface return one of these status codes.  */

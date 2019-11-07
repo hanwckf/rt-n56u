@@ -1,0 +1,17 @@
+alpha does not have a __NR_creat
+
+http://bugs.gentoo.org/227275
+http://sourceware.org/bugzilla/show_bug.cgi?id=6650
+
+---
+ sysdeps/unix/sysv/linux/wordsize-64/creat64.c |    4 ++++
+ 1 file changed, 4 insertions(+)
+
+--- a/sysdeps/unix/sysv/linux/wordsize-64/creat64.c
++++ b/sysdeps/unix/sysv/linux/wordsize-64/creat64.c
+@@ -1 +1,5 @@
+ /* Defined as alias for the syscall.  */
++#include <sysdep.h>
++#ifndef __NR_creat
++#include "../../../../../io/creat64.c"
++#endif

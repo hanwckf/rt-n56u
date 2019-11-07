@@ -1,0 +1,117 @@
+# bionic options
+
+## package android-ndk
+## depends on ! WINDOWS && ! BARE_METAL
+## depends on ARCH_ARM || ARCH_MIPS || ARCH_X86
+## depends on EXPERIMENTAL
+## select GCC_REQUIRE_6_or_later
+##
+## select LIBC_SUPPORT_THREADS_POSIX
+##
+## help Bionic is the Android C library. It is prebuilt, extracted from the Android NDK.
+## help This platform has no TLS (Thread Local Storage) support so that option must be
+## help disabled in the Compiler options.
+
+config THREADS
+    default "posix"
+
+# FIXME does API level depend on the bionic version? generate that, too?
+choice 
+    bool
+    prompt "Android API level"
+    help
+      The minimum for 64 bit support is 21.
+
+config ANDROID_API_28
+    bool
+    prompt "28"
+
+config ANDROID_API_27
+    bool
+    prompt "27"
+
+config ANDROID_API_26
+    bool
+    prompt "26"
+
+config ANDROID_API_24
+    bool
+    prompt "24"
+
+config ANDROID_API_23
+    bool
+    prompt "23"
+
+config ANDROID_API_22
+    bool
+    prompt "22"
+
+config ANDROID_API_21
+    bool
+    prompt "21"
+
+config ANDROID_API_19
+    bool
+    prompt "19"
+    depends on ARCH_32
+
+config ANDROID_API_18
+    bool
+    prompt "18"
+    depends on ARCH_32
+
+config ANDROID_API_17
+    bool
+    prompt "17"
+    depends on ARCH_32
+
+config ANDROID_API_16
+    bool
+    prompt "16"
+    depends on ARCH_32
+
+config ANDROID_API_15
+    bool
+    prompt "15"
+    depends on ARCH_32
+
+config ANDROID_API_14
+    bool
+    prompt "14"
+    depends on ARCH_32
+
+config ANDROID_API_13
+    bool
+    prompt "13"
+    depends on ARCH_32
+
+config ANDROID_API_12
+    bool
+    prompt "12"
+    depends on ARCH_32
+
+config ANDROID_API_9
+    bool
+    prompt "9"
+    depends on ARCH_32
+
+endchoice
+
+config ANDROID_API
+    string
+    default "28" if ANDROID_API_28
+    default "27" if ANDROID_API_27
+    default "26" if ANDROID_API_26
+    default "24" if ANDROID_API_24
+    default "23" if ANDROID_API_23
+    default "22" if ANDROID_API_22
+    default "21" if ANDROID_API_21
+    default "19" if ANDROID_API_19
+    default "18" if ANDROID_API_18
+    default "17" if ANDROID_API_17
+    default "16" if ANDROID_API_16
+    default "15" if ANDROID_API_15
+    default "14" if ANDROID_API_14
+    default "13" if ANDROID_API_13
+    default "12" if ANDROID_API_12
+    default "9" if ANDROID_API_9

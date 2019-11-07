@@ -1,0 +1,6 @@
+repository='git https://git.savannah.gnu.org/git/automake.git'
+bootstrap='./bootstrap'
+mirrors='$(CT_Mirrors GNU automake)'
+relevantpattern='1.*|.'
+archive_formats='.tar.xz .tar.gz'
+signature_format='packed/.sig'

@@ -1,0 +1,343 @@
+#!@MAKE@ -rf
+# vim: set filetype=make noet :
+# Makefile for crosstool-NG.
+# Copyright 2006 Yann E. MORIN <yann.morin.1998@free.fr>
+
+# Don't print directory as we descend into them
+# Don't use built-in rules, we know what we're doing
+MAKEFLAGS += --no-print-directory --no-builtin-rules
+
+# Don't go parallel
+.NOTPARALLEL:
+
+# This is where ct-ng is:
+export CT_NG:=$(abspath $(lastword $(MAKEFILE_LIST)))
+# and this is where we're working in:
+export CT_TOP_DIR:=$(shell pwd)
+
+ifeq (@enable_local@,yes)
+# automake does not allow to set pkgxxxdir, they are always derived from
+# a respective xxxdir. So, for enable-local case, set them directly here.
+export CT_LIB_DIR:=$(patsubst %/,%,$(dir $(CT_NG)))
+export CT_LIBEXEC_DIR:=$(CT_LIB_DIR)/kconfig
+export CT_DOC_DIR:=$(CT_LIB_DIR)/docs
+export CT_LICENSE_DIR
+else
+# Paths and values set by ./configure
+# Don't bother to change it other than with a new ./configure!
+export CT_LIB_DIR:=@pkgdatadir@
+export CT_LIBEXEC_DIR:=@pkglibexecdir@
+export CT_DOC_DIR:=@docdir@
+endif
+
+# This is crosstool-NG version string
+export CT_VERSION:=@PACKAGE_VERSION@
+
+# Export with an empty value: this masks the version detection variable in
+# user-visible configurators, and suppresses a warning from kconfig.
+export CT_VCHECK=
+
+# Current version of the configuration file. Defined here, because we also
+# need to pass it to the upgrade script - which may receive an input that
+# was not preprocessed by kconfig, and hence have no string for "up-to-date"
+# version.
+export CT_CONFIG_VERSION_CURRENT=3
+
+# Download agents used by scripts.mk
+CT_WGET     := @wget@
+CT_CURL     := @curl@
+
+# Paths found by ./configure
+export install      = @INSTALL@
+export bash         = @BASH_SHELL@
+export awk          = @AWK@
+export grep         = @GREP@
+export make         = @MAKE@
+export sed          = @SED@
+export libtool      = @LIBTOOL@
+export libtoolize   = @LIBTOOLIZE@
+export objcopy      = @OBJCOPY@
+export objdump      = @OBJDUMP@
+export readelf      = @READELF@
+export patch        = @PATCH@
+
+# Some distributions (eg. Ubuntu) thought it wise to point /bin/sh to
+# a truly POSIX-conforming shell, ash in this case. This is not so good
+# as we, smart (haha!) developers (as smart we ourselves think we are),
+# got used to bashisms, and are inclined to easiness... So force use of
+# bash.
+export SHELL=$(bash)
+
+# Make the restart/stop steps available to scripts/crostool-NG.sh
+export CT_STOP:=$(STOP)
+export CT_RESTART:=$(RESTART)
+
+SILENT=@
+CT_ECHO=echo
+ifeq ($(strip $(origin V)),command line)
+  ifeq ($(strip $(V)),0)
+    SILENT=@
+    CT_ECHO=:
+  else
+    ifeq ($(strip $(V)),1)
+      SILENT=
+      CT_ECHO=:
+    else
+      ifeq ($(strip $(V)),2)
+        SILENT=
+        CT_ECHO=echo
+      endif # V == 2
+    endif # V== 1
+  endif # V == 0
+endif # origin V
+export V SILENT CT_ECHO
+
+all: help
+
+.PHONY: $(PHONY)
+PHONY += all
+FORCE:
+
+# Configuration rules. Currently, saveSample.sh uses some of the variables
+# below - they should be passed explicitly.
+
+# Top file of crosstool-NG configuration
+export KCONFIG_TOP = $(CT_LIB_DIR)/config/config.in
+
+CONF            := $(CT_LIBEXEC_DIR)/conf
+CONF-menuconfig := $(CT_LIBEXEC_DIR)/mconf
+CONF-nconfig    := $(CT_LIBEXEC_DIR)/nconf
+
+# Used by conf/mconf/nconf to find the .in files
+# TBD needed? We do supply the defconfig name explicitly below
+export srctree=$(CT_LIB_DIR)
+
+.PHONY: menuconfig nconfig oldconfig olddefconfig savedefconfig defconfig check-config extractconfig
+.PHONY: upgradeconfig
+
+check-config:
+	@[ ! -e .config -o -f .config ] || { echo ".config is not a regular file:"; ls -dl .config; exit 1; } >&2
+
+menuconfig nconfig: check-config
+	@$(CT_ECHO) "  CONF  $@"
+	$(SILENT)if [ ! -f .config ] || CT_VCHECK=strict $(bash) $(CT_LIB_DIR)/scripts/version-check.sh .config; then \
+		$(CONF-$@) $(KCONFIG_TOP); \
+	else \
+		CT_VCHECK=warning $(CONF-$@) $(KCONFIG_TOP); \
+	fi
+
+oldconfig: .config check-config
+	@$(CT_ECHO) "  CONF  $@"
+	@$(bash) $(CT_LIB_DIR)/scripts/version-check.sh .config
+	$(SILENT)$(CONF) --silent$@ $(KCONFIG_TOP)
+
+olddefconfig: .config check-config
+	@$(CT_ECHO) "  CONF  $@"
+	@$(bash) $(CT_LIB_DIR)/scripts/version-check.sh .config
+	$(SILENT)$(CONF) --$@ $(KCONFIG_TOP)
+
+savedefconfig: .config check-config
+	@$(CT_ECHO) '  GEN   $@'
+	$(SILENT)CT_VCHECK=save $(CONF) --savedefconfig=$${DEFCONFIG-defconfig} $(KCONFIG_TOP)
+
+defconfig: check-config
+	@$(CT_ECHO) '  CONF  $@'
+	$(SILENT)CT_VCHECK=save $(CONF) --defconfig=$${DEFCONFIG-defconfig} $(KCONFIG_TOP)
+
+upgradeconfig: .config check-config
+	$(SILENT)cp .config .config.before-upgrade
+	$(SILENT)CT_UPGRADECONFIG=yes $(bash) $(CT_LIB_DIR)/scripts/version-check.sh .config
+	@$(CT_ECHO) "Saving .config as .config.before-olddefconfig before running 'ct-ng olddefconfig'"
+	$(SILENT)cp .config .config.before-olddefconfig
+	$(SILENT)$(CONF) --olddefconfig $(KCONFIG_TOP)
+	@$(CT_ECHO) "Done. You may now run 'ct-ng menuconfig' to edit the configuration."
+
+# Always be silent, the stdout an be >.config
+extractconfig:
+	@$(awk) 'BEGIN { dump=0; }                                                  \
+	         dump==1 && $$0~/^\[.....\][[:space:]]+(# )?CT_/ {                  \
+	             $$1="";                                                        \
+	             gsub("^[[:space:]]","");                                       \
+	             print;                                                         \
+	         }                                                                  \
+	         $$0~/Dumping user-supplied crosstool-NG configuration: done in/ {  \
+	             dump=0;                                                        \
+	         }                                                                  \
+	         $$0~/Dumping user-supplied crosstool-NG configuration$$/ {         \
+	             dump=1;                                                        \
+	         }'
+
+# Help system
+help:: help-head help-config help-samples help-build help-clean help-distrib help-env help-tail
+
+help-head:: version
+	@echo  'See below for a list of available actions, listed by category:'
+
+help-config::
+	@echo
+	@echo  'Configuration actions:'
+
+help-samples::
+	@echo
+	@echo  'Preconfigured toolchains (#: force number of // jobs):'
+
+help-build::
+	@echo
+	@echo  'Build actions (#: force number of // jobs):'
+	@echo  '  list-steps         - List all build steps'
+
+help-clean::
+	@echo
+	@echo  'Clean actions:'
+
+help-distrib::
+	@echo
+	@echo  'Distribution actions:'
+
+help-env::
+	@echo
+	@if [ -r "@docdir@/manual/4_Building.md" ]; then \
+		echo 'Environment variables (see @docdir@/0 - Table of content.txt):'; \
+	else \
+		echo 'Environment variables (see http://crosstool-ng.github.io/docs/build/)'; \
+	fi
+	@echo  '  STOP=step          - Stop the build just after this step (list with list-steps)'
+	@echo  '  RESTART=step       - Restart the build just before this step (list with list-steps)'
+
+help-tail::
+	@echo
+	@echo  'Use action "menuconfig" to configure your toolchain'
+	@echo  'Use action "build" to build your toolchain'
+	@echo  'Use action "version" to see the version'
+	@echo  'See "man 1 $(notdir $(CT_NG))" for some help as well'
+
+help-build::
+	@echo  '  source             - Download sources for currently configured toolchain'
+	@echo  '  build[.#]          - Build the currently configured toolchain'
+
+help-clean::
+	@echo  '  clean              - Remove generated files'
+	@echo  '  distclean          - Remove generated files, configuration and build directories'
+
+include $(CT_LIB_DIR)/samples/samples.mk
+include $(CT_LIB_DIR)/scripts/scripts.mk
+
+help-config::
+	@echo  '  menuconfig         - Update current config using a menu based program'
+	@echo  '  nconfig            - Update current config using a menu based program'
+	@echo  '  oldconfig          - Update current config using a provided .config as base'
+	@echo  '  upgradeconfig      - Upgrade config file to current crosstool-NG'
+	@echo  '  extractconfig      - Extract to stdout the configuration items from a'
+	@echo  '                       build.log file piped to stdin'
+	@echo  '  savedefconfig      - Save current config as a mini-defconfig to $${DEFCONFIG}'
+	@echo  '  defconfig          - Update config from a mini-defconfig $${DEFCONFIG}'
+	@echo  '                       (default: $${DEFCONFIG}=./defconfig)'
+	@echo  '  show-tuple         - Print the tuple of the currently configured toolchain'
+
+help-distrib::
+
+help-env::
+	@echo  '  V=0|1|2|<unset>    - <unset> show only human-readable messages (default)'
+	@echo  '                       0 => do not show commands or human-readable message'
+	@echo  '                       1 => show only the commands being executed'
+	@echo  '                       2 => show both'
+
+# End help system
+
+.config:
+	@echo "There is no existing .config file!"
+	@echo "You need to either run 'menuconfig',"
+	@echo "or configure an existing sample."
+	@false
+
+show-tuple: .config
+	$(SILENT)$(bash) $(CT_LIB_DIR)/scripts/show-tuple.sh '$${CT_TARGET}'
+
+# Actual build
+source: .config
+	$(SILENT)CT_SOURCE=y $(bash) $(CT_LIB_DIR)/scripts/crosstool-NG.sh
+
+build: .config
+	$(SILENT)BUILD_NCPUS=`@CPU_COUNT@ 2>/dev/null || echo 0` \
+        $(bash) $(CT_LIB_DIR)/scripts/crosstool-NG.sh
+
+build.%:
+	$(SILENT)$(MAKE) -rf $(CT_NG) build CT_JOBS=$*
+
+# The _for_build steps are noop for native and cross,
+# but are actual steps for canadian and cross-native.
+# Please keep the last line with a '\' and keep the following empty line:
+# it helps when diffing and merging.
+CT_STEPS := \
+            companion_tools_for_build  \
+            companion_libs_for_build   \
+            binutils_for_build         \
+            companion_tools_for_host   \
+            companion_libs_for_host    \
+            binutils_for_host          \
+            cc_core_pass_1             \
+            kernel_headers             \
+            libc_start_files           \
+            cc_core_pass_2             \
+            libc_main                  \
+            cc_for_build               \
+            cc_for_host                \
+            libc_post_cc               \
+            companion_libs_for_target  \
+            binutils_for_target        \
+            debug                      \
+            test_suite                 \
+            finish                     \
+
+# Keep an empty line above this comment, so the last
+# back-slash terminated line works as expected.
+
+# Make the list available to sub-processes (scripts/crosstool-NG.sh needs it)
+export CT_STEPS
+
+# Print the steps list
+PHONY += list-steps
+list-steps:
+	@echo  'Available build steps, in order:'
+	@for step in $(CT_STEPS); do    \
+	     echo "  - $${step}";       \
+	 done
+	@echo  'Use "<step>" as action to execute only that step.'
+	@echo  'Use "+<step>" as action to execute up to that step.'
+	@echo  'Use "<step>+" as action to execute from that step onward.'
+
+# ----------------------------------------------------------
+# This part deals with executing steps
+
+$(CT_STEPS):
+	$(SILENT)$(MAKE) -rf $(CT_NG) V=$(V) RESTART=$@ STOP=$@ build
+
+$(patsubst %,+%,$(CT_STEPS)):
+	$(SILENT)$(MAKE) -rf $(CT_NG) V=$(V) STOP=$(patsubst +%,%,$@) build
+
+$(patsubst %,%+,$(CT_STEPS)):
+	$(SILENT)$(MAKE) -rf $(CT_NG) V=$(V) RESTART=$(patsubst %+,%,$@) build
+
+PHONY += version
+version:
+	@echo 'This is crosstool-NG version $(CT_VERSION)'
+	@echo
+	@echo 'Copyright (C) 2008  Yann E. MORIN <yann.morin.1998@free.fr>'
+	@echo 'This is free software; see the source for copying conditions.'
+	@echo 'There is NO warranty; not even for MERCHANTABILITY or FITNESS FOR A'
+	@echo 'PARTICULAR PURPOSE.'
+	@echo
+
+PHONY += clean
+clean::
+	@$(CT_ECHO) "  CLEAN log"
+	$(SILENT)rm -f build.log
+	@$(CT_ECHO) "  CLEAN build dir"
+	$(SILENT)[ ! -d targets ] || chmod -R u+w targets
+	$(SILENT)[ ! -d .build  ] || chmod -R u+w .build
+	$(SILENT)rm -rf targets .build .build-all
+
+PHONY += distclean
+distclean:: clean
+	@$(CT_ECHO) "  CLEAN .config"
+	$(SILENT)rm -f .config .config.* ..config*

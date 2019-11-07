@@ -1,0 +1,3 @@
+reporter_name="Daniel Zimmermann <netzimme@gmail.com>"
+reporter_url="http://www.zimme.de"
+reporter_comment="cross compiler toolchain for the NIOS2 architecture. NIOS2 is a soft microprocessor from Altera"

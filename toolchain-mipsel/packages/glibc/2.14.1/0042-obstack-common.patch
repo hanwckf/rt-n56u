@@ -1,0 +1,32 @@
+commit 39b1f6172a2f9ddc74a8f82d6e84dd13b22dbaf2
+Author: Peter Collingbourne <pcc@google.com>
+Date:   Wed May 15 20:28:08 2013 +0200
+
+    Move _obstack_compat out of common
+    
+    it is impossible to create an alias of a common symbol (as
+    compat_symbol does), because common symbols do not have a section or
+    an offset until linked.  GNU as tolerates aliases of common symbols by
+    simply creating another common symbol, but other assemblers (notably
+    LLVM's integrated assembler) are less tolerant.
+    
+    2013-05-15  Peter Collingbourne  <pcc@google.com>
+    
+            * malloc/obstack.c (_obstack_compat): Add initializer.
+    -
+
+---
+ malloc/obstack.c |    2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+--- a/malloc/obstack.c
++++ b/malloc/obstack.c
+@@ -117,7 +117,7 @@
+ /* A looong time ago (before 1994, anyway; we're not sure) this global variable
+    was used by non-GNU-C macros to avoid multiple evaluation.  The GNU C
+    library still exports it because somebody might use it.  */
+-struct obstack *_obstack_compat;
++struct obstack *_obstack_compat = 0;
+ compat_symbol (libc, _obstack_compat, _obstack, GLIBC_2_0);
+ #  endif
+ # endif

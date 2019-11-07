@@ -1,0 +1,17 @@
+timezone data has been split into the package sys-libs/timezone-data
+
+---
+ Makeconfig |    2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+--- a/Makeconfig
++++ b/Makeconfig
+@@ -926,7 +926,7 @@
+ 	      stdlib stdio-common libio malloc string wcsmbs time dirent    \
+ 	      grp pwd posix io termios resource misc socket sysvipc gmon    \
+ 	      gnulib iconv iconvdata wctype manual shadow gshadow po argp   \
+-	      crypt nss localedata timezone rt conform debug		    \
++	      crypt nss localedata rt conform debug		    \
+ 	      $(add-on-subdirs) $(dlfcn) $(binfmt-subdir)
+ 
+ ifndef avoid-generated

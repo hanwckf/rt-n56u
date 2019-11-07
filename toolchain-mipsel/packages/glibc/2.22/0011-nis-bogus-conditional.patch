@@ -1,0 +1,64 @@
+commit f88759ea9bd3c8d8fef28f123ba9767cb0e421a3
+Author: Joseph Myers <joseph@codesourcery.com>
+Date:   Wed Dec 21 23:44:01 2016 +0000
+
+    Fix nss_nisplus build with mainline GCC (bug 20978).
+    
+    glibc build with current mainline GCC fails because
+    nis/nss_nisplus/nisplus-alias.c contains code
+    
+      if (name != NULL)
+        {
+          *errnop = EINVAL;
+          return NSS_STATUS_UNAVAIL;
+        }
+    
+      char buf[strlen (name) + 9 + tablename_len];
+    
+    producing an error about strlen being called on a pointer that is
+    always NULL (and a subsequent use of that pointer with a %s format in
+    snprintf).
+    
+    As Andreas noted, the bogus conditional comes from a 1997 change:
+    
+    -  if (name == NULL || strlen(name) > 8)
+    -    return NSS_STATUS_NOTFOUND;
+    -  else
+    +  if (name != NULL || strlen(name) <= 8)
+    
+    So the intention is clearly to return an error for NULL name.
+    
+    This patch duly inverts the sense of the conditional.  It fixes the
+    build with GCC mainline, and passes usual glibc testsuite testing for
+    x86_64.  However, I have not tried any actual substantive nisplus
+    testing, do not have an environment for such testing, and do not know
+    whether it is possible that strlen (name) or tablename_len might be
+    large so that the VLA for buf is actually a security issue.  However,
+    if it is a security issue, there are plenty of other similar instances
+    in the nisplus code (that haven't been hidden by a bogus comparison
+    with NULL) - and nis_table.c:__create_ib_request uses strdupa on the
+    string passed to nis_list, so a local fix in the caller wouldn't
+    suffice anyway (see bug 20987).  (Calls to strdupa and other such
+    macros that use alloca must be considered equally questionable
+    regarding stack overflow issues as direct calls to alloca and VLA
+    declarations.)
+    
+            [BZ #20978]
+            * nis/nss_nisplus/nisplus-alias.c (_nss_nisplus_getaliasbyname_r):
+            Compare name == NULL, not name != NULL.
+
+---
+ nis/nss_nisplus/nisplus-alias.c |    2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+--- a/nis/nss_nisplus/nisplus-alias.c
++++ b/nis/nss_nisplus/nisplus-alias.c
+@@ -291,7 +291,7 @@
+ 	return status;
+     }
+ 
+-  if (name != NULL)
++  if (name == NULL)
+     {
+       *errnop = EINVAL;
+       return NSS_STATUS_UNAVAIL;

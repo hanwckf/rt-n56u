@@ -1,0 +1,105 @@
+---
+ binutils/configure    |    3 +++
+ binutils/configure.ac |    3 +++
+ gas/configure         |    3 +++
+ gas/configure.ac      |    3 +++
+ ld/configure          |    3 +++
+ ld/configure.ac       |    3 +++
+ 6 files changed, 18 insertions(+)
+
+--- a/binutils/configure
++++ b/binutils/configure
+@@ -12069,6 +12069,7 @@
+ done
+ test -n "$YACC" || YACC="yacc"
+ 
++save_LIBS=$LIBS
+ for ac_prog in flex lex
+ do
+   # Extract the first word of "$ac_prog", so it can be a program name with args.
+@@ -12230,6 +12231,8 @@
+ if test "$LEX" = :; then
+   LEX=${am_missing_run}flex
+ fi
++LIBS=$save_LIBS
++LEXLIB=
+ 
+ ALL_LINGUAS="bg ca da es fi fr id it ja ro ru rw sk sv tr uk vi zh_CN zh_TW hr"
+ # If we haven't got the data from the intl directory,
+--- a/binutils/configure.ac
++++ b/binutils/configure.ac
+@@ -87,7 +87,10 @@
+ fi
+ 
+ AC_PROG_YACC
++save_LIBS=$LIBS
+ AM_PROG_LEX
++LIBS=$save_LIBS
++LEXLIB=
+ 
+ ALL_LINGUAS="bg ca da es fi fr id it ja ro ru rw sk sv tr uk vi zh_CN zh_TW hr"
+ ZW_GNU_GETTEXT_SISTER_DIR
+--- a/gas/configure
++++ b/gas/configure
+@@ -12853,6 +12853,7 @@
+ done
+ test -n "$YACC" || YACC="yacc"
+ 
++save_LIBS=$LIBS
+ for ac_prog in flex lex
+ do
+   # Extract the first word of "$ac_prog", so it can be a program name with args.
+@@ -13014,6 +13015,8 @@
+ if test "$LEX" = :; then
+   LEX=${am_missing_run}flex
+ fi
++LIBS=$save_LIBS
++LEXLIB=
+ 
+ ALL_LINGUAS="fr tr es rw id ru fi ja zh_CN"
+ # If we haven't got the data from the intl directory,
+--- a/gas/configure.ac
++++ b/gas/configure.ac
+@@ -763,7 +763,10 @@
+ AC_DEFINE_UNQUOTED(TARGET_OS,		"${target_os}",    [Target OS.])
+ 
+ AC_PROG_YACC
++save_LIBS=$LIBS
+ AM_PROG_LEX
++LIBS=$save_LIBS
++LEXLIB=
+ 
+ ALL_LINGUAS="fr tr es rw id ru fi ja zh_CN"
+ ZW_GNU_GETTEXT_SISTER_DIR
+--- a/ld/configure
++++ b/ld/configure
+@@ -16087,6 +16087,7 @@
+ done
+ test -n "$YACC" || YACC="yacc"
+ 
++save_LIBS=$LIBS
+ for ac_prog in flex lex
+ do
+   # Extract the first word of "$ac_prog", so it can be a program name with args.
+@@ -16248,6 +16249,8 @@
+ if test "$LEX" = :; then
+   LEX=${am_missing_run}flex
+ fi
++LIBS=$save_LIBS
++LEXLIB=
+ 
+ 
+ { $as_echo "$as_me:${as_lineno-$LINENO}: checking whether to enable maintainer-specific portions of Makefiles" >&5
+--- a/ld/configure.ac
++++ b/ld/configure.ac
+@@ -186,7 +186,10 @@
+ AC_EXEEXT
+ 
+ AC_PROG_YACC
++save_LIBS=$LIBS
+ AM_PROG_LEX
++LIBS=$save_LIBS
++LEXLIB=
+ 
+ AM_MAINTAINER_MODE
+ AM_CONDITIONAL(GENINSRC_NEVER, false)

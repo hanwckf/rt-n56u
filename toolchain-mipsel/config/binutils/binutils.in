@@ -1,0 +1,214 @@
+# binutils options
+
+comment "GNU binutils"
+
+config BINUTILS_HAS_HASH_STYLE
+    default y if BINUTILS_2_23_or_later
+    bool
+
+config BINUTILS_HAS_GOLD
+    default y if BINUTILS_2_23_or_later
+    bool
+
+config BINUTILS_HAS_PLUGINS
+    default y if BINUTILS_2_23_or_later
+    bool
+
+config BINUTILS_HAS_PKGVERSION_BUGURL
+    default y if BINUTILS_2_23_or_later
+    bool
+
+# gold only suports the listed architectures
+config BINUTILS_GOLD_SUPPORTS_ARCH
+    bool
+    default y if ARCH_ARM
+    default y if ARCH_X86
+
+config BINUTILS_GOLD_SUPPORT
+    bool
+    default y
+    depends on BINUTILS_HAS_GOLD
+    depends on BINUTILS_GOLD_SUPPORTS_ARCH
+    depends on ! STATIC_TOOLCHAIN
+
+# Force using the BFD linker if needed. There are two options:
+# - For some C libraries (eg. glibc at least), BFD ld must be
+#   built and be selected by default.
+# - For elf2flt, BFD ld must be the only linker built.
+config BINUTILS_FORCE_LD_BFD_DEFAULT
+    bool
+
+config BINUTILS_FORCE_LD_BFD_ONLY
+    bool
+
+choice
+    bool
+    prompt "Linkers to enable"
+
+config BINUTILS_LINKER_LD
+    bool
+    prompt "ld"
+    help
+      The historical, bfd linker.
+
+config BINUTILS_LINKER_GOLD
+    bool
+    prompt "gold"
+    depends on BINUTILS_GOLD_SUPPORT
+    depends on !BINUTILS_FORCE_LD_BFD_DEFAULT && !BINUTILS_FORCE_LD_BFD_ONLY
+    select BINUTILS_GOLD_INSTALLED
+    help
+      gold is a new, optimised, multi-threaded linker with support
+      for plugins. Designed to be a drop-in replacement for the
+      original linker, ld, it can be much faster, with a 5:1 or
+      bigger ratio being not uncommon, YMMV.
+
+config BINUTILS_LINKER_LD_GOLD
+    bool
+    prompt "ld, gold"
+    depends on !BINUTILS_FORCE_LD_BFD_ONLY
+    depends on BINUTILS_GOLD_SUPPORT
+    select BINUTILS_GOLD_INSTALLED
+    select BINUTILS_LINKER_BOTH
+    help
+      Both the historical ld and the new gold linkers will be
+      installed, with ld being the default linker used.
+
+      See help for gold, above.
+
+config BINUTILS_LINKER_GOLD_LD
+    bool
+    prompt "gold, ld"
+    depends on !BINUTILS_FORCE_LD_BFD_DEFAULT && !BINUTILS_FORCE_LD_BFD_ONLY
+    depends on BINUTILS_GOLD_SUPPORT
+    select BINUTILS_GOLD_INSTALLED
+    select BINUTILS_LINKER_BOTH
+    select BINUTILS_LD_WRAPPER if BINUTILS_FORCE_LD_BFD_DEFAULT
+    help
+      Both the historical ld and the new gold linkers will be
+      installed, with gold being the default linker used.
+
+      See help for gold, above.
+
+endchoice # Enable linkers
+
+if BINUTILS_LINKER_GOLD
+comment "WARNING! gold is not capable of"
+comment "|         building glibc!"
+endif # BINUTILS_LINKER_GOLD
+
+config BINUTILS_GOLD_INSTALLED
+    bool
+
+config BINUTILS_GOLD_THREADS
+    bool
+    prompt "|  Enable threaded gold"
+    depends on BINUTILS_GOLD_INSTALLED
+    help
+      When configured with threads, gold can link in parallel,
+      possibly cooperating with a make jobserver.
+
+config BINUTILS_LINKER_BOTH
+    bool
+
+config BINUTILS_LINKERS_LIST
+    string
+    default "ld"        if BINUTILS_LINKER_LD
+    default "gold"      if BINUTILS_LINKER_GOLD
+    default "ld,gold"   if BINUTILS_LINKER_LD_GOLD
+    default "gold,ld"   if BINUTILS_LINKER_GOLD_LD
+
+config BINUTILS_LD_WRAPPER
+    bool
+    prompt "|  Add ld wrapper"
+    depends on BINUTILS_LINKER_BOTH
+    help
+      Add an ld wrapper that calls to either gold or ld.
+
+      By default, the wrapper will call to the default wrapper,
+      but if you set the environment variable CTNG_LD_IS, you
+      can change which linker will get called:
+        CTNG_LD_IS=gold     will unconditionally call the gold linker
+        CTNG_LD_IS=bfd      will unconditionally call the old bfd ld linker
+
+config BINUTILS_LINKER_DEFAULT
+    string
+    default "bfd"   if BINUTILS_LINKER_LD || BINUTILS_LINKER_LD_GOLD
+    default "gold"  if BINUTILS_LINKER_GOLD || BINUTILS_LINKER_GOLD_LD
+
+config BINUTILS_PLUGINS
+    bool
+    prompt "Enable support for plugins"
+    depends on BINUTILS_HAS_PLUGINS
+    depends on ! STATIC_TOOLCHAIN
+    help
+      binutils can be extended through the use of plugins.
+      Especially, gold can use the lto-plugin, as installed
+      by gcc, to handle LTO.
+
+config BINUTILS_RELRO
+    tristate
+    prompt "Enable -z relro in ELF linker by default" if BINUTILS_2_27_or_later
+    default m
+    help
+      Setting this option forces "-z relro" by default in the ELF linker.
+      Clearing this option forces "-z norelro" by default in the ELF linker.
+      Setting this option to 'M' configures binutils with their internal
+      default for the selected architecture.
+
+config BINUTILS_EXTRA_CONFIG_ARRAY
+    string
+    prompt "binutils extra config"
+    default ""
+    help
+      Extra flags passed onto ./configure when configuring
+
+      You can enter multiple arguments here, and arguments can contain spaces
+      if they are properly quoted (or escaped, but prefer quotes). Eg.:
+          --with-foo="1st arg with 4 spaces" --with-bar=2nd-arg-without-space
+
+config BINUTILS_FOR_TARGET
+    bool
+    prompt "binutils libraries for the target"
+    depends on ! BARE_METAL
+    help
+      Some utilities may need binutils libraries to be available on
+      the target, eg. oprofile.
+
+if BINUTILS_FOR_TARGET
+
+config BINUTILS_FOR_TARGET_IBERTY
+    bool
+    prompt "libiberty"
+    default y
+
+config BINUTILS_FOR_TARGET_BFD
+    bool
+    prompt "libbfd"
+    default y
+
+endif # BINUTILS_FOR_TARGET
+
+if ARCH_BINFMT_FLAT
+
+comment "elf2flt"
+
+config ELF2FLT_REQUIRES
+    def_bool y
+    select ZLIB_NEEDED
+    select BINUTILS_FORCE_LD_BFD_ONLY
+
+source "config/versions/elf2flt.in"
+
+config ELF2FLT_EXTRA_CONFIG_ARRAY
+    string
+    prompt "elf2flt extra config"
+    default ""
+    help
+      Extra flags passed onto ./configure when configuring
+      
+      You can enter multiple arguments here, and arguments can contain spaces
+      if they are properly quoted (or escaped, but prefer quotes). Eg.:
+          --with-foo="1st arg with 4 spaces" --with-bar=2nd-arg-without-space
+
+endif # ARCH_BINFMT_FLAT

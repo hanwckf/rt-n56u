@@ -1,0 +1,27 @@
+commit 751728a1f10cdaf35c499c1d508a3a28ccfddc92
+Author: Marek Polacek <polacek@redhat.com>
+Date:   Mon Apr 16 11:03:41 2012 +0200
+
+    Reverse arguments of fdivp in i386 code.
+
+---
+ sysdeps/i386/fpu/bits/fenv.h |    4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+--- a/sysdeps/i386/fpu/bits/fenv.h
++++ b/sysdeps/i386/fpu/bits/fenv.h
+@@ -1,4 +1,4 @@
+-/* Copyright (C) 1997, 1998, 1999, 2000, 2011 Free Software Foundation, Inc.
++/* Copyright (C) 1997-2012 Free Software Foundation, Inc.
+    This file is part of the GNU C Library.
+ 
+    The GNU C Library is free software; you can redistribute it and/or
+@@ -122,7 +122,7 @@
+ # ifdef __SSE_MATH__
+ 	  __asm__ __volatile__ ("divss %1, %0" : : "x" (__f), "x" (__g));
+ # else
+-	  __asm__ __volatile__ ("fdivp %%st(1), %%st; fwait"
++	  __asm__ __volatile__ ("fdivp %%st, %%st(1); fwait"
+ 				: "=t" (__f) : "0" (__f), "u" (__g) : "st(1)");
+ # endif
+ 	  (void) &__f;

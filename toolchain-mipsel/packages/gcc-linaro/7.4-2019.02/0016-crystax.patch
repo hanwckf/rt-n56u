@@ -1,0 +1,26 @@
+commit dbeae1190cabad83999f2540523f045acc1bb4ec
+Author: Dmitry Moskalchuk <dm@crystax.net>
+Date:   Fri Aug 21 17:41:59 2015 +0300
+
+    [android] Always use gthr-posix.h instead of gthr-default.h
+    
+    Signed-off-by: Dmitry Moskalchuk <dm@crystax.net>
+
+---
+ libgcc/gthr.h |    4 ++++
+ 1 file changed, 4 insertions(+)
+
+--- a/libgcc/gthr.h
++++ b/libgcc/gthr.h
+@@ -145,7 +145,11 @@
+ #define GTHREAD_USE_WEAK 1
+ #endif
+ #endif
++#if __ANDROID__
++#include "gthr-posix.h"
++#else
+ #include "gthr-default.h"
++#endif
+ 
+ #ifndef HIDE_EXPORTS
+ #pragma GCC visibility pop

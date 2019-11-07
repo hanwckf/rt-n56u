@@ -1,0 +1,529 @@
+commit 080803512c8f6f87c2f1f711170d54033144d628
+Author: Dmitry Moskalchuk <dm@crystax.net>
+Date:   Wed Jul 29 11:28:29 2015 +0300
+
+    [android] Apply Android-related modifications
+    
+    Signed-off-by: Dmitry Moskalchuk <dm@crystax.net>
+
+[Edited: keep libstdc++, drop libcrystax-related modifications]
+---
+ gcc/config.gcc                             |   17 +++++++-
+ gcc/config/aarch64/aarch64-linux-android.h |   59 +++++++++++++++++++++++++++++
+ gcc/config/aarch64/aarch64-linux.h         |    9 +++-
+ gcc/config/arm/arm.h                       |    3 -
+ gcc/config/arm/arm.md                      |    2 
+ gcc/config/arm/arm.opt                     |    4 +
+ gcc/config/arm/elf.h                       |    9 ++--
+ gcc/config/arm/linux-eabi.h                |    7 ++-
+ gcc/config/i386/gnu-user.h                 |    7 ++-
+ gcc/config/i386/gnu-user64.h               |    5 ++
+ gcc/config/i386/linux-common.h             |    8 +++
+ gcc/config/linux-android.h                 |   13 +++---
+ gcc/config/mips/android.h                  |   49 ++++++++++++++++++++++++
+ gcc/config/mips/gnu-user.h                 |    6 +-
+ gcc/config/mips/linux-common.h             |    2 
+ gcc/config/mips/t-linux-android            |    3 +
+ gcc/config/mips/t-linux-android64          |    4 +
+ libgcc/gthr-posix.h                        |   13 ++++++
+ libstdc++-v3/configure                     |   12 +++++
+ libstdc++-v3/include/bits/locale_facets.h  |   18 +++++++-
+ libstdc++-v3/libsupc++/guard.cc            |    5 ++
+ 21 files changed, 235 insertions(+), 20 deletions(-)
+
+--- a/gcc/config.gcc
++++ b/gcc/config.gcc
+@@ -963,13 +963,17 @@
+ 	tmake_file="${tmake_file} aarch64/t-aarch64 aarch64/t-aarch64-freebsd"
+ 	;;
+ aarch64*-*-linux*)
+-	tm_file="${tm_file} dbxelf.h elfos.h gnu-user.h linux.h glibc-stdint.h"
++	tm_file="${tm_file} dbxelf.h elfos.h gnu-user.h linux.h linux-android.h glibc-stdint.h"
+ 	tm_file="${tm_file} aarch64/aarch64-elf.h aarch64/aarch64-linux.h"
++	extra_options="${extra_options} linux-android.opt"
+ 	tmake_file="${tmake_file} aarch64/t-aarch64 aarch64/t-aarch64-linux"
+ 	case $target in
+ 	aarch64_be-*)
+ 		tm_defines="${tm_defines} TARGET_BIG_ENDIAN_DEFAULT=1"
+ 		;;
++	aarch64*-*-linux-android*)
++		tm_file="${tm_file} aarch64/aarch64-linux-android.h"
++		;;
+ 	esac
+ 	aarch64_multilibs="${with_multilib_list}"
+ 	if test "$aarch64_multilibs" = "default"; then
+@@ -2094,6 +2098,17 @@
+ 	tm_file="dbxelf.h elfos.h gnu-user.h linux.h linux-android.h glibc-stdint.h ${tm_file} mips/gnu-user.h mips/linux.h mips/linux-common.h"
+ 	extra_options="${extra_options} linux-android.opt"
+ 	case ${target} in
++		mips64*android*)
++			default_mips_arch=mips64r6
++			default_mips_abi=64
++			tm_file="${tm_file} mips/android.h"
++			tmake_file="${tmake_file} mips/t-linux-android64"
++			;;
++		mips*android*)
++			default_mips_arch=mips32
++			tm_file="${tm_file} mips/android.h"
++			tmake_file="$tmake_file mips/t-linux-android"
++			;;
+ 		mipsisa32r6*)
+ 			default_mips_arch=mips32r6
+ 			;;
+--- /dev/null
++++ b/gcc/config/aarch64/aarch64-linux-android.h
+@@ -0,0 +1,59 @@
++/* Machine description for AArch64 architecture.
++   Copyright (C) 2014 Free Software Foundation, Inc.
++
++   This file is part of GCC.
++
++   GCC is free software; you can redistribute it and/or modify it
++   under the terms of the GNU General Public License as published by
++   the Free Software Foundation; either version 3, or (at your option)
++   any later version.
++
++   GCC is distributed in the hope that it will be useful, but
++   WITHOUT ANY WARRANTY; without even the implied warranty of
++   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
++   General Public License for more details.
++
++   You should have received a copy of the GNU General Public License
++   along with GCC; see the file COPYING3.  If not see
++   <http://www.gnu.org/licenses/>.  */
++
++#ifndef GCC_AARCH64_LINUX_ANDROID_H
++#define GCC_AARCH64_LINUX_ANDROID_H
++
++
++#undef TARGET_OS_CPP_BUILTINS
++#define TARGET_OS_CPP_BUILTINS()		\
++  do						\
++    {						\
++	GNU_USER_TARGET_OS_CPP_BUILTINS();	\
++	ANDROID_TARGET_OS_CPP_BUILTINS();	\
++    }						\
++  while (0)
++
++#undef  LINK_SPEC
++#define LINK_SPEC							\
++  LINUX_OR_ANDROID_LD (LINUX_TARGET_LINK_SPEC,				\
++		       LINUX_TARGET_LINK_SPEC " " ANDROID_LINK_SPEC)
++
++#undef  CC1_SPEC
++#define CC1_SPEC							\
++  LINUX_OR_ANDROID_CC (GNU_USER_TARGET_CC1_SPEC,			\
++		       GNU_USER_TARGET_CC1_SPEC " " ANDROID_CC1_SPEC("-fpic"))
++
++#define CC1PLUS_SPEC \
++  LINUX_OR_ANDROID_CC ("", ANDROID_CC1PLUS_SPEC)
++
++#undef  LIB_SPEC
++#define LIB_SPEC							\
++  LINUX_OR_ANDROID_LD (GNU_USER_TARGET_LIB_SPEC,			\
++		    GNU_USER_TARGET_NO_PTHREADS_LIB_SPEC " " ANDROID_LIB_SPEC)
++
++#undef	STARTFILE_SPEC
++#define STARTFILE_SPEC \
++  LINUX_OR_ANDROID_LD (GNU_USER_TARGET_STARTFILE_SPEC, ANDROID_STARTFILE_SPEC)
++
++#undef	ENDFILE_SPEC
++#define ENDFILE_SPEC \
++  LINUX_OR_ANDROID_LD (GNU_USER_TARGET_ENDFILE_SPEC, ANDROID_ENDFILE_SPEC)
++
++#endif  /* GCC_AARCH64_LINUX_ANDROID_H */
+--- a/gcc/config/aarch64/aarch64-linux.h
++++ b/gcc/config/aarch64/aarch64-linux.h
+@@ -21,7 +21,14 @@
+ #ifndef GCC_AARCH64_LINUX_H
+ #define GCC_AARCH64_LINUX_H
+ 
+-#define GLIBC_DYNAMIC_LINKER "/lib/ld-linux-aarch64%{mbig-endian:_be}%{mabi=ilp32:_ilp32}.so.1"
++#ifndef RUNTIME_ROOT_PREFIX
++#define RUNTIME_ROOT_PREFIX ""
++#endif
++#define GLIBC_DYNAMIC_LINKER RUNTIME_ROOT_PREFIX "/lib/ld-linux-aarch64%{mbig-endian:_be}%{mabi=ilp32:_ilp32}.so.1"
++#ifdef BIONIC_DYNAMIC_LINKER
++#undef BIONIC_DYNAMIC_LINKER
++#endif
++#define BIONIC_DYNAMIC_LINKER RUNTIME_ROOT_PREFIX "/system/bin/linker64"
+ 
+ #undef MUSL_DYNAMIC_LINKER
+ #define MUSL_DYNAMIC_LINKER "/lib/ld-musl-aarch64%{mbig-endian:_be}%{mabi=ilp32:_ilp32}.so.1"
+--- a/gcc/config/arm/arm.h
++++ b/gcc/config/arm/arm.h
+@@ -1879,10 +1879,11 @@
+ 
+ #define CASE_VECTOR_PC_RELATIVE (TARGET_THUMB2				\
+ 				 || (TARGET_THUMB1			\
++				     && !inline_thumb1_jump_table	\
+ 				     && (optimize_size || flag_pic)))
+ 
+ #define CASE_VECTOR_SHORTEN_MODE(min, max, body)			\
+-  (TARGET_THUMB1							\
++  (TARGET_THUMB1 && !inline_thumb1_jump_table				\
+    ? (min >= 0 && max < 512						\
+       ? (ADDR_DIFF_VEC_FLAGS (body).offset_unsigned = 1, QImode)	\
+       : min >= -256 && max < 256					\
+--- a/gcc/config/arm/arm.md
++++ b/gcc/config/arm/arm.md
+@@ -8665,7 +8665,7 @@
+    (match_operand:SI 2 "const_int_operand" "")	; total range
+    (match_operand:SI 3 "" "")			; table label
+    (match_operand:SI 4 "" "")]			; Out of range label
+-  "(TARGET_32BIT || optimize_size || flag_pic) && !target_pure_code"
++  "(TARGET_32BIT || ((optimize_size || flag_pic) && !inline_thumb1_jump_table)) && !target_pure_code"
+   "
+   {
+     enum insn_code code;
+--- a/gcc/config/arm/arm.opt
++++ b/gcc/config/arm/arm.opt
+@@ -193,6 +193,10 @@
+ Target Report Mask(INTERWORK)
+ Support calls between Thumb and ARM instruction sets.
+ 
++minline-thumb1-jumptable
++Target Report Var(inline_thumb1_jump_table)
++Inline Thumb1 Jump table code
++
+ mtls-dialect=
+ Target RejectNegative Joined Enum(tls_type) Var(target_tls_dialect) Init(TLS_GNU)
+ Specify thread local storage scheme.
+--- a/gcc/config/arm/elf.h
++++ b/gcc/config/arm/elf.h
+@@ -56,8 +56,7 @@
+ #undef SUBSUBTARGET_EXTRA_SPECS
+ #define SUBSUBTARGET_EXTRA_SPECS
+ 
+-#ifndef ASM_SPEC
+-#define ASM_SPEC "\
++#define DEFAULT_ASM_SPEC "\
+ %{mbig-endian:-EB} \
+ %{mlittle-endian:-EL} \
+ %(asm_cpu_spec) \
+@@ -66,6 +65,9 @@
+ %{mthumb-interwork:-mthumb-interwork} \
+ %{mfloat-abi=*} %{mfpu=*} \
+ %(subtarget_extra_asm_spec)"
++
++#ifndef ASM_SPEC
++#define ASM_SPEC DEFAULT_ASM_SPEC
+ #endif
+ 
+ /* The ARM uses @ are a comment character so we need to redefine
+@@ -95,7 +97,8 @@
+    the code more efficient, but for Thumb-1 it's better to put them out of
+    band unless we are generating compressed tables.  */
+ #define JUMP_TABLES_IN_TEXT_SECTION					\
+-   ((TARGET_32BIT || (TARGET_THUMB && (optimize_size || flag_pic))) \
++   ((TARGET_32BIT || (TARGET_THUMB && !inline_thumb1_jump_table \
++                    && (optimize_size || flag_pic))) \
+     && !target_pure_code)
+ 
+ #ifndef LINK_SPEC
+--- a/gcc/config/arm/linux-eabi.h
++++ b/gcc/config/arm/linux-eabi.h
+@@ -102,11 +102,16 @@
+ #define CC1_SPEC							\
+   LINUX_OR_ANDROID_CC (GNU_USER_TARGET_CC1_SPEC " " ASAN_CC1_SPEC,	\
+ 		       GNU_USER_TARGET_CC1_SPEC " " ASAN_CC1_SPEC " "	\
+-		       ANDROID_CC1_SPEC)
++		       ANDROID_CC1_SPEC("-fpic"))
+ 
+ #define CC1PLUS_SPEC \
+   LINUX_OR_ANDROID_CC ("", ANDROID_CC1PLUS_SPEC)
+ 
++#undef ASM_SPEC
++#define ASM_SPEC \
++  LINUX_OR_ANDROID_CC (DEFAULT_ASM_SPEC, \
++                       DEFAULT_ASM_SPEC  " " ANDROID_ASM_SPEC)
++
+ #undef  LIB_SPEC
+ #define LIB_SPEC							\
+   LINUX_OR_ANDROID_LD (GNU_USER_TARGET_LIB_SPEC,			\
+--- a/gcc/config/i386/gnu-user.h
++++ b/gcc/config/i386/gnu-user.h
+@@ -65,9 +65,14 @@
+    When the -shared link option is used a final link is not being
+    done.  */
+ 
++#undef ANDROID_TARGET_CC1_SPEC
++#define ANDROID_TARGET_CC1_SPEC \
++  " -mssse3 -fno-short-enums " \
++
+ #undef  ASM_SPEC
+ #define ASM_SPEC \
+-  "--32 %{msse2avx:%{!mavx:-msse2avx}}"
++  "--32 %{msse2avx:%{!mavx:-msse2avx}} " \
++  LINUX_OR_ANDROID_CC ("", ANDROID_ASM_SPEC)
+ 
+ #undef  SUBTARGET_EXTRA_SPECS
+ #define SUBTARGET_EXTRA_SPECS \
+--- a/gcc/config/i386/gnu-user64.h
++++ b/gcc/config/i386/gnu-user64.h
+@@ -46,6 +46,11 @@
+ #define SPEC_X32 "mx32"
+ #endif
+ 
++#undef ANDROID_TARGET_CC1_SPEC
++#define ANDROID_TARGET_CC1_SPEC \
++  "%{m32:-mssse3 -fno-short-enums}" \
++  "%{!m32:-msse4.2 -mpopcnt}"
++
+ #undef ASM_SPEC
+ #define ASM_SPEC "%{" SPEC_32 ":--32} \
+  %{" SPEC_64 ":--64} \
+--- a/gcc/config/i386/linux-common.h
++++ b/gcc/config/i386/linux-common.h
+@@ -30,7 +30,13 @@
+ #undef CC1_SPEC
+ #define CC1_SPEC \
+   LINUX_OR_ANDROID_CC (GNU_USER_TARGET_CC1_SPEC, \
+-		       GNU_USER_TARGET_CC1_SPEC " " ANDROID_CC1_SPEC)
++                       GNU_USER_TARGET_CC1_SPEC \
++                       ANDROID_TARGET_CC1_SPEC \
++                       " " \
++                       ANDROID_CC1_SPEC("-fPIC"))
++
++#define CC1PLUS_SPEC \
++  LINUX_OR_ANDROID_CC ("", ANDROID_CC1PLUS_SPEC)
+ 
+ #undef	LINK_SPEC
+ #define LINK_SPEC \
+--- a/gcc/config/linux-android.h
++++ b/gcc/config/linux-android.h
+@@ -38,15 +38,18 @@
+   "%{" NOANDROID "|tno-android-ld:" LINUX_SPEC ";:" ANDROID_SPEC "}"
+ 
+ #define ANDROID_LINK_SPEC \
+-  "%{shared: -Bsymbolic}"
++  "%{shared: -Bsymbolic} -z noexecstack -z relro -z now"
+ 
+-#define ANDROID_CC1_SPEC						\
++#define ANDROID_CC1_SPEC(ANDROID_PIC_DEFAULT)				\
+   "%{!mglibc:%{!muclibc:%{!mbionic: -mbionic}}} "			\
+-  "%{!fno-pic:%{!fno-PIC:%{!fpic:%{!fPIC: -fPIC}}}}"
++  "%{!fno-pic:%{!fno-PIC:%{!fpic:%{!fPIC: " ANDROID_PIC_DEFAULT "}}}}"
+ 
+ #define ANDROID_CC1PLUS_SPEC						\
+-  "%{!fexceptions:%{!fno-exceptions: -fno-exceptions}} "		\
+-  "%{!frtti:%{!fno-rtti: -fno-rtti}}"
++  "%{!fexceptions:%{!fno-exceptions: -fexceptions}} "		\
++  "%{!frtti:%{!fno-rtti: -frtti}}"
++
++#define ANDROID_ASM_SPEC \
++  "--noexecstack"
+ 
+ #define ANDROID_LIB_SPEC \
+   "%{!static: -ldl}"
+--- /dev/null
++++ b/gcc/config/mips/android.h
+@@ -0,0 +1,49 @@
++/* Target macros for mips*-*android* targets.
++   Copyright (C) 2014 Free Software Foundation, Inc.
++
++This file is part of GCC.
++
++GCC is free software; you can redistribute it and/or modify
++it under the terms of the GNU General Public License as published by
++the Free Software Foundation; either version 3, or (at your option)
++any later version.
++
++GCC is distributed in the hope that it will be useful,
++but WITHOUT ANY WARRANTY; without even the implied warranty of
++MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++GNU General Public License for more details.
++
++You should have received a copy of the GNU General Public License
++along with GCC; see the file COPYING3.  If not see
++<http://www.gnu.org/licenses/>.  */
++
++#undef DRIVER_SELF_SPECS
++#define DRIVER_SELF_SPECS						\
++  /* Make sure a -mips option is present.  This helps us to pick	\
++     the right multilib, and also makes the later specs easier		\
++     to write.  */							\
++  MIPS_ISA_LEVEL_SPEC,							\
++									\
++  /* Infer the default float setting from -march.  */			\
++  MIPS_ARCH_FLOAT_SPEC,							\
++									\
++  /* Infer the -msynci setting from -march if not explicitly set.  */	\
++  MIPS_ISA_SYNCI_SPEC,							\
++									\
++  /* If no ABI option is specified, infer one from the ISA level	\
++     or -mgp setting.  */						\
++  "%{!mabi=*: %{" MIPS_32BIT_OPTION_SPEC ": -mabi=32;: -mabi=64}}",	\
++									\
++  /* If no FP ABI option is specified, infer one from the		\
++     ABI/ISA level unless there is a conflicting option.  */		\
++  "%{!msoft-float: %{!msingle-float: %{!mfp*: %{!mmsa: %{mabi=32: %{"	\
++  MIPS_FPXX_OPTION_SPEC ": -mfpxx}}}}}}",				\
++									\
++  /* If no odd-spreg option is specified, infer one from the ISA.  */	\
++  "%{!modd-spreg: %{mabi=32: %{mips32r6: -mno-odd-spreg}}}",		\
++									\
++  /* Base SPECs.  */							\
++  BASE_DRIVER_SELF_SPECS,						\
++									\
++  /* Use the standard linux specs for everything else.  */		\
++  LINUX_DRIVER_SELF_SPECS
+--- a/gcc/config/mips/gnu-user.h
++++ b/gcc/config/mips/gnu-user.h
+@@ -36,6 +36,7 @@
+     /* The GNU C++ standard library requires this.  */		\
+     if (c_dialect_cxx ())					\
+       builtin_define ("_GNU_SOURCE");				\
++    ANDROID_TARGET_OS_CPP_BUILTINS();				\
+   } while (0)
+ 
+ #undef SUBTARGET_CPP_SPEC
+@@ -71,7 +72,8 @@
+ 
+ #undef SUBTARGET_ASM_SPEC
+ #define SUBTARGET_ASM_SPEC \
+-  "%{!mno-abicalls:%{mplt:-call_nonpic;:-KPIC}}"
++  "%{!mno-abicalls:%{mplt:-call_nonpic;:-KPIC}} " \
++  LINUX_OR_ANDROID_CC ("", ANDROID_ASM_SPEC)
+ 
+ /* The MIPS assembler has different syntax for .set. We set it to
+    .dummy to trap any errors.  */
+@@ -120,7 +122,7 @@
+ #endif
+ 
+ #define LINUX_DRIVER_SELF_SPECS \
+-  NO_SHARED_SPECS							\
++  LINUX_OR_ANDROID_CC(NO_SHARED_SPECS, "")                              \
+   MARCH_MTUNE_NATIVE_SPECS,						\
+   /* -mplt has no effect without -mno-shared.  Simplify later		\
+      specs handling by removing a redundant option.  */			\
+--- a/gcc/config/mips/linux-common.h
++++ b/gcc/config/mips/linux-common.h
+@@ -35,7 +35,7 @@
+ #undef  SUBTARGET_CC1_SPEC
+ #define SUBTARGET_CC1_SPEC						\
+   LINUX_OR_ANDROID_CC (GNU_USER_TARGET_CC1_SPEC,			\
+-		       GNU_USER_TARGET_CC1_SPEC " " ANDROID_CC1_SPEC)
++		       GNU_USER_TARGET_CC1_SPEC " " ANDROID_CC1_SPEC("-fpic"))
+ 
+ #undef  CC1PLUS_SPEC
+ #define CC1PLUS_SPEC							\
+--- /dev/null
++++ b/gcc/config/mips/t-linux-android
+@@ -0,0 +1,3 @@
++MULTILIB_OPTIONS = mips32r2/mips32r6
++MULTILIB_DIRNAMES = mips-r2 mips-r6
++MULTILIB_OSDIRNAMES = ../libr2 ../libr6
+--- /dev/null
++++ b/gcc/config/mips/t-linux-android64
+@@ -0,0 +1,4 @@
++MULTILIB_OPTIONS = mabi=32 mips32/mips32r2/mips32r6/mips64r2/mips64r6
++MULTILIB_DIRNAMES = 32 mips-r1 mips-r2 mips-r6 mips64-r2 mips64-r6
++MULTILIB_OSDIRNAMES = ../lib ../lib ../libr2 ../libr6 ../lib64r2 ../lib64
++MULTILIB_REQUIRED = mabi=32/mips32 mabi=32/mips32r2 mabi=32/mips32r6 mips64r2 mips64r6
+--- a/libgcc/gthr-posix.h
++++ b/libgcc/gthr-posix.h
+@@ -32,6 +32,19 @@
+ #define __GTHREADS 1
+ #define __GTHREADS_CXX0X 1
+ 
++/* The following should normally be in a different header file,
++ * but I couldn't find the right location. The point of the macro
++ * definition below is to prevent libsupc++ and libstdc++ to reference
++ * weak symbols in their static C++ constructors. Such code crashes
++ * when a shared object linked statically to these libraries is
++ * loaded on Android 2.1 (Eclair) and older platform releases, due
++ * to a dynamic linker bug.
++ */
++#ifdef __ANDROID__
++#undef GTHREAD_USE_WEAK
++#define GTHREAD_USE_WEAK 0
++#endif
++
+ #include <pthread.h>
+ 
+ #if ((defined(_LIBOBJC) || defined(_LIBOBJC_WEAK)) \
+--- a/libstdc++-v3/configure
++++ b/libstdc++-v3/configure
+@@ -78577,6 +78577,12 @@
+ /* end confdefs.h.  */
+ #include <sys/syscall.h>
+ 	   int lk;
++#if !defined(SYS_gettid)
++#define SYS_gettid __NR_gettid
++#endif
++#if !defined(SYS_futex)
++#define SYS_futex __NR_futex
++#endif
+ int
+ main ()
+ {
+@@ -78635,6 +78641,12 @@
+ /* end confdefs.h.  */
+ #include <sys/syscall.h>
+ 	   int lk;
++#if !defined(SYS_gettid)
++#define SYS_gettid __NR_gettid
++#endif
++#if !defined(SYS_futex)
++#define SYS_futex __NR_futex
++#endif
+ int
+ main ()
+ {
+--- a/libstdc++-v3/include/bits/locale_facets.h
++++ b/libstdc++-v3/include/bits/locale_facets.h
+@@ -47,6 +47,20 @@
+ #include <ext/numeric_traits.h>
+ #include <bits/streambuf_iterator.h>
+ 
++#if !__clang__ && __GNUC__ == 4 && __GNUC_MINOR__ == 9 && __i386__
++// CrystaX: for some reason, x86 gcc-4.9 makes ctype<char>::do_widen() and
++// ctype<char>::_M_widen_init() methods working wrong if optimization enabled.
++// For ctype<char>::do_widen(), values of passed arguments (__lo, __hi and __to)
++// are completely messed up and don't correspond to passed values. In case if
++// we disable optimization for those methods, things become correct so we apply
++// this workaround here for a time.
++// TODO: figure out what exactly wrong here - is it bug in GCC optimization
++// algorithm or smth else?
++#define __CRYSTAX_X86_DONT_OPTIMIZE __attribute__((optimize(0)))
++#else
++#define __CRYSTAX_X86_DONT_OPTIMIZE
++#endif
++
+ namespace std _GLIBCXX_VISIBILITY(default)
+ {
+ _GLIBCXX_BEGIN_NAMESPACE_VERSION
+@@ -1102,7 +1116,7 @@
+        *  @return  @a __hi.
+       */
+       virtual const char*
+-      do_widen(const char* __lo, const char* __hi, char_type* __to) const
++      do_widen(const char* __lo, const char* __hi, char_type* __to) const __CRYSTAX_X86_DONT_OPTIMIZE
+       {
+ 	__builtin_memcpy(__to, __lo, __hi - __lo);
+ 	return __hi;
+@@ -1163,7 +1177,7 @@
+ 
+     private:
+       void _M_narrow_init() const;
+-      void _M_widen_init() const;
++      void _M_widen_init() const __CRYSTAX_X86_DONT_OPTIMIZE;
+     };
+ 
+ #ifdef _GLIBCXX_USE_WCHAR_T
+--- a/libstdc++-v3/libsupc++/guard.cc
++++ b/libstdc++-v3/libsupc++/guard.cc
+@@ -34,7 +34,12 @@
+ #if defined(__GTHREADS) && defined(__GTHREAD_HAS_COND) \
+   && (ATOMIC_INT_LOCK_FREE > 1) && defined(_GLIBCXX_HAVE_LINUX_FUTEX)
+ # include <climits>
++#if defined(__ANDROID__)
++# include <sys/syscall.h>
++# define SYS_futex __NR_futex
++#else
+ # include <syscall.h>
++#endif
+ # include <unistd.h>
+ # define _GLIBCXX_USE_FUTEX
+ # define _GLIBCXX_FUTEX_WAIT 0

@@ -1,0 +1,51 @@
+---
+ nptl/sysdeps/pthread/unwind-forcedunwind.c                   |    2 +-
+ ports/sysdeps/unix/sysv/linux/arm/nptl/unwind-forcedunwind.c |    2 +-
+ ports/sysdeps/unix/sysv/linux/arm/nptl/unwind-resume.c       |    2 +-
+ sysdeps/gnu/unwind-resume.c                                  |    2 +-
+ 4 files changed, 4 insertions(+), 4 deletions(-)
+
+--- a/nptl/sysdeps/pthread/unwind-forcedunwind.c
++++ b/nptl/sysdeps/pthread/unwind-forcedunwind.c
+@@ -24,7 +24,7 @@
+ #include <gnu/lib-names.h>
+ 
+ static void *libgcc_s_handle;
+-static void (*libgcc_s_resume) (struct _Unwind_Exception *exc);
++static void (*libgcc_s_resume) (struct _Unwind_Exception *exc) __attribute_used__;
+ static _Unwind_Reason_Code (*libgcc_s_personality)
+   (int, _Unwind_Action, _Unwind_Exception_Class, struct _Unwind_Exception *,
+    struct _Unwind_Context *);
+--- a/ports/sysdeps/unix/sysv/linux/arm/nptl/unwind-forcedunwind.c
++++ b/ports/sysdeps/unix/sysv/linux/arm/nptl/unwind-forcedunwind.c
+@@ -22,7 +22,7 @@
+ #include <pthreadP.h>
+ 
+ static void *libgcc_s_handle;
+-static void (*libgcc_s_resume) (struct _Unwind_Exception *exc);
++static void (*libgcc_s_resume) (struct _Unwind_Exception *exc) __attribute_used__;
+ static _Unwind_Reason_Code (*libgcc_s_personality)
+   (_Unwind_State, struct _Unwind_Exception *, struct _Unwind_Context *);
+ static _Unwind_Reason_Code (*libgcc_s_forcedunwind)
+--- a/ports/sysdeps/unix/sysv/linux/arm/nptl/unwind-resume.c
++++ b/ports/sysdeps/unix/sysv/linux/arm/nptl/unwind-resume.c
+@@ -20,7 +20,7 @@
+ #include <stdio.h>
+ #include <unwind.h>
+ 
+-static void (*libgcc_s_resume) (struct _Unwind_Exception *exc);
++static void (*libgcc_s_resume) (struct _Unwind_Exception *exc) __attribute_used__;
+ static _Unwind_Reason_Code (*libgcc_s_personality)
+   (_Unwind_State, struct _Unwind_Exception *, struct _Unwind_Context *);
+ 
+--- a/sysdeps/gnu/unwind-resume.c
++++ b/sysdeps/gnu/unwind-resume.c
+@@ -21,7 +21,7 @@
+ #include <unwind.h>
+ #include <gnu/lib-names.h>
+ 
+-static void (*libgcc_s_resume) (struct _Unwind_Exception *exc);
++static void (*libgcc_s_resume) (struct _Unwind_Exception *exc) __attribute_used__;
+ static _Unwind_Reason_Code (*libgcc_s_personality)
+   (int, _Unwind_Action, _Unwind_Exception_Class, struct _Unwind_Exception *,
+    struct _Unwind_Context *);

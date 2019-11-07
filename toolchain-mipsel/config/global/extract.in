@@ -1,0 +1,111 @@
+# Options specific to extracting packages
+
+comment "Extracting"
+
+config FORCE_EXTRACT
+    bool
+    prompt "Force extractions"
+    help
+      Force extraction of already extracted tarballs.
+      
+      Useful if you suspect a previous extract did not complete (eg. broken
+      tarball), or you added a new set of patches for this component.
+
+config OVERRIDE_CONFIG_GUESS_SUB
+    bool
+    prompt "Override config.{guess,sub}"
+    default y
+    help
+      Override tools' versions of config.guess and config.sub with the ones
+      from crosstool-NG. This means that all instances of config.guess and
+      config.sub in gcc, binutils, glibc, etc... will be replaced.
+
+      Most of the time, the versions of those scripts found in packages are old
+      versions, thus lacking some target definitions. This is the case for
+      uClibc-based tuples in old versions of gcc and gdb, for example.
+
+      Also, doing so will guarantee that all components have the same tuples
+      definitions for your target, and not diverging ones.
+
+      You can update the ones provided with crosstool-NG by first running:
+        ct-ng updatetools
+      in the directory where you want to run crosstool-NG prior to the build.
+
+config ONLY_EXTRACT
+    bool
+    prompt "Stop after extracting tarballs"
+    help
+      Exit after unpacking and patching tarballs.
+      
+      Useful to look at the code before doing the build itself.
+
+choice
+    bool "Patches origin"
+    default PATCH_BUNDLED
+
+config PATCH_BUNDLED
+    bool "Bundled only"
+    help
+      Only apply patches bundled with crosstool-NG.
+
+config PATCH_LOCAL
+    bool "Local only"
+    select PATCH_USE_LOCAL
+    depends on EXPERIMENTAL
+    help
+      Only apply your local patches. Many components require patching
+      to build or work properly; please review the bundled patches and
+      copy them into your local directory if needed.
+
+config PATCH_BUNDLED_LOCAL
+    bool "Bundled, then local"
+    select PATCH_USE_LOCAL
+    help
+      Apply the patches bundled with crosstool-NG, then apply your local
+      patches.
+
+config PATCH_LOCAL_BUNDLED
+    bool "Local, then bundled"
+    select PATCH_USE_LOCAL
+    depends on EXPERIMENTAL
+    help
+      Apply your local patches, then apply the patches bundled with
+      crosstool-NG. Note that the bundled patches cannot be guaranteed
+      to apply on top of your local patches.
+
+config PATCH_NONE
+    bool "None"
+    depends on EXPERIMENTAL
+    help
+      Don't use any patch at all.
+      
+      Please be careful if you select this. Most components do require
+      patches to properly build. It can happen, however, that support for
+      your architecture is clean enough that you can build a toolchain
+      with no patch. But most probably, this is *not* the case.
+      
+      Be safe, use (the bundeld) patches.
+
+endchoice
+
+config PATCH_ORDER
+    string
+    default "bundled"           if PATCH_BUNDLED
+    default "local"             if PATCH_LOCAL
+    default "bundled,local"     if PATCH_BUNDLED_LOCAL
+    default "local,bundled"     if PATCH_LOCAL_BUNDLED
+    default "none"              if PATCH_NONE
+
+config PATCH_USE_LOCAL
+    bool
+
+config LOCAL_PATCH_DIR
+    string
+    prompt "Local patch directory"
+    default ""
+    depends on PATCH_USE_LOCAL
+    help
+      Enter the custom patch directory here.
+      
+      Note that you must ensure that the directory containing your custom
+      patches is arranged the same way the official directory is.

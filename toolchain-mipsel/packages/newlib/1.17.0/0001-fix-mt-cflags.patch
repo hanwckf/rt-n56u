@@ -1,0 +1,29 @@
+---
+ config/mt-d30v   |    4 ++--
+ config/mt-gnu    |    2 +-
+ config/mt-ospace |    4 ++--
+ 3 files changed, 5 insertions(+), 5 deletions(-)
+
+--- a/config/mt-d30v
++++ b/config/mt-d30v
+@@ -1,4 +1,4 @@
+ # Build libraries optimizing for space, not speed.
+ # Turn off warnings about symbols named the same as registers
+- CFLAGS_FOR_TARGET = -g -Os -Wa,-C
+- CXXFLAGS_FOR_TARGET = -g -Os -Wa,-C
++ CFLAGS_FOR_TARGET += -g -Os -Wa,-C
++ CXXFLAGS_FOR_TARGET += -g -Os -Wa,-C
+--- a/config/mt-gnu
++++ b/config/mt-gnu
+@@ -1,2 +1,2 @@
+-CXXFLAGS_FOR_TARGET = $(CXXFLAGS) $(SYSROOT_CFLAGS_FOR_TARGET) \
++CXXFLAGS_FOR_TARGET += $(CXXFLAGS) $(SYSROOT_CFLAGS_FOR_TARGET) \
+ 	$(DEBUG_PREFIX_CFLAGS_FOR_TARGET) -D_GNU_SOURCE
+--- a/config/mt-ospace
++++ b/config/mt-ospace
+@@ -1,3 +1,3 @@
+ # Build libraries optimizing for space, not speed.
+- CFLAGS_FOR_TARGET = -g -Os
+- CXXFLAGS_FOR_TARGET = -g -Os
++ CFLAGS_FOR_TARGET += -g -Os
++ CXXFLAGS_FOR_TARGET += -g -Os

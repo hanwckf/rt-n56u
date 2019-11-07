@@ -1,0 +1,26 @@
+From c8fad280eb4cbfe2711e6715aed5749ff400bb80 Mon Sep 17 00:00:00 2001
+From: jcmvbkbc <jcmvbkbc@138bc75d-0d04-0410-961f-82ee72b054a4>
+Date: Mon, 11 Sep 2017 21:53:38 +0000
+Subject: [PATCH] xtensa: fix PR target/82181
+
+2017-09-11  Max Filippov  <jcmvbkbc@gmail.com>
+gcc/
+	Backport from mainline
+	* config/xtensa/xtensa.c (xtensa_mem_offset): Check that both
+	words of DImode object are reachable by xtensa_uimm8x4 access.
+
+Signed-off-by: Max Filippov <jcmvbkbc@gmail.com>
+---
+ gcc/config/xtensa/xtensa.c |    1 +
+ 1 file changed, 1 insertion(+)
+
+--- a/gcc/config/xtensa/xtensa.c
++++ b/gcc/config/xtensa/xtensa.c
+@@ -612,6 +612,7 @@
+     case HImode:
+       return xtensa_uimm8x2 (v);
+ 
++    case DImode:
+     case DFmode:
+       return (xtensa_uimm8x4 (v) && xtensa_uimm8x4 (v + 4));
+ 

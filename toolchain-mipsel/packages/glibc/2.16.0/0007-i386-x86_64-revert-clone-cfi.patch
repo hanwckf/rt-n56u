@@ -1,0 +1,51 @@
+revert cfi additions to clone on i386/x86_64 to workaround problems in
+gcc's unwinder code.  this is not a bug in glibc, it triggers problems
+elsewhere.  this cfi code does not gain us a whole lot anyways.
+
+http://gcc.gnu.org/ml/gcc/2006-12/msg00293.html
+
+---
+ sysdeps/unix/sysv/linux/i386/clone.S   |    4 ----
+ sysdeps/unix/sysv/linux/x86_64/clone.S |    4 ----
+ 2 files changed, 8 deletions(-)
+
+--- a/sysdeps/unix/sysv/linux/i386/clone.S
++++ b/sysdeps/unix/sysv/linux/i386/clone.S
+@@ -119,9 +119,6 @@
+ 	ret
+ 
+ L(thread_start):
+-	cfi_startproc;
+-	/* Clearing frame pointer is insufficient, use CFI.  */
+-	cfi_undefined (eip);
+ 	/* Note: %esi is zero.  */
+ 	movl	%esi,%ebp	/* terminate the stack frame */
+ #ifdef RESET_PID
+@@ -154,7 +151,6 @@
+ 	jmp	L(haspid)
+ 	.previous
+ #endif
+-	cfi_endproc;
+ 
+ 	cfi_startproc
+ PSEUDO_END (BP_SYM (__clone))
+--- a/sysdeps/unix/sysv/linux/x86_64/clone.S
++++ b/sysdeps/unix/sysv/linux/x86_64/clone.S
+@@ -88,9 +88,6 @@
+ 	ret
+ 
+ L(thread_start):
+-	cfi_startproc;
+-	/* Clearing frame pointer is insufficient, use CFI.  */
+-	cfi_undefined (rip);
+ 	/* Clear the frame pointer.  The ABI suggests this be done, to mark
+ 	   the outermost frame obviously.  */
+ 	xorl	%ebp, %ebp
+@@ -115,7 +112,6 @@
+ 	/* Call exit with return value from function call. */
+ 	movq	%rax, %rdi
+ 	call	HIDDEN_JUMPTARGET (_exit)
+-	cfi_endproc;
+ 
+ 	cfi_startproc;
+ PSEUDO_END (BP_SYM (__clone))

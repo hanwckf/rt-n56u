@@ -1,0 +1,14 @@
+---
+ sysdeps/linux-gnu/Makefile |    1 +
+ 1 file changed, 1 insertion(+)
+
+--- a/sysdeps/linux-gnu/Makefile
++++ b/sysdeps/linux-gnu/Makefile
+@@ -2,6 +2,7 @@
+ 				-e s/i.86/i386/ \
+ 				-e s/sun4u/sparc64/ \
+ 				-e s/sparc64/sparc/ \
++				-e s/alpha.*/alpha/ \
+ 				-e s/arm.*/arm/ \
+ 				-e s/sa110/arm/ \
+ 				-e s/ppc64/ppc/ \

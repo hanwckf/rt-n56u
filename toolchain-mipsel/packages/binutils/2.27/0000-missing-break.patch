@@ -1,0 +1,24 @@
+From 8941017bc0226b60ce306d5271df15820ce66a53 Mon Sep 17 00:00:00 2001
+From: Alan Modra <amodra@gmail.com>
+Date: Tue, 30 Aug 2016 20:57:32 +0930
+Subject: [PATCH] ppc apuinfo for spe parsed incorrectly
+
+apuinfo saying SPE resulted in mach = bfd_mach_ppc_vle due to a
+missing break.
+
+	PR 20531
+	* elf32-ppc.c (_bfd_elf_ppc_set_arch): Add missing "break".
+---
+ bfd/elf32-ppc.c |    1 +
+ 1 file changed, 1 insertion(+)
+
+--- a/bfd/elf32-ppc.c
++++ b/bfd/elf32-ppc.c
+@@ -2246,6 +2246,7 @@
+ 		case PPC_APUINFO_BRLOCK:
+ 		  if (mach != bfd_mach_ppc_vle)
+ 		    mach = bfd_mach_ppc_e500;
++		  break;
+ 
+ 		case PPC_APUINFO_VLE:
+ 		  mach = bfd_mach_ppc_vle;

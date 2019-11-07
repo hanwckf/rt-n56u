@@ -1,0 +1,239 @@
+# uClibc options
+
+## depends on ! WINDOWS && ! BARE_METAL
+##
+## select LIBC_SUPPORT_THREADS_LT
+## select LIBC_SUPPORT_THREADS_NONE
+## select LIBC_SUPPORT_THREADS_NATIVE if UCLIBC_0_9_33_2_or_later
+## select CC_CORE_PASSES_NEEDED
+##
+## help The de-facto standard for embeded linux systems.
+## help
+## help Highly configurable, thus as feature-rich as you
+## help need, without compromising for size.
+
+config THREADS
+    default "nptl"          if THREADS_NATIVE
+    default "linuxthreads"  if THREADS_LT
+
+if ARCH_FLOAT_SOFTFP
+comment "'softfp' ABI and uClibc is not entirely tested in crosstool-NG"
+comment "You may experience issues, although it should work just fine"
+endif # ARCH_FLOAT_SOFTFP
+
+config LIBC_UCLIBC_HAS_SUNRPC
+    bool
+    default y if !UCLIBC_1_0_23_or_later
+
+config LIBC_UCLIBC_HAS_LIBICONV
+    bool
+    default y if UCLIBC_1_0_21_or_later
+
+config LIBC_UCLIBC_PARALLEL
+    def_bool y
+    depends on UCLIBC_0_9_33_2_or_later
+
+config LIBC_UCLIBC_NG
+    def_bool y
+    depends on UCLIBC_1_0_0_or_later
+
+# uClibc-ng 1.0.15 did away with 2 implementations of linuxthreads
+config UCLIBC_MERGED_LINUXTHREADS
+    def_bool y
+    depends on UCLIBC_1_0_15_or_later
+
+choice
+    bool
+    prompt "uClibc verbosity:"
+    default LIBC_UCLIBC_VERBOSITY_0
+
+config LIBC_UCLIBC_VERBOSITY_0
+    bool
+    prompt "Quiet build"
+    help
+      Print terse command indications.
+
+config LIBC_UCLIBC_VERBOSITY_1
+    bool
+    prompt "Brief build (show defines, ld flags)"
+    help
+      Print simplified command lines.
+
+config LIBC_UCLIBC_VERBOSITY_2
+    bool
+    prompt "Very verbose build"
+    help
+      Print full command lines.
+
+endchoice
+
+# uClibc-ng has reverted the meaning of V=1 and V=2 compared to its
+# ancestor, uClibc, in order to match kernel's Kbuild settings.
+# Hence, for uClibc-ng supply V=2 if "brief build" is selected,
+# and so forth.
+config LIBC_UCLIBC_VERBOSITY
+    string
+    default ""      if LIBC_UCLIBC_VERBOSITY_0
+    default "V=2"   if LIBC_UCLIBC_VERBOSITY_1 && LIBC_UCLIBC_NG
+    default "V=1"   if LIBC_UCLIBC_VERBOSITY_1
+    default "V=1"   if LIBC_UCLIBC_VERBOSITY_2 && LIBC_UCLIBC_NG
+    default "V=2"   if LIBC_UCLIBC_VERBOSITY_2
+
+choice
+    bool
+    prompt "Debug level"
+    default LIBC_UCLIBC_DEBUG_LEVEL_0
+
+config LIBC_UCLIBC_DEBUG_LEVEL_0
+    bool
+    prompt "none"
+
+config LIBC_UCLIBC_DEBUG_LEVEL_1
+    bool
+    prompt "minimal"
+
+config LIBC_UCLIBC_DEBUG_LEVEL_2
+    bool
+    prompt "normal"
+
+config LIBC_UCLIBC_DEBUG_LEVEL_3
+    bool
+    prompt "all"
+
+endchoice
+
+config LIBC_UCLIBC_DEBUG_LEVEL
+    int
+    default 0 if LIBC_UCLIBC_DEBUG_LEVEL_0
+    default 1 if LIBC_UCLIBC_DEBUG_LEVEL_1
+    default 2 if LIBC_UCLIBC_DEBUG_LEVEL_2
+    default 3 if LIBC_UCLIBC_DEBUG_LEVEL_3
+
+config LIBC_UCLIBC_CONFIG_FILE
+    string
+    prompt "Configuration file"
+    default ""
+    help
+      Path to the configuration file.
+
+      If the file is not provided, we fall back to a default config file.
+
+if THREADS_LT && !UCLIBC_MERGED_LINUXTHREADS
+
+choice
+    bool
+    prompt "Linuxthread implementation: "
+    default LIBC_UCLIBC_LNXTHRD_OLD
+
+config LIBC_UCLIBC_LNXTHRD_OLD
+    bool
+    prompt "old/stable"
+    help
+      From the uClibc config option help:
+        There are two versions of linuxthreads.  The older (stable) version
+        has been in uClibc for quite a long time but hasn't seen too many
+        updates other than bugfixes.
+
+config LIBC_UCLIBC_LNXTHRD_NEW
+    bool
+    prompt "new"
+    help
+      From the uClibc config option help:
+        The new version has not been tested much, and lacks ports for arches
+        which glibc does not support (like frv, etc...), but is based on
+        the latest code from glibc, so it may be the only choice for the
+        newer ports (like alpha/amd64/64bit arches and hppa).
+
+endchoice
+
+endif # THREADS_LT
+
+config LIBC_UCLIBC_LNXTHRD
+    string
+    default ""      if THREADS_NONE
+    default ""      if THREADS_NATIVE
+    default ""      if UCLIBC_MERGED_LINUXTHREADS
+    default "old"   if LIBC_UCLIBC_LNXTHRD_OLD
+    default "new"   if LIBC_UCLIBC_LNXTHRD_NEW
+
+config LIBC_UCLIBC_LOCALES
+    bool
+    select LIBC_UCLIBC_WCHAR
+    # Before it became a separate option, libiconv depended on locales
+    prompt "Add support for locales"
+    help
+      Say y if you want uClibc to support localisation.
+
+      Note that seems to be broken on recent uClibc releases.
+
+config LIBC_UCLIBC_LIBICONV
+    bool "Enable iconv"
+    depends on LIBC_UCLIBC_HAS_LIBICONV
+    help
+      Say y if you want to enable <iconv.h> and the corresponding interfaces.
+
+config LIBC_UCLIBC_IPV6
+    bool
+    prompt "Add support for IPv6"
+    help
+      Say y if you want uClibc to support IPv6.
+
+config LIBC_UCLIBC_WCHAR
+    bool
+    prompt "Add support for WCHAR"
+    help
+      Say y if you want uClibc to support WCHAR.
+
+      Maybe this is needed, if you're building a C++-Compiler
+
+config LIBC_UCLIBC_FENV
+    bool
+    prompt "Add support for fenv.h"
+    default y if ARCH_X86
+    help
+      fenv.h provides functions to control the floating point environment,
+      such as rounding mode, exceptions...
+
+      For some architectures, fenv.h is incomplete, so is not installed
+      by default. x86 is known to have a rather complete fenv.h, so it is
+      installed by default only for x86.
+
+      If you need fenv.h on other architectures, say 'y' here, but you may
+      encounter some issues.
+
+config LIBC_UCLIBC_RPC
+    bool
+    prompt "Add support for RPC"
+    depends on LIBC_UCLIBC_HAS_SUNRPC
+    help
+      Enable support for remote procedure calls (RPC) in uClibc.
+
+config LIBC_UCLIBC_HAS_SSP
+    bool
+    prompt "Support stack smashing protection (SSP)"
+    default y
+    help
+      Enable support for building programs with -fstack-protector family
+      of options. If this option is disabled, one can also use a standalone
+      libssp library from GCC.
+
+config LIBC_UCLIBC_BUILD_SSP
+    bool
+    prompt "Build uClibc with SSP"
+    depends on LIBC_UCLIBC_HAS_SSP
+    help
+      Build uClibc with -fstack-protector. This adds runtime overhead
+      to many function calls and is disabled by default.
+
+if ARCH_ARM
+config LIBC_UCLIBC_USE_GNU_SUFFIX
+    bool
+    default y
+    prompt "Use -uclibcgnueabi suffix"
+    help
+      Depending on where the resulting toolchain will be used, you may need
+      to tweak the "system" part of the target tuple. Buildroot prefers
+      to have arm-*-linux-uclibcgnueabi; OpenEmbedded prefers
+      arm-*-linux-uclibceabi. Other tools seem to either accept both, or
+      don't care about the suffix.
+endif

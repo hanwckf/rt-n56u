@@ -1,0 +1,20 @@
+2011-02-28  Aurelien Jarno  <aurelien@aurel32.net>
+
+	* sysdeps/unix/sysv/linux/alpha/bits/fcntl.h (F_SETPIPE_SZ,
+	F_GETPIPE_SZ): Define.
+
+---
+ sysdeps/unix/sysv/linux/alpha/bits/fcntl.h |    2 ++
+ 1 file changed, 2 insertions(+)
+
+--- a/sysdeps/unix/sysv/linux/alpha/bits/fcntl.h
++++ b/sysdeps/unix/sysv/linux/alpha/bits/fcntl.h
+@@ -97,6 +97,8 @@
+ # define F_SETLEASE	1024	/* Set a lease.	 */
+ # define F_GETLEASE	1025	/* Enquire what lease is active.  */
+ # define F_NOTIFY	1026	/* Request notfications on a directory.	 */
++# define F_SETPIPE_SZ	1031    /* Set pipe page size array.  */
++# define F_GETPIPE_SZ	1032    /* Set pipe page size array.  */
+ #endif
+ #ifdef __USE_XOPEN2K8
+ # define F_DUPFD_CLOEXEC 1030	/* Duplicate file descriptor with

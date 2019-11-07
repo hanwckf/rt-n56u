@@ -1,0 +1,35 @@
+
+
+---
+ elf/elf.h |   13 +++++++++++++
+ 1 file changed, 13 insertions(+)
+
+--- a/elf/elf.h
++++ b/elf/elf.h
+@@ -580,6 +580,7 @@
+ #define PT_GNU_EH_FRAME	0x6474e550	/* GCC .eh_frame_hdr segment */
+ #define PT_GNU_STACK	0x6474e551	/* Indicates stack executability */
+ #define PT_GNU_RELRO	0x6474e552	/* Read-only after relocation */
++#define PT_PAX_FLAGS	0x65041580	/* Indicates PaX flag markings */
+ #define PT_LOSUNW	0x6ffffffa
+ #define PT_SUNWBSS	0x6ffffffa	/* Sun Specific segment */
+ #define PT_SUNWSTACK	0x6ffffffb	/* Stack segment */
+@@ -593,6 +594,18 @@
+ #define PF_X		(1 << 0)	/* Segment is executable */
+ #define PF_W		(1 << 1)	/* Segment is writable */
+ #define PF_R		(1 << 2)	/* Segment is readable */
++#define PF_PAGEEXEC	(1 << 4)	/* Enable  PAGEEXEC */
++#define PF_NOPAGEEXEC	(1 << 5)	/* Disable PAGEEXEC */
++#define PF_SEGMEXEC	(1 << 6)	/* Enable  SEGMEXEC */
++#define PF_NOSEGMEXEC	(1 << 7)	/* Disable SEGMEXEC */
++#define PF_MPROTECT	(1 << 8)	/* Enable  MPROTECT */
++#define PF_NOMPROTECT	(1 << 9)	/* Disable MPROTECT */
++#define PF_RANDEXEC	(1 << 10)	/* Enable  RANDEXEC */
++#define PF_NORANDEXEC	(1 << 11)	/* Disable RANDEXEC */
++#define PF_EMUTRAMP	(1 << 12)	/* Enable  EMUTRAMP */
++#define PF_NOEMUTRAMP	(1 << 13)	/* Disable EMUTRAMP */
++#define PF_RANDMMAP	(1 << 14)	/* Enable  RANDMMAP */
++#define PF_NORANDMMAP	(1 << 15)	/* Disable RANDMMAP */
+ #define PF_MASKOS	0x0ff00000	/* OS-specific */
+ #define PF_MASKPROC	0xf0000000	/* Processor-specific */
+ 

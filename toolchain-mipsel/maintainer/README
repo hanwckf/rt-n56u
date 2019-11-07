@@ -1,0 +1,5 @@
+These scripts are not of much interest to the end user.
+They are used to automate everyday maintenance tasks for crosstool-NG. As such,
+they are not subject to the same level of portability requirements - they can
+expect to be run on a fairly modern Linux distribution, with bash, GNU sed and
+grep, etc.

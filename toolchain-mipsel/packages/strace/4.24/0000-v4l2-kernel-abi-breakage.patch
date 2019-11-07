@@ -1,0 +1,96 @@
+commit b89a69dec27cf638df0e17db80ed937c3e1abf77
+Author: Dmitry V. Levin <ldv@altlinux.org>
+Date:   Sat Aug 18 07:22:47 2018 +0000
+
+    xlat: workaround V4L2_CID_USER_IMX_BASE Linux kernel ABI breakage
+    
+    Linux kernel commit v4.18-rc2-106-g421860b9d47053badce4b247576fa48df9ab4c48
+    has changed the value of V4L2_CID_USER_IMX_BASE constant introduced
+    by commit v4.13-rc1~141^2~121 because the old value was already used
+    by V4L2_CID_USER_MAX217X_BASE.
+    
+    This is of course an ABI breakage that affects Linux kernels starting
+    with 4.13 and up to 4.18, as well as their LTS derivatives.
+    
+    Since the imx driver didn't provide any public control ID definitions,
+    it looks like the best way to handle this situation is to pretend that
+    the old value of V4L2_CID_USER_IMX_BASE didn't exist.
+    
+    * xlat/v4l2_control_id_bases.in (V4L2_CID_USER_IMX_BASE): Redefine.
+    
+    Co-Authored-by: Eugene Syromyatnikov <evgsyr@gmail.com>
+
+---
+ xlat/v4l2_control_id_bases.h  |   23 +++++++++++++++++++++--
+ xlat/v4l2_control_id_bases.in |   17 ++++++++++++++++-
+ 2 files changed, 37 insertions(+), 3 deletions(-)
+
+--- a/xlat/v4l2_control_id_bases.in
++++ b/xlat/v4l2_control_id_bases.in
+@@ -2,7 +2,22 @@
+ V4L2_CID_USER_MEYE_BASE			(V4L2_CID_BASE + 0x1000)
+ V4L2_CID_USER_BTTV_BASE			(V4L2_CID_BASE + 0x1010)
+ V4L2_CID_USER_TI_VPE_BASE		(V4L2_CID_BASE + 0x1050)
+-V4L2_CID_USER_IMX_BASE			(V4L2_CID_BASE + 0x1090)
++#ifndef STRACE_WORKAROUND_FOR_V4L2_CID_USER_IMX_BASE
++# define STRACE_WORKAROUND_FOR_V4L2_CID_USER_IMX_BASE
++/*
++ * Linux kernel commit v4.18-rc2-106-g421860b9d47053badce4b247576fa48df9ab4c48
++ * has changed the value of V4L2_CID_USER_IMX_BASE constant introduced
++ * by commit v4.13-rc1~141^2~121 because the old value was already used
++ * by V4L2_CID_USER_MAX217X_BASE.
++ * This is of course an ABI breakage that affects Linux kernels starting
++ * with 4.13 and up to 4.18, as well as their LTS derivatives.
++ * Since the imx driver didn't provide any public control ID definitions,
++ * it looks like the best way to handle this situation is to pretend that
++ * the old value of V4L2_CID_USER_IMX_BASE didn't exist.
++ */
++# undef V4L2_CID_USER_IMX_BASE
++#endif
++V4L2_CID_USER_IMX_BASE			(V4L2_CID_BASE + 0x10b0)
+ V4L2_CID_MPEG_BASE			(V4L2_CTRL_CLASS_MPEG | 0x900)
+ V4L2_CID_MPEG_CX2341X_BASE		(V4L2_CTRL_CLASS_MPEG | 0x1000)
+ V4L2_CID_MPEG_MFC51_BASE		(V4L2_CTRL_CLASS_MPEG | 0x1100)
+--- a/xlat/v4l2_control_id_bases.h
++++ b/xlat/v4l2_control_id_bases.h
+@@ -31,12 +31,16 @@
+ #else
+ # define V4L2_CID_USER_TI_VPE_BASE (V4L2_CID_BASE + 0x1050)
+ #endif
++#ifndef STRACE_WORKAROUND_FOR_V4L2_CID_USER_IMX_BASE
++# define STRACE_WORKAROUND_FOR_V4L2_CID_USER_IMX_BASE
++# undef V4L2_CID_USER_IMX_BASE
++#endif
+ #if defined(V4L2_CID_USER_IMX_BASE) || (defined(HAVE_DECL_V4L2_CID_USER_IMX_BASE) && HAVE_DECL_V4L2_CID_USER_IMX_BASE)
+ DIAG_PUSH_IGNORE_TAUTOLOGICAL_COMPARE
+-static_assert((V4L2_CID_USER_IMX_BASE) == ((V4L2_CID_BASE + 0x1090)), "V4L2_CID_USER_IMX_BASE != (V4L2_CID_BASE + 0x1090)");
++static_assert((V4L2_CID_USER_IMX_BASE) == ((V4L2_CID_BASE + 0x10b0)), "V4L2_CID_USER_IMX_BASE != (V4L2_CID_BASE + 0x10b0)");
+ DIAG_POP_IGNORE_TAUTOLOGICAL_COMPARE
+ #else
+-# define V4L2_CID_USER_IMX_BASE (V4L2_CID_BASE + 0x1090)
++# define V4L2_CID_USER_IMX_BASE (V4L2_CID_BASE + 0x10b0)
+ #endif
+ #if defined(V4L2_CID_MPEG_BASE) || (defined(HAVE_DECL_V4L2_CID_MPEG_BASE) && HAVE_DECL_V4L2_CID_MPEG_BASE)
+ DIAG_PUSH_IGNORE_TAUTOLOGICAL_COMPARE
+@@ -146,6 +150,21 @@
+  XLAT(V4L2_CID_USER_MEYE_BASE),
+  XLAT(V4L2_CID_USER_BTTV_BASE),
+  XLAT(V4L2_CID_USER_TI_VPE_BASE),
++#ifndef STRACE_WORKAROUND_FOR_V4L2_CID_USER_IMX_BASE
++# define STRACE_WORKAROUND_FOR_V4L2_CID_USER_IMX_BASE
++/*
++* Linux kernel commit v4.18-rc2-106-g421860b9d47053badce4b247576fa48df9ab4c48
++* has changed the value of V4L2_CID_USER_IMX_BASE constant introduced
++* by commit v4.13-rc1~141^2~121 because the old value was already used
++* by V4L2_CID_USER_MAX217X_BASE.
++* This is of course an ABI breakage that affects Linux kernels starting
++* with 4.13 and up to 4.18, as well as their LTS derivatives.
++* Since the imx driver didn't provide any public control ID definitions,
++* it looks like the best way to handle this situation is to pretend that
++* the old value of V4L2_CID_USER_IMX_BASE didn't exist.
++*/
++# undef V4L2_CID_USER_IMX_BASE
++#endif
+  XLAT(V4L2_CID_USER_IMX_BASE),
+  XLAT(V4L2_CID_MPEG_BASE),
+  XLAT(V4L2_CID_MPEG_CX2341X_BASE),

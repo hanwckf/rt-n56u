@@ -1,0 +1,29 @@
+commit 9d247a3d78b97c004e7ca5e7d6cc9964dba870c7
+Author: jason <jason@138bc75d-0d04-0410-961f-82ee72b054a4>
+Date:   Wed May 13 01:11:13 2015 +0000
+
+    gcc/
+            * config/mmix/mmix.c, config/msp430/msp430.c: Add space between
+            string literal and macro name.
+    gcc/ada/
+            * sigtramp-vxworks.c: Add space between string literal and macro
+            name.
+    
+    git-svn-id: svn+ssh://gcc.gnu.org/svn/gcc/trunk@223106 138bc75d-0d04-0410-961f-82ee72b054a4
+
+[4.9 change: remove non-applicable parts of the patch]
+---
+ gcc/config/msp430/msp430.c |    2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+--- a/gcc/config/msp430/msp430.c
++++ b/gcc/config/msp430/msp430.c
+@@ -1629,7 +1629,7 @@
+ }
+   const_shift_helpers[] =
+ {
+-#define CSH(N,C,X,G) { "__mspabi_"N, C, X, gen_##G }
++#define CSH(N,C,X,G) { "__mspabi_" N, C, X, gen_##G }
+ 
+   CSH ("slli", 1, 1, slli_1),
+   CSH ("slll", 1, 1, slll_1),

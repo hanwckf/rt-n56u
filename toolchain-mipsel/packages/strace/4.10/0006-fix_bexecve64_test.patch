@@ -1,0 +1,24 @@
+commit b704e8fbb4d9cf90ac56f3c889de5b779c444db4
+(loosely based on)
+---
+ tests/bexecve.test |    3 ++-
+ 1 file changed, 2 insertions(+), 1 deletion(-)
+
+--- a/tests/bexecve.test
++++ b/tests/bexecve.test
+@@ -24,13 +24,14 @@
+ }
+ 
+ pattern='Process [1-9][0-9]* detached'
++pattern_personality='\[ Process PID=[1-9][0-9]* runs in .* mode. \]'
+ 
+ LC_ALL=C grep -x "$pattern" "$LOG" > /dev/null || {
+ 	cat "$LOG"
+ 	fail_ "$what: unexpected output"
+ }
+ 
+-if LC_ALL=C grep -v -x "$pattern" "$LOG" > /dev/null; then
++if LC_ALL=C grep -E -v -x "($pattern|$pattern_personality)" "$LOG" > /dev/null; then
+ 	cat "$LOG"
+ 	fail_ "$what: unexpected output"
+ fi

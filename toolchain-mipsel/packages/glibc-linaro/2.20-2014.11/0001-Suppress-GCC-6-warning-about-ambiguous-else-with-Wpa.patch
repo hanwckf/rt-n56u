@@ -1,0 +1,75 @@
+From df1cf48777fe4cd81ad7fb09ecbe5b31432b7c1c Mon Sep 17 00:00:00 2001
+From: Yvan Roux <yvan.roux@linaro.org>
+Date: Fri, 15 Apr 2016 13:29:26 +0200
+Subject: [PATCH] Suppress GCC 6 warning about ambiguous 'else' with
+ -Wparentheses
+
+---
+ nis/nis_call.c  |   20 +++++++++++---------
+ stdlib/setenv.c |   24 +++++++++++++-----------
+ 2 files changed, 24 insertions(+), 20 deletions(-)
+
+--- a/nis/nis_call.c
++++ b/nis/nis_call.c
+@@ -680,16 +680,18 @@
+   /* Choose which entry should be evicted from the cache.  */
+   loc = &nis_server_cache[0];
+   if (*loc != NULL)
+-    for (i = 1; i < 16; ++i)
+-      if (nis_server_cache[i] == NULL)
+-	{
++    {
++      for (i = 1; i < 16; ++i)
++	if (nis_server_cache[i] == NULL)
++	  {
++	    loc = &nis_server_cache[i];
++	    break;
++	  }
++	else if ((*loc)->uses > nis_server_cache[i]->uses
++		 || ((*loc)->uses == nis_server_cache[i]->uses
++		     && (*loc)->expires > nis_server_cache[i]->expires))
+ 	  loc = &nis_server_cache[i];
+-	  break;
+-	}
+-      else if ((*loc)->uses > nis_server_cache[i]->uses
+-	       || ((*loc)->uses == nis_server_cache[i]->uses
+-		   && (*loc)->expires > nis_server_cache[i]->expires))
+-	loc = &nis_server_cache[i];
++    }
+   old = *loc;
+   *loc = new;
+ 
+--- a/stdlib/setenv.c
++++ b/stdlib/setenv.c
+@@ -262,18 +262,20 @@
+   ep = __environ;
+   if (ep != NULL)
+     while (*ep != NULL)
+-      if (!strncmp (*ep, name, len) && (*ep)[len] == '=')
+-	{
+-	  /* Found it.  Remove this pointer by moving later ones back.  */
+-	  char **dp = ep;
++      {
++	if (!strncmp (*ep, name, len) && (*ep)[len] == '=')
++	  {
++	    /* Found it.  Remove this pointer by moving later ones back.  */
++	    char **dp = ep;
+ 
+-	  do
+-	    dp[0] = dp[1];
+-	  while (*dp++);
+-	  /* Continue the loop in case NAME appears again.  */
+-	}
+-      else
+-	++ep;
++	    do
++		dp[0] = dp[1];
++	    while (*dp++);
++	    /* Continue the loop in case NAME appears again.  */
++	  }
++	else
++	  ++ep;
++      }
+ 
+   UNLOCK;
+ 

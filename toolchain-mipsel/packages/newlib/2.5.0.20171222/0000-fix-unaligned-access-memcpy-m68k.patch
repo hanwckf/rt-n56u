@@ -1,0 +1,25 @@
+The m68k mcpu processor does not like unaligned access
+
+Disable at least mcpu32, m68010 and m68020. These processors certainly
+do not like unaligned accesses.
+
+Signed-off-by: Remy Bohmer <linux@bohmer.net>
+[yann.morin.1998@anciens.enib.fr: update for 1.19.0 from 1.18.0]
+Signed-off-by: "Yann E. MORIN" <yann.morin.1998@anciens.enib.fr>
+[austinpmorton@gmail.com: update for 1.20.0 from 1.19.0]
+Signed-off-by: Austin Morton <austinpmorton@gmail.com>
+---
+ newlib/libc/machine/m68k/memcpy.S |    2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+--- a/newlib/libc/machine/m68k/memcpy.S
++++ b/newlib/libc/machine/m68k/memcpy.S
+@@ -15,7 +15,7 @@
+ 
+ #include "m68kasm.h"
+ 
+-#if defined (__mcoldfire__) || defined (__mc68010__) || defined (__mc68020__) || defined (__mc68030__) || defined (__mc68040__) || defined (__mc68060__)
++#if defined (__mcoldfire__) || defined (__mc68030__) || defined (__mc68040__) || defined (__mc68060__)
+ # define MISALIGNED_OK 1
+ #else
+ # define MISALIGNED_OK 0

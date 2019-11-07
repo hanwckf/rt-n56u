@@ -1,0 +1,26 @@
+---
+ Makefile.in |    1 +
+ configure   |    2 +-
+ 2 files changed, 2 insertions(+), 1 deletion(-)
+
+--- a/Makefile.in
++++ b/Makefile.in
+@@ -15,6 +15,7 @@
+ mandir		= @mandir@
+ docdir		= $(prefix)/share/doc/ltrace
+ 
++AR		=	@AR@
+ CC		=	@CC@
+ CFLAGS		=	-Wall @CFLAGS@
+ CPPFLAGS	=	-iquote $(TOPDIR) -iquote $(TOPDIR)/sysdeps/$(OS) -DSYSCONFDIR=\"$(sysconfdir)\" @CPPFLAGS@
+--- a/configure
++++ b/configure
+@@ -113,7 +113,7 @@
+ #
+ # Makefile.in -> Makefile
+ #
+-x_subst_vars='PACKAGE_VERSION HOST HOST_OS INSTALL CC CPPFLAGS CFLAGS LDFLAGS LIBS iquote iquoteend prefix sysconfdir mandir docdir'
++x_subst_vars='PACKAGE_VERSION HOST HOST_OS INSTALL AR CC CPPFLAGS CFLAGS LDFLAGS LIBS iquote iquoteend prefix sysconfdir mandir docdir'
+ 
+ for i in $x_subst_vars
+ do

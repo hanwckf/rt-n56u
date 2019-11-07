@@ -1,0 +1,84 @@
+This patch is courtesy of OpenEmbedded, by Khem Raj <raj.khem@gmail.com>
+
+http://cgit.openembedded.org/cgit.cgi/openembedded/commit/?id=b85b779688f0abc389e3c25d06b54de8b86385c1
+
+---
+ common.h  |    4 ++++
+ configure |   11 ++++-------
+ debug.h   |    4 +++-
+ 3 files changed, 11 insertions(+), 8 deletions(-)
+
+--- a/common.h
++++ b/common.h
+@@ -1,3 +1,5 @@
++#ifndef COMMON_H
++#define COMMON_H
+ #include <sys/types.h>
+ #include <sys/time.h>
+ #include <stdio.h>
+@@ -251,3 +253,5 @@
+ #if 0				/* not yet */
+ extern int umoven(Process * proc, void * addr, int len, void * laddr);
+ #endif
++#endif
++
+--- a/configure
++++ b/configure
+@@ -30,7 +30,7 @@
+   return cplus_demangle();
+ }
+ EOF
+-if gcc conftest.c -liberty 2>/dev/null
++if $CC conftest.c -liberty 2>/dev/null
+ then
+   HAVE_LIBIBERTY=1
+   echo "yes"
+@@ -48,7 +48,7 @@
+   return __cxa_demangle();
+ }
+ EOF
+-if gcc conftest.c -lsupc++ 2>/dev/null
++if $CC conftest.c -lsupc++ 2>/dev/null
+ then
+   HAVE_LIBSUPC__=1
+   echo "yes"
+@@ -67,7 +67,7 @@
+   return 0;
+ }
+ EOF
+-if gcc conftest.c 2>/dev/null
++if $CC conftest.c 2>/dev/null
+ then
+   HAVE_ELF_C_READ_MMAP=1
+   echo "yes"
+@@ -77,15 +77,12 @@
+ fi
+ rm -f conftest.c a.out
+ 
+-CC=gcc
+-CPPFLAGS=' -I /usr/include/libelf'
+ CFLAGS='-g -O2'
+ LIBS='-lelf -lsupc++ -liberty '
+-INSTALL='/usr/bin/install -c'
++INSTALL='install -c'
+ iquote='-iquote '
+ iquoteend=''
+ 
+-prefix=/usr/local
+ sysconfdir='${prefix}/etc'
+ bindir='${prefix}/bin'
+ mandir='${prefix}/share/man'
+--- a/debug.h
++++ b/debug.h
+@@ -1,3 +1,5 @@
++#ifndef DEBUG_H
++#define DEBUG_H
+ #include <features.h>
+ 
+ /* debug levels:
+@@ -14,4 +16,4 @@
+ int xinfdump(long, void *, int);
+ 
+ # define debug(level, expr...) debug_(level, __FILE__, __LINE__, expr)
+-
++#endif

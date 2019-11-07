@@ -1,0 +1,37 @@
+# xtensa specific configuration file
+
+## no-package
+## select ARCH_SUPPORTS_32
+## select ARCH_SUPPORTS_EITHER_ENDIAN
+## select ARCH_DEFAULT_LE
+## select ARCH_SUPPORTS_BOTH_MMU
+## select ARCH_DEFAULT_HAS_MMU
+## select ARCH_SUPPORTS_FLAT_FORMAT
+
+## help The xtensa architecture
+## help
+## help    Xtensa is a configurable and extensible processor architecture.
+## help    Supporting a specific configuration typically requires minor
+## help    modifications to a small set of configuration files in various
+## help    development tools. This process is automated and only requires
+## help    a configuration specific 'overlay' file.
+## help
+## help    For a custom configuration, select the XTENSA_CUSTOM option and
+## help    provide the name of the processor configuration through the
+## help    CT_ARCH_XTENSA_CUSTOM_NAME option.
+## help
+## help    The default option (ARCH_xtensa_fsf) uses a built-in configuration,
+## help    which may or may not work for a particular Xtensa processor.
+
+choice
+    prompt "Target Architecture Variant"
+    default ARCH_xtensa_fsf
+
+config XTENSA_CUSTOM
+    bool "Custom Xtensa processor configuration"
+    select TARGET_USE_OVERLAY
+
+config ARCH_xtensa_fsf
+    bool "fsf - Default configuration"
+
+endchoice

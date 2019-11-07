@@ -1,0 +1,336 @@
+menu "Toolchain options"
+
+comment "General toolchain options"
+
+config FORCE_SYSROOT
+    bool
+    default y if !OBSOLETE && !BARE_METAL
+    select USE_SYSROOT
+
+config USE_SYSROOT
+    bool
+    prompt "Use sysroot'ed toolchain"
+    depends on !BARE_METAL
+    default y
+    help
+      Use the 'shiny new' sysroot feature of gcc: libraries split between
+      prefix/target/sysroot/lib and prefix/target/sysroot/usr/lib
+      
+      You definitely want to say 'Y' here. Yes you do. I know you do. Say 'Y'.
+
+config SYSROOT_NAME
+    string
+    prompt "sysroot directory name"
+    depends on USE_SYSROOT
+    default "sysroot"
+    help
+      Enter the base name of the sysroot directory. Usually, this simply
+      is 'sysroot' (the default) or 'sys-root'.
+      
+      You are free to enter anything here, except for spaces, and '/'
+      (see SYSROOT_DIR_PREFIX, below). If you leave this empty, then the
+      default 'sysroot' is used.
+
+config SYSROOT_DIR_PREFIX
+    string
+    prompt "sysroot prefix dir (READ HELP)"
+    depends on USE_SYSROOT
+    default ""
+    help
+      *
+      * Unless you really know you need that, leave it empty!
+      *
+      
+      This string will be interpreted as a directory component to be added
+      to the sysroot path, just before the actual sysroot directory.
+      
+      In fact, the sysroot path is constructed as:
+        ${CT_PREFIX_DIR}/${CT_TARGET}/${CT_SYSROOT_DIR_PREFIX}/${CT_SYSROOT_NAME}
+
+# FIXME: the name is misleading, it is only checking if we want the build machine
+# to support static linking.
+config WANTS_STATIC_LINK
+    bool
+config WANTS_STATIC_LINK_CXX
+    bool
+
+config STATIC_TOOLCHAIN
+    bool
+    prompt "Build Static Toolchain"
+    depends on CONFIGURE_has_static_link
+    select WANTS_STATIC_LINK if NATIVE || CROSS
+    help
+      Build static host binaries.
+      
+      If you wish to move the toolchain to another host, and you are not
+      confident that this host has the required versions of system libs, then
+      you can say 'Y' here, and all the host tools will be linked statically.
+      
+      The impacted tools are:
+        - the cross-binutils (GNU binutils, elf2flt)
+        - the cross-compiler (gcc)
+        - the cross-debugger (gdb)
+      
+      The default is 'N', to build dynamicaly-linked host binaries.
+      
+      NOTE: this has no connection to whether the target libraries will be
+      dynamic or static. This only applies to the tools themselves.
+
+config SHOW_CT_VERSION
+    bool
+    prompt "Add crosstool-NG version to --version output"
+    default y
+    help
+      If yes, the crosstool-NG version will be included in the output of
+      gcc --version, and also in binutils, glibc, gdb and gdbserver.
+
+      If this is enabled, the package version will include:
+          "crosstool-NG ${CT_VERSION}"
+
+      If this is disabled and no ID string is given below, the default
+      of each individual package will be used.
+
+      This is passed to the configure flag --with-pkgversion.
+
+config TOOLCHAIN_PKGVERSION
+    string
+    prompt "Toolchain ID string"
+    default ""
+    help
+      Specify a string that identifies your package. You may wish to include
+      a build number or build date. This version string will be included in
+      the output of gcc --version, and also in binutils, glibc, gdb and
+      gdbserver.
+
+      If this is enabled, it will either be added to the crosstool-NG version:
+          "crosstool-NG ${CT_VERSION} - ${CT_TOOLCHAIN_PKGVERSION}"
+      Or it will be entirely on its own:
+          "${CT_TOOLCHAIN_PKGVERSION}"
+
+      This is passed to the configure flag --with-pkgversion.
+
+config TOOLCHAIN_BUGURL
+    string
+    prompt "Toolchain bug URL"
+    default ""
+    help
+      Specify the URL that users should visit if they wish to report a bug.
+
+comment "Tuple completion and aliasing"
+
+config TARGET_VENDOR
+    string
+    prompt "Tuple's vendor string"
+    depends on !OMIT_TARGET_VENDOR
+    default "unknown"
+    help
+      Vendor part of the target tuple.
+      
+      A tuple is of the form arch-vendor-kernel-system.
+      You can set the second part, vendor, to whatever you see fit.
+      Use a single word, or use underscores "_" to separate words.
+      Use neither dash nor space, as it breaks things.
+      
+      Keep the default (unknown) if you don't know better.
+
+config TARGET_ALIAS_SED_EXPR
+    string
+    prompt "Tuple's sed transform"
+    default ""
+    help
+      Normally, you'd call your toolchain components (especially gcc) by
+      prefixing the target tuple followed by a dash and the component name
+      (eg. armeb-unknown-linux-uclibc-gcc).
+      
+      You can enter here a sed expression to be applied to ${CT_TARGET} to
+      create an alias for your toolchain.
+      
+      For example, "s/${CT_TARGET_VENDOR}/foobar/" (without the double quotes)
+      will create the armeb-foobar-linux-uclibc alias to the above-mentioned
+      toolchain.
+      
+      You shouldn't need to enter anything here, unless you plan to manually
+      call the tools (autotools-based ./configure will use the standard name).
+
+config TARGET_ALIAS
+    string
+    prompt "Tuple's alias"
+    default ""
+    help
+      Normally, you'd call your toolchain components (especially gcc) by
+      prefixing the target tuple followed by a dash and the component name
+      (eg. armeb-unknown-linux-uclibc-gcc).
+      
+      You can enter a shortcut here. This string will be used to create
+      symbolic links to the toolchain tools (eg. if you enter "foo-bar" here,
+      then gcc for your toolchain will also be available as "foo-bar-gcc" along
+      with the original name).
+      
+      You shouldn't need to enter anything here, unless you plan to manually
+      call the tools (autotools-based ./configure will use the standard name).
+
+comment "Toolchain type"
+
+choice
+    bool
+    prompt "Type"
+    default CROSS
+
+config NATIVE
+    bool
+    prompt "Native       (NO CODE!) (EXPERIMENTAL)"
+    depends on EXPERIMENTAL
+    help
+      Build a native toolchain.
+      See: "docs/6_Toolchain_Types.md"
+
+config CROSS
+    bool
+    prompt "Cross"
+    help
+      Build a cross-toolchain.
+      See: "docs/6_Toolchain_Types.md"
+
+config CROSS_NATIVE
+    bool
+    prompt "Cross-native (NO CODE!) (EXPERIMENTAL)"
+    depends on EXPERIMENTAL
+    help
+      Build a cross-native toolchain.
+      See: "docs/6_Toolchain_Types.md"
+
+config CANADIAN
+    bool
+    prompt "Canadian"
+    help
+      Build a canadian-toolchain.
+      See: "docs/6_Toolchain_Types.md"
+
+endchoice
+
+config TOOLCHAIN_TYPE
+    string
+    default "native"        if NATIVE
+    default "cross"         if CROSS
+    default "cross-native"  if CROSS_NATIVE
+    default "canadian"      if CANADIAN
+
+comment "Build system"
+
+config BUILD
+    string
+    prompt "|  Tuple        (READ HELP!)"
+    default ""
+    help
+      Canonical name of the machine building the toolchain.
+      You should leave empty, unless you really know what you're doing.
+
+config BUILD_PREFIX
+    string
+    prompt "|  Tools prefix (READ HELP!)"
+    default ""
+    help
+      If you have your *build system* tools in a weird location, and/or
+      they have an unusual prefix, enter it here.
+      
+      Usually, you should leave that empty!
+      
+      Eg.:
+        If your *build* gcc is /opt/build-tools/bin/weird-gcc then you
+        should enter:
+            /opt/build-tools/bin/weird-
+        
+        If your *build* gcc is /opt/build-tools/bin/weird-gcc and
+        /opt/build-tools/bin is in your PATH, you should enter:
+            weird-
+        
+        If your *build* gcc is /opt/build-tools/bin/gcc then you
+        should enter (do not forget to add the trailing '/'):
+            /opt/build-tools/bin/
+
+config BUILD_SUFFIX
+    string
+    prompt "|  Tools suffix (READ HELP!)"
+    default ""
+    help
+      If your *build system* tools have an unusual suffix, enter it
+      here.
+      
+      Usually, you should leave that empty!
+      
+      Eg.:
+        If your 'default' gcc is gcc 4.3.1, but you also have gcc-3.4.2
+        installed as gcc-3.4, then you should enter:
+            -3.4
+      
+      It can happen that some of the tools have a suffix, when others
+      don't, eg. you can have 'gcc-3.4' and 'ar'. crosstool-NG accounts
+      for that by checking the tools without the suffix in case it can
+      not find some of the tool.
+
+if CANADIAN
+
+comment "Host system"
+
+config HOST
+    string
+    prompt "|  Tuple        (READ HELP!)"
+    default ""
+    help
+      Canonical name of the machine running the toolchain.
+
+config HOST_PREFIX
+    string
+    prompt "|  Tools prefix (READ HELP!)"
+    default ""
+    help
+      If you have your *host system* tools in a weird location, and/or
+      they have an unusual prefix, enter it here.
+      
+      Usually, you should leave that empty!
+      
+      Eg.:
+        If your *host* gcc is /opt/host-tools/bin/weird-gcc then you
+        should enter:
+            /opt/host-tools/bin/weird-
+        
+        If your *host* gcc is /opt/host-tools/bin/weird-gcc and
+        /opt/host-tools/bin is in your PATH, you should enter:
+            weird-
+        
+        If your *host* gcc is /opt/host-tools/bin/gcc then you
+        should enter (do not forget to add the trailing '/'):
+            /opt/host-tools/bin/
+
+config HOST_SUFFIX
+    string
+    prompt "|  Tools suffix (READ HELP!)"
+    default ""
+    help
+      If your *host system* tools have an unusual suffix, enter it
+      here.
+      
+      Usually, you should leave that empty!
+      
+      Eg.:
+        If your 'default' gcc is gcc 4.3.1, but you also have gcc-3.4.2
+        installed as gcc-3.4, then you should enter:
+            -3.4
+      
+      It can happen that some of the tools have a suffix, when others
+      don't, eg. you can have 'gcc-3.4' and 'ar'. crosstool-NG accounts
+      for that by checking the tools without the suffix in case it can
+      not find some of the tool.
+
+endif # CANADIAN
+
+comment "Misc options"
+
+config TOOLCHAIN_ENABLE_NLS
+    bool
+    prompt "Enable nls"
+    select GETTEXT_NEEDED
+    help
+      Say 'Y' here to enable native language support (nls).
+
+endmenu

@@ -1,0 +1,48 @@
+From dank@kegel.com
+Wed Jun 15 09:12:43 PDT 2005
+
+Fixes
+
+build-glibc/libc.a(nsswitch.o)(.data+0x64): undefined reference to `_nss_files_getaliasent_r'
+build-glibc/libc.a(nsswitch.o)(.data+0x6c): undefined reference to `_nss_files_endaliasent'
+... 53 lines deleted ...
+build-glibc/libc.a(nsswitch.o)(.data+0x21c): undefined reference to `_nss_files_getspnam_r'
+collect2: ld returned 1 exit status
+make[2]: *** [/build/gcc-3.4.3-glibc-2.3.5-hdrs-2.6.11.2/i686-unknown-linux-gnu/build-glibc/elf/ldconfig] Error 1
+
+when building glibc with --enable-static-nss.
+
+See http://sources.redhat.com/bugzilla/show_bug.cgi?id=631
+
+---
+ Makeconfig   |    2 +-
+ elf/Makefile |    7 +++++++
+ 2 files changed, 8 insertions(+), 1 deletion(-)
+
+--- a/Makeconfig
++++ b/Makeconfig
+@@ -531,7 +531,7 @@
+ 
+ # The static libraries.
+ ifeq (yes,$(build-static))
+-link-libc-static = $(common-objpfx)libc.a $(static-gnulib) $(common-objpfx)libc.a
++link-libc-static = $(common-objpfx)libc.a $(static-gnulib) $(otherlibs) $(common-objpfx)libc.a
+ else
+ ifeq (yes,$(build-shared))
+ # We can try to link the programs with lib*_pic.a...
+--- a/elf/Makefile
++++ b/elf/Makefile
+@@ -146,6 +146,13 @@
+ install-bin-script = ldd
+ endif
+ 
++ifeq (yes,$(build-static-nss))
++nssobjdir := $(patsubst ../$(subdir),.,$(common-objpfx)nss)
++resolvobjdir := $(patsubst ../$(subdir),.,$(common-objpfx)resolv)
++otherlibs += $(nssobjdir)/libnss_files.a $(resolvobjdir)/libnss_dns.a \
++	     $(resolvobjdir)/libresolv.a
++endif
++
+ others		= sprof sln
+ install-bin	= sprof
+ others-static   = sln

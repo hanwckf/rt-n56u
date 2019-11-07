@@ -1,0 +1,97 @@
+---
+ dumapp.cpp |   12 ++++--------
+ dumapp.h   |   13 +++++++++----
+ 2 files changed, 13 insertions(+), 12 deletions(-)
+
+--- a/dumapp.cpp
++++ b/dumapp.cpp
+@@ -189,8 +189,7 @@
+  * Single object form, no debug information
+  * (11) = (a) ; ASW
+  */
+-void * DUMA_CDECL operator new( DUMA_SIZE_T size )
+-throw(std::bad_alloc)
++void * DUMA_CDECL operator new( DUMA_SIZE_T size ) NEW_THROW_SPEC
+ {
+   return duma_new_operator(size, EFA_NEW_ELEM, true  DUMA_PARAMS_UK);
+ }
+@@ -253,8 +252,7 @@
+  * Array object form, no debug information
+  * (21) = (a) ; AAW
+  */
+-void * DUMA_CDECL operator new[]( DUMA_SIZE_T size )
+-throw(std::bad_alloc)
++void * DUMA_CDECL operator new[]( DUMA_SIZE_T size ) NEW_THROW_SPEC
+ {
+   return duma_new_operator(size, EFA_NEW_ARRAY, true  DUMA_PARAMS_UK);
+ }
+@@ -320,8 +318,7 @@
+  * Single object form with debug information
+  * (31) = (a) ; ASW 
+  */
+-void * DUMA_CDECL operator new( DUMA_SIZE_T size, const char *filename, int lineno )
+-throw( std::bad_alloc )
++void * DUMA_CDECL operator new( DUMA_SIZE_T size, const char *filename, int lineno ) NEW_THROW_SPEC
+ {
+   return duma_new_operator(size, EFA_NEW_ELEM, true  DUMA_PARAMS_FILELINE);
+ }
+@@ -373,8 +370,7 @@
+  * Array object form with debug information
+  * (41) = (a) ; AAW 
+  */
+-void * DUMA_CDECL operator new[]( DUMA_SIZE_T size, const char *filename, int lineno )
+-throw( std::bad_alloc )
++void * DUMA_CDECL operator new[]( DUMA_SIZE_T size, const char *filename, int lineno ) NEW_THROW_SPEC
+ {
+   return duma_new_operator(size, EFA_NEW_ARRAY, true  DUMA_PARAMS_FILELINE);
+ }
+--- a/dumapp.h
++++ b/dumapp.h
+@@ -64,6 +64,11 @@
+   #endif
+ #endif
+ 
++#if __cplusplus <= 199711L
++#define NEW_THROW_SPEC throw(std::bad_alloc)
++#else
++#define NEW_THROW_SPEC
++#endif
+ 
+ #ifndef DUMA_NO_CPP_SUPPORT
+ 
+@@ -81,7 +86,7 @@
+     /* (12) = (b) ; ASN */
+     /* (13) = (c) ; FSW */
+     /* (14) = (d) ; FSN */
+-    void * DUMA_CDECL operator new(DUMA_SIZE_T) throw(std::bad_alloc);
++    void * DUMA_CDECL operator new(DUMA_SIZE_T) NEW_THROW_SPEC;
+     void * DUMA_CDECL operator new(DUMA_SIZE_T, const std::nothrow_t &) throw();
+     void   DUMA_CDECL operator delete(void *) throw();
+     void   DUMA_CDECL operator delete(void *, const std::nothrow_t &)   throw();
+@@ -91,7 +96,7 @@
+     /* (22) = (b) ; AAN */
+     /* (23) = (c) ; FAW */
+     /* (24) = (d) ; FAN */
+-    void * DUMA_CDECL operator new[](DUMA_SIZE_T) throw(std::bad_alloc);
++    void * DUMA_CDECL operator new[](DUMA_SIZE_T) NEW_THROW_SPEC;
+     void * DUMA_CDECL operator new[](DUMA_SIZE_T, const std::nothrow_t &) throw();
+     void   DUMA_CDECL operator delete[](void *) throw();
+     void   DUMA_CDECL operator delete[](void *, const std::nothrow_t &)   throw();
+@@ -103,7 +108,7 @@
+       /* (32) = (b) ; ASN */
+       /* (33) = (c) ; FSW */
+       /* (34) = (d) ; FSN */
+-      void * DUMA_CDECL operator new(DUMA_SIZE_T, const char *, int) throw(std::bad_alloc);
++      void * DUMA_CDECL operator new(DUMA_SIZE_T, const char *, int) NEW_THROW_SPEC;
+       void * DUMA_CDECL operator new(DUMA_SIZE_T, const std::nothrow_t &, const char *, int) throw();
+       void   DUMA_CDECL operator delete(void *, const char *, int) throw();
+       void   DUMA_CDECL operator delete(void *, const std::nothrow_t &, const char *, int) throw();
+@@ -113,7 +118,7 @@
+       /* (42) = (b) ; AAN */
+       /* (43) = (c) ; FAW */
+       /* (44) = (d) ; FAN */
+-      void * DUMA_CDECL operator new[](DUMA_SIZE_T, const char *, int) throw(std::bad_alloc);
++      void * DUMA_CDECL operator new[](DUMA_SIZE_T, const char *, int) NEW_THROW_SPEC;
+       void * DUMA_CDECL operator new[](DUMA_SIZE_T, const std::nothrow_t &, const char *, int) throw();
+       void   DUMA_CDECL operator delete[](void *, const char *, int) throw();
+       void   DUMA_CDECL operator delete[](void *, const std::nothrow_t &, const char *, int) throw();

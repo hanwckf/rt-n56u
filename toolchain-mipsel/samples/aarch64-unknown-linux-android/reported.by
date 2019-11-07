@@ -1,0 +1,3 @@
+reporter_name="Howard Chu"
+reporter_url="http://www.symas.com"
+reporter_comment="Config to build cross-compiler for Android/bionic on ARM64"

@@ -1,0 +1,8 @@
+origin='RedHat'
+repository='git git://sourceware.org/git/newlib-cygwin.git'
+# Do not use "$(CT_Mirrors sourceware newlib)" here: the mirrors (kernel.org
+# and gnu.org) only store some older releases of newlib (2.0.0 and before).
+mirrors='ftp://sourceware.org/pub/newlib'
+milestones='2.0 2.1 2.2'
+relevantpattern='*.*|.*. *.*|.'
+archive_formats='.tar.gz'

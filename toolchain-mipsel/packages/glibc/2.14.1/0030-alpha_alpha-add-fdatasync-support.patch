@@ -1,0 +1,122 @@
+2009-07-25  Aurelien Jarno  <aurelien@aurel32.net>
+
+	* sysdeps/unix/sysv/linux/kernel-features.h: define 
+	__ASSUME_FDATASYNC. 
+	* sysdeps/unix/sysv/linux/fdatasync.c: New file.
+	* sysdeps/unix/sysv/linux/Makefile: compile fdatasync.c with
+	-fexceptions.
+	* sysdeps/unix/sysv/linux/syscalls.list: Remove fdatasync.
+
+ sysdeps/unix/sysv/linux/Makefile          |    1 
+ sysdeps/unix/sysv/linux/fdatasync.c       |   69 ++++++++++++++++++++++++++++++
+ sysdeps/unix/sysv/linux/kernel-features.h |    6 ++
+ sysdeps/unix/sysv/linux/syscalls.list     |    1 
+ 4 files changed, 76 insertions(+), 1 deletion(-)
+
+--- a/sysdeps/unix/sysv/linux/Makefile
++++ b/sysdeps/unix/sysv/linux/Makefile
+@@ -21,6 +21,7 @@
+ 		   setfsuid setfsgid makedev epoll_pwait signalfd \
+ 		   eventfd eventfd_read eventfd_write prlimit
+ 
++CFLAGS-fdatasync.c = -fexceptions
+ CFLAGS-gethostid.c = -fexceptions
+ 
+ sysdep_headers += sys/mount.h sys/acct.h sys/sysctl.h \
+--- /dev/null
++++ b/sysdeps/unix/sysv/linux/fdatasync.c
+@@ -0,0 +1,69 @@
++/* fdatasync -- synchronize at least the data part of a file with 
++   the underlying media. Linux version. 
++
++   Copyright (C) 2007 Free Software Foundation, Inc.
++   This file is part of the GNU C Library.
++
++   The GNU C Library is free software; you can redistribute it and/or
++   modify it under the terms of the GNU Lesser General Public
++   License as published by the Free Software Foundation; either
++   version 2.1 of the License, or (at your option) any later version.
++
++   The GNU C Library is distributed in the hope that it will be useful,
++   but WITHOUT ANY WARRANTY; without even the implied warranty of
++   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
++   Lesser General Public License for more details.
++
++   You should have received a copy of the GNU Lesser General Public
++   License along with the GNU C Library; if not, write to the Free
++   Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
++   02111-1307 USA.  */
++
++#include <errno.h>
++#include <unistd.h>
++
++#include <sysdep-cancel.h>
++#include <sys/syscall.h>
++#include <bp-checks.h>
++
++#include <kernel-features.h>
++
++#if defined __NR_fdatasync && !defined __ASSUME_FDATASYNC
++static int __have_no_fdatasync;
++#endif
++
++static int
++do_fdatasync (int fd)
++{
++#ifdef __ASSUME_FDATASYNC
++  return INLINE_SYSCALL (fdatasync, 1, fd);
++#elif defined __NR_fdatasync
++  if (!__builtin_expect (__have_no_fdatasync, 0))
++    {
++      int result = INLINE_SYSCALL (fdatasync, 1, fd);
++      if (__builtin_expect (result, 0) != -1 || errno != ENOSYS)
++	return result;
++
++      __have_no_fdatasync = 1;
++    }
++#endif
++  return INLINE_SYSCALL (fsync, 1, fd);
++}
++
++int
++__fdatasync (int fd)
++{
++  if (SINGLE_THREAD_P)
++    return do_fdatasync (fd);
++
++  int oldtype = LIBC_CANCEL_ASYNC ();
++
++  int result = do_fdatasync (fd);
++
++  LIBC_CANCEL_RESET (oldtype);
++
++  return result;
++}
++
++weak_alias (__fdatasync, fdatasync)
++
+--- a/sysdeps/unix/sysv/linux/kernel-features.h
++++ b/sysdeps/unix/sysv/linux/kernel-features.h
+@@ -459,6 +459,12 @@
+ # define __ASSUME_FUTEX_LOCK_PI	1
+ #endif
+ 
++/* Support for fsyncdata syscall was added in 2.6.22 on alpha, but it
++   was already present in 2.0 kernels on other architectures.  */
++#if (!defined __alpha || __LINUX_KERNEL_VERSION >= 0x020616)
++# define __ASSUME_FDATASYNC	1
++#endif
++
+ /* Support for utimensat syscall was added in 2.6.22, on SH
+    only after 2.6.22-rc1.  */
+ #if __LINUX_KERNEL_VERSION >= 0x020616 \
+--- a/sysdeps/unix/sysv/linux/syscalls.list
++++ b/sysdeps/unix/sysv/linux/syscalls.list
+@@ -12,7 +12,6 @@
+ epoll_create1	EXTRA	epoll_create1	i:i	epoll_create1
+ epoll_ctl	EXTRA	epoll_ctl	i:iiip	epoll_ctl
+ epoll_wait	EXTRA	epoll_wait	Ci:ipii	epoll_wait
+-fdatasync	-	fdatasync	Ci:i	fdatasync
+ flock		-	flock		i:ii	__flock		flock
+ fork		-	fork		i:	__libc_fork	__fork fork
+ get_kernel_syms	EXTRA	get_kernel_syms	i:p	get_kernel_syms

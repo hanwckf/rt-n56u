@@ -1,0 +1,11 @@
+Support for Alpine Linux as a build or host platform is EXPERIMENTAL. Some of
+the packages try to compile binaries for the build or the machine and fail
+because they expect certain GLIBC-specific types, etc: Alpine Linux does not
+use GNU libc, it uses musl.
+
+Only the following bug reports will be looked into:
+- A sample configuration used to build successfully and no longer does. Identify
+the commit ID that builds successfully for you.
+- A pull request that fixes the build for any sample on the Alpine Linux.
+
+All other bug reports against Alpine as a build/host will be summarily closed.

@@ -1,0 +1,31 @@
+---
+ posix/sys/types.h  |    3 +++
+ sunrpc/rpc/types.h |    3 +++
+ 2 files changed, 6 insertions(+)
+
+--- a/posix/sys/types.h
++++ b/posix/sys/types.h
+@@ -114,7 +114,10 @@
+ #ifdef	__USE_BSD
+ # ifndef __daddr_t_defined
+ typedef __daddr_t daddr_t;
++#  if ! defined(caddr_t) && ! defined(__caddr_t_defined)
+ typedef __caddr_t caddr_t;
++#   define __caddr_t_defined
++#  endif
+ #  define __daddr_t_defined
+ # endif
+ #endif
+--- a/sunrpc/rpc/types.h
++++ b/sunrpc/rpc/types.h
+@@ -86,7 +86,10 @@
+ #endif
+ #ifndef __daddr_t_defined
+ typedef __daddr_t daddr_t;
++# if ! defined(caddr_t) && ! defined(__caddr_t_defined)
+ typedef __caddr_t caddr_t;
++#  define __caddr_t_defined
++# endif
+ # define __daddr_t_defined
+ #endif
+ 

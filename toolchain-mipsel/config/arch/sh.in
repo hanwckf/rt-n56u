@@ -1,0 +1,77 @@
+# Super-H specific configuration file
+
+## no-package
+## select ARCH_SUPPORTS_32
+## select ARCH_DEFAULT_32
+## select ARCH_SUPPORTS_BOTH_MMU
+## select ARCH_DEFAULT_HAS_MMU
+## select ARCH_SUPPORTS_FLAT_FORMAT
+## select ARCH_SUPPORTS_EITHER_ENDIAN
+## select ARCH_DEFAULT_LE
+## select ARCH_REQUIRES_MULTILIB
+## select ARCH_SUPPORTS_WITH_ENDIAN
+##
+## help The Super-H architecture, as defined by:
+## help     http://www.renesas.com/fmwk.jsp?cnt=superh_family_landing.jsp&fp=/products/mpumcu/superh_family/
+
+choice
+    bool
+    prompt "Variant"
+
+# GCC supports both endiannesses even if a specific CPU is selected (so long
+# as that CPU can be both BE/LE), but the binutils (or specifically, ld)
+# configures for both endiannesses only if sh-*-linux target is selected.
+config ARCH_SH_SH
+    bool
+    prompt "unspecified"
+    select ARCH_SUPPORTS_BOTH_ENDIAN
+    select ARCH_SUPPORTS_WITH_CPU
+    help
+      If left unspecified, GCC will determine the set of multilibs to compile automatically
+      based on selected endianness, FPU mode and OS.
+
+config ARCH_SH_SH1
+    bool
+    prompt "sh1"
+
+config ARCH_SH_SH2
+    bool
+    prompt "sh2"
+
+config ARCH_SH_SH2E
+    bool
+    prompt "sh2e"
+
+config ARCH_SH_SH2A
+    bool
+    prompt "sh2a"
+
+config ARCH_SH_SH3
+    bool
+    prompt "sh3"
+
+config ARCH_SH_SH3E
+    bool
+    prompt "sh3e"
+
+config ARCH_SH_SH4
+    bool
+    prompt "sh4"
+
+config ARCH_SH_SH4A
+    bool
+    prompt "sh4a"
+
+endchoice
+
+config ARCH_SH_VARIANT
+    string
+    default "sh"   if ARCH_SH_SH
+    default "sh1"   if ARCH_SH_SH1
+    default "sh2"   if ARCH_SH_SH2
+    default "sh2e"   if ARCH_SH_SH2E
+    default "sh2a"   if ARCH_SH_SH2A
+    default "sh3"   if ARCH_SH_SH3
+    default "sh3e"   if ARCH_SH_SH3E
+    default "sh4"   if ARCH_SH_SH4
+    default "sh4a"  if ARCH_SH_SH4A

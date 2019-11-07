@@ -1,0 +1,31 @@
+---
+ gcc/config/nios2/nios2.h |    4 ++--
+ gcc/config/nios2/t-nios2 |    3 +--
+ 2 files changed, 3 insertions(+), 4 deletions(-)
+
+--- a/gcc/config/nios2/nios2.h
++++ b/gcc/config/nios2/nios2.h
+@@ -63,11 +63,11 @@
+ #if TARGET_ENDIAN_DEFAULT == 0
+ # define ASM_SPEC "%{!meb:-EL} %{meb:-EB} %{march=*:-march=%*}"
+ # define LINK_SPEC_ENDIAN "%{!meb:-EL} %{meb:-EB}"
+-# define MULTILIB_DEFAULTS { "EL" }
++# define MULTILIB_DEFAULTS { "mel" }
+ #else
+ # define ASM_SPEC "%{!mel:-EB} %{mel:-EL} %{march=*:-march=%*}"
+ # define LINK_SPEC_ENDIAN "%{!mel:-EB} %{mel:-EL}"
+-# define MULTILIB_DEFAULTS { "EB" }
++# define MULTILIB_DEFAULTS { "meb" }
+ #endif
+ 
+ #define LINK_SPEC LINK_SPEC_ENDIAN \
+--- a/gcc/config/nios2/t-nios2
++++ b/gcc/config/nios2/t-nios2
+@@ -22,6 +22,5 @@
+ # MULTILIB_DIRNAMES = nomul mulx fpu-60-1 fpu-60-2
+ # MULTILIB_EXCEPTIONS = 
+ 
+-# MULTILIB_OPTIONS += EL/EB
++# MULTILIB_OPTIONS += mel/meb
+ # MULTILIB_DIRNAMES += le be
+-# MULTILIB_MATCHES += EL=mel EB=meb

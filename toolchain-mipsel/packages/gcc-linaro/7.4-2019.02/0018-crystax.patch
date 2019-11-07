@@ -1,0 +1,23 @@
+commit 89d27bc45ee7325dcfff6748da0f8b9c1dc1f234
+Author: Dmitry Moskalchuk <dm@crystax.net>
+Date:   Sat Aug 22 09:55:55 2015 +0300
+
+    [android][i386] Remove throw() declaration from posix_memalign() proto
+    
+    Signed-off-by: Dmitry Moskalchuk <dm@crystax.net>
+
+---
+ gcc/config/i386/pmm_malloc.h |    2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+--- a/gcc/config/i386/pmm_malloc.h
++++ b/gcc/config/i386/pmm_malloc.h
+@@ -31,7 +31,7 @@
+ #ifndef __cplusplus
+ extern int posix_memalign (void **, size_t, size_t);
+ #else
+-extern "C" int posix_memalign (void **, size_t, size_t) throw ();
++extern "C" int posix_memalign (void **, size_t, size_t);
+ #endif
+ 
+ static __inline void *

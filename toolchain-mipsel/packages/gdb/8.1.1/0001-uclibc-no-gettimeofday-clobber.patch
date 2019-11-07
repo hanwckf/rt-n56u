@@ -1,0 +1,33 @@
+Improve gnulib in gdb's guess work, gettimeofday() works in uClibcm promise.
+
+This patch helps building x86_64-unknown-linux-uclibc toolchains, the final
+gdb-native step otherwise fails when linking the libinproctrace.so
+
+Signed-off-by: Joachim Nilsson <troglobit@gmail.com>
+Signed-off-by: Alexey Neyman <stilor@att.net>
+
+---
+ gdb/gnulib/configure                 |    1 +
+ gdb/gnulib/import/m4/gettimeofday.m4 |    1 +
+ 2 files changed, 2 insertions(+)
+
+--- a/gdb/gnulib/configure
++++ b/gdb/gnulib/configure
+@@ -16790,6 +16790,7 @@
+       case "$host_os" in
+                 # Guess all is fine on glibc systems.
+         *-gnu*) gl_cv_func_gettimeofday_clobber="guessing no" ;;
++        *-uclibc*) gl_cv_func_gettimeofday_clobber="guessing no" ;;
+                 # If we don't know, assume the worst.
+         *)      gl_cv_func_gettimeofday_clobber="guessing yes" ;;
+       esac
+--- a/gdb/gnulib/import/m4/gettimeofday.m4
++++ b/gdb/gnulib/import/m4/gettimeofday.m4
+@@ -111,6 +111,7 @@
+       case "$host_os" in
+                 # Guess all is fine on glibc systems.
+         *-gnu*) gl_cv_func_gettimeofday_clobber="guessing no" ;;
++        *-uclibc*) gl_cv_func_gettimeofday_clobber="guessing no" ;;
+                 # If we don't know, assume the worst.
+         *)      gl_cv_func_gettimeofday_clobber="guessing yes" ;;
+       esac

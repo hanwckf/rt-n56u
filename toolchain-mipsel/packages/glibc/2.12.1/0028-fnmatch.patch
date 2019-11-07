@@ -1,0 +1,62 @@
+http://sourceware.org/ml/libc-hacker/2002-11/msg00071.html
+
+When fnmatch detects an invalid multibyte character it should fall back to
+single byte matching, so that "*" has a chance to match such a string.
+
+Andreas.
+
+2005-04-12  Andreas Schwab  <schwab@suse.de>
+
+	* posix/fnmatch.c (fnmatch): If conversion to wide character
+	fails fall back to single byte matching.
+
+---
+ posix/fnmatch.c |   16 ++++++++--------
+ 1 file changed, 8 insertions(+), 8 deletions(-)
+
+--- a/posix/fnmatch.c
++++ b/posix/fnmatch.c
+@@ -327,6 +327,7 @@
+ # if HANDLE_MULTIBYTE
+   if (__builtin_expect (MB_CUR_MAX, 1) != 1)
+     {
++      const char *orig_pattern = pattern;
+       mbstate_t ps;
+       size_t n;
+       const char *p;
+@@ -382,10 +383,8 @@
+ 	  wstring = (wchar_t *) alloca ((n + 1) * sizeof (wchar_t));
+ 	  n = mbsrtowcs (wstring, &p, n + 1, &ps);
+ 	  if (__builtin_expect (n == (size_t) -1, 0))
+-	    /* Something wrong.
+-	       XXX Do we have to set `errno' to something which mbsrtows hasn't
+-	       already done?  */
+-	    return -1;
++	    /* Something wrong.  Fall back to single byte matching.  */
++	    goto try_singlebyte;
+ 	  if (p)
+ 	    {
+ 	      memset (&ps, '\0', sizeof (ps));
+@@ -397,10 +396,8 @@
+ 	prepare_wstring:
+ 	  n = mbsrtowcs (NULL, &string, 0, &ps);
+ 	  if (__builtin_expect (n == (size_t) -1, 0))
+-	    /* Something wrong.
+-	       XXX Do we have to set `errno' to something which mbsrtows hasn't
+-	       already done?  */
+-	    return -1;
++	    /* Something wrong.  Fall back to single byte matching.  */
++	    goto try_singlebyte;
+ 	  wstring = (wchar_t *) alloca ((n + 1) * sizeof (wchar_t));
+ 	  assert (mbsinit (&ps));
+ 	  (void) mbsrtowcs (wstring, &string, n + 1, &ps);
+@@ -408,6 +405,9 @@
+ 
+       return internal_fnwmatch (wpattern, wstring, wstring + n,
+ 				flags & FNM_PERIOD, flags, NULL);
++
++    try_singlebyte:
++      pattern = orig_pattern;
+     }
+ # endif  /* mbstate_t and mbsrtowcs or _LIBC.  */
+ 

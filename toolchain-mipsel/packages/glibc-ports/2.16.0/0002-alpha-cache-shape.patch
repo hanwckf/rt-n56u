@@ -1,0 +1,16 @@
+older verisons of glibc would build dl-sysdep as shared-only and dl-support as
+static-only.  alpha hooks in a cache variable via dl-auxv.h.  newer versions of
+glibc build dl-sysdep as both shared and static which means we now have symbol
+duplication for static builds with dl-sysdep and dl-support.  since dl-sysdep
+is both shared/static, there is no point in hooking dl-support anymore, so we
+can punt it.
+
+---
+ sysdeps/unix/sysv/linux/alpha/dl-support.c |    1 -
+ 1 file changed, 1 deletion(-)
+
+--- a/sysdeps/unix/sysv/linux/alpha/dl-support.c
++++ b/sysdeps/unix/sysv/linux/alpha/dl-support.c
+@@ -1,2 +1 @@
+-#include "dl-auxv.h"
+ #include <elf/dl-support.c>

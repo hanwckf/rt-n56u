@@ -1,0 +1,6 @@
+# MPC options
+# MPC 1.1.0 and later requires MPFR 3.0.0 or later and GMP 5.0.0 or later.
+# MPC 1.0.x and earlier break with MPFR 4.0.0.
+## select MPFR_REQUIRE_3_0_0_or_later if MPFR_NEEDED && MPC_1_1_0_or_later
+## select GMP_REQUIRE_5_0_0_or_later if GMP_NEEDED && MPC_1_1_0_or_later
+## select MPFR_REQUIRE_older_than_4_0_0 if MPFR_NEEDED && !MPC_1_1_0_or_later

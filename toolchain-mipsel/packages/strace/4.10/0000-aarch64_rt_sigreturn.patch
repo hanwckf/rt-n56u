@@ -1,0 +1,23 @@
+commit d76d3069526c348e6fe5d40bbbceb2ae4a928d16
+Author: Dmitry V. Levin <ldv@altlinux.org>
+Date:   Wed Mar 11 14:32:25 2015 +0000
+
+    aarch64: fix rt_sigreturn decoding
+    
+    * sigreturn.c (sys_sigreturn) [AARCH64]: Fix personality check.
+
+---
+ sigreturn.c |    2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+--- a/sigreturn.c
++++ b/sigreturn.c
+@@ -23,7 +23,7 @@
+ # define OFFSETOF_STRUCT_UCONTEXT_UC_SIGMASK (5 * 4 + SIZEOF_STRUCT_SIGCONTEXT)
+ 		const long addr =
+ # ifdef AARCH64
+-			current_personality == 0 ?
++			current_personality == 1 ?
+ 				(*aarch64_sp_ptr + SIZEOF_STRUCT_SIGINFO +
+ 				 offsetof(struct ucontext, uc_sigmask)) :
+ # endif

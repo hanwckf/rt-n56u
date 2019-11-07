@@ -1,0 +1,8 @@
+origin='GNU'
+repository='git git://sourceware.org/git/glibc.git'
+mirrors='$(CT_Mirrors GNU glibc)'
+# Cannot use MAJOR.MINOR as the releant part because of 2.12: 2.12.2 was the most recent
+# bugfix release, but it didn't have glibc-ports released alongside it.
+milestones='2.14 2.17 2.20 2.23 2.24 2.25 2.26 2.27 2.29'
+archive_formats='.tar.xz .tar.bz2 .tar.gz'
+signature_format='packed/.sig'

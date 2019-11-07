@@ -1,0 +1,16 @@
+# SPARC specific config options
+
+## no-package
+## select ARCH_SUPPORTS_32
+## select ARCH_SUPPORTS_64
+## select ARCH_DEFAULT_32
+## select ARCH_SUPPORTS_BOTH_MMU
+## select ARCH_DEFAULT_HAS_MMU
+## select ARCH_SUPPORTS_FLAT_FORMAT
+## select ARCH_SUPPORTS_WITH_CPU
+## select ARCH_SUPPORTS_WITH_TUNE
+## select ARCH_SUPPORTS_WITH_FLOAT
+##
+## help The SUN SPARC architecture, as defined by:
+## help     32 bit: http://www.sparc.org/standards/V8.pdf
+## help     64 bit: http://www.sparc.org/standards/SPARCV9.pdf

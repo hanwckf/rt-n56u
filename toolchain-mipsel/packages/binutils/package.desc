@@ -1,0 +1,7 @@
+repository='git git://sourceware.org/git/binutils-gdb.git'
+mirrors='$(CT_Mirrors GNU binutils) $(CT_Mirrors sourceware binutils/releases)'
+relevantpattern='*.*|.'
+origin='GNU'
+milestones='2.23 2.25 2.27 2.30'
+archive_formats='.tar.xz .tar.bz2 .tar.gz'
+signature_format='packed/.sig'

@@ -1,0 +1,366 @@
+http://yann.poupet.free.fr/ep93xx/
+Add support for the Maverick Crunch FPU on Cirrus EP93XX processor series
+
+---
+ sysdeps/arm/bits/endian.h        |    2 -
+ sysdeps/arm/fpu/__longjmp.S      |   26 +++++++++++++
+ sysdeps/arm/fpu/bits/fenv.h      |   41 ++++++++++++++++++++
+ sysdeps/arm/fpu/bits/setjmp.h    |    4 ++
+ sysdeps/arm/fpu/fegetround.c     |   12 ++++++
+ sysdeps/arm/fpu/fesetround.c     |   16 ++++++++
+ sysdeps/arm/fpu/fpu_control.h    |   78 ++++++++++++++++++++++++++++++++++++++-
+ sysdeps/arm/fpu/jmpbuf-offsets.h |    4 ++
+ sysdeps/arm/fpu/setjmp.S         |   30 +++++++++++++++
+ sysdeps/arm/gccframe.h           |    4 ++
+ sysdeps/arm/gmp-mparam.h         |    2 -
+ 11 files changed, 216 insertions(+), 3 deletions(-)
+
+--- a/sysdeps/arm/bits/endian.h
++++ b/sysdeps/arm/bits/endian.h
+@@ -12,7 +12,7 @@
+ /* FPA floating point units are always big-endian, irrespective of the
+    CPU endianness.  VFP floating point units use the same endianness
+    as the rest of the system.  */
+-#ifdef __VFP_FP__
++#if defined __VFP_FP__ || defined __MAVERICK__
+ #define __FLOAT_WORD_ORDER __BYTE_ORDER
+ #else
+ #define __FLOAT_WORD_ORDER __BIG_ENDIAN
+--- a/sysdeps/arm/fpu/__longjmp.S
++++ b/sysdeps/arm/fpu/__longjmp.S
+@@ -30,7 +30,33 @@
+ 	movs	r0, r1		/* get the return value in place */
+ 	moveq	r0, #1		/* can't let setjmp() return zero! */
+ 
++#ifdef __MAVERICK__
++	cfldrd	mvd4,  [ip], #8
++	nop
++	cfldrd	mvd5,  [ip], #8
++	nop
++	cfldrd	mvd6,  [ip], #8
++	nop
++	cfldrd	mvd7,  [ip], #8
++	nop
++	cfldrd	mvd8,  [ip], #8
++	nop
++	cfldrd	mvd9,  [ip], #8
++	nop
++	cfldrd	mvd10, [ip], #8
++	nop
++	cfldrd	mvd11, [ip], #8
++	nop
++	cfldrd	mvd12, [ip], #8
++	nop
++	cfldrd	mvd13, [ip], #8
++	nop
++	cfldrd	mvd14, [ip], #8
++	nop
++	cfldrd	mvd15, [ip], #8
++#else
+ 	lfmfd	f4, 4, [ip] !	/* load the floating point regs */
++#endif
+ 
+ 	LOADREGS(ia, ip, {v1-v6, sl, fp, sp, pc})
+ END (__longjmp)
+--- a/sysdeps/arm/fpu/bits/fenv.h
++++ b/sysdeps/arm/fpu/bits/fenv.h
+@@ -20,6 +20,45 @@
+ # error "Never use <bits/fenv.h> directly; include <fenv.h> instead."
+ #endif
+ 
++#if defined(__MAVERICK__)
++
++/* Define bits representing exceptions in the FPU status word.  */
++enum
++  {
++    FE_INVALID = 1,
++#define FE_INVALID FE_INVALID
++    FE_OVERFLOW = 4,
++#define FE_OVERFLOW FE_OVERFLOW
++    FE_UNDERFLOW = 8,
++#define FE_UNDERFLOW FE_UNDERFLOW
++    FE_INEXACT = 16,
++#define FE_INEXACT FE_INEXACT
++  };
++
++/* Amount to shift by to convert an exception to a mask bit.  */
++#define FE_EXCEPT_SHIFT	5
++
++/* All supported exceptions.  */
++#define FE_ALL_EXCEPT	\
++	(FE_INVALID | FE_OVERFLOW | FE_UNDERFLOW | FE_INEXACT)
++
++/* IEEE rounding modes.  */
++enum
++  {
++    FE_TONEAREST = 0,
++#define FE_TONEAREST    FE_TONEAREST
++    FE_TOWARDZERO = 0x400,
++#define FE_TOWARDZERO   FE_TOWARDZERO
++    FE_DOWNWARD = 0x800,
++#define FE_DOWNWARD     FE_DOWNWARD
++    FE_UPWARD = 0xc00,
++#define FE_UPWARD       FE_UPWARD
++  };
++
++#define FE_ROUND_MASK (FE_UPWARD)
++
++#else /* FPA */
++
+ /* Define bits representing exceptions in the FPU status word.  */
+ enum
+   {
+@@ -44,6 +83,8 @@
+    modes exist, but you have to encode them in the actual instruction.  */
+ #define FE_TONEAREST	0
+ 
++#endif
++
+ /* Type representing exception flags. */
+ typedef unsigned long int fexcept_t;
+ 
+--- a/sysdeps/arm/fpu/bits/setjmp.h
++++ b/sysdeps/arm/fpu/bits/setjmp.h
+@@ -28,7 +28,11 @@
+ #ifndef _ASM
+ /* Jump buffer contains v1-v6, sl, fp, sp and pc.  Other registers are not
+    saved.  */
++#ifdef __MAVERICK__
++typedef int __jmp_buf[34];
++#else
+ typedef int __jmp_buf[22];
+ #endif
++#endif
+ 
+ #endif
+--- a/sysdeps/arm/fpu/fegetround.c
++++ b/sysdeps/arm/fpu/fegetround.c
+@@ -18,9 +18,21 @@
+    02111-1307 USA.  */
+ 
+ #include <fenv.h>
++#include <fpu_control.h>
+ 
+ int
+ fegetround (void)
+ {
++#if defined(__MAVERICK__)
++
++  unsigned long temp;
++
++  _FPU_GETCW (temp);
++  return temp & FE_ROUND_MASK;
++
++#else /* FPA */
++
+   return FE_TONEAREST;		/* Easy. :-) */
++
++#endif
+ }
+--- a/sysdeps/arm/fpu/fesetround.c
++++ b/sysdeps/arm/fpu/fesetround.c
+@@ -18,12 +18,28 @@
+    02111-1307 USA.  */
+ 
+ #include <fenv.h>
++#include <fpu_control.h>
+ 
+ int
+ fesetround (int round)
+ {
++#if defined(__MAVERICK__)
++  unsigned long temp;
++
++  if (round & ~FE_ROUND_MASK)
++    return 1;
++
++  _FPU_GETCW (temp);
++  temp = (temp & ~FE_ROUND_MASK) | round;
++  _FPU_SETCW (temp);
++  return 0;
++
++#else /* FPA */
++
+   /* We only support FE_TONEAREST, so there is no need for any work.  */
+   return (round == FE_TONEAREST)?0:1;
++
++#endif
+ }
+ 
+ libm_hidden_def (fesetround)
+--- a/sysdeps/arm/fpu/fpu_control.h
++++ b/sysdeps/arm/fpu/fpu_control.h
+@@ -1,5 +1,6 @@
+ /* FPU control word definitions.  ARM version.
+-   Copyright (C) 1996, 1997, 1998, 2000 Free Software Foundation, Inc.
++   Copyright (C) 1996, 1997, 1998, 2000, 2005
++   Free Software Foundation, Inc.
+    This file is part of the GNU C Library.
+ 
+    The GNU C Library is free software; you can redistribute it and/or
+@@ -20,6 +21,79 @@
+ #ifndef _FPU_CONTROL_H
+ #define _FPU_CONTROL_H
+ 
++#if defined(__MAVERICK__)
++
++/* DSPSC register: (from EP9312 User's Guide)
++ *
++ * bits 31..29	- DAID
++ * bits 28..26	- HVID
++ * bits 25..24	- RSVD
++ * bit  23	- ISAT
++ * bit  22	- UI
++ * bit  21	- INT
++ * bit  20	- AEXC
++ * bits 19..18	- SAT
++ * bits 17..16	- FCC
++ * bit  15	- V
++ * bit  14	- FWDEN
++ * bit  13	- Invalid
++ * bit	12	- Denorm
++ * bits 11..10	- RM
++ * bits 9..5	- IXE, UFE, OFE, RSVD, IOE
++ * bits 4..0	- IX, UF, OF, RSVD, IO
++ */
++
++/* masking of interrupts */
++#define _FPU_MASK_IM	(1 << 5)	/* invalid operation */
++#define _FPU_MASK_ZM	0		/* divide by zero */
++#define _FPU_MASK_OM	(1 << 7)	/* overflow */
++#define _FPU_MASK_UM	(1 << 8)	/* underflow */
++#define _FPU_MASK_PM	(1 << 9)	/* inexact */
++#define _FPU_MASK_DM	0		/* denormalized operation */
++
++#define _FPU_RESERVED	0xfffff000	/* These bits are reserved.  */
++
++#define _FPU_DEFAULT	0x00b00000	/* Default value.  */
++#define _FPU_IEEE	0x00b003a0	/* Default + exceptions enabled. */
++
++/* Type of the control word.  */
++typedef unsigned int fpu_control_t;
++
++/* Macros for accessing the hardware control word.  */
++#define _FPU_GETCW(cw) ({			\
++	register int __t1, __t2;		\
++						\
++	__asm__ volatile (			\
++	"cfmvr64l	%1, mvdx0\n\t"		\
++	"cfmvr64h	%2, mvdx0\n\t"		\
++	"cfmv32sc	mvdx0, dspsc\n\t"	\
++	"cfmvr64l	%0, mvdx0\n\t"		\
++	"cfmv64lr	mvdx0, %1\n\t"		\
++	"cfmv64hr	mvdx0, %2"		\
++	: "=r" (cw), "=r" (__t1), "=r" (__t2)	\
++	);					\
++})
++
++#define _FPU_SETCW(cw) ({			\
++	register int __t0, __t1, __t2;		\
++						\
++	__asm__ volatile (			\
++	"cfmvr64l	%1, mvdx0\n\t"		\
++	"cfmvr64h	%2, mvdx0\n\t"		\
++	"cfmv64lr	mvdx0, %0\n\t"		\
++	"cfmvsc32	dspsc, mvdx0\n\t"	\
++	"cfmv64lr	mvdx0, %1\n\t"		\
++	"cfmv64hr	mvdx0, %2"		\
++	: "=r" (__t0), "=r" (__t1), "=r" (__t2)	\
++	: "0" (cw)				\
++	);					\
++})
++
++/* Default control word set at startup.  */
++extern fpu_control_t __fpu_control;
++
++#else /* FPA */
++
+ /* We have a slight terminology confusion here.  On the ARM, the register
+  * we're interested in is actually the FPU status word - the FPU control
+  * word is something different (which is implementation-defined and only
+@@ -99,4 +173,6 @@
+ /* Default control word set at startup.  */
+ extern fpu_control_t __fpu_control;
+ 
++#endif
++
+ #endif /* _FPU_CONTROL_H */
+--- a/sysdeps/arm/fpu/jmpbuf-offsets.h
++++ b/sysdeps/arm/fpu/jmpbuf-offsets.h
+@@ -17,4 +17,8 @@
+    Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
+    02111-1307 USA.  */
+ 
++#ifdef __MAVERICK__
++#define __JMP_BUF_SP		32
++#else
+ #define __JMP_BUF_SP		20
++#endif
+--- a/sysdeps/arm/fpu/setjmp.S
++++ b/sysdeps/arm/fpu/setjmp.S
+@@ -24,11 +24,41 @@
+ 
+ ENTRY (__sigsetjmp)
+ 	/* Save registers */
++#ifdef __MAVERICK__
++	cfstrd	mvd4,  [r0], #8
++	nop
++	cfstrd	mvd5,  [r0], #8
++	nop
++	cfstrd	mvd6,  [r0], #8
++	nop
++	cfstrd	mvd7,  [r0], #8
++	nop
++	cfstrd	mvd8,  [r0], #8
++	nop
++	cfstrd	mvd9,  [r0], #8
++	nop
++	cfstrd	mvd10, [r0], #8
++	nop
++	cfstrd	mvd11, [r0], #8
++	nop
++	cfstrd	mvd12, [r0], #8
++	nop
++	cfstrd	mvd13, [r0], #8
++	nop
++	cfstrd	mvd14, [r0], #8
++	nop
++	cfstrd	mvd15, [r0], #8
++#else
+ 	sfmea	f4, 4, [r0]!
++#endif
+ 	stmia	r0, {v1-v6, sl, fp, sp, lr}
+ 
+ 	/* Restore pointer to jmp_buf */
++#ifdef __MAVERICK__
++	sub	r0, r0, #96
++#else
+ 	sub	r0, r0, #48
++#endif
+ 
+ 	/* Make a tail call to __sigjmp_save; it takes the same args.  */
+ 	B	PLTJMP(C_SYMBOL_NAME(__sigjmp_save))
+--- a/sysdeps/arm/gccframe.h
++++ b/sysdeps/arm/gccframe.h
+@@ -17,6 +17,10 @@
+    Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
+    02111-1307 USA.  */
+ 
++#ifdef __MAVERICK__
++#define FIRST_PSEUDO_REGISTER 43
++#else
+ #define FIRST_PSEUDO_REGISTER 27
++#endif
+ 
+ #include <sysdeps/generic/gccframe.h>
+--- a/sysdeps/arm/gmp-mparam.h
++++ b/sysdeps/arm/gmp-mparam.h
+@@ -29,7 +29,7 @@
+ #if defined(__ARMEB__)
+ # define IEEE_DOUBLE_MIXED_ENDIAN 0
+ # define IEEE_DOUBLE_BIG_ENDIAN 1
+-#elif defined(__VFP_FP__)
++#elif defined(__VFP_FP__) || defined(__MAVERICK__)
+ # define IEEE_DOUBLE_MIXED_ENDIAN 0
+ # define IEEE_DOUBLE_BIG_ENDIAN 0
+ #else

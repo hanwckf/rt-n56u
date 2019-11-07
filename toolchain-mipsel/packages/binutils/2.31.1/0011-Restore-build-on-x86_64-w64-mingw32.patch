@@ -1,0 +1,122 @@
+From be07c0ea2b943fe0bc8009432eadf157bbc2b718 Mon Sep 17 00:00:00 2001
+From: Alexey Neyman <stilor@att.net>
+Date: Sun, 7 Oct 2018 11:57:49 -0700
+Subject: [PATCH] Restore build on x86_64-w64-mingw32
+
+	* gold/configure.ac: Add checks for link, mkdtemp.
+	* gold/configure: Regenerated.
+	* gold/config.in: Regenerated.
+	* gold/plugin.cc (Plugin_recorder::init): Fall back to mktemp
+	if mkdtemp is not available.
+	(link_or_copy_file): Fall back to copy if link() is not available.
+
+Signed-off-by: Alexey Neyman <stilor@att.net>
+---
+ gold/config.in    |    6 ++++++
+ gold/configure    |    9 ++++++++-
+ gold/configure.ac |    5 ++++-
+ gold/plugin.cc    |   14 ++++++++++++++
+ 4 files changed, 32 insertions(+), 2 deletions(-)
+
+--- a/gold/config.in
++++ b/gold/config.in
+@@ -103,6 +103,9 @@
+ /* Define if your <locale.h> file defines LC_MESSAGES. */
+ #undef HAVE_LC_MESSAGES
+ 
++/* Define to 1 if you have the `link' function. */
++#undef HAVE_LINK
++
+ /* Define to 1 if you have the <locale.h> header file. */
+ #undef HAVE_LOCALE_H
+ 
+@@ -112,6 +115,9 @@
+ /* Define to 1 if you have the <memory.h> header file. */
+ #undef HAVE_MEMORY_H
+ 
++/* Define to 1 if you have the `mkdtemp' function. */
++#undef HAVE_MKDTEMP
++
+ /* Define to 1 if you have the `mmap' function. */
+ #undef HAVE_MMAP
+ 
+--- a/gold/configure
++++ b/gold/configure
+@@ -7977,7 +7977,7 @@
+ 
+ done
+ 
+-for ac_func in chsize mmap
++for ac_func in chsize mmap link
+ do :
+   as_ac_var=`$as_echo "ac_cv_func_$ac_func" | $as_tr_sh`
+ ac_fn_c_check_func "$LINENO" "$ac_func" "$as_ac_var"
+@@ -9878,6 +9878,13 @@
+ fi
+ done
+ 
++ac_fn_cxx_check_func "$LINENO" "mkdtemp" "ac_cv_func_mkdtemp"
++if test "x$ac_cv_func_mkdtemp" = xyes; then :
++
++$as_echo "#define HAVE_MKDTEMP 1" >>confdefs.h
++
++fi
++
+ ac_fn_cxx_check_decl "$LINENO" "basename" "ac_cv_have_decl_basename" "$ac_includes_default"
+ if test "x$ac_cv_have_decl_basename" = xyes; then :
+   ac_have_decl=1
+--- a/gold/configure.ac
++++ b/gold/configure.ac
+@@ -529,7 +529,7 @@
+ AC_SUBST(LFS_CFLAGS)
+ 
+ AC_CHECK_HEADERS(sys/mman.h)
+-AC_CHECK_FUNCS(chsize mmap)
++AC_CHECK_FUNCS(chsize mmap link)
+ AC_REPLACE_FUNCS(pread ftruncate ffsll)
+ 
+ AC_CACHE_CHECK([mremap with MREMAP_MAYMOVE], [gold_cv_lib_mremap_maymove],
+@@ -614,6 +614,9 @@
+ AC_SUBST(DLOPEN_LIBS)
+ 
+ AC_CHECK_FUNCS(mallinfo posix_fallocate fallocate readv sysconf times)
++AC_CHECK_FUNC([mkdtemp],
++              AC_DEFINE([HAVE_MKDTEMP], 1,
++              [Define to 1 if you have the `mkdtemp' function.]))
+ AC_CHECK_DECLS([basename, ffs, asprintf, vasprintf, snprintf, vsnprintf, strverscmp, strndup, memmem])
+ 
+ # Use of ::std::tr1::unordered_map::rehash causes undefined symbols
+--- a/gold/plugin.cc
++++ b/gold/plugin.cc
+@@ -508,8 +508,20 @@
+   // Create a temporary directory where we can stash the log and
+   // copies of replacement files.
+   char dir_template[] = "gold-recording-XXXXXX";
++#ifdef HAVE_MKDTEMP
+   if (mkdtemp(dir_template) == NULL)
+     return false;
++#else
++  if (mktemp(dir_template) == NULL)
++    return false;
++#if defined (_WIN32) && !defined (__CYGWIN32__)
++  if (mkdir(dir_template) != 0)
++    return false;
++#else
++  if (mkdir(dir_template, 0700) != 0)
++    return false;
++#endif
++#endif
+ 
+   size_t len = strlen(dir_template) + 1;
+   char* tempdir = new char[len];
+@@ -562,8 +574,10 @@
+ {
+   static char buf[4096];
+ 
++#ifdef HAVE_LINK
+   if (::link(inname, outname) == 0)
+     return true;
++#endif
+ 
+   int in = ::open(inname, O_RDONLY);
+   if (in < 0)

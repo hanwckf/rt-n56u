@@ -1,0 +1,57 @@
+# ncurses config file
+
+config NCURSES_NEW_ABI
+    bool "ncurses 6.0 ABI support"
+    depends on EXPERIMENTAL
+    help
+      This option allows you to use the new ncurses-6 ABI.
+      It's wise to leave this disabled and stick with the ncurses-5 ABI!
+
+config NCURSES_HOST_CONFIG_ARGS
+    string "Extra configure arguments for host ncurses"
+    help
+      Extra arguments that are passed verbatim to the configure when
+      building host ncurses.
+
+config NCURSES_HOST_DISABLE_DB
+    bool "Disable terminfo DB on the host"
+    default y
+    help
+      The terminfo database is not currently not installed on the host
+      as a part of the toolchain built by crosstool-ng.  This means the
+      library will not be able to use the terminals, unless that database
+      comes preinstalled.
+
+      Selecting this option allows one to embed some popular terminal
+      definitions into the library itself.
+
+      If not select, the path to the terminfo database on the host will
+      likely need to be passed as an argument to configure.
+
+config NCURSES_HOST_FALLBACKS
+    string "List of fallback terminals for the host"
+    default "linux,xterm,xterm-color,xterm-256color,vt100"
+    help
+      List of terminal descriptions that will be compiled into the curses
+      library for the host.
+
+config NCURSES_TARGET_CONFIG_ARGS
+    string "Extra configure arguments for target ncurses"
+    help
+      Extra arguments that are passed verbatim to the configure when
+      building target ncurses.
+
+config NCURSES_TARGET_DISABLE_DB
+    bool "Disable terminfo DB on the target"
+    default n
+    help
+      The terminfo database is installed with the terminfo database for the
+      target. If you want to configure ncurses with preselected terminals,
+      select Y here.
+
+config NCURSES_TARGET_FALLBACKS
+    string "List of fallback terminals for the target"
+    help
+      List of terminal descriptions that will be compiled into the curses
+      library for the target.
+

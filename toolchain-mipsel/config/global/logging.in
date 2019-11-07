@@ -1,0 +1,105 @@
+# Options specific to logging
+
+comment "Logging"
+
+choice
+    bool
+    prompt "Maximum log level to see:"
+    default LOG_EXTRA
+
+config LOG_ERROR
+    bool
+    prompt "ERROR"
+    help
+      The build will be silent.
+      Only if there is an error will you see a message.
+
+config LOG_WARN
+    bool
+    prompt "WARN"
+    help
+      The same as above, plus warnings.
+
+config LOG_INFO
+    bool
+    prompt "INFO"
+    help
+      The same as above, plus informational messages (main steps).
+
+config LOG_EXTRA
+    bool
+    prompt "EXTRA"
+    help
+      The same as above, plus extra messages (sub-steps).
+
+config LOG_ALL
+    bool
+    prompt "ALL"
+    help
+      The same as above, plus all components build messages (very noisy!).
+
+config LOG_DEBUG
+    bool
+    prompt "DEBUG"
+    help
+      The same as above, plus lots of crosstool-NG debug information.
+
+endchoice
+
+config LOG_LEVEL_MAX
+    string
+    default "ERROR"   if LOG_ERROR
+    default "WARN"    if LOG_WARN
+    default "INFO"    if LOG_INFO
+    default "EXTRA"   if LOG_EXTRA
+    default "ALL"     if LOG_ALL
+    default "DEBUG"   if LOG_DEBUG
+
+config LOG_SEE_TOOLS_WARN
+    bool
+    prompt "Warnings from the tools' builds"
+    depends on ! LOG_ERROR
+    help
+      Treat warnings from the different tools as crosstool-NG warnings.
+      If you say 'y' here, then those warnings will be prefixed with
+      '[WARN ]' instead of the default '[ALL  ]'.
+
+      You can safely say 'n' here. Those warnings will anyway be
+      recorded in the log file (provided you configured one).
+
+      Tools error will always be logged as crosstool-NG errors.
+
+config LOG_PROGRESS_BAR
+    bool
+    prompt "Progress bar"
+    default y
+    depends on ! LOG_ALL && ! LOG_DEBUG
+    help
+      If you say 'y' here, you'll be able to see the elapsed time.
+      
+      As a bonus, you'll also get a rotating bar (/-\|) showing you
+      that the build is not stalled (the bar rotates 1/4 every 10 lines
+      of components build log).
+
+      Note that the elapsed time can stall for a little while if a
+      component has long commands, as the elapsed time is only updated
+      each line.
+
+config LOG_TO_FILE
+    bool
+    prompt "Log to a file"
+    default y
+    help
+      Save *full* logs to a file. Even log levels you didn't specify above
+      will be available in this file. The log file will be named build.log
+      and stored in the toolchain prefix dir (set above).
+
+      Definitely, say Y.
+
+config LOG_FILE_COMPRESS
+    bool
+    prompt "Compress the log file"
+    default y
+    depends on LOG_TO_FILE
+    help
+      Compress the log file once the toolchain is successfully built.

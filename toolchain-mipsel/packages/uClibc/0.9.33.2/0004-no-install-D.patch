@@ -1,0 +1,33 @@
+---
+ utils/Makefile.in |   15 +++++++++++----
+ 1 file changed, 11 insertions(+), 4 deletions(-)
+
+--- a/utils/Makefile.in
++++ b/utils/Makefile.in
+@@ -118,15 +118,22 @@
+ install-y += utils_install
+ 
+ # This installs both utils and hostutils, so doesn't depend on either.
++$(PREFIX)$(DEVEL_PREFIX)bin $(PREFIX)$(RUNTIME_PREFIX)sbin:
++	$(do_mkdir)
++
++utils_install: $(PREFIX)$(DEVEL_PREFIX)bin
++ifeq ($(HAVE_SHARED),y)
++utils_install: $(PREFIX)$(RUNTIME_PREFIX)sbin
++endif
+ 
+ utils_install: $(addsuffix $(DOTHOST), $(utils_OBJ) $(utils_LOCALE_OBJ))
+-	$(Q)$(INSTALL) -D -m 755 $(utils_OUT)/getconf$(DOTHOST) $(PREFIX)$(DEVEL_PREFIX)bin/getconf
++	$(Q)$(INSTALL) -m 755 $(utils_OUT)/getconf$(DOTHOST) $(PREFIX)$(DEVEL_PREFIX)bin/getconf
+ ifeq ($(HAVE_SHARED),y)
+-	$(Q)$(INSTALL) -D -m 755 $(utils_OUT)/ldd$(DOTHOST) $(PREFIX)$(DEVEL_PREFIX)bin/ldd
+-	$(Q)$(INSTALL) -D -m 755 $(utils_OUT)/ldconfig$(DOTHOST) $(PREFIX)$(RUNTIME_PREFIX)sbin/ldconfig
++	$(Q)$(INSTALL) -m 755 $(utils_OUT)/ldd$(DOTHOST) $(PREFIX)$(DEVEL_PREFIX)bin/ldd
++	$(Q)$(INSTALL) -m 755 $(utils_OUT)/ldconfig$(DOTHOST) $(PREFIX)$(RUNTIME_PREFIX)sbin/ldconfig
+ endif
+ ifeq ($(UCLIBC_HAS_LOCALE),y)
+-	$(Q)$(INSTALL) -D -m 755 $(utils_OUT)/iconv$(DOTHOST) $(PREFIX)$(DEVEL_PREFIX)bin/iconv
++	$(Q)$(INSTALL) -m 755 $(utils_OUT)/iconv$(DOTHOST) $(PREFIX)$(DEVEL_PREFIX)bin/iconv
+ 	#$(Q)$(INSTALL) -m 755 $(utils_OUT)/locale$(DOTHOST) $(PREFIX)$(DEVEL_PREFIX)bin/locale
+ endif
+ 

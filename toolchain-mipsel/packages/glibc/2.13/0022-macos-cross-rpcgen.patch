@@ -1,0 +1,34 @@
+commit ae7080d30c68cfa0c81ce3422dca948f64a94f50
+Author: Jia Liu <proljc@gmail.com>
+Date:   Sat Sep 7 00:01:08 2013 +0800
+
+    sunrpc/rpc/types.h: fix OS X and FreeBSD build problems
+    
+    When I build arm-linux-gcc on OS X, I find glibc will get a build error
+    in sunrpc/rpc/types.h, so I add __APPLE_CC__ to make OS X build OK.
+    For FreeBSD, Add __FreeBSD__ to make it build OK, too.
+    
+    URL: http://sourceware.org/ml/libc-alpha/2013-09/msg00155.html
+    URL: http://sourceware.org/ml/libc-alpha/2013-09/msg00217.html
+    URL: http://sourceware.org/ml/libc-alpha/2013-09/msg00240.html
+    Signed-off-by: Jia Liu <proljc@gmail.com>
+    Signed-off-by: Mike Frysinger <vapier@gentoo.org>
+
+---
+ sunrpc/rpc/types.h |    5 +++++
+ 1 file changed, 5 insertions(+)
+
+--- a/sunrpc/rpc/types.h
++++ b/sunrpc/rpc/types.h
+@@ -69,6 +69,11 @@
+ #include <sys/types.h>
+ #endif
+ 
++#if defined __APPLE_CC__ || defined __FreeBSD__
++# define __u_char_defined
++# define __daddr_t_defined
++#endif
++
+ #ifndef __u_char_defined
+ typedef __u_char u_char;
+ typedef __u_short u_short;

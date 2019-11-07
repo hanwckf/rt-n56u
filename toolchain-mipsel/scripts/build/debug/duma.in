@@ -1,0 +1,55 @@
+#!/bin/sh
+# (C) 2008 Yann E. MORIN <yann.morin.1998@free.fr>
+# Licensed under the GPL v.2
+
+LIBDUMA_SO=
+
+case "$1" in
+  -on)
+    case "${LD_PRELOAD}" in
+      *${LIBDUMA_SO}*) ;;
+      *) LD_PRELOAD="${LIBDUMA_SO} ${LD_PRELOAD}";;
+    esac
+    shift
+    ;;
+  -off)
+    # We use a suposedly POSIX-compliant shell: /bin/sh
+    #  -> we can't use "${LD_PRELOAD//${LIBDUMA_SO}/}", it's not POSIX
+    # We don't know if sed will be present on the target
+    #  -> we can't use $(echo "${LD_PRELOAD}" |sed -r -e "s|${LIBDUMA_SO}||;")
+    # So, iterate through LD_PRELOAD, and keep only those libs that
+    # are not "${LIBDUMA_SO}"
+    old_LD_PRELOAD="${LD_PRELOAD}"
+    LD_PRELOAD=
+    for lib in ${old_LD_PRELOAD}; do
+      [ "${lib}" = "${LIBDUMA_SO}" ] || LD_PRELOAD="${LD_PRELOAD} ${lib}"
+    done
+    unset old_LD_PRELOAD
+    shift
+    ;;
+  -show)
+    case "${LD_PRELOAD}" in
+      *${LIBDUMA_SO}*) echo "duma is enabled";;
+      *)               echo "duma is disabled";;
+    esac
+    exit 0
+    ;;
+  "")
+    cat <<_EOF_
+Usage:
+    . $0 <-on|-off|-show>
+        Sets, unsets or show DUMA usage.
+    $0 <executable [arg...]>
+        Execute 'executable' (with arguments 'args') using DUMA.
+_EOF_
+    false # Don't 'exit', we could well be source'd
+    ;;
+  *)
+    exec "$0" -on "$@"
+    ;;
+esac
+
+export LD_PRELOAD
+if [ -n "$1" ]; then
+  exec "$@"
+fi

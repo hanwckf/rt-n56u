@@ -1,0 +1,28 @@
+commit 64fc9cedc475b2fc0d940509dc4232b02b5f83ec
+Author: Andreas Schwab <schwab@suse.de>
+Date:   Thu Mar 12 11:54:08 2015 +0100
+
+    Distribute linux/aarch64/arch_regs.h
+    
+    * Makefile.am (EXTRA_DIST): Add linux/aarch64/arch_regs.h.
+
+---
+ Makefile.am               |    1 +
+ linux/aarch64/arch_regs.h |    2 ++
+ 2 files changed, 3 insertions(+)
+
+--- a/Makefile.am
++++ b/Makefile.am
+@@ -164,6 +164,7 @@
+ 	linux/32/syscallent.h		\
+ 	linux/64/ioctls_inc.h		\
+ 	linux/64/syscallent.h		\
++	linux/aarch64/arch_regs.h	\
+ 	linux/aarch64/errnoent1.h	\
+ 	linux/aarch64/ioctls_arch0.h	\
+ 	linux/aarch64/ioctls_arch1.h	\
+--- /dev/null
++++ b/linux/aarch64/arch_regs.h
+@@ -0,0 +1,2 @@
++extern uint64_t *const aarch64_sp_ptr;
++extern uint32_t *const arm_sp_ptr;

@@ -1,0 +1,73 @@
+commit e4043b84c49e1cf9bcf1e8320233343ecc34f8eb
+Author: Joseph Myers <joseph@codesourcery.com>
+Date:   Tue Jun 27 17:12:13 2017 +0000
+
+    Fix strftime build with GCC 8.
+    
+    Building with current GCC mainline fails with:
+    
+    strftime_l.c: In function '__strftime_internal':
+    strftime_l.c:719:4: error: macro expands to multiple statements [-Werror=multistatement-macros]
+        digits = d > width ? d : width;          \
+        ^
+    strftime_l.c:1260:6: note: in expansion of macro 'DO_NUMBER'
+          DO_NUMBER (1, tp->tm_year + TM_YEAR_BASE);
+          ^~~~~~~~~
+    strftime_l.c:1259:4: note: some parts of macro expansion are not guarded by this 'else' clause
+        else
+        ^~~~
+    
+    In fact this particular instance is harmless; the code looks like:
+    
+              if (modifier == L_('O'))
+                goto bad_format;
+              else
+                DO_NUMBER (1, tp->tm_year + TM_YEAR_BASE);
+    
+    and because of the goto, it doesn't matter that part of the expansion
+    isn't under the "else" conditional.  But it's also clearly bad style
+    to rely on that.  This patch changes DO_NUMBER and DO_NUMBER_SPACEPAD
+    to use do { } while (0) to avoid such problems.
+    
+    Tested (full testsuite) for x86_64 (GCC 6), and with
+    build-many-glibcs.py with GCC mainline, in conjunction with my libgcc
+    patch <https://gcc.gnu.org/ml/gcc-patches/2017-06/msg02032.html>.
+    
+            * time/strftime_l.c (DO_NUMBER): Define using do { } while (0).
+            (DO_NUMBER_SPACEPAD): Likewise.
+
+---
+ time/strftime_l.c |   22 ++++++++++++++++------
+ 1 file changed, 16 insertions(+), 6 deletions(-)
+
+--- a/time/strftime_l.c
++++ b/time/strftime_l.c
+@@ -738,12 +738,22 @@
+       format_char = *f;
+       switch (format_char)
+ 	{
+-#define DO_NUMBER(d, v) \
+-	  digits = d > width ? d : width;				      \
+-	  number_value = v; goto do_number
+-#define DO_NUMBER_SPACEPAD(d, v) \
+-	  digits = d > width ? d : width;				      \
+-	  number_value = v; goto do_number_spacepad
++#define DO_NUMBER(d, v)				\
++	  do					\
++	    {					\
++	      digits = d > width ? d : width;	\
++	      number_value = v;			\
++	      goto do_number;			\
++	    }					\
++	  while (0)
++#define DO_NUMBER_SPACEPAD(d, v)		\
++	  do					\
++	    {					\
++	      digits = d > width ? d : width;	\
++	      number_value = v;			\
++	      goto do_number_spacepad;		\
++	    }					\
++	  while (0)
+ 
+ 	case L_('%'):
+ 	  if (modifier != 0)

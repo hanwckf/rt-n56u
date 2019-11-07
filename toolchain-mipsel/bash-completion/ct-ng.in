@@ -1,0 +1,36 @@
+# To be sourced
+
+_ct_ng () {
+    local cur prev samples show_samples actions steps start_steps stop_steps ct_ng_opts vars
+    COMPREPLY=()
+    cur=$(_get_cword)
+    prev=${COMP_WORDS[COMP_CWORD-1]}
+
+    samples=$( "${COMP_WORDS[0]}" list-samples-short 2>/dev/null )
+    show_samples=$(echo "${samples}" |sed -r -e 's/(^| )/\1show-/g;')
+    build_samples=$(echo "${samples}" |sed -r -e 's/(^| )/\1build-/g;')
+    check_samples=$(echo "${samples}" |sed -r -e 's/(^| )/\1check-/g;')
+
+    steps=$(${COMP_WORDS[0]} list-steps 2>/dev/null |awk '$1 == "-" { print $2; }')
+    start_steps=$(echo "${steps}" |sed -r -e 's/($| )/\1+/;')
+    stop_steps=$(echo "${steps}" |sed -r -e 's/(^| )/+\1/;')
+
+    actions='help menuconfig nconfig oldconfig saveconfig extractconfig
+             defconfig savedefconfig olddefconfig upgradeconfig
+             build build-all
+             wiki-samples list-samples list-samples-short check-samples
+             list-steps
+             show-tuple show-all show-config
+             clean distclean updatetools
+             version'
+
+    vars="RESTART= STOP= PREFIX= V= DEFCONFIG="
+
+    ct_ng_opts="${samples} ${show_samples} ${build_samples} ${check_samples}
+                ${steps} ${start_steps} ${stop_steps}
+                ${actions} ${vars}"
+
+    COMPREPLY=($(compgen -W "${ct_ng_opts}" -- "${cur}"))
+    return 0
+}
+complete -F _ct_ng @progname@

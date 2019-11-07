@@ -1,0 +1,24 @@
+From 3a36c1eea4fa3b6f3b3b43f7eb91152383ae4ad8 Mon Sep 17 00:00:00 2001
+From: Alexey Neyman <stilor@att.net>
+Date: Tue, 24 Jan 2017 10:31:40 -0800
+Subject: [PATCH] Fix build with --enable-static-nss
+
+* nss/nsswitch.c (nscd_init_cb, is_nscd): make the #if around definitions
+  match those around use, to avoid "defined but not used" error.
+
+Signed-off-by: Alexey Neyman <stilor@att.net>
+---
+ nss/nsswitch.c |    2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+--- a/nss/nsswitch.c
++++ b/nss/nsswitch.c
+@@ -94,7 +94,7 @@
+ static name_database_entry *defconfig_entries;
+ 
+ 
+-#ifdef USE_NSCD
++#if defined USE_NSCD && (!defined DO_STATIC_NSS || defined SHARED)
+ /* Nonzero if this is the nscd process.  */
+ static bool is_nscd;
+ /* The callback passed to the init functions when nscd is used.  */

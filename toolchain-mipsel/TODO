@@ -1,0 +1,135 @@
+A (slightly) ordered set of tasks for crosstool-NG. Written in a cryptic language; contact me if you want to help with any of these :)
+
+-- Alexey Neyman (@stilor)
+
+[ ] Migrate .config and build.log into per-target directory, make top-level file into symlinks - this will allow to compare/debug multiple configs side-by-side without overwriting each other
+[ ] Need a variant of CT_DoExecLog that only captures stderr - for use where we need stdout for further processing but want to capture errors
+  [ ] Use in test-package.sh
+[ ] mirror: remove crosstool-ng.org mirroring of archives? Use the option only for local mirrors? Archives currently hosted are outdated.
+[ ] old mingw-w64 fails to build (with new gcc?) - the headers are installed into usr/x86_64-w64-mingw32/x86_64-w64-mingw32/include instead of usr/x86_64-w64-mingw32/include
+  [ ] fix or retire?
+[ ] test-packages.sh
+  [ ] FTP URLs always succeed in verification (wget bug) - how to work around?
+[ ] templates (bootstrap)
+  [ ] relevant pattern for Linaro releases - tie to the major version
+[ ] new packages
+  [ ] config.guess
+  [ ] gnulib
+    [ ] use gnulib in m4, gettext, libiconv, libtool
+  [ ] autoconf-archive
+    [ ] use to retrieve ax_pthread.m4 (gettext?)
+[ ] arm_neon.h - offer as a companion "library" for the target
+[ ] gdbinit (installed if CT_GDB_INSTALL_GDBINIT is set) is not relocatable, contains absolute paths
+[ ] Support alldefconfig/allnoconfig/other standard kconfig targets
+[ ] Xtensa
+  [ ] Merge from xtensa maintainer whatever applicable?
+    [ ] Newlib does not seem to be working
+  [ ] Avoid printing "Using <overlay>" if the sources are already prepared
+[ ] FreeBSD
+  [ ] Use 'cc' rather than 'gcc' on the host
+    [ ] Detect in configure what the default value is
+    [ ] Allow passing via CC=... to ct-ng
+    [ ] Same for ar/ld/ranlib/whatever we're using
+    [ ] Same for other utilities (patch, python, ...)
+  [ ] Allow using BSD patch
+  [ ] Set up 3 testing VMs: plain (using clang), using default 'gcc', using 'gcc6'
+[ ] GDB7.1 build fails on macOS
+  [ ] need 'cpp' in the list of symlinked tools
+  [ ] still fails at link due to multiple definitions of BC/UP/PC
+[ ] mingw.sh: create a hook for "pre-checks" for all libcs
+  [ ] move CT_DoMultilibList to this new hook?
+[ ] go over all config options and evaluate their applicability to cross/canadian/cross-native (i.e. WANTS_STATIC_LINK does not have to test build's support for static link)
+[ ] Update "Internals" chapter in the docs to match current state
+[ ] Integrate openrisc support
+[ ] Re-enable shared libraries - can it be done without wrapper scripts, e.g. via rpath?
+[ ] 'ct-ng source'
+  [ ] disregard FORBID_DOWNLOADS and to avoid clobbering .build and build.log
+  [ ] should not check/prepare environment (#776)
+  [ ] move download/patching/prepare into separate steps
+    [ ] beware of TBD - want to use autotools for all packages after they're built, so need to defer preparation of the sources from a repo
+[ ] 'ct-ng' source to disregard FORBID_DOWNLOADS and to avoid clobbering .build and build.log
+  [ ] Make ONLY_{DOWNLOAD,EXTRACT} options into steps
+  [ ] Create "prepare" state to make the environment checks, after "download"
+[ ] Restore blackfin/fdpic support?
+[ ] Install bash completion script - are there any default locations for it?
+[ ] Do we need "HACK: we need to override SHLIB_LC from gcc/config/t-slibgcc-elf-ver" block in 100-gcc.sh? We do create a dummy libc.so
+[ ] Follow up on -static -Wl,--dynamic-list=... weirdness
+[ ] xldd.in
+  [ ] Deduce root from the location of the script itself by default + option for multiroot selection (e.g. for SH)
+  [ ] Handle CT_LD_LIBRARY_PATH in lieu of LD_LIBRARY_PATH
+    [ ] Handle AT_SECURE
+  [ ] Handle DT_RPATH/DT_RUNPATH separately (they have different priority vs LD_LIBRARY_PATH)
+  [ ] Handle default ld_library_path after ld.so.conf cache
+[ ] Add optional removal of .build/src as part of build-all
+[ ] Add removal of non-precious toolchains (i.e. those that are not needed for canadian)
+  [ ] Or remove all *when* they are no longer needed?
+[ ] GMP select the right CC when not cross-compiling (https://github.com/crosstool-ng/crosstool-ng/pull/627)
+[ ] Default to arch=i686 on x86
+[ ] Run ct-ng oldconfig at the start, or detect if a different version of ct-ng has been used?
+[ ] Move fetching config.guess/config.sub to scripts/functions to use common wget/curl wrappers
+  [ ] Allow auto-update as part of the build
+  [ ] Do they have versions? Is it possible to request a specific version?
+[ ] Separate 'make check' for companion libs and companion tools?
+[ ] gettext - test internationalization
+  [ ] seems the DB is hardcoded into .build/<TARGET>/... location - is it possible to make it relocatable?
+  [ ] add passthrough to configure, for host/target
+[ ] Read/spellcheck configs & scripts
+[ ] 'ct-ng olddefconfig'
+[ ] Install a "trap" C++ compiler as ${CT_TARGET}-g++ during pass-1/pass-2 to trap attempts to compile target code with g++ (currently glibc detects host g++ and warns that it uses g++ w/o target triplet)
+  [ ] Somehow it needs to be functional during the configure step - export env var while running in CT_DoExecLog with CFG level, and forward it to host compiler?
+[ ] elf2flt not compatible with multiple linkers enabled in binutils (ld.bfd + ld.gold) - fix upstream?
+[ ] Companion libs 
+  [ ] Group options into submenus
+  [ ] Allow building [companion] target libs (and tools, like gdbserver or native gdb or strace) for all multilibs
+  [ ] Install companion libs into a multi-os-directory for the default multilib
+    [ ] Perhaps remove the distinction between multi_os_dir/multi_os_dir_gcc and use gcc-reported dir always, and rely on "demultilib" to combine them if possible
+[ ] Check for python-devel to enable cross-gdb python bindings
+[ ] Common location for sources provided by ctng - duma.in, gdbinit.in, uclibc{,-ng}-config.in ...
+[ ] CTNG_LD_IS=bfd has no effect on subsequent build steps, as each step runs in its own environment
+[ ] Enable other languages in some sample(s):
+  [ ] Ada (?) - requires gnatbind/gnatmake on the host
+    [X] Seems to build
+    [ ] Try to run
+  [ ] Obj-C/C++
+    [X] Seems to build
+    [ ] Try to run - seems to crash, need to investigate
+  [ ] Go
+    [ ] Fix the build
+    [ ] Try to run
+[ ] #516 Building with GO support fails
+[ ] #521 gccgo - i586-unknown-linux-gnu - fails on missing version.go 
+[ ] Smoke-test test suite - whatever is supported by a particular toolchain
+  [ ] Compile baremetal, shared, static, static-libgcc, static-libstdc, C++, Fortran, Ada, Obj-C, Obj-C++, multilibs
+[ ] Disallow libc selections that cannot handle the arch (e.g. aarch64-*-uclibc, aarch64-*-musl, ...)
+[ ] Support removal of .build/<TARGET>/build after each step (to save space while compiling in a VM; and to test restartability - since this directory is lost after restart)
+[ ] Configure enhancements
+  [ ] What is --host= in ct-ng's configure used for? should it set the default canadian cross?
+  [ ] CFLAGS/LDFLAGS from configure should probably be added into default build flags
+  [ ] Move tool checks from configure to runtime (i.e. if xz was installed after crosstool-ng, it should be usable)
+    [ ] Check for companion libs and allow using host's libraries for native/cross (need to check if the host has them) - but allow them to be selected for build
+[ ] Merge aggregator scripts like cc.sh, debug.sh etc
+[ ] #534 Merge gcc backends in 100-gcc.sh 
+  [ ] Currently some options (e.g. plugins) are not supported in core backend, hence aren't available on baremetal configurations
+[ ] Support clang
+[ ] Add a script to poll for new releases
+[ ] Install a single lib/ directory with all the stuff needed - scripts, makefile fragments, etc
+  [ ] Separate maintainer's scripts from the scripts used by crosstool-ng itself
+  [ ] Commit testing.py to the new maintainer's dir
+  [ ] Add an ability to do a single run of testing.py? or just use build-all, when the branch for separate canadian install is done
+[ ] Extensibility to allow custom kernel headers and/or libc
+[ ] Support elfkickers
+[ ] Make cross-native toolchain non-experimental
+  [ ] Rework dependency order to suit xnative toolchain too
+[ ] Make native/cross-native toolchain non-experimental
+  [ ] Pick up libc from host for native
+  [ ] Optimize steps to not require simple-cross for cross-native
+[ ] Make supplemental commands like show-config leave .config and .build alone
+[ ] Test populate script
+[ ] 3rd party extensions to GCC
+  [ ] GHDL seems to be active and supports GCC6
+  [ ] COBOL? Cannot find which GCC version they need [http://cobolforgcc.sourceforge.net/]
+    [ ] At the very least they have an awesome guide to GCC internals: http://cobolforgcc.sourceforge.net/cobol_14.html; might just as well reference it in our docs
+  [ ] Modula-2 supports GCC 4.7 as the latest
+    [ ] Resurrect GCC4.7?
+[ ] readelf: DWARF parser does not handle DW_CFA_remember_state/DW_CFA_restore_state
+[ ] Support uClibc++?

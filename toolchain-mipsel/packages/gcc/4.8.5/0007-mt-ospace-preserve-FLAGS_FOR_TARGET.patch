@@ -1,0 +1,23 @@
+From 9bcf38cd9f382486b3823eb923b50e2e9a89cef7 Mon Sep 17 00:00:00 2001
+From: law <law@138bc75d-0d04-0410-961f-82ee72b054a4>
+Date: Tue, 18 Nov 2014 22:12:52 +0000
+Subject: [PATCH] 2014-11-17  Bob Dunlop  <bob.dunlop@xyzzy.org.uk>
+
+        * mt-ospace (CFLAGS_FOR_TARGET): Append -g -Os rather than
+        overwriting.
+        (CXXFLAGS_FOR_TARGET): Similarly.
+
+git-svn-id: svn+ssh://gcc.gnu.org/svn/gcc/trunk@217739 138bc75d-0d04-0410-961f-82ee72b054a4
+Signed-off-by: Max Filippov <jcmvbkbc@gmail.com>
+---
+ config/mt-ospace |    4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+--- a/config/mt-ospace
++++ b/config/mt-ospace
+@@ -1,3 +1,3 @@
+ # Build libraries optimizing for space, not speed.
+- CFLAGS_FOR_TARGET = -g -Os
+- CXXFLAGS_FOR_TARGET = -g -Os
++ CFLAGS_FOR_TARGET += -g -Os
++ CXXFLAGS_FOR_TARGET += -g -Os

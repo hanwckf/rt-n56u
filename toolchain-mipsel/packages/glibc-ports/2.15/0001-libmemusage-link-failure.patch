@@ -1,0 +1,21 @@
+commit 2d80bda39073a35af4b904d27fa1511cd309b26f
+Author: Nathan Sidwell <nathan@codesourcery.com>
+Date:   Fri Jan 6 20:14:44 2012 +0000
+
+    Add ARM dependency of libmemusage.so on libc_nonshared.a.
+
+---
+ sysdeps/arm/Makefile |    5 +++++
+ 1 file changed, 5 insertions(+)
+
+--- a/sysdeps/arm/Makefile
++++ b/sysdeps/arm/Makefile
+@@ -7,3 +7,8 @@
+ ifeq ($(subdir),csu)
+ gen-as-const-headers += tlsdesc.sym
+ endif
++
++# to pull in __aeabi_read_tp, needed for tls
++ifeq ($(subdir),malloc)
++$(objpfx)libmemusage.so: $(common-objpfx)libc_nonshared.a
++endif

@@ -1,0 +1,20 @@
+enable _REENTRANT when -lpthread is used
+
+Signed-off-by: Waldemar Brodkorb <wbx@openadk.org>
+
+---
+ gcc/config/bfin/linux.h |    3 +++
+ 1 file changed, 3 insertions(+)
+
+--- a/gcc/config/bfin/linux.h
++++ b/gcc/config/bfin/linux.h
+@@ -38,6 +38,9 @@
+   "%{static:--start-group} %{mfast-fp:-lbffastfp} %G %L %{static:--end-group} \
+    %{!static:%{mfast-fp:-lbffastfp} %G}"
+ 
++#undef CPP_SPEC
++#define CPP_SPEC "%{posix:-D_POSIX_SOURCE} %{pthread:-D_REENTRANT}"
++
+ #undef LINK_SPEC
+ #define LINK_SPEC "\
+   %{mfdpic: -m elf32bfinfd -z text} %{shared} %{pie} \

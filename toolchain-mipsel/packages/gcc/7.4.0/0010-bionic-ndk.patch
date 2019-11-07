@@ -1,0 +1,60 @@
+commit d38d37bdfe24b7ce1bdcb55642fb6b904718e68f
+Author: Howard Chu <hyc@symas.com>
+Date:   Tue Apr 25 19:02:18 2017 -0700
+
+    Fix ctype for newer NDK headers
+
+---
+ libstdc++-v3/config/os/bionic/ctype_base.h |   34 +++++++++++++++++++----------
+ 1 file changed, 23 insertions(+), 11 deletions(-)
+
+--- a/libstdc++-v3/config/os/bionic/ctype_base.h
++++ b/libstdc++-v3/config/os/bionic/ctype_base.h
+@@ -28,6 +28,18 @@
+ 
+ // Information as gleaned from /usr/include/ctype.h
+ 
++// _CTYPE prefix was added in NDK r14 unified headers
++#ifndef _CTYPE_U
++#define _CTYPE_U _U
++#define _CTYPE_L _L
++#define _CTYPE_D _N
++#define _CTYPE_S _S
++#define _CTYPE_P _P
++#define _CTYPE_C _C
++#define _CTYPE_X _X
++#define _CTYPE_B _B
++#endif
++
+ namespace std _GLIBCXX_VISIBILITY(default)
+ {
+ _GLIBCXX_BEGIN_NAMESPACE_VERSION
+@@ -41,17 +53,17 @@
+     // NB: Offsets into ctype<char>::_M_table force a particular size
+     // on the mask type. Because of this, we don't use an enum.
+     typedef char 		mask;
+-    static const mask upper    	= _U;
+-    static const mask lower 	= _L;
+-    static const mask alpha 	= _U | _L;
+-    static const mask digit 	= _N;
+-    static const mask xdigit 	= _X | _N;
+-    static const mask space 	= _S;
+-    static const mask print 	= _P | _U | _L | _N | _B;
+-    static const mask graph 	= _P | _U | _L | _N;
+-    static const mask cntrl 	= _C;
+-    static const mask punct 	= _P;
+-    static const mask alnum 	= _U | _L | _N;
++    static const mask upper    	= _CTYPE_U;
++    static const mask lower 	= _CTYPE_L;
++    static const mask alpha 	= _CTYPE_U | _CTYPE_L;
++    static const mask digit 	= _CTYPE_D;
++    static const mask xdigit 	= _CTYPE_X | _CTYPE_D;
++    static const mask space 	= _CTYPE_S;
++    static const mask print 	= _CTYPE_P | _CTYPE_U | _CTYPE_L | _CTYPE_D | _CTYPE_B;
++    static const mask graph 	= _CTYPE_P | _CTYPE_U | _CTYPE_L | _CTYPE_D;
++    static const mask cntrl 	= _CTYPE_C;
++    static const mask punct 	= _CTYPE_P;
++    static const mask alnum 	= _CTYPE_U | _CTYPE_L | _CTYPE_D;
+ #if __cplusplus >= 201103L
+     static const mask blank 	= space;
+ #endif

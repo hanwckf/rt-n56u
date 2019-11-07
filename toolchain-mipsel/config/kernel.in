@@ -1,0 +1,38 @@
+# Kernel options
+
+menu "Operating System"
+
+# Config option used throughout the config and code to determine wether
+# we have a kernel or not (there might be different bare metal stuff)...
+# FIXME use CT_KERNEL_bare_metal instead
+config BARE_METAL
+    bool
+
+# FIXME use CT_KERNEL_windows instead
+config WINDOWS
+    bool
+
+# Each target OS (aka kernel) that support shared libraries can select
+# this, so the user can decide whether or not to build a shared library
+# enabled toolchain
+config KERNEL_SUPPORTS_SHARED_LIBS
+    bool
+
+source "config/gen/kernel.in"
+
+comment "Common kernel options"
+
+config SHARED_LIBS
+    bool
+    prompt "Build shared libraries"
+    depends on KERNEL_SUPPORTS_SHARED_LIBS
+    # Building "shared flat" currently fails
+    depends on ARCH_USE_MMU || EXPERIMENTAL
+    default y
+    help
+      Say 'y' here, unless you don't want shared libraries.
+      
+      You might not want shared libraries if you're building for a target that
+      don't support it (maybe some nommu targets, for example, or bare metal).
+
+endmenu

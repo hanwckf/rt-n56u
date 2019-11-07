@@ -1,0 +1,25 @@
+From a5e814c69315f3b7528418f6a5185c4f8a9dc250 Mon Sep 17 00:00:00 2001
+From: Alexey Neyman <stilor@att.net>
+Date: Wed, 15 Feb 2017 22:36:35 -0800
+Subject: [PATCH] Fix unresolved reference to _wopen on Cygwin
+
+The default Cygwin GCC/glibc do not provide _wopen. This seems to be
+part of Win32API, which is provided by x86-w64-mingw32-gcc - but that
+compiler does not define __CYGWIN__, it defines _WIN32.
+
+Signed-off-by: Alexey Neyman <stilor@att.net>
+---
+ gzguts.h |    2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+--- a/gzguts.h
++++ b/gzguts.h
+@@ -39,7 +39,7 @@
+ #  include <io.h>
+ #endif
+ 
+-#if defined(_WIN32) || defined(__CYGWIN__)
++#if defined(_WIN32)
+ #  define WIDECHAR
+ #endif
+ 

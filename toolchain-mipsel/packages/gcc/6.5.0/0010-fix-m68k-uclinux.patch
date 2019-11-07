@@ -1,0 +1,21 @@
+avoids internal compiler error while compiling linux-atomic.c
+See here:
+https://gcc.gnu.org/bugzilla/show_bug.cgi?id=53833
+
+Signed-off-by: Waldemar Brodkorb <wbx@openadk.org>
+
+---
+ libgcc/config.host |    2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+--- a/libgcc/config.host
++++ b/libgcc/config.host
+@@ -824,7 +824,7 @@
+ m68k*-*-openbsd*)
+ 	;;
+ m68k-*-uclinux*)	# Motorola m68k/ColdFire running uClinux with uClibc
+-	tmake_file="$tmake_file m68k/t-floatlib m68k/t-linux"
++	tmake_file="$tmake_file m68k/t-floatlib"
+ 	md_unwind_header=m68k/linux-unwind.h
+ 	;;
+ m68k-*-linux*)			# Motorola m68k's running GNU/Linux

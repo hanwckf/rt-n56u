@@ -1,0 +1,27 @@
+# Test suite config options
+
+if EXPERIMENTAL
+
+menu "Test suite"
+
+config TEST_SUITE
+    bool
+
+config TEST_SUITE_GCC
+    bool
+    prompt "GCC test suite"
+    select TEST_SUITE
+    help
+      Select this option to install the GCC test suite in $CT_PREFIX_DIR/test_suite.
+
+      The GCC test suite includes a collection of various toolchain tests for GCC -
+      it utilizes the DejaGnu test framework.
+
+      For some tests a network enabled target with ssh server is required.
+
+      A helper Makefile is provided for running the tests - please see the included
+      README for information on how to run the test suite.
+
+endmenu
+
+endif

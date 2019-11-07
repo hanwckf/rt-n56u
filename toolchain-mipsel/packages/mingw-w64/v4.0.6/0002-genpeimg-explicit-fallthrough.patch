@@ -1,0 +1,31 @@
+commit f9f2bd0641b89895ab42b1948f431dadf1e837a4
+Author: sezero <sezero@users.sourceforge.net>
+Date:   Thu Jun 15 09:45:52 2017 +0300
+
+    genpeimg.c (pass_args): add a /* fallthru */ comment in the switch
+     after show_usage() to avoid -Wimplicit-fallthrough
+    (show_usage): mark the function with noreturn attribute.
+
+---
+ mingw-w64-tools/genpeimg/src/genpeimg.c |    3 ++-
+ 1 file changed, 2 insertions(+), 1 deletion(-)
+
+--- a/mingw-w64-tools/genpeimg/src/genpeimg.c
++++ b/mingw-w64-tools/genpeimg/src/genpeimg.c
+@@ -28,7 +28,7 @@
+ int dump_information = 0;
+ static char *file_name = NULL;
+ 
+-static void
++static void __attribute__((noreturn))
+ show_usage (void)
+ {
+   fprintf (stderr, "genpeimg [options] files...\n");
+@@ -204,6 +204,7 @@
+ 	case 'h':
+ 	  if (h[2] == 0)
+ 	    show_usage ();
++	  /* fallthru */
+ 	default:
+ error_point:
+ 	  fprintf (stderr, "Unknown option ,%s'\n", h);

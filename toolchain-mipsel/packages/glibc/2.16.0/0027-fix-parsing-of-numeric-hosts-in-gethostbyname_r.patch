@@ -1,0 +1,222 @@
+From 536ae0651b015b1f6140ec01775d4deaacf12c0c Mon Sep 17 00:00:00 2001
+From: Andreas Schwab <schwab@suse.de>
+Date: Mon, 21 Jan 2013 17:41:28 +0100
+Subject: [PATCH] Fix parsing of numeric hosts in gethostbyname_r
+
+Ported from master, fixes CVE-2015-0235.
+---
+ nss/Makefile           |    2 -
+ nss/digits_dots.c      |   73 +++++++++++++------------------------------------
+ nss/getXXbyYY_r.c      |    3 ++
+ nss/test-digits-dots.c |   38 +++++++++++++++++++++++++
+ 4 files changed, 62 insertions(+), 54 deletions(-)
+ create mode 100644 nss/test-digits-dots.c
+
+--- a/nss/Makefile
++++ b/nss/Makefile
+@@ -38,7 +38,7 @@
+ makedb-modules = xmalloc hash-string
+ extra-objs		+= $(makedb-modules:=.o)
+ 
+-tests			= test-netdb tst-nss-test1
++tests			= test-netdb tst-nss-test1 test-digits-dots
+ xtests			= bug-erange
+ 
+ include ../Makeconfig
+--- a/nss/digits_dots.c
++++ b/nss/digits_dots.c
+@@ -46,7 +46,10 @@
+     {
+       if (h_errnop)
+ 	*h_errnop = NETDB_INTERNAL;
+-      *result = NULL;
++      if (buffer_size == NULL)
++	*status = NSS_STATUS_TRYAGAIN;
++      else
++	*result = NULL;
+       return -1;
+     }
+ 
+@@ -83,14 +86,16 @@
+ 	}
+ 
+       size_needed = (sizeof (*host_addr)
+-		     + sizeof (*h_addr_ptrs) + strlen (name) + 1);
++		     + sizeof (*h_addr_ptrs)
++		     + sizeof (*h_alias_ptr) + strlen (name) + 1);
+ 
+       if (buffer_size == NULL)
+         {
+ 	  if (buflen < size_needed)
+ 	    {
++	      *status = NSS_STATUS_TRYAGAIN;
+ 	      if (h_errnop != NULL)
+-		*h_errnop = TRY_AGAIN;
++		*h_errnop = NETDB_INTERNAL;
+ 	      __set_errno (ERANGE);
+ 	      goto done;
+ 	    }
+@@ -109,7 +114,7 @@
+ 	      *buffer_size = 0;
+ 	      __set_errno (save);
+ 	      if (h_errnop != NULL)
+-		*h_errnop = TRY_AGAIN;
++		*h_errnop = NETDB_INTERNAL;
+ 	      *result = NULL;
+ 	      goto done;
+ 	    }
+@@ -149,7 +154,9 @@
+ 		  if (! ok)
+ 		    {
+ 		      *h_errnop = HOST_NOT_FOUND;
+-		      if (buffer_size)
++		      if (buffer_size == NULL)
++			*status = NSS_STATUS_NOTFOUND;
++		      else
+ 			*result = NULL;
+ 		      goto done;
+ 		    }
+@@ -190,7 +197,7 @@
+ 		  if (buffer_size == NULL)
+ 		    *status = NSS_STATUS_SUCCESS;
+ 		  else
+-		   *result = resbuf;
++		    *result = resbuf;
+ 		  goto done;
+ 		}
+ 
+@@ -201,15 +208,6 @@
+ 
+       if ((isxdigit (name[0]) && strchr (name, ':') != NULL) || name[0] == ':')
+ 	{
+-	  const char *cp;
+-	  char *hostname;
+-	  typedef unsigned char host_addr_t[16];
+-	  host_addr_t *host_addr;
+-	  typedef char *host_addr_list_t[2];
+-	  host_addr_list_t *h_addr_ptrs;
+-	  size_t size_needed;
+-	  int addr_size;
+-
+ 	  switch (af)
+ 	    {
+ 	    default:
+@@ -225,7 +223,10 @@
+ 	      /* This is not possible.  We cannot represent an IPv6 address
+ 		 in an `struct in_addr' variable.  */
+ 	      *h_errnop = HOST_NOT_FOUND;
+-	      *result = NULL;
++	      if (buffer_size == NULL)
++		*status = NSS_STATUS_NOTFOUND;
++	      else
++		*result = NULL;
+ 	      goto done;
+ 
+ 	    case AF_INET6:
+@@ -233,42 +234,6 @@
+ 	      break;
+ 	    }
+ 
+-	  size_needed = (sizeof (*host_addr)
+-			 + sizeof (*h_addr_ptrs) + strlen (name) + 1);
+-
+-	  if (buffer_size == NULL && buflen < size_needed)
+-	    {
+-	      if (h_errnop != NULL)
+-		*h_errnop = TRY_AGAIN;
+-	      __set_errno (ERANGE);
+-	      goto done;
+-	    }
+-	  else if (buffer_size != NULL && *buffer_size < size_needed)
+-	    {
+-	      char *new_buf;
+-	      *buffer_size = size_needed;
+-	      new_buf = realloc (*buffer, *buffer_size);
+-
+-	      if (new_buf == NULL)
+-		{
+-		  save = errno;
+-		  free (*buffer);
+-		  __set_errno (save);
+-		  *buffer = NULL;
+-		  *buffer_size = 0;
+-		  *result = NULL;
+-		  goto done;
+-		}
+-	      *buffer = new_buf;
+-	    }
+-
+-	  memset (*buffer, '\0', size_needed);
+-
+-	  host_addr = (host_addr_t *) *buffer;
+-	  h_addr_ptrs = (host_addr_list_t *)
+-	    ((char *) host_addr + sizeof (*host_addr));
+-	  hostname = (char *) h_addr_ptrs + sizeof (*h_addr_ptrs);
+-
+ 	  for (cp = name;; ++cp)
+ 	    {
+ 	      if (!*cp)
+@@ -281,7 +246,9 @@
+ 		  if (inet_pton (AF_INET6, name, host_addr) <= 0)
+ 		    {
+ 		      *h_errnop = HOST_NOT_FOUND;
+-		      if (buffer_size)
++		      if (buffer_size == NULL)
++			*status = NSS_STATUS_NOTFOUND;
++		      else
+ 			*result = NULL;
+ 		      goto done;
+ 		    }
+--- /dev/null
++++ b/nss/test-digits-dots.c
+@@ -0,0 +1,38 @@
++/* Copyright (C) 2013 Free Software Foundation, Inc.
++   This file is part of the GNU C Library.
++
++   The GNU C Library is free software; you can redistribute it and/or
++   modify it under the terms of the GNU Lesser General Public
++   License as published by the Free Software Foundation; either
++   version 2.1 of the License, or (at your option) any later version.
++
++   The GNU C Library is distributed in the hope that it will be useful,
++   but WITHOUT ANY WARRANTY; without even the implied warranty of
++   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
++   Lesser General Public License for more details.
++
++   You should have received a copy of the GNU Lesser General Public
++   License along with the GNU C Library; if not, see
++   <http://www.gnu.org/licenses/>.  */
++
++/* Testcase for BZ #15014 */
++
++#include <stdlib.h>
++#include <netdb.h>
++#include <errno.h>
++
++static int
++do_test (void)
++{
++  char buf[32];
++  struct hostent *result = NULL;
++  struct hostent ret;
++  int h_err = 0;
++  int err;
++
++  err = gethostbyname_r ("1.2.3.4", &ret, buf, sizeof (buf), &result, &h_err);
++  return err == ERANGE && h_err == NETDB_INTERNAL ? EXIT_SUCCESS : EXIT_FAILURE;
++}
++
++#define TEST_FUNCTION do_test ()
++#include "../test-skeleton.c"
+--- a/nss/getXXbyYY_r.c
++++ b/nss/getXXbyYY_r.c
+@@ -179,6 +179,9 @@
+     case -1:
+       return errno;
+     case 1:
++#ifdef NEED_H_ERRNO
++      any_service = true;
++#endif
+       goto done;
+     }
+ #endif

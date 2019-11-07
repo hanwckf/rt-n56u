@@ -1,0 +1,12 @@
+# NIOS232 specific configuration file
+
+## no-package
+## select ARCH_SUPPORTS_32
+## select ARCH_DEFAULT_32
+## select ARCH_SUPPORTS_BOTH_MMU
+## select ARCH_DEFAULT_LE
+## select ARCH_SUPPORTS_WITH_ARCH
+## select ARCH_SUPPORTS_FLAT_FORMAT
+##
+## help The NIOS2 architecture, as defined by:
+## help     http://www.altera.com

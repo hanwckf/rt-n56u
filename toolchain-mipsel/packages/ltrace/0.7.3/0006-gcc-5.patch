@@ -1,0 +1,24 @@
+From 8c3674c86688a79a8689772c3d0c84d6e7aaa118 Mon Sep 17 00:00:00 2001
+From: Petr Machata <pmachata@redhat.com>
+Date: Tue, 8 Jan 2013 23:22:49 +0100
+Subject: Fix conditions in elf_read_u{16,32,64}
+
+- The calling convention of need_data is 0 on success, <0 on failure.
+  The condition seems to have it all mixed, using both a ! and a
+  comparison.
+
+---
+ ltrace-elf.c |    2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+--- a/ltrace-elf.c
++++ b/ltrace-elf.c
+@@ -218,7 +218,7 @@
+ 	int								\
+ 	NAME(Elf_Data *data, GElf_Xword offset, uint##SIZE##_t *retp)	\
+ 	{								\
+-		if (!need_data(data, offset, SIZE / 8) < 0)		\
++		if (need_data(data, offset, SIZE / 8) < 0)		\
+ 			return -1;					\
+ 									\
+ 		if (data->d_buf == NULL) /* NODATA section */ {		\

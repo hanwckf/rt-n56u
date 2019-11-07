@@ -1,30 +1,20 @@
-#!/bin/sh
+#!/bin/bash
 
-DIR=`pwd`
+echo "=================REMOVE-OLD-BUILD-TREE=================="
 
-. "$DIR/versions.inc"
-
-TARGET="mipsel-linux-uclibc"
-TARGET_DIR="$DIR/src/$TARGET-toolchain"
-
-KERNELVER="3.4.x"
-if [ "$1" = "--kernel-3_0" ] ; then
-    KERNELVER="3.0.x"
+if [ -f ct-ng ]; then
+	./ct-ng distclean || exit 1
 fi
 
-ID_BINUTILS="binutils-$BINUTILSVER"
-ID_GCC="gcc-$GCCVER"
-ID_UCLIBC="uClibc-$UCLIBCVER"
-ID_TOOLCHAIN="toolchain-$KERNELVER"
+if [ -f Makefile ]; then
+	make distclean || exit 1
+fi
 
-echo "==================REMOVE-OLD-TOOLCHAIN=================="
-rm -rf $ID_TOOLCHAIN
-echo "=================REMOVE-OLD-BUILD-TREE=================="
-cd "$TARGET_DIR"
-rm -rf build-*
-rm -rf $ID_BINUTILS
-rm -rf $ID_GCC
-rm -rf $ID_UCLIBC
-rm -rf include
-cd "$DIR"
+if [ -d toolchain-3.4.x ]; then
+	rm -rf toolchain-3.4.x
+fi
+
+# remove remaining
+rm -rf Makefile.in aclocal.m4 autom4te.cache config.h.in config/gen config/versions configure kconfig/Makefile.in maintainer/package-versions verbatim-data.mk
+
 echo "====================All IS DONE!========================"

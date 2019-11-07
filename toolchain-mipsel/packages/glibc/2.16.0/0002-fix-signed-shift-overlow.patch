@@ -1,0 +1,97 @@
+commit 5542236837c5c41435f8282ec92799f480c36f18
+Author: Paul Eggert <eggert@cs.ucla.edu>
+Date:   Tue Jul 21 22:50:29 2015 -0700
+
+    Port the 0x7efe...feff pattern to GCC 6.
+    
+    See Steve Ellcey's bug report in:
+    https://sourceware.org/ml/libc-alpha/2015-07/msg00673.html
+    * string/memrchr.c (MEMRCHR):
+    * string/rawmemchr.c (RAWMEMCHR):
+    * string/strchr.c (strchr):
+    * string/strchrnul.c (STRCHRNUL):
+    Rewrite code to avoid issues with signed shift overflow.
+
+---
+ string/memrchr.c   |   11 ++---------
+ string/rawmemchr.c |   11 ++---------
+ string/strchr.c    |    9 ++-------
+ string/strchrnul.c |    9 ++-------
+ 4 files changed, 8 insertions(+), 32 deletions(-)
+
+--- a/string/memrchr.c
++++ b/string/memrchr.c
+@@ -96,15 +96,8 @@
+ 
+      The 1-bits make sure that carries propagate to the next 0-bit.
+      The 0-bits provide holes for carries to fall into.  */
+-
+-  if (sizeof (longword) != 4 && sizeof (longword) != 8)
+-    abort ();
+-
+-#if LONG_MAX <= LONG_MAX_32_BITS
+-  magic_bits = 0x7efefeff;
+-#else
+-  magic_bits = ((unsigned long int) 0x7efefefe << 32) | 0xfefefeff;
+-#endif
++  magic_bits = -1;
++  magic_bits = magic_bits / 0xff * 0xfe << 1 >> 1 | 1;
+ 
+   /* Set up a longword, each of whose bytes is C.  */
+   charmask = c | (c << 8);
+--- a/string/rawmemchr.c
++++ b/string/rawmemchr.c
+@@ -83,15 +83,8 @@
+ 
+      The 1-bits make sure that carries propagate to the next 0-bit.
+      The 0-bits provide holes for carries to fall into.  */
+-
+-  if (sizeof (longword) != 4 && sizeof (longword) != 8)
+-    abort ();
+-
+-#if LONG_MAX <= LONG_MAX_32_BITS
+-  magic_bits = 0x7efefeff;
+-#else
+-  magic_bits = ((unsigned long int) 0x7efefefe << 32) | 0xfefefeff;
+-#endif
++  magic_bits = -1;
++  magic_bits = magic_bits / 0xff * 0xfe << 1 >> 1 | 1;
+ 
+   /* Set up a longword, each of whose bytes is C.  */
+   charmask = c | (c << 8);
+--- a/string/strchr.c
++++ b/string/strchr.c
+@@ -64,13 +64,8 @@
+ 
+      The 1-bits make sure that carries propagate to the next 0-bit.
+      The 0-bits provide holes for carries to fall into.  */
+-  switch (sizeof (longword))
+-    {
+-    case 4: magic_bits = 0x7efefeffL; break;
+-    case 8: magic_bits = ((0x7efefefeL << 16) << 16) | 0xfefefeffL; break;
+-    default:
+-      abort ();
+-    }
++  magic_bits = -1;
++  magic_bits = magic_bits / 0xff * 0xfe << 1 >> 1 | 1;
+ 
+   /* Set up a longword, each of whose bytes is C.  */
+   charmask = c | (c << 8);
+--- a/string/strchrnul.c
++++ b/string/strchrnul.c
+@@ -62,13 +62,8 @@
+ 
+      The 1-bits make sure that carries propagate to the next 0-bit.
+      The 0-bits provide holes for carries to fall into.  */
+-  switch (sizeof (longword))
+-    {
+-    case 4: magic_bits = 0x7efefeffL; break;
+-    case 8: magic_bits = ((0x7efefefeL << 16) << 16) | 0xfefefeffL; break;
+-    default:
+-      abort ();
+-    }
++  magic_bits = -1;
++  magic_bits = magic_bits / 0xff * 0xfe << 1 >> 1 | 1;
+ 
+   /* Set up a longword, each of whose bytes is C.  */
+   charmask = c | (c << 8);

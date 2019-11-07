@@ -1,0 +1,30 @@
+From 208ea73d38c9c16cf983b6419f58050dbadcb6a9 Mon Sep 17 00:00:00 2001
+From: Max Filippov <jcmvbkbc@gmail.com>
+Date: Sun, 7 Jun 2015 22:43:49 +0300
+Subject: [PATCH 2/2] xtensa: make sure ar_base is initialized
+
+ar_base is uninitialized for cores w/o windowed registers as their
+regmap doesn't have register 0x0100.
+Check that ar_base is initialized and if not initialize it with a0_base.
+
+gdb/
+	* xtensa-tdep.c (xtensa_derive_tdep): Make sure ar_base is
+	initialized.
+
+Signed-off-by: Max Filippov <jcmvbkbc@gmail.com>
+---
+ gdb/xtensa-tdep.c |    3 +++
+ 1 file changed, 3 insertions(+)
+
+--- a/gdb/xtensa-tdep.c
++++ b/gdb/xtensa-tdep.c
+@@ -3151,6 +3151,9 @@
+   if (tdep->num_regs == 0)
+     tdep->num_regs = tdep->num_nopriv_regs;
+ 
++  if (tdep->ar_base == -1)
++    tdep->ar_base = tdep->a0_base;
++
+   /* Number of pseudo registers.  */
+   tdep->num_pseudo_regs = n - tdep->num_regs;
+ 

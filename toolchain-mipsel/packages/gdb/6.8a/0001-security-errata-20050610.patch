@@ -1,0 +1,208 @@
+Original patch from gentoo: gentoo/src/patchsets/gdb/6.8/35_all_gdb-6.3-security-errata-20050610.patch
+-= BEGIN original header =-
+2005-06-09  Jeff Johnston  <jjohnstn@redhat.com>
+
+        * gdb.base/gdbinit.exp: New testcase.
+        * gdb.base/gdbinit.sample: Sample .gdbinit for gdbinit.exp.
+
+2005-06-08  Daniel Jacobowitz  <dan@codesourcery.com>
+            Jeff Johnston  <jjohnstn@redhat.com>
+
+        * Makefile.in (cli-cmds.o): Update.
+        * configure.in: Add check for getuid.
+        * configure: Regenerated.
+        * config.in: Ditto.
+        * main.c (captured_main): Pass -1 to source_command when loading
+        gdbinit files.
+        * cli/cli-cmds.c: Include "gdb_stat.h" and <fcntl.h>.
+        (source_command): Update documentation.  Check permissions if
+        FROM_TTY is -1.
+
+-= END original header =-
+---
+ gdb/Makefile.in                       |    2 
+ gdb/cli/cli-cmds.c                    |   22 +++++++
+ gdb/main.c                            |    4 -
+ gdb/testsuite/gdb.base/gdbinit.exp    |   98 ++++++++++++++++++++++++++++++++++
+ gdb/testsuite/gdb.base/gdbinit.sample |    1 
+ 5 files changed, 123 insertions(+), 4 deletions(-)
+
+--- a/gdb/Makefile.in
++++ b/gdb/Makefile.in
+@@ -3004,7 +3004,7 @@
+ 	$(expression_h) $(frame_h) $(value_h) $(language_h) $(filenames_h) \
+ 	$(objfiles_h) $(source_h) $(disasm_h) $(ui_out_h) $(top_h) \
+ 	$(cli_decode_h) $(cli_script_h) $(cli_setshow_h) $(cli_cmds_h) \
+-	$(tui_h)
++	$(tui_h) $(gdb_stat_h)
+ 	$(CC) -c $(INTERNAL_CFLAGS) $(srcdir)/cli/cli-cmds.c
+ cli-decode.o: $(srcdir)/cli/cli-decode.c $(defs_h) $(symtab_h) \
+ 	$(gdb_regex_h) $(gdb_string_h) $(completer_h) $(ui_out_h) \
+--- a/gdb/cli/cli-cmds.c
++++ b/gdb/cli/cli-cmds.c
+@@ -36,6 +36,7 @@
+ #include "objfiles.h"
+ #include "source.h"
+ #include "disasm.h"
++#include "gdb_stat.h"
+ 
+ #include "ui-out.h"
+ 
+@@ -459,12 +460,31 @@
+ 
+   if (fd == -1)
+     {
+-      if (from_tty)
++      if (from_tty > 0)
+ 	perror_with_name (file);
+       else
+ 	return;
+     }
+ 
++#ifdef HAVE_GETUID
++  if (from_tty == -1)
++    {
++      struct stat statbuf;
++      if (fstat (fd, &statbuf) < 0)
++	{
++	  perror_with_name (file);
++	  close (fd);
++	  return;
++	}
++      if (statbuf.st_uid != getuid () || (statbuf.st_mode & S_IWOTH))
++	{
++          warning (_("not using untrusted file \"%s\""), file);
++	  close (fd);
++	  return;
++	}
++    }
++#endif
++
+   stream = fdopen (fd, FOPEN_RT);
+   script_from_file (stream, file);
+ 
+--- a/gdb/main.c
++++ b/gdb/main.c
+@@ -690,7 +690,7 @@
+ 
+       if (!inhibit_gdbinit)
+ 	{
+-	  catch_command_errors (source_script, homeinit, 0, RETURN_MASK_ALL);
++	  catch_command_errors (source_script, homeinit, -1, RETURN_MASK_ALL);
+ 	}
+ 
+       /* Do stats; no need to do them elsewhere since we'll only
+@@ -778,7 +778,7 @@
+       || memcmp ((char *) &homebuf, (char *) &cwdbuf, sizeof (struct stat)))
+     if (!inhibit_gdbinit)
+       {
+-	catch_command_errors (source_script, gdbinit, 0, RETURN_MASK_ALL);
++	catch_command_errors (source_script, gdbinit, -1, RETURN_MASK_ALL);
+       }
+ 
+   for (i = 0; i < ncmd; i++)
+--- /dev/null
++++ b/gdb/testsuite/gdb.base/gdbinit.exp
+@@ -0,0 +1,98 @@
++#   Copyright 2005
++#   Free Software Foundation, Inc.
++
++# This program is free software; you can redistribute it and/or modify
++# it under the terms of the GNU General Public License as published by
++# the Free Software Foundation; either version 2 of the License, or
++# (at your option) any later version.
++# 
++# This program is distributed in the hope that it will be useful,
++# but WITHOUT ANY WARRANTY; without even the implied warranty of
++# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++# GNU General Public License for more details.
++# 
++# You should have received a copy of the GNU General Public License
++# along with this program; if not, write to the Free Software
++# Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.  
++
++# Please email any bugs, comments, and/or additions to this file to:
++# bug-gdb@prep.ai.mit.edu
++
++# This file was written by Jeff Johnston <jjohnstn@redhat.com>.
++
++if $tracelevel then {
++    strace $tracelevel
++}
++
++set prms_id 0
++set bug_id 0
++
++# are we on a target board
++if [is_remote target] {
++    return
++}
++
++
++global verbose
++global GDB
++global GDBFLAGS
++global gdb_prompt
++global timeout
++global gdb_spawn_id;
++                                                                                
++gdb_stop_suppressing_tests;
++                                                                                
++verbose "Spawning $GDB -nw"
++                                                                                
++if [info exists gdb_spawn_id] {
++    return 0;
++}
++                                                                                
++if ![is_remote host] {
++   if { [which $GDB] == 0 } then {
++        perror "$GDB does not exist."
++        exit 1
++    }
++}
++
++set env(HOME) [pwd]
++remote_exec build "rm .gdbinit"
++remote_exec build "cp ${srcdir}/${subdir}/gdbinit.sample .gdbinit"
++remote_exec build "chmod 646 .gdbinit"
++
++set res [remote_spawn host "$GDB -nw [host_info gdb_opts]"];
++if { $res < 0 || $res == "" } {
++    perror "Spawning $GDB failed."
++    return 1;
++}
++gdb_expect 360 {
++    -re "warning: not using untrusted file.*\.gdbinit.*\[\r\n\]$gdb_prompt $" {
++        pass "untrusted .gdbinit caught."
++    }
++    -re "$gdb_prompt $"     {
++        fail "untrusted .gdbinit caught."
++    }
++    timeout {
++        fail "(timeout) untrusted .gdbinit caught."
++    }
++}
++
++remote_exec build "chmod 644 .gdbinit"
++set res [remote_spawn host "$GDB -nw [host_info gdb_opts]"];
++if { $res < 0 || $res == "" } {
++    perror "Spawning $GDB failed."
++    return 1;
++}
++gdb_expect 360 {
++    -re "warning: not using untrusted file.*\.gdbinit.*\[\r\n\]$gdb_prompt $" {
++        fail "trusted .gdbinit allowed."
++    }
++    -re "in gdbinit.*$gdb_prompt $"     {
++        pass "trusted .gdbinit allowed."
++    }
++    timeout {
++        fail "(timeout) trusted .gdbinit allowed."
++    }
++}
++
++remote_exec build "rm .gdbinit"
+--- /dev/null
++++ b/gdb/testsuite/gdb.base/gdbinit.sample
+@@ -0,0 +1 @@
++echo "\nin gdbinit"

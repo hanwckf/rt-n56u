@@ -1,0 +1,26 @@
+2011-03-01  Aurelien Jarno  <aurelien@aurel32.net>
+
+	* sysdeps/alpha/fpu/feupdateenv.c (feupdateenv): Add
+	libm_hidden_def.
+	* sysdeps/alpha/fpu/ftestexcept.c (fetestexcept): Likewise.
+
+---
+ sysdeps/alpha/fpu/feupdateenv.c |    1 +
+ sysdeps/alpha/fpu/ftestexcept.c |    1 +
+ 2 files changed, 2 insertions(+)
+
+--- a/sysdeps/alpha/fpu/feupdateenv.c
++++ b/sysdeps/alpha/fpu/feupdateenv.c
+@@ -46,4 +46,5 @@
+ compat_symbol (libm, __old_feupdateenv, feupdateenv, GLIBC_2_1);
+ #endif
+ 
++libm_hidden_ver (__feupdateenv, feupdateenv)
+ versioned_symbol (libm, __feupdateenv, feupdateenv, GLIBC_2_2);
+--- a/sysdeps/alpha/fpu/ftestexcept.c
++++ b/sysdeps/alpha/fpu/ftestexcept.c
+@@ -30,3 +30,4 @@
+ 
+   return tmp & excepts & SWCR_STATUS_MASK;
+ }
++libm_hidden_def (fetestexcept)

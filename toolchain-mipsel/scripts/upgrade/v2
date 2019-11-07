@@ -1,0 +1,25 @@
+# vim: set filetype=sh :
+
+# Upgrade v2 -> v3: unified build of native gdb and gdbserver,
+# combining their options
+upgrade()
+{
+    case "${opt}" in
+    CT_GDB_GDBSERVER_BUILD_IPA_LIB)
+        replace CT_GDB_NATIVE_BUILD_IPA_LIB
+        ;;
+    CT_GDB_GDBSERVER_STATIC)
+        if [ "${CT_GDB_GDBSERVER_STATIC}" != "${CT_GDB_GDBSERVER_STATIC}" ]; then
+            warning "Both native gdb and gdbserver must now be built in the same way"
+        fi
+        unset opt
+        ;;
+    CT_GDB_GDBSERVER_STATIC_LIBSTDCXX)
+        replace GDB_NATIVE_STATIC_LIBSTDCXX
+        ;;
+    CT_GDB_GDBSERVER_HAS_IPA_LIB)
+        # not user-selectable
+        unset opt
+        ;;
+    esac
+}

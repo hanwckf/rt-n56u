@@ -1,0 +1,19 @@
+do not bother running ldconfig on DESTDIR.  it wants to write the temp cache
+file outside of the chroot.  doesnt matter anyways as we wont use the cache
+results (portage will rebuild cache), so running ldconfig is simply a waste
+of time.
+
+---
+ Makefile |    1 +
+ 1 file changed, 1 insertion(+)
+
+--- a/Makefile
++++ b/Makefile
+@@ -107,6 +107,7 @@
+ 	rm -f $(symbolic-link-list)
+ 
+ install:
++dont-bother-with-destdir:
+ 	-test ! -x $(common-objpfx)elf/ldconfig || LC_ALL=C LANGUAGE=C \
+ 	  $(common-objpfx)elf/ldconfig $(addprefix -r ,$(install_root)) \
+ 				       $(slibdir) $(libdir)

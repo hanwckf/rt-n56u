@@ -1,0 +1,4 @@
+# Libtool
+
+## default y if !CONFIGURE_has_libtool_2_4_or_newer
+## default y if !CONFIGURE_has_libtoolize_2_4_or_newer

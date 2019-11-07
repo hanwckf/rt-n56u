@@ -1,0 +1,6 @@
+repository='git git://git.debian.org/git/collab-maint/ltrace.git'
+bootstrap='./autogen.sh'
+mirrors='http://ftp.debian.org/debian/pool/main/l/ltrace ftp:://ftp.debian.org/debian/pool/main/l/ltrace'
+archive_filename='@{pkg_name}_@{version}.orig'
+archive_dirname='@{pkg_name}-@{version}'
+archive_formats='.tar.bz2'

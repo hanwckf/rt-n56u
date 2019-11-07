@@ -1,0 +1,25 @@
+fix build error on arm like on hppa:
+
+arm-unknown-linux-gnu-gcc ../nptl/sysdeps/unix/sysv/linux/libc-lowlevellock.c -c -std=gnu99 -fgnu89-inline -O2 -Wall -Winline -Wwrite-strings -fmerge-all-constants -fno-strict-aliasing -g -pipe -Wstrict-prototypes   -fPIC    -I../include -I/var/tmp/portage/cross-arm-unknown-linux-gnu/glibc-2.8_p20080602/work/build-default-arm-unknown-linux-gnu-nptl/nptl -I/var/tmp/portage/cross-arm-unknown-linux-gnu/glibc-2.8_p20080602/work/build-default-arm-unknown-linux-gnu-nptl -I../ports/sysdeps/arm/elf -I../ports/sysdeps/unix/sysv/linux/arm/nptl -I../ports/sysdeps/unix/sysv/linux/arm -I../nptl/sysdeps/unix/sysv/linux -I../nptl/sysdeps/pthread -I../sysdeps/pthread -I../ports/sysdeps/unix/sysv/linux -I../sysdeps/unix/sysv/linux -I../sysdeps/gnu -I../sysdeps/unix/common -I../sysdeps/unix/mman -I../sysdeps/unix/inet -I../nptl/sysdeps/unix/sysv -I../ports/sysdeps/unix/sysv -I../sysdeps/unix/sysv -I../ports/sysdeps/unix/arm -I../nptl/sysdeps/unix -I../ports/sysdeps/unix -I../sysdeps/unix -I../sysdeps/posix -I../ports/sysdeps/arm/fpu -I../ports/sysdeps/arm/nptl -I../ports/sysdeps/arm -I../sysdeps/wordsize-32 -I../sysdeps/ieee754/flt-32 -I../sysdeps/ieee754/dbl-64 -I../sysdeps/ieee754 -I../sysdeps/generic/elf -I../sysdeps/generic -I../nptl -I../ports  -I.. -I../libio -I. -nostdinc -isystem /usr/lib/gcc/arm-unknown-linux-gnu/4.3.2/include -isystem /usr/lib/gcc/arm-unknown-linux-gnu/4.3.2/include-fixed -isystem /usr/arm-unknown-linux-gnu/usr/include -D_LIBC_REENTRANT -include ../include/libc-symbols.h  -DPIC -DSHARED      -o /var/tmp/portage/cross-arm-unknown-linux-gnu/glibc-2.8_p20080602/work/build-default-arm-unknown-linux-gnu-nptl/nptl/rtld-libc-lowlevellock.os -MD -MP -MF /var/tmp/portage/cross-arm-unknown-linux-gnu/glibc-2.8_p20080602/work/build-default-arm-unknown-linux-gnu-nptl/nptl/rtld-libc-lowlevellock.os.dt -MT /var/tmp/portage/cross-arm-unknown-linux-gnu/glibc-2.8_p20080602/work/build-default-arm-unknown-linux-gnu-nptl/nptl/rtld-libc-lowlevellock.os -DNOT_IN_libc=1 -DIS_IN_rtld=1
+In file included from ../nptl/sysdeps/unix/sysv/linux/libc-lowlevellock.c:21:
+../nptl/sysdeps/unix/sysv/linux/lowlevellock.c: In function '__lll_lock_wait_private':
+../nptl/sysdeps/unix/sysv/linux/lowlevellock.c:31: warning: implicit declaration of function 'THREAD_GETMEM'
+../nptl/sysdeps/unix/sysv/linux/lowlevellock.c:31: error: 'THREAD_SELF' undeclared (first use in this function)
+../nptl/sysdeps/unix/sysv/linux/lowlevellock.c:31: error: (Each undeclared identifier is reported only once
+../nptl/sysdeps/unix/sysv/linux/lowlevellock.c:31: error: for each function it appears in.)
+../nptl/sysdeps/unix/sysv/linux/lowlevellock.c:31: error: 'header' undeclared (first use in this function)
+
+---
+ sysdeps/unix/sysv/linux/arm/nptl/lowlevellock.h |    1 +
+ 1 file changed, 1 insertion(+)
+
+--- a/sysdeps/unix/sysv/linux/arm/nptl/lowlevellock.h
++++ b/sysdeps/unix/sysv/linux/arm/nptl/lowlevellock.h
+@@ -24,6 +24,7 @@
+ #include <atomic.h>
+ #include <sysdep.h>
+ #include <kernel-features.h>
++#include <tls.h>		/* Need THREAD_*, and header.*.  */
+ 
+ #define FUTEX_WAIT		0
+ #define FUTEX_WAKE		1

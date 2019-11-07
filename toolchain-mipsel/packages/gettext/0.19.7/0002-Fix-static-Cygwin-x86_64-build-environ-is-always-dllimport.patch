@@ -1,0 +1,75 @@
+---
+ gettext-tools/gnulib-lib/execute.c        |    2 +-
+ gettext-tools/gnulib-lib/spawn-pipe.c     |    2 +-
+ gettext-tools/gnulib-tests/test-environ.c |    2 +-
+ gnulib-local/lib/execute.c.diff           |    2 +-
+ gnulib-local/lib/spawn-pipe.c.diff        |    2 +-
+ gnulib-local/tests/test-environ.c.diff    |    2 +-
+ 6 files changed, 6 insertions(+), 6 deletions(-)
+
+--- a/gettext-tools/gnulib-lib/execute.c
++++ b/gettext-tools/gnulib-lib/execute.c
+@@ -52,7 +52,7 @@
+    __cygwin_environ variable on cygwin64:
+    <https://cygwin.com/ml/cygwin/2013-06/msg00228.html>.  */
+ #if defined __CYGWIN__ && defined __x86_64__
+-extern DLL_VARIABLE char **environ;
++extern __attribute__((dllimport)) char **environ;
+ #endif
+ 
+ 
+--- a/gettext-tools/gnulib-lib/spawn-pipe.c
++++ b/gettext-tools/gnulib-lib/spawn-pipe.c
+@@ -52,7 +52,7 @@
+    __cygwin_environ variable on cygwin64:
+    <https://cygwin.com/ml/cygwin/2013-06/msg00228.html>.  */
+ #if defined __CYGWIN__ && defined __x86_64__
+-extern DLL_VARIABLE char **environ;
++extern __attribute__((dllimport)) char **environ;
+ #endif
+ 
+ 
+--- a/gettext-tools/gnulib-tests/test-environ.c
++++ b/gettext-tools/gnulib-tests/test-environ.c
+@@ -26,7 +26,7 @@
+    __cygwin_environ variable on cygwin64:
+    <https://cygwin.com/ml/cygwin/2013-06/msg00228.html>.  */
+ #if defined __CYGWIN__ && defined __x86_64__
+-extern DLL_VARIABLE char **environ;
++extern __attribute__((dllimport)) char **environ;
+ #endif
+ 
+ int
+--- a/gnulib-local/lib/execute.c.diff
++++ b/gnulib-local/lib/execute.c.diff
+@@ -10,7 +10,7 @@
+ +   __cygwin_environ variable on cygwin64:
+ +   <https://cygwin.com/ml/cygwin/2013-06/msg00228.html>.  */
+ +#if defined __CYGWIN__ && defined __x86_64__
+-+extern DLL_VARIABLE char **environ;
+++extern __attribute__((dllimport)) char **environ;
+ +#endif
+ +
+  
+--- a/gnulib-local/lib/spawn-pipe.c.diff
++++ b/gnulib-local/lib/spawn-pipe.c.diff
+@@ -10,7 +10,7 @@
+ +   __cygwin_environ variable on cygwin64:
+ +   <https://cygwin.com/ml/cygwin/2013-06/msg00228.html>.  */
+ +#if defined __CYGWIN__ && defined __x86_64__
+-+extern DLL_VARIABLE char **environ;
+++extern __attribute__((dllimport)) char **environ;
+ +#endif
+ +
+  
+--- a/gnulib-local/tests/test-environ.c.diff
++++ b/gnulib-local/tests/test-environ.c.diff
+@@ -10,7 +10,7 @@
+ +   __cygwin_environ variable on cygwin64:
+ +   <https://cygwin.com/ml/cygwin/2013-06/msg00228.html>.  */
+ +#if defined __CYGWIN__ && defined __x86_64__
+-+extern DLL_VARIABLE char **environ;
+++extern __attribute__((dllimport)) char **environ;
+ +#endif
+ +
+  int

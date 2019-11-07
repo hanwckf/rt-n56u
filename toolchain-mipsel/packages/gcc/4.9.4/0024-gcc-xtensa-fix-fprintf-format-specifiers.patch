@@ -1,0 +1,68 @@
+From 0f32ae7bc51725cd500e2877b571fd914d77852e Mon Sep 17 00:00:00 2001
+From: Max Filippov <jcmvbkbc@gmail.com>
+Date: Sun, 28 May 2017 19:56:56 -0700
+Subject: [PATCH] gcc: xtensa: fix fprintf format specifiers
+
+HOST_WIDE_INT may not be long as assumed in print_operand and
+xtensa_emit_call. Use HOST_WIDE_INT_PRINT_DEC/HOST_WIDE_INT_PRINT_HEX
+format strings instead of %ld/0x%lx. This fixes incorrect assembly code
+generation by the compiler running on armhf host.
+
+2017-05-28  Max Filippov  <jcmvbkbc@gmail.com>
+gcc/
+	* config/xtensa/xtensa.c (xtensa_emit_call): Use
+	HOST_WIDE_INT_PRINT_HEX instead of 0x%lx format string.
+	(print_operand): Use HOST_WIDE_INT_PRINT_DEC instead of %ld
+	format string.
+
+Signed-off-by: Max Filippov <jcmvbkbc@gmail.com>
+---
+ gcc/config/xtensa/xtensa.c |   10 +++++-----
+ 1 file changed, 5 insertions(+), 5 deletions(-)
+
+--- a/gcc/config/xtensa/xtensa.c
++++ b/gcc/config/xtensa/xtensa.c
+@@ -1786,7 +1786,7 @@
+   rtx tgt = operands[callop];
+ 
+   if (GET_CODE (tgt) == CONST_INT)
+-    sprintf (result, "call8\t0x%lx", INTVAL (tgt));
++    sprintf (result, "call8\t" HOST_WIDE_INT_PRINT_HEX, INTVAL (tgt));
+   else if (register_operand (tgt, VOIDmode))
+     sprintf (result, "callx8\t%%%d", callop);
+   else
+@@ -2361,14 +2361,14 @@
+ 
+     case 'L':
+       if (GET_CODE (x) == CONST_INT)
+-	fprintf (file, "%ld", (32 - INTVAL (x)) & 0x1f);
++	fprintf (file, HOST_WIDE_INT_PRINT_DEC, (32 - INTVAL (x)) & 0x1f);
+       else
+ 	output_operand_lossage ("invalid %%L value");
+       break;
+ 
+     case 'R':
+       if (GET_CODE (x) == CONST_INT)
+-	fprintf (file, "%ld", INTVAL (x) & 0x1f);
++	fprintf (file, HOST_WIDE_INT_PRINT_DEC, INTVAL (x) & 0x1f);
+       else
+ 	output_operand_lossage ("invalid %%R value");
+       break;
+@@ -2382,7 +2382,7 @@
+ 
+     case 'd':
+       if (GET_CODE (x) == CONST_INT)
+-	fprintf (file, "%ld", INTVAL (x));
++	fprintf (file, HOST_WIDE_INT_PRINT_DEC, INTVAL (x));
+       else
+ 	output_operand_lossage ("invalid %%d value");
+       break;
+@@ -2451,7 +2451,7 @@
+       else if (GET_CODE (x) == MEM)
+ 	output_address (XEXP (x, 0));
+       else if (GET_CODE (x) == CONST_INT)
+-	fprintf (file, "%ld", INTVAL (x));
++	fprintf (file, HOST_WIDE_INT_PRINT_DEC, INTVAL (x));
+       else
+ 	output_addr_const (file, x);
+     }

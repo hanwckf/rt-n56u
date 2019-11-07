@@ -1,0 +1,80 @@
+# Menu for the native GDB binaries (GDB itself and gdbserver)
+
+config GDB_NATIVE
+    bool
+    prompt "Native gdb"
+    depends on ! BARE_METAL
+    depends on ! LIBC_BIONIC
+    depends on CC_LANG_CXX || !GDB_8_0_or_later
+    select LIBC_UCLIBC_WCHAR if LIBC_UCLIBC
+    select EXPAT_TARGET
+    select NCURSES_TARGET
+    help
+      Build and install a native gdb for the target, to run on the target.
+
+config GDB_GDBSERVER
+    bool
+    prompt "gdbserver"
+    default y
+    depends on ! BARE_METAL
+    select LIBC_UCLIBC_WCHAR if LIBC_UCLIBC && GDB_8_0_or_later
+    help
+      Build and install a gdbserver for the target, to run on the target.
+
+if GDB_NATIVE || GDB_GDBSERVER
+
+config GDB_NATIVE_BUILD_IPA_LIB
+    bool
+    prompt "Build the IPA library"
+    depends on LIBC_GLIBC
+    depends on GDB_HAS_IPA_LIB && !GDB_NATIVE_STATIC
+    help
+      gdbserver >= 7.2 comes with an optional library to use tracepoints,
+      the In Process Agent (IPA) library, libinproctrace.so. This library
+      uses some GNU extensions from the C library.
+      
+      Say 'y' if you intend to use tracepoints when debugging your
+      programs with gdbserver.
+      
+      Note: Currently, building this library is not possible when the
+            gdbserver is built statically. This is a limitation in
+            crosstool-NG, so do not bug upstream about it...
+
+config GDB_NATIVE_STATIC
+    bool
+    prompt "Build a static gdb binaries"
+    depends on EXPERIMENTAL
+    help
+      In case you have trouble with dynamic loading of shared libraries,
+      you will find that a static gdb comes in handy.
+
+      However, it has been noticed at least on x86 that enabling this
+      option produces an invalid gdb binary. It is linked with
+      "-static -Wl,--dynamic-list=..." which
+      # (a) requests invalid program interpreter
+      # (b) crashes glibc/uClibc-ng and does not work with musl
+      # See https://sourceware.org/ml/libc-alpha/2017-03/msg00267.html
+
+      It is possible it would work with other architectures, hence it is
+      not completely removed. Use with care and report to the mailing list
+      if the resulting binaries work.
+
+      For further details, see:
+      https://sourceware.org/bugzilla/show_bug.cgi?id=19617
+      https://sourceware.org/bugzilla/show_bug.cgi?id=21086
+
+config GDB_NATIVE_STATIC_LIBSTDCXX
+    bool
+    prompt "Link against static libstdc+++"
+    depends on !GDB_NATIVE_STATIC
+    default n
+    help
+      Say 'y' if you do not want gdbserver to require libstdc++.so on the
+      target.
+
+endif # GDB_NATIVE
+
+if BARE_METAL
+comment "In bare-metal, you'll need to   "
+comment "provide your own gdbserver stub."
+endif # BARE_METAL

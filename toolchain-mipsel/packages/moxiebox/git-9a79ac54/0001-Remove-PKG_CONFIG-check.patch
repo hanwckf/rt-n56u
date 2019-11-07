@@ -1,0 +1,29 @@
+From a59675779247f544695959646a1615a033ca2d8d Mon Sep 17 00:00:00 2001
+From: Alexey Neyman <stilor@att.net>
+Date: Tue, 20 Nov 2018 10:54:40 -0800
+Subject: [PATCH] Remove PKG_CONFIG check
+
+... it is not used afterwards anyway, and causes errors if pkg-config
+is not installed (since one cannot just run configure - one has to
+run autogen.sh first).
+
+Signed-off-by: Alexey Neyman <stilor@att.net>
+---
+ configure.ac | 1 -
+ 1 file changed, 1 deletion(-)
+
+diff --git a/configure.ac b/configure.ac
+index aeadb36..1925a88 100644
+--- a/configure.ac
++++ b/configure.ac
+@@ -22,7 +22,6 @@ AC_PATH_TOOL(STRIP, strip)
+ AC_CHECK_PROG(MOX_AS, moxiebox-as, moxiebox-as)
+ AC_CHECK_PROG(MOX_AR, moxiebox-ar, moxiebox-ar)
+ AC_CHECK_PROG(MOX_GCC, moxiebox-gcc, moxiebox-gcc)
+-PKG_PROG_PKG_CONFIG
+ 
+ AC_LANG_PUSH([C++])
+ 
+-- 
+2.14.1
+

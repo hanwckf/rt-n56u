@@ -1,0 +1,42 @@
+sniped from Debian
+http://bugs.gentoo.org/289615
+
+2009-10-27  Aurelien Jarno  <aurelien@aurel32.net>
+
+	* locale/programs/locarchive.c: use MMAP_SHARED to reserve memory
+	used later with MMAP_FIXED | MMAP_SHARED to cope with different
+	alignment restrictions.
+
+---
+ locale/programs/locarchive.c |    6 +++---
+ 1 file changed, 3 insertions(+), 3 deletions(-)
+
+--- a/locale/programs/locarchive.c
++++ b/locale/programs/locarchive.c
+@@ -134,7 +134,7 @@
+   size_t reserved = RESERVE_MMAP_SIZE;
+   int xflags = 0;
+   if (total < reserved
+-      && ((p = mmap64 (NULL, reserved, PROT_NONE, MAP_PRIVATE | MAP_ANON,
++      && ((p = mmap64 (NULL, reserved, PROT_NONE, MAP_SHARED | MAP_ANON,
+ 		       -1, 0)) != MAP_FAILED))
+     xflags = MAP_FIXED;
+   else
+@@ -396,7 +396,7 @@
+   size_t reserved = RESERVE_MMAP_SIZE;
+   int xflags = 0;
+   if (total < reserved
+-      && ((p = mmap64 (NULL, reserved, PROT_NONE, MAP_PRIVATE | MAP_ANON,
++      && ((p = mmap64 (NULL, reserved, PROT_NONE, MAP_SHARED | MAP_ANON,
+ 		       -1, 0)) != MAP_FAILED))
+     xflags = MAP_FIXED;
+   else
+@@ -614,7 +614,7 @@
+   int xflags = 0;
+   void *p;
+   if (st.st_size < reserved
+-      && ((p = mmap64 (NULL, reserved, PROT_NONE, MAP_PRIVATE | MAP_ANON,
++      && ((p = mmap64 (NULL, reserved, PROT_NONE, MAP_SHARED | MAP_ANON,
+ 		       -1, 0)) != MAP_FAILED))
+     xflags = MAP_FIXED;
+   else

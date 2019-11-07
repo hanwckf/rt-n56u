@@ -1,0 +1,29 @@
+commit 328c44c3670ebf6c1bd790acddce65a12998cd6c
+Author: Roland McGrath <roland@hack.frob.com>
+Date:   Fri Apr 17 12:11:58 2015 -0700
+
+    Fuller check for invalid NSID in _dl_open.
+
+---
+ elf/dl-open.c |   10 ++++++++--
+ 1 file changed, 8 insertions(+), 2 deletions(-)
+
+--- a/elf/dl-open.c
++++ b/elf/dl-open.c
+@@ -526,8 +526,14 @@
+   /* Never allow loading a DSO in a namespace which is empty.  Such
+      direct placements is only causing problems.  Also don't allow
+      loading into a namespace used for auditing.  */
+-  else if (__builtin_expect (nsid != LM_ID_BASE && nsid != __LM_ID_CALLER, 0)
+-	   && (GL(dl_ns)[nsid]._ns_nloaded == 0
++  else if ((nsid != LM_ID_BASE && nsid != __LM_ID_CALLER)
++	   && ((nsid < 0 || nsid >= GL(dl_nns))
++	       /* This prevents the [NSID] index expressions from being
++		  evaluated, so the compiler won't think that we are
++		  accessing an invalid index here in the !SHARED case where
++		  DL_NNS is 1 and so any NSID != 0 is invalid.  */
++	       || DL_NNS == 1
++	       || GL(dl_ns)[nsid]._ns_nloaded == 0
+ 	       || GL(dl_ns)[nsid]._ns_loaded->l_auditing))
+     _dl_signal_error (EINVAL, file, NULL,
+ 		      N_("invalid target namespace in dlmopen()"));

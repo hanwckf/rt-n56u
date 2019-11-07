@@ -1,0 +1,25 @@
+#!/bin/bash
+
+set -e
+# Mounted directory may already be configured - or may not
+# even had bootstrapped.
+tar cf - -C / \
+        --exclude=crosstool-ng/.build \
+        --exclude=crosstool-ng/.build.all \
+        --exclude=crosstool-ng/.git \
+        --exclude=crosstool-ng/testing/docker \
+        crosstool-ng | \
+    tar xf -
+cd crosstool-ng
+if [ -r Makefile ]; then
+    make distclean
+elif [ ! -r configure ]; then
+    ./bootstrap
+fi
+cd ..
+cd work
+~/crosstool-ng/configure --prefix=/opt/ctng
+make
+make install
+cd ..
+rm -rf crosstool-ng

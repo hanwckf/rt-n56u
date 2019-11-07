@@ -1,0 +1,154 @@
+# Options related to how the build behaves
+
+comment "Build behavior"
+
+config PARALLEL_JOBS
+    int
+    prompt "Number of parallel jobs"
+    default 0
+    help
+      Number of jobs make will be allowed to run concurently.
+      Set this higher than the number of processors you have, but not too high.
+      A good rule of thumb is twice the number of processors you have.
+      
+      Enter 1 to have only one job at a time.
+
+      Enter 0 to set automatically based on how many processors the build
+      machine has.
+
+config LOAD
+    string
+    prompt "Maximum allowed load"
+    default ""
+    help
+      Specifies that no new jobs should be started if there are others jobs
+      running and the load average is at least this value.
+
+      Leave to empty for no load limit.
+
+      Note: any float value is allowed and will be passed to the '-l' option
+            of make (for further details, refer to the make manpage).
+
+config USE_PIPES
+    bool
+    prompt "Use -pipe"
+    default y
+    help
+      Use gcc's option -pipe to use pipes rather than temp files when building
+      the toolchain.
+
+config EXTRA_CFLAGS_FOR_BUILD
+    string
+    prompt "Extra build compiler flags"
+    default ""
+    help
+      Extra flags to pass to the build C and C++ compiler.
+
+      May be used to change the default features of the build
+      compiler such as turning off the stack protector or fortify.
+      
+config EXTRA_LDFLAGS_FOR_BUILD
+    string
+    prompt "Extra build linker flags"
+    default ""
+    help
+      Extra flags to pass to the build linker.
+
+      May be used to change the default features of the build
+      linker.
+      
+config EXTRA_CFLAGS_FOR_HOST
+    string
+    prompt "Extra host compiler flags"
+    default ""
+    help
+      Extra flags to pass to the host C and C++ compiler.
+
+      May be used to change the default features of the host
+      compiler such as turning off the stack protector or fortify.
+      
+config EXTRA_LDFLAGS_FOR_HOST
+    string
+    prompt "Extra host linker flags"
+    default ""
+    help
+      Extra flags to pass to the host linker.
+
+      May be used to change the default features of the host
+      linker.
+
+choice
+    bool
+    prompt "Shell to use as CONFIG_SHELL"
+    default CONFIG_SHELL_BASH
+
+config CONFIG_SHELL_SH
+    bool
+    prompt "sh (the system shell)"
+    help
+      Use 'sh' as CONFIG_SHELL.
+      
+      ./configure scripts and Makefiles make intensive use of calling
+      sub-shells. This is usually done by calling /bin/sh. /bin/sh ought
+      to be an at-least-POSIX-conformant shell (that is, able to interpret
+      POSIX shell scripts).
+      
+      On many (most?) systems, /bin/sh is a symlink to bash. On some other
+      systems (eg. Ubuntu, latest Debian), /bin/sh points to dash (or ash).
+      bash is a full-featured shell, with many extension to POSIX, but is
+      quite slow (see ection BUGS in the bash man page), while dash is
+      faster, with very few extensions to POSIX.  On the other hand, some
+      ./configure scripts, although written to use /bin/sh, may really
+      require to be run by bash.
+      
+      The default is to use bash, as some components (eg. GMP) will fail
+      to build with anything else than bash.
+      
+      Unless you have a very strong reason not to (eg. you are debugging
+      the bashisms in a ./configure script), you should use the default,
+      and use bash.
+
+config CONFIG_SHELL_ASH
+    bool
+    prompt "ash (READ HELP!)"
+    help
+      Use 'ash' as CONFIG_SHELL.
+      
+      See help for CONFIG_SHELL_SH, above, for more explanations.
+      
+      NOTE: It is advised that you do NOT use ash as CONFIG_SHELL, as some
+      components are broken. If you decide to use ash, and the build breaks,
+      don't come moaning and set the CONFIG_SHELL to bash, below.
+
+config CONFIG_SHELL_BASH
+    bool
+    prompt "bash"
+    help
+      Use 'bash' as CONFIG_SHELL.
+      
+      See help for CONFIG_SHELL_SH, above, for more explanations.
+
+config CONFIG_SHELL_CUSTOM
+    bool
+    prompt "custom shell"
+    help
+      Enter full path to the custom shell below.
+      
+      See help for CONFIG_SHELL_SH, above, for more explanations.
+
+endchoice
+
+config CONFIG_SHELL_CUSTOM_PATH
+    string
+    prompt "Path to custom shell"
+    depends on CONFIG_SHELL_CUSTOM
+    default "/bin/sh"
+
+# Ditto.
+# And we must use the ./configured bash...
+config CONFIG_SHELL
+    string
+    default "/bin/sh"                   if CONFIG_SHELL_SH
+    default "/bin/ash"                  if CONFIG_SHELL_ASH
+    default "${bash}"                   if CONFIG_SHELL_BASH
+    default CONFIG_SHELL_CUSTOM_PATH    if CONFIG_SHELL_CUSTOM

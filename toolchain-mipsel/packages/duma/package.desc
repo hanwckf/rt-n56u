@@ -1,0 +1,5 @@
+repository='cvs :pserver:anonymous@duma.cvs.sourceforge.net:/cvsroot/duma duma'
+mirrors='http://downloads.sourceforge.net/project/duma/duma/${CT_DUMA_VERSION//_/.}'
+archive_filename='@{pkg_name}_@{version}'
+archive_dirname='@{pkg_name}_@{version}'
+archive_formats='.tar.gz .zip'

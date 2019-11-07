@@ -1,0 +1,4 @@
+# No public repository for ncurses
+mirrors='ftp://invisible-island.net/ncurses $(CT_Mirrors GNU ncurses)'
+archive_formats='.tar.gz'
+signature_format='packed/.sig'

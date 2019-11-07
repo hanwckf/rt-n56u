@@ -1,0 +1,24 @@
+# MicroBlaze specific config options
+
+## no-package
+## depends on EXPERIMENTAL
+##
+## select ARCH_SUPPORTS_WITH_CPU
+## select ARCH_FLOAT_SW
+## select ARCH_SUPPORTS_EITHER_ENDIAN
+## select ARCH_DEFAULT_BE
+## select ARCH_SUPPORTS_BOTH_MMU
+## select ARCH_DEFAULT_HAS_MMU
+## select ARCH_SUPPORTS_FLAT_FORMAT
+##
+## help The MicroBlaze architecture, as defined by:
+## help     http://www.xilinx.com/
+## help
+## help Upstream projects do not currently provide
+## help full support for the microblaze architecture
+## help and as such, this is marked as EXPERIMENTAL
+## help for CT-NG.
+## help
+## help Support is being added for a modern gcc,
+## help binutils and gdb along with nptl threading
+## help in glibc for microblaze.

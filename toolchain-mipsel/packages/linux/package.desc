@@ -1,0 +1,6 @@
+repository='git git://git.kernel.org/pub/scm/linux/kernel/git/torvalds/linux.git'
+mirrors='$(CT_Mirrors kernel.org linux ${CT_LINUX_VERSION})'
+relevantpattern='2.*.*|. *.*|.'
+milestones='3.2 3.7 4.8'
+archive_formats='.tar.xz .tar.gz'
+signature_format='unpacked/.sign'

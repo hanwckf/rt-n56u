@@ -1,0 +1,5 @@
+# Autoconf
+
+## default y if !CONFIGURE_has_autoconf_2_65_or_newer
+## default y if !CONFIGURE_has_autoreconf_2_65_or_newer
+## help Autoconf

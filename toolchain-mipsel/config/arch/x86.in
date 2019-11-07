@@ -1,0 +1,14 @@
+# x86 specific options
+
+## no-package
+## select ARCH_SUPPORTS_32
+## select ARCH_SUPPORTS_64
+## select ARCH_DEFAULT_32
+## select ARCH_USE_MMU
+## select ARCH_SUPPORTS_WITH_ARCH
+## select ARCH_SUPPORTS_WITH_CPU
+## select ARCH_SUPPORTS_WITH_TUNE
+##
+## help The x86 architecture, as defined by:
+## help     32-bit (ia32) : http://www.intel.com/
+## help     64-bit (amd64): http://www.amd.com/us-en/Processors/DevelopWithAMD/0,,30_2252_875_7044,00.html

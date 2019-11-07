@@ -1,0 +1,185 @@
+# Options specific to downloading packages
+
+comment "Downloading"
+
+choice
+    prompt "Download agent"
+
+config DOWNLOAD_AGENT_WGET
+    bool "wget"
+    depends on CONFIGURE_has_wget
+
+config DOWNLOAD_AGENT_CURL
+    bool "curl"
+    depends on CONFIGURE_has_curl
+
+config DOWNLOAD_AGENT_NONE
+    bool "none (forbid download)"
+    select FORBID_DOWNLOAD
+
+endchoice
+
+config FORBID_DOWNLOAD
+    bool
+    prompt "Forbid downloads"
+    help
+      Normally, crosstool-NG will try to download missing tarballs (or
+      checkout from CVS/SVN...).
+      If you do not have network connectivity when you run crosstool-NG,
+      and some files are missing, it can be a long time before crosstool-NG
+      fails.
+
+      Saying 'y' here will prevent crosstool-NG from downloading missing
+      files, thus failing early so that you don't get stuck.
+
+if ! FORBID_DOWNLOAD
+
+config FORCE_DOWNLOAD
+    bool
+    prompt "Force downloads"
+    help
+      Force downloading tarballs, even if one already exists.
+
+      Useful if you suspect a tarball to be damaged.
+
+config CONNECT_TIMEOUT
+    int
+    prompt "Connection timeout"
+    default 10
+    help
+      Maximum time in seconds that you allow the connection to the server to take.
+
+      The scenario is as follows;
+        - some enterprise networks have firewalls that prohibit FTP traffic, while
+          still allowing HTTP
+        - most download sites have http:// equivalent for the ftp:// URL
+        - after this number of seconds, it is considered that the connection could
+          not be established, and the next URL in the list is tried, until we reach
+          an URL that will go through the firewall, most probably an http:// URL.
+
+      If you have a slow network, you'd better set this value higher than the default
+      10s. If you know a firewall is blocking connections, but your network is globally
+      fast, you can try to lower this value to jump more quickly to allowed URLs. YMMV.
+
+      If '-1' is specified, no timeout reconfiguration options are passed to wget.
+
+if DOWNLOAD_AGENT_WGET
+
+config DOWNLOAD_WGET_OPTIONS
+    string "Extra options to wget"
+    default "--passive-ftp --tries=3 -nc --progress=dot:binary"
+
+endif
+
+if DOWNLOAD_AGENT_CURL
+
+config DOWNLOAD_CURL_OPTIONS
+    string "Extra options to curl"
+    default "--location --ftp-pasv --retry 3 --fail --silent"
+
+endif
+
+config ONLY_DOWNLOAD
+    bool
+    prompt "Stop after downloading tarballs"
+    help
+      Only download the tarballs. Exit once it done.
+      
+      Useful to pre-retrieve the tarballs before going off-line.
+
+config USE_MIRROR
+    bool
+    prompt "Use a mirror"
+    help
+      If you have a machine on your LAN that mirrors some of the needed
+      tarballs, you can say 'Y' here, and configure adequate values in
+      the following options.
+      
+      Obviously, nothing prevents you from using a mirror that is in fact
+      *not* on your LAN, for example on another subnet of your company's
+      network, or a mirror on the Internet.
+
+if USE_MIRROR
+
+config FORCE_MIRROR
+    bool
+    prompt "Only use mirror"
+    help
+      Only allow downloading from the mirror specified, other download locations
+      will NOT be used, and the package will fail to be located if not present
+      on the mirror provided
+
+config MIRROR_BASE_URL
+    string
+    prompt "Base URL"
+    default "http://crosstool-ng.org/mirrors/"
+    help
+      This is the base URL searched in for tarballs.
+      
+      The crosstool-NG server hosts a few of the required components, but
+      it is limited to volatile snashots (eg. uClibc) that are used in some
+      samples, or to mirror some archives which upstream can be flaky (eg.
+      mpfr), or for which upstream releases can be missing due to upstream
+      not doing archives (eg. glibc-ports).
+      
+      The mirror is provided as-is, no guarantee is made as to the actual
+      content of the archives, or to the availability of the mirror.
+      
+      Excercise caution, use at your own risks!
+      
+      The mirror is available at:
+        http://crosstool-ng.org/mirrors/
+
+endif # USE_MIRROR
+
+config VERIFY_DOWNLOAD_DIGEST
+    bool "Verify download digests (checksums)"
+    default y
+    depends on CONFIGURE_has_sha512sum || CONFIGURE_has_sha256sum || CONFIGURE_has_sha1sum || CONFIGURE_has_md5sum
+
+if VERIFY_DOWNLOAD_DIGEST
+
+choice
+    prompt "Digest algorithm"
+
+config VERIFY_DOWNLOAD_DIGEST_SHA512
+    bool "SHA-512"
+    depends on CONFIGURE_has_sha512sum
+
+config VERIFY_DOWNLOAD_DIGEST_SHA256
+    depends on CONFIGURE_has_sha256sum
+    bool "SHA-256"
+
+config VERIFY_DOWNLOAD_DIGEST_SHA1
+    depends on CONFIGURE_has_sha1sum
+    bool "SHA-1"
+
+config VERIFY_DOWNLOAD_DIGEST_MD5
+    depends on CONFIGURE_has_md5sum
+    bool "MD5"
+
+endchoice
+
+config VERIFY_DOWNLOAD_DIGEST_ALG
+    string
+    default "md5" if VERIFY_DOWNLOAD_DIGEST_MD5
+    default "sha1" if VERIFY_DOWNLOAD_DIGEST_SHA1
+    default "sha256" if VERIFY_DOWNLOAD_DIGEST_SHA256
+    default "sha512" if VERIFY_DOWNLOAD_DIGEST_SHA512
+
+endif # VERIFY_DOWNLOAD_DIGEST
+
+config VERIFY_DOWNLOAD_SIGNATURE
+    bool "Verify detached signatures"
+    help
+      Verify the signatures for the downloads where available.
+      This requires the public keys for all the packages used in the build
+      to be imported into a keyring on the build machine.
+
+      Note that the validation will succeed so long as the signature
+      is known and valid, even if the signature is not trusted! GnuPG
+      issues a warning in this case, but ultimately reports that validation
+      succeeded. Check the log file if this is a concern; crosstool-NG
+      may add an option to verify this more paranoidally later.
+
+endif # ! FORBID_DOWNLOAD

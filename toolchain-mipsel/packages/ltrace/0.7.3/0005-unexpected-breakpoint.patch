@@ -1,0 +1,26 @@
+From: Juan Cespedes <cespedes@debian.org>
+Description: continue after unexpected breakpoint
+  (instead of decrementing PC and execute int3 again and again)
+Last-Update: 2014-01-03
+
+
+---
+ handle_event.c |    5 ++++-
+ 1 file changed, 4 insertions(+), 1 deletion(-)
+
+--- a/handle_event.c
++++ b/handle_event.c
+@@ -656,9 +656,12 @@
+ 
+ 	if ((sbp = address2bpstruct(leader, brk_addr)) != NULL)
+ 		breakpoint_on_hit(sbp, event->proc);
+-	else if (event->proc->state != STATE_IGNORED)
++	else if (event->proc->state != STATE_IGNORED) {
+ 		output_line(event->proc,
+ 			    "unexpected breakpoint at %p", brk_addr);
++		continue_process(event->proc->pid);
++		return;
++	}
+ 
+ 	/* breakpoint_on_hit may delete its own breakpoint, so we have
+ 	 * to look it up again.  */

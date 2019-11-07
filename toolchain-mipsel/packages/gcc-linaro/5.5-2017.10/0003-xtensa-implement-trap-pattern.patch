@@ -1,0 +1,57 @@
+From d462e776df56a72f68545054f6d722bf447f0519 Mon Sep 17 00:00:00 2001
+From: Max Filippov <jcmvbkbc@gmail.com>
+Date: Mon, 8 Jun 2015 22:29:11 +0300
+Subject: [PATCH] xtensa: implement trap pattern
+
+gcc/
+	* config/xtensa/xtensa.h (TARGET_DEBUG): New definition.
+	* config/xtensa/xtensa.md (define_attr "type"): New type "trap".
+	(define_insn "trap"): New definition.
+
+Signed-off-by: Max Filippov <jcmvbkbc@gmail.com>
+---
+ gcc/config/xtensa/xtensa.h  |    1 +
+ gcc/config/xtensa/xtensa.md |   15 ++++++++++++++-
+ 2 files changed, 15 insertions(+), 1 deletion(-)
+
+--- a/gcc/config/xtensa/xtensa.h
++++ b/gcc/config/xtensa/xtensa.h
+@@ -67,6 +67,7 @@
+ #define TARGET_THREADPTR	XCHAL_HAVE_THREADPTR
+ #define TARGET_LOOPS	        XCHAL_HAVE_LOOPS
+ #define TARGET_WINDOWED_ABI	(XSHAL_ABI == XTHAL_ABI_WINDOWED)
++#define TARGET_DEBUG		XCHAL_HAVE_DEBUG
+ 
+ #define TARGET_DEFAULT \
+   ((XCHAL_HAVE_L32R	? 0 : MASK_CONST16) |				\
+--- a/gcc/config/xtensa/xtensa.md
++++ b/gcc/config/xtensa/xtensa.md
+@@ -86,7 +86,7 @@
+ ;; Attributes.
+ 
+ (define_attr "type"
+-  "unknown,jump,call,load,store,move,arith,multi,nop,farith,fmadd,fconv,fload,fstore,mul16,mul32,div32,mac16,rsr,wsr,entry"
++  "unknown,jump,call,load,store,move,arith,multi,nop,farith,fmadd,fconv,fload,fstore,mul16,mul32,div32,mac16,rsr,wsr,entry,trap"
+   (const_string "unknown"))
+ 
+ (define_attr "mode"
+@@ -1764,6 +1764,19 @@
+   [(set_attr "length" "0")
+    (set_attr "type" "nop")])
+ 
++(define_insn "trap"
++  [(trap_if (const_int 1) (const_int 0))]
++  ""
++{
++  if (TARGET_DEBUG)
++    return "break\t1, 15";
++  else
++    return (TARGET_DENSITY ? "ill.n" : "ill");
++}
++  [(set_attr "type"	"trap")
++   (set_attr "mode"	"none")
++   (set_attr "length"	"3")])
++
+ ;; Setting up a frame pointer is tricky for Xtensa because GCC doesn't
+ ;; know if a frame pointer is required until the reload pass, and
+ ;; because there may be an incoming argument value in the hard frame

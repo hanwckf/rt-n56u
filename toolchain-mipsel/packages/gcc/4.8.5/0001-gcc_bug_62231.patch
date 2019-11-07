@@ -1,0 +1,21 @@
+As-applied.  From:
+
+https://gcc.gnu.org/ml/gcc-patches/2014-10/msg02605.html
+
+Linked from bug62231 comment 4 there
+
+---
+ gcc/config/rs6000/rs6000.c |    2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+--- a/gcc/config/rs6000/rs6000.c
++++ b/gcc/config/rs6000/rs6000.c
+@@ -1677,7 +1677,7 @@
+      SCmode so as to pass the value correctly in a pair of
+      registers.  */
+   else if (TARGET_E500_DOUBLE && FLOAT_MODE_P (mode) && mode != SCmode
+-	   && !DECIMAL_FLOAT_MODE_P (mode))
++	   && !DECIMAL_FLOAT_MODE_P (mode) && SPE_SIMD_REGNO_P (regno))
+     reg_size = UNITS_PER_FP_WORD;
+ 
+   else

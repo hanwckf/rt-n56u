@@ -1,0 +1,15 @@
+# Companion tools config options
+
+menu "Companion tools"
+
+config COMP_TOOLS_FOR_HOST
+    bool
+    prompt "Install companion tools for host"
+    help
+      Enable this option if you want to include the selected companion
+      tools into the final toolchain (rather than just using them
+      to build it).
+
+source "config/gen/comp_tools.in"
+
+endmenu

@@ -1,0 +1,24 @@
+commit dbadf7bcc8995612d5ef737047b909e868387e37
+Author: Andreas Schwab <schwab@suse.de>
+Date:   Mon Mar 9 16:55:06 2015 +0100
+
+    Fix decoding of mmap2 for arm
+    
+    * syscallent.h (mmap2): Decode with sys_mmap_4koff, not
+    sys_mmap_pgoff.
+
+---
+ linux/arm/syscallent.h |    2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+--- a/linux/arm/syscallent.h
++++ b/linux/arm/syscallent.h
+@@ -218,7 +218,7 @@
+ [189] = { 5,	0,		sys_putpmsg,			"putpmsg"		},
+ [190] = { 0,	TP,		sys_vfork,			"vfork"			},
+ [191] = { 2,	0,		sys_getrlimit,			"ugetrlimit"		},
+-[192] = { 6,	TD|TM|SI,	sys_mmap_pgoff,			"mmap2"			},
++[192] = { 6,	TD|TM|SI,	sys_mmap_4koff,			"mmap2"			},
+ [193] = { 4,	TF,		sys_truncate64,			"truncate64"		},
+ [194] = { 4,	TD,		sys_ftruncate64,		"ftruncate64"		},
+ [195] = { 2,	TF,		sys_stat64,			"stat64"		},

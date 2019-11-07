@@ -1,0 +1,64 @@
+commit bdc543e338281da051b3dc06eae96c330a485ce6
+Author: Adhemerval Zanella <adhemerval.zanella@linaro.org>
+Date:   Thu Mar 16 09:15:57 2017 -0300
+
+    sparc: Fix .udiv plt on libc
+    
+    With the removal of divdi3 object from sparcv9-linux-gnu build, its
+    definition came from libgcc and its functions internall calls .udiv.
+    Since glibc also exports these symbols for compatibility reasons, it
+    will end up creating PLT calls internally in libc.so.
+    
+    To avoid it, this patch uses the linker option --wrap to replace all
+    the internal libc.so .udiv calls to the wrapper __wrap_.udiv. Along
+    with strong alias in the udiv implementations, it makes linker do
+    local calls.
+    
+    Checked on sparcv9-linux-gnu.
+    
+            * sysdeps/sparc/sparc32/Makefile (libc.so-gnulib): New rule.
+            * sysdeps/sparc/sparc32/sparcv8/udiv.S (.udiv): Make a strong_alias
+            to __wrap_.udiv.
+            * sysdeps/sparc/sparc32/sparcv9/udiv.S (.udiv): Likewise.
+            * sysdeps/sparc/sparc32/udiv.S (.udiv): Likewise.
+
+---
+ sysdeps/sparc/sparc32/Makefile       |    6 ++++++
+ sysdeps/sparc/sparc32/sparcv8/udiv.S |    1 +
+ sysdeps/sparc/sparc32/sparcv9/udiv.S |    1 +
+ sysdeps/sparc/sparc32/udiv.S         |    1 +
+ 4 files changed, 9 insertions(+)
+
+--- a/sysdeps/sparc/sparc32/Makefile
++++ b/sysdeps/sparc/sparc32/Makefile
+@@ -47,3 +47,9 @@
+ 	mv -f $@-tmp $@
+ 
+ sysdep-realclean := $(sysdep-realclean) $(divrem:%=sysdeps/sparc/sparc32/%.S)
++
++# libgcc __divdi3 and __moddi3 uses .udiv and since it is also exported by
++# libc.so linker will create PLTs for the symbol.  To avoid it we strong alias
++# the exported libc one to __wrap_.udiv and use linker option --wrap to make any
++# call to .udiv to call the wrapper symbol.
++libc.so-gnulib += -Wl,--wrap=.udiv
+--- a/sysdeps/sparc/sparc32/sparcv8/udiv.S
++++ b/sysdeps/sparc/sparc32/sparcv8/udiv.S
+@@ -13,3 +13,4 @@
+ 	 udiv	%o0, %o1, %o0
+ 
+ END(.udiv)
++strong_alias (.udiv, __wrap_.udiv)
+--- a/sysdeps/sparc/sparc32/sparcv9/udiv.S
++++ b/sysdeps/sparc/sparc32/sparcv9/udiv.S
+@@ -15,3 +15,4 @@
+ 	 udiv		%o0, %o1, %o0
+ 
+ END(.udiv)
++strong_alias (.udiv, __wrap_.udiv)
+--- a/sysdeps/sparc/sparc32/udiv.S
++++ b/sysdeps/sparc/sparc32/udiv.S
+@@ -344,3 +344,4 @@
+ 	mov %o2, %o0
+ 
+ END(.udiv)
++strong_alias (.udiv, __wrap_.udiv)

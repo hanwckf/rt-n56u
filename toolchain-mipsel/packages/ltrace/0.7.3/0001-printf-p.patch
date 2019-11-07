@@ -1,0 +1,22 @@
+From: Juan Cespedes <cespedes@debian.org>
+Description: Prevent freeing static-alloc'd memory for %p and %n in printf
+Bug-Debian: http://bugs.debian.org/614994
+Forwarded: http://lists.alioth.debian.org/pipermail/ltrace-devel/2013-September/000953.html
+Last-Update: 2014-01-02
+
+
+---
+ printf.c |    2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+--- a/printf.c
++++ b/printf.c
+@@ -168,7 +168,7 @@
+ 		type_init_pointer(infop, array, 1);
+ 
+ 	} else if (format_type == ARGTYPE_POINTER) {
+-		type_init_pointer(infop, elt_info, 1);
++		type_init_pointer(infop, elt_info, 0);
+ 
+ 	} else {
+ 		*infop = *type_get_simple(format_type);

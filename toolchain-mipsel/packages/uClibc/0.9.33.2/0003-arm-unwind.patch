@@ -1,0 +1,25 @@
+commit 16884562bf54a93e76c6d2ba03edb1fb00e8b3e0
+Author: Alexey Neyman <stilor@att.net>
+Date:   Thu Oct 1 13:22:37 2015 -0700
+
+    Mark libgcc_c_resume as used.
+    
+    Recent GCC releases eliminate the data that is only set and never read,
+    along with the code storing to that data. For assembly blocks like in
+    ARM unwind code, the data structures need to be declared used.
+
+---
+ libpthread/nptl/sysdeps/unix/sysv/linux/arm/unwind-resume.c |    2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+--- a/libpthread/nptl/sysdeps/unix/sysv/linux/arm/unwind-resume.c
++++ b/libpthread/nptl/sysdeps/unix/sysv/linux/arm/unwind-resume.c
+@@ -26,7 +26,7 @@
+ #define __libc_dlclose          dlclose
+ #define __libc_fatal(x)         {/*write(STDERR_FILENO, x, strlen(x));*/ abort();}
+ 
+-static void (*libgcc_s_resume) (struct _Unwind_Exception *exc);
++static void (*libgcc_s_resume) (struct _Unwind_Exception *exc) __attribute_used__;
+ static _Unwind_Reason_Code (*libgcc_s_personality)
+   (_Unwind_State, struct _Unwind_Exception *, struct _Unwind_Context *);
+ 

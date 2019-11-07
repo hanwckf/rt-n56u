@@ -1,0 +1,35 @@
+
+
+---
+ localedata/locales/zh_TW |    6 +++---
+ 1 file changed, 3 insertions(+), 3 deletions(-)
+
+--- a/localedata/locales/zh_TW
++++ b/localedata/locales/zh_TW
+@@ -1,7 +1,7 @@
+ comment_char %
+ escape_char /
+ %
+-% Chinese language locale for Taiwan R.O.C.
++% Chinese language locale for Taiwan
+ % charmap: BIG5-CP950
+ %
+ % Original Author:
+@@ -17,7 +17,7 @@
+ % Reference:	http://wwwold.dkuug.dk/JTC1/SC22/WG20/docs/n690.pdf
+ 
+ LC_IDENTIFICATION
+-title      "Chinese locale for Taiwan R.O.C."
++title      "Chinese locale for Taiwan"
+ source     ""
+ address    ""
+ contact    ""
+@@ -25,7 +25,7 @@
+ tel        ""
+ fax        ""
+ language   "Chinese"
+-territory  "Taiwan R.O.C."
++territory  "Taiwan"
+ revision   "0.2"
+ date       "2000-08-02"
+ %

@@ -1,0 +1,26 @@
+From a76649dae62768d0af7017b3fc0ca5f891588c78 Mon Sep 17 00:00:00 2001
+From: Andoni Morales Alastruey <ylatuya@gmail.com>
+Date: Wed, 29 Feb 2012 10:44:43 +0100
+Subject: [PATCH] Fix linker error: redefinition of vasprintf
+
+This might not be the best patch, but it works for us
+The link error was:
+.libs/autosprintf.o:autosprintf.cc:(.text$vasprintf[_vasprintf]+0x0): multiple definition of `_vasprintf'
+.libs/lib-asprintf.o:lib-asprintf.c:(.text+0x4621): first defined here
+---
+ gettext-runtime/libasprintf/autosprintf.cc |    2 ++
+ 1 file changed, 2 insertions(+)
+
+--- a/gettext-runtime/libasprintf/autosprintf.cc
++++ b/gettext-runtime/libasprintf/autosprintf.cc
+@@ -19,8 +19,10 @@
+    This must come before <config.h> because <config.h> may include
+    <features.h>, and once <features.h> has been included, it's too late.  */
+ #ifndef _GNU_SOURCE
++#ifndef _WIN32
+ # define _GNU_SOURCE    1
+ #endif
++#endif
+ 
+ /* Specification.  */
+ #include "autosprintf.h"

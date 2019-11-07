@@ -1,0 +1,47 @@
+commit 4bae615022cb5a5da79ccda83cc6c9ba9f2d479c
+Author: Joseph Myers <joseph@codesourcery.com>
+Date:   Wed Nov 22 18:44:23 2017 +0000
+
+    Avoid use of strlen in getlogin_r (bug 22447).
+    
+    Building glibc with current mainline GCC fails, among other reasons,
+    because of an error for use of strlen on the nonstring ut_user field.
+    This patch changes the problem code in getlogin_r to use __strnlen
+    instead.  It also needs to set the trailing NUL byte of the result
+    explicitly, because of the case where ut_user does not have such a
+    trailing NUL byte (but the result should always have one).
+    
+    Tested for x86_64.  Also tested that, in conjunction with
+    <https://sourceware.org/ml/libc-alpha/2017-11/msg00797.html>, it fixes
+    the build for arm with mainline GCC.
+    
+            [BZ #22447]
+            * sysdeps/unix/getlogin_r.c (__getlogin_r): Use __strnlen not
+            strlen to compute length of ut_user and set trailing NUL byte of
+            result explicitly.
+
+---
+ sysdeps/unix/getlogin_r.c |    5 +++--
+ 1 file changed, 3 insertions(+), 2 deletions(-)
+
+--- a/sysdeps/unix/getlogin_r.c
++++ b/sysdeps/unix/getlogin_r.c
+@@ -82,7 +82,7 @@
+ 
+   if (result == 0)
+     {
+-      size_t needed = strlen (ut->ut_user) + 1;
++      size_t needed = __strnlen (ut->ut_user, UT_NAMESIZE) + 1;
+ 
+       if (needed > name_len)
+ 	{
+@@ -91,7 +91,8 @@
+ 	}
+       else
+ 	{
+-	  memcpy (name, ut->ut_user, needed);
++	  memcpy (name, ut->ut_user, needed - 1);
++	  name[needed - 1] = 0;
+ 	  result = 0;
+ 	}
+     }

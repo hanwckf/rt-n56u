@@ -1,0 +1,217 @@
+# newlib options
+
+## depends on BARE_METAL
+## select LIBC_SUPPORT_THREADS_NONE
+## select CC_CORE_PASSES_NEEDED if CANADIAN
+## select CC_CORE_PASS_2_NEEDED if ! CANADIAN
+
+## help Newlib is a C library intended for use on embedded systems. It is a
+## help conglomeration of several library parts, all under free software
+## help licenses that make them easily usable on embedded products. Newlib
+## help is only available in source form. It can be compiled for a wide
+## help array of processors, and will usually work on any architecture with
+## help the addition of a few low-level routines.
+
+# maybe older versions of newlib will support it too, but this
+# needs to be checked
+config NEWLIB_CXA_ATEXIT
+    def_bool y
+    depends on NEWLIB_2_0_or_later
+    select LIBC_PROVIDES_CXA_ATEXIT
+
+config NEWLIB_HAS_NANO_MALLOC
+    def_bool y
+    depends on NEWLIB_2_1_or_later
+
+config NEWLIB_HAS_NANO_FORMATTED_IO
+    def_bool y
+    depends on NEWLIB_2_2_or_later
+
+config LIBC_NEWLIB_TARGET_CFLAGS
+    string
+    prompt "Target CFLAGS for newlib"
+    default ""
+    help
+      Used to add specific options when compiling the target libraries
+      (eg. -ffunction-sections -fdata-sections), which can't be defined
+      in global TARGET_CFLAGS, because they shall be not used for the
+      gcc target libraries.
+      Note:  Both TARGET_CFLAGS and LIBC_NEWLIB_TARGET_CFLAGS are used
+             to compile the libraries.
+
+      Leave blank if you don't know better.
+
+config LIBC_NEWLIB_IO_C99FMT
+    bool
+    prompt "Enable IOs on C99 formats"
+    help
+      Enable support for IOs on C99 formats.
+
+config LIBC_NEWLIB_IO_LL
+    bool
+    prompt "Enable IOs on long long"
+    help
+      Enable support for IOs on long long integers.
+
+config LIBC_NEWLIB_IO_FLOAT
+    bool
+    prompt "Enable IOs on floats and doubles"
+    help
+      Enable support for IOs on floating point
+      values (float and double).
+
+config LIBC_NEWLIB_IO_LDBL
+    bool
+    prompt "Enable IOs on long doubles"
+    depends on LIBC_NEWLIB_IO_FLOAT
+    help
+      Enable support for IOs on long doubles.
+
+config LIBC_NEWLIB_IO_POS_ARGS
+    bool
+    prompt "Enable printf-family positional arg support"
+    help
+        Enable printf-family positional arg support.
+
+config LIBC_NEWLIB_FVWRITE_IN_STREAMIO
+    bool
+    prompt "Vector buffer mechanism to support stream IO buffering"
+    default y
+    help
+        NEWLIB implements the vector buffer mechanism to support stream IO
+        buffering required by C standard.  This feature is possibly
+        unnecessary for embedded systems which won't change file buffering
+        with functions like `setbuf' or `setvbuf'.  The buffering mechanism
+        still acts as default for STDIN/STDOUT/STDERR even if this option
+        is specified.
+
+config LIBC_NEWLIB_UNBUF_STREAM_OPT
+    bool
+    prompt "Optimize fprintf to unbuffered unix file"
+    default y
+    help
+        NEWLIB does optimization when `fprintf to write only unbuffered unix
+        file'.  It creates a temorary buffer to do the optimization that
+        increases stack consumption by about `BUFSIZ' bytes. Disabling this option
+        disables the optimization and saves size of text and stack.
+
+config LIBC_NEWLIB_FSEEK_OPTIMIZATION
+    bool
+    prompt "Fseek optimisation"
+    default y
+    help
+        Disabling fseek optimisation can decrease code size.
+
+config LIBC_NEWLIB_DISABLE_SUPPLIED_SYSCALLS
+    bool
+    prompt "Disable the syscalls supplied with newlib"
+    help
+      Disable the syscalls that come with newlib. You
+      will have to implement your own _sbrk, _read,
+      _write... If you plan to port newlib to a new
+      platform/board, say Yes.
+
+config LIBC_NEWLIB_REGISTER_FINI
+    bool
+    prompt "Enable finalization function registration using atexit"
+    help
+        Enable finalization function registration using atexit.
+
+config LIBC_NEWLIB_ATEXIT_DYNAMIC_ALLOC
+    bool
+    prompt "Enable dynamic allocation of atexit entries"
+    default y
+    help
+        Enable dynamic allocation of atexit entries.
+
+config LIBC_NEWLIB_GLOBAL_ATEXIT
+    bool
+    prompt "Enable atexit data structure as global variable"
+    help
+        Enable atexit data structure as global variable.  By doing so it is
+        move out of _reent structure, and can be garbage collected if atexit
+        is not referenced.
+
+config LIBC_NEWLIB_LITE_EXIT
+    bool
+    prompt "Enable lite exit"
+    help
+        Enable lite exit, a size-reduced implementation of exit that doesn't
+        invoke clean-up functions such as _fini or global destructors.
+
+config LIBC_NEWLIB_REENT_SMALL
+    bool
+    prompt "Enable small reentrant struct support"
+    help
+        Enable small reentrant struct support.
+
+config LIBC_NEWLIB_MULTITHREAD
+    bool
+    prompt "Enable support for multiple threads"
+    default y
+    help
+        Enable support for multiple threads.
+
+config LIBC_NEWLIB_EXTRA_SECTIONS
+    bool
+    prompt "Place each function & data element in their own section"
+    help
+        Place each function & data symbol in their own section. This allows
+        the linker to garbage collect unused symbols at link time.
+
+config LIBC_NEWLIB_WIDE_ORIENT
+    bool
+    prompt "Allow wide C99 stream orientation"
+    default y
+    help
+        C99 states that each stream has an orientation, wide or byte.  This
+        feature is possibly unnecessary for embedded systems which only do
+        byte input/output operations on stream. Disabling this feature can
+        decrease code size.
+
+config LIBC_NEWLIB_ENABLE_TARGET_OPTSPACE
+    bool
+    prompt "Optimize newlib for size"
+    default y
+    help
+      Pass --enable-target-optspace to newlib configure.
+
+      This will compile newlib with -Os.
+
+config LIBC_NEWLIB_LTO
+    bool
+    prompt "Enable Link Time Optimization"
+    depends on CC_GCC_USE_LTO
+    help
+      Builds the libraries with -flto to enable more aggressive link time
+      optimization. You will need to add -flto-partition=one to your
+      application's link line to keep the RETURN assembler macro together
+      with it's consumers.
+
+config LIBC_NEWLIB_NANO_MALLOC
+    bool
+    prompt "Enable Nano Malloc"
+    depends on NEWLIB_HAS_NANO_MALLOC
+    help
+      NEWLIB has two implementations of malloc family's functions, one in
+      `mallocr.c' and the other one in `nano-mallocr.c'.  This options
+      enables the nano-malloc implementation, which is for small systems
+      with very limited memory.  Note that this implementation does not
+      support `--enable-malloc-debugging' any more.
+
+config LIBC_NEWLIB_NANO_FORMATTED_IO
+    bool
+    prompt "Enable Nano Formatted I/O"
+    depends on NEWLIB_HAS_NANO_FORMATTED_IO
+    help
+      This builds NEWLIB with a special implementation of formatted I/O
+      functions, designed to lower the size of application on small systems
+      with size constraint issues.  This option does not affect wide-char
+      formatted I/O functions.
+
+config LIBC_NEWLIB_EXTRA_CONFIG_ARRAY
+    string
+    prompt "Extra config for newlib"
+    default ""
+    help
+      Extra flags to pass onto ./configure when configuring the newlib.

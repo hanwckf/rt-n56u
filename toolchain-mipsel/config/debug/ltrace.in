@@ -1,0 +1,16 @@
+# ltrace
+
+## select LIBELF_TARGET
+## depends on ! LIBC_BIONIC
+##
+## help ltrace is a program that simply runs the specified command until it exits.
+## help It intercepts and records the dynamic library calls which are called by
+## help the executed process and the signals which are received by that process.
+## help It can also intercept and print the system calls executed by the program.
+
+# Ltrace 0.5.3 had a unique hand-crafted configure script that has to be
+# run differently from any preceding or following releases. This serves
+# as a reminder to remove that code once 0.5.3 support is dropped.
+config LTRACE_0_5_3_CONFIGURE
+    bool
+    default y if LTRACE_V_0_5_3

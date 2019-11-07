@@ -1,0 +1,18 @@
+This patch is courtesy of OpenEmbedded, by Khem Raj <raj.khem@gmail.com>
+
+http://cgit.openembedded.org/cgit.cgi/openembedded/commit/?id=b85b779688f0abc389e3c25d06b54de8b86385c1
+
+---
+ sysdeps/linux-gnu/mipsel/trace.c |    1 -
+ 1 file changed, 1 deletion(-)
+
+--- a/sysdeps/linux-gnu/mipsel/trace.c
++++ b/sysdeps/linux-gnu/mipsel/trace.c
+@@ -127,7 +127,6 @@
+ 			return ret;
+ 		} else {
+ 			// If we need this, I think we can look at [sp+16] for arg_num==4.
+-			CP;
+ 			return 0;
+ 		}
+ 	}

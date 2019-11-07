@@ -1,0 +1,41 @@
+From 61d5f9c09b3157db76bd1a393e248c262a8d9dd4 Mon Sep 17 00:00:00 2001
+From: Alexey Neyman <stilor@att.net>
+Date: Wed, 8 Mar 2017 14:31:10 -0800
+Subject: [PATCH] Fix combreloc test with BSD grep
+
+The test for "-z combreloc" fails when cross-compiling on a machine
+that uses BSD grep (e.g. on macos). grep complains about empty
+subexpression and exits with non-zero status, which is interpreted
+by configure as "not found". As a result, support for "-z combreloc"
+(HAVE_Z_COMBRELOC) is not detected, leading to link failure on SPARC.
+
+	* configure.ac: Avoid empty subexpression in grep.
+
+Signed-off-by: Alexey Neyman <stilor@att.net>
+---
+ configure    |    2 +-
+ configure.ac |    2 +-
+ 2 files changed, 2 insertions(+), 2 deletions(-)
+
+--- a/configure
++++ b/configure
+@@ -5527,7 +5527,7 @@
+   $as_echo "$as_me:${as_lineno-$LINENO}: \$? = $ac_status" >&5
+   test $ac_status = 0; }; }
+ then
+-  if $READELF -S conftest.so | grep '\.rel\(a\|\)\.dyn' > /dev/null; then
++  if $READELF -S conftest.so | grep '\.\(rel\|rela\)\.dyn' > /dev/null; then
+     libc_cv_z_combreloc=yes
+   else
+     libc_cv_z_combreloc=no
+--- a/configure.ac
++++ b/configure.ac
+@@ -1243,7 +1243,7 @@
+ dnl introducing new options this is not easily doable.  Instead use a tool
+ dnl which always is cross-platform: readelf.  To detect whether -z combreloc
+ dnl look for a section named .rel.dyn.
+-  if $READELF -S conftest.so | grep '\.rel\(a\|\)\.dyn' > /dev/null; then
++  if $READELF -S conftest.so | grep '\.\(rel\|rela\)\.dyn' > /dev/null; then
+     libc_cv_z_combreloc=yes
+   else
+     libc_cv_z_combreloc=no

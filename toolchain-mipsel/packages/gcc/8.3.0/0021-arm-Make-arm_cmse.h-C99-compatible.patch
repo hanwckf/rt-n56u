@@ -1,0 +1,38 @@
+From 02a72c22044c079becd5307c8b5c9552ba0c7f53 Mon Sep 17 00:00:00 2001
+From: avieira <avieira@138bc75d-0d04-0410-961f-82ee72b054a4>
+Date: Tue, 5 Jun 2018 15:07:09 +0000
+Subject: [PATCH] [arm] Make arm_cmse.h C99 compatible
+
+gcc/ChangeLog
+2018-06-05  Andre Vieira  <andre.simoesdiasvieira@arm.com>
+
+	* config/arm/arm_cmse.h (cmse_nsfptr_create): Change typeof to
+	__typeof__.
+	(cmse_check_pointed_object): Likewise.
+
+git-svn-id: svn+ssh://gcc.gnu.org/svn/gcc/trunk@261204 138bc75d-0d04-0410-961f-82ee72b054a4
+---
+ gcc/config/arm/arm_cmse.h |    4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+ create mode 100644 gcc/testsuite/gcc.target/arm/cmse/cmse-1c99.c
+
+--- a/gcc/config/arm/arm_cmse.h
++++ b/gcc/config/arm/arm_cmse.h
+@@ -173,7 +173,7 @@
+ #define CMSE_MPU_NONSECURE	16
+ #define CMSE_NONSECURE		18
+ 
+-#define cmse_nsfptr_create(p) ((typeof ((p))) ((__INTPTR_TYPE__) (p) & ~1))
++#define cmse_nsfptr_create(p) ((__typeof__ ((p))) ((__INTPTR_TYPE__) (p) & ~1))
+ 
+ #define cmse_is_nsfptr(p) (!((__INTPTR_TYPE__) (p) & 1))
+ 
+@@ -187,7 +187,7 @@
+ cmse_check_address_range (void *, size_t, int);
+ 
+ #define cmse_check_pointed_object(p, f) \
+-  ((typeof ((p))) cmse_check_address_range ((p), sizeof (*(p)), (f)))
++  ((__typeof__ ((p))) cmse_check_address_range ((p), sizeof (*(p)), (f)))
+ 
+ #endif /* __ARM_FEATURE_CMSE & 1 */
+ 

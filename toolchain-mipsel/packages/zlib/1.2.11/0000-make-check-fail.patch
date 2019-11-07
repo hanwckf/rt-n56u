@@ -1,0 +1,37 @@
+'make check' should return with non-zero status
+
+... if the test fails.
+
+---
+ Makefile.in |    6 +++---
+ 1 file changed, 3 insertions(+), 3 deletions(-)
+
+--- a/Makefile.in
++++ b/Makefile.in
+@@ -91,7 +91,7 @@
+ 	  echo '		*** zlib test OK ***'; \
+ 	else \
+ 	  echo '		*** zlib test FAILED ***'; false; \
+-	fi; \
++	fi
+ 	rm -f $$TMPST
+ 
+ testshared: shared
+@@ -104,7 +104,7 @@
+ 	  echo '		*** zlib shared test OK ***'; \
+ 	else \
+ 	  echo '		*** zlib shared test FAILED ***'; false; \
+-	fi; \
++	fi
+ 	rm -f $$TMPSH
+ 
+ test64: all64
+@@ -113,7 +113,7 @@
+ 	  echo '		*** zlib 64-bit test OK ***'; \
+ 	else \
+ 	  echo '		*** zlib 64-bit test FAILED ***'; false; \
+-	fi; \
++	fi
+ 	rm -f $$TMP64
+ 
+ infcover.o: $(SRCDIR)test/infcover.c $(SRCDIR)zlib.h zconf.h

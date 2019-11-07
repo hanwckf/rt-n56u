@@ -1,0 +1,35 @@
+commit e223d1fe72e820d96f43831412ab267a1ace04d0
+Author: steve ellcey-CA Eng-Software <sellcey@sellcey-thinkpad.caveonetworks.com>
+Date:   Fri Oct 14 12:53:27 2016 -0700
+
+    Fix warnings from latest GCC.
+    
+            * sysdeps/ieee754/dbl-64/e_pow.c (checkint) Make conditions explicitly
+            boolean.
+
+---
+ sysdeps/ieee754/dbl-64/e_pow.c |    8 ++++----
+ 1 file changed, 4 insertions(+), 4 deletions(-)
+
+--- a/sysdeps/ieee754/dbl-64/e_pow.c
++++ b/sysdeps/ieee754/dbl-64/e_pow.c
+@@ -466,15 +466,15 @@
+     return (n & 1) ? -1 : 1;	/* odd or even */
+   if (k > 20)
+     {
+-      if (n << (k - 20))
++      if (n << (k - 20) != 0)
+ 	return 0;		/* if not integer */
+-      return (n << (k - 21)) ? -1 : 1;
++      return (n << (k - 21) != 0) ? -1 : 1;
+     }
+   if (n)
+     return 0;			/*if  not integer */
+   if (k == 20)
+     return (m & 1) ? -1 : 1;
+-  if (m << (k + 12))
++  if (m << (k + 12) != 0)
+     return 0;
+-  return (m << (k + 11)) ? -1 : 1;
++  return (m << (k + 11) != 0) ? -1 : 1;
+ }

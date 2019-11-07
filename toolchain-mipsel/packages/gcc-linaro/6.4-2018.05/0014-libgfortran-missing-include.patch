@@ -1,0 +1,14 @@
+---
+ libgfortran/io/close.c |    1 +
+ 1 file changed, 1 insertion(+)
+
+--- a/libgfortran/io/close.c
++++ b/libgfortran/io/close.c
+@@ -25,6 +25,7 @@
+ #include "io.h"
+ #include "unix.h"
+ #include <limits.h>
++#include <stdlib.h>
+ 
+ typedef enum
+ { CLOSE_DELETE, CLOSE_KEEP, CLOSE_UNSPECIFIED }

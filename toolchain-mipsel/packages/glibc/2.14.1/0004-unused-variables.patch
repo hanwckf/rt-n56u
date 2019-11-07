@@ -1,0 +1,159 @@
+commit 6565fcb6e189d67b5a3f321453daebb805056d73
+Author: Wilco Dijkstra <wdijkstr@arm.com>
+Date:   Fri Sep 18 20:27:20 2015 +0100
+
+    Fix several build failures with GCC6 due to unused static variables.
+    
+    2015-09-18  Wilco Dijkstra  <wdijkstr@arm.com>
+    
+            * resolv/base64.c (rcsid): Remove unused static.
+            * sysdeps/ieee754/dbl-64/atnat2.h (qpi1): Remove unused
+            static.  (tqpi1): Likewise.
+            * sysdeps/ieee754/dbl-64/uexp.h (one): Likewise.
+            * sysdeps/ieee754/dbl-64/upow.h (sqrt_2): Likewise.
+            * sysdeps/ieee754/flt-32/e_log10f.c (one): Likewise.
+            * sysdeps/ieee754/flt-32/s_cosf.c (one): Likewise.
+            * sysdeps/ieee754/ldbl-128/e_lgammal_r.c (zero): Likewise.
+            * sysdeps/ieee754/ldbl-128/s_erfl.c (half): Likewise.
+            * sysdeps/ieee754/ldbl-128/s_log1pl.c (maxlog): Likewise.
+            * timezone/private.h (time_t_min): Likewise.  (time_t_max):
+            Likewise.
+
+---
+ resolv/base64.c                        |    4 ----
+ sysdeps/ieee754/dbl-64/atnat2.h        |    4 ----
+ sysdeps/ieee754/dbl-64/uexp.h          |    2 +-
+ sysdeps/ieee754/dbl-64/upow.h          |    2 --
+ sysdeps/ieee754/flt-32/e_log10f.c      |    6 ------
+ sysdeps/ieee754/flt-32/s_cosf.c        |    6 ------
+ sysdeps/ieee754/ldbl-128/e_lgammal_r.c |    1 -
+ sysdeps/ieee754/ldbl-128/s_erfl.c      |    1 -
+ sysdeps/ieee754/ldbl-128/s_log1pl.c    |    1 -
+ 9 files changed, 1 insertion(+), 26 deletions(-)
+
+--- a/resolv/base64.c
++++ b/resolv/base64.c
+@@ -40,10 +40,6 @@
+  * IF IBM IS APPRISED OF THE POSSIBILITY OF SUCH DAMAGES.
+  */
+ 
+-#if !defined(LINT) && !defined(CODECENTER)
+-static const char rcsid[] = "$BINDId: base64.c,v 8.7 1999/10/13 16:39:33 vixie Exp $";
+-#endif /* not lint */
+-
+ #include <sys/types.h>
+ #include <sys/param.h>
+ #include <sys/socket.h>
+--- a/sysdeps/ieee754/dbl-64/atnat2.h
++++ b/sysdeps/ieee754/dbl-64/atnat2.h
+@@ -69,10 +69,8 @@
+ /**/ hpi1           = {{0x3c91a626, 0x33145c07} }, /*  pi/2-hpi     */
+ /**/ mhpi           = {{0xbff921fb, 0x54442d18} }, /* -pi/2         */
+ /**/ qpi            = {{0x3fe921fb, 0x54442d18} }, /*  pi/4         */
+-/**/ qpi1           = {{0x3c81a626, 0x33145c07} }, /*  pi/4-qpi     */
+ /**/ mqpi           = {{0xbfe921fb, 0x54442d18} }, /* -pi/4         */
+ /**/ tqpi           = {{0x4002d97c, 0x7f3321d2} }, /*  3pi/4        */
+-/**/ tqpi1          = {{0x3c9a7939, 0x4c9e8a0a} }, /*  3pi/4-tqpi   */
+ /**/ mtqpi          = {{0xc002d97c, 0x7f3321d2} }, /* -3pi/4        */
+ /**/ u1             = {{0x3c314c2a, 0x00000000} }, /*  9.377e-19    */
+ /**/ u2             = {{0x3bf955e4, 0x00000000} }, /*  8.584e-20    */
+@@ -139,10 +137,8 @@
+ /**/ hpi1           = {{0x33145c07, 0x3c91a626} }, /*  pi/2-hpi     */
+ /**/ mhpi           = {{0x54442d18, 0xbff921fb} }, /* -pi/2         */
+ /**/ qpi            = {{0x54442d18, 0x3fe921fb} }, /*  pi/4         */
+-/**/ qpi1           = {{0x33145c07, 0x3c81a626} }, /*  pi/4-qpi     */
+ /**/ mqpi           = {{0x54442d18, 0xbfe921fb} }, /* -pi/4         */
+ /**/ tqpi           = {{0x7f3321d2, 0x4002d97c} }, /*  3pi/4        */
+-/**/ tqpi1          = {{0x4c9e8a0a, 0x3c9a7939} }, /*  3pi/4-tqpi   */
+ /**/ mtqpi          = {{0x7f3321d2, 0xc002d97c} }, /* -3pi/4        */
+ /**/ u1             = {{0x00000000, 0x3c314c2a} }, /*  9.377e-19    */
+ /**/ u2             = {{0x00000000, 0x3bf955e4} }, /*  8.584e-20    */
+--- a/sysdeps/ieee754/dbl-64/uexp.h
++++ b/sysdeps/ieee754/dbl-64/uexp.h
+@@ -30,7 +30,7 @@
+ 
+ #include "mydefs.h"
+ 
+-const static double one = 1.0, zero = 0.0, hhuge = 1.0e300, tiny = 1.0e-300,
++const static double zero = 0.0, hhuge = 1.0e300, tiny = 1.0e-300,
+ err_0 = 1.000014, err_1 = 0.000016;
+ const static int4 bigint = 0x40862002,
+              badint = 0x40876000,smallint = 0x3C8fffff;
+--- a/sysdeps/ieee754/dbl-64/upow.h
++++ b/sysdeps/ieee754/dbl-64/upow.h
+@@ -36,7 +36,6 @@
+ /**/ INF            = {{0x7ff00000, 0x00000000}}, /* INF           */
+ /**/ nINF           = {{0xfff00000, 0x00000000}}, /* -INF          */
+ /**/ NaNQ           = {{0x7ff80000, 0x00000000}}, /* NaNQ          */
+-/**/ sqrt_2         = {{0x3ff6a09e, 0x667f3bcc}}, /* sqrt(2)       */
+ /**/ ln2a           = {{0x3fe62e42, 0xfefa3800}}, /* ln(2) 43 bits */
+ /**/ ln2b           = {{0x3d2ef357, 0x93c76730}}, /* ln(2)-ln2a    */
+ /**/ bigu           = {{0x4297ffff, 0xfffffd2c}}, /* 1.5*2**42 -724*2**-10  */
+@@ -51,7 +50,6 @@
+ /**/ INF            = {{0x00000000, 0x7ff00000}}, /* INF           */
+ /**/ nINF           = {{0x00000000, 0xfff00000}}, /* -INF           */
+ /**/ NaNQ           = {{0x00000000, 0x7ff80000}}, /* NaNQ          */
+-/**/ sqrt_2         = {{0x667f3bcc, 0x3ff6a09e}}, /* sqrt(2)       */
+ /**/ ln2a           = {{0xfefa3800, 0x3fe62e42}}, /* ln(2) 43 bits */
+ /**/ ln2b           = {{0x93c76730, 0x3d2ef357}}, /* ln(2)-ln2a    */
+ /**/ bigu           = {{0xfffffd2c, 0x4297ffff}}, /* 1.5*2**42 -724*2**-10  */
+--- a/sysdeps/ieee754/flt-32/e_log10f.c
++++ b/sysdeps/ieee754/flt-32/e_log10f.c
+@@ -31,12 +31,6 @@
+ log10_2lo  =  7.9034151668e-07; /* 0x355427db */
+ 
+ #ifdef __STDC__
+-static const float zero   =  0.0;
+-#else
+-static float zero   =  0.0;
+-#endif
+-
+-#ifdef __STDC__
+ 	float __ieee754_log10f(float x)
+ #else
+ 	float __ieee754_log10f(x)
+--- a/sysdeps/ieee754/flt-32/s_cosf.c
++++ b/sysdeps/ieee754/flt-32/s_cosf.c
+@@ -22,12 +22,6 @@
+ #include "math_private.h"
+ 
+ #ifdef __STDC__
+-static const float one=1.0;
+-#else
+-static float one=1.0;
+-#endif
+-
+-#ifdef __STDC__
+ 	float __cosf(float x)
+ #else
+ 	float __cosf(x)
+--- a/sysdeps/ieee754/ldbl-128/e_lgammal_r.c
++++ b/sysdeps/ieee754/ldbl-128/e_lgammal_r.c
+@@ -74,7 +74,6 @@
+ static const long double PIL = 3.1415926535897932384626433832795028841972E0L;
+ static const long double MAXLGM = 1.0485738685148938358098967157129705071571E4928L;
+ static const long double one = 1.0L;
+-static const long double zero = 0.0L;
+ static const long double huge = 1.0e4000L;
+ 
+ /* log gamma(x) = ( x - 0.5 ) * log(x) - x + LS2PI + 1/x P(1/x^2)
+--- a/sysdeps/ieee754/ldbl-128/s_erfl.c
++++ b/sysdeps/ieee754/ldbl-128/s_erfl.c
+@@ -142,7 +142,6 @@
+ static long double
+ #endif
+ tiny = 1e-4931L,
+-  half = 0.5L,
+   one = 1.0L,
+   two = 2.0L,
+   /* 2/sqrt(pi) - 1 */
+--- a/sysdeps/ieee754/ldbl-128/s_log1pl.c
++++ b/sysdeps/ieee754/ldbl-128/s_log1pl.c
+@@ -116,7 +116,6 @@
+ 
+ static const long double sqrth = 0.7071067811865475244008443621048490392848L;
+ /* ln (2^16384 * (1 - 2^-113)) */
+-static const long double maxlog = 1.1356523406294143949491931077970764891253E4L;
+ static const long double zero = 0.0L;
+ 
+ long double

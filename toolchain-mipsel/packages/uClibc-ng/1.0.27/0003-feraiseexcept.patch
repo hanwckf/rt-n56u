@@ -1,0 +1,930 @@
+commit edce88cfef2f2a62647c2ab9536ca29694fab292
+Author: Waldemar Brodkorb <wbx@uclibc-ng.org>
+Date:   Sun Dec 3 21:12:34 2017 +0100
+
+    x86_64: add fenv support from glibc
+
+---
+ libc/sysdeps/linux/x86_64/bits/fenv.h |   12 +++
+ libm/x86_64/Makefile.arch             |   24 ++++++
+ libm/x86_64/fclrexcpt.c               |   50 ++++++++++++++
+ libm/x86_64/fedisblxcpt.c             |   45 +++++++++++++
+ libm/x86_64/feenablxcpt.c             |   45 +++++++++++++
+ libm/x86_64/fegetenv.c                |   31 +++++++++
+ libm/x86_64/fegetexcept.c             |   30 ++++++++
+ libm/x86_64/fegetmode.c               |   27 +++++++
+ libm/x86_64/fegetround.c              |   31 +++++++++
+ libm/x86_64/feholdexcpt.c             |   37 ++++++++++
+ libm/x86_64/fesetenv.c                |  112 ++++++++++++++++++++++++++++++++
+ libm/x86_64/fesetexcept.c             |   30 ++++++++
+ libm/x86_64/fesetmode.c               |   49 ++++++++++++++
+ libm/x86_64/fesetround.c              |   44 ++++++++++++
+ libm/x86_64/feupdateenv.c             |   41 +++++++++++
+ libm/x86_64/fgetexcptflg.c            |   34 +++++++++
+ libm/x86_64/fraiseexcpt.c             |  117 ++++++++++++++++++++++++++++++++++
+ libm/x86_64/fsetexcptflg.c            |   52 +++++++++++++++
+ libm/x86_64/ftestexcept.c             |   31 +++++++++
+ 19 files changed, 842 insertions(+)
+
+--- a/libc/sysdeps/linux/x86_64/bits/fenv.h
++++ b/libc/sysdeps/linux/x86_64/bits/fenv.h
+@@ -94,3 +94,15 @@
+ /* Floating-point environment where none of the exception is masked.  */
+ # define FE_NOMASK_ENV	((const fenv_t *) -2)
+ #endif
++
++/* Type representing floating-point control modes.  */
++typedef struct
++  {
++    unsigned short int __control_word;
++    unsigned short int __glibc_reserved;
++    unsigned int __mxcsr;
++  }
++femode_t;
++
++/* Default floating-point control modes.  */
++# define FE_DFL_MODE	((const femode_t *) -1L)
+--- /dev/null
++++ b/libm/x86_64/Makefile.arch
+@@ -0,0 +1,24 @@
++# Makefile for uClibc
++#
++# Copyright (C) 2000-2008 Erik Andersen <andersen@uclibc.org>
++#
++# Licensed under the LGPL v2.1, see the file COPYING.LIB in this tarball.
++#
++# The routines included in this math library are derived from
++# glibc's libm.
++#
++
++ifeq ($(UCLIBC_HAS_FENV),y)
++libm_ARCH_SRC:=$(wildcard $(libm_ARCH_DIR)/*.c)
++libm_ARCH_OBJ:=$(patsubst $(libm_ARCH_DIR)/%.c,$(libm_ARCH_OUT)/%.o,$(libm_ARCH_SRC))
++endif
++
++libm_ARCH_OBJS:=$(libm_ARCH_OBJ)
++
++ifeq ($(DOPIC),y)
++libm-a-y+=$(libm_ARCH_OBJS:.o=.os)
++else
++libm-a-y+=$(libm_ARCH_OBJS)
++endif
++libm-so-y+=$(libm_ARCH_OBJS:.o=.os)
++
+--- /dev/null
++++ b/libm/x86_64/fclrexcpt.c
+@@ -0,0 +1,50 @@
++/* Clear given exceptions in current floating-point environment.
++   Copyright (C) 2001-2017 Free Software Foundation, Inc.
++
++   The GNU C Library is free software; you can redistribute it and/or
++   modify it under the terms of the GNU Lesser General Public
++   License as published by the Free Software Foundation; either
++   version 2.1 of the License, or (at your option) any later version.
++
++   The GNU C Library is distributed in the hope that it will be useful,
++   but WITHOUT ANY WARRANTY; without even the implied warranty of
++   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
++   Lesser General Public License for more details.
++
++   You should have received a copy of the GNU Lesser General Public
++   License along with the GNU C Library; if not, see
++   <http://www.gnu.org/licenses/>.  */
++
++#include <fenv.h>
++
++int
++feclearexcept (int excepts)
++{
++  fenv_t temp;
++  unsigned int mxcsr;
++
++  /* Mask out unsupported bits/exceptions.  */
++  excepts &= FE_ALL_EXCEPT;
++
++  /* Bah, we have to clear selected exceptions.  Since there is no
++     `fldsw' instruction we have to do it the hard way.  */
++  __asm__ ("fnstenv %0" : "=m" (*&temp));
++
++  /* Clear the relevant bits.  */
++  temp.__status_word &= excepts ^ FE_ALL_EXCEPT;
++
++  /* Put the new data in effect.  */
++  __asm__ ("fldenv %0" : : "m" (*&temp));
++
++  /* And the same procedure for SSE.  */
++  __asm__ ("stmxcsr %0" : "=m" (*&mxcsr));
++
++  /* Clear the relevant bits.  */
++  mxcsr &= ~excepts;
++
++  /* And put them into effect.  */
++  __asm__ ("ldmxcsr %0" : : "m" (*&mxcsr));
++
++  /* Success.  */
++  return 0;
++}
+--- /dev/null
++++ b/libm/x86_64/fedisblxcpt.c
+@@ -0,0 +1,45 @@
++/* Disable floating-point exceptions.
++   Copyright (C) 2001-2017 Free Software Foundation, Inc.
++   Contributed by Andreas Jaeger <aj@suse.de>, 2001.
++
++   The GNU C Library is free software; you can redistribute it and/or
++   modify it under the terms of the GNU Lesser General Public
++   License as published by the Free Software Foundation; either
++   version 2.1 of the License, or (at your option) any later version.
++
++   The GNU C Library is distributed in the hope that it will be useful,
++   but WITHOUT ANY WARRANTY; without even the implied warranty of
++   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
++   Lesser General Public License for more details.
++
++   You should have received a copy of the GNU Lesser General Public
++   License along with the GNU C Library; if not, see
++   <http://www.gnu.org/licenses/>.  */
++
++#include <fenv.h>
++
++int
++fedisableexcept (int excepts)
++{
++  unsigned short int new_exc, old_exc;
++  unsigned int new;
++
++  excepts &= FE_ALL_EXCEPT;
++
++  /* Get the current control word of the x87 FPU.  */
++  __asm__ ("fstcw %0" : "=m" (*&new_exc));
++
++  old_exc = (~new_exc) & FE_ALL_EXCEPT;
++
++  new_exc |= excepts;
++  __asm__ ("fldcw %0" : : "m" (*&new_exc));
++
++  /* And now the same for the SSE MXCSR register.  */
++  __asm__ ("stmxcsr %0" : "=m" (*&new));
++
++  /* The SSE exception masks are shifted by 7 bits.  */
++  new |= excepts << 7;
++  __asm__ ("ldmxcsr %0" : : "m" (*&new));
++
++  return old_exc;
++}
+--- /dev/null
++++ b/libm/x86_64/feenablxcpt.c
+@@ -0,0 +1,45 @@
++/* Enable floating-point exceptions.
++   Copyright (C) 2001-2017 Free Software Foundation, Inc.
++   Contributed by Andreas Jaeger <aj@suse.de>, 2001.
++
++   The GNU C Library is free software; you can redistribute it and/or
++   modify it under the terms of the GNU Lesser General Public
++   License as published by the Free Software Foundation; either
++   version 2.1 of the License, or (at your option) any later version.
++
++   The GNU C Library is distributed in the hope that it will be useful,
++   but WITHOUT ANY WARRANTY; without even the implied warranty of
++   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
++   Lesser General Public License for more details.
++
++   You should have received a copy of the GNU Lesser General Public
++   License along with the GNU C Library; if not, see
++   <http://www.gnu.org/licenses/>.  */
++
++#include <fenv.h>
++
++int
++feenableexcept (int excepts)
++{
++  unsigned short int new_exc, old_exc;
++  unsigned int new;
++
++  excepts &= FE_ALL_EXCEPT;
++
++  /* Get the current control word of the x87 FPU.  */
++  __asm__ ("fstcw %0" : "=m" (*&new_exc));
++
++  old_exc = (~new_exc) & FE_ALL_EXCEPT;
++
++  new_exc &= ~excepts;
++  __asm__ ("fldcw %0" : : "m" (*&new_exc));
++
++  /* And now the same for the SSE MXCSR register.  */
++  __asm__ ("stmxcsr %0" : "=m" (*&new));
++
++  /* The SSE exception masks are shifted by 7 bits.  */
++  new &= ~(excepts << 7);
++  __asm__ ("ldmxcsr %0" : : "m" (*&new));
++
++  return old_exc;
++}
+--- /dev/null
++++ b/libm/x86_64/fegetenv.c
+@@ -0,0 +1,31 @@
++/* Store current floating-point environment.
++   Copyright (C) 2001-2017 Free Software Foundation, Inc.
++
++   The GNU C Library is free software; you can redistribute it and/or
++   modify it under the terms of the GNU Lesser General Public
++   License as published by the Free Software Foundation; either
++   version 2.1 of the License, or (at your option) any later version.
++
++   The GNU C Library is distributed in the hope that it will be useful,
++   but WITHOUT ANY WARRANTY; without even the implied warranty of
++   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
++   Lesser General Public License for more details.
++
++   You should have received a copy of the GNU Lesser General Public
++   License along with the GNU C Library; if not, see
++   <http://www.gnu.org/licenses/>.  */
++
++#include <fenv.h>
++
++int
++fegetenv (fenv_t *envp)
++{
++  __asm__ ("fnstenv %0\n"
++	   /* fnstenv changes the exception mask, so load back the
++	      stored environment.  */
++	   "fldenv %0\n"
++	   "stmxcsr %1" : "=m" (*envp), "=m" (envp->__mxcsr));
++
++  /* Success.  */
++  return 0;
++}
+--- /dev/null
++++ b/libm/x86_64/fegetexcept.c
+@@ -0,0 +1,30 @@
++/* Get enabled floating-point exceptions.
++   Copyright (C) 2001-2017 Free Software Foundation, Inc.
++   Contributed by Andreas Jaeger <aj@suse.de>, 2001.
++
++   The GNU C Library is free software; you can redistribute it and/or
++   modify it under the terms of the GNU Lesser General Public
++   License as published by the Free Software Foundation; either
++   version 2.1 of the License, or (at your option) any later version.
++
++   The GNU C Library is distributed in the hope that it will be useful,
++   but WITHOUT ANY WARRANTY; without even the implied warranty of
++   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
++   Lesser General Public License for more details.
++
++   You should have received a copy of the GNU Lesser General Public
++   License along with the GNU C Library; if not, see
++   <http://www.gnu.org/licenses/>.  */
++
++#include <fenv.h>
++
++int
++fegetexcept (void)
++{
++  unsigned short int exc;
++
++  /* Get the current control word.  */
++  __asm__ ("fstcw %0" : "=m" (*&exc));
++
++  return (~exc) & FE_ALL_EXCEPT;
++}
+--- /dev/null
++++ b/libm/x86_64/fegetmode.c
+@@ -0,0 +1,27 @@
++/* Store current floating-point control modes.  x86_64 version.
++   Copyright (C) 2016-2017 Free Software Foundation, Inc.
++
++   The GNU C Library is free software; you can redistribute it and/or
++   modify it under the terms of the GNU Lesser General Public
++   License as published by the Free Software Foundation; either
++   version 2.1 of the License, or (at your option) any later version.
++
++   The GNU C Library is distributed in the hope that it will be useful,
++   but WITHOUT ANY WARRANTY; without even the implied warranty of
++   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
++   Lesser General Public License for more details.
++
++   You should have received a copy of the GNU Lesser General Public
++   License along with the GNU C Library; if not, see
++   <http://www.gnu.org/licenses/>.  */
++
++#include <fenv.h>
++#include <fpu_control.h>
++
++int
++fegetmode (femode_t *modep)
++{
++  _FPU_GETCW (modep->__control_word);
++  __asm__ ("stmxcsr %0" : "=m" (modep->__mxcsr));
++  return 0;
++}
+--- /dev/null
++++ b/libm/x86_64/fegetround.c
+@@ -0,0 +1,31 @@
++/* Return current rounding direction.
++   Copyright (C) 1997-2017 Free Software Foundation, Inc.
++   Contributed by Ulrich Drepper <drepper@cygnus.com>, 1997.
++
++   The GNU C Library is free software; you can redistribute it and/or
++   modify it under the terms of the GNU Lesser General Public
++   License as published by the Free Software Foundation; either
++   version 2.1 of the License, or (at your option) any later version.
++
++   The GNU C Library is distributed in the hope that it will be useful,
++   but WITHOUT ANY WARRANTY; without even the implied warranty of
++   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
++   Lesser General Public License for more details.
++
++   You should have received a copy of the GNU Lesser General Public
++   License along with the GNU C Library; if not, see
++   <http://www.gnu.org/licenses/>.  */
++
++#include <fenv.h>
++
++int
++fegetround (void)
++{
++  int cw;
++  /* We only check the x87 FPU unit.  The SSE unit should be the same
++     - and if it's not the same there's no way to signal it.  */
++
++  __asm__ ("fnstcw %0" : "=m" (*&cw));
++
++  return cw & 0xc00;
++}
+--- /dev/null
++++ b/libm/x86_64/feholdexcpt.c
+@@ -0,0 +1,37 @@
++/* Store current floating-point environment and clear exceptions.
++   Copyright (C) 2001-2017 Free Software Foundation, Inc.
++
++   The GNU C Library is free software; you can redistribute it and/or
++   modify it under the terms of the GNU Lesser General Public
++   License as published by the Free Software Foundation; either
++   version 2.1 of the License, or (at your option) any later version.
++
++   The GNU C Library is distributed in the hope that it will be useful,
++   but WITHOUT ANY WARRANTY; without even the implied warranty of
++   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
++   Lesser General Public License for more details.
++
++   You should have received a copy of the GNU Lesser General Public
++   License along with the GNU C Library; if not, see
++   <http://www.gnu.org/licenses/>.  */
++
++#include <fenv.h>
++
++int
++feholdexcept (fenv_t *envp)
++{
++  unsigned int mxcsr;
++
++  /* Store the environment.  Recall that fnstenv has a side effect of
++     masking all exceptions.  Then clear all exceptions.  */
++  __asm__ ("fnstenv %0\n\t"
++	   "stmxcsr %1\n\t"
++	   "fnclex"
++	   : "=m" (*envp), "=m" (envp->__mxcsr));
++
++  /* Set the SSE MXCSR register.  */
++  mxcsr = (envp->__mxcsr | 0x1f80) & ~0x3f;
++  __asm__ ("ldmxcsr %0" : : "m" (*&mxcsr));
++
++  return 0;
++}
+--- /dev/null
++++ b/libm/x86_64/fesetenv.c
+@@ -0,0 +1,112 @@
++/* Install given floating-point environment.
++   Copyright (C) 2001-2017 Free Software Foundation, Inc.
++
++   The GNU C Library is free software; you can redistribute it and/or
++   modify it under the terms of the GNU Lesser General Public
++   License as published by the Free Software Foundation; either
++   version 2.1 of the License, or (at your option) any later version.
++
++   The GNU C Library is distributed in the hope that it will be useful,
++   but WITHOUT ANY WARRANTY; without even the implied warranty of
++   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
++   Lesser General Public License for more details.
++
++   You should have received a copy of the GNU Lesser General Public
++   License along with the GNU C Library; if not, see
++   <http://www.gnu.org/licenses/>.  */
++
++#include <fenv.h>
++#include <fpu_control.h>
++#include <assert.h>
++
++libm_hidden_proto(fesetenv)
++
++/* All exceptions, including the x86-specific "denormal operand"
++   exception.  */
++#define FE_ALL_EXCEPT_X86 (FE_ALL_EXCEPT | __FE_DENORM)
++
++
++int
++fesetenv (const fenv_t *envp)
++{
++  fenv_t temp;
++
++  /* Install the environment specified by ENVP.  But there are a few
++     values which we do not want to come from the saved environment.
++     Therefore, we get the current environment and replace the values
++     we want to use from the environment specified by the parameter.  */
++  __asm__ ("fnstenv %0\n"
++	   "stmxcsr %1" : "=m" (*&temp), "=m" (*&temp.__mxcsr));
++
++  if (envp == FE_DFL_ENV)
++    {
++      temp.__control_word |= FE_ALL_EXCEPT_X86;
++      temp.__control_word &= ~FE_TOWARDZERO;
++      temp.__control_word |= _FPU_EXTENDED;
++      temp.__status_word &= ~FE_ALL_EXCEPT_X86;
++      temp.__eip = 0;
++      temp.__cs_selector = 0;
++      temp.__opcode = 0;
++      temp.__data_offset = 0;
++      temp.__data_selector = 0;
++      /* Clear SSE exceptions.  */
++      temp.__mxcsr &= ~FE_ALL_EXCEPT_X86;
++      /* Set mask for SSE MXCSR.  */
++      temp.__mxcsr |= (FE_ALL_EXCEPT_X86 << 7);
++      /* Set rounding to FE_TONEAREST.  */
++      temp.__mxcsr &= ~ 0x6000;
++      temp.__mxcsr |= (FE_TONEAREST << 3);
++      /* Clear the FZ and DAZ bits.  */
++      temp.__mxcsr &= ~0x8040;
++    }
++  else if (envp == FE_NOMASK_ENV)
++    {
++      temp.__control_word &= ~(FE_ALL_EXCEPT | FE_TOWARDZERO);
++      /* Keep the "denormal operand" exception masked.  */
++      temp.__control_word |= __FE_DENORM;
++      temp.__control_word |= _FPU_EXTENDED;
++      temp.__status_word &= ~FE_ALL_EXCEPT_X86;
++      temp.__eip = 0;
++      temp.__cs_selector = 0;
++      temp.__opcode = 0;
++      temp.__data_offset = 0;
++      temp.__data_selector = 0;
++      /* Clear SSE exceptions.  */
++      temp.__mxcsr &= ~FE_ALL_EXCEPT_X86;
++      /* Set mask for SSE MXCSR.  */
++      /* Set rounding to FE_TONEAREST.  */
++      temp.__mxcsr &= ~ 0x6000;
++      temp.__mxcsr |= (FE_TONEAREST << 3);
++      /* Do not mask exceptions.  */
++      temp.__mxcsr &= ~(FE_ALL_EXCEPT << 7);
++      /* Keep the "denormal operand" exception masked.  */
++      temp.__mxcsr |= (__FE_DENORM << 7);
++      /* Clear the FZ and DAZ bits.  */
++      temp.__mxcsr &= ~0x8040;
++    }
++  else
++    {
++      temp.__control_word &= ~(FE_ALL_EXCEPT_X86
++			       | FE_TOWARDZERO
++			       | _FPU_EXTENDED);
++      temp.__control_word |= (envp->__control_word
++			      & (FE_ALL_EXCEPT_X86
++				 | FE_TOWARDZERO
++				 | _FPU_EXTENDED));
++      temp.__status_word &= ~FE_ALL_EXCEPT_X86;
++      temp.__status_word |= envp->__status_word & FE_ALL_EXCEPT_X86;
++      temp.__eip = envp->__eip;
++      temp.__cs_selector = envp->__cs_selector;
++      temp.__opcode = envp->__opcode;
++      temp.__data_offset = envp->__data_offset;
++      temp.__data_selector = envp->__data_selector;
++      temp.__mxcsr = envp->__mxcsr;
++    }
++
++  __asm__ ("fldenv %0\n"
++	   "ldmxcsr %1" : : "m" (temp), "m" (temp.__mxcsr));
++
++  /* Success.  */
++  return 0;
++}
++libm_hidden_def(fesetenv)
+--- /dev/null
++++ b/libm/x86_64/fesetexcept.c
+@@ -0,0 +1,30 @@
++/* Set given exception flags.  x86_64 version.
++   Copyright (C) 2016-2017 Free Software Foundation, Inc.
++
++   The GNU C Library is free software; you can redistribute it and/or
++   modify it under the terms of the GNU Lesser General Public
++   License as published by the Free Software Foundation; either
++   version 2.1 of the License, or (at your option) any later version.
++
++   The GNU C Library is distributed in the hope that it will be useful,
++   but WITHOUT ANY WARRANTY; without even the implied warranty of
++   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
++   Lesser General Public License for more details.
++
++   You should have received a copy of the GNU Lesser General Public
++   License along with the GNU C Library; if not, see
++   <http://www.gnu.org/licenses/>.  */
++
++#include <fenv.h>
++
++int
++fesetexcept (int excepts)
++{
++  unsigned int mxcsr;
++
++  __asm__ ("stmxcsr %0" : "=m" (*&mxcsr));
++  mxcsr |= excepts & FE_ALL_EXCEPT;
++  __asm__ ("ldmxcsr %0" : : "m" (*&mxcsr));
++
++  return 0;
++}
+--- /dev/null
++++ b/libm/x86_64/fesetmode.c
+@@ -0,0 +1,49 @@
++/* Install given floating-point control modes.  x86_64 version.
++   Copyright (C) 2016-2017 Free Software Foundation, Inc.
++
++   The GNU C Library is free software; you can redistribute it and/or
++   modify it under the terms of the GNU Lesser General Public
++   License as published by the Free Software Foundation; either
++   version 2.1 of the License, or (at your option) any later version.
++
++   The GNU C Library is distributed in the hope that it will be useful,
++   but WITHOUT ANY WARRANTY; without even the implied warranty of
++   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
++   Lesser General Public License for more details.
++
++   You should have received a copy of the GNU Lesser General Public
++   License along with the GNU C Library; if not, see
++   <http://www.gnu.org/licenses/>.  */
++
++#include <fenv.h>
++#include <fpu_control.h>
++
++/* All exceptions, including the x86-specific "denormal operand"
++   exception.  */
++#define FE_ALL_EXCEPT_X86 (FE_ALL_EXCEPT | __FE_DENORM)
++
++int
++fesetmode (const femode_t *modep)
++{
++  fpu_control_t cw;
++  unsigned int mxcsr;
++  __asm__ ("stmxcsr %0" : "=m" (mxcsr));
++  /* Preserve SSE exception flags but restore other state in
++     MXCSR.  */
++  mxcsr &= FE_ALL_EXCEPT_X86;
++  if (modep == FE_DFL_MODE)
++    {
++      cw = _FPU_DEFAULT;
++      /* Default MXCSR state has all bits zero except for those
++	 masking exceptions.  */
++      mxcsr |= FE_ALL_EXCEPT_X86 << 7;
++    }
++  else
++    {
++      cw = modep->__control_word;
++      mxcsr |= modep->__mxcsr & ~FE_ALL_EXCEPT_X86;
++    }
++  _FPU_SETCW (cw);
++  __asm__ ("ldmxcsr %0" : : "m" (mxcsr));
++  return 0;
++}
+--- /dev/null
++++ b/libm/x86_64/fesetround.c
+@@ -0,0 +1,44 @@
++/* Set current rounding direction.
++   Copyright (C) 2001-2017 Free Software Foundation, Inc.
++
++   The GNU C Library is free software; you can redistribute it and/or
++   modify it under the terms of the GNU Lesser General Public
++   License as published by the Free Software Foundation; either
++   version 2.1 of the License, or (at your option) any later version.
++
++   The GNU C Library is distributed in the hope that it will be useful,
++   but WITHOUT ANY WARRANTY; without even the implied warranty of
++   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
++   Lesser General Public License for more details.
++
++   You should have received a copy of the GNU Lesser General Public
++   License along with the GNU C Library; if not, see
++   <http://www.gnu.org/licenses/>.  */
++
++#include <fenv.h>
++
++int
++fesetround (int round)
++{
++  unsigned short int cw;
++  int mxcsr;
++
++  if ((round & ~0xc00) != 0)
++    /* ROUND is no valid rounding mode.  */
++    return 1;
++
++  /* First set the x87 FPU.  */
++  __asm__ ("fnstcw %0" : "=m" (*&cw));
++  cw &= ~0xc00;
++  cw |= round;
++  __asm__ ("fldcw %0" : : "m" (*&cw));
++
++  /* And now the MSCSR register for SSE, the precision is at different bit
++     positions in the different units, we need to shift it 3 bits.  */
++  __asm__ ("stmxcsr %0" : "=m" (*&mxcsr));
++  mxcsr &= ~ 0x6000;
++  mxcsr |= round << 3;
++  __asm__ ("ldmxcsr %0" : : "m" (*&mxcsr));
++
++  return 0;
++}
+--- /dev/null
++++ b/libm/x86_64/feupdateenv.c
+@@ -0,0 +1,41 @@
++/* Install given floating-point environment and raise exceptions.
++   Copyright (C) 1997-2017 Free Software Foundation, Inc.
++   Contributed by Ulrich Drepper <drepper@cygnus.com>, 1997.
++
++   The GNU C Library is free software; you can redistribute it and/or
++   modify it under the terms of the GNU Lesser General Public
++   License as published by the Free Software Foundation; either
++   version 2.1 of the License, or (at your option) any later version.
++
++   The GNU C Library is distributed in the hope that it will be useful,
++   but WITHOUT ANY WARRANTY; without even the implied warranty of
++   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
++   Lesser General Public License for more details.
++
++   You should have received a copy of the GNU Lesser General Public
++   License along with the GNU C Library; if not, see
++   <http://www.gnu.org/licenses/>.  */
++
++#include <fenv.h>
++
++int
++feupdateenv (const fenv_t *envp)
++{
++  fexcept_t temp;
++  unsigned int xtemp;
++
++  /* Save current exceptions.  */
++  __asm__ ("fnstsw %0\n\tstmxcsr %1" : "=m" (*&temp), "=m" (xtemp));
++  temp = (temp | xtemp) & FE_ALL_EXCEPT;
++
++  /* Install new environment.  */
++  fesetenv (envp);
++
++  /* Raise the saved exception.  Incidently for us the implementation
++     defined format of the values in objects of type fexcept_t is the
++     same as the ones specified using the FE_* constants.  */
++  feraiseexcept ((int) temp);
++
++  /* Success.  */
++  return 0;
++}
+--- /dev/null
++++ b/libm/x86_64/fgetexcptflg.c
+@@ -0,0 +1,34 @@
++/* Store current representation for exceptions.
++   Copyright (C) 2001-2017 Free Software Foundation, Inc.
++
++   The GNU C Library is free software; you can redistribute it and/or
++   modify it under the terms of the GNU Lesser General Public
++   License as published by the Free Software Foundation; either
++   version 2.1 of the License, or (at your option) any later version.
++
++   The GNU C Library is distributed in the hope that it will be useful,
++   but WITHOUT ANY WARRANTY; without even the implied warranty of
++   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
++   Lesser General Public License for more details.
++
++   You should have received a copy of the GNU Lesser General Public
++   License along with the GNU C Library; if not, see
++   <http://www.gnu.org/licenses/>.  */
++
++#include <fenv.h>
++
++int
++fegetexceptflag (fexcept_t *flagp, int excepts)
++{
++  fexcept_t temp;
++  unsigned int mxscr;
++
++  /* Get the current exceptions for the x87 FPU and SSE unit.  */
++  __asm__ ("fnstsw %0\n"
++	   "stmxcsr %1" : "=m" (*&temp), "=m" (*&mxscr));
++
++  *flagp = (temp | mxscr) & FE_ALL_EXCEPT & excepts;
++
++  /* Success.  */
++  return 0;
++}
+--- /dev/null
++++ b/libm/x86_64/fraiseexcpt.c
+@@ -0,0 +1,117 @@
++/* Raise given exceptions.
++   Copyright (C) 2001-2017 Free Software Foundation, Inc.
++
++   The GNU C Library is free software; you can redistribute it and/or
++   modify it under the terms of the GNU Lesser General Public
++   License as published by the Free Software Foundation; either
++   version 2.1 of the License, or (at your option) any later version.
++
++   The GNU C Library is distributed in the hope that it will be useful,
++   but WITHOUT ANY WARRANTY; without even the implied warranty of
++   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
++   Lesser General Public License for more details.
++
++   You should have received a copy of the GNU Lesser General Public
++   License along with the GNU C Library; if not, see
++   <http://www.gnu.org/licenses/>.  */
++
++#include <fenv.h>
++#include <math.h>
++
++int
++feraiseexcept (int excepts)
++{
++  /* Raise exceptions represented by EXPECTS.  But we must raise only
++     one signal at a time.  It is important that if the overflow/underflow
++     exception and the inexact exception are given at the same time,
++     the overflow/underflow exception follows the inexact exception.  */
++
++  /* First: invalid exception.  */
++  if ((FE_INVALID & excepts) != 0)
++    {
++      /* One example of an invalid operation is 0.0 / 0.0.  */
++      float f = 0.0;
++
++      __asm__ __volatile__ ("divss %0, %0 " : : "x" (f));
++      (void) &f;
++    }
++
++  /* Next: division by zero.  */
++  if ((FE_DIVBYZERO & excepts) != 0)
++    {
++      float f = 1.0;
++      float g = 0.0;
++
++      __asm__ __volatile__ ("divss %1, %0" : : "x" (f), "x" (g));
++      (void) &f;
++    }
++
++  /* Next: overflow.  */
++  if ((FE_OVERFLOW & excepts) != 0)
++    {
++      /* XXX: Is it ok to only set the x87 FPU?  */
++      /* There is no way to raise only the overflow flag.  Do it the
++	 hard way.  */
++      fenv_t temp;
++
++      /* Bah, we have to clear selected exceptions.  Since there is no
++	 `fldsw' instruction we have to do it the hard way.  */
++      __asm__ __volatile__ ("fnstenv %0" : "=m" (*&temp));
++
++      /* Set the relevant bits.  */
++      temp.__status_word |= FE_OVERFLOW;
++
++      /* Put the new data in effect.  */
++      __asm__ __volatile__ ("fldenv %0" : : "m" (*&temp));
++
++      /* And raise the exception.  */
++      __asm__ __volatile__ ("fwait");
++    }
++
++  /* Next: underflow.  */
++  if ((FE_UNDERFLOW & excepts) != 0)
++    {
++      /* XXX: Is it ok to only set the x87 FPU?  */
++      /* There is no way to raise only the underflow flag.  Do it the
++	 hard way.  */
++      fenv_t temp;
++
++      /* Bah, we have to clear selected exceptions.  Since there is no
++	 `fldsw' instruction we have to do it the hard way.  */
++      __asm__ __volatile__ ("fnstenv %0" : "=m" (*&temp));
++
++      /* Set the relevant bits.  */
++      temp.__status_word |= FE_UNDERFLOW;
++
++      /* Put the new data in effect.  */
++      __asm__ __volatile__ ("fldenv %0" : : "m" (*&temp));
++
++      /* And raise the exception.  */
++      __asm__ __volatile__ ("fwait");
++    }
++
++  /* Last: inexact.  */
++  if ((FE_INEXACT & excepts) != 0)
++    {
++      /* XXX: Is it ok to only set the x87 FPU?  */
++      /* There is no way to raise only the inexact flag.  Do it the
++	 hard way.  */
++      fenv_t temp;
++
++      /* Bah, we have to clear selected exceptions.  Since there is no
++	 `fldsw' instruction we have to do it the hard way.  */
++      __asm__ __volatile__ ("fnstenv %0" : "=m" (*&temp));
++
++      /* Set the relevant bits.  */
++      temp.__status_word |= FE_INEXACT;
++
++      /* Put the new data in effect.  */
++      __asm__ __volatile__ ("fldenv %0" : : "m" (*&temp));
++
++      /* And raise the exception.  */
++      __asm__ __volatile__ ("fwait");
++    }
++
++  /* Success.  */
++  return 0;
++}
+--- /dev/null
++++ b/libm/x86_64/fsetexcptflg.c
+@@ -0,0 +1,52 @@
++/* Set floating-point environment exception handling.
++   Copyright (C) 2001-2017 Free Software Foundation, Inc.
++
++   The GNU C Library is free software; you can redistribute it and/or
++   modify it under the terms of the GNU Lesser General Public
++   License as published by the Free Software Foundation; either
++   version 2.1 of the License, or (at your option) any later version.
++
++   The GNU C Library is distributed in the hope that it will be useful,
++   but WITHOUT ANY WARRANTY; without even the implied warranty of
++   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
++   Lesser General Public License for more details.
++
++   You should have received a copy of the GNU Lesser General Public
++   License along with the GNU C Library; if not, see
++   <http://www.gnu.org/licenses/>.  */
++
++#include <fenv.h>
++#include <math.h>
++
++int
++fesetexceptflag (const fexcept_t *flagp, int excepts)
++{
++  fenv_t temp;
++  unsigned int mxcsr;
++
++  /* XXX: Do we really need to set both the exception in both units?
++     Shouldn't it be enough to set only the SSE unit?  */
++
++  /* Get the current x87 FPU environment.  We have to do this since we
++     cannot separately set the status word.  */
++  __asm__ ("fnstenv %0" : "=m" (*&temp));
++
++  temp.__status_word &= ~(excepts & FE_ALL_EXCEPT);
++  temp.__status_word |= *flagp & excepts & FE_ALL_EXCEPT;
++
++  /* Store the new status word (along with the rest of the environment.
++     Possibly new exceptions are set but they won't get executed unless
++     the next floating-point instruction.  */
++  __asm__ ("fldenv %0" : : "m" (*&temp));
++
++  /* And now the same for SSE.  */
++  __asm__ ("stmxcsr %0" : "=m" (*&mxcsr));
++
++  mxcsr &= ~(excepts & FE_ALL_EXCEPT);
++  mxcsr |= *flagp & excepts & FE_ALL_EXCEPT;
++
++  __asm__ ("ldmxcsr %0" : : "m" (*&mxcsr));
++
++  /* Success.  */
++  return 0;
++}
+--- /dev/null
++++ b/libm/x86_64/ftestexcept.c
+@@ -0,0 +1,31 @@
++/* Test exception in current environment.
++   Copyright (C) 2001-2017 Free Software Foundation, Inc.
++
++   The GNU C Library is free software; you can redistribute it and/or
++   modify it under the terms of the GNU Lesser General Public
++   License as published by the Free Software Foundation; either
++   version 2.1 of the License, or (at your option) any later version.
++
++   The GNU C Library is distributed in the hope that it will be useful,
++   but WITHOUT ANY WARRANTY; without even the implied warranty of
++   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
++   Lesser General Public License for more details.
++
++   You should have received a copy of the GNU Lesser General Public
++   License along with the GNU C Library; if not, see
++   <http://www.gnu.org/licenses/>.  */
++
++#include <fenv.h>
++
++int
++fetestexcept (int excepts)
++{
++  int temp;
++  unsigned int mxscr;
++
++  /* Get current exceptions.  */
++  __asm__ ("fnstsw %0\n"
++	   "stmxcsr %1" : "=m" (*&temp), "=m" (*&mxscr));
++
++  return (temp | mxscr) & excepts & FE_ALL_EXCEPT;
++}

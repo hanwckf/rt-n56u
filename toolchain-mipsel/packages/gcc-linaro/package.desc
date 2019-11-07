@@ -1,0 +1,7 @@
+master='gcc'
+repository='git https://git.linaro.org/toolchain/gcc.git'
+mirrors='$(CT_Mirrors Linaro gcc ${CT_GCC_LINARO_VERSION})'
+relevantpattern='4.*|- *|.'
+origin='Linaro'
+experimental='yes'
+archive_formats='.tar.xz'

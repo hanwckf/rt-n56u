@@ -1,0 +1,33 @@
+commit 8a66d422721ae5999737d7825701ff22097d287b
+Author: Andrew Hsieh <andrewhsieh@google.com>
+Date:   Mon Apr 14 21:05:51 2014 -0700
+
+    [android] Fix ARM generates insufficient alignment for NEON vst/vld
+    
+    See d909af3e2469aad87d5c3e79b93c778fd26c03a9
+    
+    Change-Id: Ie1de9f946f397196bb6f1623f5add86933739484
+    Signed-off-by: Dmitry Moskalchuk <dm@crystax.net>
+
+---
+ gcc/config/arm/arm.c |    8 ++++++--
+ 1 file changed, 6 insertions(+), 2 deletions(-)
+
+--- a/gcc/config/arm/arm.c
++++ b/gcc/config/arm/arm.c
+@@ -22335,9 +22335,13 @@
+ 	memsize = MEM_SIZE (x);
+ 
+ 	/* Only certain alignment specifiers are supported by the hardware.  */
+-	if (memsize == 32 && (align % 32) == 0)
++	/* Note that ARM EABI only guarentees 8-byte stack alignment. While GCC
++	   honors stricter alignment of composite type in user code, it doesn't
++	   observe the alignment of memory passed as an extra argument for function
++	   returning large composite type.  See http://gcc.gnu.org/bugzilla/show_bug.cgi?id=57271 */
++	if (memsize == 32 && (align % 32) == 0 && !TARGET_AAPCS_BASED)
+ 	  align_bits = 256;
+-	else if ((memsize == 16 || memsize == 32) && (align % 16) == 0)
++	else if ((memsize == 16 || memsize == 32) && (align % 16) == 0 && !TARGET_AAPCS_BASED)
+ 	  align_bits = 128;
+ 	else if (memsize >= 8 && (align % 8) == 0)
+ 	  align_bits = 64;

@@ -1,0 +1,114 @@
+# vim: set filetype=sh :
+
+# Upgrade v1 -> v2: several packages had their config options renamed
+# to leave only the relevant part - so that further upgrades of, say,
+# GCC 6.5.0 to 6.6.0 do not result in config changes.
+upgrade()
+{
+    case "${opt}" in
+    CT_ANDROID_NDK_V_R10E|CT_ANDROID_NDK_V_R11C|CT_ANDROID_NDK_V_R12B|\
+    CT_ANDROID_NDK_V_R13B|CT_ANDROID_NDK_V_R14B|CT_ANDROID_NDK_V_R15C|\
+    CT_ANDROID_NDK_V_R16B|CT_ANDROID_NDK_V_R17C)
+        replace "${opt%[A-Z]}"
+        ;;
+    CT_AUTOMAKE_V_1_11_6|CT_AUTOMAKE_V_1_14_1|\
+    CT_AUTOMAKE_V_1_15_1|CT_AUTOMAKE_V_1_16_1)
+        replace "${opt%_[0-9]}"
+        ;;
+    CT_BINUTILS_LINARO_V_2_23_2_2013_10_4|CT_BINUTILS_LINARO_V_2_24_0_2014_11_2|\
+    CT_BINUTILS_LINARO_V_2_25_0_2015_01_2)
+        replace "${opt%_[0-9]_201[345]*}"
+        ;;
+    CT_BINUTILS_V_2_23_2|CT_BINUTILS_V_2_25_1|CT_BINUTILS_V_2_26_1|\
+    CT_BINUTILS_V_2_28_1|CT_BINUTILS_V_2_29_1|CT_BINUTILS_V_2_31_1)
+        replace "${opt%_[0-9]}"
+        ;;
+    CT_DTC_V_1_4_7)
+        replace CT_DTC_V_1_4
+        ;;
+    CT_EXPAT_V_2_1_1|CT_EXPAT_V_2_2_6)
+        replace "${opt%_[0-9]}"
+        ;;
+    CT_GCC_LINARO_V_4_8_2015_06|CT_GCC_LINARO_V_4_9_2017_01)
+        replace "${opt%_201[57]*}"
+        ;;
+    CT_GCC_LINARO_V_5_5_2017_10|CT_GCC_LINARO_V_6_4_2018_05|\
+    CT_GCC_LINARO_V_7_3_2018_05)
+        replace "${opt%_[0-9]_201[78]*}"
+        ;;
+    CT_GCC_V_4_8_5|CT_GCC_V_4_9_4)
+        replace "${opt%_[0-9]}"
+        ;;
+    CT_GCC_V_5_5_0|CT_GCC_V_6_5_0|CT_GCC_V_7_4_0|CT_GCC_V_8_2_0)
+        replace "${opt%_[0-9]_[0-9]}"
+        ;;
+    CT_GDB_LINARO_V_7_3_2011_12|CT_GDB_LINARO_V_7_4_2012_06|CT_GDB_LINARO_V_7_5_2012_12|\
+    CT_GDB_LINARO_V_7_7_2014_05|CT_GDB_LINARO_V_7_8_2014_09)
+        replace "${opt%_201[57]*}"
+        ;;
+    CT_GDB_LINARO_V_7_6_1_2013_10|CT_GDB_LINARO_V_7_7_1_2014_06_1)
+        replace "${opt%_[0-9]_201[345]*}"
+        ;;
+
+    CT_GDB_V_6_8A|CT_GDB_V_7_1A|CT_GDB_V_7_2A)
+        replace "${opt%A}"
+        ;;
+    CT_GDB_V_7_0_1A)
+        replace CT_GDB_V_7_0
+        ;;
+    CT_GDB_V_7_3_1|CT_GDB_V_7_4_1|CT_GDB_V_7_5_1|CT_GDB_V_7_6_1|CT_GDB_V_7_7_1|\
+    CT_GDB_V_7_8_2|CT_GDB_V_7_9_1|CT_GDB_V_7_10_1|CT_GDB_V_7_11_1|CT_GDB_V_7_12_1|\
+    CT_GDB_V_8_0_1|CT_GDB_V_8_1_1)
+        replace "${opt%_[0-9]}"
+        ;;
+    CT_GLIBC_LINARO_V_2_20_2014_11)
+        replace CT_GLIBC_LINARO_V_2_20
+        ;;
+    CT_GMP_V_4_3_2|CT_GMP_V_5_0_5|CT_GMP_V_5_1_3|CT_GMP_V_6_0_0A|CT_GMP_V_6_1_2)
+        replace "${opt%_[0-9]*}"
+        ;;
+    CT_ISL_V_0_11_2|CT_ISL_V_0_12_2|CT_ISL_V_0_14_1|CT_ISL_V_0_16_1|CT_ISL_V_0_17_1)
+        replace "${opt%_[0-9]}"
+        ;;
+    CT_LIBELF_V_0_8_13)
+        replace CT_LIBELF_V_0_8
+        ;;
+    CT_LIBTOOL_V_2_4_6)
+        replace CT_LIBTOOL_V_2_4
+        ;;
+    CT_M4_V_1_4_18)
+        replace CT_M4_V_1_4
+        ;;
+    CT_MAKE_V_4_2_1)
+        replace CT_MAKE_V_4_2
+        ;;
+    CT_MINGW_W64_V_V2_0_10|CT_MINGW_W64_V_V3_0_0|CT_MINGW_W64_V_V3_1_0|CT_MINGW_W64_V_V3_2_0|\
+    CT_MINGW_W64_V_V3_3_0|CT_MINGW_W64_V_V4_0_6|CT_MINGW_W64_V_V5_0_3|CT_MINGW_W64_V_V6_0_0)
+        replace "${opt%_[0-9]}"
+        ;;
+    CT_MPC_V_0_8_2|CT_MPC_V_1_0_3|CT_MPC_V_1_1_0)
+        replace "${opt%_[0-9]}"
+        ;;
+    CT_MPFR_V_2_4_2|CT_MPFR_V_3_0_1|CT_MPFR_V_3_1_6|CT_MPFR_V_4_0_1)
+        replace "${opt%_[0-9]}"
+        ;;
+    CT_NEWLIB_LINARO_V_2_1_0_2014|CT_NEWLIB_LINARO_V_2_2_0_2015)
+        replace "${opt%_[0-9]_201[345]*}"
+        ;;
+    CT_NEWLIB_V_1_17_0|CT_NEWLIB_V_1_18_0|CT_NEWLIB_V_1_19_0|CT_NEWLIB_V_1_20_0|CT_NEWLIB_V_2_0_0|\
+    CT_NEWLIB_V_2_1_0|CT_NEWLIB_V_2_2_0|CT_NEWLIB_V_2_3_0|CT_NEWLIB_V_2_4_0|CT_NEWLIB_V_2_5_0|\
+    CT_NEWLIB_V_3_0_0)
+        replace "${opt%_[0-9]}"
+        ;;
+
+    CT_CLOOG_HAS_WITH_GMP_ISL_OSL|CT_CLOOG_0_18_or_later|CT_CLOOG_0_18_or_older|\
+    CT_CLOOG_REQUIRE_0_18_or_later|CT_CLOOG_REQUIRE_0_18_or_older|\
+    CT_CLOOG_REQUIRE_later_than_0_18|CT_CLOOG_REQUIRE_older_than_0_18|\
+    CT_CLOOG_later_than_0_18|CT_CLOOG_older_than_0_18|CT_GCC_REQUIRE_4_9_2_or_later|\
+    CT_GCC_REQUIRE_4_9_2_or_older|CT_GCC_REQUIRE_later_than_4_9_2|\
+    CT_GCC_REQUIRE_older_than_4_9_2|CT_GCC_4_9_2_or_later|CT_GCC_4_9_2_or_older|\
+    CT_GCC_BUG_61144|CT_GCC_later_than_4_9_2|CT_GCC_older_than_4_9_2)
+        unset opt # No longer used auto-selectors
+        ;;
+    esac
+}

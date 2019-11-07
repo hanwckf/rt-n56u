@@ -1,0 +1,21 @@
+commit 6cd4ad106ef87a3c58b0c3478e78409b47000de0
+Author: Howard Chu <hyc@symas.com>
+Date:   Tue Apr 25 20:17:03 2017 -0700
+
+    Fix, errno is volatile int
+
+---
+ libstdc++-v3/src/filesystem/dir.cc |    2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+--- a/libstdc++-v3/src/filesystem/dir.cc
++++ b/libstdc++-v3/src/filesystem/dir.cc
+@@ -146,7 +146,7 @@
+ 
+   int err = std::exchange(errno, 0);
+   const auto entp = readdir(dirp);
+-  std::swap(errno, err);
++  std::swap((int&)errno, err);
+ 
+   if (entp)
+     {

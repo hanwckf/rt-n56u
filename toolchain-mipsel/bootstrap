@@ -1,0 +1,823 @@
+#!/usr/bin/env bash
+
+if [ "${BASH_VERSINFO[0]}" -lt 4 ]; then
+    echo "Your BASH shell version (${BASH_VERSION}) is too old." >&2
+    echo "Run bootstrap on a machine with BASH 4.x" >&2
+    exit 1
+fi
+
+########################################
+# Common meta-language implementation. Syntax:
+#
+# The template file is processed line by line, with @@VAR@@ placeholders
+# being replaced with a value of the VAR variable.
+# Special lines start with '#!' and a keyword:
+#
+# #!//
+#     Comment, the rest of the line is ignored
+# #!if COND
+#     Conditional: the lines until the matching #!end-if are processed
+#     only if the conditional COND evaluates to true.
+# #!foreach NAME
+#     Iterate over NAME entities (the iterator must be set up first
+#     using the set_iter function), processing the lines until the matching
+#     #!end-foreach line.
+#
+# Also, several forms of @@VAR@@ expansions are possible:
+#
+# @@VAR@@
+#     Just the value of the variable VAR
+# @@VAR|@@
+#     The value of VAR made into Kconfig-name: all non-alphanumeric character
+#     replaced with underscores; upper-cased.
+# @@VAR?val@@
+#     If VAR is non-empty, insert value "val". Otherwise, insert nothing.
+# @@*ITER@@
+#     Expands to a space separated list of values for the iterator ITER.
+#     Postprocess operations, if any, are applied to each value.
+
+declare -A info
+
+debug()
+{
+    if [ -n "${DEBUG}" ]; then
+        echo "DEBUG :: $@" >&2
+    fi
+}
+
+msg()
+{
+    if [ -z "${QUIET}" ]; then
+        echo "INFO  :: $@" >&2
+    fi
+}
+
+warn()
+{
+    echo "WARN  :: $@" >&2
+}
+
+error()
+{
+    echo "ERROR :: $@" >&2
+    exit 1
+}
+
+find_end()
+{
+    local token="${1}"
+    local count=1
+
+    # Skip first line, we know it has the proper '#!' command on it
+    endline=$[l + 1]
+    while [ "${endline}" -le "${end}" ]; do
+        case "${tlines[${endline}]}" in
+            "#!${token} "*)
+                count=$[count + 1]
+                ;;
+            "#!end-${token}")
+                count=$[count - 1]
+                ;;
+        esac
+        if [ "${count}" = 0 ]; then
+            return
+        fi
+        endline=$[endline + 1]
+    done
+    error "${template}:${l}: '${token}' token is unpaired"
+}
+
+set_iter()
+{
+    local name="${1}"
+    local -a temp
+
+    if [ "${info[iter_${name}]+set}" = "set" ]; then
+        error "Iterator over '${name}' is already set up"
+    fi
+    shift
+    debug "Setting iterator over '${name}' to '$*'"
+    temp=("$@")
+    info[iter_${name}]="$*"
+    info[#${name}]=${#temp[@]}
+}
+
+run_if()
+{
+    local cond="$*"
+    local endline
+
+    find_end "if"
+    if eval "${cond}"; then
+        debug "True conditional '${cond}' at lines ${l}..${endline}"
+        run_lines $[l + 1] $[endline - 1]
+    else
+        debug "False conditional '${cond}' at lines ${l}..${endline}"
+    fi
+    lnext=$[endline + 1]
+    debug "Continue at line ${lnext}"
+}
+
+do_foreach()
+{
+    local var="${1}"
+    local -A saveinfo
+    local v k
+
+    shift
+    if [ "`type -t enter_${var}`" != "function" ]; then
+        error "No parameter setup routine for iterator over '${var}'"
+    fi
+    if [ "x${info[iter_${var}]+set}" != "xset" ]; then
+        error "Iterator over '${var}' not configured"
+    fi
+    for v in ${info[iter_${var}]}; do
+        # This works in bash 4.4, but not in bash 4.3:
+        # local saveinfo=`declare -p info`
+        # ...
+        # eval "${saveinfo}"
+        # Therefore, need to save key-by-key
+        saveinfo=()
+        for k in "${!info[@]}"; do
+            saveinfo["${k}"]=${info["${k}"]}
+        done
+        if eval "enter_${var} ${v}"; then
+            eval "$@"
+        fi
+        info=()
+        for k in "${!saveinfo[@]}"; do
+            info["${k}"]=${saveinfo["${k}"]}
+        done
+    done
+}
+
+run_foreach()
+{
+    local endline
+    local var="${1}"
+    shift
+
+    if [ "${info[iter_${var}]+set}" != "set" ]; then
+        error "${template}:${l}: iterator over '${var}' is not defined"
+    fi
+    find_end "foreach"
+    debug "Loop over '${var}', lines ${l}..${endline}"
+    do_foreach ${var} run_lines_if $[l + 1] $[endline - 1] "$*"
+    lnext=$[endline + 1]
+    debug "Continue at line ${lnext}"
+}
+
+run_lines_if()
+{
+    local start="${1}"
+    local end="${2}"
+    shift 2
+    local cond="$*"
+    local a prev
+
+    for a in ${cond}; do
+        if [ -n "${prev}" ]; then
+            case "${prev}" in
+                if-differs)
+                    if [ "${info[${a}]}" = "${saveinfo[${a}]}" ]; then
+                        return
+                    fi
+                    ;;
+                *)
+                    error "${template}:${l}: unknown condition '${prev}' for loop"
+                    ;;
+            esac
+            prev=
+        else
+            prev=${a}
+        fi
+    done
+    run_lines "${start}" "${end}"
+}
+
+run_lines()
+{
+    local start="${1}"
+    local end="${2}"
+    local l lnext s s1 v vn vp pp p val val0 is_iter pp_saved
+    local -a vpl
+
+    debug "Running lines ${start}..${end}"
+    l=${start}
+    while [ "${l}" -le "${end}" ]; do
+        lnext=$[l+1]
+        s="${tlines[${l}]}"
+        # Expand @@foo@@ to ${info[foo]}. First escape variables/backslashes for evals below.
+        s="${s//\\/\\\\}"
+        s="${s//\$/\\\$}"
+        s1=
+        while [ -n "${s}" ]; do
+            case "${s}" in
+                *@@*@@*)
+                    v="${s#*@@}"
+                    v="${v%%@@*}"
+                    # $v now has the complete reference. First check if it is cached already.
+                    if [ "${info[${v}]+set}" != "set" ]; then
+                        case "${v}" in
+                            "*"*) is_iter=y; vn="${v#\*}";;
+                            *) is_iter=n; vn="${v}";;
+                        esac
+                        # $vn is now the reference without the preceding iterator
+                        vp="${vn%%[|?]*}"
+                        pp="${vn#${vp}}"
+                        # $vp is name of the variable proper, $pp is any postprocessing
+                        if [ "${is_iter}" = "n" ]; then
+                            if [ "${info[${vp}]+set}" != "set" ]; then
+                                error "${template}:${l}: reference to undefined variable '${vp}'"
+                            fi
+                            vpl=( "${info[${vp}]}" )
+                        else
+                            if [ "${info[iter_${vp}]+set}" != "set" ]; then
+                                error "${template}:${l}: iterator over '${vp} is not defined"
+                            fi
+                            vpl=( ${info[iter_${vp}]} )
+                        fi
+                        # ${vpl[@]} now is an array of values to be transformed.
+                        val=
+                        pp_saved="${pp}"
+                        for val0 in "${vpl[@]}"; do
+                            debug "val0 [${val0}]"
+                            pp="${pp_saved}"
+                            # Apply postprocessing(s)
+                            while [ -n "${pp}" ]; do
+                                case "${pp}" in
+                                    "|"*)
+                                        # Kconfigize
+                                        pp="${pp#|}"
+                                        val0=${val0//[^0-9A-Za-z_]/_}
+                                        val0=${val0^^}
+                                        ;;
+                                    "?"*)
+                                        pp="${pp#?}"
+                                        p="${pp%%[|?]*}"
+                                        pp="${pp#${p}}"
+                                        val0="${val0:+${p}}"
+                                        ;;
+                                esac
+                            done
+                            val="${val:+${val} }${val0}"
+                        done
+                        # Cache for future references.
+                        info[${v}]="${val}"
+                    fi
+                    s1="${s1}${s%%@@*}\${info[${v}]}"
+                    s="${s#*@@*@@}"
+                    ;;
+                *@@*)
+                    error "${template}:${l}: non-paired @@ markers"
+                    ;;
+                *)
+                    s1="${s1}${s}"
+                    break
+                    ;;
+            esac
+        done
+        s=${s1}
+
+        debug "Evaluate: ${s}"
+        case "${s}" in
+            "#!if "*)
+                run_if ${s#* }
+                ;;
+            "#!foreach "*)
+                run_foreach ${s#* }
+                ;;
+            "#!//"*)
+                # Comment, do nothing
+                ;;
+            "#!"*)
+                error "${template}:${l}: unrecognized command"
+                ;;
+            *)
+                # Not a special command
+                eval "echo \"${s//\"/\\\"}\""
+                ;;
+        esac
+        l=${lnext}
+    done
+}
+
+run_template()
+{
+    local -a tlines
+    local src="${1}"
+
+    if [ ! -r "${src}" ]; then
+        error "Template '${src}' not found"
+    fi
+    template="${src}"
+    debug "Running template ${src}"
+    mapfile -O 1 -t tlines < "${src}"
+    run_lines 1 ${#tlines[@]}
+}
+
+########################################
+
+# Leave only relevant portion of the string
+relevantize()
+{
+    local p pb pa vx
+    local v="${1}"
+    shift
+
+    # Find the first match and contract to the matching portion.
+    for p in "$@"; do
+        pb=${p%|*}
+        pa=${p#*|}
+        eval "vx=\${v#${pb}${pa}}"
+        if [ "${v%${pa}${vx}}" != "${v}" ]; then
+            v=${v%${pa}${vx}}
+            break
+        fi
+    done
+    echo "${v}"
+}
+
+# Helper for cmp_versions: compare an upstream/debian portion of
+# a version. Returns 0 if equal, otherwise echoes "-1" or "1" and
+# returns 1.
+equal_versions()
+{
+    local v1="${1}"
+    local v2="${2}"
+    local p1 p2
+
+    # Compare alternating non-numerical/numerical portions, until
+    # non-equal portion is found or either string is exhausted.
+    while [ -n "${v1}" -a -n "${v2}" ]; do
+        # Find non-numerical portions and compare lexicographically
+        p1="${v1%%[0-9]*}"
+        p2="${v2%%[0-9]*}"
+        v1="${v1#${p1}}"
+        v2="${v2#${p2}}"
+        #debug "lex [${p1}] v [${p2}]"
+        if [ "${p1}" \< "${p2}" ]; then
+            echo "-1"
+            return 1
+        elif [ "${p1}" \> "${p2}" ]; then
+            echo "1"
+            return 1
+        fi
+        #debug "rem [${v1}] v [${v2}]"
+        # Find numerical portions and compare numerically
+        p1="${v1%%[^0-9]*}"
+        p2="${v2%%[^0-9]*}"
+        v1="${v1#${p1}}"
+        v2="${v2#${p2}}"
+        #debug "num [${p1}] v [${p2}]"
+        if [ "${p1:-0}" -lt "${p2:-0}" ]; then
+            echo "-1"
+            return 1
+        elif [ "${p1:-0}" -gt "${p2:-0}" ]; then
+            echo "1"
+            return 1
+        fi
+        #debug "rem [${v1}] v [${v2}]"
+    done
+    if [ -n "${v1}" ]; then
+        echo "1"
+        return 1
+    elif [ -n "${v2}" ]; then
+        echo "-1"
+        return 1
+    fi
+    return 0
+}
+
+# Compare two version strings, similar to sort -V. But we don't
+# want to depend on GNU sort availability on the host.
+# See http://www.debian.org/doc/debian-policy/ch-controlfields.html
+# for description of what the version is expected to be.
+# Returns "-1", "0" or "1" if first version is earlier, same or
+# later than the second.
+cmp_versions()
+{
+    local v1="${1}"
+    local v2="${2}"
+    local e1=0 e2=0 u1 u2 d1=0 d2=0
+
+    # Case-insensitive comparison
+    v1="${v1^^}"
+    v2="${v2^^}"
+
+    # Find if the versions contain epoch part
+    case "${v1}" in
+        *:*)
+            e1="${v1%%:*}"
+            v1="${v1#*:}"
+            ;;
+    esac
+    case "${v2}" in
+        *:*)
+            e2="${v2%%:*}"
+            v2="${v2#*:}"
+            ;;
+    esac
+
+    # Compare epochs numerically
+    if [ "${e1}" -lt "${e2}" ]; then
+        echo "-1"
+        return
+    elif [ "${e1}" -gt "${e2}" ]; then
+        echo "1"
+        return
+    fi
+
+    # Find if the version contains a "debian" part.
+    # v1/v2 will now contain "upstream" part.
+    case "${v1}" in
+        *-*)
+            d1=${v1##*-}
+            v1=${v1%-*}
+            ;;
+    esac
+    case "${v2}" in
+        *-*)
+            d2=${v2##*-}
+            v2=${v2%-*}
+            ;;
+    esac
+
+    # Compare upstream
+    if equal_versions "${v1}" "${v2}" && equal_versions "${d1}" "${d2}"; then
+        echo "0"
+    fi
+}
+
+# Sort versions, descending
+sort_versions()
+{
+    local sorted
+    local remains="$*"
+    local next_remains
+    local v vx found
+
+    while [ -n "${remains}" ]; do
+        #debug "Sorting [${remains}]"
+        for v in ${remains}; do
+            found=yes
+            next_remains=
+            #debug "Candidate ${v}"
+            for vx in ${remains}; do
+                #debug "${v} vs ${vx} :: `cmp_versions ${v} ${vx}`"
+                case `cmp_versions ${v} ${vx}` in
+                    1)
+			    next_remains+=" ${vx}"
+			    ;;
+                    0)
+			    ;;
+                    -1)
+			    found=no
+			    #debug "Bad: earlier than ${vx}"
+			    break
+			    ;;
+                esac
+            done
+            if [ "${found}" = "yes" ]; then
+                # $v is less than all other members in next_remains
+                sorted+=" ${v}"
+                remains="${next_remains}"
+                #debug "Good candidate ${v} sorted [${sorted}] remains [${remains}]"
+                break
+            fi
+        done
+    done
+    echo "${sorted}"
+}
+
+read_file()
+{
+    local l p
+
+    while read l; do
+        l="${p}${l}"
+        p=
+        case "${l}" in
+            "")
+                continue
+                ;;
+            *\\)
+                p="${l%\\}"
+                continue
+                ;;
+            "#"*)
+                continue
+                ;;
+            *=*)
+                echo "info[${l%%=*}]=${l#*=}"
+                ;;
+            *)
+                error "syntax error in '${1}': '${l}'"
+                ;;
+        esac
+    done < "${1}"
+}
+
+read_package_desc()
+{
+    read_file "packages/${1}/package.desc"
+}
+
+read_version_desc()
+{
+    read_file "packages/${1}/${2}/version.desc"
+}
+
+find_forks()
+{
+    local -A info
+
+    info[preferred]=${1}
+    eval `read_package_desc ${1}`
+
+    if [ -n "${info[master]}" ]; then
+        pkg_nforks[${info[master]}]=$[pkg_nforks[${info[master]}]+1]
+        pkg_forks[${info[master]}]+=" ${1} "
+    else
+        pkg_preferred[${1}]=${info[preferred]}
+        pkg_nforks[${1}]=$[pkg_nforks[${1}]+1]
+        pkg_forks[${1}]+=" ${1} "
+        pkg_milestones[${1}]=`sort_versions ${info[milestones]}`
+        pkg_relevantpattern[${1}]=${info[relevantpattern]}
+        pkg_masters+=( "${1}" )
+    fi
+    # Keep sorting so that preferred fork is first
+    if [ -n "${pkg_preferred[${1}]}" ]; then
+        pkg_forks[${1}]="${pkg_preferred[${1}]} ${pkg_forks[${1}]##* ${pkg_preferred[${1}]} } ${pkg_forks[${1}]%% ${pkg_preferred[${1}]} *}"
+    fi
+}
+
+enter_fork()
+{
+    local fork="${1}"
+    local versions
+    local only_obsolete only_experimental
+    local -A seen_selectors
+
+    # Set defaults
+    info[obsolete]=
+    info[experimental]=
+    info[repository]=
+    info[repository_branch]=
+    info[repository_cset]=
+    info[repository_subdir]=
+    info[bootstrap]=
+    info[fork]=${fork}
+    info[pkg_name]=${fork}
+    info[pkg_label]=${fork}
+    info[mirrors]=
+    info[archive_filename]='@{pkg_name}-@{version}'
+    info[archive_dirname]='@{pkg_name}-@{version}'
+    info[versionlocked]=
+    info[origin]=
+    info[signature_format]=
+
+    eval `read_package_desc ${fork}`
+
+    if [ -r "packages/${info[origin]}.help" ]; then
+        info[originhelp]=`sed 's/^/      /' "packages/${info[origin]}.help"`
+    else
+        info[originhelp]="      ${info[master]} from ${info[origin]}."
+    fi
+
+    if [ -n "${info[repository]}" ]; then
+        info[vcs]=${info[repository]%% *}
+        info[repository_url]=${info[repository]#* }
+    fi
+
+    versions=`cd packages/${fork} && \
+        for f in */version.desc; do [ -r "${f}" ] && echo "${f%/version.desc}"; done`
+    versions=`sort_versions ${versions}`
+
+    set_iter version ${versions}
+    info[all_versions]=${versions}
+
+    check_relevant_pattern()
+    {
+        if [ "x${seen_selectors[${info[ver_sel]}]+set}" = "xset" ]; then
+            error "${info[pkg_name]}: version ${info[ver]} conflicts with version ${seen_selectors[${info[ver_sel]}]} (${info[ver_sel]} selector)"
+        else
+            seen_selectors[${info[ver_sel]}]=${info[ver]}
+        fi
+    }
+    do_foreach version check_relevant_pattern
+
+    # If a fork does not define any versions at all ("rolling release"), do not
+    # consider it obsolete/experimental unless it is so marked in the fork's
+    # description.
+    if [ -n "${versions}" ]; then
+        only_obsolete=yes
+        only_experimental=yes
+
+        check_obsolete_experimental()
+        {
+            [ -z "${info[obsolete]}" ] && only_obsolete=
+            [ -z "${info[experimental]}" ] && only_experimental=
+        }
+        do_foreach version check_obsolete_experimental
+        info[only_obsolete]=${only_obsolete}
+        info[only_experimental]=${only_experimental}
+    else
+        info[only_obsolete]=${info[obsolete]}
+        info[only_experimental]=${info[experimental]}
+    fi
+}
+
+enter_version()
+{
+    local version="${1}"
+
+    eval `read_version_desc ${info[fork]} ${version}`
+    info[ver]=${version}
+    info[ver_sel]=`relevantize ${version} ${info[relevantpattern]}`
+}
+
+enter_milestone()
+{
+    local ms="${1}"
+    local cmp
+
+    info[ms]=${ms}
+    if [ -n "${info[ver]}" ]; then
+        info[version_cmp_milestone]=`cmp_versions ${info[ver]} ${info[ms]}`
+    fi
+}
+
+gen_packages()
+{
+    local -A pkg_forks pkg_milestones pkg_nforks pkg_relevantpattern
+    local -a pkg_masters pkg_all pkg_preferred
+
+    pkg_all=( `cd packages && \
+        ls */package.desc 2>/dev/null | \
+        while read f; do [ -r "${f}" ] && echo "${f%/package.desc}"; done | \
+        xargs echo` )
+
+    debug "Packages: ${pkg_all[@]}"
+
+    # We need to group forks of the same package into the same
+    # config file. Discover such relationships and only iterate
+    # over "master" packages at the top.
+    for p in "${pkg_all[@]}"; do
+        find_forks "${p}"
+    done
+    msg "Master packages: ${pkg_masters[@]}"
+
+    # Now for each master, create its kconfig file with version
+    # definitions. As a byproduct, generate a list of all package
+    # versions for maintenance purposes.
+    exec 3>"maintainer/package-versions"
+    for p in "${pkg_masters[@]}"; do
+        msg "Generating '${config_versions_dir}/${p}.in'"
+        exec >"${config_versions_dir}/${p}.in"
+        # Base definitions for the whole config file
+        info=( \
+            [master]=${p} \
+            [nforks]=${pkg_nforks[${p}]} \
+            [relevantpattern]=${pkg_relevantpattern[${p}]} \
+            )
+        set_iter fork ${pkg_forks[${p}]}
+        set_iter milestone ${pkg_milestones[${p}]}
+
+        run_template "maintainer/kconfig-versions.template"
+        run_template "maintainer/package-versions.template" >&3
+    done
+}
+
+msg "*** Generating package version descriptions"
+config_versions_dir=config/versions
+rm -rf "${config_versions_dir}"
+mkdir -p "${config_versions_dir}"
+gen_packages
+
+get_components()
+{
+    local dir="${1}"
+    local f b
+
+    for f in ${dir}/*.in; do
+        b=${f#${dir}/}
+        echo ${b%.in}
+    done
+}
+
+enter_choice()
+{
+    local choice="${1}"
+    local input="config/${info[dir]}/${choice}.in"
+    local l ln
+
+    info[choice]="${choice}"
+    info[pkg]="${choice}"
+
+    # Not local, we need these arrays be set in enter_dependency/enter_help
+    deplines=( )
+    helplines=( )
+    ln=0
+    while read l; do
+        ln=$[ln+1]
+        case "${l}" in
+        "## help "*)
+            helplines+=( "${l#\#\# help }" )
+            ;;
+        "## depends "*|"## select "*|"## default "*)
+            deplines+=( "${l#\#\# }" )
+            ;;
+        "## no-package")
+            info[pkg]=
+            ;;
+        "## package "*)
+            info[pkg]=${l#\#\# package }
+            ;;
+        "##"|"## help")
+            # accept empty, for formatting
+            ;;
+        "##"*)
+            error "${input}:${ln}: unrecognized command"
+            ;;
+        esac
+    done < "${input}"
+    set_iter dependency "${!deplines[@]}"
+    set_iter help "${!helplines[@]}"
+}
+
+enter_dependency()
+{
+    info[depline]="${deplines[${1}]}"
+}
+
+enter_help()
+{
+    info[helpline]="${helplines[${1}]}"
+}
+
+gen_selection()
+{
+    local type="${1}"
+    local dir="${2}"
+    local label="${3}"
+
+    msg "Generating ${dir}.in (${type})"
+    exec >"${config_gen_dir}/${dir}.in"
+    info=( \
+        [dir]=${dir} \
+        [label]="${label}" \
+        )
+    set_iter choice `get_components config/${dir}`
+    run_template "maintainer/kconfig-${type}.template"
+}
+
+msg "*** Generating menu/choice selections"
+config_gen_dir=config/gen
+rm -rf "${config_gen_dir}"
+mkdir -p "${config_gen_dir}"
+
+gen_selection choice arch "Target Architecture"
+gen_selection choice kernel "Target OS"
+gen_selection choice cc "Compiler"
+gen_selection choice binutils "Binutils"
+gen_selection choice libc "C library"
+gen_selection menu debug "Debug facilities"
+gen_selection menu comp_tools "Companion tools"
+gen_selection menu comp_libs "Companion libraries"
+
+msg "*** Gathering the list of data files to install"
+{
+    declare -A seen_files
+    echo -n "verbatim_data ="
+    find COPYING config contrib licenses.d packages samples scripts -type f | LANG=C sort | while read f; do
+        # Implement some kind of .installignore for these files?
+        case "${f}" in
+            # Avoid temp files
+            *.sw[po])
+                continue
+                ;;
+            # And, some files automake insists we must have
+            scripts/compile | scripts/missing | scripts/depcomp | scripts/ltmain.sh | scripts/install-sh)
+                continue
+                ;;
+            # 
+            # will produce. FIXME: create this file at the time of 'ct-ng build'.
+            config/configure.in.in | config/configure.in)
+                continue
+                ;;
+        esac
+        # Checks & substitutions above may result in duplicate files
+        if [ -n "${seen_files[${f}]}" ]; then
+            continue
+        fi
+        echo " \\"
+        echo -n "	${f}"
+        seen_files[${f}]=y
+    done
+} > verbatim-data.mk
+
+msg "*** Running autoreconf"
+autoreconf -Wall --force
+
+msg "*** Done!"

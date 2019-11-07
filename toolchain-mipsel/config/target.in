@@ -1,0 +1,484 @@
+# Target definition: architecture, optimisations, etc...
+
+menu "Target options"
+
+source "config/gen/arch.in"
+
+config ARCH_SUFFIX
+    string
+    prompt "Suffix to the arch-part"
+    help
+      Some architectures have multiple variants and being able to specify
+      the variant instead of the arch is quite convenient. This is commonly
+      seen for instance when "armv5tel-" is used as a prefix instead of the
+      more generic "arm-", or with "alphaev6-" instead of "alpha-".
+      
+      Whatever you enter here will be appended to the architecture-part of the
+      tuple, just before the first '-'. It will override any architecture-
+      specific suffix that crosstool-NG may compute.
+      
+      If you are not sure about what this is, leave it blank.
+
+config OMIT_TARGET_ARCH
+    bool
+    help
+      Do not include architecture into the target tuple.
+
+config OMIT_TARGET_VENDOR
+    bool "Omit vendor part of the target tuple"
+    help
+      Do not include vendor into the target tuple.
+
+config TARGET_SKIP_CONFIG_SUB
+    bool
+    help
+      Skip canonicalization of the target tuple.
+
+#--------------------------------------
+comment "Generic target options"
+
+#--------------------------------------
+config ARCH_REQUIRES_MULTILIB
+    bool
+    select MULTILIB
+
+# Multilib requires 1st core pass (i.e., pass without building libgcc)
+# to determine which target cflags vary with multilib and which must be
+# passed from the arch configuration.
+config MULTILIB
+    bool
+    prompt "Build a multilib toolchain (READ HELP!!!)"
+    help
+      If you say 'y' here, then the toolchain will also contain the C library
+      optimised for some variants of the selected architecture, besides the
+      default settings.
+      
+      This means the build time of the C library will be in O(nb_variants).
+      
+      The list of variants is dependent on the architecture, and is hard-coded
+      in gcc, so it is not possible to say what variants to support, only
+      whether hard-coded variants should be supported or not.
+      
+      NOTE: The multilib feature in crosstool-NG is not well-tested.
+            Use at your own risk, and report success and/or failure.
+
+config DEMULTILIB
+    bool "Attempt to combine libraries into a single directory"
+    default y if !MULTILIB
+    depends on !MULTILIB || EXPERIMENTAL
+    help
+      Normally, Crosstool-NG installs the libraries into the directories
+      as the configure for these libraries determines appropriate. For
+      example, for AArch64 glibc wants to install the libraries into
+      /lib64 but the default dynamic linker path is /lib/ld-linux-aarch64.so.1
+      (which is installed as a symlink to ../lib64/ld-VER.so).
+
+      However, not all consumers of the toolchain can handle the libraries
+      residing in multiple directories. To appease them, crosstool-NG can
+      attempt to combine the libraries back into a single /lib directory and
+      create all other directories as symlinks to /lib. This requires all
+      the library names to be unique within each sysroot.
+
+      Note that GCC may also use separate sysroots for different multilibs.
+      Hence it may make sense to enable this option even for multilib toolchains.
+      However, separate roots are rare (any other architecture aside from
+      SuperH using them?) and hence not well tested in crosstool-NG; therefore,
+      this option is experimental when MULTILIB is enabled.
+
+#--------------------------------------
+config ARCH_SUPPORTS_BOTH_MMU
+    bool
+
+config ARCH_DEFAULT_HAS_MMU
+    bool
+
+config ARCH_USE_MMU
+    bool
+    prompt "Use the MMU" if ARCH_SUPPORTS_BOTH_MMU
+    default y if ARCH_DEFAULT_HAS_MMU
+    help
+      If your architecture has an MMU and you want to use it,
+      say 'Y' here.
+      
+      OTOH, if you don't want to use the MMU, or your arch
+      lacks an MMU, say 'N' here.
+      
+      Note that some architectures (eg. ARM) has variants that
+      lacks an MMU (eg. ARM Cortex-M3), while other variants
+      have one (eg. ARM Cortex-A8).
+
+#--------------------------------------
+config ARCH_SUPPORTS_FLAT_FORMAT
+    bool
+
+#--------------------------------------
+config ARCH_SUPPORTS_EITHER_ENDIAN
+    bool
+    help
+      Architecture allows to select endianness at the time the toolchain is built.
+
+config ARCH_SUPPORTS_BOTH_ENDIAN
+    bool
+    select ARCH_SUPPORTS_EITHER_ENDIAN
+    help
+      Toolchain supports both big/little endian.
+
+config ARCH_DEFAULT_BE
+    bool
+
+config ARCH_DEFAULT_LE
+    bool
+
+config ARCH_DEFAULT_BE_LE
+    bool
+    depends on ARCH_SUPPORTS_BOTH_ENDIAN
+
+config ARCH_DEFAULT_LE_BE
+    bool
+    depends on ARCH_SUPPORTS_BOTH_ENDIAN
+
+choice
+    bool
+    prompt "Endianness:"
+    depends on ARCH_SUPPORTS_EITHER_ENDIAN
+    default ARCH_BE if ARCH_DEFAULT_BE
+    default ARCH_LE if ARCH_DEFAULT_LE
+    default ARCH_BE_LE if ARCH_DEFAULT_BE_LE
+    default ARCH_LE_BE if ARCH_DEFAULT_LE_BE
+
+config ARCH_BE
+    bool
+    prompt "Big endian"
+
+config ARCH_LE
+    bool
+    prompt "Little endian"
+
+config ARCH_BE_LE
+    bool
+    prompt "Both, default big endian"
+    depends on ARCH_SUPPORTS_BOTH_ENDIAN
+
+config ARCH_LE_BE
+    bool
+    prompt "Both, default little endian"
+    depends on ARCH_SUPPORTS_BOTH_ENDIAN
+
+endchoice
+
+config ARCH_ENDIAN
+    string
+    depends on ARCH_SUPPORTS_EITHER_ENDIAN
+    default "big"        if ARCH_BE
+    default "little"     if ARCH_LE
+    default "big,little" if ARCH_BE_LE
+    default "little,big" if ARCH_LE_BE
+
+#--------------------------------------
+config ARCH_SUPPORTS_8
+    bool
+
+config ARCH_SUPPORTS_16
+    bool
+
+config ARCH_SUPPORTS_32
+    bool
+
+config ARCH_SUPPORTS_64
+    bool
+
+config ARCH_DEFAULT_8
+    bool
+
+config ARCH_DEFAULT_16
+    bool
+
+config ARCH_DEFAULT_32
+    bool
+
+config ARCH_DEFAULT_64
+    bool
+
+config ARCH_BITNESS
+    int
+    default "8"     if ARCH_8
+    default "16"    if ARCH_16
+    default "32"    if ARCH_32
+    default "64"    if ARCH_64
+
+choice
+    bool
+    prompt "Bitness:"
+    default ARCH_8  if ARCH_DEFAULT_8
+    default ARCH_16 if ARCH_DEFAULT_16
+    default ARCH_32 if ARCH_DEFAULT_32
+    default ARCH_64 if ARCH_DEFAULT_64
+
+config ARCH_8
+    bool
+    prompt "8-bit"
+    depends on ARCH_SUPPORTS_8
+
+config ARCH_16
+    bool
+    prompt "16-bit"
+    depends on ARCH_SUPPORTS_16
+
+config ARCH_32
+    bool
+    prompt "32-bit"
+    depends on ARCH_SUPPORTS_32
+
+config ARCH_64
+    bool
+    prompt "64-bit"
+    depends on ARCH_SUPPORTS_64
+
+endchoice
+
+#--------------------------------------
+comment "Target optimisations"
+
+config ARCH_SUPPORTS_WITH_ARCH
+    bool
+
+config ARCH_SUPPORTS_WITH_ABI
+    bool
+
+config ARCH_SUPPORTS_WITH_CPU
+    bool
+
+config ARCH_SUPPORTS_WITH_TUNE
+    bool
+
+config ARCH_SUPPORTS_WITH_FLOAT
+    bool
+
+config ARCH_SUPPORTS_WITH_FPU
+    bool
+
+config ARCH_SUPPORTS_WITH_ENDIAN
+    bool
+
+config ARCH_SUPPORTS_SOFTFP
+    bool
+
+config ARCH_EXCLUSIVE_WITH_CPU
+    bool
+
+config ARCH_ARCH
+    string
+    prompt "Architecture level"
+    depends on ARCH_SUPPORTS_WITH_ARCH
+    depends on !ARCH_EXCLUSIVE_WITH_CPU || ARCH_CPU = ""
+    default ""
+    help
+      GCC uses this name to determine what kind of instructions it can emit
+      when generating assembly code. This option can be used in conjunction
+      with or instead of the ARCH_CPU option (above), or a (command-line)
+      -mcpu= option.
+      
+      This is the configuration flag --with-arch=XXXX, and the runtime flag
+      -march=XXX.
+      
+      Pick a value from the gcc manual for your choosen gcc version and your
+      target CPU.
+      
+      Leave blank if you don't know, or if your target architecture does not
+      offer this option. Must be specified for 32-bit x86 that uses some
+      C library (glibc, uClibc-ng, ...) - the default, "i386" is not supported
+      by these libraries.
+
+config ARCH_ABI
+    string
+    prompt "Generate code for the specific ABI"
+    depends on ARCH_SUPPORTS_WITH_ABI
+    default ""
+    help
+      Generate code for the given ABI.
+
+      This is the configuration flag --with-abi=XXXX, and the runtime flag
+      -mabi=XXX.
+
+      Pick a value from the gcc manual for your choosen gcc version and your
+      target CPU.
+
+      Leave blank if you don't know, or if your target architecture does not
+      offer this option.
+
+config ARCH_CPU
+    string
+    prompt "Emit assembly for CPU"
+    depends on ARCH_SUPPORTS_WITH_CPU
+    default ""
+    help
+      This specifies the name of the target processor. GCC uses this name
+      to determine what kind of instructions it can emit when generating
+      assembly code.
+      
+      This is the configuration flag --with-cpu=XXXX, and the runtime flag
+      -mcpu=XXX.
+
+      Pick a value from the gcc manual for your choosen gcc version and your
+      target CPU.
+      
+      Leave blank if you don't know, or if your target architecture does not
+      offer this option.
+
+config ARCH_TUNE
+    string
+    prompt "Tune for CPU"
+    depends on ARCH_SUPPORTS_WITH_TUNE
+    depends on !ARCH_EXCLUSIVE_WITH_CPU || ARCH_CPU = ""
+    default ""
+    help
+      This option is very similar to the ARCH_CPU option (above), except
+      that instead of specifying the actual target processor type, and hence
+      restricting which instructions can be used, it specifies that GCC should
+      tune the performance of the code as if the target were of the type
+      specified in this option, but still choosing the instructions that it
+      will generate based on the cpu specified by the ARCH_CPU option
+      (above), or a (command-line) -mcpu= option.
+      
+      This is the configuration flag --with-tune=XXXX, and the runtime flag
+      -mtune=XXX.
+      
+      Pick a value from the gcc manual for your choosen gcc version and your
+      target CPU.
+      
+      Leave blank if you don't know, or if your target architecture does not
+      offer this option.
+
+config ARCH_FPU
+    string
+    prompt "Use specific FPU"
+    depends on ARCH_SUPPORTS_WITH_FPU
+    default ""
+    help
+      On some targets (eg. ARM), you can specify the kind of FPU to emit
+      code for.
+
+      This is the configuration flag --with-fpu=XXX, and the runtime flag
+      -mfpu=XXX.
+      
+      See below wether to actually emit FP opcodes, or to emulate them.
+      
+      Pick a value from the gcc manual for your choosen gcc version and your
+      target CPU.
+      
+      Leave blank if you don't know, or if your target architecture does not
+      offer this option.
+
+choice
+    bool
+    prompt "Floating point:"
+    depends on ARCH_SUPPORTS_WITH_FLOAT
+
+config ARCH_FLOAT_AUTO
+    bool
+    prompt "auto (let gcc decide)"
+    help
+      Instead of explicitly passing a float option, don't
+      pass any float options and let gcc figure it out.
+
+      For multilib configurations, this may help.
+
+config ARCH_FLOAT_HW
+    bool
+    prompt "hardware (FPU)"
+    help
+      Emit hardware floating point opcodes.
+      
+      If you've got a processor with a FPU, then you want that.
+      If your hardware has no FPU, you still can use HW floating point, but
+      need to compile support for FPU emulation in your kernel. Needless to
+      say that emulating the FPU is /slooowwwww/...
+      
+      One situation you'd want HW floating point without a FPU is if you get
+      binary blobs from different vendors that are compiling this way and
+      can't (don't wan't to) change.
+
+config ARCH_FLOAT_SOFTFP
+    bool
+    prompt "softfp (FPU)"
+    depends on ARCH_SUPPORTS_SOFTFP
+    help
+      Emit hardware floating point opcodes but use the software
+      floating point calling convention.
+
+      Architectures such as ARM use different registers for passing
+      floating point values depending on if they're in software mode
+      or hardware mode.  softfp emits FPU instructions but uses the
+      software FP calling convention allowing softfp code to
+      interoperate with legacy software only code.
+
+      If in doubt, use 'software' or 'hardware' mode instead.
+
+config ARCH_FLOAT_SW
+    bool
+    prompt "software (no FPU)"
+    help
+      Do not emit any hardware floating point opcode.
+      
+      If your processor has no FPU, then you most probably want this, as it
+      is faster than emulating the FPU in the kernel.
+
+endchoice
+
+config TARGET_CFLAGS
+    string
+    prompt "Target CFLAGS"
+    default ""
+    help
+      Used to add specific options when compiling libraries of the toolchain,
+      that will run on the target (eg. libc.so).
+      
+      Note that the options above for ARCH, ABI, CPU, TUNE and FPU will be
+      automatically used. You don't need to specify them here.
+      
+      Leave blank if you don't know better.
+
+config TARGET_LDFLAGS
+    string
+    prompt "Target LDFLAGS"
+    default ""
+    help
+      Used to add specific options when linking libraries of the toolchain,
+      that will run on your target.
+      
+      Leave blank if you don't know better.
+
+config ARCH_FLOAT
+    string
+    default "auto"   if ARCH_FLOAT_AUTO
+    default "hard"   if ARCH_FLOAT_HW
+    default "soft"   if ARCH_FLOAT_SW
+    default "softfp" if ARCH_FLOAT_SOFTFP
+
+config TARGET_USE_OVERLAY
+    bool
+
+if TARGET_USE_OVERLAY
+
+config OVERLAY_NAME
+    string "Custom processor configuration name"
+    help
+      Enter the name of the custom processor configuration.
+      Overlay file for that configuration must be called
+      '<ARCH>_<OVERLAY_NAME>.tar' (optionally, with .gz/.bz2/.lzma/.xz
+      extension).
+
+      Leave blank to use the default '<ARCH>_overlay.tar'.
+      For more information about this option, please also consult the
+      section 'Using crosstool-NG to build Xtensa toolchains' in the
+      in http://crosstool-ng.github.io/docs/caveats-features/
+
+config OVERLAY_LOCATION
+    string "Full path to custom configuration (overlay)"
+    help
+      Enter the path to the directory for the custom processor
+      configuration file.
+
+endif
+
+endmenu

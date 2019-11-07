@@ -1,0 +1,77 @@
+Submitted By: Ken Moffat <ken at linuxfromscratch dot org>
+Date: 2013-08-26
+Initial Package Version: 4.8
+Upstream Status: Unknown
+Origin: Unknown
+Description: Fixes compilation with glibc-2.18.
+From OpenSuse factory, found in strace-4.8-2.1.src.rpm by rpmfind.net.
+http://download.opensuse.org/factory/repo/src-oss/suse/strace-4.8-2.1.src.rpm
+Their changelog reports:
+ * Wed Aug 14 2013 schwab@suse.de
+ - strace-linux-ptrace-h.patch: handle conflict with struct
+   ptrace_peeksiginfo_args between <sys/ptrace.h> and <linux/ptrace.h>
+
+
+---
+ process.c |    2 ++
+ signal.c  |    2 ++
+ syscall.c |    2 ++
+ util.c    |    2 ++
+ 4 files changed, 8 insertions(+)
+
+--- a/process.c
++++ b/process.c
+@@ -63,9 +63,11 @@
+ # ifdef HAVE_STRUCT_PT_ALL_USER_REGS
+ #  define pt_all_user_regs XXX_pt_all_user_regs
+ # endif
++# define ptrace_peeksiginfo_args XXX_ptrace_peeksiginfo_args
+ # include <linux/ptrace.h>
+ # undef ia64_fpreg
+ # undef pt_all_user_regs
++# undef ptrace_peeksiginfo_args
+ #endif
+ 
+ #if defined(SPARC64)
+--- a/signal.c
++++ b/signal.c
+@@ -51,9 +51,11 @@
+ # ifdef HAVE_STRUCT_PT_ALL_USER_REGS
+ #  define pt_all_user_regs XXX_pt_all_user_regs
+ # endif
++# define ptrace_peeksiginfo_args XXX_ptrace_peeksiginfo_args
+ # include <linux/ptrace.h>
+ # undef ia64_fpreg
+ # undef pt_all_user_regs
++# undef ptrace_peeksiginfo_args
+ #endif
+ 
+ #ifdef IA64
+--- a/syscall.c
++++ b/syscall.c
+@@ -48,9 +48,11 @@
+ # ifdef HAVE_STRUCT_PT_ALL_USER_REGS
+ #  define pt_all_user_regs XXX_pt_all_user_regs
+ # endif
++# define ptrace_peeksiginfo_args XXX_ptrace_peeksiginfo_args
+ # include <linux/ptrace.h>
+ # undef ia64_fpreg
+ # undef pt_all_user_regs
++# undef ptrace_peeksiginfo_args
+ #endif
+ 
+ #if defined(SPARC64)
+--- a/util.c
++++ b/util.c
+@@ -55,9 +55,11 @@
+ # ifdef HAVE_STRUCT_PT_ALL_USER_REGS
+ #  define pt_all_user_regs XXX_pt_all_user_regs
+ # endif
++# define ptrace_peeksiginfo_args XXX_ptrace_peeksiginfo_args
+ # include <linux/ptrace.h>
+ # undef ia64_fpreg
+ # undef pt_all_user_regs
++# undef ptrace_peeksiginfo_args
+ #endif
+ 
+ int

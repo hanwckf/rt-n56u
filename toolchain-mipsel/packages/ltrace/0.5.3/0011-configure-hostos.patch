@@ -1,0 +1,21 @@
+---
+ configure |    8 ++++++--
+ 1 file changed, 6 insertions(+), 2 deletions(-)
+
+--- a/configure
++++ b/configure
+@@ -15,8 +15,12 @@
+ echo $PACKAGE_VERSION
+ 
+ echo -n "checking HOST_OS... "
+-HOST_OS=$( uname -s )
+-if [ "$HOST_OS" = "Linux" ]
++if [ -z "$HOST_OS" ] ; then
++  HOST_OS=$( uname -s )
++else
++  echo -n "using preset: "
++fi
++if [ "$HOST_OS" = "Linux" -o "$HOST_OS" = "linux" ]
+ then
+   HOST_OS="linux-gnu"
+ fi

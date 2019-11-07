@@ -1,0 +1,27 @@
+# moxiebox options
+
+# Moxie is distributed in non-bootstrapped form, so we really need
+# autoconfig and automake.
+
+## depends on ARCH_MOXIE
+## depends on ARCH_LE
+## depends on BARE_METAL
+## select LIBC_NEWLIB_SHOW
+## select LIBC_SUPPORT_THREADS_NONE
+## select COMP_TOOLS_AUTOCONF if !CONFIGURE_has_autoconf_2_65_or_newer || !CONFIGURE_has_autoreconf_2_64_or_newer
+## select COMP_TOOLS_AUTOMAKE if !CONFIGURE_has_automake_1_15_or_newer
+## select CC_CORE_PASSES_NEEDED if CANADIAN
+## select CC_CORE_PASS_2_NEEDED if ! CANADIAN
+## select LIBELF_NEEDED
+##
+## help Secure execution runtime for Moxie architecture.
+
+config MOXIEBOX_SHORT_TUPLE
+    bool "Use 'moxiebox-' as target tuple"
+    select OMIT_TARGET_ARCH
+    select OMIT_TARGET_VENDOR
+    select TARGET_SKIP_CONFIG_SUB
+    help
+      Moxiebox refers to the tools configured for 'moxie-unknown-moxiebox-' by
+      a short, 'moxiebox-' prefix. Though non-canonical, it seems to be officially
+      endorsed.

@@ -1,0 +1,72 @@
+---
+ configure    |    8 ++++----
+ configure.in |    8 ++++----
+ 2 files changed, 8 insertions(+), 8 deletions(-)
+
+--- a/configure
++++ b/configure
+@@ -4957,7 +4957,7 @@
+   ac_prog_version=`$CC -v 2>&1 | sed -n 's/^.*version \([egcygnustpi-]*[0-9.]*\).*$/\1/p'`
+   case $ac_prog_version in
+     '') ac_prog_version="v. ?.??, bad"; ac_verc_fail=yes;;
+-    3.4* | 4.[0-9]* )
++    3.4* | [4-9].* )
+        ac_prog_version="$ac_prog_version, ok"; ac_verc_fail=no;;
+     *) ac_prog_version="$ac_prog_version, bad"; ac_verc_fail=yes;;
+ 
+@@ -5020,7 +5020,7 @@
+   ac_prog_version=`$MAKE --version 2>&1 | sed -n 's/^.*GNU Make[^0-9]*\([0-9][0-9.]*\).*$/\1/p'`
+   case $ac_prog_version in
+     '') ac_prog_version="v. ?.??, bad"; ac_verc_fail=yes;;
+-    3.79* | 3.[89]*)
++    3.79* | 3.[89]* | [4-9].* | [1-9][0-9]*)
+        ac_prog_version="$ac_prog_version, ok"; ac_verc_fail=no;;
+     *) ac_prog_version="$ac_prog_version, bad"; ac_verc_fail=yes;;
+ 
+@@ -5147,7 +5147,7 @@
+   ac_prog_version=`$MAKEINFO --version 2>&1 | sed -n 's/^.*GNU texinfo.* \([0-9][0-9.]*\).*$/\1/p'`
+   case $ac_prog_version in
+     '') ac_prog_version="v. ?.??, bad"; ac_verc_fail=yes;;
+-    4.*)
++    [4-9].*)
+        ac_prog_version="$ac_prog_version, ok"; ac_verc_fail=no;;
+     *) ac_prog_version="$ac_prog_version, bad"; ac_verc_fail=yes;;
+ 
+@@ -5207,7 +5207,7 @@
+   # Found it, now check the version.
+   { $as_echo "$as_me:${as_lineno-$LINENO}: checking version of $SED" >&5
+ $as_echo_n "checking version of $SED... " >&6; }
+-  ac_prog_version=`$SED --version 2>&1 | sed -n 's/^.*GNU sed version \([0-9]*\.[0-9.]*\).*$/\1/p'`
++  ac_prog_version=`$SED --version 2>&1 | sed -n 's/^.*GNU sed[^0-9]* \([0-9]*\.[0-9.]*\).*$/\1/p'`
+   case $ac_prog_version in
+     '') ac_prog_version="v. ?.??, bad"; ac_verc_fail=yes;;
+     3.0[2-9]*|3.[1-9]*|[4-9]*)
+--- a/configure.in
++++ b/configure.in
+@@ -1037,11 +1037,11 @@
+ # These programs are version sensitive.
+ AC_CHECK_TOOL_PREFIX
+ AC_CHECK_PROG_VER(CC, ${ac_tool_prefix}gcc ${ac_tool_prefix}cc, -v,
+-  [version \([egcygnustpi-]*[0-9.]*\)], [3.4* | 4.[0-9]* ],
++  [version \([egcygnustpi-]*[0-9.]*\)], [3.4* | [4-9].* ],
+   critic_missing="$critic_missing gcc")
+ AC_CHECK_PROG_VER(MAKE, gnumake gmake make, --version,
+   [GNU Make[^0-9]*\([0-9][0-9.]*\)],
+-  [3.79* | 3.[89]*], critic_missing="$critic_missing make")
++  [3.79* | 3.[89]* | [4-9].* | [1-9][0-9]*], critic_missing="$critic_missing make")
+ 
+ AC_CHECK_PROG_VER(MSGFMT, gnumsgfmt gmsgfmt msgfmt, --version,
+   [GNU gettext.* \([0-9]*\.[0-9.]*\)],
+@@ -1049,10 +1049,10 @@
+   MSGFMT=: aux_missing="$aux_missing msgfmt")
+ AC_CHECK_PROG_VER(MAKEINFO, makeinfo, --version,
+   [GNU texinfo.* \([0-9][0-9.]*\)],
+-  [4.*],
++  [[4-9].*],
+   MAKEINFO=: aux_missing="$aux_missing makeinfo")
+ AC_CHECK_PROG_VER(SED, sed, --version,
+-  [GNU sed version \([0-9]*\.[0-9.]*\)],
++  [GNU sed[^0-9]* \([0-9]*\.[0-9.]*\)],
+   [3.0[2-9]*|3.[1-9]*|[4-9]*],
+   SED=: aux_missing="$aux_missing sed")
+ 

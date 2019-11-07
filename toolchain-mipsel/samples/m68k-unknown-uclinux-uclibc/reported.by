@@ -1,0 +1,3 @@
+reporter_name="Esben Haabendal"
+reporter_url="esben@haabendal.dk"
+reporter_comment="Example for building a toolchain for m68k no-mmu Linux targets"

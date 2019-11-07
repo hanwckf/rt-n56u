@@ -1,0 +1,15 @@
+---
+ Makefile.in |    2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+--- a/Makefile.in
++++ b/Makefile.in
+@@ -39,7 +39,7 @@
+ 		$(CC) $(LDFLAGS) $^ $(LIBS) -o $@
+ 
+ libltrace.a: 	sysdeps/sysdep.o $(OBJ)
+-		$(AR) rcv $@ $^
++		$(AR) rscv $@ $^
+ 
+ $(OBJ):		sysdeps/sysdep.o
+ 

@@ -1,0 +1,18 @@
+remove unused header, which breaks the toolchain building
+
+Signed-off-by: Waldemar Brodkorb <wbx@openadk.org>
+
+---
+ libgcc/config/m68k/linux-atomic.c |    1 -
+ 1 file changed, 1 deletion(-)
+
+--- a/libgcc/config/m68k/linux-atomic.c
++++ b/libgcc/config/m68k/linux-atomic.c
+@@ -33,7 +33,6 @@
+    using the kernel helper defined below.  There is no support for
+    64-bit operations yet.  */
+ 
+-#include <asm/unistd.h>
+ #include <stdbool.h>
+ 
+ #ifndef __NR_atomic_cmpxchg_32

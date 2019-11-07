@@ -1,0 +1,36 @@
+Original patch from gentoo: gentoo/src/patchsets/gdb/6.8/20_all_gdb-tdep-opcode-include-workaround.patch
+-= BEGIN original header =-
+workaround build failure
+
+http://bugs.gentoo.org/216368
+
+-= END original header =-
+---
+ gdb/frv-tdep.c |    2 +-
+ gdb/mep-tdep.c |    4 ++--
+ 2 files changed, 3 insertions(+), 3 deletions(-)
+
+--- a/gdb/frv-tdep.c
++++ b/gdb/frv-tdep.c
+@@ -32,7 +32,7 @@
+ #include "gdb_assert.h"
+ #include "sim-regno.h"
+ #include "gdb/sim-frv.h"
+-#include "opcodes/frv-desc.h"	/* for the H_SPR_... enums */
++#include "../opcodes/frv-desc.h"	/* for the H_SPR_... enums */
+ #include "symtab.h"
+ #include "elf-bfd.h"
+ #include "elf/frv.h"
+--- a/gdb/mep-tdep.c
++++ b/gdb/mep-tdep.c
+@@ -53,8 +53,8 @@
+ 
+ /* Get the user's customized MeP coprocessor register names from
+    libopcodes.  */
+-#include "opcodes/mep-desc.h"
+-#include "opcodes/mep-opc.h"
++#include "../opcodes/mep-desc.h"
++#include "../opcodes/mep-opc.h"
+ 
+ 
+ /* The gdbarch_tdep structure.  */

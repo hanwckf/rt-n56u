@@ -1,0 +1,1842 @@
+# ncurses 6.0 - patch 20150905 - Thomas E. Dickey
+#
+# ------------------------------------------------------------------------------
+#
+# Ncurses 6.0 is at
+# 	ftp.gnu.org:/pub/gnu
+#
+# Patches for ncurses 6.0 are in the subdirectory
+# 	ftp://invisible-island.net/ncurses/6.0
+#
+# ------------------------------------------------------------------------------
+# ftp://invisible-island.net/ncurses/6.0/ncurses-6.0-20150905.patch.gz
+# patch by Thomas E. Dickey <dickey@invisible-island.net>
+# created  Sun Sep  6 01:23:48 UTC 2015
+# ------------------------------------------------------------------------------
+# NEWS                                |   12 ++-
+# VERSION                             |    2 
+# dist.mk                             |    4 -
+# doc/html/man/captoinfo.1m.html      |    2 
+# doc/html/man/clear.1.html           |    2 
+# doc/html/man/curs_addch.3x.html     |   50 ++++++++----
+# doc/html/man/curs_attr.3x.html      |    4 -
+# doc/html/man/curs_variables.3x.html |   21 ++++-
+# doc/html/man/form.3x.html           |    2 
+# doc/html/man/infocmp.1m.html        |   77 +++++++++++--------
+# doc/html/man/infotocap.1m.html      |    2 
+# doc/html/man/menu.3x.html           |    2 
+# doc/html/man/ncurses.3x.html        |    2 
+# doc/html/man/panel.3x.html          |    2 
+# doc/html/man/tabs.1.html            |    2 
+# doc/html/man/terminfo.5.html        |    2 
+# doc/html/man/tic.1m.html            |  139 +++++++++++++++++++-----------------
+# doc/html/man/toe.1m.html            |   39 +++++-----
+# doc/html/man/tput.1.html            |    2 
+# doc/html/man/tset.1.html            |    2 
+# include/term_entry.h                |    3 
+# man/curs_addch.3x                   |   19 ++++
+# man/curs_attr.3x                    |    6 -
+# man/curs_threads.3x                 |    4 -
+# man/infocmp.1m                      |   26 ++++++
+# man/tic.1m                          |   25 +++++-
+# man/toe.1m                          |    7 +
+# ncurses/tinfo/write_entry.c         |   13 +--
+# package/debian-mingw/changelog      |    4 -
+# package/debian-mingw64/changelog    |    4 -
+# package/debian/changelog            |    4 -
+# package/mingw-ncurses.nsi           |    4 -
+# package/mingw-ncurses.spec          |    2 
+# package/ncurses.map                 |    9 ++
+# package/ncurses.spec                |    2 
+# package/ncurses.sym                 |    3 
+# package/ncursest.map                |    9 ++
+# package/ncursest.sym                |    3 
+# package/ncursestw.map               |    9 ++
+# package/ncursestw.sym               |    3 
+# package/ncursesw.map                |    9 ++
+# package/ncursesw.sym                |    3 
+# progs/dump_entry.c                  |   96 ++++++++++++++++++++++--
+# progs/dump_entry.h                  |    5 -
+# progs/infocmp.c                     |   21 +++--
+# progs/tic.c                         |   47 ++++++++----
+# 46 files changed, 491 insertions(+), 219 deletions(-)
+# ------------------------------------------------------------------------------
+--- a/NEWS
++++ b/NEWS
+@@ -25,7 +25,7 @@
+ -- sale, use or other dealings in this Software without prior written        --
+ -- authorization.                                                            --
+ -------------------------------------------------------------------------------
+--- $Id: NEWS,v 1.2487 2015/08/22 23:55:21 tom Exp $
++-- $Id: NEWS,v 1.2490 2015/09/05 21:14:36 tom Exp $
+ -------------------------------------------------------------------------------
+ 
+ This is a log of changes that ncurses has gone through since Zeyd started
+@@ -45,6 +45,16 @@
+ Changes through 1.9.9e did not credit all contributions;
+ it is not possible to add this information.
+ 
++20150905
++	+ add note in curs_addch.3x about line-drawing when it depends upon
++	  UTF-8.
++	+ add tic -q option for consistency with infocmp, use it to suppress
++	  all comments from the "tic -I" output.
++	+ modify infocmp -q option to suppress the "Reconstructed from"
++	  header.
++	+ add infocmp/tic -Q option, which allows one to dump the compiled
++	  form of the terminal entry, in hexadecimal or base64.
++
+ 20150822
+ 	+ sort options in usage message for infocmp, to make it simpler to
+ 	  see unused letters.
+--- a/VERSION
++++ b/VERSION
+@@ -1 +1 @@
+-5:0:9	6.0	20150822
++5:0:9	6.0	20150905
+--- a/dist.mk
++++ b/dist.mk
+@@ -25,7 +25,7 @@
+ # use or other dealings in this Software without prior written               #
+ # authorization.                                                             #
+ ##############################################################################
+-# $Id: dist.mk,v 1.1067 2015/08/17 08:41:12 tom Exp $
++# $Id: dist.mk,v 1.1069 2015/09/05 21:14:02 tom Exp $
+ # Makefile for creating ncurses distributions.
+ #
+ # This only needs to be used directly as a makefile by developers, but
+@@ -37,7 +37,7 @@
+ # These define the major/minor/patch versions of ncurses.
+ NCURSES_MAJOR = 6
+ NCURSES_MINOR = 0
+-NCURSES_PATCH = 20150822
++NCURSES_PATCH = 20150905
+ 
+ # We don't append the patch to the version, since this only applies to releases
+ VERSION = $(NCURSES_MAJOR).$(NCURSES_MINOR)
+--- a/doc/html/man/captoinfo.1m.html
++++ b/doc/html/man/captoinfo.1m.html
+@@ -205,7 +205,7 @@
+ <H2><a name="h2-SEE-ALSO">SEE ALSO</a></H2><PRE>
+        <STRONG><A HREF="infocmp.1m.html">infocmp(1m)</A></STRONG>, <STRONG><A HREF="ncurses.3x.html">curses(3x)</A></STRONG>, <STRONG><A HREF="terminfo.5.html">terminfo(5)</A></STRONG>
+ 
+-       This describes <STRONG>ncurses</STRONG> version 6.0 (patch 20150808).
++       This describes <STRONG>ncurses</STRONG> version 6.0 (patch 20150905).
+ 
+ 
+ </PRE>
+--- a/doc/html/man/clear.1.html
++++ b/doc/html/man/clear.1.html
+@@ -71,7 +71,7 @@
+ <H2><a name="h2-SEE-ALSO">SEE ALSO</a></H2><PRE>
+        <STRONG><A HREF="tput.1.html">tput(1)</A></STRONG>, <STRONG><A HREF="terminfo.5.html">terminfo(5)</A></STRONG>
+ 
+-       This describes <STRONG>ncurses</STRONG> version 6.0 (patch 20150808).
++       This describes <STRONG>ncurses</STRONG> version 6.0 (patch 20150905).
+ 
+ 
+ 
+--- a/doc/html/man/curs_addch.3x.html
++++ b/doc/html/man/curs_addch.3x.html
+@@ -136,8 +136,11 @@
+        characters to the screen with routines of the  <STRONG>addch</STRONG>  fam-
+        ily.   The  default  character listed below is used if the
+        <STRONG>acsc</STRONG>  capability  does  not  define  a   terminal-specific
+-       replacement for it.  The names are taken from VT100 nomen-
+-       clature.
++       replacement for it, or if the terminal and locale configu-
++       ration requires Unicode but the library is unable  to  use
++       Unicode.
++
++       The names are taken from VT100 nomenclature.
+ 
+        <EM>Name</EM>           <EM>Default</EM>   <EM>Description</EM>
+        --------------------------------------------------
+@@ -178,41 +181,54 @@
+ </PRE>
+ <H2><a name="h2-RETURN-VALUE">RETURN VALUE</a></H2><PRE>
+        All routines return the integer <STRONG>ERR</STRONG> upon failure and <STRONG>OK</STRONG> on
+-       success  (the  SVr4 manuals specify only "an integer value
++       success (the SVr4 manuals specify only "an  integer  value
+        other than <STRONG>ERR</STRONG>") upon successful completion, unless other-
+        wise noted in the preceding routine descriptions.
+ 
+-       Functions  with a "mv" prefix first perform a cursor move-
+-       ment using <STRONG>wmove</STRONG>, and return an error if the  position  is
++       Functions with a "mv" prefix first perform a cursor  move-
++       ment  using  <STRONG>wmove</STRONG>, and return an error if the position is
+        outside the window, or if the window pointer is null.
+ 
+ 
+ </PRE>
+ <H2><a name="h2-NOTES">NOTES</a></H2><PRE>
+-       Note  that  <STRONG>addch</STRONG>,  <STRONG>mvaddch</STRONG>, <STRONG>mvwaddch</STRONG>, and <STRONG>echochar</STRONG> may be
++       Note that <STRONG>addch</STRONG>, <STRONG>mvaddch</STRONG>, <STRONG>mvwaddch</STRONG>, and  <STRONG>echochar</STRONG>  may  be
+        macros.
+ 
+ 
+ </PRE>
+ <H2><a name="h2-PORTABILITY">PORTABILITY</a></H2><PRE>
+-       All these functions are described in the XSI Curses  stan-
+-       dard,  Issue  4.  The defaults specified for forms-drawing
++       All  these functions are described in the XSI Curses stan-
++       dard, Issue 4.  The defaults specified  for  forms-drawing
+        characters apply in the POSIX locale.
+ 
+-       X/Open Curses states that the <EM>ACS</EM><STRONG>_</STRONG>  definitions  are  <STRONG>char</STRONG>
+-       constants.   For  the  wide-character  implementation (see
++       X/Open  Curses  states  that the <EM>ACS</EM><STRONG>_</STRONG> definitions are <STRONG>char</STRONG>
++       constants.  For  the  wide-character  implementation  (see
+        <STRONG>curs_add_wch</STRONG>), there are analogous <EM>WACS</EM><STRONG>_</STRONG> definitions which
+        are <STRONG>cchar_t</STRONG> constants.
+ 
+-       Some  ACS symbols (ACS_S3, ACS_S7, ACS_LEQUAL, ACS_GEQUAL,
+-       ACS_PI, ACS_NEQUAL, ACS_STERLING) were not  documented  in
+-       any  publicly  released  System V.  However, many publicly
+-       available terminfos include <STRONG>acsc</STRONG> strings  in  which  their
+-       key  characters  (pryz{|}) are embedded, and a second-hand
+-       list of their character descriptions has  come  to  light.
+-       The   ACS-prefixed   names  for  them  were  invented  for
++       Some ACS symbols (ACS_S3, ACS_S7, ACS_LEQUAL,  ACS_GEQUAL,
++       ACS_PI,  ACS_NEQUAL,  ACS_STERLING) were not documented in
++       any publicly released System V.   However,  many  publicly
++       available  terminfos  include  <STRONG>acsc</STRONG> strings in which their
++       key characters (pryz{|}) are embedded, and  a  second-hand
++       list  of  their  character descriptions has come to light.
++       The  ACS-prefixed  names  for  them  were   invented   for
+        <STRONG><A HREF="ncurses.3x.html">ncurses(3x)</A></STRONG>.
+ 
++       The  <EM>displayed</EM>  values  for  the  <EM>ACS</EM><STRONG>_</STRONG> and <EM>WACS</EM><STRONG>_</STRONG> constants
++       depend on
++
++       <STRONG>o</STRONG>   the library configuration, i.e., <STRONG>ncurses</STRONG> versus <STRONG>ncurs-</STRONG>
++           <STRONG>esw</STRONG>, where the latter is capable of displaying Unicode
++           while the former is not, and
++
++       <STRONG>o</STRONG>   whether the <EM>locale</EM> uses UTF-8 encoding.
++
++       In certain cases, the terminal is unable to display  line-
++       drawing  characters except by using UTF-8 (see the discus-
++       sion of <STRONG>NCURSES_NO_UTF8_ACS</STRONG> in <STRONG><A HREF="ncurses.3x.html">ncurses(3x)</A></STRONG>).
++
+        The <STRONG>TABSIZE</STRONG> variable is implemented in  some  versions  of
+        curses, but is not part of X/Open curses.
+ 
+--- a/doc/html/man/curs_attr.3x.html
++++ b/doc/html/man/curs_attr.3x.html
+@@ -173,8 +173,8 @@
+ <H3><a name="h3-Attributes">Attributes</a></H3><PRE>
+        The following video attributes, defined in <STRONG>&lt;curses.h&gt;</STRONG>, can
+        be passed to the routines <STRONG>attron</STRONG>, <STRONG>attroff</STRONG>, and <STRONG>attrset</STRONG>, or
+-       OR'd with the characters passed to  <STRONG>addch</STRONG>  (see  curs_add-
+-       <STRONG><A HREF="ch.3x.html">ch(3x)</A></STRONG>).
++       OR'd with the characters passed to  <STRONG>addch</STRONG>  (see  <STRONG><A HREF="curs_addch.3x.html">curs_add-
++       ch(3x)</A></STRONG>).
+ 
+               <EM>Name</EM>            <EM>Description</EM>
+               ------------------------------------------------------------
+--- a/doc/html/man/curs_variables.3x.html
++++ b/doc/html/man/curs_variables.3x.html
+@@ -1,6 +1,6 @@
+ <!-- 
+   ****************************************************************************
+-  * Copyright (c) 2010,2013 Free Software Foundation, Inc.                   *
++  * Copyright (c) 2010-2013,2015 Free Software Foundation, Inc.              *
+   *                                                                          *
+   * Permission is hereby granted, free of charge, to any person obtaining a  *
+   * copy of this software and associated documentation files (the            *
+@@ -26,7 +26,7 @@
+   * sale, use or other dealings in this Software without prior written       *
+   * authorization.                                                           *
+   ****************************************************************************
+-  * @Id: curs_variables.3x,v 1.6 2013/12/21 18:41:32 tom Exp @
++  * @Id: curs_variables.3x,v 1.8 2015/08/22 23:33:22 tom Exp @
+ -->
+ <!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01//EN">
+ <HTML>
+@@ -163,10 +163,25 @@
+        ESCDELAY  and TABSIZE are extensions, not provided in most
+        other implementations of curses.
+ 
++       ESCDELAY is an extension in AIX curses:
++
++       <STRONG>o</STRONG>   In AIX, the units for ESCDELAY are <EM>fifths</EM>  of  a  mil-
++           lisecond.
++
++       <STRONG>o</STRONG>   The default value for AIX's ESCDELAY is 0.1 seconds.
++
++       <STRONG>o</STRONG>   AIX also enforces a limit of 10,000 seconds for ESCDE-
++           LAY; this implementation currently has no upper limit.
++
++       This implementation has long used ESCDELAY with  units  of
++       milliseconds,  making  it impossible to be completely com-
++       patible with AIX.  Likewise, most users have either decid-
++       ed to override the value, or rely upon its default value.
++
+ 
+ </PRE>
+ <H2><a name="h2-SEE-ALSO">SEE ALSO</a></H2><PRE>
+-       <STRONG><A HREF="ncurses.3x.html">curses(3x)</A></STRONG>,      <STRONG><A HREF="curs_opaque.3x.html">curs_opaque(3x)</A></STRONG>,       <STRONG><A HREF="curs_terminfo.3x.html">curs_terminfo(3x)</A></STRONG>,
++       <STRONG><A HREF="ncurses.3x.html">curses(3x)</A></STRONG>,       <STRONG><A HREF="curs_opaque.3x.html">curs_opaque(3x)</A></STRONG>,      <STRONG><A HREF="curs_terminfo.3x.html">curs_terminfo(3x)</A></STRONG>,
+        <STRONG><A HREF="curs_threads.3x.html">curs_threads(3x)</A></STRONG>, <STRONG><A HREF="term_variables.3x.html">term_variables(3x)</A></STRONG>, <STRONG><A HREF="terminfo.5.html">terminfo(5)</A></STRONG>.
+ 
+ 
+--- a/doc/html/man/form.3x.html
++++ b/doc/html/man/form.3x.html
+@@ -245,7 +245,7 @@
+        <STRONG><A HREF="ncurses.3x.html">curses(3x)</A></STRONG> and related pages whose names begin "form_" for
+        detailed descriptions of the entry points.
+ 
+-       This describes <STRONG>ncurses</STRONG> version 6.0 (patch 20150808).
++       This describes <STRONG>ncurses</STRONG> version 6.0 (patch 20150905).
+ 
+ 
+ 
+--- a/doc/html/man/infocmp.1m.html
++++ b/doc/html/man/infocmp.1m.html
+@@ -27,7 +27,7 @@
+   * sale, use or other dealings in this Software without prior written       *
+   * authorization.                                                           *
+   ****************************************************************************
+-  * @Id: infocmp.1m,v 1.56 2015/05/23 20:50:00 tom Exp @
++  * @Id: infocmp.1m,v 1.57 2015/09/05 20:50:22 tom Exp @
+ -->
+ <!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01//EN">
+ <HTML>
+@@ -54,7 +54,7 @@
+ </PRE>
+ <H2><a name="h2-SYNOPSIS">SYNOPSIS</a></H2><PRE>
+        <STRONG>infocmp</STRONG> [<STRONG>-1CDEFGIKLTUVcdegilnpqrtux</STRONG>]
+-             [<STRONG>-v</STRONG> <EM>n</EM>] [<STRONG>-s</STRONG> <STRONG>d</STRONG>| <STRONG>i</STRONG>| <STRONG>l</STRONG>| <STRONG>c</STRONG>] [<STRONG>-R</STRONG> <STRONG>subset</STRONG>]
++             [<STRONG>-v</STRONG> <EM>n</EM>] [<STRONG>-s</STRONG> <STRONG>d</STRONG>| <STRONG>i</STRONG>| <STRONG>l</STRONG>| <STRONG>c</STRONG>] [<STRONG>-Q</STRONG> <EM>n</EM>] [<STRONG>-R</STRONG> <STRONG>subset</STRONG>]
+              [<STRONG>-w</STRONG> <EM>width</EM>] [<STRONG>-A</STRONG> <EM>directory</EM>] [<STRONG>-B</STRONG> <EM>directory</EM>]
+              [<EM>termname</EM>...]
+ 
+@@ -374,29 +374,44 @@
+ 
+        <STRONG>-p</STRONG>   Ignore padding specifications when comparing strings.
+ 
+-       <STRONG>-q</STRONG>   Make  the comparison listing shorter by omitting sub-
+-            headings, and using "-" for absent capabilities,  "@"
+-            for canceled rather than "NULL".
++       <STRONG>-Q</STRONG> <EM>n</EM> Rather  than  show  source in terminfo (text) format,
++            print the compiled (binary) format in hexadecimal  or
++            base64 form, depending on the option's value:
++
++               1  hexadecimal
++
++               2  base64
++
++               3  hexadecimal and base64
++
++       <STRONG>-q</STRONG>   This makes the output a little shorter:
++
++            <STRONG>o</STRONG>   Make  the  comparison listing shorter by omitting
++                subheadings, and using "-" for  absent  capabili-
++                ties, "@" for canceled rather than "NULL".
++
++            <STRONG>o</STRONG>   Omit  the "Reconstructed from" comment for source
++                listings.
+ 
+        <STRONG>-R</STRONG><EM>subset</EM>
+-            Restrict  output  to  a given subset.  This option is
+-            for use with archaic versions of terminfo like  those
+-            on  SVr1,  Ultrix,  or  HP/UX that do not support the
+-            full set of SVR4/XSI Curses  terminfo;  and  variants
++            Restrict output to a given subset.   This  option  is
++            for  use with archaic versions of terminfo like those
++            on SVr1, Ultrix, or HP/UX that  do  not  support  the
++            full  set  of  SVR4/XSI Curses terminfo; and variants
+             such as AIX that have their own extensions incompati-
+             ble with SVr4/XSI.
+ 
+             Available  terminfo  subsets  are  "SVr1",  "Ultrix",
+-            "HP",  and  "AIX";  see <STRONG><A HREF="terminfo.5.html">terminfo(5)</A></STRONG> for details.  You
+-            can also choose the subset "BSD" which  selects  only
+-            capabilities  with  termcap equivalents recognized by
++            "HP", and "AIX"; see <STRONG><A HREF="terminfo.5.html">terminfo(5)</A></STRONG>  for  details.   You
++            can  also  choose the subset "BSD" which selects only
++            capabilities with termcap equivalents  recognized  by
+             4.4BSD.
+ 
+        <STRONG>-s</STRONG> <EM>[d|i|l|c]</EM>
+-            The <STRONG>-s</STRONG> option  sorts  the  fields  within  each  type
++            The  <STRONG>-s</STRONG>  option  sorts  the  fields  within each type
+             according to the argument below:
+ 
+-            <STRONG>d</STRONG>    leave  fields  in the order that they are stored
++            <STRONG>d</STRONG>    leave fields in the order that they  are  stored
+                  in the <EM>terminfo</EM> database.
+ 
+             <STRONG>i</STRONG>    sort by <EM>terminfo</EM> name.
+@@ -406,38 +421,38 @@
+             <STRONG>c</STRONG>    sort by the <EM>termcap</EM> name.
+ 
+             If the <STRONG>-s</STRONG> option is not given, the fields printed out
+-            will  be  sorted  alphabetically by the <STRONG>terminfo</STRONG> name
++            will be sorted alphabetically by  the  <STRONG>terminfo</STRONG>  name
+             within each type, except in the case of the <STRONG>-C</STRONG> or the
+             <STRONG>-L</STRONG> options, which cause the sorting to be done by the
+-            <STRONG>termcap</STRONG> name or the long  C  variable  name,  respec-
++            <STRONG>termcap</STRONG>  name  or  the  long C variable name, respec-
+             tively.
+ 
+-       <STRONG>-T</STRONG>   eliminates  size-restrictions  on the generated text.
++       <STRONG>-T</STRONG>   eliminates size-restrictions on the  generated  text.
+             This is mainly useful for testing and analysis, since
+             the compiled descriptions are limited (e.g., 1023 for
+             termcap, 4096 for terminfo).
+ 
+        <STRONG>-t</STRONG>   tells  <STRONG>tic</STRONG>  to  discard  commented-out  capabilities.
+-            Normally  when  translating from terminfo to termcap,
++            Normally when translating from terminfo  to  termcap,
+             untranslatable capabilities are commented-out.
+ 
+-       <STRONG>-U</STRONG>   tells <STRONG>infocmp</STRONG> to  not  post-process  the  data  after
+-            parsing  the  source  file.   This feature helps when
+-            comparing the actual contents of  two  source  files,
+-            since  it  excludes the inferences that <STRONG>infocmp</STRONG> makes
++       <STRONG>-U</STRONG>   tells  <STRONG>infocmp</STRONG>  to  not  post-process  the data after
++            parsing the source file.   This  feature  helps  when
++            comparing  the  actual  contents of two source files,
++            since it excludes the inferences that  <STRONG>infocmp</STRONG>  makes
+             to fill in missing data.
+ 
+        <STRONG>-V</STRONG>   reports the version of ncurses which was used in this
+             program, and exits.
+ 
+-       <STRONG>-v</STRONG> <EM>n</EM> prints  out  tracing information on standard error as
+-            the program runs.  Higher values of n induce  greater
++       <STRONG>-v</STRONG> <EM>n</EM> prints out tracing information on standard  error  as
++            the  program runs.  Higher values of n induce greater
+             verbosity.
+ 
+        <STRONG>-w</STRONG> <EM>width</EM>
+             changes the output to <EM>width</EM> characters.
+ 
+-       <STRONG>-x</STRONG>   print   information  for  user-defined  capabilities.
++       <STRONG>-x</STRONG>   print  information  for  user-defined   capabilities.
+             These are extensions to the terminfo repertoire which
+             can be loaded using the <STRONG>-x</STRONG> option of <STRONG>tic</STRONG>.
+ 
+@@ -450,13 +465,13 @@
+ 
+ </PRE>
+ <H2><a name="h2-EXTENSIONS">EXTENSIONS</a></H2><PRE>
+-       The <STRONG>-0</STRONG>, <STRONG>-1</STRONG>, <STRONG>-E</STRONG>, <STRONG>-F</STRONG>, <STRONG>-G</STRONG>, <STRONG>-R</STRONG>, <STRONG>-T</STRONG>, <STRONG>-V</STRONG>, <STRONG>-a</STRONG>, <STRONG>-e</STRONG>,  <STRONG>-f</STRONG>,  <STRONG>-g</STRONG>,  <STRONG>-i</STRONG>,
+-       <STRONG>-l</STRONG>,  <STRONG>-p</STRONG>,  <STRONG>-q</STRONG>  and  <STRONG>-t</STRONG>  options  are  not supported in SVr4
++       The  <STRONG>-0</STRONG>,  <STRONG>-1</STRONG>,  <STRONG>-E</STRONG>, <STRONG>-F</STRONG>, <STRONG>-G</STRONG>, <STRONG>-R</STRONG>, <STRONG>-T</STRONG>, <STRONG>-V</STRONG>, <STRONG>-a</STRONG>, <STRONG>-e</STRONG>, <STRONG>-f</STRONG>, <STRONG>-g</STRONG>, <STRONG>-i</STRONG>,
++       <STRONG>-l</STRONG>, <STRONG>-p</STRONG>, <STRONG>-q</STRONG> and  <STRONG>-t</STRONG>  options  are  not  supported  in  SVr4
+        curses.
+ 
+        The <STRONG>-r</STRONG> option's notion of `termcap' capabilities is System
+-       V  Release  4's.   Actual  BSD curses versions will have a
+-       more restricted set.  To see only the 4.4BSD set,  use  <STRONG>-r</STRONG>
++       V Release 4's.  Actual BSD curses  versions  will  have  a
++       more  restricted  set.  To see only the 4.4BSD set, use <STRONG>-r</STRONG>
+        <STRONG>-RBSD</STRONG>.
+ 
+ 
+@@ -467,12 +482,12 @@
+ 
+ </PRE>
+ <H2><a name="h2-SEE-ALSO">SEE ALSO</a></H2><PRE>
+-       <STRONG><A HREF="captoinfo.1m.html">captoinfo(1m)</A></STRONG>,     <STRONG><A HREF="infotocap.1m.html">infotocap(1m)</A></STRONG>,     <STRONG><A HREF="tic.1m.html">tic(1m)</A></STRONG>,    <STRONG><A HREF="toe.1m.html">toe(1m)</A></STRONG>,
++       <STRONG><A HREF="captoinfo.1m.html">captoinfo(1m)</A></STRONG>,    <STRONG><A HREF="infotocap.1m.html">infotocap(1m)</A></STRONG>,     <STRONG><A HREF="tic.1m.html">tic(1m)</A></STRONG>,     <STRONG><A HREF="toe.1m.html">toe(1m)</A></STRONG>,
+        <STRONG><A HREF="ncurses.3x.html">curses(3x)</A></STRONG>, <STRONG><A HREF="terminfo.5.html">terminfo(5)</A></STRONG>.
+ 
+        http://invisible-island.net/ncurses/tctest.html
+ 
+-       This describes <STRONG>ncurses</STRONG> version 6.0 (patch 20150808).
++       This describes <STRONG>ncurses</STRONG> version 6.0 (patch 20150905).
+ 
+ 
+ </PRE>
+--- a/doc/html/man/infotocap.1m.html
++++ b/doc/html/man/infotocap.1m.html
+@@ -94,7 +94,7 @@
+ <H2><a name="h2-SEE-ALSO">SEE ALSO</a></H2><PRE>
+        <STRONG><A HREF="ncurses.3x.html">curses(3x)</A></STRONG>, <STRONG><A HREF="tic.1m.html">tic(1m)</A></STRONG>, <STRONG><A HREF="infocmp.1m.html">infocmp(1m)</A></STRONG>, <STRONG><A HREF="terminfo.5.html">terminfo(5)</A></STRONG>
+ 
+-       This describes <STRONG>ncurses</STRONG> version 6.0 (patch 20150808).
++       This describes <STRONG>ncurses</STRONG> version 6.0 (patch 20150905).
+ 
+ 
+ </PRE>
+--- a/doc/html/man/menu.3x.html
++++ b/doc/html/man/menu.3x.html
+@@ -227,7 +227,7 @@
+        <STRONG><A HREF="ncurses.3x.html">curses(3x)</A></STRONG> and related pages whose names begin "menu_" for
+        detailed descriptions of the entry points.
+ 
+-       This describes <STRONG>ncurses</STRONG> version 6.0 (patch 20150808).
++       This describes <STRONG>ncurses</STRONG> version 6.0 (patch 20150905).
+ 
+ 
+ 
+--- a/doc/html/man/ncurses.3x.html
++++ b/doc/html/man/ncurses.3x.html
+@@ -63,7 +63,7 @@
+        sonable optimization.  This implementation is "new curses"
+        (ncurses) and is the approved replacement for 4.4BSD clas-
+        sic  curses,  which has been discontinued.  This describes
+-       <STRONG>ncurses</STRONG> version 6.0 (patch 20150808).
++       <STRONG>ncurses</STRONG> version 6.0 (patch 20150905).
+ 
+        The <STRONG>ncurses</STRONG> library emulates the curses library of  System
+        V  Release  4  UNIX,  and  XPG4 (X/Open Portability Guide)
+--- a/doc/html/man/panel.3x.html
++++ b/doc/html/man/panel.3x.html
+@@ -218,7 +218,7 @@
+ <H2><a name="h2-SEE-ALSO">SEE ALSO</a></H2><PRE>
+        <STRONG><A HREF="ncurses.3x.html">curses(3x)</A></STRONG>, <STRONG><A HREF="curs_variables.3x.html">curs_variables(3x)</A></STRONG>,
+ 
+-       This describes <STRONG>ncurses</STRONG> version 6.0 (patch 20150808).
++       This describes <STRONG>ncurses</STRONG> version 6.0 (patch 20150905).
+ 
+ 
+ </PRE>
+--- a/doc/html/man/tabs.1.html
++++ b/doc/html/man/tabs.1.html
+@@ -168,7 +168,7 @@
+ <H2><a name="h2-SEE-ALSO">SEE ALSO</a></H2><PRE>
+        <STRONG><A HREF="tset.1.html">tset(1)</A></STRONG>, <STRONG><A HREF="infocmp.1m.html">infocmp(1m)</A></STRONG>, <STRONG><A HREF="ncurses.3x.html">curses(3x)</A></STRONG>, <STRONG><A HREF="terminfo.5.html">terminfo(5)</A></STRONG>.
+ 
+-       This describes <STRONG>ncurses</STRONG> version 6.0 (patch 20150808).
++       This describes <STRONG>ncurses</STRONG> version 6.0 (patch 20150905).
+ 
+ 
+ 
+--- a/doc/html/man/terminfo.5.html
++++ b/doc/html/man/terminfo.5.html
+@@ -78,7 +78,7 @@
+        nals by giving a set of capabilities which they  have,  by
+        specifying how to perform screen operations, and by speci-
+        fying padding requirements and  initialization  sequences.
+-       This describes <STRONG>ncurses</STRONG> version 6.0 (patch 20150808).
++       This describes <STRONG>ncurses</STRONG> version 6.0 (patch 20150905).
+ 
+        Entries in <EM>terminfo</EM> consist of a sequence of `,' separated
+        fields (embedded commas may be escaped with a backslash or
+--- a/doc/html/man/tic.1m.html
++++ b/doc/html/man/tic.1m.html
+@@ -1,6 +1,6 @@
+ <!-- 
+   ****************************************************************************
+-  * Copyright (c) 1998-2013,2014 Free Software Foundation, Inc.              *
++  * Copyright (c) 1998-2014,2015 Free Software Foundation, Inc.              *
+   *                                                                          *
+   * Permission is hereby granted, free of charge, to any person obtaining a  *
+   * copy of this software and associated documentation files (the            *
+@@ -26,7 +26,7 @@
+   * sale, use or other dealings in this Software without prior written       *
+   * authorization.                                                           *
+   ****************************************************************************
+-  * @Id: tic.1m,v 1.60 2014/05/24 22:00:11 tom Exp @
++  * @Id: tic.1m,v 1.61 2015/09/05 20:45:49 tom Exp @
+ -->
+ <!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01//EN">
+ <HTML>
+@@ -52,8 +52,8 @@
+ 
+ </PRE>
+ <H2><a name="h2-SYNOPSIS">SYNOPSIS</a></H2><PRE>
+-       <STRONG>tic</STRONG>  [<STRONG>-01CDGIKLNTUVacfgrstx</STRONG>]  [<STRONG>-e</STRONG> <EM>names</EM>] [<STRONG>-o</STRONG> <EM>dir</EM>] [<STRONG>-R</STRONG> <EM>sub-</EM>
+-       <EM>set</EM>] [<STRONG>-v</STRONG>[<EM>n</EM>]] [<STRONG>-w</STRONG>[<EM>n</EM>]] <EM>file</EM>
++       <STRONG>tic</STRONG>  [<STRONG>-01CDGIKLNTUVacfgqrstx</STRONG>]  [<STRONG>-e</STRONG> <EM>names</EM>] [<STRONG>-o</STRONG> <EM>dir</EM>] [<STRONG>-Q</STRONG>[<EM>n</EM>]]
++       [<STRONG>-R</STRONG> <EM>subset</EM>] [<STRONG>-v</STRONG>[<EM>n</EM>]] [<STRONG>-w</STRONG>[<EM>n</EM>]] <EM>file</EM>
+ 
+ 
+ </PRE>
+@@ -228,22 +228,35 @@
+        <STRONG>-o</STRONG><EM>dir</EM>  Write  compiled entries to given database location.
+               Overrides the TERMINFO environment variable.
+ 
++       <STRONG>-Q</STRONG><EM>n</EM>    Rather than show source in terminfo (text)  format,
++              print  the  compiled (binary) format in hexadecimal
++              or base64 form, depending on the option's value:
++
++               1  hexadecimal
++
++               2  base64
++
++               3  hexadecimal and base64
++
++       <STRONG>-q</STRONG>     Suppress comments  and  blank  lines  when  showing
++              translated source.
++
+        <STRONG>-R</STRONG><EM>subset</EM>
+-              Restrict output to a given subset.  This option  is
+-              for  use  with  archaic  versions  of terminfo like
++              Restrict  output to a given subset.  This option is
++              for use with  archaic  versions  of  terminfo  like
+               those on SVr1, Ultrix, or HP/UX that do not support
+-              the  full set of SVR4/XSI Curses terminfo; and out-
++              the full set of SVR4/XSI Curses terminfo; and  out-
+               right broken ports like AIX 3.x that have their own
+-              extensions  incompatible  with SVr4/XSI.  Available
++              extensions incompatible with  SVr4/XSI.   Available
+               subsets  are  "SVr1",  "Ultrix",  "HP",  "BSD"  and
+               "AIX"; see <STRONG><A HREF="terminfo.5.html">terminfo(5)</A></STRONG> for details.
+ 
+-       <STRONG>-r</STRONG>     Force  entry  resolution (so there are no remaining
+-              tc capabilities) even  when  doing  translation  to
++       <STRONG>-r</STRONG>     Force entry resolution (so there are  no  remaining
++              tc  capabilities)  even  when  doing translation to
+               termcap format.  This may be needed if you are pre-
+-              paring a termcap file for a termcap  library  (such
+-              as  GNU  termcap through version 1.3 or BSD termcap
+-              through 4.3BSD) that does not  handle  multiple  tc
++              paring  a  termcap file for a termcap library (such
++              as GNU termcap through version 1.3 or  BSD  termcap
++              through  4.3BSD)  that  does not handle multiple tc
+               capabilities per entry.
+ 
+        <STRONG>-s</STRONG>     Summarize the compile by showing the database loca-
+@@ -251,28 +264,28 @@
+               of entries which are compiled.
+ 
+        <STRONG>-T</STRONG>     eliminates size-restrictions on the generated text.
+-              This is mainly useful  for  testing  and  analysis,
+-              since  the compiled descriptions are limited (e.g.,
++              This  is  mainly  useful  for testing and analysis,
++              since the compiled descriptions are limited  (e.g.,
+               1023 for termcap, 4096 for terminfo).
+ 
+-       <STRONG>-t</STRONG>     tells <STRONG>tic</STRONG> to  discard  commented-out  capabilities.
++       <STRONG>-t</STRONG>     tells  <STRONG>tic</STRONG>  to  discard commented-out capabilities.
+               Normally when translating from terminfo to termcap,
+               untranslatable capabilities are commented-out.
+ 
+-       <STRONG>-U</STRONG>   tells <STRONG>tic</STRONG> to not post-process the data after  parsing
+-            the  source  file.  Normally, it infers data which is
+-            commonly missing in older terminfo data, or in  term-
++       <STRONG>-U</STRONG>   tells  <STRONG>tic</STRONG> to not post-process the data after parsing
++            the source file.  Normally, it infers data  which  is
++            commonly  missing in older terminfo data, or in term-
+             caps.
+ 
+        <STRONG>-V</STRONG>   reports the version of ncurses which was used in this
+             program, and exits.
+ 
+-       <STRONG>-v</STRONG><EM>n</EM>  specifies that (verbose) output be written  to  stan-
+-            dard  error trace information showing <STRONG>tic</STRONG>'s progress.
+-            The optional parameter <EM>n</EM> is a number from  1  to  10,
+-            inclusive,  indicating the desired level of detail of
+-            information.  If <EM>n</EM> is omitted, the default  level  is
+-            1.   If  <EM>n</EM> is specified and greater than 1, the level
++       <STRONG>-v</STRONG><EM>n</EM>  specifies  that  (verbose) output be written to stan-
++            dard error trace information showing <STRONG>tic</STRONG>'s  progress.
++            The  optional  parameter  <EM>n</EM> is a number from 1 to 10,
++            inclusive, indicating the desired level of detail  of
++            information.   If  <EM>n</EM> is omitted, the default level is
++            1.  If <EM>n</EM> is specified and greater than 1,  the  level
+             of detail is increased.
+ 
+             The debug flag levels are as follows:
+@@ -289,32 +302,32 @@
+ 
+             8      List of tokens encountered by scanner
+ 
+-            9      All values computed  in  construction  of  the
++            9      All  values  computed  in  construction of the
+                    hash table
+ 
+-            If  the debug level <EM>n</EM> is not given, it is taken to be
++            If the debug level <EM>n</EM> is not given, it is taken to  be
+             one.
+ 
+-       <STRONG>-w</STRONG><EM>n</EM>  specifies the width of the output.  The parameter  is
++       <STRONG>-w</STRONG><EM>n</EM>  specifies  the width of the output.  The parameter is
+             optional.  If it is omitted, it defaults to 60.
+ 
+        <STRONG>-x</STRONG>   Treat unknown capabilities as user-defined.  That is,
+-            if you supply a capability name which  <STRONG>tic</STRONG>  does  not
++            if  you  supply  a capability name which <STRONG>tic</STRONG> does not
+             recognize, it will infer its type (boolean, number or
+-            string) from the syntax and make  an  extended  table
++            string)  from  the  syntax and make an extended table
+             entry  for  that.   User-defined  capability  strings
+-            whose name begins with "k" are  treated  as  function
++            whose  name  begins  with "k" are treated as function
+             keys.
+ 
+ 
+ </PRE>
+ <H3><a name="h3-PARAMETERS">PARAMETERS</a></H3><PRE>
+        <EM>file</EM>   contains one or more <STRONG>terminfo</STRONG> terminal descriptions
+-              in source format [see <STRONG><A HREF="terminfo.5.html">terminfo(5)</A></STRONG>].  Each  descrip-
+-              tion  in  the  file describes the capabilities of a
++              in  source format [see <STRONG><A HREF="terminfo.5.html">terminfo(5)</A></STRONG>].  Each descrip-
++              tion in the file describes the  capabilities  of  a
+               particular terminal.
+ 
+-              If <EM>file</EM> is "-", then the  data  is  read  from  the
++              If  <EM>file</EM>  is  "-",  then  the data is read from the
+               standard input.  The <EM>file</EM> parameter may also be the
+               path of a character-device.
+ 
+@@ -325,62 +338,62 @@
+        umented in <STRONG><A HREF="terminfo.5.html">terminfo(5)</A></STRONG>.  The exception is the <STRONG>use</STRONG> capabil-
+        ity.
+ 
+-       When a <STRONG>use</STRONG>=<EM>entry</EM>-<EM>name</EM> field is discovered  in  a  terminal
+-       entry  currently  being  compiled, <STRONG>tic</STRONG> reads in the binary
+-       from <STRONG>/usr/share/terminfo</STRONG> to complete the entry.   (Entries
+-       created  from <EM>file</EM> will be used first.  <STRONG>tic</STRONG> duplicates the
++       When  a  <STRONG>use</STRONG>=<EM>entry</EM>-<EM>name</EM>  field is discovered in a terminal
++       entry currently being compiled, <STRONG>tic</STRONG> reads  in  the  binary
++       from  <STRONG>/usr/share/terminfo</STRONG> to complete the entry.  (Entries
++       created from <EM>file</EM> will be used first.  <STRONG>tic</STRONG> duplicates  the
+        capabilities in <EM>entry</EM>-<EM>name</EM> for the current entry, with the
+-       exception   of  those  capabilities  that  explicitly  are
++       exception  of  those  capabilities  that  explicitly   are
+        defined in the current entry.
+ 
+-       When   an   entry,   e.g.,   <STRONG>entry_name_1</STRONG>,   contains    a
+-       <STRONG>use=</STRONG><EM>entry</EM>_<EM>name</EM>_<EM>2</EM>   field,  any  canceled  capabilities  in
+-       <EM>entry</EM>_<EM>name</EM>_<EM>2</EM> must also appear in <STRONG>entry_name_1</STRONG> before  <STRONG>use=</STRONG>
++       When    an   entry,   e.g.,   <STRONG>entry_name_1</STRONG>,   contains   a
++       <STRONG>use=</STRONG><EM>entry</EM>_<EM>name</EM>_<EM>2</EM>  field,  any  canceled  capabilities   in
++       <EM>entry</EM>_<EM>name</EM>_<EM>2</EM>  must also appear in <STRONG>entry_name_1</STRONG> before <STRONG>use=</STRONG>
+        for these capabilities to be canceled in <STRONG>entry_name_1</STRONG>.
+ 
+        Total compiled entries cannot exceed 4096 bytes.  The name
+-       field cannot exceed 512 bytes.  Terminal  names  exceeding
+-       the  maximum  alias  length (32 characters on systems with
++       field  cannot  exceed 512 bytes.  Terminal names exceeding
++       the maximum alias length (32 characters  on  systems  with
+        long filenames, 14 characters otherwise) will be truncated
+-       to  the maximum alias length and a warning message will be
++       to the maximum alias length and a warning message will  be
+        printed.
+ 
+ 
+ </PRE>
+ <H2><a name="h2-COMPATIBILITY">COMPATIBILITY</a></H2><PRE>
+-       There is some evidence that historic  <STRONG>tic</STRONG>  implementations
+-       treated  description  fields with no whitespace in them as
+-       additional aliases or short names.  This <STRONG>tic</STRONG> does  not  do
+-       that,  but  it  does  warn  when description fields may be
++       There  is  some evidence that historic <STRONG>tic</STRONG> implementations
++       treated description fields with no whitespace in  them  as
++       additional  aliases  or short names.  This <STRONG>tic</STRONG> does not do
++       that, but it does warn  when  description  fields  may  be
+        treated that way and check them for dangerous characters.
+ 
+ 
+ </PRE>
+ <H2><a name="h2-EXTENSIONS">EXTENSIONS</a></H2><PRE>
+        Unlike the SVr4 <STRONG>tic</STRONG> command, this implementation can actu-
+-       ally  compile  termcap  sources.  In fact, entries in ter-
+-       minfo and termcap syntax can be mixed in a  single  source
++       ally compile termcap sources.  In fact,  entries  in  ter-
++       minfo  and  termcap syntax can be mixed in a single source
+        file.  See <STRONG><A HREF="terminfo.5.html">terminfo(5)</A></STRONG> for the list of termcap names taken
+        to be equivalent to terminfo names.
+ 
+-       The SVr4 manual pages are  not  clear  on  the  resolution
+-       rules  for  <STRONG>use</STRONG>  capabilities.  This implementation of <STRONG>tic</STRONG>
++       The  SVr4  manual  pages  are  not clear on the resolution
++       rules for <STRONG>use</STRONG> capabilities.  This  implementation  of  <STRONG>tic</STRONG>
+        will find <STRONG>use</STRONG> targets anywhere in the source file, or any-
+-       where  in the file tree rooted at <STRONG>TERMINFO</STRONG> (if <STRONG>TERMINFO</STRONG> is
++       where in the file tree rooted at <STRONG>TERMINFO</STRONG> (if <STRONG>TERMINFO</STRONG>  is
+        defined), or in the user's <EM>$HOME/.terminfo</EM> database (if it
+-       exists),  or  (finally) anywhere in the system's file tree
++       exists), or (finally) anywhere in the system's  file  tree
+        of compiled entries.
+ 
+-       The error messages from this <STRONG>tic</STRONG> have the same  format  as
+-       GNU  C  error  messages,  and can be parsed by GNU Emacs's
++       The  error  messages from this <STRONG>tic</STRONG> have the same format as
++       GNU C error messages, and can be  parsed  by  GNU  Emacs's
+        compile facility.
+ 
+-       The <STRONG>-0</STRONG>, <STRONG>-1</STRONG>, <STRONG>-C</STRONG>, <STRONG>-G</STRONG>, <STRONG>-I</STRONG>, <STRONG>-N</STRONG>, <STRONG>-R</STRONG>, <STRONG>-T</STRONG>, <STRONG>-V</STRONG>, <STRONG>-a</STRONG>,  <STRONG>-e</STRONG>,  <STRONG>-f</STRONG>,  <STRONG>-g</STRONG>,
+-       <STRONG>-o</STRONG>,  <STRONG>-r</STRONG>,  <STRONG>-s</STRONG>,  <STRONG>-t</STRONG>  and  <STRONG>-x</STRONG> options are not supported under
++       The  <STRONG>-0</STRONG>,  <STRONG>-1</STRONG>,  <STRONG>-C</STRONG>, <STRONG>-G</STRONG>, <STRONG>-I</STRONG>, <STRONG>-N</STRONG>, <STRONG>-R</STRONG>, <STRONG>-T</STRONG>, <STRONG>-V</STRONG>, <STRONG>-a</STRONG>, <STRONG>-e</STRONG>, <STRONG>-f</STRONG>, <STRONG>-g</STRONG>,
++       <STRONG>-o</STRONG>, <STRONG>-r</STRONG>, <STRONG>-s</STRONG>, <STRONG>-t</STRONG> and <STRONG>-x</STRONG>  options  are  not  supported  under
+        SVr4.  The SVr4 <STRONG>-c</STRONG> mode does not report bad use links.
+ 
+-       System V does not compile entries to or read entries  from
+-       your  <EM>$HOME/.terminfo</EM>  database unless TERMINFO is explic-
++       System  V does not compile entries to or read entries from
++       your <EM>$HOME/.terminfo</EM> database unless TERMINFO  is  explic-
+        itly set to it.
+ 
+ 
+@@ -392,10 +405,10 @@
+ 
+ </PRE>
+ <H2><a name="h2-SEE-ALSO">SEE ALSO</a></H2><PRE>
+-       <STRONG><A HREF="infocmp.1m.html">infocmp(1m)</A></STRONG>,   <STRONG><A HREF="captoinfo.1m.html">captoinfo(1m)</A></STRONG>,   <STRONG><A HREF="infotocap.1m.html">infotocap(1m)</A></STRONG>,    <STRONG><A HREF="toe.1m.html">toe(1m)</A></STRONG>,
++       <STRONG><A HREF="infocmp.1m.html">infocmp(1m)</A></STRONG>,    <STRONG><A HREF="captoinfo.1m.html">captoinfo(1m)</A></STRONG>,   <STRONG><A HREF="infotocap.1m.html">infotocap(1m)</A></STRONG>,   <STRONG><A HREF="toe.1m.html">toe(1m)</A></STRONG>,
+        <STRONG><A HREF="ncurses.3x.html">curses(3x)</A></STRONG>, <STRONG><A HREF="term.5.html">term(5)</A></STRONG>.  <STRONG><A HREF="terminfo.5.html">terminfo(5)</A></STRONG>.
+ 
+-       This describes <STRONG>ncurses</STRONG> version 6.0 (patch 20150808).
++       This describes <STRONG>ncurses</STRONG> version 6.0 (patch 20150905).
+ 
+ 
+ </PRE>
+--- a/doc/html/man/toe.1m.html
++++ b/doc/html/man/toe.1m.html
+@@ -1,6 +1,6 @@
+ <!-- 
+   ****************************************************************************
+-  * Copyright (c) 1998-2010,2011 Free Software Foundation, Inc.              *
++  * Copyright (c) 1998-2011,2015 Free Software Foundation, Inc.              *
+   *                                                                          *
+   * Permission is hereby granted, free of charge, to any person obtaining a  *
+   * copy of this software and associated documentation files (the            *
+@@ -26,7 +26,7 @@
+   * sale, use or other dealings in this Software without prior written       *
+   * authorization.                                                           *
+   ****************************************************************************
+-  * @Id: toe.1m,v 1.26 2012/01/01 00:40:51 tom Exp @
++  * @Id: toe.1m,v 1.27 2015/08/29 22:04:48 tom Exp @
+ -->
+ <!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01//EN">
+ <HTML>
+@@ -77,34 +77,37 @@
+               marks entries which differ, and "+"  marks  equiva-
+               lent entries.
+ 
++              Without  the  <STRONG>-s</STRONG>  option,  <STRONG>toe</STRONG>  does not attempt to
++              merge duplicates in its report
++
+        <STRONG>-s</STRONG>     sort the output by the entry names.
+ 
+        <STRONG>-u</STRONG> <EM>file</EM>
+-              says  to  write  a  report  to the standard output,
+-              listing dependencies in the given  terminfo/termcap
+-              source  file.  The report condenses the `use' rela-
+-              tion: each line consists of the primary name  of  a
+-              terminal  that  has use capabilities, followed by a
++              says to write a  report  to  the  standard  output,
++              listing  dependencies in the given terminfo/termcap
++              source file.  The report condenses the `use'  rela-
++              tion:  each  line consists of the primary name of a
++              terminal that has use capabilities, followed  by  a
+               colon, followed by the whitespace-separated primary
+-              names  of  all  terminals  which occur in those use
++              names of all terminals which  occur  in  those  use
+               capabilities, followed by a newline
+ 
+        <STRONG>-U</STRONG> <EM>file</EM>
+-              says to write a  report  to  the  standard  output,
+-              listing  reverse  dependencies  in  the  given ter-
++              says  to  write  a  report  to the standard output,
++              listing reverse  dependencies  in  the  given  ter-
+               minfo/termcap source file.  The report reverses the
+-              `use'  relation:  each line consists of the primary
++              `use' relation: each line consists of  the  primary
+               name of a terminal that occurs in use capabilities,
+-              followed  by  a  colon, followed by the whitespace-
+-              separated primary  names  of  all  terminals  which
++              followed by a colon, followed  by  the  whitespace-
++              separated  primary  names  of  all  terminals which
+               depend on it, followed by a newline.
+ 
+        <STRONG>-v</STRONG><EM>n</EM>    specifies that (verbose) output be written to stan-
+-              dard error, showing <STRONG>toe</STRONG>'s progress.   The  optional
+-              parameter  <EM>n</EM>  is a number from 1 to 10, interpreted
++              dard  error,  showing <STRONG>toe</STRONG>'s progress.  The optional
++              parameter <EM>n</EM> is a number from 1 to  10,  interpreted
+               as for <STRONG><A HREF="tic.1m.html">tic(1m)</A></STRONG>.
+ 
+-       <STRONG>-V</STRONG>     reports the version of ncurses which  was  used  in
++       <STRONG>-V</STRONG>     reports  the  version  of ncurses which was used in
+               this program, and exits.
+ 
+ 
+@@ -116,10 +119,10 @@
+ 
+ </PRE>
+ <H2><a name="h2-SEE-ALSO">SEE ALSO</a></H2><PRE>
+-       <STRONG><A HREF="tic.1m.html">tic(1m)</A></STRONG>,    <STRONG><A HREF="infocmp.1m.html">infocmp(1m)</A></STRONG>,   <STRONG><A HREF="captoinfo.1m.html">captoinfo(1m)</A></STRONG>,   <STRONG><A HREF="infotocap.1m.html">infotocap(1m)</A></STRONG>,
++       <STRONG><A HREF="tic.1m.html">tic(1m)</A></STRONG>,   <STRONG><A HREF="infocmp.1m.html">infocmp(1m)</A></STRONG>,   <STRONG><A HREF="captoinfo.1m.html">captoinfo(1m)</A></STRONG>,    <STRONG><A HREF="infotocap.1m.html">infotocap(1m)</A></STRONG>,
+        <STRONG><A HREF="ncurses.3x.html">curses(3x)</A></STRONG>, <STRONG><A HREF="terminfo.5.html">terminfo(5)</A></STRONG>.
+ 
+-       This describes <STRONG>ncurses</STRONG> version 6.0 (patch 20150808).
++       This describes <STRONG>ncurses</STRONG> version 6.0 (patch 20150905).
+ 
+ 
+ 
+--- a/doc/html/man/tput.1.html
++++ b/doc/html/man/tput.1.html
+@@ -338,7 +338,7 @@
+ <H2><a name="h2-SEE-ALSO">SEE ALSO</a></H2><PRE>
+        <STRONG><A HREF="clear.1.html">clear(1)</A></STRONG>, <STRONG>stty(1)</STRONG>, <STRONG><A HREF="tabs.1.html">tabs(1)</A></STRONG>, <STRONG><A HREF="terminfo.5.html">terminfo(5)</A></STRONG>, <STRONG><A HREF="curs_termcap.3x.html">curs_termcap(3x)</A></STRONG>.
+ 
+-       This describes <STRONG>ncurses</STRONG> version 6.0 (patch 20150808).
++       This describes <STRONG>ncurses</STRONG> version 6.0 (patch 20150905).
+ 
+ 
+ 
+--- a/doc/html/man/tset.1.html
++++ b/doc/html/man/tset.1.html
+@@ -319,7 +319,7 @@
+        <STRONG>csh(1)</STRONG>,   <STRONG>sh(1)</STRONG>,   <STRONG>stty(1)</STRONG>,   <STRONG><A HREF="curs_terminfo.3x.html">curs_terminfo(3x)</A></STRONG>,   <STRONG>tty(4)</STRONG>,
+        <STRONG><A HREF="terminfo.5.html">terminfo(5)</A></STRONG>, <STRONG>ttys(5)</STRONG>, <STRONG>environ(7)</STRONG>
+ 
+-       This describes <STRONG>ncurses</STRONG> version 6.0 (patch 20150808).
++       This describes <STRONG>ncurses</STRONG> version 6.0 (patch 20150905).
+ 
+ 
+ 
+--- a/include/term_entry.h
++++ b/include/term_entry.h
+@@ -32,7 +32,7 @@
+  *     and: Thomas E. Dickey                        1998-on                 *
+  ****************************************************************************/
+ 
+-/* $Id: term_entry.h,v 1.46 2015/08/22 23:04:25 tom Exp $ */
++/* $Id: term_entry.h,v 1.47 2015/08/30 00:41:20 tom Exp $ */
+ 
+ /*
+  *	term_entry.h -- interface to entry-manipulation code
+@@ -172,6 +172,7 @@
+ /* write_entry.c: writing an entry to the file system */
+ extern NCURSES_EXPORT(void) _nc_set_writedir (const char *);
+ extern NCURSES_EXPORT(void) _nc_write_entry (TERMTYPE *const);
++extern NCURSES_EXPORT(int) _nc_write_object(TERMTYPE *, char *, unsigned *, unsigned);
+ 
+ /* comp_parse.c: entry list handling */
+ extern NCURSES_EXPORT(void) _nc_read_entry_source (FILE*, char*, int, bool, bool (*)(ENTRY*));
+--- a/man/curs_addch.3x
++++ b/man/curs_addch.3x
+@@ -27,7 +27,7 @@
+ .\" authorization.                                                           *
+ .\"***************************************************************************
+ .\"
+-.\" $Id: curs_addch.3x,v 1.36 2015/07/16 09:14:44 tom Exp $
++.\" $Id: curs_addch.3x,v 1.37 2015/09/05 21:13:25 tom Exp $
+ .TH curs_addch 3X ""
+ .de bP
+ .IP \(bu 4
+@@ -110,7 +110,10 @@
+ The following variables may be used to add line drawing characters to the
+ screen with routines of the \fBaddch\fR family.  The default character listed
+ below is used if the \fBacsc\fR capability does not define a terminal-specific
+-replacement for it.
++replacement for it,
++or if the terminal and locale configuration requires Unicode but the
++library is unable to use Unicode.
++.PP
+ The names are taken from VT100 nomenclature.
+ .PP
+ .TS
+@@ -185,6 +188,18 @@
+ embedded, and a second-hand list of their character descriptions has come
+ to light.  The ACS-prefixed names for them were invented for \fBncurses\fR(3X).
+ .LP
++The \fIdisplayed\fP values for the \fIACS_\fP and \fIWACS_\fP constants
++depend on 
++.bP
++the library configuration, i.e., \fBncurses\fP versus \fBncursesw\fP,
++where the latter is capable of displaying Unicode while the former is not, and
++.bP
++whether the \fIlocale\fP uses UTF-8 encoding.
++.LP
++In certain cases, the terminal is unable to display line-drawing characters
++except by using UTF-8 (see the discussion of \fBNCURSES_NO_UTF8_ACS\fP in
++ncurses(3X)).
++.LP
+ The \fBTABSIZE\fR variable is implemented in some versions of curses,
+ but is not part of X/Open curses.
+ .LP
+--- a/man/curs_attr.3x
++++ b/man/curs_attr.3x
+@@ -27,7 +27,7 @@
+ .\" authorization.                                                           *
+ .\"***************************************************************************
+ .\"
+-.\" $Id: curs_attr.3x,v 1.40 2015/07/20 23:35:38 tom Exp $
++.\" $Id: curs_attr.3x,v 1.41 2015/09/05 21:13:25 tom Exp $
+ .TH curs_attr 3X ""
+ .na
+ .hy 0
+@@ -168,7 +168,7 @@
+ for \fBstdscr\fR.
+ .PP
+ There is no corresponding \fBattrget\fP function as such in X/Open Curses,
+-although ncurses provides \fBgetattrs\fP (see curs_legacy(3x)).
++although ncurses provides \fBgetattrs\fP (see curs_legacy(3X)).
+ .SS chgat
+ .PP
+ The routine \fBchgat\fR changes the attributes of a given number of characters
+@@ -188,7 +188,7 @@
+ .SS Attributes
+ The following video attributes, defined in \fB<curses.h>\fR, can be passed to
+ the routines \fBattron\fR, \fBattroff\fR, and \fBattrset\fR, or OR'd with the
+-characters passed to \fBaddch\fR (see curs_addch(3x)).
++characters passed to \fBaddch\fR (see curs_addch(3X)).
+ .PP
+ .RS
+ .TS
+--- a/man/curs_threads.3x
++++ b/man/curs_threads.3x
+@@ -26,7 +26,7 @@
+ .\" authorization.                                                           *
+ .\"***************************************************************************
+ .\"
+-.\" $Id: curs_threads.3x,v 1.21 2015/04/11 10:23:49 tom Exp $
++.\" $Id: curs_threads.3x,v 1.22 2015/09/05 21:13:25 tom Exp $
+ .TH curs_threads 3X ""
+ .de bP
+ .IP \(bu 4
+@@ -67,7 +67,7 @@
+ use of the global variables when configured for threading.
+ .PP
+ In addition to forcing access to members of the \fBWINDOW\fP structure
+-to be via functions (see \fBcurs_opaque\fP(3x)),
++to be via functions (see \fBcurs_opaque\fP(3X)),
+ it makes functions of the common global variables,
+ e.g.,
+ COLORS,
+--- a/man/infocmp.1m
++++ b/man/infocmp.1m
+@@ -27,7 +27,7 @@
+ .\" authorization.                                                           *
+ .\"***************************************************************************
+ .\"
+-.\" $Id: infocmp.1m,v 1.56 2015/05/23 20:50:00 tom Exp $
++.\" $Id: infocmp.1m,v 1.57 2015/09/05 20:50:22 tom Exp $
+ .TH @INFOCMP@ 1M ""
+ .ds n 5
+ .de bP
+@@ -65,7 +65,7 @@
+ x\
+ \fR]
+ .br
+-      [\fB\-v\fR \fIn\fR] [\fB\-s d\fR| \fBi\fR| \fBl\fR| \fBc\fR] [\fB\-R \fR\fBsubset\fR]
++      [\fB\-v\fR \fIn\fR] [\fB\-s d\fR| \fBi\fR| \fBl\fR| \fBc\fR] [\fB\-Q\fR \fIn\fR] [\fB\-R \fR\fBsubset\fR]
+ .br
+       [\fB\-w\fR\ \fIwidth\fR] [\fB\-A\fR\ \fIdirectory\fR] [\fB\-B\fR\ \fIdirectory\fR]
+ .br
+@@ -390,9 +390,31 @@
+ \fB\-p\fR
+ Ignore padding specifications when comparing strings.
+ .TP 5
++\fB\-Q\fR \fIn\fR
++Rather than show source in terminfo (text) format,
++print the compiled (binary) format in hexadecimal or base64 form,
++depending on the option's value:
++.RS 8
++.TP 3
++1
++hexadecimal
++.TP 3
++2
++base64
++.TP 3
++3
++hexadecimal and base64
++.RE
++.TP 5
+ \fB\-q\fR
++This makes the output a little shorter:
++.RS
++.bP
+ Make the comparison listing shorter by omitting subheadings, and using
+ "\-" for absent capabilities, "@" for canceled rather than "NULL".
++.bP
++Omit the "Reconstructed from" comment for source listings.
++.RE
+ .TP 5
+ \fB\-R\fR\fIsubset\fR
+ Restrict output to a given subset.
+--- a/man/tic.1m
++++ b/man/tic.1m
+@@ -1,5 +1,5 @@
+ .\"***************************************************************************
+-.\" Copyright (c) 1998-2013,2014 Free Software Foundation, Inc.              *
++.\" Copyright (c) 1998-2014,2015 Free Software Foundation, Inc.              *
+ .\"                                                                          *
+ .\" Permission is hereby granted, free of charge, to any person obtaining a  *
+ .\" copy of this software and associated documentation files (the            *
+@@ -26,7 +26,7 @@
+ .\" authorization.                                                           *
+ .\"***************************************************************************
+ .\"
+-.\" $Id: tic.1m,v 1.60 2014/05/24 22:00:11 tom Exp $
++.\" $Id: tic.1m,v 1.61 2015/09/05 20:45:49 tom Exp $
+ .TH @TIC@ 1M ""
+ .ie \n(.g .ds `` \(lq
+ .el       .ds `` ``
+@@ -58,6 +58,7 @@
+ c\
+ f\
+ g\
++q\
+ r\
+ s\
+ t\
+@@ -65,6 +66,7 @@
+ \fR]
+ [\fB\-e\fR \fInames\fR]
+ [\fB\-o\fR \fIdir\fR]
++[\fB\-Q\fR[\fIn\fR]]
+ [\fB\-R\fR \fIsubset\fR]
+ [\fB\-v\fR[\fIn\fR]]
+ [\fB\-w\fR[\fIn\fR]]
+@@ -243,6 +245,25 @@
+ Write compiled entries to given database location.
+ Overrides the TERMINFO environment variable.
+ .TP
++\fB\-Q\fR\fIn\fR
++Rather than show source in terminfo (text) format,
++print the compiled (binary) format in hexadecimal or base64 form,
++depending on the option's value:
++.RS 8
++.TP 3
++1
++hexadecimal
++.TP 3
++2
++base64
++.TP 3
++3
++hexadecimal and base64
++.RE
++.TP
++\fB\-q\fR
++Suppress comments and blank lines when showing translated source.
++.TP
+ \fB\-R\fR\fIsubset\fR
+ Restrict output to a given subset.
+ This option is for use with archaic
+--- a/man/toe.1m
++++ b/man/toe.1m
+@@ -1,5 +1,5 @@
+ .\"***************************************************************************
+-.\" Copyright (c) 1998-2010,2011 Free Software Foundation, Inc.              *
++.\" Copyright (c) 1998-2011,2015 Free Software Foundation, Inc.              *
+ .\"                                                                          *
+ .\" Permission is hereby granted, free of charge, to any person obtaining a  *
+ .\" copy of this software and associated documentation files (the            *
+@@ -26,7 +26,7 @@
+ .\" authorization.                                                           *
+ .\"***************************************************************************
+ .\"
+-.\" $Id: toe.1m,v 1.26 2012/01/01 00:40:51 tom Exp $
++.\" $Id: toe.1m,v 1.27 2015/08/29 22:04:48 tom Exp $
+ .TH @TOE@ 1M ""
+ .ds n 5
+ .ds d @TERMINFO@
+@@ -58,6 +58,9 @@
+ showing (like \fBconflict\fP(1)) which entries which 
+ belong to a given terminal database.
+ An "*" marks entries which differ, and "+" marks equivalent entries.
++.IP
++Without the \fB\-s\fP option, \fB@TOE@\fR does not attempt to merge
++duplicates in its report
+ .TP
+ \fB\-s\fR
+ sort the output by the entry names.
+--- a/ncurses/tinfo/write_entry.c
++++ b/ncurses/tinfo/write_entry.c
+@@ -1,5 +1,5 @@
+ /****************************************************************************
+- * Copyright (c) 1998-2013,2014 Free Software Foundation, Inc.              *
++ * Copyright (c) 1998-2014,2015 Free Software Foundation, Inc.              *
+  *                                                                          *
+  * Permission is hereby granted, free of charge, to any person obtaining a  *
+  * copy of this software and associated documentation files (the            *
+@@ -47,12 +47,11 @@
+ #define TRACE_OUT(p)		/*nothing */
+ #endif
+ 
+-MODULE_ID("$Id: write_entry.c,v 1.92 2014/11/01 14:47:00 tom Exp $")
++MODULE_ID("$Id: write_entry.c,v 1.93 2015/09/05 21:24:29 tom Exp $")
+ 
+ static int total_written;
+ 
+ static int make_db_root(const char *);
+-static int write_object(TERMTYPE *, char *, unsigned *, unsigned);
+ 
+ #if !USE_HASHED_DB
+ static void
+@@ -69,7 +68,7 @@
+     }
+     DEBUG(1, ("Created %s", filename));
+ 
+-    if (write_object(tp, buffer, &offset, limit) == ERR
++    if (_nc_write_object(tp, buffer, &offset, limit) == ERR
+ 	|| fwrite(buffer, sizeof(char), (size_t) offset, fp) != offset) {
+ 	_nc_syserr_abort("error writing %s/%s", _nc_tic_dir(0), filename);
+     }
+@@ -316,7 +315,7 @@
+     _nc_set_type(first_name);
+ 
+ #if USE_HASHED_DB
+-    if (write_object(tp, buffer + 1, &offset, limit - 1) != ERR) {
++    if (_nc_write_object(tp, buffer + 1, &offset, limit - 1) != ERR) {
+ 	DB *capdb = _nc_db_open(_nc_tic_dir(0), TRUE);
+ 	DBT key, data;
+ 
+@@ -620,8 +619,8 @@
+ }
+ #endif
+ 
+-static int
+-write_object(TERMTYPE *tp, char *buffer, unsigned *offset, unsigned limit)
++NCURSES_EXPORT(int)
++_nc_write_object(TERMTYPE *tp, char *buffer, unsigned *offset, unsigned limit)
+ {
+     char *namelist;
+     size_t namelen, boolmax, nummax, strmax;
+--- a/package/debian-mingw/changelog
++++ b/package/debian-mingw/changelog
+@@ -1,8 +1,8 @@
+-ncurses6 (6.0+20150822) unstable; urgency=low
++ncurses6 (6.0+20150905) unstable; urgency=low
+ 
+   * latest weekly patch
+ 
+- -- Thomas E. Dickey <dickey@invisible-island.net>  Mon, 17 Aug 2015 04:41:12 -0400
++ -- Thomas E. Dickey <dickey@invisible-island.net>  Sat, 05 Sep 2015 17:14:03 -0400
+ 
+ ncurses6 (5.9-20131005) unstable; urgency=low
+ 
+--- a/package/debian-mingw64/changelog
++++ b/package/debian-mingw64/changelog
+@@ -1,8 +1,8 @@
+-ncurses6 (6.0+20150822) unstable; urgency=low
++ncurses6 (6.0+20150905) unstable; urgency=low
+ 
+   * latest weekly patch
+ 
+- -- Thomas E. Dickey <dickey@invisible-island.net>  Mon, 17 Aug 2015 04:41:12 -0400
++ -- Thomas E. Dickey <dickey@invisible-island.net>  Sat, 05 Sep 2015 17:14:03 -0400
+ 
+ ncurses6 (5.9-20131005) unstable; urgency=low
+ 
+--- a/package/debian/changelog
++++ b/package/debian/changelog
+@@ -1,8 +1,8 @@
+-ncurses6 (6.0+20150822) unstable; urgency=low
++ncurses6 (6.0+20150905) unstable; urgency=low
+ 
+   * latest weekly patch
+ 
+- -- Thomas E. Dickey <dickey@invisible-island.net>  Mon, 17 Aug 2015 04:41:12 -0400
++ -- Thomas E. Dickey <dickey@invisible-island.net>  Sat, 05 Sep 2015 17:14:03 -0400
+ 
+ ncurses6 (5.9-20120608) unstable; urgency=low
+ 
+--- a/package/mingw-ncurses.nsi
++++ b/package/mingw-ncurses.nsi
+@@ -1,4 +1,4 @@
+-; $Id: mingw-ncurses.nsi,v 1.120 2015/08/17 08:41:12 tom Exp $
++; $Id: mingw-ncurses.nsi,v 1.122 2015/09/05 21:14:03 tom Exp $
+ 
+ ; TODO add examples
+ ; TODO bump ABI to 6
+@@ -10,7 +10,7 @@
+ !define VERSION_MAJOR "6"
+ !define VERSION_MINOR "0"
+ !define VERSION_YYYY  "2015"
+-!define VERSION_MMDD  "0822"
++!define VERSION_MMDD  "0905"
+ !define VERSION_PATCH ${VERSION_YYYY}${VERSION_MMDD}
+ 
+ !define MY_ABI   "5"
+--- a/package/mingw-ncurses.spec
++++ b/package/mingw-ncurses.spec
+@@ -3,7 +3,7 @@
+ Summary: shared libraries for terminal handling
+ Name: mingw32-ncurses6
+ Version: 6.0
+-Release: 20150822
++Release: 20150905
+ License: X11
+ Group: Development/Libraries
+ Source: ncurses-%{version}-%{release}.tgz
+--- a/package/ncurses.map
++++ b/package/ncurses.map
+@@ -1,4 +1,4 @@
+-# $Id: ncurses.map,v 1.34 2015/06/27 22:28:50 tom Exp $
++# $Id: ncurses.map,v 1.35 2015/09/05 19:27:16 tom Exp $
+ # script for shared library symbol-versioning using ld
+ #
+ # This file was generated by ncu-mapsyms
+@@ -806,6 +806,13 @@
+ 		_nc_strict_bsd;
+ } NCURSES_TIC_5.7.20081102;
+ 
++NCURSES_TIC_6.0.current {
++	global:
++		_nc_write_object;
++	local:
++		_*;
++} NCURSES_TIC_5.9.20150530;
++
+ NCURSES_TINFO_5.0.19991023 {
+ 	global:
+ 		BC;
+--- a/package/ncurses.spec
++++ b/package/ncurses.spec
+@@ -1,7 +1,7 @@
+ Summary: shared libraries for terminal handling
+ Name: ncurses6
+ Version: 6.0
+-Release: 20150822
++Release: 20150905
+ License: X11
+ Group: Development/Libraries
+ Source: ncurses-%{version}-%{release}.tgz
+--- a/package/ncurses.sym
++++ b/package/ncurses.sym
+@@ -1,4 +1,4 @@
+-# $Id: ncurses.sym,v 1.23 2015/06/27 22:30:44 tom Exp $
++# $Id: ncurses.sym,v 1.24 2015/09/05 19:36:49 tom Exp $
+ # script for shared library symbol-visibility using libtool
+ #
+ # This file was generated by ncu-mapsyms
+@@ -231,6 +231,7 @@
+ _nc_viscbuf
+ _nc_warning
+ _nc_write_entry
++_nc_write_object
+ _traceattr
+ _traceattr2
+ _tracechar
+--- a/package/ncursest.map
++++ b/package/ncursest.map
+@@ -1,4 +1,4 @@
+-# $Id: ncursest.map,v 1.30 2015/07/11 13:01:10 tom Exp $
++# $Id: ncursest.map,v 1.31 2015/09/05 19:35:45 tom Exp $
+ # script for shared library symbol-versioning using ld
+ #
+ # This file was generated by ncu-mapsyms
+@@ -105,6 +105,13 @@
+ 		_nc_strict_bsd;
+ } NCURSES_TIC_5.7.20081102;
+ 
++NCURSES_TIC_6.0.current {
++	global:
++		_nc_write_object;
++	local:
++		_*;
++} NCURSES_TIC_5.9.20150530;
++
+ NCURSES_TINFO_5.0.19991023 {
+ 	global:
+ 		BC;
+--- a/package/ncursest.sym
++++ b/package/ncursest.sym
+@@ -1,4 +1,4 @@
+-# $Id: ncursest.sym,v 1.25 2015/07/11 23:33:50 tom Exp $
++# $Id: ncursest.sym,v 1.26 2015/09/05 19:36:49 tom Exp $
+ # script for shared library symbol-visibility using libtool
+ #
+ # This file was generated by ncu-mapsyms
+@@ -233,6 +233,7 @@
+ _nc_viscbuf
+ _nc_warning
+ _nc_write_entry
++_nc_write_object
+ _traceattr
+ _traceattr2
+ _tracechtype
+--- a/package/ncursestw.map
++++ b/package/ncursestw.map
+@@ -1,4 +1,4 @@
+-# $Id: ncursestw.map,v 1.31 2015/07/11 13:02:44 tom Exp $
++# $Id: ncursestw.map,v 1.32 2015/09/05 19:35:05 tom Exp $
+ # script for shared library symbol-versioning using ld
+ #
+ # This file was generated by ncu-mapsyms
+@@ -105,6 +105,13 @@
+ 		_nc_strict_bsd;
+ } NCURSES_TIC_5.7.20081102;
+ 
++NCURSES_TIC_6.0.current {
++	global:
++		_nc_write_object;
++	local:
++		_*;
++} NCURSES_TIC_5.9.20150530;
++
+ NCURSES_TINFO_5.0.19991023 {
+ 	global:
+ 		BC;
+--- a/package/ncursestw.sym
++++ b/package/ncursestw.sym
+@@ -1,4 +1,4 @@
+-# $Id: ncursestw.sym,v 1.23 2015/07/11 23:33:35 tom Exp $
++# $Id: ncursestw.sym,v 1.24 2015/09/05 19:36:49 tom Exp $
+ # script for shared library symbol-visibility using libtool
+ #
+ # This file was generated by ncu-mapsyms
+@@ -238,6 +238,7 @@
+ _nc_warning
+ _nc_wcrtomb
+ _nc_write_entry
++_nc_write_object
+ _traceattr
+ _traceattr2
+ _tracecchar_t
+--- a/package/ncursesw.map
++++ b/package/ncursesw.map
+@@ -1,4 +1,4 @@
+-# $Id: ncursesw.map,v 1.36 2015/06/27 22:26:52 tom Exp $
++# $Id: ncursesw.map,v 1.37 2015/09/05 19:33:48 tom Exp $
+ # script for shared library symbol-versioning using ld
+ #
+ # This file was generated by ncu-mapsyms
+@@ -114,6 +114,13 @@
+ 		_nc_strict_bsd;
+ } NCURSES_TIC_5.7.20081102;
+ 
++NCURSES_TIC_6.0.current {
++	global:
++		_nc_write_object;
++	local:
++		_*;
++} NCURSES_TIC_5.9.20150530;
++
+ NCURSES_TINFO_5.0.19991023 {
+ 	global:
+ 		BC;
+--- a/package/ncursesw.sym
++++ b/package/ncursesw.sym
+@@ -1,4 +1,4 @@
+-# $Id: ncursesw.sym,v 1.24 2015/06/27 22:30:29 tom Exp $
++# $Id: ncursesw.sym,v 1.25 2015/09/05 19:36:49 tom Exp $
+ # script for shared library symbol-visibility using libtool
+ #
+ # This file was generated by ncu-mapsyms
+@@ -233,6 +233,7 @@
+ _nc_wchstrlen
+ _nc_wcrtomb
+ _nc_write_entry
++_nc_write_object
+ _traceattr
+ _traceattr2
+ _tracecchar_t
+--- a/progs/dump_entry.c
++++ b/progs/dump_entry.c
+@@ -39,9 +39,8 @@
+ #include "termsort.c"		/* this C file is generated */
+ #include <parametrized.h>	/* so is this */
+ 
+-MODULE_ID("$Id: dump_entry.c,v 1.118 2015/07/07 08:06:39 Werner.Fink Exp $")
++MODULE_ID("$Id: dump_entry.c,v 1.123 2015/09/05 23:31:12 tom Exp $")
+ 
+-#define INDENT			8
+ #define DISCARD(string) string = ABSENT_STRING
+ #define PRINTF (void) printf
+ 
+@@ -62,6 +61,7 @@
+ static int oldcol;		/* last value of column before wrap */
+ static bool pretty;		/* true if we format if-then-else strings */
+ static bool checking;		/* true if we are checking for tic */
++static int quickdump;		/* true if we are dumping compiled data */
+ 
+ static char *save_sgr;
+ 
+@@ -75,6 +75,7 @@
+ static NCURSES_CONST char *const *str_names;
+ 
+ static const char *separator = "", *trailer = "";
++static int indent = 8;
+ 
+ /* cover various ports and variants of terminfo */
+ #define V_ALLCAPS	0	/* all capabilities (SVr4, XSI, ncurses) */
+@@ -193,13 +194,15 @@
+ 	  int theight,
+ 	  unsigned traceval,
+ 	  bool formatted,
+-	  bool check)
++	  bool check,
++	  int quick)
+ /* set up for entry display */
+ {
+     width = twidth;
+     height = theight;
+     pretty = formatted;
+     checking = check;
++    quickdump = (quick & 3);
+ 
+     /* versions */
+     if (version == 0)
+@@ -244,6 +247,7 @@
+ 	trailer = "\\\n\t:";
+ 	break;
+     }
++    indent = 8;
+ 
+     /* implement sort modes */
+     switch (sortmode = sort) {
+@@ -413,7 +417,7 @@
+     oldcol = column;
+     trim_trailing();
+     strcpy_DYN(&outbuf, trailer);
+-    column = INDENT;
++    column = indent;
+ }
+ 
+ static void
+@@ -422,7 +426,7 @@
+     size_t need = strlen(src);
+     size_t want = strlen(separator) + need;
+ 
+-    if (column > INDENT
++    if (column > indent
+ 	&& column + (int) want > width) {
+ 	force_wrap();
+     }
+@@ -628,7 +632,7 @@
+ 
+     strcpy_DYN(&outbuf, 0);
+     if (content_only) {
+-	column = INDENT;	/* FIXME: workaround to prevent empty lines */
++	column = indent;	/* FIXME: workaround to prevent empty lines */
+     } else {
+ 	strcpy_DYN(&outbuf, tterm->term_names);
+ 
+@@ -671,7 +675,7 @@
+ 	}
+     }
+ 
+-    if (column != INDENT && height > 1)
++    if (column != indent && height > 1)
+ 	force_wrap();
+ 
+     for_each_number(j, tterm) {
+@@ -699,7 +703,7 @@
+ 	}
+     }
+ 
+-    if (column != INDENT && height > 1)
++    if (column != indent && height > 1)
+ 	force_wrap();
+ 
+     len += (int) (num_bools
+@@ -1112,6 +1116,34 @@
+     return result;
+ }
+ 
++static void
++encode_b64(char *target, char *source, unsigned state, int *saved)
++{
++    /* RFC-4648 */
++    static const char data[] =
++    "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
++    "abcdefghijklmnopqrstuvwxyz"
++    "0123456789" "-_";
++    int ch = UChar(source[state]);
++
++    switch (state % 3) {
++    case 0:
++	*target++ = data[ch & 077];
++	*saved = (ch >> 6) & 3;
++	break;
++    case 1:
++	*target++ = data[((ch << 2) | *saved) & 077];
++	*saved = (ch >> 4) & 017;
++	break;
++    case 2:
++	*target++ = data[((ch << 4) | *saved) & 077];
++	*target++ = data[(ch >> 2) & 077];
++	*saved = 0;
++	break;
++    }
++    *target = '\0';
++}
++
+ /*
+  * Dump a single entry.
+  */
+@@ -1127,6 +1159,48 @@
+     const char *legend;
+     bool infodump;
+ 
++    if (quickdump) {
++	char bigbuf[65536];
++	unsigned n;
++	unsigned offset = 0;
++	separator = "";
++	trailer = "\n";
++	indent = 0;
++	if (_nc_write_object(tterm, bigbuf, &offset, sizeof(bigbuf)) == OK) {
++	    char numbuf[80];
++	    if (quickdump & 1) {
++		if (outbuf.used)
++		    wrap_concat("\n");
++		wrap_concat("hex:");
++		for (n = 0; n < offset; ++n) {
++		    sprintf(numbuf, "%02X", UChar(bigbuf[n]));
++		    wrap_concat(numbuf);
++		}
++	    }
++	    if (quickdump & 2) {
++		int value = 0;
++		if (outbuf.used)
++		    wrap_concat("\n");
++		wrap_concat("b64:");
++		for (n = 0; n < offset; ++n) {
++		    encode_b64(numbuf, bigbuf, n, &value);
++		    wrap_concat(numbuf);
++		}
++		switch (n % 3) {
++		case 0:
++		    break;
++		case 1:
++		    wrap_concat("===");
++		    break;
++		case 2:
++		    wrap_concat("==");
++		    break;
++		}
++	    }
++	}
++	return;
++    }
++
+     if (outform == F_TERMCAP || outform == F_TCONVERR) {
+ 	critlen = MAX_TERMCAP_LENGTH;
+ 	legend = "older termcap";
+@@ -1276,8 +1350,10 @@
+ 	}
+ 	outbuf.text[outbuf.used] = '\0';
+     }
+-    (void) fputs(outbuf.text, stdout);
+-    putchar('\n');
++    if (outbuf.text != 0) {
++	(void) fputs(outbuf.text, stdout);
++	putchar('\n');
++    }
+     return (int) outbuf.used;
+ }
+ 
+--- a/progs/dump_entry.h
++++ b/progs/dump_entry.h
+@@ -33,7 +33,7 @@
+  ****************************************************************************/
+ 
+ /*
+- * $Id: dump_entry.h,v 1.35 2015/05/27 00:56:54 tom Exp $
++ * $Id: dump_entry.h,v 1.37 2015/09/05 15:49:58 tom Exp $
+  *
+  * Dump control definitions and variables
+  */
+@@ -72,7 +72,8 @@
+ extern int show_entry(void);
+ extern void compare_entry(PredHook, TERMTYPE *, bool);
+ extern void dump_entry(TERMTYPE *, int, int, int, PredFunc);
+-extern void dump_init(const char *, int, int, int, int, unsigned, bool, bool);
++extern void dump_init(const char *, int, int, int, int, unsigned, bool,
++		      bool, int);
+ extern void dump_uses(const char *, bool);
+ extern void repair_acsc(TERMTYPE *tp);
+ 
+--- a/progs/infocmp.c
++++ b/progs/infocmp.c
+@@ -42,7 +42,7 @@
+ 
+ #include <dump_entry.h>
+ 
+-MODULE_ID("$Id: infocmp.c,v 1.134 2015/08/22 23:54:25 tom Exp $")
++MODULE_ID("$Id: infocmp.c,v 1.136 2015/09/05 15:49:57 tom Exp $")
+ 
+ #define L_CURL "{"
+ #define R_CURL "}"
+@@ -989,7 +989,8 @@
+     int i, n;
+ 
+     memset(heads, 0, sizeof(heads));
+-    dump_init((char *) 0, F_LITERAL, S_TERMINFO, 0, 65535, itrace, FALSE, FALSE);
++    dump_init((char *) 0, F_LITERAL, S_TERMINFO, 0, 65535, itrace, FALSE,
++	      FALSE, FALSE);
+ 
+     for (n = 0; n < argc && n < MAXCOMPARE; n++) {
+ 	if (freopen(argv[n], "r", stdin) == 0)
+@@ -1197,6 +1198,7 @@
+ 	,"  -l    output terminfo names"
+ 	,"  -n    list capabilities in neither"
+ 	,"  -p    ignore padding specifiers"
++	,"  -Q number  dump compiled description"
+ 	,"  -q    brief listing, removes headers"
+ 	,"  -r    with -C, output in termcap form"
+ 	,"  -r    with -F, resolve use-references"
+@@ -1506,6 +1508,7 @@
+     int initdump = 0;
+     bool init_analyze = FALSE;
+     bool suppress_untranslatable = FALSE;
++    int quickdump = 0;
+ 
+     /* where is the terminfo database location going to default to? */
+     restdir = firstdir = 0;
+@@ -1527,7 +1530,7 @@
+ 
+     while ((c = getopt(argc,
+ 		       argv,
+-		       "01A:aB:CcDdEeFfGgIiKLlnpqR:rs:TtUuVv:w:x")) != -1) {
++		       "01A:aB:CcDdEeFfGgIiKLlnpQ:qR:rs:TtUuVv:w:x")) != -1) {
+ 	switch (c) {
+ 	case '0':
+ 	    mwidth = 65535;
+@@ -1628,6 +1631,10 @@
+ 	    ignorepads = TRUE;
+ 	    break;
+ 
++	case 'Q':
++	    quickdump = optarg_to_number();
++	    break;
++
+ 	case 'q':
+ 	    quiet = TRUE;
+ 	    s_absent = "-";
+@@ -1751,7 +1758,7 @@
+ 
+     /* set up for display */
+     dump_init(tversion, outform, sortmode, mwidth, mheight, itrace,
+-	      formatted, FALSE);
++	      formatted, FALSE, quickdump);
+ 
+     if (!filecompare) {
+ 	/* grab the entries */
+@@ -1852,8 +1859,10 @@
+ 				   "%s: about to dump %s\n",
+ 				   _nc_progname,
+ 				   tname[0]);
+-		(void) printf("#\tReconstructed via infocmp from file: %s\n",
+-			      tfile[0]);
++		if (!quiet)
++		    (void)
++				  printf("#\tReconstructed via infocmp from file: %s\n",
++				  tfile[0]);
+ 		dump_entry(&entries[0].tterm,
+ 			   suppress_untranslatable,
+ 			   limited,
+--- a/progs/tic.c
++++ b/progs/tic.c
+@@ -48,7 +48,7 @@
+ #include <parametrized.h>
+ #include <transform.h>
+ 
+-MODULE_ID("$Id: tic.c,v 1.213 2015/08/22 23:49:57 tom Exp $")
++MODULE_ID("$Id: tic.c,v 1.216 2015/09/05 19:22:49 tom Exp $")
+ 
+ #define STDIN_NAME "<stdin>"
+ 
+@@ -159,6 +159,8 @@
+ 	DATA("  -L         translate entries to full terminfo source form")
+ 	DATA("  -N         disable smart defaults for source translation")
+ 	DATA("  -o<dir>    set output directory for compiled entry writes")
++	DATA("  -Q[n]      dump compiled description")
++	DATA("  -q    brief listing, removes headers")
+ 	DATA("  -R<name>   restrict translation to given terminfo/termcap version")
+ 	DATA("  -r         force resolution of all use entries in source translation")
+ 	DATA("  -s         print summary statistics")
+@@ -660,6 +662,12 @@
+     }
+ }
+ 
++static void
++add_digit(int *target, int source)
++{
++    *target = (*target * 10) + (source - '0');
++}
++
+ #define VtoTrace(opt) (unsigned) ((opt > 0) ? opt : (opt == 0))
+ 
+ int
+@@ -690,6 +698,8 @@
+     char *outdir = (char *) NULL;
+     bool check_only = FALSE;
+     bool suppress_untranslatable = FALSE;
++    int quickdump = 0;
++    bool quiet = FALSE;
+ 
+     log_fp = stderr;
+ 
+@@ -715,14 +725,17 @@
+      * be optional.
+      */
+     while ((this_opt = getopt(argc, argv,
+-			      "0123456789CDIKLNR:TUVace:fGgo:rstvwx")) != -1) {
++			      "0123456789CDIKLNQR:TUVace:fGgo:qrstvwx")) != -1) {
+ 	if (isdigit(this_opt)) {
+ 	    switch (last_opt) {
++	    case 'Q':
++		add_digit(&quickdump, this_opt);
++		break;
+ 	    case 'v':
+-		v_opt = (v_opt * 10) + (this_opt - '0');
++		add_digit(&v_opt, this_opt);
+ 		break;
+ 	    case 'w':
+-		width = (width * 10) + (this_opt - '0');
++		add_digit(&width, this_opt);
+ 		break;
+ 	    default:
+ 		switch (this_opt) {
+@@ -773,6 +786,9 @@
+ 	    smart_defaults = FALSE;
+ 	    literal = TRUE;
+ 	    break;
++	case 'Q':
++	    quickdump = 0;
++	    break;
+ 	case 'R':
+ 	    tversion = optarg;
+ 	    break;
+@@ -803,6 +819,9 @@
+ 	case 'o':
+ 	    outdir = optarg;
+ 	    break;
++	case 'q':
++	    quiet = TRUE;
++	    break;
+ 	case 'r':
+ 	    forceresolve = TRUE;
+ 	    break;
+@@ -914,11 +933,11 @@
+ 		  ? outform
+ 		  : F_LITERAL,
+ 		  sortmode, width, height, debug_level, formatted ||
+-		  check_only, check_only);
++		  check_only, check_only, quickdump);
+     } else if (capdump) {
+ 	dump_init(tversion,
+ 		  outform,
+-		  sortmode, width, height, debug_level, FALSE, FALSE);
++		  sortmode, width, height, debug_level, FALSE, FALSE, FALSE);
+     }
+ 
+     /* parse entries out of the source file */
+@@ -989,12 +1008,14 @@
+ 		    /* this is in case infotocap() generates warnings */
+ 		    _nc_set_type(_nc_first_name(qp->tterm.term_names));
+ 
+-		    (void) fseek(tmp_fp, qp->cstart, SEEK_SET);
+-		    while (j-- > 0) {
+-			if (infodump)
+-			    (void) putchar(fgetc(tmp_fp));
+-			else
+-			    put_translate(fgetc(tmp_fp));
++		    if (!quiet) {
++			(void) fseek(tmp_fp, qp->cstart, SEEK_SET);
++			while (j-- > 0) {
++			    if (infodump)
++				(void) putchar(fgetc(tmp_fp));
++			    else
++				put_translate(fgetc(tmp_fp));
++			}
+ 		    }
+ 
+ 		    repair_acsc(&qp->tterm);
+@@ -1007,7 +1028,7 @@
+ 			printf("# length=%d\n", len);
+ 		}
+ 	    }
+-	    if (!namelst && _nc_tail) {
++	    if (!namelst && _nc_tail && !quiet) {
+ 		int c, oldc = '\0';
+ 		bool in_comment = FALSE;
+ 		bool trailing_comment = FALSE;

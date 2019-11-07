@@ -1,0 +1,7 @@
+master='gdb'
+repository='git https://git.linaro.org/toolchain/binutils-gdb.git'
+mirrors='$(CT_Mirrors Linaro gdb ${CT_GDB_LINARO_VERSION})'
+relevantpattern='*.*|.*-20[0-9][0-9] *.*|-20[0-9][0-9]'
+origin='Linaro'
+experimental='yes'
+archive_formats='.tar.xz'

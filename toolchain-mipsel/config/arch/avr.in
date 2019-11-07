@@ -1,0 +1,9 @@
+# AVR specific config options
+
+## no-package
+## select ARCH_SUPPORTS_8
+## select ARCH_DEFAULT_8
+## select ARCH_REQUIRES_MULTILIB
+##
+## help The 8-bit AVR architecture, as defined by:
+## help     http://www.atmel.com/products/microcontrollers/avr

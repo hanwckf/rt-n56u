@@ -1,0 +1,6 @@
+# Kernel.org's device tree compiler
+
+## default y if !CONFIGURE_has_dtc && ARCH_MOXIE
+
+config DTC_VERBOSE
+    bool "Verbose DTC build output"

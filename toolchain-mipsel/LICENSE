@@ -1,0 +1,48 @@
+Unless otherwise stated in individual files, this work is licensed to you under
+the following terms.
+
+- Files in docs/ are available under the Creative Commons Attribution, Share
+  Alike (by-sa), v2.5, to be found there:
+    licenses.d/by-sa/deed.en     (human-readable summary)
+    licenses.d/by-sa/legalcode   (legal code, the full license)
+    
+- Files found in patches/*/ are available under the same license as the
+  upstream software they apply to.
+
+  That means that you can't use those patches if you were licensed the
+  software under a specific license which is not the one the software is
+  commonly available under.
+
+  As an example, if you ever managed to get the Linux kernel under a license
+  other than the GPLv2, you are not allowed to use the Linux kernel patches
+  coming with crosstool-NG, as those are available under the GPLv2, which is
+  the license the Linux kernel is most commonly available under.
+
+  As a convenience, the GNU Lesser General Public License (LGPL) v2.1 (for the
+  patches against glibc, uClibc, and some other libraries) is available there:
+    licenses.d/lgpl.txt
+
+- Other files not covered by the above licenses, and not covered by an
+  individual license specified in the file itself, or an accompanying file,
+  are available under the GNU General Public License (GPL), v2, to be found
+  here:
+    licenses.d/gpl.txt
+
+- Also, I want to clarify one point. If you build a toolchain with crosstool-NG
+  and you happen to sell, deliver, or otherwise publish this toolchain to a
+  third party, I consider crosstool-NG as being part of the sources needed to
+  rebuild the afore-mentioned toolchain, alongside with all other source code
+  that third party is otherwise entitled to receive, due to other licenses of
+  the different components. See licenses.d/gpl.txt, section 3, which reads:
+   > For an executable work, complete source code means [...], plus the
+   > scripts used to control compilation and installation of the executable.
+
+  In short: crosstool-NG is the part refered to as "the scripts to control
+  compilation and installation of the executable", it being the toolchain in
+  our case; and as such you must make it available, in conformance to the
+  GPLv2, see above.
+
+  Also, if you have local patches that you apply to the different components
+  (either manualy, or by instructing crosstool-NG to do so), you will have to
+  make those patches available alongside with your toolchain, to comply with
+  the licenses of the components impacted by your patches.

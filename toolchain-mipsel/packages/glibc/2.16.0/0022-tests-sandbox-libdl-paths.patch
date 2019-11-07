@@ -1,0 +1,196 @@
+when glibc runs its tests, it does so by invoking the local library loader.
+in Gentoo, we build/run inside of our "sandbox" which itself is linked against
+libdl (so that it can load libraries and pull out symbols).  the trouble
+is that when you upgrade from an older glibc to the new one, often times
+internal symbols change name or abi.  this is normally OK as you cannot use
+libc.so from say version 2.3.6 but libpthread.so from say version 2.5, so
+we always say "keep all of the glibc libraries from the same build".  but
+when glibc runs its tests, it uses dynamic paths to point to its new local
+copies of libraries.  if the test doesnt use libdl, then glibc doesnt add
+its path, and when sandbox triggers the loading of libdl, glibc does so
+from the host system system.  this gets us into the case of all libraries
+are from the locally compiled version of glibc except for libdl.so.
+
+Fix by Wormo
+
+http://bugs.gentoo.org/56898
+
+---
+ grp/tst_fgetgrent.sh        |    3 ++-
+ iconvdata/run-iconv-test.sh |    2 +-
+ iconvdata/tst-table.sh      |    5 ++++-
+ intl/tst-codeset.sh         |    3 +++
+ intl/tst-gettext.sh         |    5 ++++-
+ intl/tst-gettext2.sh        |    5 ++++-
+ intl/tst-translit.sh        |    5 ++++-
+ malloc/tst-mtrace.sh        |    5 ++++-
+ nptl/tst-tls6.sh            |    4 ++--
+ posix/globtest.sh           |    2 +-
+ posix/tst-getconf.sh        |    5 ++++-
+ posix/wordexp-tst.sh        |    5 ++++-
+ 12 files changed, 37 insertions(+), 12 deletions(-)
+
+--- a/grp/tst_fgetgrent.sh
++++ b/grp/tst_fgetgrent.sh
+@@ -23,7 +23,8 @@
+ rtld_installed_name=$1; shift
+ 
+ testout=${common_objpfx}/grp/tst_fgetgrent.out
+-library_path=${common_objpfx}
++# make sure libdl is also in path in case sandbox is in use
++library_path=${common_objpfx}:${common_objpfx}/dlfcn
+ 
+ result=0
+ 
+--- a/iconvdata/run-iconv-test.sh
++++ b/iconvdata/run-iconv-test.sh
+@@ -33,7 +33,7 @@
+ export GCONV_PATH
+ 
+ # We have to have some directories in the library path.
+-LIBPATH=$codir:$codir/iconvdata
++LIBPATH=$codir:$codir/iconvdata:$codir/dlfcn
+ 
+ # How the start the iconv(1) program.
+ ICONV='$codir/elf/ld.so --library-path $LIBPATH --inhibit-rpath ${from}.so \
+--- a/iconvdata/tst-table.sh
++++ b/iconvdata/tst-table.sh
+@@ -58,8 +58,11 @@
+   irreversible=${charset}.irreversible
+ fi
+ 
++# make sure libdl is also in path in case sandbox is in use
++library_path=${common_objpfx}:${common_objpfx}/dlfcn
++
+ # iconv in one direction.
+-${common_objpfx}elf/ld.so --library-path $common_objpfx \
++${common_objpfx}elf/ld.so --library-path $library_path \
+ ${objpfx}tst-table-from ${charset} \
+   > ${objpfx}tst-${charset}.table
+ 
+--- a/intl/tst-codeset.sh
++++ b/intl/tst-codeset.sh
+@@ -36,6 +36,9 @@
+ LOCPATH=${common_objpfx}localedata
+ export LOCPATH
+ 
++# make sure libdl is also in path in case sandbox is in use
++library_path=${common_objpfx}:${common_objpfx}/dlfcn
++
+ ${common_objpfx}elf/ld.so --library-path $common_objpfx \
+ ${objpfx}tst-codeset > ${objpfx}tst-codeset.out
+ 
+--- a/intl/tst-gettext.sh
++++ b/intl/tst-gettext.sh
+@@ -50,9 +50,12 @@
+ LOCPATH=${common_objpfx}localedata
+ export LOCPATH
+ 
++# make sure libdl is also in path in case sandbox is in use
++library_path=${common_objpfx}:${common_objpfx}/dlfcn
++
+ # Now run the test.
+ MALLOC_TRACE=$malloc_trace LOCPATH=${objpfx}localedir:$LOCPATH \
+-${common_objpfx}elf/ld.so --library-path $common_objpfx \
++${common_objpfx}elf/ld.so --library-path $library_path \
+ ${objpfx}tst-gettext > ${objpfx}tst-gettext.out ${objpfx}domaindir
+ 
+ exit $?
+--- a/intl/tst-gettext2.sh
++++ b/intl/tst-gettext2.sh
+@@ -64,8 +64,11 @@
+ LOCPATH=${objpfx}domaindir
+ export LOCPATH
+ 
++# make sure libdl is also in path in case sandbox is in use
++library_path=${common_objpfx}:${common_objpfx}/dlfcn
++
+ # Now run the test.
+-${common_objpfx}elf/ld.so --library-path $common_objpfx \
++${common_objpfx}elf/ld.so --library-path $library_path \
+ ${objpfx}tst-gettext2 > ${objpfx}tst-gettext2.out ${objpfx}domaindir &&
+ cmp ${objpfx}tst-gettext2.out - <<EOF
+ String1 - Lang1: 1st string
+--- a/intl/tst-translit.sh
++++ b/intl/tst-translit.sh
+@@ -35,7 +35,10 @@
+ LOCPATH=${common_objpfx}localedata
+ export LOCPATH
+ 
+-${common_objpfx}elf/ld.so --library-path $common_objpfx \
++# make sure libdl is also in path in case sandbox is in use
++library_path=${common_objpfx}:${common_objpfx}/dlfcn
++
++${common_objpfx}elf/ld.so --library-path $library_path \
+ ${objpfx}tst-translit > ${objpfx}tst-translit.out ${objpfx}domaindir
+ 
+ exit $?
+--- a/malloc/tst-mtrace.sh
++++ b/malloc/tst-mtrace.sh
+@@ -23,9 +23,12 @@
+ status=0
+ trap "rm -f ${common_objpfx}malloc/tst-mtrace.leak; exit 1" 1 2 15
+ 
++# make sure libdl is also in path in case sandbox is in use
++library_path=${common_objpfx}:${common_objpfx}/dlfcn
++
+ MALLOC_TRACE=${common_objpfx}malloc/tst-mtrace.leak \
+ LOCPATH=${common_objpfx}localedata GCONV_PATH=${common_objpfx}iconvdata \
+-${common_objpfx}elf/ld.so --library-path $common_objpfx \
++${common_objpfx}elf/ld.so --library-path $library_path \
+   ${common_objpfx}malloc/tst-mtrace || status=1
+ 
+ if test $status -eq 0 && test -f ${common_objpfx}malloc/mtrace; then
+--- a/nptl/tst-tls6.sh
++++ b/nptl/tst-tls6.sh
+@@ -5,8 +5,8 @@
+ rtld_installed_name=$1; shift
+ logfile=$common_objpfx/nptl/tst-tls6.out
+ 
+-# We have to find libc and nptl
+-library_path=${common_objpfx}:${common_objpfx}nptl
++# We have to find libc and nptl (also libdl in case sandbox is in use)
++library_path=${common_objpfx}:${common_objpfx}nptl:${common_objpfx}/dlfcn
+ tst_tls5="${elf_objpfx}${rtld_installed_name} --library-path ${library_path} \
+ 	  ${common_objpfx}/nptl/tst-tls5"
+ 
+--- a/posix/globtest.sh
++++ b/posix/globtest.sh
+@@ -18,7 +18,7 @@
+ esac
+ 
+ # We have to find the libc and the NSS modules.
+-library_path=${common_objpfx}:${common_objpfx}nss:${common_objpfx}nis:${common_objpfx}db2:${common_objpfx}hesiod
++library_path=${common_objpfx}:${common_objpfx}nss:${common_objpfx}nis:${common_objpfx}db2:${common_objpfx}hesiod:${common_objpfx}/dlfcn
+ 
+ # Since we use `sort' we must make sure to use the same locale everywhere.
+ LC_ALL=C
+--- a/posix/tst-getconf.sh
++++ b/posix/tst-getconf.sh
+@@ -10,7 +10,10 @@
+ else
+   rtld_installed_name=$1; shift
+   runit() {
+-    ${elf_objpfx}${rtld_installed_name} --library-path ${common_objpfx} "$@"
++    
++  # make sure libdl is also in path in case sandbox is in use
++  library_path=${common_objpfx}:${common_objpfx}/dlfcn
++    ${elf_objpfx}${rtld_installed_name} --library-path ${library_path} "$@"
+   }
+ fi
+ 
+--- a/posix/wordexp-tst.sh
++++ b/posix/wordexp-tst.sh
+@@ -19,8 +19,11 @@
+ "
+ export IFS
+ 
++# make sure libdl is also in path in case sandbox is in use
++library_path=${common_objpfx}:${common_objpfx}/dlfcn
++
+ failed=0
+-${elf_objpfx}${rtld_installed_name} --library-path ${common_objpfx} \
++${elf_objpfx}${rtld_installed_name} --library-path ${library_path} \
+ ${common_objpfx}posix/wordexp-test '$*' > ${testout}1
+ cat <<"EOF" | cmp - ${testout}1 >> $logfile || failed=1
+ wordexp returned 0

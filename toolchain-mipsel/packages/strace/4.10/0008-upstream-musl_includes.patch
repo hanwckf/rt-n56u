@@ -1,0 +1,63 @@
+commit 3460dc486d333231998de0f19918204aacee9ae3
+commit d34e00b293942b1012ddc49ed3ab379a32337611
+---
+ evdev.c     |    2 ++
+ ioctl.c     |    2 +-
+ ioctlsort.c |    2 +-
+ mknod.c     |    1 +
+ printmode.c |    1 +
+ 5 files changed, 6 insertions(+), 2 deletions(-)
+
+--- a/evdev.c
++++ b/evdev.c
+@@ -28,6 +28,8 @@
+ 
+ #include "defs.h"
+ 
++#include <linux/ioctl.h>
++
+ #ifdef HAVE_LINUX_INPUT_H
+ #include <linux/input.h>
+ #include "xlat/evdev_abs.h"
+--- a/ioctl.c
++++ b/ioctl.c
+@@ -29,7 +29,7 @@
+  */
+ 
+ #include "defs.h"
+-#include <asm/ioctl.h>
++#include <linux/ioctl.h>
+ #include "xlat/ioctl_dirs.h"
+ 
+ #ifdef HAVE_LINUX_INPUT_H
+--- a/ioctlsort.c
++++ b/ioctlsort.c
+@@ -33,7 +33,7 @@
+ #include <stdio.h>
+ #include <stdlib.h>
+ #include <string.h>
+-#include <asm/ioctl.h>
++#include <linux/ioctl.h>
+ 
+ struct ioctlent {
+ 	const char *info;
+--- a/mknod.c
++++ b/mknod.c
+@@ -1,6 +1,7 @@
+ #include "defs.h"
+ 
+ #include <fcntl.h>
++#include <sys/stat.h>
+ 
+ #ifdef MAJOR_IN_SYSMACROS
+ # include <sys/sysmacros.h>
+--- a/printmode.c
++++ b/printmode.c
+@@ -1,6 +1,7 @@
+ #include "defs.h"
+ 
+ #include <fcntl.h>
++#include <sys/stat.h>
+ 
+ #include "xlat/modetypes.h"
+ 

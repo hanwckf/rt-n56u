@@ -1,0 +1,31 @@
+2011-02-28  Aurelien Jarno  <aurelien@aurel32.net>
+
+	* sysdeps/unix/sysv/linux/mips/bits/statfs.h (struct statfs,
+	struct statfs64): Add f_flags field.
+
+---
+ sysdeps/unix/sysv/linux/alpha/bits/statfs.h |    6 ++++--
+ 1 file changed, 4 insertions(+), 2 deletions(-)
+
+--- a/sysdeps/unix/sysv/linux/alpha/bits/statfs.h
++++ b/sysdeps/unix/sysv/linux/alpha/bits/statfs.h
+@@ -42,7 +42,8 @@
+     __fsid_t f_fsid;
+     int f_namelen;
+     int f_frsize;
+-    int f_spare[5];
++    int f_flags;
++    int f_spare[4];
+   };
+ 
+ #ifdef __USE_LARGEFILE64
+@@ -58,7 +59,8 @@
+     __fsid_t f_fsid;
+     int f_namelen;
+     int f_frsize;
+-    int f_spare[5];
++    int f_flags;
++    int f_spare[4];
+   };
+ #endif
+ 

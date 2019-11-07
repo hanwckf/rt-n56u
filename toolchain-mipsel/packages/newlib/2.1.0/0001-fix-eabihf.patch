@@ -1,0 +1,27 @@
+---
+ libgloss/arm/configure    |    2 +-
+ libgloss/arm/configure.in |    2 +-
+ 2 files changed, 2 insertions(+), 2 deletions(-)
+
+--- a/libgloss/arm/configure
++++ b/libgloss/arm/configure
+@@ -2541,7 +2541,7 @@
+ 
+ 
+ case "${target}" in
+-  *-*-elf | *-*-eabi)
++  *-*-elf | *-*-eabi*)
+ 	objtype=elf-
+ 	;;
+   *-*-coff)
+--- a/libgloss/arm/configure.in
++++ b/libgloss/arm/configure.in
+@@ -49,7 +49,7 @@
+ LIB_AM_PROG_AS
+ 
+ case "${target}" in
+-  *-*-elf | *-*-eabi)
++  *-*-elf | *-*-eabi*)
+ 	objtype=elf-
+ 	;;
+   *-*-coff)

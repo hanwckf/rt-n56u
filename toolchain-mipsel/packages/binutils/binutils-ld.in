@@ -1,0 +1,11 @@
+#!/bin/sh
+
+call_to=@@DEFAULT_LD@@
+
+case "${CTNG_LD_IS}" in
+    bfd)    call_to=bfd;;
+    gold)   call_to=gold;;
+esac
+
+exec "${0}.${call_to}" "$@"
+exit $?

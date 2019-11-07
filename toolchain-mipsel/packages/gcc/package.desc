@@ -1,0 +1,6 @@
+repository='svn svn://gcc.gnu.org/svn/gcc'
+mirrors='$(CT_Mirrors GNU gcc/gcc-${CT_GCC_VERSION}) $(CT_Mirrors sourceware gcc/releases/gcc-${CT_GCC_VERSION})'
+relevantpattern='4.*|. *|.'
+origin='GNU'
+milestones='4.8 4.9 5 6 7'
+archive_formats='.tar.xz .tar.gz'

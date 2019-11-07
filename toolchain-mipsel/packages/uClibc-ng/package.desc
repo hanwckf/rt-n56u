@@ -1,0 +1,6 @@
+master='uClibc'
+origin='uclibc-ng.org'
+repository='git git://uclibc-ng.org/git/uclibc-ng'
+mirrors='http://downloads.uclibc-ng.org/releases/${CT_UCLIBC_NG_VERSION}'
+archive_formats='.tar.xz .tar.lz .tar.bz2 .tar.gz'
+signature_format='packed/.asc'

@@ -1,0 +1,67 @@
+commit f34b97f89dd3893ef3652a6899487771402fc13c
+---
+ linux/mips/syscallent-o32.h |    2 +-
+ linux/syscall.h             |    1 +
+ syscall.c                   |   24 ++++++++++++++++++++++++
+ 3 files changed, 26 insertions(+), 1 deletion(-)
+
+--- a/linux/mips/syscallent-o32.h
++++ b/linux/mips/syscallent-o32.h
+@@ -1,6 +1,6 @@
+ #if defined LINUX_MIPSO32
+ /* For an O32 strace, decode the o32 syscalls.  */
+-[4000] = { MA,	0,		printargs,			"syscall"		}, /* start of Linux o32 */
++[4000] = { MA,	0,		sys_syscall,			"syscall"		}, /* start of Linux o32 */
+ [4001] = { 1,	TP|SE,		sys_exit,			"exit"			},
+ [4002] = { 0,	TP,		sys_fork,			"fork"			},
+ [4003] = { 3,	TD,		sys_read,			"read"			},
+--- a/syscall.c
++++ b/syscall.c
+@@ -606,6 +606,25 @@
+ }
+ #endif
+ 
++#ifdef LINUX_MIPSO32
++static void
++decode_mips_subcall(struct tcb *tcp)
++{
++	if (!SCNO_IS_VALID(tcp->u_arg[0]))
++		return;
++	tcp->scno = tcp->u_arg[0];
++	tcp->qual_flg = qual_flags[tcp->scno];
++	tcp->s_ent = &sysent[tcp->scno];
++	memmove(&tcp->u_arg[0], &tcp->u_arg[1],
++		sizeof(tcp->u_arg) - sizeof(tcp->u_arg[0]));
++}
++
++int sys_syscall(struct tcb *tcp)
++{
++	return printargs(tcp);
++}
++#endif
++
+ int
+ printargs(struct tcb *tcp)
+ {
+@@ -1774,6 +1793,11 @@
+ 		goto ret;
+ 	}
+ 
++#ifdef LINUX_MIPSO32
++	if (sys_syscall == tcp->s_ent->sys_func)
++		decode_mips_subcall(tcp);
++#endif
++
+ 	if (   sys_execve == tcp->s_ent->sys_func
+ # if defined(SPARC) || defined(SPARC64)
+ 	    || sys_execv == tcp->s_ent->sys_func
+--- a/linux/syscall.h
++++ b/linux/syscall.h
+@@ -277,6 +277,7 @@
+ int sys_symlinkat();
+ int sys_sync_file_range();
+ int sys_sync_file_range2();
++int sys_syscall();
+ int sys_sysctl();
+ int sys_sysinfo();
+ int sys_syslog();

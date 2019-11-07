@@ -1,0 +1,118 @@
+http://bugs.gentoo.org/show_bug.cgi?id=131815
+http://sourceware.org/bugzilla/show_bug.cgi?id=2522
+
+---
+ localedata/SUPPORTED              |    2 
+ localedata/locales/ca_ES@valencia |   96 ++++++++++++++++++++++++++++++++++++++
+ 2 files changed, 98 insertions(+)
+
+--- a/localedata/SUPPORTED
++++ b/localedata/SUPPORTED
+@@ -72,6 +72,8 @@
+ ca_ES.UTF-8/UTF-8 \
+ ca_ES/ISO-8859-1 \
+ ca_ES@euro/ISO-8859-15 \
++ca_ES.UTF-8@valencia/UTF-8 \
++ca_ES@valencia/ISO-8859-15 \
+ ca_FR.UTF-8/UTF-8 \
+ ca_FR/ISO-8859-15 \
+ ca_IT.UTF-8/UTF-8 \
+--- /dev/null
++++ b/localedata/locales/ca_ES@valencia
+@@ -0,0 +1,96 @@
++comment_char %
++escape_char  /
++%
++% Valencian (southern Catalan) locale for Spain with Euro
++%
++% Note that this locale is almost the same as ca_ES@euro.  The point of having
++% a separate locale is only for PO translations, which have a lot of social
++% support and are very appreciated by the Valencian-speaking community.
++%
++% Contact: Jordi Mallach
++% Email: jordi@gnu.org
++% Tel:
++% Fax:
++% Language: ca
++% Territory: ES
++% Option: euro
++% Revision: 1.0
++% Date: 2006-04-06
++% Application: general
++% Users: general
++% Repertoiremap: mnemonic,ds
++% Charset: ISO-8859-15
++% Distribution and use is free, also
++% for commercial purposes.
++
++LC_IDENTIFICATION
++title      "Valencian (southern Catalan) locale for Spain with Euro"
++source     ""
++address    ""
++contact    "Jordi Mallach"
++email      "jordi@gnu.org"
++tel        ""
++fax        ""
++language   "Catalan"
++territory  "Spain"
++revision   "1.0"
++date       "2006-04-06"
++%
++category  "ca_ES@valencia:2006";LC_IDENTIFICATION
++category  "ca_ES@valencia:2006";LC_CTYPE
++category  "ca_ES@valencia:2006";LC_COLLATE
++category  "ca_ES@valencia:2006";LC_MONETARY
++category  "ca_ES@valencia:2006";LC_NUMERIC
++category  "ca_ES@valencia:2006";LC_TIME
++category  "ca_ES@valencia:2006";LC_MESSAGES
++category  "ca_ES@valencia:2006";LC_PAPER
++category  "ca_ES@valencia:2006";LC_NAME
++category  "ca_ES@valencia:2006";LC_ADDRESS
++category  "ca_ES@valencia:2006";LC_TELEPHONE
++category  "ca_ES@valencia:2006";LC_MEASUREMENT
++
++END LC_IDENTIFICATION
++
++LC_CTYPE
++copy "i18n"
++END LC_CTYPE
++
++LC_COLLATE
++copy "ca_ES"
++END LC_COLLATE
++
++LC_MONETARY
++copy "ca_ES"
++END LC_MONETARY
++
++LC_NUMERIC
++copy "ca_ES"
++END LC_NUMERIC
++
++LC_TIME
++copy "ca_ES"
++END LC_TIME
++
++LC_MESSAGES
++copy "ca_ES"
++END LC_MESSAGES
++
++LC_PAPER
++copy "ca_ES"
++END LC_PAPER
++
++LC_NAME
++copy "ca_ES"
++END LC_NAME
++
++LC_ADDRESS
++copy "ca_ES"
++END LC_ADDRESS
++
++LC_TELEPHONE
++copy "ca_ES"
++END LC_TELEPHONE
++
++LC_MEASUREMENT
++copy "ca_ES"
++END LC_MEASUREMENT

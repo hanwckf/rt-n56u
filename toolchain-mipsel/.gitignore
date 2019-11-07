@@ -1,15 +1,44 @@
-*.dep
-*.deps
-*.pc
-*.orig
-*.rej
-*.lo
-.libs
-libtool
-aclocal.m4
+# Generated files
+configure
 autom4te.cache
-config.h.in~
+aclocal.m4
+config.h*
 config.log
 config.status
-toolchain-*
-toolchain-*/*
+Makefile
+Makefile.in
+ct-ng
+!ct-ng.comp
+!ct-ng.in
+paths.sh
+config/configure.in
+config/gen/
+config/versions/
+.config
+verbatim-data.mk
+maintainer/package-versions
+
+# Compressed files
+*.tar*
+*.zip
+*.xz
+*.7zip
+
+# Temporaries
+.*.swp
+build.log
+.config.old
+temp.*
+stamp-h1
+
+# Testing
+testing/docker/*/build
+testing/docker/*/install
+testing/docker/*/xtools
+
+.build/
+.build-all/
+
+toolchain-3.4.x/
+dl/
+

@@ -1,0 +1,65 @@
+# Alpha specific configuration file
+
+## no-package
+## select ARCH_SUPPORTS_32
+## select ARCH_DEFAULT_32
+## select ARCH_USE_MMU
+## select ARCH_SUPPORTS_WITH_CPU
+## select ARCH_SUPPORTS_WITH_TUNE
+
+## help The Alpha architecture.
+
+choice
+    bool
+    prompt "Variant"
+
+config ARCH_ALPHA_EV4
+    bool
+    prompt "EV4"
+
+config ARCH_ALPHA_EV45
+    bool
+    prompt "EV45"
+
+config ARCH_ALPHA_EV5
+    bool
+    prompt "EV5"
+
+config ARCH_ALPHA_EV56
+    bool
+    prompt "EV56"
+
+config ARCH_ALPHA_EV6
+    bool
+    prompt "EV6"
+
+config ARCH_ALPHA_EV67
+    bool
+    prompt "EV67"
+
+endchoice
+
+config ARCH_ALPHA_VARIANT
+    string
+    default "ev4"   if ARCH_ALPHA_EV4
+    default "ev45"  if ARCH_ALPHA_EV45
+    default "ev5"   if ARCH_ALPHA_EV5
+    default "ev56"  if ARCH_ALPHA_EV56
+    default "ev6"   if ARCH_ALPHA_EV6
+    default "ev67"  if ARCH_ALPHA_EV67
+
+config ARCH_CPU
+    default "ev4"   if ARCH_ALPHA_EV4
+    default "ev45"  if ARCH_ALPHA_EV45
+    default "ev5"   if ARCH_ALPHA_EV5
+    default "ev56"  if ARCH_ALPHA_EV56
+    default "ev6"   if ARCH_ALPHA_EV6
+    default "ev67"  if ARCH_ALPHA_EV67
+
+config ARCH_TUNE
+    default "ev4"   if ARCH_ALPHA_EV4
+    default "ev45"  if ARCH_ALPHA_EV45
+    default "ev5"   if ARCH_ALPHA_EV5
+    default "ev56"  if ARCH_ALPHA_EV56
+    default "ev6"   if ARCH_ALPHA_EV6
+    default "ev67"  if ARCH_ALPHA_EV67

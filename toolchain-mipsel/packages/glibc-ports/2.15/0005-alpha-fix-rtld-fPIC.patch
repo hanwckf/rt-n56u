@@ -1,0 +1,19 @@
+2009-05-26  Aurelien Jarno  <aurelien@aurel32.net>
+
+	* sysdeps/alpha/Makefile (CFLAGS-rtld.c): add $(PIC-ccflag).
+
+ sysdeps/alpha/Makefile |    3 ++-
+ 1 file changed, 2 insertions(+), 1 deletion(-)
+
+--- a/sysdeps/alpha/Makefile
++++ b/sysdeps/alpha/Makefile
+@@ -35,7 +35,8 @@
+ 
+ ifeq ($(subdir),elf)
+ # The ld.so startup code cannot use literals until it self-relocates.
+-CFLAGS-rtld.c = -mbuild-constants
++# It uses more than 64k for the small data area.
++CFLAGS-rtld.c = -mbuild-constants $(PIC-ccflag)
+ endif
+ 
+ # Build everything with full IEEE math support, and with dynamic rounding;

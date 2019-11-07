@@ -1,0 +1,249 @@
+
+
+---
+ elf/rtld.c                    |   10 +++++-----
+ include/atomic.h              |   26 +++++++++++++-------------
+ nptl/Makefile                 |   35 ++++++++++++++++++++++++++++++++---
+ nptl/pthread_barrier_wait.c   |    2 +-
+ nptl/sysdeps/pthread/Makefile |    2 ++
+ stdio-common/Makefile         |    2 +-
+ sunrpc/clnt_udp.c             |    2 +-
+ 7 files changed, 55 insertions(+), 24 deletions(-)
+
+--- a/elf/rtld.c
++++ b/elf/rtld.c
+@@ -390,14 +390,14 @@
+      know it is available.  We do not have to clear the memory if we
+      do not have to use the temporary bootstrap_map.  Global variables
+      are initialized to zero by default.  */
+-#ifndef DONT_USE_BOOTSTRAP_MAP
++#if !defined DONT_USE_BOOTSTRAP_MAP
+ # ifdef HAVE_BUILTIN_MEMSET
+   __builtin_memset (bootstrap_map.l_info, '\0', sizeof (bootstrap_map.l_info));
+ # else
+-  for (size_t cnt = 0;
+-       cnt < sizeof (bootstrap_map.l_info) / sizeof (bootstrap_map.l_info[0]);
+-       ++cnt)
+-    bootstrap_map.l_info[cnt] = 0;
++  /* Clear the whole bootstrap_map structure */
++  for (char *cnt = (char *)&(bootstrap_map);
++       cnt < ((char *)&(bootstrap_map) + sizeof (bootstrap_map));
++       *cnt++ = '\0');
+ # endif
+ # if USE___THREAD
+   bootstrap_map.l_tls_modid = 0;
+--- a/include/atomic.h
++++ b/include/atomic.h
+@@ -185,7 +185,7 @@
+      __typeof (*(mem)) __atg5_value = (newvalue);			      \
+ 									      \
+      do									      \
+-       __atg5_oldval = *__atg5_memp;					      \
++       __atg5_oldval = *(volatile __typeof (mem))__atg5_memp;		      \
+      while (__builtin_expect						      \
+ 	    (atomic_compare_and_exchange_bool_acq (__atg5_memp, __atg5_value, \
+ 						   __atg5_oldval), 0));	      \
+@@ -206,7 +206,7 @@
+      __typeof (*(mem)) __atg6_value = (value);				      \
+ 									      \
+      do									      \
+-       __atg6_oldval = *__atg6_memp;					      \
++       __atg6_oldval = *(volatile __typeof (mem))__atg6_memp;		      \
+      while (__builtin_expect						      \
+ 	    (atomic_compare_and_exchange_bool_acq (__atg6_memp,		      \
+ 						   __atg6_oldval	      \
+@@ -224,7 +224,7 @@
+      __typeof (*(mem)) __atg7_value = (value);				      \
+ 									      \
+      do									      \
+-       __atg7_oldv = *__atg7_memp;					      \
++       __atg7_oldv = *(volatile __typeof (mem))__atg7_memp;		      \
+      while (__builtin_expect						      \
+ 	    (catomic_compare_and_exchange_bool_acq (__atg7_memp,	      \
+ 						    __atg7_oldv		      \
+@@ -242,7 +242,7 @@
+     __typeof (mem) __atg8_memp = (mem);					      \
+     __typeof (*(mem)) __atg8_value = (value);				      \
+     do {								      \
+-      __atg8_oldval = *__atg8_memp;					      \
++      __atg8_oldval = *(volatile __typeof (mem))__atg8_memp;		      \
+       if (__atg8_oldval >= __atg8_value)				      \
+ 	break;								      \
+     } while (__builtin_expect						      \
+@@ -259,7 +259,7 @@
+     __typeof (mem) __atg9_memp = (mem);					      \
+     __typeof (*(mem)) __atg9_value = (value);				      \
+     do {								      \
+-      __atg9_oldv = *__atg9_memp;					      \
++      __atg9_oldv = *(volatile __typeof (mem))__atg9_memp;		      \
+       if (__atg9_oldv >= __atg9_value)					      \
+ 	break;								      \
+     } while (__builtin_expect						      \
+@@ -277,7 +277,7 @@
+     __typeof (mem) __atg10_memp = (mem);				      \
+     __typeof (*(mem)) __atg10_value = (value);				      \
+     do {								      \
+-      __atg10_oldval = *__atg10_memp;					      \
++      __atg10_oldval = *(volatile __typeof (mem))__atg10_memp;		      \
+       if (__atg10_oldval <= __atg10_value)				      \
+ 	break;								      \
+     } while (__builtin_expect						      \
+@@ -361,7 +361,7 @@
+ 									      \
+      do									      \
+        {								      \
+-	 __atg11_oldval = *__atg11_memp;				      \
++	 __atg11_oldval = *(volatile __typeof (mem))__atg11_memp;	      \
+ 	 if (__builtin_expect (__atg11_oldval <= 0, 0))			      \
+ 	   break;							      \
+        }								      \
+@@ -400,7 +400,7 @@
+      __typeof (*(mem)) __atg14_mask = ((__typeof (*(mem))) 1 << (bit));	      \
+ 									      \
+      do									      \
+-       __atg14_old = (*__atg14_memp);					      \
++       __atg14_old = (*(volatile __typeof (mem))__atg14_memp);		      \
+      while (__builtin_expect						      \
+ 	    (atomic_compare_and_exchange_bool_acq (__atg14_memp,	      \
+ 						   __atg14_old | __atg14_mask,\
+@@ -418,7 +418,7 @@
+     __typeof (*(mem)) __atg15_mask = (mask);				      \
+ 									      \
+     do									      \
+-      __atg15_old = (*__atg15_memp);					      \
++      __atg15_old = (*(volatile __typeof (mem))__atg15_memp);		      \
+     while (__builtin_expect						      \
+ 	   (atomic_compare_and_exchange_bool_acq (__atg15_memp,		      \
+ 						  __atg15_old & __atg15_mask, \
+@@ -450,7 +450,7 @@
+      __typeof (*(mem)) __atg16_mask = (mask);				      \
+ 									      \
+      do									      \
+-       __atg16_old = (*__atg16_memp);					      \
++       __atg16_old = (*(volatile __typeof (mem))__atg16_memp);		      \
+      while (__builtin_expect						      \
+ 	    (atomic_compare_and_exchange_bool_acq (__atg16_memp,	      \
+ 						   __atg16_old & __atg16_mask,\
+@@ -468,7 +468,7 @@
+     __typeof (*(mem)) __atg17_mask = (mask);				      \
+ 									      \
+     do									      \
+-      __atg17_old = (*__atg17_memp);					      \
++      __atg17_old = (*(volatile __typeof (mem))__atg17_memp);		      \
+     while (__builtin_expect						      \
+ 	   (atomic_compare_and_exchange_bool_acq (__atg17_memp,		      \
+ 						  __atg17_old | __atg17_mask, \
+@@ -484,7 +484,7 @@
+     __typeof (*(mem)) __atg18_mask = (mask);				      \
+ 									      \
+     do									      \
+-      __atg18_old = (*__atg18_memp);					      \
++      __atg18_old = (*(volatile __typeof (mem))__atg18_memp);		      \
+     while (__builtin_expect						      \
+ 	   (catomic_compare_and_exchange_bool_acq (__atg18_memp,	      \
+ 						   __atg18_old | __atg18_mask,\
+@@ -500,7 +500,7 @@
+      __typeof (*(mem)) __atg19_mask = (mask);				      \
+ 									      \
+      do									      \
+-       __atg19_old = (*__atg19_memp);					      \
++       __atg19_old = (*(volatile __typeof (mem))__atg19_memp);		      \
+      while (__builtin_expect						      \
+ 	    (atomic_compare_and_exchange_bool_acq (__atg19_memp,	      \
+ 						   __atg19_old | __atg19_mask,\
+--- a/nptl/Makefile
++++ b/nptl/Makefile
+@@ -264,9 +264,9 @@
+ # Files which must not be linked with libpthread.
+ tests-nolibpthread = tst-unload
+ 
+-# This sets the stack resource limit to 1023kb, which is not a multiple
+-# of the page size since every architecture's page size is > 1k.
+-tst-oddstacklimit-ENV = ; ulimit -s 1023;
++# This sets the stack resource limit to 8193kb, which is not a multiple
++# of the page size since every architecture's page size is 4096 bytes.
++tst-oddstacklimit-ENV = ; ulimit -s 8193;
+ 
+ distribute = eintr.c tst-cleanup4aux.c
+ 
+@@ -425,6 +425,35 @@
+ CFLAGS-tst-cleanupx4.c += -fexceptions
+ CFLAGS-tst-oncex3.c += -fexceptions
+ CFLAGS-tst-oncex4.c += -fexceptions
++
++ldflags-libgcc_s = --as-needed -lgcc_s --no-as-needed
++LDFLAGS-tst-cancelx2 += $(ldflags-libgcc_s)
++LDFLAGS-tst-cancelx3 += $(ldflags-libgcc_s)
++LDFLAGS-tst-cancelx4 += $(ldflags-libgcc_s)
++LDFLAGS-tst-cancelx5 += $(ldflags-libgcc_s)
++LDFLAGS-tst-cancelx6 += $(ldflags-libgcc_s)
++LDFLAGS-tst-cancelx7 += $(ldflags-libgcc_s)
++LDFLAGS-tst-cancelx8 += $(ldflags-libgcc_s)
++LDFLAGS-tst-cancelx9 += $(ldflags-libgcc_s)
++LDFLAGS-tst-cancelx10 += $(ldflags-libgcc_s)
++LDFLAGS-tst-cancelx11 += $(ldflags-libgcc_s)
++LDFLAGS-tst-cancelx12 += $(ldflags-libgcc_s)
++LDFLAGS-tst-cancelx13 += $(ldflags-libgcc_s)
++LDFLAGS-tst-cancelx14 += $(ldflags-libgcc_s)
++LDFLAGS-tst-cancelx15 += $(ldflags-libgcc_s)
++LDFLAGS-tst-cancelx16 += $(ldflags-libgcc_s)
++LDFLAGS-tst-cancelx17 += $(ldflags-libgcc_s)
++LDFLAGS-tst-cancelx18 += $(ldflags-libgcc_s)
++LDFLAGS-tst-cancelx20 += $(ldflags-libgcc_s)
++LDFLAGS-tst-cancelx21 += $(ldflags-libgcc_s)
++LDFLAGS-tst-cleanupx0 += $(ldflags-libgcc_s)
++LDFLAGS-tst-cleanupx1 += $(ldflags-libgcc_s)
++LDFLAGS-tst-cleanupx2 += $(ldflags-libgcc_s)
++LDFLAGS-tst-cleanupx3 += $(ldflags-libgcc_s)
++LDFLAGS-tst-cleanupx4 += $(ldflags-libgcc_s)
++LDFLAGS-tst-oncex3 += $(ldflags-libgcc_s)
++LDFLAGS-tst-oncex4 += $(ldflags-libgcc_s)
++
+ CFLAGS-tst-align.c += $(stack-align-test-flags)
+ CFLAGS-tst-align3.c += $(stack-align-test-flags)
+ CFLAGS-tst-initializers1.c = -W -Wall -Werror
+--- a/nptl/pthread_barrier_wait.c
++++ b/nptl/pthread_barrier_wait.c
+@@ -64,7 +64,7 @@
+       do
+ 	lll_futex_wait (&ibarrier->curr_event, event,
+ 			ibarrier->private ^ FUTEX_PRIVATE_FLAG);
+-      while (event == ibarrier->curr_event);
++      while (event == *(volatile unsigned int *)&ibarrier->curr_event);
+     }
+ 
+   /* Make sure the init_count is stored locally or in a register.  */
+--- a/nptl/sysdeps/pthread/Makefile
++++ b/nptl/sysdeps/pthread/Makefile
+@@ -33,7 +33,9 @@
+ 
+ ifeq ($(have-forced-unwind),yes)
+ tests += tst-mqueue8x
++ldflags-libgcc_s = --as-needed -lgcc_s --no-as-needed
+ CFLAGS-tst-mqueue8x.c += -fexceptions
++LDFLAGS-tst-mqueue8x += $(ldflags-libgcc_s) 
+ endif
+ endif
+ 
+--- a/stdio-common/Makefile
++++ b/stdio-common/Makefile
+@@ -82,7 +82,7 @@
+ 	$(SHELL) -e tst-printf.sh $(common-objpfx) '$(run-program-prefix)'
+ endif
+ 
+-CFLAGS-vfprintf.c = -Wno-uninitialized
++CFLAGS-vfprintf.c = -Wno-uninitialized -fno-delayed-branch
+ CFLAGS-vfwprintf.c = -Wno-uninitialized
+ CFLAGS-tst-printf.c = -Wno-format
+ CFLAGS-tstdiomisc.c = -Wno-format
+--- a/sunrpc/clnt_udp.c
++++ b/sunrpc/clnt_udp.c
+@@ -456,7 +456,7 @@
+       while (inlen < 0 && errno == EINTR);
+       if (inlen < 0)
+ 	{
+-	  if (errno == EWOULDBLOCK)
++	  if (errno == EWOULDBLOCK || errno == EAGAIN)
+ 	    continue;
+ 	  cu->cu_error.re_errno = errno;
+ 	  return (cu->cu_error.re_status = RPC_CANTRECV);

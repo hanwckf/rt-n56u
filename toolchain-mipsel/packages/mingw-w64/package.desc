@@ -1,0 +1,6 @@
+repository='git https://git.code.sf.net/p/mingw-w64/mingw-w64'
+mirrors='http://downloads.sourceforge.net/sourceforge/mingw-w64 https://downloads.sourceforge.net/project/mingw-w64/mingw-w64/mingw-w64-release/'
+relevantpattern='v*.*|.'
+milestones='v4'
+archive_formats='.tar.bz2 .zip'
+signature_format='packed/.sig'

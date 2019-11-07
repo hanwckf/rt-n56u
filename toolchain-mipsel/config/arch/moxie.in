@@ -1,0 +1,11 @@
+# Moxie soft-core architecture
+
+## no-package
+## select ARCH_SUPPORTS_32
+## select ARCH_DEFAULT_32
+## select ARCH_SUPPORTS_EITHER_ENDIAN
+## select ARCH_DEFAULT_BE
+## depends on EXPERIMENTAL
+
+## help The Moxie soft-core architecture, as defined by:
+## help     http://moxielogic.org/blog/pages/architecture.html

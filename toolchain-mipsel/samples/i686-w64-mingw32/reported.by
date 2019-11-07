@@ -1,0 +1,4 @@
+reporter_name="Yann Diorcet <diorcet.yann@gmail.com>"
+reporter_url=""
+reporter_comment="Config to build cross-compiler with mingw as kernel type for
+32 bits Windows target"

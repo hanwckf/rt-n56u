@@ -1,0 +1,98 @@
+commit dff73565df46267296c9bee0589e1f106a07a5e2
+Author: law <law@138bc75d-0d04-0410-961f-82ee72b054a4>
+Date:   Wed Feb 14 07:21:11 2018 +0000
+
+    2018-02-14  Jozef Lawrynowicz <jozefl.gcc@gmail.com>
+    
+            PR target/79242
+            * machmode.def: Define a complex mode for PARTIAL_INT.
+            * genmodes.c (complex_class): Return MODE_COMPLEX_INT for
+            MODE_PARTIAL_INT.
+            * doc/rtl.texi: Document CSPImode.
+            * config/msp430/msp430.c (msp430_hard_regno_nregs): Add CPSImode
+            handling.
+            (msp430_hard_regno_nregs_with_padding): Likewise.
+    
+            PR target/79242
+            * gcc.target/msp430/pr79242.c: New test.
+    
+    git-svn-id: svn+ssh://gcc.gnu.org/svn/gcc/trunk@257653 138bc75d-0d04-0410-961f-82ee72b054a4
+
+---
+ gcc/config/msp430/msp430.c                |    4 ++++
+ gcc/doc/rtl.texi                          |    5 +++--
+ gcc/genmodes.c                            |    1 +
+ gcc/machmode.def                          |    1 +
+ gcc/testsuite/gcc.target/msp430/pr79242.c |   11 +++++++++++
+ 5 files changed, 20 insertions(+), 2 deletions(-)
+
+--- a/gcc/config/msp430/msp430.c
++++ b/gcc/config/msp430/msp430.c
+@@ -309,6 +309,8 @@
+ {
+   if (mode == PSImode && msp430x)
+     return 1;
++  if (mode == CPSImode && msp430x)
++    return 2;
+   return ((GET_MODE_SIZE (mode) + UNITS_PER_WORD - 1)
+ 	  / UNITS_PER_WORD);
+ }
+@@ -320,6 +322,8 @@
+ {
+   if (mode == PSImode)
+     return 2;
++  if (mode == CPSImode)
++    return 4;
+   return msp430_hard_regno_nregs (regno, mode);
+ }
+ 
+--- a/gcc/doc/rtl.texi
++++ b/gcc/doc/rtl.texi
+@@ -1291,10 +1291,11 @@
+ @findex CDImode
+ @findex CTImode
+ @findex COImode
+-@item CQImode, CHImode, CSImode, CDImode, CTImode, COImode
++@findex CPSImode
++@item CQImode, CHImode, CSImode, CDImode, CTImode, COImode, CPSImode
+ These modes stand for a complex number represented as a pair of integer
+ values.  The integer values are in @code{QImode}, @code{HImode},
+-@code{SImode}, @code{DImode}, @code{TImode}, and @code{OImode},
++@code{SImode}, @code{DImode}, @code{TImode}, @code{OImode}, and @code{PSImode},
+ respectively.
+ 
+ @findex BND32mode
+--- a/gcc/genmodes.c
++++ b/gcc/genmodes.c
+@@ -116,6 +116,7 @@
+   switch (c)
+     {
+     case MODE_INT: return MODE_COMPLEX_INT;
++    case MODE_PARTIAL_INT: return MODE_COMPLEX_INT;
+     case MODE_FLOAT: return MODE_COMPLEX_FLOAT;
+     default:
+       error ("no complex class for class %s", mode_class_names[c]);
+--- a/gcc/machmode.def
++++ b/gcc/machmode.def
+@@ -243,6 +243,7 @@
+ 
+ /* Complex modes.  */
+ COMPLEX_MODES (INT);
++COMPLEX_MODES (PARTIAL_INT);
+ COMPLEX_MODES (FLOAT);
+ 
+ /* Decimal floating point modes.  */
+--- /dev/null
++++ b/gcc/testsuite/gcc.target/msp430/pr79242.c
+@@ -0,0 +1,11 @@
++/* { dg-do compile } */
++/* { dg-skip-if "" { "*-*-*" } { "-mcpu=msp430" "-msmall" } { "" } } */
++/* { dg-options "-mcpu=msp430x" } */
++
++typedef _Complex __int20 C;
++
++C
++foo (C x, C y)
++{
++  return x + y;
++}

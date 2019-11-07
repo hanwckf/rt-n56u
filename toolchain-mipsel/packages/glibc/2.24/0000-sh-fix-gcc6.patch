@@ -1,0 +1,23 @@
+From 279acf7a059f2d2296f690d7f2d886bd0e404f30 Mon Sep 17 00:00:00 2001
+From: Alexey Neyman <stilor@att.net>
+Date: Wed, 25 Jan 2017 21:46:53 -0800
+Subject: [PATCH] sh: conditional is false in dl-conflict.c
+
+... ifdef it out, so that it doesn't create a call to abort().
+
+Signed-off-by: Alexey Neyman <stilor@att.net>
+---
+ sysdeps/sh/dl-machine.h |    2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+--- a/sysdeps/sh/dl-machine.h
++++ b/sysdeps/sh/dl-machine.h
+@@ -389,7 +389,7 @@
+ 	  break;
+ 	case R_SH_DIR32:
+ 	  {
+-#ifndef RTLD_BOOTSTRAP
++#if !defined RTLD_BOOTSTRAP && !defined RESOLVE_CONFLICT_FIND_MAP
+ 	   /* This is defined in rtld.c, but nowhere in the static
+ 	      libc.a; make the reference weak so static programs can
+ 	      still link.  This declaration cannot be done when

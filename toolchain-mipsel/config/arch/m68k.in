@@ -1,0 +1,10 @@
+# m68k specific configuration file
+
+## no-package
+## select ARCH_SUPPORTS_32
+## select ARCH_DEFAULT_32
+## select ARCH_DEFAULT_BE
+## select ARCH_SUPPORTS_FLAT_FORMAT
+## select ARCH_SUPPORTS_WITH_CPU
+##
+## help The m68k architecture

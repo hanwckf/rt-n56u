@@ -1,0 +1,42 @@
+commit 2bd2cad9e8a410643e80efa0b15f6f2882e1271b
+Author: Roland McGrath <roland@hack.frob.com>
+Date:   Fri Apr 17 14:29:40 2015 -0700
+
+    Avoid confusing compiler with dynamically impossible statically invalid dereference in _dl_close_worker.
+
+---
+ elf/dl-close.c |   16 +++++++++++++---
+ 1 file changed, 13 insertions(+), 3 deletions(-)
+
+--- a/elf/dl-close.c
++++ b/elf/dl-close.c
+@@ -641,9 +641,16 @@
+ 	  DL_UNMAP (imap);
+ 
+ 	  /* Finally, unlink the data structure and free it.  */
+-	  if (imap->l_prev != NULL)
+-	    imap->l_prev->l_next = imap->l_next;
+-	  else
++#if DL_NNS == 1
++	  /* The assert in the (imap->l_prev == NULL) case gives
++	     the compiler license to warn that NS points outside
++	     the dl_ns array bounds in that case (as nsid != LM_ID_BASE
++	     is tantamount to nsid >= DL_NNS).  That should be impossible
++	     in this configuration, so just assert about it instead.  */
++	  assert (nsid == LM_ID_BASE);
++	  assert (imap->l_prev != NULL);
++#else
++	  if (imap->l_prev == NULL)
+ 	    {
+ 	      assert (nsid != LM_ID_BASE);
+ 	      ns->_ns_loaded = imap->l_next;
+@@ -652,6 +659,9 @@
+ 		 we leave for debuggers to examine.  */
+ 	      r->r_map = (void *) ns->_ns_loaded;
+ 	    }
++	  else
++#endif
++	    imap->l_prev->l_next = imap->l_next;
+ 
+ 	  --ns->_ns_nloaded;
+ 	  if (imap->l_next != NULL)

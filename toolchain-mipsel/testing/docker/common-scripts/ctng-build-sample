@@ -1,0 +1,6 @@
+#!/bin/bash --login
+# Use --login to ensure /etc/profile is read
+
+set -e
+cd work
+ct-ng build-all ${1+CT_SAMPLES="$*"}

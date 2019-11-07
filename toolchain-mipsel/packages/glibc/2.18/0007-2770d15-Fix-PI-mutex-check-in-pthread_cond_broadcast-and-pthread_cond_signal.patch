@@ -1,0 +1,77 @@
+commit 2770d15e7e880821fc586619c59eb45180628e16
+Author: Siddhesh Poyarekar <siddhesh@redhat.com>
+Date:   Thu Oct 3 08:26:21 2013 +0530
+
+    Fix PI mutex check in pthread_cond_broadcast and pthread_cond_signal
+    
+    Fixes BZ #15996.
+    
+    The check had a typo - it checked for PTHREAD_MUTEX_ROBUST_NP instead
+    of PTHREAD_MUTEX_ROBUST_NORMAL_NP.  It has now been replaced by the
+    already existing convenience macro USE_REQUEUE_PI.
+
+---
+ NEWS                          |    2 +-
+ nptl/ChangeLog                |    9 +++++++++
+ nptl/pthread_cond_broadcast.c |    5 +----
+ nptl/pthread_cond_signal.c    |    7 +------
+ 4 files changed, 12 insertions(+), 11 deletions(-)
+
+--- a/NEWS
++++ b/NEWS
+@@ -9,7 +9,7 @@
+ 
+ * The following bugs are resolved with this release:
+ 
+-  15909.
++  15909, 15996.
+ 
+ Version 2.18
+ 
+--- a/nptl/ChangeLog
++++ b/nptl/ChangeLog
+@@ -1,3 +1,12 @@
++2013-10-03  Siddhesh Poyarekar  <siddhesh@redhat.com>
++
++	[BZ #15996]
++	* pthread_cond_broadcast.c (__pthread_cond_broadcast)
++	[lll_futex_cmp_requeue_pi && __ASSUME_REQUEUE_PI]: Use
++	USE_REQUEUE_PI.
++	* pthread_cond_signal.c (__pthread_cond_signal)
++	[lll_futex_cmd_requeue_pi && __ASSUME_REQUEUE_PI]: Likewise.
++
+ 2013-07-23  David S. Miller  <davem@davemloft.net>
+ 
+ 	* tst-cancel4.c (WRITE_BUFFER_SIZE): Adjust comment.
+--- a/nptl/pthread_cond_broadcast.c
++++ b/nptl/pthread_cond_broadcast.c
+@@ -63,10 +63,7 @@
+ 
+ #if (defined lll_futex_cmp_requeue_pi \
+      && defined __ASSUME_REQUEUE_PI)
+-      int pi_flag = PTHREAD_MUTEX_PRIO_INHERIT_NP | PTHREAD_MUTEX_ROBUST_NP;
+-      pi_flag &= mut->__data.__kind;
+-
+-      if (pi_flag == PTHREAD_MUTEX_PRIO_INHERIT_NP)
++      if (USE_REQUEUE_PI (mut))
+ 	{
+ 	  if (lll_futex_cmp_requeue_pi (&cond->__data.__futex, 1, INT_MAX,
+ 					&mut->__data.__lock, futex_val,
+--- a/nptl/pthread_cond_signal.c
++++ b/nptl/pthread_cond_signal.c
+@@ -49,14 +49,9 @@
+ 
+ #if (defined lll_futex_cmp_requeue_pi \
+      && defined __ASSUME_REQUEUE_PI)
+-      int pi_flag = PTHREAD_MUTEX_PRIO_INHERIT_NP | PTHREAD_MUTEX_ROBUST_NP;
+       pthread_mutex_t *mut = cond->__data.__mutex;
+ 
+-      /* Do not use requeue for pshared condvars.  */
+-      if (mut != (void *) ~0l)
+-	pi_flag &= mut->__data.__kind;
+-
+-      if (__builtin_expect (pi_flag == PTHREAD_MUTEX_PRIO_INHERIT_NP, 0)
++      if (USE_REQUEUE_PI (mut)
+ 	/* This can only really fail with a ENOSYS, since nobody can modify
+ 	   futex while we have the cond_lock.  */
+ 	  && lll_futex_cmp_requeue_pi (&cond->__data.__futex, 1, 0,

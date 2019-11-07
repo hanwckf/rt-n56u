@@ -1,0 +1,10 @@
+# MSP430 specific config options
+
+## no-package
+## select ARCH_SUPPORTS_16
+## select ARCH_DEFAULT_16
+## select ARCH_REQUIRES_MULTILIB
+## depends on EXPERIMENTAL
+##
+## help The 16-bit MSP430 architecture, as defined by:
+## help     http://www.ti.com/lsds/ti/microcontrollers-16-bit-32-bit/msp/overview.page?HQS=msp430

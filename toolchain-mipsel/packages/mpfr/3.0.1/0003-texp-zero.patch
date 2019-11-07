@@ -1,0 +1,53 @@
+---
+ PATCHES      |    1 +
+ VERSION      |    2 +-
+ mpfr.h       |    2 +-
+ tests/texp.c |    4 +++-
+ version.c    |    2 +-
+ 5 files changed, 7 insertions(+), 4 deletions(-)
+
+--- a/PATCHES
++++ b/PATCHES
+@@ -1,3 +1,4 @@
++texp-zero
+ atan-expo-range
+ rec_sqrt-carry
+ asin_exprange
+--- a/VERSION
++++ b/VERSION
+@@ -1 +1 @@
+-3.0.1-p3
++3.0.1-p4
+--- a/mpfr.h
++++ b/mpfr.h
+@@ -27,7 +27,7 @@
+ #define MPFR_VERSION_MAJOR 3
+ #define MPFR_VERSION_MINOR 0
+ #define MPFR_VERSION_PATCHLEVEL 1
+-#define MPFR_VERSION_STRING "3.0.1-p3"
++#define MPFR_VERSION_STRING "3.0.1-p4"
+ 
+ /* Macros dealing with MPFR VERSION */
+ #define MPFR_VERSION_NUM(a,b,c) (((a) << 16L) | ((b) << 8) | (c))
+--- a/tests/texp.c
++++ b/tests/texp.c
+@@ -170,7 +170,9 @@
+       mpfr_set_prec (x, prec);
+       mpfr_set_prec (y, prec);
+       mpfr_set_prec (z, prec);
+-      mpfr_urandomb (x, RANDS);
++      do
++        mpfr_urandomb (x, RANDS);
++      while (MPFR_IS_ZERO (x));  /* 0 is handled by mpfr_exp only */
+       rnd = RND_RAND ();
+       mpfr_exp_2 (y, x, rnd);
+       mpfr_exp_3 (z, x, rnd);
+--- a/version.c
++++ b/version.c
+@@ -25,5 +25,5 @@
+ const char *
+ mpfr_get_version (void)
+ {
+-  return "3.0.1-p3";
++  return "3.0.1-p4";
+ }

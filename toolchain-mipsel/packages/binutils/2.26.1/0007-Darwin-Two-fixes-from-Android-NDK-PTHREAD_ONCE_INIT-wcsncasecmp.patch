@@ -1,0 +1,70 @@
+From c39479f4ab4d372b518957871e1f205a03e7c3d6 Mon Sep 17 00:00:00 2001
+From: Andrew Hsieh <andrewhsieh@google.com>
+Date: Wed, 18 Mar 2015 10:57:24 +0800
+Subject: [PATCH] Fix darwin build
+
+1. In Drawin PTHREAD_ONCE_INIT is {0x30B1BCBA, {0}} and the GCC < 4.4
+   doesn't support ended initializer list
+2. wcsncasecmp doesn't exist in MacSDK10.6.x
+
+Change-Id: I69204a72f853f5263dffedc448379d75ed4eca2e
+---
+ bfd/peXXigen.c       |   22 ++++++++++++++++++++++
+ gold/gold-threads.cc |   15 ++++++++++++---
+ 2 files changed, 34 insertions(+), 3 deletions(-)
+
+--- a/bfd/peXXigen.c
++++ b/bfd/peXXigen.c
+@@ -3578,6 +3578,28 @@
+ }
+ #endif /* HAVE_WCHAR_H and not Cygwin/Mingw */
+ 
++#if defined __APPLE__ && __DARWIN_C_LEVEL < 200809L
++/* wcsncasecmp isn't always defined in Mac SDK */
++static int
++wcsncasecmp(const wchar_t *s1, const wchar_t *s2, size_t n)
++{
++  wchar_t c1, c2;
++
++  if (n == 0)
++    return (0);
++  for (; *s1; s1++, s2++)
++  {
++    c1 = towlower(*s1);
++    c2 = towlower(*s2);
++    if (c1 != c2)
++      return ((int)c1 - c2);
++    if (--n == 0)
++      return (0);
++  }
++  return (-*s2);
++}
++#endif
++
+ /* Perform a comparison of two entries.  */
+ static signed int
+ rsrc_cmp (bfd_boolean is_name, rsrc_entry * a, rsrc_entry * b)
+--- a/gold/gold-threads.cc
++++ b/gold/gold-threads.cc
+@@ -284,9 +284,18 @@
+ class Once_initialize
+ {
+  public:
+-  Once_initialize()
+-    : once_(PTHREAD_ONCE_INIT)
+-  { }
++   Once_initialize()
++#if !defined(__APPLE__)
++     : once_(PTHREAD_ONCE_INIT)
++   { }
++#else
++// In Drawin PTHREAD_ONCE_INIT is {0x30B1BCBA, {0}} and the GCC < 4.4 doesn't support
++// extended initializer list as above */
++   {
++     pthread_once_t once_2 = PTHREAD_ONCE_INIT;
++     once_ = once_2; 
++   }
++#endif
+ 
+   // Return a pointer to the pthread_once_t variable.
+   pthread_once_t*

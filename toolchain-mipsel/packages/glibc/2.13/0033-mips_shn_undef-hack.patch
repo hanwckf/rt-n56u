@@ -1,0 +1,19 @@
+---
+ elf/dl-lookup.c |    6 ++++++
+ 1 file changed, 6 insertions(+)
+
+--- a/elf/dl-lookup.c
++++ b/elf/dl-lookup.c
+@@ -301,6 +301,12 @@
+ 	      /* FALLTHROUGH */
+ 	    case STB_GLOBAL:
+ 	    success:
++#ifdef __mips__
++	      /* HACK: MIPS marks its lazy evaluation stubs with SHN_UNDEF
++		 symbols, we skip them. */
++	      if (sym->st_shndx == SHN_UNDEF)
++		break;
++#endif
+ 	      /* Global definition.  Just what we need.  */
+ 	      result->s = sym;
+ 	      result->m = (struct link_map *) map;

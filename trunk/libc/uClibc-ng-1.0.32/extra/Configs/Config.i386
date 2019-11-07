@@ -1,0 +1,39 @@
+#
+# For a description of the syntax of this configuration file,
+# see extra/config/Kconfig-language.txt
+#
+
+config TARGET_ARCH
+	string
+	default "i386"
+
+config FORCE_OPTIONS_FOR_ARCH
+	bool
+	default y
+	select ARCH_LITTLE_ENDIAN
+	select ARCH_HAS_MMU
+	select ARCH_HAS_UCONTEXT
+	select ARCH_HAS_DEPRECATED_SYSCALLS
+
+choice
+	prompt "Target x86 Processor Family"
+	default CONFIG_686
+	help
+	  This is the processor type of your CPU. This information is used for
+	  selecting different handcoded optimization functions.  Nowadays, most
+	  people have an i686 CPU.  If you don't, you most likely know what this
+	  means and can pick the right one for your processor.
+
+config CONFIG_386
+	bool "386"
+
+config CONFIG_486
+	bool "486"
+
+config CONFIG_586
+	bool "586"
+
+config CONFIG_686
+	bool "686"
+
+endchoice

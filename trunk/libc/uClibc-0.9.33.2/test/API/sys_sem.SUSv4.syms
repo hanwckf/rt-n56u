@@ -1,3 +1,0 @@
-semctl
-semget
-semop

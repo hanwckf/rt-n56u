@@ -1,4 +1,0 @@
-closelog
-openlog
-setlogmask
-syslog

@@ -1,0 +1,149 @@
+# Makefile for uClibc
+#
+# Copyright (C) 2000-2008 Erik Andersen <andersen@uclibc.org>
+#
+# Licensed under the LGPL v2.1, see the file COPYING.LIB in this tarball.
+#
+
+COMMON_DIR := $(top_srcdir)libc/sysdeps/linux/common
+COMMON_OUT := $(top_builddir)libc/sysdeps/linux/common
+
+CSRC-y := $(notdir $(wildcard $(COMMON_DIR)/*.c))
+CSRC-  := ssp-local.c
+
+CSRC_LFS := $(notdir $(wildcard $(COMMON_DIR)/*64.c))
+CSRC-y := $(filter-out llseek.c $(CSRC_LFS),$(CSRC-y))
+CSRC-y += llseek.c $(CSRC_LFS)
+CSRC-$(findstring y,$(UCLIBC_HAS_SSP)) += ssp.c
+# we need these internally: fstatfs.c statfs.c
+CSRC-$(UCLIBC_LINUX_SPECIFIC) += \
+	bdflush.c \
+	capget.c \
+	capset.c \
+	dup3.c \
+	euidaccess.c \
+	eventfd.c \
+	eventfd_read.c \
+	eventfd_write.c \
+	fanotify.c \
+	getrandom.c \
+	inotify.c \
+	ioperm.c \
+	iopl.c \
+	modify_ldt.c \
+	module.c \
+	personality.c \
+	pipe2.c \
+	ppoll.c \
+	prctl.c \
+	readahead.c \
+	reboot.c \
+	remap_file_pages.c \
+	sched_cpucount.c \
+	sched_getaffinity.c \
+	sched_getcpu.c \
+	sched_setaffinity.c \
+	sendfile.c \
+	setfsgid.c \
+	setfsuid.c \
+	setns.c \
+	setresgid.c \
+	setresuid.c \
+	signalfd.c \
+	splice.c \
+	swapoff.c \
+	swapon.c \
+	sync_file_range.c \
+	syncfs.c \
+	sysctl.c \
+	sysinfo.c \
+	tee.c \
+	timerfd.c \
+	umount2.c \
+	umount.c \
+	unshare.c \
+	uselib.c \
+	vhangup.c \
+	vmsplice.c
+CSRC-$(UCLIBC_LINUX_SPECIFIC) += sendfile64.c
+# posix_fallocate() needs __libc_fallocate() from fallocate.c
+# posix_fallocate64() needs __libc_fallocate64() from fallocate64.c
+CSRC-$(if $(UCLIBC_LINUX_SPECIFIC)$(UCLIBC_HAS_ADVANCED_REALTIME),y,) += \
+	fallocate.c $(filter fallocate64.c,$(CSRC-y))
+# NPTL needs these internally: madvise.c
+CSRC-$(findstring y,$(UCLIBC_LINUX_SPECIFIC)$(UCLIBC_HAS_THREADS_NATIVE)) += madvise.c
+ifeq ($(UCLIBC_HAS_THREADS),y)
+CSRC- += raise.c
+endif
+ifeq ($(UCLIBC_HAS_THREADS_NATIVE),y)
+CSRC- += fork.c getpid.c
+CSRC- += $(if $(findstring =arm=,=$(TARGET_ARCH)=),vfork.c)
+CSRC- += $(if $(findstring =x86_64=,=$(TARGET_ARCH)=),vfork.c)
+CSRC- += $(if $(findstring =metag=,=$(TARGET_ARCH)=),vfork.c)
+endif
+ifneq ($(ARCH_HAS_DEPRECATED_SYSCALLS),y)
+# No conversion is needed for new architectures
+CSRC- += xstatconv.c
+endif
+# stubbed out in mman.h
+CSRC-$(ARCH_USE_MMU) += msync.c
+# we need these internally: getdomainname.c
+CSRC-$(UCLIBC_BSD_SPECIFIC) += mincore.c setdomainname.c
+CSRC-$(UCLIBC_NTP_LEGACY) += ntp_gettime.c
+# aio_cancel|aio_error|aio_fsync|aio_read|aio_return|aio_suspend|aio_write|clock_getres|clock_gettime|clock_settime|clock_settime|fdatasync|lio_listio|mlockall|munlockall|mlock|munlock|mq_close|mq_getattr|mq_notify|mq_open|mq_receive|mq_timedreceive|mq_send|mq_timedsend|mq_setattr|mq_unlink|nanosleep|sched_getparam|sched_get_priority_max|sched_get_priority_min|sched_getscheduler|sched_rr_get_interval|sched_setparam|sched_setscheduler|sem_close|sem_destroy|sem_getvalue|sem_init|sem_open|sem_post|sem_trywait|sem_wait|sem_unlink|sem_wait|shm_open|shm_unlink|sigqueue|sigtimedwait|sigwaitinfo|timer_create|timer_delete|timer_getoverrun|timer_gettime|timer_settime
+CSRC-$(UCLIBC_HAS_REALTIME) += clock_adjtime.c clock_getres.c clock_gettime.c clock_settime.c \
+	fdatasync.c mlockall.c mlock.c munlockall.c munlock.c \
+	nanosleep.c __rt_sigtimedwait.c __rt_sigwaitinfo.c sched_getparam.c \
+	sched_get_priority_max.c sched_get_priority_min.c sched_getscheduler.c \
+	sched_rr_get_interval.c sched_setparam.c sched_setscheduler.c sigqueue.c
+# use clock_gettime.c from librt
+ifeq ($(UCLIBC_HAS_ADVANCED_REALTIME),y)
+CSRC- += clock_gettime.c
+endif
+# clock_getcpuclockid|clock_nanosleep|mq_timedreceive|mq_timedsend|posix_fadvise|posix_fallocate|posix_madvise|posix_memalign|posix_mem_offset|posix_spawnattr_destroy|posix_spawnattr_init|posix_spawnattr_getflags|posix_spawnattr_setflags|posix_spawnattr_getpgroup|posix_spawnattr_setpgroup|posix_spawnattr_getschedparam|posix_spawnattr_setschedparam|posix_spawnattr_getschedpolicy|posix_spawnattr_setschedpolicy|posix_spawnattr_getsigdefault|posix_spawnattr_setsigdefault|posix_spawnattr_getsigmask|posix_spawnattr_setsigmask|posix_spawnattr_init|posix_spawnattr_setflags|posix_spawnattr_setpgroup|posix_spawnattr_setschedparam|posix_spawnattr_setschedpolicy|posix_spawnattr_setsigdefault|posix_spawnattr_setsigmask|posix_spawn_file_actions_addclose|posix_spawn_file_actions_addopen|posix_spawn_file_actions_adddup2|posix_spawn_file_actions_addopen|posix_spawn_file_actions_destroy|posix_spawn_file_actions_init|posix_spawn_file_actions_init|posix_spawn|posix_spawnp|posix_spawnp|posix_typed_mem_get_info|pthread_mutex_timedlock|sem_timedwait
+CSRC-$(UCLIBC_HAS_ADVANCED_REALTIME) += posix_fadvise64.c posix_fadvise.c posix_madvise.c \
+	posix_fallocate.c posix_fallocate64.c
+CSRC-$(UCLIBC_SUSV4_LEGACY) += utime.c
+CSRC- += epoll.c # multi-source
+CSRC-$(UCLIBC_HAS_EPOLL) += epoll_create.c epoll_ctl.c epoll_wait.c epoll_pwait.c
+CSRC-$(UCLIBC_HAS_XATTR) += xattr.c
+CSRC-$(UCLIBC_HAS_PROFILING) += noophooks.c #pcprofile.c
+CSRC-$(UCLIBC_SV4_DEPRECATED) += ustat.c
+CSRC- += $(if $(findstring =c6x=,=$(TARGET_ARCH)=),vfork.c)
+CSRC- += $(if $(findstring =sh=,=$(TARGET_ARCH)=),vfork.c)
+CSRC- += $(if $(findstring =sparc=,=$(TARGET_ARCH)=),vfork.c)
+CSRC- += $(if $(findstring =i386=,=$(TARGET_ARCH)=),vfork.c)
+
+CSRC-y := $(filter-out $(CSRC-),$(CSRC-y))
+
+# provided via pthreads builddir
+CSRC-y := $(filter-out $(libc_a_CSRC) $(notdir $(libpthread_libc_OBJS:.o=.c)),$(CSRC-y))
+SSRC-y := $(filter-out $(libc_a_SSRC) $(notdir $(libpthread_libc_OBJS:.o=.S)),$(SSRC-y))
+
+# fails for some reason
+ifneq ($(strip $(ARCH_OBJS-y)),)
+CSRC-y := $(filter-out $(notdir $(ARCH_OBJS-y:.o=.c)) $(ARCH_OBJ_FILTEROUT-y),$(CSRC-y))
+endif
+
+CFLAGS-OMIT-ssp.c := $(CFLAG_-fstack-protector) $(CFLAG_-fstack-protector-all) $(CFLAG_-fstack-protector-strong)
+CFLAGS-OMIT-ssp-local.c := $(CFLAG_-fstack-protector) $(CFLAG_-fstack-protector-all) $(CFLAG_-fstack-protector-strong)
+CFLAGS-ssp.c := $(SSP_DISABLE_FLAGS)
+CFLAGS-ssp-local.c := $(SSP_DISABLE_FLAGS)
+
+COMMON_SRC := $(patsubst %.c,$(COMMON_DIR)/%.c,$(CSRC-y))
+COMMON_OBJ := $(patsubst %.c,$(COMMON_OUT)/%.o,$(CSRC-y))
+
+libc-y += $(COMMON_OBJ)
+libc-static-$(UCLIBC_HAS_SSP) += $(COMMON_OUT)/ssp-local.o
+libc-nonshared-$(UCLIBC_HAS_SSP) += $(COMMON_OUT)/ssp-local.os
+
+libc-nomulti-y += $(COMMON_OUT)/__syscall_rt_sigaction.o \
+	$(COMMON_OUT)/__syscall_sigaction.o \
+	$(COMMON_OUT)/mremap.o \
+	$(COMMON_OUT)/stat.o
+libc-nomulti-$(UCLIBC_HAS_SSP) += $(COMMON_OUT)/ssp.o
+
+objclean-y += CLEAN_libc/sysdeps/linux/common
+
+CLEAN_libc/sysdeps/linux/common:
+	$(do_rm) $(addprefix $(COMMON_OUT)/*., o os oS)

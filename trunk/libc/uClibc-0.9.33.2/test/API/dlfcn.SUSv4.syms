@@ -1,4 +1,0 @@
-dlclose
-dlerror
-dlopen
-dlsym

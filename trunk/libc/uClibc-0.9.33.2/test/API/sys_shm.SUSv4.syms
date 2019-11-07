@@ -1,4 +1,0 @@
-shmat
-shmctl
-shmdt
-shmget

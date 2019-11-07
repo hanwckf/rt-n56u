@@ -1,8 +1,0 @@
-These tests were imported from 'glibc/elf' and are responsible for testing
-the TLS functionality of the dynamic loader. The file 'tls-macros-mips.h'
-is a copy of 'glibc/sysdeps/mips/tls-macros.h'. Dependency and link orders
-are critical and should NOT be changed. Even if you think you know what
-you are doing, do not touch the Makefile without posting to the uClibc
-development mailing list.
-
--Steve <sjhill@uclibc.org>

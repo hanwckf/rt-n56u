@@ -1,9 +1,0 @@
-posix_trace_attr_getlogfullpolicy
-posix_trace_attr_getlogsize
-posix_trace_attr_setlogfullpolicy
-posix_trace_attr_setlogsize
-posix_trace_close
-posix_trace_create_withlog
-posix_trace_flush
-posix_trace_open
-posix_trace_rewind

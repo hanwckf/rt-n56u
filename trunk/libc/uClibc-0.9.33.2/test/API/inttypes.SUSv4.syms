@@ -1,6 +1,0 @@
-imaxabs
-imaxdiv
-strtoimax
-strtoumax
-wcstoimax
-wcstoumax

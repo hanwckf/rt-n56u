@@ -1,5 +1,0 @@
-getpriority
-getrlimit
-getrusage
-setpriority
-setrlimit

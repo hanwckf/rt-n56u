@@ -1,3 +1,0 @@
-wait
-waitid
-waitpid

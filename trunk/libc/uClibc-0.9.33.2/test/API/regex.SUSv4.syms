@@ -1,4 +1,0 @@
-regcomp
-regerror
-regexec
-regfree

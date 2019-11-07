@@ -1,2 +1,0 @@
-fstatvfs
-statvfs

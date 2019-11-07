@@ -1,0 +1,34 @@
+# Makefile for uClibc
+#
+# Copyright (C) 2000-2008 Erik Andersen <andersen@uclibc.org>
+#
+# Licensed under the LGPL v2.1, see the file COPYING.LIB in this tarball.
+#
+
+subdirs += libc/misc/time
+
+CSRC-y := adjtime.c
+CSRC-$(UCLIBC_SUSV3_LEGACY) += ftime.c
+# multi source time.c
+CSRC-y += asctime.c asctime_r.c clock.c ctime.c ctime_r.c gmtime.c gmtime_r.c \
+	localtime.c localtime_r.c mktime.c strftime.c strptime.c tzset.c \
+	_time_t2tm.c __time_tm.c _time_mktime.c dysize.c timegm.c \
+	_time_mktime_tzi.c _time_localtime_tzi.c
+CSRC-$(UCLIBC_HAS_FLOATS) += difftime.c
+CSRC-$(UCLIBC_HAS_XLOCALE) += strftime_l.c strptime_l.c
+CSRC-$(UCLIBC_HAS_WCHAR) += wcsftime.c
+CSRC-$(if $(findstring yy,$(UCLIBC_HAS_WCHAR)$(UCLIBC_HAS_XLOCALE)),y) += \
+	wcsftime_l.c
+
+MISC_TIME_DIR := $(top_srcdir)libc/misc/time
+MISC_TIME_OUT := $(top_builddir)libc/misc/time
+
+MISC_TIME_SRC := $(patsubst %.c,$(MISC_TIME_DIR)/%.c,$(CSRC-y))
+MISC_TIME_OBJ := $(patsubst %.c,$(MISC_TIME_OUT)/%.o,$(CSRC-y))
+
+libc-y += $(MISC_TIME_OBJ)
+
+objclean-y += CLEAN_libc/misc/time
+
+CLEAN_libc/misc/time:
+	$(do_rm) $(addprefix $(MISC_TIME_OUT)/*., o os)

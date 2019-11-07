@@ -1,0 +1,11 @@
+# Makefile for uClibc
+#
+# Copyright (C) 2000-2005 Erik Andersen <andersen@uclibc.org>
+#
+# Licensed under the LGPL v2.1, see the file COPYING.LIB in this tarball.
+#
+
+CSRC-y := __syscall_error.c brk.c syscall.c
+
+SSRC-y := __longjmp.S bsd-_setjmp.S bsd-setjmp.S clone.S setjmp.S \
+	add_n.s lshift.s rshift.s sub_n.s udiv_qrnnd.s vfork.S

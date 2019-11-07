@@ -1,0 +1,30 @@
+# Makefile for uClibc
+#
+# Copyright (C) 2000-2008 Erik Andersen <andersen@uclibc.org>
+#
+# Licensed under the LGPL v2.1, see the file COPYING.LIB in this tarball.
+#
+
+subdirs += libc/pwd_grp
+
+PWDGRP_DIR := $(top_srcdir)libc/pwd_grp
+PWDGRP_OUT := $(top_builddir)libc/pwd_grp
+
+CSRC-y := $(notdir $(wildcard $(PWDGRP_DIR)/*.c))
+CSRC-  := pwd_grp.c pwd_grp_internal.c # multi-source and helper
+CSRC-$(UCLIBC_HAS_SHADOW) += fgetspent_r.c fgetspent.c getspent_r.c getspent.c \
+	getspnam_r.c getspnam.c lckpwdf.c putspent.c \
+	sgetspent_r.c sgetspent.c __parsespent.c
+# getspuid_r.c getspuid.c
+
+CSRC-y := $(filter-out $(CSRC-),$(CSRC-y))
+
+PWDGRP_SRC := $(patsubst %.c,$(PWDGRP_DIR)/%.c,$(CSRC-y))
+PWDGRP_OBJ := $(patsubst %.c,$(PWDGRP_OUT)/%.o,$(CSRC-y))
+
+libc-y += $(PWDGRP_OBJ)
+
+objclean-y += CLEAN_libc/pwd_grp
+
+CLEAN_libc/pwd_grp:
+	$(do_rm) $(addprefix $(PWDGRP_OUT)/*., o os)

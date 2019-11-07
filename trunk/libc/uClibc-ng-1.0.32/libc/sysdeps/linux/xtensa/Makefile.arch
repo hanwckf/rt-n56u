@@ -1,0 +1,12 @@
+# Makefile for uClibc
+#
+# Copyright (C) 2007, 2008 Tensilica Inc.
+#
+# Licensed under the LGPL v2.1, see the file COPYING.LIB in this tarball.
+#
+
+CSRC-y := brk.c sigaction.c __syscall_error.c
+SSRC-y := bsd-_setjmp.S bsd-setjmp.S setjmp.S clone.S \
+	  sigrestorer.S syscall.S mmap.S windowspill.S __longjmp.S vfork.S
+
+CSRC-$(if $(UCLIBC_HAS_THREADS_NATIVE),,y) += fork.c

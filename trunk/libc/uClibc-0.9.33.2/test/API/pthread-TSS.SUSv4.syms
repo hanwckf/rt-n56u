@@ -1,2 +1,0 @@
-pthread_attr_getstacksize
-pthread_attr_setstacksize

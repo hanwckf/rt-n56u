@@ -1,0 +1,39 @@
+# Makefile for uClibc
+#
+# Copyright (C) 2000-2008 Erik Andersen <andersen@uclibc.org>
+#
+# Licensed under the LGPL v2.1, see the file COPYING.LIB in this tarball.
+#
+
+# The stdio and time related wide functions are now built in the normal
+# directories.
+#
+# stdio:
+#	fwide fgetwc getwchar fgetws fputwc putwchar fputws ungetwc
+#	getwc (fgetwc alias) getwc_unlocked (fgetwc_unlocked alias)
+#	putwc (fputwc alias) putwc_unlocked (fputwc_unlocked alias)
+# time:
+# wcsftime
+#
+
+subdirs += libc/misc/wchar
+
+# multi source wchar.c
+CSRC-y :=	btowc.c wctob.c mbsinit.c mbrlen.c mbrtowc.c wcrtomb.c mbsrtowcs.c \
+	wcsrtombs.c _wchar_utf8sntowcs.c _wchar_wcsntoutf8s.c \
+	mbsnrtowcs.c wcsnrtombs.c wcwidth.c wcswidth.c
+
+CSRC-$(UCLIBC_HAS_LOCALE) += iconv.c
+
+MISC_WCHAR_DIR := $(top_srcdir)libc/misc/wchar
+MISC_WCHAR_OUT := $(top_builddir)libc/misc/wchar
+
+MISC_WCHAR_SRC := $(patsubst %.c,$(MISC_WCHAR_DIR)/%.c,$(CSRC-y))
+MISC_WCHAR_OBJ := $(patsubst %.c,$(MISC_WCHAR_OUT)/%.o,$(CSRC-y))
+
+libc-$(UCLIBC_HAS_WCHAR) += $(MISC_WCHAR_OBJ)
+
+objclean-y += CLEAN_libc/misc/wchar
+
+CLEAN_libc/misc/wchar:
+	$(do_rm) $(addprefix $(MISC_WCHAR_OUT)/*., o os)

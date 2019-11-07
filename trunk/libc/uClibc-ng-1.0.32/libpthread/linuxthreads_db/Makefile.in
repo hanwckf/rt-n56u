@@ -1,0 +1,73 @@
+# Makefile for uClibc
+#
+# Copyright (C) 2000-2008 Erik Andersen <andersen@uclibc.org>
+#
+# Licensed under the LGPL v2.1, see the file COPYING.LIB in this tarball.
+#
+
+subdirs += libpthread/linuxthreads_db
+
+# Get the thread include dependencies and shared object name
+CFLAGS-libpthread/linuxthreads_db := -DNOT_IN_libc -DLIBPTHREAD_SO="\"libpthread.so.$(ABI_VERSION)\""
+
+LDFLAGS-libthread_db.so := $(LDFLAGS_NOSTRIP) $(if $(call check_ld,--warn-unresolved-symbols),-Wl$(comma)--warn-unresolved-symbols)
+ifeq ($(DOSTRIP),y)
+LDFLAGS-libthread_db.so += -Wl,-s
+endif
+
+LIBS-libthread_db.so := $(LIBS)
+
+libthread_db_FULL_NAME := libthread_db-$(VERSION).so
+
+libthread_db_DIR := $(top_srcdir)libpthread/linuxthreads_db
+libthread_db_OUT := $(top_builddir)libpthread/linuxthreads_db
+
+libthread_db_SRC := $(wildcard $(libthread_db_DIR)/*.c)
+
+libthread_db_OBJ := $(patsubst $(libthread_db_DIR)/%.c,$(libthread_db_OUT)/%.o,$(libthread_db_SRC))
+
+libthread_db-so-y := $(libthread_db_OBJ:.o=.os)
+ifeq ($(DOPIC),y)
+libthread_db-a-y  := $(libthread_db-so-y)
+else
+libthread_db-a-y  := $(libthread_db_OBJ)
+endif
+
+lib-a-$(PTHREADS_DEBUG_SUPPORT) += $(top_builddir)lib/libthread_db.a
+lib-so-$(PTHREADS_DEBUG_SUPPORT) += $(top_builddir)lib/libthread_db.so
+
+ifeq ($(DOPIC),y)
+$(top_builddir)lib/libthread_db.so: $(top_builddir)lib/libthread_db.a $(libc.depend)
+else
+$(top_builddir)lib/libthread_db.so: $(libthread_db_OUT)/libthread_db_so.a $(libc.depend)
+endif
+	$(call link.so,$(libthread_db_FULL_NAME),1)
+
+$(libthread_db_OUT)/libthread_db_so.a: $(libthread_db-so-y)
+	$(Q)$(RM) $@
+	$(do_ar)
+
+$(libthread_db_OUT)/libthread_db.oS: $(libthread_db_SRC)
+	$(Q)$(RM) $@
+	$(compile-m)
+
+$(top_builddir)lib/libthread_db.a: $(libthread_db-a-y)
+	$(Q)$(INSTALL) -d $(dir $@)
+	$(Q)$(RM) $@
+	$(do_ar)
+
+$(top_builddir)include/thread_db.h:
+	$(do_ln) $(call rel_srcdir)$(PTDIR)_db/$(@F) $@
+
+linuxthreads_db_headers := $(top_builddir)include/thread_db.h
+$(linuxthreads_db_headers): $(wildcard $(addprefix $(top_builddir)include/config/linuxthreads/,old.h new.h))
+headers-$(PTHREADS_DEBUG_SUPPORT) += $(linuxthreads_db_headers)
+
+objclean-y += CLEAN_libpthread/linuxthreads_db
+headers_clean-y += HEADERCLEAN_libpthread/linuxthreads_db
+
+HEADERCLEAN_libpthread/linuxthreads_db:
+	$(do_rm) $(linuxthreads_db_headers)
+
+CLEAN_libpthread/linuxthreads_db:
+	$(do_rm) $(addprefix $(libthread_db_OUT)/*., o os oS a)

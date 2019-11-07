@@ -1,0 +1,26 @@
+# Makefile for uClibc
+#
+# Copyright (C) 2000-2008 Erik Andersen <andersen@uclibc.org>
+#
+# Licensed under the LGPL v2.1, see the file COPYING.LIB in this tarball.
+#
+
+subdirs += libc/misc/file
+
+MISC_FILE_DIR := $(top_srcdir)libc/misc/file
+MISC_FILE_OUT := $(top_builddir)libc/misc/file
+
+CSRC-y := $(wildcard $(MISC_FILE_DIR)/*.c)
+CSRC_LFS := $(wildcard $(MISC_FILE_DIR)/*64.c)
+CSRC-y := $(filter-out $(CSRC_LFS),$(CSRC-y))
+CSRC-y += $(CSRC_LFS)
+
+MISC_FILE_OBJ := $(patsubst $(MISC_FILE_DIR)/%.c,$(MISC_FILE_OUT)/%.o,$(CSRC-y))
+libc-y += $(MISC_FILE_OBJ)
+
+libc-nomulti-y += $(MISC_FILE_OUT)/lockf64.o
+
+objclean-y += CLEAN_libc/misc/file
+
+CLEAN_libc/misc/file:
+	$(do_rm) $(addprefix $(MISC_FILE_OUT)/*., o os oS)

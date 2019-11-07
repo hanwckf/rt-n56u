@@ -1,0 +1,78 @@
+# Makefile for uClibc
+#
+# Copyright (C) 2003 Paul Mundt <lethal@linux-sh.org>
+# Copyright (C) 2000-2008 Erik Andersen <andersen@uclibc.org>
+#
+# Licensed under the LGPL v2.1, see the file COPYING.LIB in this tarball.
+#
+
+subdirs += libpthread/linuxthreads
+
+CFLAGS-dir_linuxthreads := -DNOT_IN_libc -DIS_IN_libpthread
+CFLAGS-libpthread/linuxthreads := $(CFLAGS-dir_linuxthreads) $(SSP_ALL_CFLAGS)
+
+libpthread_DIR := $(top_srcdir)libpthread/linuxthreads
+libpthread_OUT := $(top_builddir)libpthread/linuxthreads
+
+-include $(libpthread_DIR)/sysdeps/$(TARGET_ARCH)/Makefile.arch
+
+libpthread_SRC := \
+	attr.c cancel.c condvar.c errno.c events.c join.c lockfile.c manager.c \
+	mutex.c pt-machine.c ptfork.c pthread.c ptlongjmp.c \
+	rwlock.c semaphore.c signals.c specific.c spinlock.c wrapsyscall.c
+ifeq ($(UCLIBC_HAS_XLOCALE),y)
+libpthread_SRC += locale.c
+endif
+
+# remove generic sources, if arch specific version is present
+ifneq ($(strip $(libpthread_ARCH_SRC)),)
+libpthread_SRC := $(filter-out $(patsubst %.c,$(libpthread_DIR)/%.c,$(notdir $(libpthread_ARCH_SRC))),$(libpthread_SRC))
+endif
+
+libpthread_SRC := $(patsubst %,$(libpthread_DIR)/%,$(libpthread_SRC))
+
+libpthread_OBJ := $(patsubst $(libpthread_DIR)/%.c,$(libpthread_OUT)/%.o,$(libpthread_SRC))
+
+#
+# Stuff that goes into libc.so, not libpthread.so
+#
+CFLAGS-OMIT-libc_pthread_init.c := $(CFLAGS-dir_linuxthreads)
+libpthread_libc_CSRC := libc_pthread_init.c
+libpthread_libc_OBJ  := $(patsubst %.c, $(libpthread_OUT)/%.o,$(libpthread_libc_CSRC))
+libc-static-y += $(libpthread_OUT)/libc_pthread_init.o
+libc-shared-y += $(libpthread_libc_OBJ:.o=.oS)
+
+ifeq ($(DOPIC),y)
+libpthread-a-y  += $(libpthread_OBJ:.o=.os)
+else
+libpthread-a-y  += $(libpthread_OBJ)
+endif
+libpthread-so-y += $(libpthread_OBJ:.o=.oS)
+
+ifeq ($(PTHREADS_DEBUG_SUPPORT),y)
+$(libpthread_OUT)/libpthread.oS: STRIP_FLAGS:=$(STRIP_FLAGS:-x=-X --strip-debug)
+endif
+$(libpthread_OUT)/libpthread.oS: $(libpthread_SRC)
+	$(Q)$(RM) $@
+	$(compile-m)
+
+$(top_builddir)include/pthread.h:
+	$(do_ln) $(call rel_srcdir)$(PTDIR)/sysdeps/pthread/$(@F) $@
+$(top_builddir)include/semaphore.h:
+	$(do_ln) $(call rel_srcdir)$(PTDIR)/$(@F) $@
+$(top_builddir)include/bits/pthreadtypes.h: | $(top_builddir)include/bits
+	$(do_ln) $(call rel_srcdir)$(PTDIR)/sysdeps/pthread/bits/$(@F) $@
+
+linuxthreads_headers := $(top_builddir)include/pthread.h \
+			$(top_builddir)include/semaphore.h \
+			$(top_builddir)include/bits/pthreadtypes.h
+$(linuxthreads_headers): $(wildcard $(addprefix $(top_builddir)include/config/linuxthreads/,old.h new.h))
+headers-$(UCLIBC_HAS_THREADS) += $(linuxthreads_headers)
+
+objclean-y += CLEAN_libpthread/linuxthreads
+headers_clean-y += HEADERCLEAN_libpthread/linuxthreads
+HEADERCLEAN_libpthread/linuxthreads:
+	$(do_rm) $(linuxthreads_headers)
+
+CLEAN_libpthread/linuxthreads:
+	$(do_rm) $(addprefix $(libpthread_OUT)/*., o os oS a)

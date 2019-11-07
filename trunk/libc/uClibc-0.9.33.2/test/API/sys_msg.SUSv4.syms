@@ -1,4 +1,0 @@
-msgctl
-msgget
-msgrcv
-msgsnd

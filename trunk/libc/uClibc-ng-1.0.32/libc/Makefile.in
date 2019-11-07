@@ -1,0 +1,110 @@
+# Makefile for uClibc
+#
+# Copyright (C) 2000-2008 Erik Andersen <andersen@uclibc.org>
+#
+# Licensed under the LGPL v2.1, see the file COPYING.LIB in this tarball.
+#
+
+libc_DIR := $(top_srcdir)libc
+libc_OUT := $(top_builddir)libc
+
+# Check if the target architecture has a version script for
+# libc, and if so, include it when linking.
+VERSION_SCRIPT := $(wildcard $(libc_DIR)/sysdeps/linux/$(TARGET_ARCH)/libc.map)
+ifneq ($(VERSION_SCRIPT),)
+VERSION_SCRIPT := -Wl,--version-script,$(VERSION_SCRIPT)
+endif
+
+CFLAGS-libc :=# intentionally left blank
+LDFLAGS-$(UCLIBC_FORMAT_DSBT_ELF)-libc.so := -Wl,--dsbt-index=2
+LDFLAGS-libc.so := $(LDFLAGS) $(VERSION_SCRIPT) -Wl,-init,$(SYMBOL_PREFIX)__uClibc_init
+LIBS-libc.so := $(interp) $(ldso) $(top_builddir)lib/$(NONSHARED_LIBNAME) $(top_builddir)lib/$(NONSHARED_LIBPTHREAD)
+
+# we have SHARED_LIBNAME=libc.so.$(ABI_VERSION) defined in Rules.mak
+libc_FULL_NAME := libuClibc-$(VERSION).so
+
+# this comes first, so duplicate removal works correctly
+include $(libc_DIR)/sysdeps/Makefile.in
+
+include $(libc_DIR)/misc/Makefile.in
+include $(libc_DIR)/pwd_grp/Makefile.in
+include $(libc_DIR)/stdio/Makefile.in
+include $(libc_DIR)/string/Makefile.in
+include $(libc_DIR)/termios/Makefile.in
+include $(libc_DIR)/inet/Makefile.in
+include $(libc_DIR)/signal/Makefile.in
+include $(libc_DIR)/stdlib/Makefile.in
+include $(libc_DIR)/unistd/Makefile.in
+
+ifeq ($(DOPIC),y)
+libc-a-y = $(libc-y:.o=.os) $(libc-static-y:.o=.os)
+else
+libc-a-y = $(libc-y) $(libc-static-y)
+endif
+
+libc-a-$(HAVE_SHARED) += $(libdl-a-y)
+libc-a-$(DO_C99_MATH) += $(libm-a-y)
+libc-a-$(UCLIBC_HAS_LIBUTIL) += $(libutil-a-y)
+libc-a-$(UCLIBC_HAS_CRYPT) += $(libcrypt-a-y)
+libc-a-$(UCLIBC_HAS_ARGP) += $(libuargp-a-y)
+libc-a-$(UCLIBC_HAS_THREADS) += $(libpthread-a-y)
+libc-a-$(UCLIBC_HAS_REALTIME) += $(librt-a-y)
+libc-a-$(UCLIBC_HAS_BACKTRACE) += $(libubacktrace-a-y)
+libc-a-$(UCLIBC_HAS_LIBICONV) += $(libiconv-a-y)
+libc-a-$(UCLIBC_HAS_LIBINTL) += $(libintl-a-y)
+
+libc-so-y = $(libc-y:.o=.os) $(libc-shared-y)
+
+libc-so-y += $(libdl-so-y)
+libc-so-$(DO_C99_MATH) += $(libm-so-y)
+libc-so-$(UCLIBC_HAS_LIBUTIL) += $(libutil-so-y)
+libc-so-$(UCLIBC_HAS_CRYPT) += $(libcrypt-so-y)
+libc-so-$(UCLIBC_HAS_ARGP) += $(libuargp-so-y)
+libc-so-$(UCLIBC_HAS_THREADS) += $(libpthread-so-y)
+libc-so-$(UCLIBC_HAS_REALTIME) += $(librt-so-y)
+libc-so-$(UCLIBC_HAS_BACKTRACE) += $(libubacktrace-so-y)
+libc-so-$(UCLIBC_HAS_LIBICONV) += $(libiconv-so-y)
+libc-so-$(UCLIBC_HAS_LIBINTL) += $(libintl-so-y)
+
+lib-a-y += $(top_builddir)lib/libc.a
+lib-gdb-y += $(top_builddir)lib/libc.gdb
+lib-so-y += $(libc.depend)
+objclean-y += CLEAN_libc
+
+OUTPUT_FORMAT = $(CC) $(CFLAGS) -Wl,--verbose 2>&1 | $(SED) -n '/OUTPUT_FORMAT/,/)/p'
+
+$(libc.depend): $(libc_OUT)/libc_so.a $(LIBS-libc.so)
+	$(call link.so,$(libc_FULL_NAME),$(ABI_VERSION))
+	# link for backward compatibility
+	$(call link.so,$(libc_FULL_NAME),0)
+	$(Q)$(RM) $@
+	$(Q)cat $(top_srcdir)extra/scripts/format.lds > $@.tmp
+	$(Q)$(OUTPUT_FORMAT) >> $@.tmp
+	$(Q)echo "GROUP ( $(SHARED_LIBNAME) $(NONSHARED_LIBNAME) $(NONSHARED_LIBPTHREAD) $(ASNEEDED) )" >> $@.tmp
+	$(Q)mv $@.tmp $@
+
+$(libc_OUT)/libc_so.a: $(libc-so-y) | $(top_builddir)lib/libc.a $(top_builddir)lib/$(NONSHARED_LIBNAME)
+	$(Q)$(RM) $@
+ifeq ($(DOPIC),y)
+	$(Q)$(STRIPTOOL) $(STRIP_FLAGS) $(libc-shared-y)
+else
+	$(do_strip)
+endif
+	$(do_ar)
+
+$(libc_OUT)/libc.oS: $(libc-multi-y) | $(top_builddir)lib/libc.a $(top_builddir)lib/$(NONSHARED_LIBNAME)
+	$(Q)$(RM) $@
+	$(compile-m)
+
+$(top_builddir)lib/libc.a: $(libc-a-y)
+	$(Q)$(RM) $@
+	$(do_ar)
+
+# We use libc_so.a so that we can compile the shared library with special
+# flags - i.e. -mleaf-id-shared-library.  The static libc.a needs to be
+# compiled without it.
+$(top_builddir)lib/libc.gdb: $(libc_OUT)/libc_so.a $(LINK_FLAT_CRTS)
+	$(call link-flat.so,$(@:.gdb=),$(UCLIBC_SHARED_FLAT_ID))
+
+CLEAN_libc:
+	$(do_rm) $(addprefix $(libc_OUT)/*., o os oS a)

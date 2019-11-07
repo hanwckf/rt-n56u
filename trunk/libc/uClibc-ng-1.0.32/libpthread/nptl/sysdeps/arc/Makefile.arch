@@ -1,0 +1,8 @@
+# Makefile for uClibc NPTL
+#
+# Copyright (C) 2005 Steven J. Hill <sjhill@uclibc.org>
+#
+# Licensed under the LGPL v2.1 or later, see the file COPYING.LIB in this tarball.
+#
+
+libc_arch_a_CSRC = libc-tls.c

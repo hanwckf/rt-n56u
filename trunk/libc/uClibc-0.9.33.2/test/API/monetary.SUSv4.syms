@@ -1,2 +1,0 @@
-strfmon
-strfmon_l

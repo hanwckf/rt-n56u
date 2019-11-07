@@ -1,0 +1,55 @@
+# Makefile for uClibc NPTL
+#
+# Copyright (C) 2005-2006 Steven J. Hill <sjhill@uclibc.org>
+#
+# Licensed under the LGPL v2.1, see the file COPYING.LIB in this tarball.
+#
+
+subdirs += libpthread/nptl/sysdeps/pthread
+#
+# NOTE: glibc puts flockfile.c, ftrylockfile.c, funlockfile.c, and
+#       pt-longjmp.c in libc and libpthread. For uClibc, they are
+#       in libc only.
+#
+libpthread_pthread_DIR = $(top_srcdir)libpthread/nptl/sysdeps/pthread
+libpthread_pthread_OUT = $(top_builddir)libpthread/nptl/sysdeps/pthread
+
+libpthread_pthread_COBJ = $(patsubst %.c,$(libpthread_pthread_OUT)/%.o,$(libpthread_pthread_CSRC))
+libpthread_pthread_CSRC = \
+	pthread_barrier_destroy.c \
+	pthread_barrier_init.c \
+	pthread_barrier_wait.c \
+	pthread_cond_broadcast.c \
+	pthread_cond_signal.c \
+	pthread_cond_timedwait.c \
+	pthread_cond_wait.c \
+	pthread_rwlock_rdlock.c \
+	pthread_rwlock_timedrdlock.c \
+	pthread_rwlock_timedwrlock.c \
+	pthread_rwlock_unlock.c \
+	pthread_rwlock_wrlock.c \
+	pthread_sigmask.c \
+	pthread_spin_destroy.c \
+	pthread_spin_init.c \
+	pthread_spin_unlock.c \
+	pt-sigaction.c \
+	tpp.c
+
+CFLAGS-pthread_barrier_wait.c = -D_GNU_SOURCE
+CFLAGS-pthread_spin_destroy.c = -D_GNU_SOURCE
+CFLAGS-pthread_spin_init.c = -D_GNU_SOURCE
+CFLAGS-pthread_spin_unlock.c = -D_GNU_SOURCE
+CFLAGS-unwind-forcedunwind.c = -fexceptions -fasynchronous-unwind-tables
+
+CFLAGS-OMIT-librt-cancellation.c = -DIS_IN_libpthread
+CFLAGS-librt-cancellation.c = -DIS_IN_librt				\
+			      -fexceptions -fasynchronous-unwind-tables
+libpthread-so-y += $(patsubst %,$(libpthread_pthread_OUT)/%.oS, unwind-forcedunwind)
+
+librt-pt-routines-y = librt-cancellation.c
+
+objclean-y += CLEAN_libpthread/nptl/sysdeps/pthread
+
+CLEAN_libpthread/nptl/sysdeps/pthread:
+	$(do_rm) $(addprefix $(libpthread_pthread_OUT)/*., o os oS s S) \
+		$(libpthread_pthread_OUT)/defs.h

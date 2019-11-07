@@ -1,3 +1,0 @@
-catclose
-catgets
-catopen

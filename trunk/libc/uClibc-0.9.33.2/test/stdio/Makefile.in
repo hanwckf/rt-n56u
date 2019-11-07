@@ -1,4 +1,0 @@
-# uClibc stdio tests
-# Licensed under the LGPL v2.1, see the file COPYING.LIB in this tarball.
-
-DODIFF_64bit := 1

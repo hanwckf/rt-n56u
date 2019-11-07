@@ -1,5 +1,0 @@
-.cvsignore
-.svn
-*.os
-Makefile
-Makefile.in

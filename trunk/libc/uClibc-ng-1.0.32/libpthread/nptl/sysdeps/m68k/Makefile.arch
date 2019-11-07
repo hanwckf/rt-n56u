@@ -1,0 +1,1 @@
+libc_arch_a_CSRC = libc-tls.c

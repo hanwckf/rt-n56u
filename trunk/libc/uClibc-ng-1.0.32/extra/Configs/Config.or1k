@@ -1,0 +1,34 @@
+#
+# For a description of the syntax of this configuration file,
+# see extra/config/Kconfig-language.txt
+#
+
+config TARGET_ARCH
+	default "or1k"
+
+config ARCH_CFLAGS
+	string
+
+config ARCH_LDFLAGS
+	string
+
+config LIBGCC_CFLAGS
+	string
+
+choice
+	prompt "Target Architecture Type"
+	default CONFIG_OR1K
+	help
+		This is the architecture type of your CPU. This information is used for
+		optimizing purposes.
+
+		These are the possible settings:
+		- or1k  Generic support for OpenCores OpenRISC/or1k architecture.
+
+config CONFIG_OR1K
+	select ARCH_HAS_MMU	
+	select UCLIBC_HAS_FPU
+	select ARCH_BIG_ENDIAN
+	bool "or1k"
+
+endchoice

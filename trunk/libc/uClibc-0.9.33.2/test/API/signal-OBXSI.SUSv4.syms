@@ -1,6 +1,0 @@
-sighold
-sigignore
-siginterrupt
-sigpause
-sigrelse
-void

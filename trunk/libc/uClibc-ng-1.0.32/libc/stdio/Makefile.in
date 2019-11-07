@@ -1,0 +1,99 @@
+# Makefile for uClibc
+#
+# Copyright (C) 2004 Manuel Novoa III <mjn3@uclibc.org>
+# Copyright (C) 2000-2008 Erik Andersen <andersen@uclibc.org>
+#
+# Licensed under the LGPL v2.1, see the file COPYING.LIB in this tarball.
+#
+# Dedicated to Toni.  See uClibc/DEDICATION.mjn3 for details.
+#
+
+subdirs += libc/stdio
+
+# SUSv3 functions
+CSRC-y := \
+	fclose.c fcloseall.c fdopen.c fgetpos.c fopen.c freopen.c \
+	fseeko.c fsetpos.c ftello.c getdelim.c getline.c gets.c getw.c \
+	perror.c puts.c putw.c remove.c rewind.c setbuf.c setbuffer.c \
+	setlinebuf.c setvbuf.c ungetc.c \
+	printf.c vprintf.c vsprintf.c fprintf.c snprintf.c dprintf.c \
+	asprintf.c sprintf.c vasprintf.c vdprintf.c vsnprintf.c \
+	tmpfile.c popen.c ctermid.c
+CSRC-y += fgetpos64.c fopen64.c freopen64.c fseeko64.c fsetpos64.c ftello64.c
+CSRC-$(UCLIBC_SUSV4_LEGACY) += tmpnam.c tmpnam_r.c tempnam.c
+
+# internal support functions
+CSRC-y += \
+	_READ.c _WRITE.c _adjust_pos.c _fopen.c _fwrite.c \
+	_rfill.c _stdio.c _trans2r.c _trans2w.c _wcommit.c \
+	_cs_funcs.c _load_inttype.c _store_inttype.c _uintmaxtostr.c
+CSRC-$(UCLIBC_HAS_FLOATS) += _fpmaxtostr.c
+
+# stdio_ext.h functions
+CSRC-y += \
+	__fbufsize.c __flbf.c __fpending.c __fpurge.c __freadable.c \
+	__freading.c __fsetlocking.c __fwritable.c __fwriting.c _flushlbf.c
+
+# Other glibc extensions
+CSRC-$(UCLIBC_HAS_GLIBC_CUSTOM_STREAMS) += fopencookie.c fmemopen.c \
+	open_memstream.c
+
+# pthread functions
+CSRC-y += flockfile.c ftrylockfile.c funlockfile.c
+
+# Functions with unlocked versions
+CUSRC-y := \
+	clearerr.c feof.c ferror.c fflush.c fgetc.c fgets.c fileno.c \
+	fputc.c fputs.c fread.c fwrite.c getchar.c putchar.c
+# getc_unlocked -> alias for fgetc_unlocked
+# putc_unlocked -> alias for fputc_unlocked
+
+# vfprintf and support functions
+ifeq ($(USE_OLD_VFPRINTF),y)
+VF_CSRC := old_vfprintf.c
+else
+# multi source _vfprintf.c
+VF_CSRC := \
+	vfprintf.c \
+	_vfprintf_internal.c \
+	_ppfs_init.c _ppfs_prepargs.c _ppfs_setargs.c _ppfs_parsespec.c \
+	register_printf_function.c parse_printf_format.c
+endif
+CSRC-y += $(VF_CSRC)
+
+# vfscanf and support functions plus other *scanf funcs
+CSRC-y += \
+	vfscanf.c __scan_cookie.c __psfs_parse_spec.c __psfs_do_numeric.c \
+	scanf.c sscanf.c fscanf.c vscanf.c vsscanf.c
+
+CSRC-$(UCLIBC_HAS_WCHAR) += \
+	_wfwrite.c fwprintf.c swprintf.c vswprintf.c vwprintf.c wprintf.c \
+	fwide.c ungetwc.c
+CUSRC-$(UCLIBC_HAS_WCHAR) += \
+	fgetwc.c getwchar.c fgetws.c fputwc.c putwchar.c fputws.c
+# getwc (fgetwc alias) getwc_unlocked (fgetwc_unlocked alias)
+# putwc (fputwc alias) putwc_unlocked (fputwc_unlocked alias)
+CSRC-$(UCLIBC_HAS_WCHAR) += vfwprintf.c _vfwprintf_internal.c \
+	wscanf.c swscanf.c fwscanf.c vwscanf.c vswscanf.c vfwscanf.c
+
+CUSRC_UNLOCKED := $(patsubst %.c,%_unlocked.c,$(CUSRC-y))
+CSRC-y += $(CUSRC-y) $(CUSRC_UNLOCKED)
+
+STDIO_DIR := $(top_srcdir)libc/stdio
+STDIO_OUT := $(top_builddir)libc/stdio
+
+STDIO_SRC := $(patsubst %.c,$(STDIO_DIR)/%.c,$(CSRC-y))
+STDIO_OBJ := $(patsubst %.c,$(STDIO_OUT)/%.o,$(CSRC-y))
+
+libc-y += $(STDIO_OBJ)
+
+ifneq ($(USE_OLD_VFPRINTF),y)
+libc-nomulti-y += $(patsubst %.c,$(STDIO_OUT)/%.o,$(VF_CSRC))
+endif
+libc-nomulti-$(UCLIBC_HAS_WCHAR) += $(STDIO_OUT)/vfwprintf.o \
+	$(STDIO_OUT)/vfwscanf.o
+
+objclean-y += CLEAN_libc/stdio
+
+CLEAN_libc/stdio:
+	$(do_rm) $(addprefix $(STDIO_OUT)/*., o os oS)

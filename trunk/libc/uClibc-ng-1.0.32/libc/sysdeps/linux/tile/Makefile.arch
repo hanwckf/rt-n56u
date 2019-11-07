@@ -1,0 +1,2 @@
+CSRC-y := __syscall_error.c
+SSRC-y := __longjmp.S setjmp.S vfork.S clone.S

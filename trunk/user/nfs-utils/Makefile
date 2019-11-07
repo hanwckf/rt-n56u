@@ -15,6 +15,7 @@ config_test:
 
 configure:
 	( cd $(SRC_NAME) && \
+	./autogen.sh ; \
 	knfsd_cv_bsd_signals=no \
 	PKG_CONFIG_PATH=$(STAGEDIR)/lib/pkgconfig \
 	./configure \

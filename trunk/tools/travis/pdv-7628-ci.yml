@@ -7,6 +7,7 @@ compiler:
 
 env:
     - targets="HC5861B 360P2 MZ-R13 MZ-R13P HC5661A"
+    - toolchain_url="https://github.com/hanwckf/padavan-toolchain/releases/download/v1.0/mipsel-linux-uclibc.tar.xz"
 
 addons:
     apt:
@@ -16,9 +17,9 @@ addons:
         autopoint, libltdl-dev, cmake ]
 
 before_script:
-    - cd /opt && mkdir images && git clone --depth=1 https://github.com/hanwckf/rt-n56u.git
-    - cd rt-n56u && rm -rf toolchain-mipsel/
-    - git clone --depth=1 https://github.com/hanwckf/padavan-toolchain.git toolchain-mipsel && chmod u+x ./toolchain-mipsel/toolchain-3.4.x/bin/*
+    - cd /opt && git clone --depth=1 https://github.com/hanwckf/rt-n56u.git
+    - rm -rf ./rt-n56u/toolchain-mipsel/ && mkdir -p ./rt-n56u/toolchain-mipsel/toolchain-3.4.x && mkdir -p ./images
+    - wget $toolchain_url && tar -xf mipsel-linux-uclibc.tar.xz -C ./rt-n56u/toolchain-mipsel/toolchain-3.4.x
     - ls -Alh /opt/rt-n56u && cd /opt/rt-n56u/trunk/
 
 script:

@@ -6,7 +6,7 @@ SRC_ARIA_NG_URL=https://github.com/mayswind/AriaNg/releases/download/1.1.3/AriaN
 
 CFLAGS  += -ffunction-sections -fdata-sections
 CXXFLAGS += -ffunction-sections -fdata-sections
-LDFLAGS += -Wl,--gc-sections -static-libgcc
+LDFLAGS += -Wl,--gc-sections -static-libgcc -static-libstdc++
 
 THISDIR = $(shell pwd)
 

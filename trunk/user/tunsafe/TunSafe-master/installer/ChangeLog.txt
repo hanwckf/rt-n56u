@@ -1,0 +1,136 @@
+2018-12-16 - TunSafe v1.5-rc2
+
+Changes:
+1.Don't add endpoint route if route is not in included_routes
+2.In BSD network code, don't add a route that's a subset of an Address
+3.Don't add Excluded routes when Table=off
+4.Display packet loss in Windows UI
+5.Enable DNS block only if the DNS addr is a part of the routes
+6.Support for WireGuard over TCP. Use Endpoint=tcp:// to connect
+  to a TCP server, and use ListenPortTCP=12345 to listen on TCP.
+7.Add support for Two Factor authentication. Read more on:
+  https://github.com/TunSafe/TunSafe/wiki/Two-Factor-Authentication-with-TunSafe
+8.Add support for a hybrid TCP/UDP mode that uses TCP for handshakes
+  and UDP for data traffic. This means that PersistentKeepalive can
+  be significantly raised to for example 300 seconds, since as long
+  as the TCP connection remains open through NAT then the WireGuard
+  connection will stay alive. Enable with Features=hybrid_tcp
+9.Support for obfuscated WireGuard connections. Use ObfuscateKey=foo
+  in the [Interface] section to setup the obfuscator key. It needs
+  to be set to the same thing on both sides. There's also another
+  setting to masquerade TCP connections as TLS. Use ObfuscateTCP to
+  setup how TCP gets obfuscated. The default is to just make everything
+  look totally random. It can also be set to tls-chrome or tls-firefox
+  to make the traffic look like HTTPS traffic.
+10.Display incoming invalid packets in Windows UI
+11.Hide files not ending with .conf from list in Windows UI
+
+2018-10-21 - TunSafe v1.5-rc1
+
+Changes:
+1.The kill switch is now remembered across computer restarts and
+  is deactivated when disconnecting. Without this behavior, the 
+  kill switch is unusable when auto connecting on Windows startup.
+2.The kill switch is now optionally turned off on disconnect,
+  and a button is shown in the UI to turn off the kill switch.
+3.The kill switch can be configured to don't block local networks,
+  this is used only for the firewall based kill switch.
+4.Allow multiple DNS servers
+5.Now the 'tunsafe' command line tool exists, which supports
+  wg compatible configuration and statistics printing. The names
+  of the adapters are the same as the adapters in the Control
+  Panel network settings. It's used only when TunSafe runs
+  in service mode.
+6.The 'tunsafe' command line tool supports multiple wireguard
+  sessions simultaneously using different tun interfaces.
+7.Optimize IpToPeerMap for faster lookup using a trie.
+8.Print a notice if a route we're trying to add already exists,
+  perhaps will make it easier to debug issues.
+9.Resolve DNS queries using a background thread, to make it
+  possible to interrupt slow DNS queries.
+10.IPv6 endpoint was printed incorrectly on the Advanced tab
+11.Show an error message and drop packets if the TUN queue grows
+   too large. This is a problem with the TAP NDIS6 driver on Win7.
+12.Bundle the TunSafe-TAP installer instead of downloading it.
+13.Don't show empty directories in the server list.
+
+2018-10-08 - TunSafe v1.4
+
+Changes:
+1.Show a couple of more error strings when failing to edit registry.
+2.Allow # comments in config file inside of a line
+3.Enable persistent keepalive timer on sent handshakes
+
+2018-08-11 - TunSafe v1.4-rc1
+
+Changes:
+1.Subfolders in the Config/ directory now show up as submenus.
+2.Added a way to run TunSafe as a Windows Service.
+  Foreground Mode: The service will disconnect when TunSafe closes.
+  Background Mode: The service will stay connected in the background.
+  No longer required to run the TunSafe client as Admin as long as
+  the service is running.
+3.New config setting [Interface].ExcludedIPs to configure IPs that
+  should not be routed through TunSafe.
+4.Can now automatically start TunSafe when Windows starts
+5.New UI with tabs and graphs
+6.Cache DNS queries to ensure DNS will succeed if connection fails
+7.Recreate tray icon when explorer.exe restarts
+8.Renamed window title to TunSafe instead of TunSafe VPN Client
+9.Main window is now resizable
+10.Disallow roaming endpoint when using AllowedIPs=0.0.0.0/0
+   Only the original endpoint is added in the routing table so
+   this would result in an endless loop of packets.
+11.Display approximate Wireguard framing overhead in stats
+12.Preparations for protocol handling with multiple threads
+13.Delete the routes we made when disconnecting
+14.Fix error message about unable to delete a route when connecting
+
+2018-06-20 - TunSafe v1.3-rc3
+
+Changes:
+1.Add option to block Internet traffic outside of TunSafe. Either
+  based on firewall rules, or by adding a null route, or both.
+  The firewall rule blocks all traffic except traffic from TunSafe,
+  loopback traffic, and DHCP traffic on the default NIC.
+  The route rule adds two /1 routes to 0.0.0.0.
+2.Convert LF to CRLF when importing config files
+3.Update some logging messages
+4.Delete the old routing rule pointing at the VPN server IP when
+  disconnecting
+5.Delete any conflicting old routing rule pointing at the VPN server
+  when connecting.
+6.Tray popup menu did not disappear when clicking outside of it.
+7.Show config file names also in tray popup menu.
+8.Make the menu item bold if connection is selected in popup menu.
+9.Don't show the .conf filename extension in the UI.
+10.Show also config file name when hovering on tray icon.
+11.Click on the connected server to toggle connection
+12.Fix bug where internet blocking checkbox was not removed.
+13.Change so bold is used for selected server, and checkbox
+   is used when connected.
+14.Use WS_EX_COMPOSITED to reduce flicker
+15.Now possible to enter a filename on command line to connect to.
+16.Support /minimize and /minimize_on_connect command line opts.
+17.Support PreUp,PostUp,PreDown,PostDown options on [Interface]
+   Note: For security reasons you need to first enable them,
+   so either Shift-Click on Options and select Allow Pre/Post Commands
+   or specify the /allow_pre_post command line option.
+
+2018-04-29 - TunSafe v1.2
+
+Changes:
+1.Use /24 instead of failing when a /32 Address is used
+2.Use /120 instead of failing when a /128 Address is used
+3.Add routes for all entries in AllowedIPs
+
+2018-04-29 - TunSafe v1.1
+
+Changes:
+1.Retry on failed DNS lookup. Helps when resuming from sleep.
+2.Display a better message if the TAP adapter can't be found.
+3.Retry connect when getting ERROR_FILE_NOT_FOUND.
+
+2018-03-06 - TunSafe v1.0
+
+First public release.

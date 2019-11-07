@@ -1,0 +1,271 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="Source Files">
+      <UniqueIdentifier>{4FC737F1-C7A5-4376-A066-2A32D752A2FF}</UniqueIdentifier>
+      <Extensions>cpp;c;cc;cxx;def;odl;idl;hpj;bat;asm;asmx</Extensions>
+    </Filter>
+    <Filter Include="crypto">
+      <UniqueIdentifier>{cfa17b4c-1bee-434e-81b4-ba780c3f7e2d}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\Win32">
+      <UniqueIdentifier>{49ba9478-f871-449f-a410-b401e993893f}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="crypto\aesgcm">
+      <UniqueIdentifier>{d31b1b9f-4a2e-42d4-a26c-7c3daa4ccbe3}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="crypto\blake2s">
+      <UniqueIdentifier>{45ab50f7-cde8-4d0b-9756-5bfa3b9a28db}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="crypto\curve25519">
+      <UniqueIdentifier>{6adfd763-0197-437b-b7f6-2ffdd1e8e508}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="crypto\chacha20poly1305">
+      <UniqueIdentifier>{1ca37c7b-e91e-4648-9584-7d0c73d8e416}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\BSD">
+      <UniqueIdentifier>{4b2f2fd9-780e-45db-8fe1-f03079439723}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="crypto\siphash">
+      <UniqueIdentifier>{0f45e1a0-f33e-4c6e-88ae-eb4639f12041}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="crypto\sha">
+      <UniqueIdentifier>{1725c5b8-3480-41d8-8b8e-356f68ceda3d}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="stdafx.h">
+      <Filter>Source Files</Filter>
+    </ClInclude>
+    <ClInclude Include="tunsafe_endian.h">
+      <Filter>Source Files</Filter>
+    </ClInclude>
+    <ClInclude Include="resource.h" />
+    <ClInclude Include="wireguard.h">
+      <Filter>Source Files</Filter>
+    </ClInclude>
+    <ClInclude Include="wireguard_proto.h">
+      <Filter>Source Files</Filter>
+    </ClInclude>
+    <ClInclude Include="util.h">
+      <Filter>Source Files</Filter>
+    </ClInclude>
+    <ClInclude Include="network_win32_dnsblock.h">
+      <Filter>Source Files\Win32</Filter>
+    </ClInclude>
+    <ClInclude Include="network_win32.h">
+      <Filter>Source Files\Win32</Filter>
+    </ClInclude>
+    <ClInclude Include="network_win32_api.h">
+      <Filter>Source Files\Win32</Filter>
+    </ClInclude>
+    <ClInclude Include="wireguard_config.h">
+      <Filter>Source Files</Filter>
+    </ClInclude>
+    <ClInclude Include="netapi.h">
+      <Filter>Source Files</Filter>
+    </ClInclude>
+    <ClInclude Include="tunsafe_types.h">
+      <Filter>Source Files</Filter>
+    </ClInclude>
+    <ClInclude Include="crypto\aesgcm\aes.h">
+      <Filter>crypto\aesgcm</Filter>
+    </ClInclude>
+    <ClInclude Include="tunsafe_cpu.h">
+      <Filter>Source Files</Filter>
+    </ClInclude>
+    <ClInclude Include="bit_ops.h">
+      <Filter>Source Files</Filter>
+    </ClInclude>
+    <ClInclude Include="tunsafe_config.h">
+      <Filter>Source Files</Filter>
+    </ClInclude>
+    <ClInclude Include="service_win32_api.h">
+      <Filter>Source Files\Win32</Filter>
+    </ClInclude>
+    <ClInclude Include="service_win32.h">
+      <Filter>Source Files\Win32</Filter>
+    </ClInclude>
+    <ClInclude Include="tunsafe_threading.h">
+      <Filter>Source Files</Filter>
+    </ClInclude>
+    <ClInclude Include="ip_to_peer_map.h">
+      <Filter>Source Files</Filter>
+    </ClInclude>
+    <ClInclude Include="util_win32.h">
+      <Filter>Source Files\Win32</Filter>
+    </ClInclude>
+    <ClInclude Include="service_pipe_win32.h">
+      <Filter>Source Files\Win32</Filter>
+    </ClInclude>
+    <ClInclude Include="service_win32_constants.h">
+      <Filter>Source Files\Win32</Filter>
+    </ClInclude>
+    <ClInclude Include="crypto\blake2s\blake2s.h">
+      <Filter>crypto\blake2s</Filter>
+    </ClInclude>
+    <ClInclude Include="crypto\blake2s\blake2s-load-sse2.h">
+      <Filter>crypto\blake2s</Filter>
+    </ClInclude>
+    <ClInclude Include="crypto\blake2s\blake2s-load-sse41.h">
+      <Filter>crypto\blake2s</Filter>
+    </ClInclude>
+    <ClInclude Include="crypto\blake2s\blake2s-load-xop.h">
+      <Filter>crypto\blake2s</Filter>
+    </ClInclude>
+    <ClInclude Include="crypto\blake2s\blake2s-round.h">
+      <Filter>crypto\blake2s</Filter>
+    </ClInclude>
+    <ClInclude Include="crypto\blake2s\blake2s-sse-impl.h">
+      <Filter>crypto\blake2s</Filter>
+    </ClInclude>
+    <ClInclude Include="crypto\curve25519\curve25519-donna.h">
+      <Filter>crypto\curve25519</Filter>
+    </ClInclude>
+    <ClInclude Include="crypto\chacha20poly1305.h">
+      <Filter>crypto\chacha20poly1305</Filter>
+    </ClInclude>
+    <ClInclude Include="tunsafe_ipaddr.h">
+      <Filter>Source Files</Filter>
+    </ClInclude>
+    <ClInclude Include="tunsafe_dnsresolve.h">
+      <Filter>Source Files</Filter>
+    </ClInclude>
+    <ClInclude Include="crypto\siphash\siphash.h">
+      <Filter>crypto\siphash</Filter>
+    </ClInclude>
+    <ClInclude Include="network_bsd.h">
+      <Filter>Source Files\BSD</Filter>
+    </ClInclude>
+    <ClInclude Include="tunsafe_bsd.h">
+      <Filter>Source Files\BSD</Filter>
+    </ClInclude>
+    <ClInclude Include="network_common.h">
+      <Filter>Source Files</Filter>
+    </ClInclude>
+    <ClInclude Include="network_win32_tcp.h">
+      <Filter>Source Files\Win32</Filter>
+    </ClInclude>
+    <ClInclude Include="crypto\sha\sha1.h">
+      <Filter>crypto\sha</Filter>
+    </ClInclude>
+    <ClInclude Include="tunsafe_wg_plugin.h">
+      <Filter>Source Files</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="stdafx.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="wireguard.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="wireguard_proto.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="util.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="network_win32_dnsblock.cpp">
+      <Filter>Source Files\Win32</Filter>
+    </ClCompile>
+    <ClCompile Include="tunsafe_win32.cpp">
+      <Filter>Source Files\Win32</Filter>
+    </ClCompile>
+    <ClCompile Include="network_win32.cpp">
+      <Filter>Source Files\Win32</Filter>
+    </ClCompile>
+    <ClCompile Include="wireguard_config.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="crypto\aesgcm\aesgcm.cpp">
+      <Filter>crypto\aesgcm</Filter>
+    </ClCompile>
+    <ClCompile Include="benchmark.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="tunsafe_cpu.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="service_win32.cpp">
+      <Filter>Source Files\Win32</Filter>
+    </ClCompile>
+    <ClCompile Include="util_win32.cpp">
+      <Filter>Source Files\Win32</Filter>
+    </ClCompile>
+    <ClCompile Include="tunsafe_threading.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="ip_to_peer_map.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="service_pipe_win32.cpp">
+      <Filter>Source Files\Win32</Filter>
+    </ClCompile>
+    <ClCompile Include="crypto\blake2s\blake2s.cpp">
+      <Filter>crypto\blake2s</Filter>
+    </ClCompile>
+    <ClCompile Include="crypto\curve25519\curve25519-donna.cpp">
+      <Filter>crypto\curve25519</Filter>
+    </ClCompile>
+    <ClCompile Include="crypto\chacha20poly1305.cpp">
+      <Filter>crypto\chacha20poly1305</Filter>
+    </ClCompile>
+    <ClCompile Include="tunsafe_ipaddr.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="network_bsd.cpp">
+      <Filter>Source Files\BSD</Filter>
+    </ClCompile>
+    <ClCompile Include="network_bsd_mt.cpp">
+      <Filter>Source Files\BSD</Filter>
+    </ClCompile>
+    <ClCompile Include="crypto\siphash\siphash.cpp">
+      <Filter>crypto\siphash</Filter>
+    </ClCompile>
+    <ClCompile Include="tunsafe_bsd.cpp">
+      <Filter>Source Files\BSD</Filter>
+    </ClCompile>
+    <ClCompile Include="network_common.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="network_win32_tcp.cpp">
+      <Filter>Source Files\Win32</Filter>
+    </ClCompile>
+    <ClCompile Include="crypto\sha\sha1.cpp">
+      <Filter>crypto\sha</Filter>
+    </ClCompile>
+    <ClCompile Include="tunsafe_wg_plugin.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ResourceCompile Include="TunSafe.rc" />
+  </ItemGroup>
+  <ItemGroup>
+    <Image Include="icons\neutral-icon.ico" />
+    <Image Include="icons\green-icon.ico" />
+    <Image Include="icons\green-bg-icon.ico" />
+    <Image Include="downarrow.bmp" />
+  </ItemGroup>
+  <ItemGroup>
+    <NASM Include="crypto\aesgcm\aesni_gcm-x64-win.asm">
+      <Filter>crypto\aesgcm</Filter>
+    </NASM>
+    <NASM Include="crypto\aesgcm\aesni-x64-win.asm">
+      <Filter>crypto\aesgcm</Filter>
+    </NASM>
+    <NASM Include="crypto\aesgcm\ghash-x64-win.asm">
+      <Filter>crypto\aesgcm</Filter>
+    </NASM>
+    <NASM Include="crypto\curve25519\curve25519-x64-win.asm">
+      <Filter>crypto\curve25519</Filter>
+    </NASM>
+    <NASM Include="crypto\chacha20\chacha20-x64-win.asm">
+      <Filter>crypto\chacha20poly1305</Filter>
+    </NASM>
+    <NASM Include="crypto\poly1305\poly1305-x64-win.asm">
+      <Filter>crypto\chacha20poly1305</Filter>
+    </NASM>
+  </ItemGroup>
+</Project>

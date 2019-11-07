@@ -1,0 +1,1 @@
+"C:\Dev\NSIS\makensis.exe" tap-windows6.nsi

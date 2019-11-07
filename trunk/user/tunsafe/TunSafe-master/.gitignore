@@ -1,0 +1,13 @@
+/TunSafe.aps
+/*.sdf
+*vcxproj.user
+/*.opensdf
+/*.suo
+/.vs/
+/build/
+/*.psess
+/*.vspx
+/installer/*.zip
+tunsafe
+*.o
+

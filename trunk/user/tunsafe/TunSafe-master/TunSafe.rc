@@ -1,0 +1,264 @@
+// Microsoft Visual C++ generated resource script.
+//
+#include "resource.h"
+
+#define APSTUDIO_READONLY_SYMBOLS
+/////////////////////////////////////////////////////////////////////////////
+//
+// Generated from the TEXTINCLUDE 2 resource.
+//
+#include "WinResrc.h"
+#define IDC_STATIC -1
+
+/////////////////////////////////////////////////////////////////////////////
+#undef APSTUDIO_READONLY_SYMBOLS
+
+/////////////////////////////////////////////////////////////////////////////
+// Swedish (Sweden) resources
+
+#if !defined(AFX_RESOURCE_DLL) || defined(AFX_TARG_SVE)
+LANGUAGE LANG_SWEDISH, SUBLANG_SWEDISH
+#pragma code_page(1252)
+
+#ifdef APSTUDIO_INVOKED
+/////////////////////////////////////////////////////////////////////////////
+//
+// TEXTINCLUDE
+//
+
+1 TEXTINCLUDE 
+BEGIN
+    "resource.h\0"
+END
+
+2 TEXTINCLUDE 
+BEGIN
+    "#include ""WinResrc.h""\r\n"
+    "#define IDC_STATIC -1\r\n"
+    "\0"
+END
+
+3 TEXTINCLUDE 
+BEGIN
+    "\r\n"
+    "\0"
+END
+
+#endif    // APSTUDIO_INVOKED
+
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// Dialog
+//
+
+IDD_DIALOG1 DIALOGEX 0, 0, 301, 203
+STYLE DS_SETFONT | DS_FIXEDSYS | DS_CENTER | WS_MINIMIZEBOX | WS_CLIPSIBLINGS | WS_CLIPCHILDREN | WS_CAPTION | WS_SYSMENU | WS_THICKFRAME
+CAPTION "TunSafe"
+FONT 8, "MS Shell Dlg", 400, 0, 0x1
+BEGIN
+    PUSHBUTTON      "&Connect",ID_START,247,3,50,14
+    PUSHBUTTON      "&Disconnect",ID_STOP,247,19,50,14
+    PUSHBUTTON      "&Edit Config",ID_EDITCONF,247,35,50,14
+    PUSHBUTTON      "Turn Off &Kill Switch",ID_BTN_KILLSWITCH,154,19,90,14,WS_CLIPSIBLINGS
+    CONTROL         "",IDC_RICHEDIT21,"RichEdit20A",ES_MULTILINE | ES_AUTOVSCROLL | ES_AUTOHSCROLL | ES_READONLY | WS_VSCROLL | WS_HSCROLL | WS_TABSTOP,167,180,40,16
+    CONTROL         "",IDC_ADVANCEDBOX,"AdvancedBox",0x0,105,181,35,15
+    CONTROL         "",IDC_GRAPHBOX,"GraphBox",0x0,239,181,35,15
+    CONTROL         "",IDC_PAINTBOX,"PaintBox",0x0,4,0,240,44,0x4000000L
+    CONTROL         "",IDC_TAB,"SysTabControl32",WS_TABSTOP,4,49,293,122
+END
+
+IDD_DIALOG2 DIALOGEX 0, 0, 267, 91
+STYLE DS_SETFONT | DS_MODALFRAME | DS_FIXEDSYS | WS_POPUP | WS_CAPTION | WS_SYSMENU
+CAPTION "Generate Key Pair"
+FONT 8, "MS Shell Dlg", 400, 0, 0x1
+BEGIN
+    PUSHBUTTON      "&Close",IDCANCEL,210,70,50,14
+    EDITTEXT        IDC_PRIVATE_KEY,51,32,209,13,ES_AUTOHSCROLL
+    LTEXT           "Private Key:",IDC_STATIC,9,34,42,8
+    EDITTEXT        IDC_PUBLIC_KEY,51,49,209,13,ES_AUTOHSCROLL | ES_READONLY
+    LTEXT           "Public Key:",IDC_STATIC,9,51,42,8
+    LTEXT           "Enter a private key in the text box, and the corresponding public key will be displayed below.",IDC_STATIC,7,7,252,21
+    PUSHBUTTON      "&Randomize",IDRAND,7,70,50,14
+END
+
+IDD_DIALOG3 DIALOGEX 0, 0, 211, 94
+STYLE DS_SETFONT | DS_MODALFRAME | DS_FIXEDSYS | WS_POPUP | WS_CAPTION | WS_SYSMENU
+CAPTION "Two Factor Authentication"
+FONT 8, "MS Shell Dlg", 400, 0, 0x1
+BEGIN
+    LTEXT           "The server requires Two Factor authentication. Please enter the code from your authenticator.",-1,7,7,197,18
+    CONTROL         "",IDC_PAINTBOX,"TwoFactorEditField",WS_TABSTOP,7,32,197,34,0x4000000L
+    PUSHBUTTON      "&Cancel",IDCANCEL,154,72,50,14
+    LTEXT           "",IDC_CODENOTACCEPTED,7,74,133,8,NOT WS_VISIBLE
+END
+
+IDD_DIALOG4 DIALOGEX 0, 0, 211, 78
+STYLE DS_SETFONT | DS_MODALFRAME | DS_FIXEDSYS | WS_POPUP | WS_CAPTION | WS_SYSMENU
+CAPTION "Two Factor Authentication"
+FONT 8, "MS Shell Dlg", 400, 0, 0x1
+BEGIN
+    EDITTEXT        IDC_TWOFACTOREDIT,7,29,197,19,ES_PASSWORD | ES_AUTOHSCROLL
+    DEFPUSHBUTTON   "&OK",IDOK,99,57,50,14
+    PUSHBUTTON      "&Cancel",IDCANCEL,155,57,50,14
+    LTEXT           "The server requires Two Factor authentication. Please enter the code from your authenticator.",-1,7,7,197,18
+    LTEXT           "",IDC_CODENOTACCEPTED,7,53,75,17,NOT WS_VISIBLE
+END
+
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// DESIGNINFO
+//
+
+#ifdef APSTUDIO_INVOKED
+GUIDELINES DESIGNINFO
+BEGIN
+    IDD_DIALOG1, DIALOG
+    BEGIN
+        LEFTMARGIN, 4
+        RIGHTMARGIN, 297
+        TOPMARGIN, 4
+        BOTTOMMARGIN, 196
+    END
+
+    IDD_DIALOG2, DIALOG
+    BEGIN
+        LEFTMARGIN, 7
+        RIGHTMARGIN, 260
+        TOPMARGIN, 7
+        BOTTOMMARGIN, 84
+    END
+
+    IDD_DIALOG3, DIALOG
+    BEGIN
+        LEFTMARGIN, 7
+        RIGHTMARGIN, 204
+        TOPMARGIN, 7
+        BOTTOMMARGIN, 87
+    END
+
+    IDD_DIALOG4, DIALOG
+    BEGIN
+        LEFTMARGIN, 7
+        RIGHTMARGIN, 204
+        TOPMARGIN, 7
+        BOTTOMMARGIN, 71
+    END
+END
+#endif    // APSTUDIO_INVOKED
+
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// Icon
+//
+
+// Icon with lowest ID value placed first to ensure application icon
+// remains consistent on all systems.
+IDI_ICON0               ICON                    "icons\\neutral-icon.ico"
+
+IDI_ICON1               ICON                    "icons\\green-bg-icon.ico"
+
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// AFX_DIALOG_LAYOUT
+//
+
+IDD_DIALOG1 AFX_DIALOG_LAYOUT
+BEGIN
+    0
+END
+
+IDD_DIALOG2 AFX_DIALOG_LAYOUT
+BEGIN
+    0
+END
+
+IDD_DIALOG3 AFX_DIALOG_LAYOUT
+BEGIN
+    0
+END
+
+IDD_DIALOG4 AFX_DIALOG_LAYOUT
+BEGIN
+    0
+END
+
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// Menu
+//
+
+IDR_MENU1 MENU
+BEGIN
+    POPUP "&File"
+    BEGIN
+        MENUITEM "&Import File...",             IDSETT_OPEN_FILE
+        MENUITEM "&Browse in Explorer",         IDSETT_BROWSE_FILES
+        MENUITEM SEPARATOR
+        MENUITEM "&Edit Config File",           ID_EDITCONF
+        MENUITEM "&Select Server...",           ID_MORE_BUTTON
+        MENUITEM SEPARATOR
+        MENUITEM "Generate &Key Pair...",       IDSETT_KEYPAIR
+        MENUITEM SEPARATOR
+        MENUITEM "E&xit",                       ID_EXIT
+    END
+    POPUP "&Options"
+    BEGIN
+        POPUP "Internet &Kill Switch"
+        BEGIN
+            MENUITEM "&Off",                        IDSETT_BLOCKINTERNET_OFF
+            MENUITEM "Yes, with &Routing Rules",    IDSETT_BLOCKINTERNET_ROUTE
+            MENUITEM "Yes, with &Firewall Rules",   IDSETT_BLOCKINTERNET_FIREWALL
+            MENUITEM "Yes, &Both Methods",          IDSETT_BLOCKINTERNET_BOTH
+            MENUITEM SEPARATOR
+            MENUITEM "Block While &Disconnected",   IDSETT_BLOCKINTERNET_DISCONN
+            MENUITEM "Allow Traffic to &Local Networks", IDSETT_BLOCKINTERNET_ALLOWLOCAL
+        END
+        POPUP "&Service Mode"
+        BEGIN
+            MENUITEM "&Don't Use a Service",        IDSETT_SERVICE_OFF
+            MENUITEM "&Foreground Mode (Close connection when closing TunSafe)", IDSETT_SERVICE_FOREGROUND
+            MENUITEM "&Background Mode (Stay connected when closing TunSafe)", IDSETT_SERVICE_BACKGROUND
+            MENUITEM SEPARATOR
+            MENUITEM "&Resume Connection when Windows Starts", IDSETT_SERVICE_CONNECT_AUTO
+            MENUITEM "&Minimize to Tray when Windows Starts", IDSETT_SERVICE_MINIMIZE_AUTO
+        END
+        MENUITEM SEPARATOR
+        MENUITEM "Allow &Pre/Post Commands",    IDSETT_PREPOST
+    END
+    POPUP "&About"
+    BEGIN
+        MENUITEM "Go to &Web Page",             IDSETT_WEB_PAGE
+        MENUITEM "See &Open Source Licenses",   IDSETT_OPENSOURCE
+        MENUITEM SEPARATOR
+        MENUITEM "&About TunSafe",              IDSETT_ABOUT
+    END
+END
+
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// Bitmap
+//
+
+IDB_DOWNARROW           BITMAP                  "downarrow.bmp"
+
+#endif    // Swedish (Sweden) resources
+/////////////////////////////////////////////////////////////////////////////
+
+
+
+#ifndef APSTUDIO_INVOKED
+/////////////////////////////////////////////////////////////////////////////
+//
+// Generated from the TEXTINCLUDE 3 resource.
+//
+
+
+/////////////////////////////////////////////////////////////////////////////
+#endif    // not APSTUDIO_INVOKED
+

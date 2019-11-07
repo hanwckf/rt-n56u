@@ -63,6 +63,7 @@ Contributors of this project are not responsible for what happens next.
 >- [mentohust](https://github.com/hanwckf/mentohust) ```CONFIG_FIRMWARE_INCLUDE_MENTOHUST```
 >- [frpc](https://github.com/fatedier/frp) ```CONFIG_FIRMWARE_INCLUDE_FRPC```
 >- [frps](https://github.com/fatedier/frp) ```CONFIG_FIRMWARE_INCLUDE_FRPS```
+>- [tunsafe](https://github.com/TunSafe/TunSafe) ```CONFIG_FIRMWARE_INCLUDE_TUNSAFE```
 
 - 已适配除官方适配外的以下机型
 >- WR1200JS (USB)

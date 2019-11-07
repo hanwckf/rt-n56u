@@ -1,0 +1,4 @@
+/tunsafe*.exe
+/x64/
+/x86/
+*.pyc

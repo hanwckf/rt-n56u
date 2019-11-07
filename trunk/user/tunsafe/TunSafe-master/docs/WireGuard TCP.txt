@@ -1,0 +1,76 @@
+WireGuard over TCP
+------------------
+
+We hate running one TCP implementation on top of another TCP implementation.
+There's problems with cascading retransmissions and head of line blocking,
+and performance is always much worse than a UDP based tunnel.
+
+However, we also recognize that several users need to run WireGuard over TCP.
+One reason is that UDP packets are sometimes blocked by the network in
+corporate scenarios or in other types of firewalls. Also, in misconfigured
+networks outside of the user's control, TCP may be more reliable than UDP.
+
+Additionally, we want TunSafe to be a drop-in replacement for OpenVPN, which
+also supports TCP based tunneling. The feature could also be used to run
+WireGuard tunnels over ssh tunnels, or through socks/https proxies.
+
+The TunSafe project therefore takes the pragmatic approach of supporting 
+WireGuard over TCP, while discouraging its use. We absolutely don't want
+people to start using TCP by default. It's meant to be used only in the 
+extreme cases when nothing else is working.
+
+We've added experimental support for TCP in the latest TunSafe master,
+which means you can try this out on Windows, OSX, Linux, and FreeBSD. 
+On the server side, to listen on a TCP port, use ListenPortTCP=1234. (Not
+working on Windows yet). On the clients, use Endpoint=tcp://5.5.5.5:1234.
+The code is still very experimental and untested, and is not recommended
+for general use. Once the code is more well tested, we'll also release
+support for connecting to WireGuard over TCP in our Android and iOS clients.
+
+To make the impact as small as possible to our WireGuard protocol handling,
+and to minimize the risk of security related issues, the TCP feature has been
+designed to be as self-contained as possible. When a packet comes in over
+TCP, it's sent over to the WireGuard protocol handler and treated as if it
+was a UDP packet, and vice versa. This means TCP support can also be supported
+in existing WireGuard deployments by using a separate process that converts
+TCP connections into UDP packets sent to the WireGuard Linux kernel module.
+
+Each packet over TCP is prefixed by a 2-byte big endian number, which contains
+the length of the packet's payload. The payload is then the actual WireGuard
+UDP packet.
+
+TCP has larger overhead than UDP, and we want to support the usual WireGuard
+MTU of 1420 without introducing extra packet "fragmenting".  So we implemented
+an optimization to skip sending the 16-byte WireGuard header for every packet.
+TCP is a reliable connection, we know that sequence numbers are always
+monotonically increasing, so we can predict the contents of this header.
+
+Here's an example:
+A 1420 byte big packet sent over a WireGuard link will have 2 bytes of
+TCP payload length, 16 bytes of WireGuard headers, 16 bytes of WireGuard MAC,
+20 bytes of TCP headers, and 40 bytes of IPv6 headers.
+This is a total of 1420 + 2 + 16 + 16 + 20 + 40 = 1514 bytes, exceeding
+the usual 1500 byte Ethernet MTU by 14 bytes. This means that a single full
+sized packet over WireGuard will result in 2 TCP packets. With our
+optimization, we reduce this to 1498 bytes, so it fits in one TCP packet.
+
+Protocol specification
+----------------------
+
+TT LLLLLL LLLLLLLL  [Payload LL bytes]
+|  |
+|  \-- Payload length, high byte first.
+\----- Packet type
+
+The packet types (TT) currently defined are:
+TT = 00 = Normal   The payload is a normal unmodified WireGuard packet
+                   including the regular WireGuard header.
+     10 = Data     A WireGuard data packet (type 04) without the 16 byte
+                   header.
+     ?1 = Reserved
+
+When parsing an incoming Data (TT=10) packet, the Key ID and Counter from
+the most recently parsed WireGuard data packet (type 04) is prepended to
+the payload, with Counter incremented by 1.
+
+This happens independently in each of the two TCP directions.

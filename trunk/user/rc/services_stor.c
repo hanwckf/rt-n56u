@@ -501,16 +501,22 @@ config_smb_fastpath(int check_pid)
 void
 stop_samba(int force_stop)
 {
-	char* svcs[] = { "smbd", "nmbd", NULL };
+	char* svcs[] = { "smbd",
+#if defined (APP_SMBD36)
+	"wsdd2" ,
+#endif
+	 "nmbd", NULL };
+
+	const int nmbdidx = sizeof(svcs) / sizeof(svcs[0]) - 2;
 
 	if (!force_stop && nvram_match("wins_enable", "1"))
-		svcs[1] = NULL;
+		svcs[nmbdidx] = NULL;
 
 	kill_services(svcs, 5, 1);
 
 	fput_int("/proc/net/netfilter/nf_fp_smb", 0);
 
-	if (!svcs[1])
+	if (!svcs[nmbdidx])
 		return;
 
 	clean_smbd_trash();
@@ -558,6 +564,16 @@ void run_samba(void)
 		doSystem("killall %s %s", "-SIGHUP", "smbd");
 	else
 		eval("/sbin/smbd", "-D", "-s", "/etc/smb.conf");
+
+#if defined (APP_SMBD36)
+	if (pids("wsdd2"))
+		doSystem("killall %s %s", "-SIGHUP", "wsdd2");
+	else
+		eval("/sbin/wsdd2", "-d", "-w");
+	
+	if (pids("wsdd2"))
+		logmessage("WSDD2", "daemon is started");
+#endif
 
 	if (pids("nmbd") && pids("smbd"))
 		logmessage("Samba Server", "daemon is started");

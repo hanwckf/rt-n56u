@@ -1,0 +1,145 @@
+.\" @(#)rpcbind.1m 1.19 92/09/14 SMI; from SVr4
+.\" Copyright 1989 AT&T
+.\" Copyright 1991 Sun Microsystems, Inc.
+.\" $FreeBSD: src/usr.sbin/rpcbind/rpcbind.8,v 1.5 2002/11/27 15:33:47 ru Exp $
+.\" Linux: 
+
+.TH "RPCBIND" "8" "13 aout 2004" "rpcbind" ""
+
+
+.Dd September 14, 1992
+.Dt RPCBIND 8
+.Os
+.Sh NAME
+.Nm rpcbind
+.Nd correspondance entre les adresses universelles et les numéros de programme RPC
+.Sh SYNOPSIS
+.Nm
+.Op Fl adhils
+.Sh DESCRIPTION
+.Nm
+est un utilitaire qui convertit les numéros de programme 
+.Tn RPC
+en adresses universelles
+Il doit etre executé sur l'hote pour pouvoir effectuer des 
+appels de procedure à distance sur un serveur sur cette machine.
+.Nm
+doit être démarré avant  que les serveurs RPC ne soient invoqués.
+.Pp
+Quand un service 
+.Tn RPC
+est démarré,
+il indique à
+.Nm
+l'adresse à laquelle il écoute,
+et le numéro de programme
+.Tn RPC il est préparé à servir.
+Quand un client veux effectuer un appel
+.Tn RPC
+à un numéro de programme donné,
+il contacte d'abord
+.Nm
+sur la machine serveur pour déterminer
+l'adresse
+.Tn RPC
+à laquelle la requête doit être envoyée.
+.Pp
+.Nm
+doit être démarré avant tout autre service RPC
+Normalement, standard
+.Tn RPC
+servers are started by port monitors, so
+.Nm
+must be started before port monitors are invoked.
+.Pp
+Quand
+.Nm
+demarre, il vérifie que certains appels 
+pour la translation nom->adres fonctionnent de manière correcte
+Si ceux-ci échouent, les bases de données de configuration reseau
+peuvent être corrompues
+Si les services
+.Tn RPC
+ne peuvent pas fonctionner correctement dans cette situation,
+.Nm
+rapporte la condition et se termine
+.Pp
+.Nm
+ne peut être lancé qu'en super-utilisateur
+.Sh OPTIONS
+.Bl -tag -width indent
+.It Fl a
+En mode debug
+.Pq Fl d ,
+abandonne sur les erreurs.
+.It Fl d
+S'éxécute en mode debuggage. Empèche 
+.Nm
+de s'éxécuter comme démon
+Dans ce mode,
+.Nm
+ne va pas forker au démarrage, va afficher des information additionnelles
+durant les différentes opérations, et va abandonner sur certaines erreurs
+si l'option
+.Fl a
+est aussi spécifiée.
+.It Fl h
+Specifie une adresse IP spécifique à lier pour les requetes UDP
+Specify specific IP addresses to bind to for UDP requests.
+Cette option peut être spécifiée plusieurs fois et est typiquement nécessaire dans
+le cas d'une éxécution sur un hôte à plusieurs interfaces réseau.
+Si aucune option
+.Fl h
+n'est spécifiée,
+.Nm
+va lier sur
+.Dv INADDR_ANY ,
+ce qui peut entrainer des problemes sur un hote a plusieurs interfaces réseau
+à cause du fait que
+which could lead to problems on a multi-homed host due to
+.Nm
+retourne un paquet UDP depuis une adresse IP différente de celle avec laquelle on lui avait envoyé la requête
+Notons que quand on spécifie une adresse IP avec l'option
+.Fl h ,
+.Nm
+va automatiquement ajouter à la liste l'adresse
+.Li 127.0.0.1
+et si IPv6 est activé, l'adresse
+.Li ::1
+.It Fl i
+Mode
+.Dq Insecure
+(non sécurisé)
+Autorise les appels à SET et UNSET depuis n'importe quel host
+Dans le cas normal,
+.Nm
+accepte ces requêtes seulement depuis l'interface loopback, et ce
+pour des raisons de sécurité
+Ce changement peut être rendu nécessaire pour les programmes qui auraient
+été compilé avec d'anciennes versions de la librairie rpc, et qui n'effectueraient pas
+ces requêtes en utilisant l'interface loopback
+.It Fl l
+Turn on libwrap connection logging.
+.It Fl s
+.Nm
+change le demon utilisateur le plus souvent possible
+Cela oblige
+.Nm
+à utiliser des ports non privilégiés pour les connexions sortantes, pour
+empêcher les clients non privilégié d'utiliser
+.Nm
+pour se connecter aux services depuis un port privilégié
+.El
+.Sh NOTES
+Tout les serveurs RPC doivent être redémarrés si
+.Nm
+est redémarré.
+.Sh SEE ALSO
+.Xr rpcbind 3 ,
+.Xr rpcinfo 8
+.Sh FILES
+.Bl -tag -width /var/run/rpcbind.sock -compact
+.It Pa /var/run/rpcbind.sock
+.Sh TRADUCTION
+Aurelien CHARBON (Sept 2003)
+.El

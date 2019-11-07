@@ -1,0 +1,93 @@
+.\"
+.\"@(#)nfsidmap(8) - The NFS idmapper upcall program
+.\"
+.\" Copyright (C) 2010 Bryan Schumaker <bjschuma@netapp.com>
+.TH nfsidmap 5 "1 October 2010"
+.SH NAME
+nfsidmap \- The NFS idmapper upcall program
+.SH SYNOPSIS
+.B "nfsidmap [-v] [-t timeout] key desc"
+.br
+.B "nfsidmap [-v] [-c]"
+.br
+.B "nfsidmap [-v] [-u|-g|-r user]"
+.SH DESCRIPTION
+The file
+.I /usr/sbin/nfsidmap
+is used by the NFS idmapper to translate user and group ids into names, and to
+translate user and group names into ids. Idmapper uses request-key to perform
+the upcall and cache the result.
+.I /usr/sbin/nfsidmap
+is called by /sbin/request-key, and will perform the translation and
+initialize a key with the resulting information.
+.PP
+.I nfsidmap
+can also used to clear the keyring of all the keys or 
+revoke one particular key.  
+This is useful when the id mappings have failed to due 
+to a lookup error resulting in all the cached uids/gids to be set 
+to the user id nobody.
+.SH OPTIONS
+.TP
+.B -c 
+Clear the keyring of all the keys.
+.TP
+.B -g user
+Revoke the gid key of the given user.
+.TP
+.B -r user
+Revoke both the uid and gid key of the given user.
+.TP
+.B -t timeout
+Set the expiration timer, in seconds, on the key.
+The default is 600 seconds (10 mins).
+.TP
+.B -u user
+Revoke the uid key of the given user.
+.TP
+.B -v
+Increases the verbosity of the output to syslog 
+(can be specified multiple times).
+.SH CONFIGURING
+The file
+.I /etc/request-key.conf
+will need to be modified so
+.I /sbin/request-key
+can properly direct the upcall. The following line should be added before a call
+to keyctl negate:
+.PP
+create	id_resolver	*	*	/usr/sbin/nfsidmap -t 600 %k %d 
+.PP
+This will direct all id_resolver requests to the program
+.I /usr/sbin/nfsidmap.
+The 
+.B -t 600 
+defines how many seconds into the future the key will
+expire.  This is an optional parameter for
+.I /usr/sbin/nfsidmap
+and will default to 600 seconds when not specified.
+.PP
+The idmapper system uses four key descriptions:
+.PP
+	  uid: Find the UID for the given user
+.br
+	  gid: Find the GID for the given group
+.br
+	 user: Find the user name for the given UID
+.br
+	group: Find the group name for the given GID
+.PP
+You can choose to handle any of these individually, rather than using the
+generic upcall program.  If you would like to use your own program for a uid
+lookup then you would edit your request-key.conf so it looks similar to this:
+.PP
+create	id_resolver	uid:*	*	/some/other/program %k %d
+.br
+create	id_resolver	*		*	/usr/sbin/nfsidmap %k %d
+.PP
+Notice that the new line was added above the line for the generic program.
+request-key will find the first matching line and run the corresponding program.
+In this case, /some/other/program will handle all uid lookups, and
+/usr/sbin/nfsidmap will handle gid, user, and group lookups.
+.SH AUTHOR
+Bryan Schumaker, <bjschuma@netapp.com>

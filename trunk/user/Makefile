@@ -178,7 +178,10 @@ dir_$(CONFIG_FIRMWARE_INCLUDE_DUMP1090)	+= dump1090
 endif
 
 ifeq ($(STORAGE_ENABLED),y)
-dir_y						+= nfsd
+dir_$(CONFIG_FIRMWARE_INCLUDE_NFSD)		+= nfs-utils
+ifneq (,$(filter y,$(CONFIG_FIRMWARE_INCLUDE_NFSD) $(CONFIG_FIRMWARE_INCLUDE_NFSC)))
+dir_y						+= rpcbind
+endif
 dir_y						+= optware
 dir_y						+= util-linux
 dir_$(FS_EXT_ENABLED)				+= e2fsprogs

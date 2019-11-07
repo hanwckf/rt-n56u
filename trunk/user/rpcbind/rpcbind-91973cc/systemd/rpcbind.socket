@@ -1,0 +1,18 @@
+[Unit]
+Description=RPCbind Server Activation Socket
+DefaultDependencies=no
+Wants=rpcbind.target
+Before=rpcbind.target
+
+[Socket]
+ListenStream=/run/rpcbind.sock
+
+# RPC netconfig can't handle ipv6/ipv4 dual sockets
+BindIPv6Only=ipv6-only
+ListenStream=0.0.0.0:111
+ListenDatagram=0.0.0.0:111
+ListenStream=[::]:111
+ListenDatagram=[::]:111
+
+[Install]
+WantedBy=sockets.target

@@ -1,0 +1,247 @@
+2008-11-19 Steve Dickson <steved@redhat.com>
+   * Version 0.1.7 released.
+
+commit bdc14d4d867a26010466138ecb37336b1f489dcb
+Author: Chuck Lever <chuck.lever@oracle.com>
+Date:   Tue Oct 28 10:15:22 2008 -0400
+
+    rpcbind: Squelch make warnings
+    
+    Change order of AC_PROG_LIBTOOL macro invocation in configure.in to
+    eliminate autotool warning:
+    
+       Remember to add `AC_PROG_LIBTOOL' to `configure.in'.
+    
+    Signed-off-by: Chuck Lever <chuck.lever@oracle.com>
+    Signed-off-by: Steve Dickson <steved@redhat.com>
+
+commit 3d33ad8d37ea2f955a8b06beedade424bc22efbc
+Author: Chuck Lever <chuck.lever@oracle.com>
+Date:   Tue Oct 28 10:12:20 2008 -0400
+
+    rpcbind: Squelch make warnings
+    
+    Eliminate make warnings when building rpcbind and rpcinfo:
+    
+    make[3]: Circular security.o <- security.o dependency dropped.
+    make[3]: Circular util.o <- security.o dependency dropped.
+    make[3]: Circular util.o <- util.o dependency dropped.
+    make[3]: Circular util.o <- check_bound.o dependency dropped.
+    make[3]: Circular pmap_svc.o <- security.o dependency dropped.
+    make[3]: Circular pmap_svc.o <- util.o dependency dropped.
+    make[3]: Circular pmap_svc.o <- check_bound.o dependency dropped.
+    make[3]: Circular pmap_svc.o <- pmap_svc.o dependency dropped.
+    
+    and so on.
+    
+    Apparently src/Makefile.am needs either a list of source files or a
+    list of object files, but not both.
+    
+    Signed-off-by: Chuck Lever <chuck.lever@oracle.com>
+    Signed-off-by: Steve Dickson <steved@redhat.com>
+
+commit 1ee34cfa8cf3ce56f43690eba44215aafb1835a5
+Author: Chuck Lever <chuck.lever@oracle.com>
+Date:   Tue Oct 28 10:10:23 2008 -0400
+
+    rpcbind: Squelch a compiler warning
+    
+    Remove a needless pointer-to-integer conversion.  getnameinfo(3) wants
+    a size value greater than or equal to offsetof(struct sockaddr_un,
+    sun_path).  Since pointers can be different sizes depending on the
+    hardware platform, let's make this a simple constant instead.
+    
+    This eliminates the compiler warning:
+    
+    rpcinfo.c: In function sa_len
+    rpcinfo.c:666: warning: cast from pointer to integer of different size
+    
+    when building on x86-64.
+    
+    Signed-off-by: Chuck Lever <chuck.lever@oracle.com>
+    Signed-off-by: Steve Dickson <steved@redhat.com>
+
+commit 98ca016d5a2fb7a7da9e2332e3c59b123b820477
+Author: Chuck Lever <chuck.lever@oracle.com>
+Date:   Tue Oct 28 10:07:58 2008 -0400
+
+    rpcbind: Squelch a compiler warning
+    
+    Include <nss.h> to get a forward declaration of __nss_configure_lookup().
+    This eliminates the compiler warning:
+    
+    rpcbind.c: In function main
+    rpcbind.c:163: warning: implicit declaration of function
+    	_nss_configure_lookup
+    
+    Signed-off-by: Chuck Lever <chuck.lever@oracle.com>
+    Signed-off-by: Steve Dickson <steved@redhat.com>
+
+commit 9266c745930cd052713e83c7ecb0917c17f33505
+Author: Chuck Lever <chuck.lever@oracle.com>
+Date:   Tue Oct 28 10:02:42 2008 -0400
+
+    rpcbind: Squelch a compiler warning
+    
+    Remove unused variable in read_struct().  This eliminates
+    the compiler warning:
+    
+        warmstart.c: In function read_struct
+        warmstart.c:106: warning: unused variable sbuf
+    
+    Signed-off-by: Chuck Lever <chuck.lever@oracle.com>
+    Signed-off-by: Steve Dickson <steved@redhat.com>
+
+commit 0b847172bb5413d200da01618402897d493f40b1
+Author: Olaf Kirch <okir@suse.de>
+Date:   Tue Sep 30 14:49:21 2008 -0400
+
+    Properly identify local root user over ipv4/v6
+    
+    When an application registers a service through an inet transport,
+    rpcbind will always treat the owner as "unknown".  This allows random
+    users to unregister such services, and replace them with their own -
+    man-in-the-middle attacks for services like ypserv are trivial.
+    
+    This patch changes pmapproc_change to check whether the call originated
+    from a priviliged local port, and if that is the case, it identifies the
+    caller as "superuser".
+    
+    This mimics the way the current Linux portmap behaves.
+    
+    Signed-off-by: Olaf Kirch <okir@suse.de>
+    Signed-off-by: Steve Dickson <steved@redhat.com>
+
+commit 49e8a7c963c27ca3face271200b103a5efc50b05
+Author: Olaf Kirch <okir@suse.de>
+Date:   Tue Sep 30 14:44:05 2008 -0400
+
+    Fix debug output in is_loopback
+    
+    The security check in is_loopback wants to print the source
+    port number, assuming that the remote address is always a
+    sockaddr_in - which is silly. Move the printf into the
+    address family specific switch statement.
+    
+    Signed-off-by: Olaf Kirch <okir@suse.de>
+    Signed-off-by: Steve Dickson <steved@redhat.com>
+
+commit 62a20676c31a1887f8151a5b0ca42932205c4f4b
+Author: Olaf Kirch <okir@suse.de>
+Date:   Tue Sep 30 14:43:13 2008 -0400
+
+    Fix debug output in pmap_set/unset
+    
+    The debugging code in pmapproc_change prints the contents of
+    the "struct pmap" argument before decoding it, which results
+    in random garbage being displayed.
+    
+    Signed-off-by: Olaf Kirch <okir@suse.de>
+    Signed-off-by: Steve Dickson <steved@redhat.com>
+
+commit 3d9f63a9c308b305dfca745dafae63d8f96b313c
+Author: Olaf Kirch <okir@suse.de>
+Date:   Tue Sep 30 14:41:35 2008 -0400
+
+    Fix for warm start
+    
+    If you use rpcbind with the warm start functionality, it will load *all*
+    registrations from the warm start files, including those for rpcbind
+    and portmap. This is wrong, as that information may be stale - a user
+    may specifically edit the netconfig file and restart rpcbind to change
+    the transports it supports. In this case we want the registrations
+    to match the status quo, rather than the status before the restart.
+    
+    This patch changes read_warmstart() to merge the existing rpcb/pmap
+    lists, which contain only the rpcbind/portmap entries, with the saved
+    start lists, but ignoring any rpcbind/portmap entries present in the
+    warm start files.
+    
+    Signed-off-by: Olaf Kirch <okir@suse.de>
+    Signed-off-by: Steve Dickson <steved@redhat.com>
+
+commit 1d92cd58eb471765eba08ec819f7b5ae1d5e96ab
+Author: Olaf Kirch <okir@suse.de>
+Date:   Tue Sep 30 12:01:24 2008 -0400
+
+    Support portmap on AF_LOCAL, too
+    
+    This patch makes sure we support portmap (aka rpcbind v2) on ipv4 _and_
+    af_local.  That allows rpcbind to identify the owner of a socket much
+    better than by relying on privileged ports to tell root from non-root
+    users.
+    
+    Signed-off-by: Olaf Kirch <okir@suse.de>
+    Signed-off-by: Steve Dickson <steved@redhat.com>
+
+commit 566f261ff6bae2842e2e64aaf70d2e31acc1efe7
+Author: Olaf Kirch <okir@suse.de>
+Date:   Tue Sep 16 10:23:48 2008 -0400
+
+    Simplify port live check in pmap_svc.c
+    
+    There's some hack in pmap_getport that will cause a service
+    to be unregistered from the portmap list if we find the port
+    is no longer in use. Apart from being a gross hack, it is
+    also a rather inefficient hack. Since we now restrict pmap
+    emulation to IPv4, we know the address is always 0.0.0.0,
+    so no need to mess with uaddr strings.
+    
+    (The bind_check code is a huge messy no-op anyway, since
+    all ports are added with bind_check = FALSE).
+    
+    Signed-off-by: okir@suse.de
+    Signed-off-by: Steve Dickson <steved@redhat.com>
+
+commit 1a94b830a6b5a248faa6fa0e4b7818d9394f6369
+Author: Olaf Kirch <okir@suse.de>
+Date:   Tue Sep 16 10:15:39 2008 -0400
+
+    Change how we decide on the netids to use for portmap
+    
+    The current code will try to use either udp or udp6, and either tcp or
+    tcp6 for its portmap emulation code. Enabling eg both tcp6 and tcp in
+    the netconfig file will cause error messages, and cause rpcbind to not
+    register itself on the second transport (tcp).
+    
+    This is not what we want.
+    
+    I believe portmap emulation should only be enabled over IPv4.
+    There's no point in enabling it over IPv6.
+    
+    Signed-off-by: okir@suse.de
+    Signed-off-by: Steve Dickson <steved@redhat.com>
+
+commit 3e4c74ab527375f37b6633f528e7eab0c363967b
+Author: Olaf Kirch <okir@suse.de>
+Date:   Tue Sep 16 10:08:35 2008 -0400
+
+    Introduce helpers for ipprot/netid mapping
+    
+    There's a couple of places in the portmap emulation code
+    where we translate between ip protocol numbers and netids.
+    Encapsulate these in two helper functions:
+    
+    extern char *pmap_ipprot2netid(int);
+    extern int pmap_netid2ipprot(const char *);
+    
+    Signed-off-by: okir@suse.de
+    Signed-off-by: Steve Dickson <steved@redhat.com>
+
+commit 3942a3b4dcd451a2c41ad95a45f3f1462cb3f133
+Author: Steve Dickson <steved@redhat.com>
+Date:   Tue Sep 16 10:01:18 2008 -0400
+
+    Removed files that are generated from the automake process
+    
+    Signed-off-by: Steve Dickson <steved@redhat.com>
+
+2008-07-09 Steve Dickson <steved@redhat.com>
+    * See the git://git.infradead.org/~steved/rpcbind.git GIT tree
+      for the latest Changelog entries
+
+2004-10-13  Antoine Fraticelli  <antoine.fraticelli@bull.net>
+ 
+    * Version 0.1 released.
+
+081104 Fixed bug (bad services call)

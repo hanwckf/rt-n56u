@@ -228,6 +228,10 @@ dir_$(LIBS_INCLUDE_LIBXML2)		+= libxml2
 dir_$(LIBS_INCLUDE_C_ARES)		+= c-ares
 dir_$(LIBS_INCLUDE_READLINE)		+= readline
 
+ifneq (,$(filter y,$(CONFIG_FIRMWARE_INCLUDE_NFSD) $(CONFIG_FIRMWARE_INCLUDE_NFSC)))
+dir_y						+= libtirpc
+endif
+
 all:
 	for i in $(dir_y) ; do \
 		[ -d $$i ] && \

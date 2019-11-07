@@ -1,0 +1,32 @@
+.\"
+.\" mountstats(8)
+.\"
+.TH mountstats 8 "15 Apr 2010"
+.SH NAME
+mountstats \- Displays NFS client per-mount statistics
+.SH SYNOPSIS
+.BI "mountstats ["<options> "] " <mount_point> " [ " <mount_point> "]" 
+.SH DESCRIPTION
+The
+.B mountstats
+command displays NFS client statisitics on each given
+.I <mount_point>
+.SH OPTIONS
+.TP
+.B " \-\-nfs
+display only the NFS statistics
+.TP
+.B " \-\-rpc 
+display only the RPC statistics
+.TP
+.B " \-\-version 
+display the version of this command
+.SH FILES
+.TP
+.B /proc/self/mountstats
+.SH SEE ALSO
+.BR iostat (8),
+.BR nfsiostat (8),
+.BR nfsstat(8)
+.SH AUTHOR
+Chuck Lever <chuck.lever@oracle.com>

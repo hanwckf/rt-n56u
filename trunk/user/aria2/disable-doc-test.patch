@@ -1,21 +1,19 @@
-diff -urw aria2-1.17.1-ref/Makefile.am aria2-1.17.1/Makefile.am
---- aria2-1.17.1-ref/Makefile.am	2013-05-26 11:23:55.000000000 +0400
-+++ aria2-1.17.1/Makefile.am	2018-02-02 09:11:49.780813878 +0300
+--- a/Makefile.am
++++ b/Makefile.am
 @@ -1,4 +1,4 @@
--SUBDIRS =  po intl lib deps src doc test
-+SUBDIRS =  po intl lib deps src
+-SUBDIRS =  po lib deps src doc test
++SUBDIRS =  po lib deps src
  
  ACLOCAL_AMFLAGS = -I m4 --install
  RST2HTML = @RST2HTML@
-diff -urw aria2-1.17.1-ref/Makefile.in aria2-1.17.1/Makefile.in
---- aria2-1.17.1-ref/Makefile.in	2013-05-26 11:24:32.000000000 +0400
-+++ aria2-1.17.1/Makefile.in	2018-02-02 09:12:04.892366005 +0300
-@@ -398,7 +398,7 @@
+--- a/Makefile.in
++++ b/Makefile.in
+@@ -449,7 +449,7 @@ target_vendor = @target_vendor@
  top_build_prefix = @top_build_prefix@
  top_builddir = @top_builddir@
  top_srcdir = @top_srcdir@
--SUBDIRS = po intl lib deps src doc test
-+SUBDIRS = po intl lib deps src
+-SUBDIRS = po lib deps src doc test
++SUBDIRS = po lib deps src
  ACLOCAL_AMFLAGS = -I m4 --install
- EXTRA_DIST = config.rpath mingw-config android-config android-make\
- 	build_osx_release.sh \
+ EXTRA_DIST = config.rpath \
+ 	     script-helper \

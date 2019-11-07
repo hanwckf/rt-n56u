@@ -36,7 +36,6 @@ func_start()
 
 	FILE_CONF="$DIR_CFG/aria2.conf"
 	FILE_LIST="$DIR_CFG/incomplete.lst"
-	FILE_WEB_CONF="$DIR_CFG/configuration.js"
 
 	touch "$FILE_LIST"
 
@@ -107,53 +106,7 @@ log-level=notice
 
 EOF
 	fi
-:<<!
-	if [ ! -f "$FILE_WEB_CONF" ] ; then
-		cat > "$FILE_WEB_CONF" <<EOF
-angular
-.module('webui.services.configuration',  [])
-.constant('\$name', 'Aria2 WebUI')
-.constant('\$titlePattern', 'DL: {download_speed} - UL: {upload_speed}')
-.constant('\$pageSize', 11)
-.constant('\$authconf', {
-  host: '$lan_ipaddr',
-  path: '/jsonrpc',
-  port: '$aria_rport',
-  encrypt: false,
-  auth: {
-  //token: 'admin',
-  user: '$aria_user',
-  pass: '$aria_pass',
-  },
-  directURL: ''
-})
-.constant('\$enable', {
-  torrent: true,
-  metalink: true,
-  sidebar: {
-    show: true,
-    stats: true,
-    filters: true,
-    starredProps: true,
-  }
-})
-.constant('\$starredProps', [
-  'dir', 'auto-file-renaming', 'max-connection-per-server'
-])
-.constant('\$downloadProps', [
-  'pause', 'dir', 'max-connection-per-server'
-])
-.constant('\$globalTimeout', 1000)
-;
 
-EOF
-	else
-		old_host=`grep 'host:' $FILE_WEB_CONF | awk -F \' '{print $2}'`
-		old_port=`grep 'port:' $FILE_WEB_CONF | awk -F \' '{print $2}'`
-		[ "$old_host" != "$lan_ipaddr" ] && sed -i "s/\(host:\).*/\1\ \'$lan_ipaddr\'\,/" $FILE_WEB_CONF
-		[ "$old_port" != "$aria_rport" ] && sed -i "s/\(port:\).*/\1\ \'$aria_rport\'\,/" $FILE_WEB_CONF
-	fi
-!
 	# aria2 needed home dir
 	export HOME="$DIR_CFG"
 

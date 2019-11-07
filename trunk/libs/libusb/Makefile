@@ -1,5 +1,7 @@
 SRC_NAME=libusb-0.1.12
 
+CFLAGS += -Wno-format-truncation
+
 all:	config_test
 	$(MAKE) -C $(SRC_NAME)
 

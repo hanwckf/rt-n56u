@@ -25,6 +25,7 @@
 #include <unistd.h>
 #include <sys/types.h>
 #include <net/if.h>
+#include <time.h>
 
 #include "rc.h"
 #include "switch.h"

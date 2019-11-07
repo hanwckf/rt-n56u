@@ -108,8 +108,8 @@ git clone --depth=1 https://gitee.com/hanwckf/rt-n56u.git /opt/rt-n56u
 * 编译工具链
 ```shell
 cd /opt/rt-n56u/toolchain-mipsel
-./clean_sources
-./build_toolchain_3.4.x
+./clean_toolchain
+./build_toolchain
 ```
 * (可选)修改机型配置文件
 ```shell

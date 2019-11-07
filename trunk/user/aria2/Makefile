@@ -1,21 +1,17 @@
-SRC_NAME=aria2-1.17.1
-BIN_DIR_NAME=aria2-1.34.0
+SRC_NAME=aria2-1.35.0
+SRC_URL=https://github.com/aria2/aria2/releases/download/release-1.35.0/aria2-1.35.0.tar.xz
 
 SRC_ARIA_NG_NAME=AriaNg-1.1.3-AllInOne
 SRC_ARIA_NG_URL=https://github.com/mayswind/AriaNg/releases/download/1.1.3/AriaNg-1.1.3-AllInOne.zip
 
 CFLAGS  += -ffunction-sections -fdata-sections
 CXXFLAGS += -ffunction-sections -fdata-sections
-LDFLAGS += -Wl,--gc-sections
+LDFLAGS += -Wl,--gc-sections -static-libgcc
 
 THISDIR = $(shell pwd)
 
-all: extract_test config_test
-ifeq ($(CONFIG_FIRMWARE_INCLUDE_ARIA2_NEW_PREBUILD_BIN),y)
-	@echo $(BIN_DIR_NAME) done
-else
+all: download_test extract_test config_test
 	$(MAKE) -j$(HOST_NCPU) -C $(SRC_NAME)
-endif
 ifeq ($(CONFIG_FIRMWARE_INCLUDE_ARIA_WEB_CONTROL),y)
 	( if [ ! -f $(THISDIR)/$(SRC_ARIA_NG_NAME).zip ]; then \
 		wget -t5 --timeout=20 --no-check-certificate -O $(SRC_ARIA_NG_NAME).zip $(SRC_ARIA_NG_URL); \
@@ -25,22 +21,23 @@ ifeq ($(CONFIG_FIRMWARE_INCLUDE_ARIA_WEB_CONTROL),y)
 	fi )
 endif
 
+download_test:
+	( if [ ! -f $(SRC_NAME).tar.xz ]; then \
+		wget -t5 --timeout=20 --no-check-certificate -O $(SRC_NAME).tar.xz $(SRC_URL); \
+	fi )
+
 extract_test:
-ifneq ($(CONFIG_FIRMWARE_INCLUDE_ARIA2_NEW_PREBUILD_BIN),y)
 	( if [ ! -d $(SRC_NAME) ]; then \
-		tar xf $(SRC_NAME).tar.gz; \
+		tar xf $(SRC_NAME).tar.xz; \
 		patch -d $(SRC_NAME) -p1 -i ../disable-doc-test.patch; \
 	fi )
-endif
 
 config_test:
-ifneq ($(CONFIG_FIRMWARE_INCLUDE_ARIA2_NEW_PREBUILD_BIN),y)
 	( if [ -f ./config_done ]; then \
 		echo "the same configuration"; \
 	else \
 		make configure && touch config_done; \
 	fi )
-endif
 
 configure:
 	( cd $(SRC_NAME) ; \
@@ -79,13 +76,6 @@ romfs:
 ifeq ($(CONFIG_FIRMWARE_INCLUDE_ARIA_WEB_CONTROL),y)
 	cp -rf $(THISDIR)/ariaweb $(INSTALLDIR)/www
 endif
-ifeq ($(CONFIG_FIRMWARE_INCLUDE_ARIA2_NEW_PREBUILD_BIN),y)
-ifeq ($(CONFIG_PRODUCT),MT7621)
-	$(ROMFSINST) -S $(THISDIR)/aria2-bin/$(BIN_DIR_NAME)/mipsel_1004kc/aria2c /usr/bin/aria2c
-else
-	$(ROMFSINST) -S $(THISDIR)/aria2-bin/$(BIN_DIR_NAME)/mipsel_24kc/aria2c /usr/bin/aria2c
-endif
-else
 	$(ROMFSINST) $(THISDIR)/$(SRC_NAME)/src/aria2c /usr/bin/aria2c
-endif
 	$(ROMFSINST) -p +x /usr/bin/aria.sh
+

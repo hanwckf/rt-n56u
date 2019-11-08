@@ -38,6 +38,8 @@ romfs:
 	cp -fP $(DESTDIR)/lib/libuClibc*.so* $(ROMFSDIR)/lib ; \
 	cp -fP $(DESTDIR)/lib/libc.so.0 $(ROMFSDIR)/lib ; \
 	cp -fP $(DESTDIR)/lib/ld-uClibc*.so* $(ROMFSDIR)/lib ; \
+	cp -fP $(CONFIG_CROSS_COMPILER_ROOT)/mipsel-linux-uclibc/sysroot/lib/libgcc_s.so* $(ROMFSDIR)/lib ; \
+	cp -fP $(CONFIG_CROSS_COMPILER_ROOT)/mipsel-linux-uclibc/sysroot/lib/libthread_db*.so* $(ROMFSDIR)/lib ; \
 	chmod +x $(ROMFSDIR)/lib/libuClibc*.so
 
 clean:

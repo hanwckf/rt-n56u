@@ -12,7 +12,10 @@ go_exit(){
 
 auth(){
 	if [ $(date '+%H') -lt 6 ]; then
-		/usr/bin/scutclient.sh restart nolog > /dev/null 2>&1
+		# if NTP failed or force re-auth (default), then restart scutclient
+		if [ $(date '+%Y') -lt 2019 ] || [ "$(nvram get scutclient_wdg_force)" != "0" ]; then
+			/usr/bin/scutclient.sh restart nolog > /dev/null 2>&1
+		fi
 	else
 		logger -t "scutclient_watchcat" "Connection failed ($1), restart scutclient!"
 		/usr/bin/scutclient.sh restart > /dev/null 2>&1

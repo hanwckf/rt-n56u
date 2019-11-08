@@ -775,6 +775,7 @@ menu5_13_version=Drcom version:
 menu5_13_hash=DrAuthSvr.dll hash value:
 menu5_13_debug=Enable debug mode
 menu5_13_watchcat=Enable watchcat
+menu5_13_watchcat_force=Always perform watchcat
 menu5_13_log=Log
 menu5_13_udpHB=Skip UDP Heartbeat check
 menu5_14=ChinaDNS

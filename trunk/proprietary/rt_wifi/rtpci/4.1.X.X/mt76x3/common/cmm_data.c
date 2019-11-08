@@ -27,7 +27,7 @@
 #include "rt_config.h"
 
 #ifdef LED_SOFT_SUPPORT
-#include <linux/ralink_gpio.h>
+#include <ralink/ralink_gpio.h>
 #endif
 
 UCHAR	SNAP_802_1H[] = {0xaa, 0xaa, 0x03, 0x00, 0x00, 0x00};

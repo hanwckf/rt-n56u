@@ -13,7 +13,7 @@ mkdev () {    # usage: mkdev name [bcu] major minor owner group mode
 		fi
 	fi
 	[ ! "$opt_n" ] && rm -f $1 &&
-	[ ! "$opt_d" ] && mknod $1 $2 $3 $4 &&
+	[ ! "$opt_d" ] && sudo mknod $1 $2 $3 $4 &&
 	chmod $7 $1
 }
 

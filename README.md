@@ -98,7 +98,7 @@ Contributors of this project are not responsible for what happens next.
 ```shell
 sudo apt-get update
 sudo apt-get install unzip libtool curl cmake gperf gawk flex bison nano \
-git python-docutils gettext automake autopoint texinfo build-essential fakeroot \
+git python-docutils gettext automake autopoint texinfo build-essential \
 pkg-config zlib1g-dev libgmp3-dev libmpc-dev libmpfr-dev libncurses5-dev libltdl-dev
 ```
 * 克隆源码
@@ -120,7 +120,7 @@ nano /opt/rt-n56u/trunk/configs/templates/PSG1218.config
 ```shell
 cd /opt/rt-n56u/trunk
 sudo ./clear_tree
-fakeroot ./build_firmware_modify PSG1218
+sudo ./build_firmware_modify PSG1218
 #脚本第一个参数为路由型号，在trunk/configs/templates/中
 #编译好的固件在trunk/images里
 ```

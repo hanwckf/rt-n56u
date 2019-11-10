@@ -25,6 +25,8 @@ DEFENCODING(( "CP437",                  /* IANA, JDK 1.1 */
             cp437,
             { cp437_mbtowc, NULL },       { cp437_wctomb, NULL })
 
+#if 0
+
 DEFENCODING(( "CP737",                  /* JDK 1.1 */
             ),
             cp737,
@@ -124,3 +126,4 @@ DEFENCODING(( "CP1125",                 /* ICU */
             ),
             cp1125,
             { cp1125_mbtowc, NULL },      { cp1125_wctomb, NULL })
+#endif //if 0

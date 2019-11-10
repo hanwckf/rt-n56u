@@ -168,6 +168,8 @@ DEFENCODING(( "UCS-4-SWAPPED",          /* libiconv */
             ucs4swapped,
             { ucs4swapped_mbtowc, NULL }, { ucs4swapped_wctomb, NULL })
 
+# if 0
+
 DEFENCODING(( "C99",
             ),
             c99,
@@ -177,6 +179,8 @@ DEFENCODING(( "JAVA",
             ),
             java,
             { java_mbtowc, NULL },        { java_wctomb, NULL })
+
+#endif //if 0
 
 /* Standard 8-bit encodings */
 
@@ -218,6 +222,8 @@ DEFALIAS(     "ISO88592",               /* HP-UX */
             iso8859_2)
 #endif
 
+#if 0
+
 DEFENCODING(( "ISO-8859-3",             /* IANA */
               "ISO_8859-3",             /* IANA */
               "ISO_8859-3:1988",        /* IANA */
@@ -246,6 +252,8 @@ DEFENCODING(( "ISO-8859-4",             /* IANA */
             iso8859_4,
             { iso8859_4_mbtowc, NULL },   { iso8859_4_wctomb, NULL })
 
+#endif //if 0
+
 DEFENCODING(( "ISO-8859-5",             /* IANA */
               "ISO_8859-5",             /* IANA */
               "ISO_8859-5:1988",        /* IANA */
@@ -262,6 +270,8 @@ DEFENCODING(( "ISO-8859-5",             /* IANA */
 DEFALIAS(     "ISO88595",               /* HP-UX */
             iso8859_5)
 #endif
+
+#if 0
 
 DEFENCODING(( "ISO-8859-6",             /* IANA */
               "ISO_8859-6",             /* IANA */
@@ -385,6 +395,8 @@ DEFENCODING(( "ISO-8859-14",            /* IANA, glibc */
             iso8859_14,
             { iso8859_14_mbtowc, NULL },  { iso8859_14_wctomb, NULL })
 
+#endif //if 0
+
 DEFENCODING(( "ISO-8859-15",            /* IANA, glibc */
               "ISO_8859-15",            /* IANA */
               "ISO_8859-15:1998",       /* glibc */
@@ -400,6 +412,8 @@ DEFALIAS(     "ISO885915",              /* HP-UX */
             iso8859_15)
 #endif
 
+#if 0
+
 DEFENCODING(( "ISO-8859-16",            /* IANA */
               "ISO_8859-16",            /* IANA */
               "ISO_8859-16:2001",       /* IANA */
@@ -410,6 +424,8 @@ DEFENCODING(( "ISO-8859-16",            /* IANA */
             ),
             iso8859_16,
             { iso8859_16_mbtowc, NULL },  { iso8859_16_wctomb, NULL })
+
+#endif
 
 DEFENCODING(( "KOI8-R",                 /* IANA, RFC 1489, X11R6.4, JDK 1.1 */
               "csKOI8R",                /* IANA */
@@ -460,6 +476,8 @@ DEFALIAS(     "IBM-1252",               /* AIX */
             cp1252)
 #endif
 
+#if 0
+
 DEFENCODING(( "CP1253",                 /* JDK 1.1 */
               "WINDOWS-1253",           /* IANA */
               "MS-GREEK",
@@ -501,6 +519,8 @@ DEFENCODING(( "CP1258",                 /* JDK 1.1 */
             cp1258,
             { cp1258_mbtowc, cp1258_flushwc }, { cp1258_wctomb, NULL })
 
+#endif //if 0
+
 /* DOS 8-bit encodings */
 
 DEFENCODING(( "CP850",                  /* IANA, JDK 1.1 */
@@ -515,6 +535,8 @@ DEFALIAS(     "IBM-850",                /* AIX */
             cp850)
 #endif
 
+#if 0
+
 DEFENCODING(( "CP862",                  /* IANA, JDK 1.1 */
               "IBM862",                 /* IANA */
               "862",                    /* IANA */
@@ -523,6 +545,8 @@ DEFENCODING(( "CP862",                  /* IANA, JDK 1.1 */
             cp862,
             { cp862_mbtowc, NULL },       { cp862_wctomb, NULL })
 
+#endif //if 0
+
 DEFENCODING(( "CP866",                  /* IANA, JDK 1.1 */
               "IBM866",                 /* IANA */
               "866",                    /* IANA */
@@ -530,6 +554,8 @@ DEFENCODING(( "CP866",                  /* IANA, JDK 1.1 */
             ),
             cp866,
             { cp866_mbtowc, NULL },       { cp866_wctomb, NULL })
+
+#if 0
 
 DEFENCODING(( "CP1131",                 /* FreeBSD, MacOS X */
             ),
@@ -772,6 +798,8 @@ DEFENCODING(( "JIS_X0212",
             jisx0212,
             { jisx0212_mbtowc, NULL },    { jisx0212_wctomb, NULL })
 
+#endif //if 0
+
 DEFENCODING(( "GB_1988-80",             /* IANA */
               "ISO646-CN",              /* IANA */
               "ISO-IR-57",              /* IANA */
@@ -809,6 +837,8 @@ DEFENCODING(( "KSC_5601",               /* IANA */
             { ksc5601_mbtowc, NULL },     { ksc5601_wctomb, NULL })
 
 /* CJK encodings */
+
+#if 0
 
 DEFENCODING(( "EUC-JP",                 /* IANA */
               "EUCJP",                  /* glibc, HP-UX, IRIX, OSF/1, Solaris */
@@ -874,6 +904,8 @@ DEFENCODING(( "ISO-2022-JP-MS",
             ),
             iso2022_jpms,
             { iso2022_jpms_mbtowc, NULL }, { iso2022_jpms_wctomb, iso2022_jpms_reset })
+
+#endif //if 0
 
 DEFENCODING(( "EUC-CN",                 /* glibc */
               "EUCCN",                  /* glibc, IRIX */
@@ -989,6 +1021,8 @@ DEFENCODING(( "BIG5-HKSCS",             /* IANA */
             big5hkscs2008,
             { big5hkscs2008_mbtowc, big5hkscs2008_flushwc }, { big5hkscs2008_wctomb, big5hkscs2008_reset })
 
+#if 0
+
 DEFENCODING(( "EUC-KR",                 /* IANA, RFC 1557 */
               "EUCKR",                  /* glibc, HP-UX, IRIX, OSF/1 */
               "csEUCKR",                /* IANA */
@@ -1038,3 +1072,4 @@ DEFENCODING(( "ISO-2022-KR",            /* IANA, RFC 1557 */
             iso2022_kr,
             { iso2022_kr_mbtowc, NULL },  { iso2022_kr_wctomb, iso2022_kr_reset })
 
+#endif //if 0

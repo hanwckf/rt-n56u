@@ -518,6 +518,12 @@ void stop_scutclient(void);
 void start_scutclient(void);
 void restart_scutclient(void);
 #endif
+#if defined(APP_MENTOHUST)
+int is_mentohust_run(void);
+void stop_mentohust(void);
+void start_mentohust(void);
+void restart_mentohust(void);
+#endif
 #if defined(APP_TTYD)
 void stop_ttyd(void);
 void start_ttyd(void);

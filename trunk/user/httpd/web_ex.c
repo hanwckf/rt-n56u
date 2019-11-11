@@ -1953,6 +1953,31 @@ static int scutclient_version_hook(int eid, webs_t wp, int argc, char **argv)
 }
 #endif
 
+#if defined (APP_MENTOHUST)
+static int mentohust_action_hook(int eid, webs_t wp, int argc, char **argv)
+{
+	int needed_seconds = 2;
+	char *action = websGetVar(wp, "connect_action", "");
+
+	if (!strcmp(action, "Reconnect")) {
+		notify_rc(RCN_RESTART_MENTOHUST);
+	}
+	else if (!strcmp(action, "Disconnect")) {
+		notify_rc("stop_mentohust");
+	}
+
+	websWrite(wp, "<script>restart_needed_time(%d);</script>\n", needed_seconds);
+	return 0;
+}
+
+static int mentohust_status_hook(int eid, webs_t wp, int argc, char **argv)
+{
+	int status_code = pids("bin_mentohust");
+	websWrite(wp, "function mentohust_status() { return %d;}\n", status_code);
+	return 0;
+}
+#endif
+
 #if defined (APP_SHADOWSOCKS)
 static int shadowsocks_action_hook(int eid, webs_t wp, int argc, char **argv)
 {
@@ -2183,6 +2208,11 @@ ej_firmware_caps_hook(int eid, webs_t wp, int argc, char **argv)
 #else
 	int found_app_scutclient = 0;
 #endif
+#if defined(APP_MENTOHUST)
+	int found_app_mentohust = 1;
+#else
+	int found_app_mentohust = 0;
+#endif
 #if defined(APP_TTYD)
 	int found_app_ttyd = 1;
 #else
@@ -2372,7 +2402,8 @@ ej_firmware_caps_hook(int eid, webs_t wp, int argc, char **argv)
 		"function found_app_napt66() { return %d;}\n"
 		"function found_app_dnsforwarder() { return %d;}\n"
 		"function found_app_shadowsocks() { return %d;}\n"
-		"function found_app_xupnpd() { return %d;}\n",
+		"function found_app_xupnpd() { return %d;}\n"
+		"function found_app_mentohust() { return %d;}\n",
 		found_utl_hdparm,
 		found_app_ovpn,
 		found_app_dlna,
@@ -2393,7 +2424,8 @@ ej_firmware_caps_hook(int eid, webs_t wp, int argc, char **argv)
 		found_app_napt66,
 		found_app_dnsforwarder,
 		found_app_shadowsocks,
-		found_app_xupnpd
+		found_app_xupnpd,
+		found_app_mentohust
 	);
 
 	websWrite(wp,
@@ -3712,6 +3744,36 @@ static char no_cache_IE[] =
 "Expires: -1"
 ;
 
+#if defined (APP_SCUT)
+static void
+do_scutclient_log_file(const char *url, FILE *stream)
+{
+	dump_file(stream, "/tmp/scutclient.log");
+	fputs("\r\n", stream); /* terminator */
+}
+
+static char scutclient_log_txt[] =
+"Content-Disposition: attachment;\r\n"
+"filename=scutclient.log"
+;
+
+#endif
+
+#if defined (APP_MENTOHUST)
+static void
+do_mentohust_log_file(const char *url, FILE *stream)
+{
+	dump_file(stream, "/tmp/mentohust.log");
+	fputs("\r\n", stream); /* terminator */
+}
+
+static char mentohust_log_txt[] =
+"Content-Disposition: attachment;\r\n"
+"filename=mentohust.log"
+;
+
+#endif
+
 struct mime_handler mime_handlers[] = {
 	/* cached javascript files w/o translations */
 	{ "jquery.js", "text/javascript", NULL, NULL, do_file, 0 }, // 2012.06 Eagle23
@@ -3753,6 +3815,12 @@ struct mime_handler mime_handlers[] = {
 	{ "Settings_**.CFG", "application/force-download", NULL, NULL, do_nvram_file, 1 },
 	{ "Storage_**.TBZ", "application/force-download", NULL, NULL, do_storage_file, 1 },
 	{ "syslog.txt", "application/force-download", syslog_txt, NULL, do_syslog_file, 1 },
+#if defined(APP_SCUT)
+	{ "scutclient.log", "application/force-download", scutclient_log_txt, NULL, do_scutclient_log_file, 1 },
+#endif
+#if defined(APP_MENTOHUST)
+	{ "mentohust.log", "application/force-download", mentohust_log_txt, NULL, do_mentohust_log_file, 1 },
+#endif
 #if defined(APP_OPENVPN)
 	{ "client.ovpn", "application/force-download", NULL, NULL, do_export_ovpn_client, 1 },
 #endif
@@ -4045,6 +4113,10 @@ struct ej_handler ej_handlers[] =
 	{ "scutclient_action", scutclient_action_hook},
 	{ "scutclient_status", scutclient_status_hook},
 	{ "scutclient_version", scutclient_version_hook},
+#endif
+#if defined (APP_MENTOHUST)
+	{ "mentohust_action", mentohust_action_hook},
+	{ "mentohust_status", mentohust_status_hook},
 #endif
 #if defined (APP_SHADOWSOCKS)
 	{ "shadowsocks_action", shadowsocks_action_hook},

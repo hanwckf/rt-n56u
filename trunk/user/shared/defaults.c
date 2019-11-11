@@ -492,6 +492,28 @@ struct nvram_pair router_defaults[] = {
 	{ "scutclient_watchcat", "1" },
 	{ "scutclient_wdg_force", "1" },
 
+	/* mentohust related */
+	{ "mentohust_enable", "0" },
+	{ "mentohust_username", "" },
+	{ "mentohust_password", "" },
+	{ "mentohust_nic", "" },
+	{ "mentohust_ip", "" },
+	{ "mentohust_mask", "" },
+	{ "mentohust_gw", "" },
+	{ "mentohust_dns", "" },
+	{ "mentohust_pinghost", "" },
+	{ "mentohust_timeout", "8" },
+	{ "mentohust_interval", "30" },
+	{ "mentohust_restart_wait", "15" },
+	{ "mentohust_maxfail", "0" },
+	{ "mentohust_startmode", "1" },
+	{ "mentohust_dhcp", "1" },
+	{ "mentohust_daemon", "3" },
+	{ "mentohust_service", "0" },
+	{ "mentohust_ver", "0.00" },
+	{ "mentohust_datafile", "/etc/storage/mentohust" },
+	{ "mentohust_dhcpscript", "dhclient" },
+
 	/* ttyd related */
 	{ "ttyd_enable", "0" },
 	{ "ttyd_port", "7681" },

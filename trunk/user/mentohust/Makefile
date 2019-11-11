@@ -1,6 +1,5 @@
-SRC_NAME = mentohust-master
-ARCHIVE_NAME := mentohust-6a6da8d
-#https://github.com/hanwckf/mentohust
+SRC_NAME = mentohust-1-master
+#https://github.com/hanwckf/mentohust-1
 THISDIR = $(shell pwd)
 
 LDFLAGS += -L$(STAGEDIR) -liconv
@@ -11,7 +10,7 @@ all: extract_test config_test
 
 extract_test:
 	( if [ ! -d $(SRC_NAME) ]; then \
-		unzip -qq $(ARCHIVE_NAME).zip; \
+		unzip -qq $(SRC_NAME).zip; \
 	fi )
 
 config_test:
@@ -41,5 +40,6 @@ clean:
 	rm -f config_done
 
 romfs:
-	$(ROMFSINST) -p +x $(THISDIR)/$(SRC_NAME)/src/mentohust /usr/bin/mentohust
-	$(ROMFSINST) $(THISDIR)/$(SRC_NAME)/src/mentohust.conf /etc_ro/mentohust-sample.conf
+	$(ROMFSINST) -p +x $(THISDIR)/$(SRC_NAME)/src/mentohust /usr/bin/bin_mentohust
+	$(ROMFSINST) -p +x $(THISDIR)/scripts/mentohust.sh /usr/bin/mentohust.sh
+

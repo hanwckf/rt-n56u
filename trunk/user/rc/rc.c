@@ -1246,6 +1246,16 @@ handle_notifications(void)
 			stop_scutclient();
 		}
 #endif
+#if defined(APP_MENTOHUST)
+		else if (strcmp(entry->d_name, RCN_RESTART_MENTOHUST) == 0)
+		{
+			restart_mentohust();
+		}
+		else if (strcmp(entry->d_name, "stop_mentohust") == 0)
+		{
+			stop_mentohust();
+		}
+#endif
 #if defined(APP_TTYD)
 		else if (strcmp(entry->d_name, RCN_RESTART_TTYD) == 0)
 		{

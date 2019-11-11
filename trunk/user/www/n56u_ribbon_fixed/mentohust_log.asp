@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
-<title><#Web_Title#> - <#menu5_13#></title>
+<title><#Web_Title#> - <#menu5_18#></title>
 <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
 <meta http-equiv="Pragma" content="no-cache">
 <meta http-equiv="Expires" content="-1">
@@ -31,7 +31,7 @@ $j(document).ready(function(){
 
 function initial(){
 	show_banner(2);
-	show_menu(5,11,2);
+	show_menu(5,14,2);
 	show_footer();
 }
 </script>
@@ -80,14 +80,14 @@ function initial(){
                 <div class="row-fluid">
                     <div class="span12">
                         <div class="box well grad_colour_dark_blue">
-                            <h2 class="box_head round_top"><#menu5_13#></h2>
+                            <h2 class="box_head round_top"><#menu5_18#></h2>
                             <div class="round_bottom">
                                 <div class="row-fluid">
                                     <div id="tabMenu" class="submenuBlock"></div>
                                     <table width="100%" cellpadding="4" cellspacing="0" class="table">
                                         <tr>
                                             <td colspan="3" style="border-top: 0 none; padding-bottom: 0px;">
-                                                <textarea rows="21" class="span12" style="height:377px; font-family:'Courier New', Courier, mono; font-size:13px;" readonly="readonly" wrap="off" id="textarea"><% nvram_dump("scutclient.log",""); %></textarea>
+                                                <textarea rows="21" class="span12" style="height:377px; font-family:'Courier New', Courier, mono; font-size:13px;" readonly="readonly" wrap="off" id="textarea"><% nvram_dump("mentohust.log",""); %></textarea>
                                             </td>
                                         </tr>
                                         <tr>
@@ -95,7 +95,7 @@ function initial(){
                                                 <input type="button" onClick="location.href=location.href" value="<#CTL_refresh#>" class="btn btn-primary" style="width: 170px">
                                             </td>
                                             <td width="15%" style="text-align: left; padding-bottom: 0px;">
-                                                <input type="button" onClick="location.href='scutclient.log'" value="<#CTL_onlysave#>" class="btn btn-success" style="width: 170px">
+                                                <input type="button" onClick="location.href='mentohust.log'" value="<#CTL_onlysave#>" class="btn btn-success" style="width: 170px">
                                             </td>
                                         </tr>
                                     </table>

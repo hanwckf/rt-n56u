@@ -10,9 +10,10 @@ addons:
       packages: [ fakeroot, p7zip-full, autoconf, automake, bison, build-essential,
         flex, gawk, gettext, gperf, libtool, pkg-config, zlib1g-dev, libgmp3-dev,
         libmpc-dev, libmpfr-dev, texinfo, python-docutils, libncurses5-dev, curl,
-        autopoint, libltdl-dev, cmake ]
+        autopoint, libltdl-dev, cmake, shellcheck ]
 
 before_script:
+    - ./trunk/tools/shellcheck.sh
     - mkdir -p /opt/rt-n56u/toolchain-mipsel/toolchain-3.4.x && mkdir -p /opt/images/
     - cp -f ./trunk/tools/travis/* /opt && ./trunk/tools/travis_ci_build_trig.sh
     - rm -rf toolchain-mipsel/ && mv -f * .[^.]* /opt/rt-n56u

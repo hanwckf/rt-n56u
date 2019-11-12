@@ -43,7 +43,6 @@ func_start()
 	aria_rport=`nvram get aria_rport`
 	aria_user=`nvram get http_username`
 	aria_pass=`nvram get http_passwd`
-	lan_ipaddr=`nvram get lan_ipaddr_t`
 
 	[ -z "$aria_rport" ] && aria_rport="6800"
 	[ -z "$aria_pport" ] && aria_pport="16888"

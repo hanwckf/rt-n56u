@@ -18,5 +18,7 @@ exs="SC2166,SC2164,SC2174,SC2039"
 sc_opts="-W 0 -x -S warning -e $exs"
 
 for s in $check_dirs; do
-	eval "shellcheck ${sc_opts} ${TOPDIR}/${s}/*.sh"
+	shellcheck ${sc_opts} ${TOPDIR}/${s}/*.sh
 done
+
+exit 0

@@ -255,9 +255,7 @@ function fill_status(status_code){
                                         <tr> <th width="50%"><#menu5_18_15#></th>
                                             <td>
                                                 <select name="mentohust_daemon" class="input" style="width: 145px;">
-                                                    <option value="0" ><#menu5_18_15_0#></option>
                                                     <option value="1" ><#menu5_18_15_1#></option>
-                                                    <option value="2" ><#menu5_18_15_2#></option>
                                                     <option value="3" ><#menu5_18_15_3#></option>
                                                 </select>
                                             </td>

@@ -34,7 +34,6 @@ function initial(){
 	show_banner(2);
 	show_menu(5,14,1);
 	show_footer();
-	showhide_div('mentohust_daemon_option',0);
 	var o1 = document.form.mentohust_startmode;
 	var o2 = document.form.mentohust_dhcp;
 	var o3 = document.form.mentohust_daemon;
@@ -253,7 +252,7 @@ function fill_status(status_code){
                                             </td>
                                         </tr>
 
-                                        <tr id="mentohust_daemon_option"> <th width="50%"><#menu5_18_15#></th>
+                                        <tr> <th width="50%"><#menu5_18_15#></th>
                                             <td>
                                                 <select name="mentohust_daemon" class="input" style="width: 145px;">
                                                     <option value="0" ><#menu5_18_15_0#></option>

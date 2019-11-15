@@ -106,11 +106,6 @@ pkg-config zlib1g-dev libgmp3-dev libmpc-dev libmpfr-dev libncurses5-dev libltdl
 git clone --depth=1 https://gitee.com/hanwckf/rt-n56u.git /opt/rt-n56u
 #git clone --depth=1 https://github.com/hanwckf/rt-n56u.git /opt/rt-n56u
 ```
-* 编译工具链 （仅需编译一次）
-```shell
-cd /opt/rt-n56u/toolchain-mipsel
-
-```
 * 准备工具链
 ```shell
 cd /opt/rt-n56u/toolchain-mipsel

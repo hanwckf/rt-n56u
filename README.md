@@ -30,7 +30,6 @@ Contributors of this project are not responsible for what happens next.
 
 ### 固件特点 ###
 - 使用[gorden5566](https://github.com/gorden5566/padavan)的汉化字典
-- [aria2](https://github.com/aria2/aria2)可选使用较新版本的预编译程序 ```CONFIG_FIRMWARE_INCLUDE_ARIA2_NEW_PREBUILD_BIN```
 - aria2前端更换为[AriaNg](https://github.com/mayswind/AriaNg)
 - [curl](https://github.com/curl/curl)可选编译可执行程序```CONFIG_FIRMWARE_INCLUDE_CURL```
 - 使用了[PROMETHEUS](http://pm.freize.net/index.html)提供的部分补丁

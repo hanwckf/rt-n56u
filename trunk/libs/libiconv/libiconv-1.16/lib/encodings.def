@@ -252,8 +252,6 @@ DEFENCODING(( "ISO-8859-4",             /* IANA */
             iso8859_4,
             { iso8859_4_mbtowc, NULL },   { iso8859_4_wctomb, NULL })
 
-#endif //if 0
-
 DEFENCODING(( "ISO-8859-5",             /* IANA */
               "ISO_8859-5",             /* IANA */
               "ISO_8859-5:1988",        /* IANA */
@@ -270,8 +268,6 @@ DEFENCODING(( "ISO-8859-5",             /* IANA */
 DEFALIAS(     "ISO88595",               /* HP-UX */
             iso8859_5)
 #endif
-
-#if 0
 
 DEFENCODING(( "ISO-8859-6",             /* IANA */
               "ISO_8859-6",             /* IANA */
@@ -395,8 +391,6 @@ DEFENCODING(( "ISO-8859-14",            /* IANA, glibc */
             iso8859_14,
             { iso8859_14_mbtowc, NULL },  { iso8859_14_wctomb, NULL })
 
-#endif //if 0
-
 DEFENCODING(( "ISO-8859-15",            /* IANA, glibc */
               "ISO_8859-15",            /* IANA */
               "ISO_8859-15:1998",       /* glibc */
@@ -412,8 +406,6 @@ DEFALIAS(     "ISO885915",              /* HP-UX */
             iso8859_15)
 #endif
 
-#if 0
-
 DEFENCODING(( "ISO-8859-16",            /* IANA */
               "ISO_8859-16",            /* IANA */
               "ISO_8859-16:2001",       /* IANA */
@@ -424,8 +416,6 @@ DEFENCODING(( "ISO-8859-16",            /* IANA */
             ),
             iso8859_16,
             { iso8859_16_mbtowc, NULL },  { iso8859_16_wctomb, NULL })
-
-#endif
 
 DEFENCODING(( "KOI8-R",                 /* IANA, RFC 1489, X11R6.4, JDK 1.1 */
               "csKOI8R",                /* IANA */
@@ -444,6 +434,8 @@ DEFENCODING(( "KOI8-RU",
             ),
             koi8_ru,
             { koi8_ru_mbtowc, NULL },     { koi8_ru_wctomb, NULL })
+
+#endif //if 0
 
 /* Windows 8-bit encodings */
 

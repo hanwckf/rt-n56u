@@ -66,29 +66,29 @@ Contributors of this project are not responsible for what happens next.
 >- [tunsafe](https://github.com/TunSafe/TunSafe) ```CONFIG_FIRMWARE_INCLUDE_TUNSAFE```
 
 - 已适配除官方适配外的以下机型
->- WR1200JS (USB)
->- NEWIFI3 (USB)
+>- PSG1208
 >- PSG1218
->- K2P
->- K2P-USB (USB)
->- MZ-R13
->- MZ-R13P
->- HC5661A
+>- 5K-W20 (USB)
 >- OYE-001 (USB)
+>- NEWIFI-MINI (USB)
 >- MI-MINI (USB)
 >- MI-3 (USB)
->- 5K-W20 (USB)
->- JCG-AC860M (USB)
->- JCG-836PRO (USB)
->- DIR-882 (USB)
->- DIR-878
->- RT-AC1200GU (USB)
->- XY-C1 (USB)
->- NEWIFI-MINI (USB)
+>- HC5661A
 >- HC5861B
 >- 360P2 (USB)
+>- MZ-R13
+>- MZ-R13P
+>- RT-AC1200GU (USB)
+>- XY-C1 (USB)
+>- WR1200JS (USB)
+>- NEWIFI3 (USB)
+>- K2P
+>- K2P-USB (USB)
+>- JCG-836PRO (USB)
+>- JCG-AC860M (USB)
+>- DIR-882 (USB)
+>- DIR-878
 >- MR2600 (USB)
->- PSG1208
 
 ***
 
@@ -106,13 +106,25 @@ pkg-config zlib1g-dev libgmp3-dev libmpc-dev libmpfr-dev libncurses5-dev libltdl
 git clone --depth=1 https://gitee.com/hanwckf/rt-n56u.git /opt/rt-n56u
 #git clone --depth=1 https://github.com/hanwckf/rt-n56u.git /opt/rt-n56u
 ```
-* 编译工具链
+* 编译工具链 （仅需编译一次）
 ```shell
 cd /opt/rt-n56u/toolchain-mipsel
+
+```
+* 准备工具链
+```shell
+cd /opt/rt-n56u/toolchain-mipsel
+
+# 可以从源码编译工具链，这需要一些时间：
 ./clean_toolchain
 ./build_toolchain
+
+# 或者下载预编译的工具链：
+mkdir -p toolchain-3.4.x
+wget https://github.com/hanwckf/padavan-toolchain/releases/download/v1.0/mipsel-linux-uclibc.tar.xz
+tar -xvf mipsel-linux-uclibc.tar.xz -C toolchain-3.4.x
 ```
-* (可选)修改机型配置文件
+* (可选) 修改机型配置文件
 ```shell
 nano /opt/rt-n56u/trunk/configs/templates/PSG1218.config
 ```
@@ -121,8 +133,8 @@ nano /opt/rt-n56u/trunk/configs/templates/PSG1218.config
 cd /opt/rt-n56u/trunk
 sudo ./clear_tree
 sudo ./build_firmware_modify PSG1218
-#脚本第一个参数为路由型号，在trunk/configs/templates/中
-#编译好的固件在trunk/images里
+# 脚本第一个参数为路由型号，在trunk/configs/templates/中
+# 编译好的固件在trunk/images里
 ```
 
 ***

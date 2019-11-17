@@ -95,9 +95,9 @@ Contributors of this project are not responsible for what happens next.
 
 * 安装依赖包
 ```shell
-sudo apt-get update
-sudo apt-get install unzip libtool-bin curl cmake gperf gawk flex bison nano \
-git python-docutils gettext automake autopoint texinfo build-essential help2man \
+sudo apt update
+sudo apt install unzip libtool-bin curl cmake gperf gawk flex bison nano xxd \
+cpio git python-docutils gettext automake autopoint texinfo build-essential help2man \
 pkg-config zlib1g-dev libgmp3-dev libmpc-dev libmpfr-dev libncurses5-dev libltdl-dev
 ```
 * 克隆源码

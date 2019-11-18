@@ -6,7 +6,10 @@ ROMFS_DIR = $(ROOTDIR)/romfs
 
 include $(ROOTDIR)/user/shared/boards.mk
 
-PROJECT_HOME_URL="https:\/\/bitbucket.org\/padavan\/rt-n56u\/"
+#PROJECT_HOME_URL="https:\/\/bitbucket.org\/padavan\/rt-n56u\/"
+#https://pan.baidu.com/s/1cbsMrvD60L7f2pzUhuaIdA 提取码：b5ml
+
+PROJECT_HOME_URL="https:\/\/pan.baidu.com\/s\/1cbsMrvD60L7f2pzUhuaIdA"
 LABEL_COPYRIGHT_TEXT="© 2011-2016 Padavan \& N56U project community"
 
 BOARD_PATTERN=s/ZVMODELVZ/$(CONFIG_FIRMWARE_PRODUCT_ID)/g

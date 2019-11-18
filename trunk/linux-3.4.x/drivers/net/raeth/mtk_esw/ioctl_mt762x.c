@@ -343,6 +343,12 @@ static void esw_igmp_ports_config(u32 wan_bridge_mode)
 
 	mask_no_learn = 0;
 
+#ifdef IGMP_SN_DBG
+	printk("wan_bridge_mode: %d SWAPI_WAN_BRIDGE_DISABLE_WAN(8). ",wan_bridge_mode);
+	printk("g_igmp_snooping_enabled:  %d .\n", g_igmp_snooping_enabled );
+
+#endif
+
 	if (wan_bridge_mode != SWAPI_WAN_BRIDGE_DISABLE_WAN) {
 		mask_no_learn = get_ports_mask_wan(0, 0);
 		for (i = 0; i <= ESW_EPHY_ID_MAX; i++) {

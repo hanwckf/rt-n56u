@@ -2,7 +2,7 @@
 
 # If running interactively, then
 if [ "$PS1" ] ; then
-
+    export PS1='\h:\w \$ '
     export PATH=/opt/sbin:/opt/bin:/usr/sbin:/usr/bin:/sbin:/bin
     export HOSTNAME=`/bin/hostname`
     export TERMINFO=/usr/share/terminfo

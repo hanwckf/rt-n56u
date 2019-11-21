@@ -12,6 +12,7 @@ download_test:
 extract_test:
 	( if [ ! -d $(SRC_NAME) ]; then \
 		tar xf $(SRC_NAME).tar.gz ; \
+		patch -d $(SRC_NAME) -p0 < $(SRC_NAME).patch ; \
 	fi )
 
 config_test:

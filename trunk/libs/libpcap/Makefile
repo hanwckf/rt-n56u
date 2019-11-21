@@ -1,4 +1,4 @@
-SRC_NAME=libpcap-1.9.0
+SRC_NAME=libpcap-1.9.1
 SRC_URL=http://www.tcpdump.org/release/$(SRC_NAME).tar.gz
 
 all: download_test extract_test config_test

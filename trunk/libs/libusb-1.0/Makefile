@@ -1,5 +1,5 @@
-SRC_NAME=libusb-1.0.22
-SRC_URL=https://github.com/libusb/libusb/releases/download/v1.0.22/libusb-1.0.22.tar.bz2
+SRC_NAME=libusb-1.0.23
+SRC_URL=https://github.com/libusb/libusb/releases/download/v1.0.23/libusb-1.0.23.tar.bz2
 
 all: download_test extract_test config_test
 	$(MAKE) -j$(HOST_NCPU) -C $(SRC_NAME)

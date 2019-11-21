@@ -1,6 +1,6 @@
 THISDIR = $(shell pwd)
 
-SRC_SS_NAME=shadowsocks-libev-3.2.5
+SRC_SS_NAME=shadowsocks-libev-3.3.3
 #https://github.com/shadowsocks/shadowsocks-libev.git
 
 SRC_SSR_NAME=shadowsocksr-libev-master

@@ -1,5 +1,5 @@
-SRC_NAME = TunSafe-master
-THISDIR = $(shell pwd)
+SRC_NAME := TunSafe-85a871c
+THISDIR := $(shell pwd)
 
 all:
 	$(MAKE) -C $(SRC_NAME)

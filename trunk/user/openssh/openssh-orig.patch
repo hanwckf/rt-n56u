@@ -39,7 +39,7 @@ diff -rup openssh-8.1p1/Makefile.in openssh-8.1p1-new/Makefile.in
  
  sftp-server$(EXEEXT): $(LIBCOMPAT) libssh.a sftp.o sftp-common.o sftp-server.o sftp-realpath.o sftp-server-main.o
 -	$(LD) -o $@ sftp-server.o sftp-common.o sftp-realpath.o sftp-server-main.o $(LDFLAGS) -lssh -lopenbsd-compat $(LIBS)
-+	$(LD) -o $@ sftp-server.o sftp-common.o sftp-server-main.o $(LDFLAGS) libssh.a -lopenbsd-compat $(LIBS)
++	$(LD) -o $@ sftp-server.o sftp-common.o sftp-realpath.o sftp-server-main.o $(LDFLAGS) libssh.a -lopenbsd-compat $(LIBS)
  
  sftp$(EXEEXT): $(LIBCOMPAT) libssh.a sftp.o sftp-client.o sftp-common.o sftp-glob.o progressmeter.o
 -	$(LD) -o $@ progressmeter.o sftp.o sftp-client.o sftp-common.o sftp-glob.o $(LDFLAGS) -lssh -lopenbsd-compat $(LIBS) $(LIBEDIT)

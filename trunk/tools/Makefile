@@ -19,7 +19,8 @@ LDFLAGS   =
 
 all:
 	make -C mkimage
-	make -C (SSTRIP_NAME)
+	mkdir -p sstrip
+	make -C $(SSTRIP_NAME)
 	make -C lzma
 ifeq ($(CONFIG_RT2880_ROOTFS_IN_FLASH),y)
 	make -C mksquashfs_xz
@@ -29,6 +30,7 @@ clean:
 	if [ -f $(SSTRIP_NAME)/Makefile ] ; then \
 		make -C $(SSTRIP_NAME) clean ; \
 	fi ;
+	rm -rf sstrip
 	make -C mkimage clean
 	make -C lzma clean
 	make -C mksquashfs_xz clean

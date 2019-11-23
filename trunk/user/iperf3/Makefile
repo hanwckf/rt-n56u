@@ -27,6 +27,7 @@ configure:
 	./configure \
 		--prefix=/usr \
 		--disable-profiling \
+		--without-openssl \
 		--disable-shared \
 		--enable-static \
 		--host=$(HOST_TARGET) \

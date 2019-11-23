@@ -71,8 +71,8 @@ fi
 achk_enable=`nvram get achk_enable`
 
 if [ "$ID_FS_TYPE" == "msdos" -o "$ID_FS_TYPE" == "vfat" ] ; then
-	if [ "$achk_enable" != "0" ] && [ -x /sbin/dosfsck ] ; then
-		/sbin/dosfsck -a -v "$dev_full" > "/tmp/dosfsck_result_$1" 2>&1
+	if [ "$achk_enable" != "0" ] && [ -x /sbin/fsck.fat ] ; then
+		/sbin/fsck.fat -a -v "$dev_full" > "/tmp/fsck.fat_result_$1" 2>&1
 	fi
 	kernel_vfat=`modprobe -l | grep vfat`
 	if [ -n "$kernel_vfat" ] ; then

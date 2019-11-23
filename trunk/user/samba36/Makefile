@@ -2,7 +2,7 @@ SRC_DIR := samba-3.6.25
 SRC_NAME := $(SRC_DIR)/source3
 THISDIR := $(shell pwd)
 
-SMBCFLAGS = $(CFLAGS) -D__location__=\\\"\\\" -ffunction-sections -fdata-sections
+SMBCFLAGS = $(CFLAGS) -ffunction-sections -fdata-sections
 SMBLDFLAGS = $(LDFLAGS) -Wl,--gc-sections
 SMBCPPFLAGS = $(CXXFLAGS) -DNDEBUG -DSHMEM_SIZE=524288 -Dfcntl=fcntl64 -D_FILE_OFFSET_BITS=64 -D_LARGEFILE_SOURCE=1 -D_LARGEFILE64_SOURCE=1 -D_LARGE_FILES=1
 MAKE_FLAGS = $(MAKEFLAGS) DYNEXP= PICFLAG= MODULES=

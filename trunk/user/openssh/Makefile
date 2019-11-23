@@ -1,12 +1,24 @@
-SRC_NAME=openssh-7.x
+SRC_NAME=openssh-8.1p1
+SRC_URL=https://ftp.usa.openbsd.org/pub/OpenBSD/OpenSSH/portable/$(SRC_NAME).tar.gz
 
 CFLAGS += -ffunction-sections -fdata-sections
 LDFLAGS += -Wl,--gc-sections
 
 THISDIR = $(shell pwd)
 
-all: config_test
+all: download_test extract_test config_test
 	$(MAKE) -j$(HOST_NCPU) -C $(SRC_NAME)
+
+download_test:
+	( if [ ! -f $(SRC_NAME).tar.gz ]; then \
+		wget -t5 --timeout=20 --no-check-certificate -O $(SRC_NAME).tar.gz $(SRC_URL); \
+	fi )
+
+extract_test:
+	( if [ ! -d $(SRC_NAME) ]; then \
+		tar xzf $(SRC_NAME).tar.gz; \
+		patch -d $(SRC_NAME) -p1 -i ../openssh-orig.patch; \
+	fi )
 
 config_test:
 	( if [ -f ./config_done ]; then \
@@ -17,6 +29,7 @@ config_test:
 
 configure:
 	( cd $(SRC_NAME) ; \
+	autoreconf -v; \
 	LD="$(CC)" \
 	./configure \
 		--prefix=/usr \

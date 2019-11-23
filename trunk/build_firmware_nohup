@@ -14,10 +14,6 @@ while true ;do
 		echo "Build script is exited"
 		if [ -f $basedir/trunk/images/*.trx ]; then
 			tail -20 build.log && exit 0
-		elif [ "$rebuild" != "1" ] && tail -10 build.log |grep -q libssl ; then
-			echo "openssl parallel make bug, rebuild..."
-			tail -30 build.log && rebuild=1
-			./build_firmware_modify $1 > build.log 2>&1 &
 		else
 			tail -60 build.log && exit 1
 		fi

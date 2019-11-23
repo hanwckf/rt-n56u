@@ -1,0 +1,33 @@
+.TH INFECT 1 "May 2011" "ELF kickers 3.0"
+.LO 1
+.SH NAME
+infect \- insert malicious code into an existing binary
+.SH SYNOPSIS
+.B infect
+FILENAME
+.SH DESCRIPTION
+.B infect
+alters an executable file by inserting extra code to run before the
+original program, that when invoked creates a set-user-ID /bin/sh
+program.
+.P
+.B infect
+only operates on 64-bit ELF executable files.
+.SH OPTIONS
+None.
+.SH NOTES
+In order to minimize the size of the code that needs to be inserted,
+.B infect
+relies on several non-portable aspects of Linux ELF executables. This
+program is therefore in no way guaranteed to function with future
+revisions of the Linux kernel. Then again,
+.B infect
+is not really meant to be used so much as its source code is meant to
+be read.
+.SH COPYRIGHT
+Copyright \(co 2011 Brian Raiter
+.IR <breadbox@muppetlabs.com> .
+.P
+License GPLv2+: GNU GPL version 2 or later. This is free software: you
+are free to change and redistribute it. There is NO WARRANTY, to the
+extent permitted by law.

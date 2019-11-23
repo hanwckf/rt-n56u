@@ -1,0 +1,66 @@
+.TH OBJRES 1 "May 2011" "ELF kickers 3.0"
+.LO 1
+.SH NAME
+objres \- compile binary data into an object file.
+.SH SYNOPSIS
+.B objres
+[OPTIONS] [SYMBOL=]FILE ...
+.SH DESCRIPTION
+.B objres
+takes as input one or more files containing binary data, and creates
+an ELF object file that exports the contents of each input file as a
+read-only compile-time object.
+.B objres
+also produces a C header file that declares each of the exported
+objects as an array of unsigned char.
+.P
+Each input file may be preceded by the symbol name to assign to that
+binary object. If no symbol name is provided,
+.B objres
+will derive one from the filename.
+.SH OPTIONS
+.TP
+\fB\-o\fR, \fB\--output=\fR\fIFILENAME\fR
+Set the name of the target object file to
+.IR FILENAME .
+If this option is omitted, the default filename will be derived from
+the name of the exported symbol (or the first symbol, if there is more
+than one).
+.TP
+\fB\-h\fR, \fB\--header=\fR\fIFILENAME\fR
+Set the name of the header file to
+.IR FILENAME .
+If this option is omitted, the default filename will be chosen to
+match the name of the object file.
+.TP
+.BR \-m ", " \--machine={32|64}
+Set the target object file to be either a 32-bit ELF object or a
+64-bit ELF object. The default type will be the same as the
+.B objres
+binary's type.
+.TP
+.BR \-R ", " \--reference=\fR\fIOBJFILE\fR
+Examine the object file
+.IR OBJFILE ,
+and copy the fields from its ELF header to the file created. By
+default
+.B objres
+will only target x86 platforms; this option allows it to create object
+files for other platforms.
+.TP
+.BR \-r ", " \--read\-only
+Place the binary objects in read-only memory. The objects will be
+declared as arrays of const unsigned char.
+.TP
+.B \--help
+Display help and exit.
+.TP
+.B \--version
+Display version information and exit.
+.SH COPYRIGHT
+Copyright \(co 2011 Brian Raiter
+.IR <breadbox@muppetlabs.com> .
+.P
+License GPLv2+: GNU GPL version 2 or later. This is free software: you
+are free to change and redistribute it. There is NO WARRANTY, to the
+extent permitted by law.

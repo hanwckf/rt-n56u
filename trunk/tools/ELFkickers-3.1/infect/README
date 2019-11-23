@@ -1,0 +1,25 @@
+infect provides a very simple example of how an ELF executable can be
+subverted to compromise security. (Of course, this is not a very
+practical approach if compromising security is really your goal, since
+it requires already having write access to someone else's executables.
+The true purpose here is simply to illustrate one technique for
+surgically altering ELF files.)
+
+Given a 64-bit ELF executable file, this program inserts into it a
+snippet of malicious code. When the modified executable is next
+invoked, the added code creates a file named "/tmp/.~", a 32-bit ELF
+executable that simply invokes /bin/sh, and has the set-user-ID bit
+set. The added code then jumps to the original program so that the
+modified executable shows no obvious sign of having been tampered
+with.
+
+infect takes advantage of the fact that most ELF executables are laid
+out with a significant chunk of unused padding bytes immediately
+following the executable segment. infect simply extends the size of
+the executable segment to include enough extra bytes to hold the new
+code, and then changes the executable's entry point.
+
+The malicious code provided with infect is very simple, and only
+requires 116 bytes. (58 of those bytes are for the generated ELF
+executable.) Further analysis of this assembly code is left as an
+exercise for the reader.

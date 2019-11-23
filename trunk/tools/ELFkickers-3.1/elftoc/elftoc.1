@@ -1,0 +1,76 @@
+.TH ELFTOC 1 "May 2011" "ELF kickers 3.0"
+.LO 1
+.SH NAME
+elftoc \- translate an ELF file into a C struct
+.SH SYNOPSIS
+.B elftoc
+[OPTIONS] FILE
+.SH DESCRIPTION
+.B elftoc
+takes as input an ELF file, and translates its content into a C source
+file describing a struct with an initialized value that matches the
+ELF file's memory image. Where possible, literal values are replaced
+with preprocessor symbols and sizeof-based calculations.
+.SH OPTIONS
+.TP
+.BR \-e ", " \--force\-end
+Force inclusion of a final _end field in the C struct. By default, an
+_end field is only included if the padding causes the struct to be
+larger than the original ELF file. With this option, a struct with no
+extra padding will provide an _end field defined as a zero-length
+array.
+.TP
+.BR \-E ", " \--exclude\-end
+Do not include a final _end field, even if padding is present at the
+end of the C struct.
+.TP
+\fB\-w\fR, \fB\--width=\fR\fIN\fR
+Set the maximum line width in the output to
+.IR N .
+The default maximum line width is 80.
+.TP
+\fB\-i\fR, \fB\--indent=\fR\fIN\fR
+Set the number of spaces to indent to
+.IR N .
+The default indentation amount is 2.
+.TP
+\fB\-s\fR, \fB\--structname=\fR\fINAME\fR
+Set the name of the C struct in the generated source code to
+.IR NAME .
+By default the struct's name is "elf".
+.TP
+\fB\-v\fR, \fB\--varname=\fR\fINAME\fR
+Set the name of the variable in the generated source code to
+.IR NAME .
+By default the variable's name is "foo".
+.TP
+.BR \-m ", " \--allow\-misaligned
+A misaligned section in the ELF file would cause padding bytes to be
+inserted in the C struct. To avoid this,
+.B elftoc
+represents misaligned sections as uninterpreted byte arrays,
+regardless of their original type. This option suppresses this
+behavior, so that misaligned sections retain their actual type, even
+when this creates an incorrect image in the C struct.
+.TP
+.BR \-q ", " \--quiet
+Suppress warning messages regarding invalid and contradictory values
+in the ELF file.
+.TP
+\fB\-o\fR, \fB\--output=\fR\fIFILENAME\fR
+Write the C source code to
+.I FILENAME
+instead of to standard output.
+.TP
+.B \--help
+Display help and exit.
+.TP
+.B \--version
+Display version information and exit.
+.SH COPYRIGHT
+Copyright \(co 1999, 2001, 2011 Brian Raiter
+.IR <breadbox@muppetlabs.com> .
+.P
+License GPLv2+: GNU GPL version 2 or later. This is free software: you
+are free to change and redistribute it. There is NO WARRANTY, to the
+extent permitted by law.

@@ -1,0 +1,14 @@
+elfls is a simple utility that displays an ELF file's program and
+section header tables. These tables serve as a roadmap to the rest of
+an ELF file's contents. The purpose of elfls is to provide a quick,
+top-level view of an ELF file's organization.
+
+If requested, elfls will also display the file's dependencies and
+source code filenames.
+
+The output is a bit terse, similar to the long format of ls, and
+therefore also a bit cryptic. Refer to the man page for a full
+description of the program's output.
+
+For more in-depth information regarding a file's contents, objdump or
+readelf should be used.

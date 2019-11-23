@@ -1,0 +1,50 @@
+.TH SSTRIP 1 "May 2011" "ELF kickers 3.0"
+.LO 1
+.SH NAME
+sstrip \- truncates ELF files to remove non-program content.
+.SH SYNOPSIS
+.B sstrip
+[OPTIONS] FILE ...
+.SH DESCRIPTION
+.B sstrip
+removes the content at the end of an ELF file that does not contribute
+to a program's memory image.
+.P
+.B sstrip
+modifies the named file in place, rather than outputting new contents
+to another location.
+.SH OPTIONS
+.TP
+.BR \-z ", " \--zeroes
+Attempt to also strip trailing zero bytes from the file.
+.TP
+.B \--help
+Display help and exit.
+.TP
+.B \--version
+Display version information and exit.
+.SH NOTES
+.B sstrip
+works by identifying the parts of an ELF binary file that are loaded
+into memory when executed, and then truncating the file to remove
+everything beyond that point. Typically this means removing the
+section header table and various other tables that are not needed by
+the program loader.
+.P
+A shared-object library stripped in this fashion will still be usable
+by the dynamic linker, but not by the static linker.
+.P
+The use of the option to delete trailing zero bytes can sometimes
+cause a binary to not function (depending on which ELF structure was
+truncated as a result). Since this feature typically reduces a file
+size by only a handful of bytes anyway, it is only useful in rare
+circumstances.
+.SH COPYRIGHT
+Copyright \(co 1999 Brian Raiter
+.IR <breadbox@muppetlabs.com> .
+.P
+License GPLv2+: GNU GPL version 2 or later. This is free software: you
+are free to change and redistribute it. There is NO WARRANTY, to the
+extent permitted by law.
+.SH SEE ALSO
+.IR strip (1).

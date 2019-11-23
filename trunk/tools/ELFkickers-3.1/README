@@ -1,0 +1,92 @@
+This distribution is a collection of programs that are generally
+unrelated, except in that they all deal with the ELF file format.
+
+The main purpose of these programs is to be illustrative and
+educational -- to help fellow programmers understand the ELF file
+format and something of how it works under the Linux platform. For the
+most part, these programs have limited real-world utility. (Although I
+myself have found some of these programs quite useful while writing
+the others.)
+
+With the exception of shared use of the elfrw static library, each
+program is independent of the others. There is no other shared code
+between them, and they all take slightly different approaches to
+handling ELF files.
+
+The table of contents:
+
+sstrip/
+  sstrip is a small utility that removes as much as possible from an
+  ELF file without affecting the file's memory image.
+
+objres/
+  objres is a simple utility that embeds arbitrary binary data files
+  in object files as exported variables.
+
+elfls/
+  elfls is a utility that displays an ELF file's program and/or
+  section header tables, which serve as a kind of global roadmap to
+  the file's contents.
+
+rebind/
+  rebind is another small utility that alters the binding of selected
+  exported symbols in an ELF object file.
+
+elfrw/
+  libelfrw.a is a small wrapper library. Its main purpose is to make
+  32-bit ELF structures look like 64-bit structures when reading ELF
+  files (and vice versa when writing them), thus allowing programs to
+  more easily support both flavors of ELF files. The previous four
+  programs all make use of this library.
+
+elftoc/
+  elftoc takes an ELF file and generates C code that defines a
+  structure with the same memory image, using the structures and
+  preprocessor symbols defined in your system's elf.h header file.
+
+ebfc/
+  ebfc is a compiler for a tiny programming language. The compiler can
+  generate 32-bit ELF executables, object files, and shared libraries.
+
+infect/
+  infect provides a very simple example of modifying an ELF executable
+  without affecting its original program.
+
+See the README in each directory for more details about each program.
+
+The ELF standard is worthwhile reading if you want to understand more
+about the inner workings of these programs. You can find PDF documents
+describing the 32-bit ELF standard, and the additions made for 64-bit
+support, floating around in various unlikely places on the web. Search
+engines are your friends here.
+
+Many years ago I created a flat-text version of the document because
+the Postscript version was too hard to search. You can find it at
+<http://www.muppetlabs.com/~breadbox/software/ELF.txt>. Although it
+only covers 32-bit ELF for x86, nearly all of it is still applicable
+to 64-bit ELF files as well.
+
+Earlier versions of this distribution also included my collection of
+tiny ELF executables. I stopped including these because they are
+somewhat orthogonal to the subject of most of the programs here. They
+can be found at <http://www.muppetlabs.com/~breadbox/software/tiny/>
+if you are curious about them.
+
+    These programs are copyright (C) 1999, 2000, 2001, 2011 by Brian
+    Raiter. These programs are free software; you can redistribute
+    them and/or modify them under the terms of the GNU General Public
+    License as published by the Free Software Foundation; either
+    version 2 of the License, or (at your option) any later version.
+    These programs are distributed in the hope that they will be
+    useful, but WITHOUT ANY WARRANTY; without even the implied
+    warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+    See the GNU General Public License, included in this distribution
+    in the file COPYING, for more details.
+
+Bug reports and general feedback should be directed to the author at
+<breadbox@muppetlabs.com>.
+
+Share and enjoy.
+
+Brian Raiter
+<http://www.muppetlabs.com/~breadbox/software/elfkickers.html>

@@ -1,0 +1,37 @@
+rebind is a small utility that allows one to modify the binding
+strength and/or visibility of a global symbol in an ELF object file.
+
+There are two different types of global symbol bindings. The first is
+STB_GLOBAL. A global symbol can appear in multiple ELF files, but it
+must be an undefined reference in all but one place. The second type
+of binding is STB_WEAK. A weak symbol acts identically to a global
+symbol only as long as there exists no global symbol with the same
+name. If there is, however, then the weak symbol is ignored in favor
+of the global symbol, and the condition is not treated as a name
+collision error.
+
+Note that rebind does not permit you to make local symbols global, or
+vice versa. The dynamic symbol table requires that all local symbols
+be listed before global symbols, so making these sort of changes
+requires that the symbol table be reordered.
+
+rebind also permits you to change a symbol's visibility. With the
+default visibility, a global symbol is visible everywhere. A symbol
+with hidden visibility, however, is only available to the module it
+was built with -- in other words, the symbol can be accessed by the
+static linker but not by the dynamic linker. An symbol with internal
+visibility cannot be accessed from outside its module (not even via a
+pointer). A symbol with protected visibility is not hidden, but
+internally it cannot have its definition overridden by another module
+containing a symbol with the same name.
+
+The GNU C compiler permits the user to specify the binding and/or
+visibility of a symbol via the __attribute__ extension. The GNU
+assembler uses directives such as .weak, .hidden, et al, to accomplish
+the same thing. Some other tools, however, offer no way to specify a
+global symbol's binding or visibility, so this program can be seen as
+providing an alternate method for doing this. This program can also be
+used to directly see how changing a symbol's binding can affect its
+behavior. And, hopefully, it also provides a template for writing
+other specialized programs for making small, in-place modifications to
+ELF files.

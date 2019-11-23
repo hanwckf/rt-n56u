@@ -1,0 +1,45 @@
+ebfc is a compiler for a tiny programming language called Brainfuck.
+(If the name of the language offends you, then you might as well stop
+reading now and just delete this entire subdirectory.) This language
+was created by Urban Müller, apparently solely for the purpose of
+being able to create a compiler for the Amiga under 256 bytes in size.
+(My own efforts along these lines can be found at my website of tiny
+ELF executables, by the way.) I chose to write a compiler for this
+language so as to keep the details of the language translation to a
+minimum, and focus on the process of building an ELF file completely
+from scratch.
+
+ebfc can compile Brainfuck programs into executables, shared
+libraries, and/or object files. Refer to the man page for a
+description of the command-line options and of the Brainfuck language
+itself.
+
+Most of the code that deals with creating the ELF file is built into a
+separate library, called elfparts. This library is too primitive to be
+a real general-purpose library (though it might serve as a starting
+point for such a thing). The main justification for the separation is
+to clearly distinguish the compilation activities from the more
+general housekeeping involved in building a functional ELF file.
+
+The file elfparts.txt contains a description of the library interface.
+
+Most of the compiler's work is very straightforward. The Brainfuck
+commands all translate directly to a few bytes of machine language.
+The real work is mainly in creating the prolog code, which has
+different requirements depending on the type of file being generated.
+There are two "objects", the program and the 30000-byte array.
+Compiling to an executable merely requires that the address of the
+data segment be properly inserted into the prolog code, and the
+address of the text segment is placed in the ELF header's e_entry
+field. Compiling to an object file instead requires that these
+addresses are added to a relocation table, with the function being
+global and the array being local. Finally, compiling to a shared
+library requires that the function be added to the symbol table, and
+the array's address be indirectly computed via the global offset
+table. And, of course, the actual code to use for the prolog depends
+on how the function is being invoked (i.e., from the OS, another
+program, or another part of the same program).
+
+The ebfc/bf/ subdirectory contains a few Brainfuck programs, which can
+be used to test the compiler. prime.b was written by Urban Müller;
+the others were written by myself.

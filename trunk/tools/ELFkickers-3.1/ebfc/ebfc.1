@@ -1,0 +1,242 @@
+.TH EBFC 1 "July 1999" "ELF kickers 2.0"
+.LO 1
+.SH NAME
+ebfc \- ELF Brainfuck compiler
+.SH SYNOPSIS
+.B ebfc
+[\-lxcszhv] [\-f FUNCTION] [\-o FILE] [\-i FILE] SRCFILE
+.SH DESCRIPTION
+.B ebfc
+is a compiler for the Brainfuck programming language, creating 32-bit
+ELF files targeted for the Linux platform running under an Intel x86
+architecture.
+.P
+.B ebfc
+can create standalone executables, shared libraries, or object files,
+and the object file can itself be targeted for a standalone executable
+or a shared library, as well as a simple module.
+.SH COMPILATION OPTIONS
+The following options control how the source file is compiled. It is
+assumed here that the name of the source file is
+.BR foo.b .
+.TP
+.BI \-x
+Compile the source code into a standalone executable file, named
+.BR foo .
+.TP
+.BI \-l
+Compile the source code into a function, named
+.BR foo (),
+in a shared library file, named
+.BR libfoo.so .
+.TP
+.BI \-c
+Compile the source code into a function, named
+.BR foo (),
+in an object file, named
+.BR foo.o .
+.TP
+.BI \-xc
+Compile the source code into an object file, named
+.BR foo.o ,
+that can then be linked into a standalone executable.
+.TP
+.BI \-lc
+Compile the source code into a function, named
+.BR foo (),
+in an object file, named
+.BR foo.o ,
+that can then be linked into a shared library.
+.P
+If the source filename lacks a
+.B .b
+suffix, then the entire filename will be used when creating the name
+of the target file and function. (In the case of
+.IR -x ,
+the name of the target file will be
+.B a.out
+instead.)
+.SH OTHER OPTIONS
+.TP
+\fB\-f\fR \fIFUNCTION\fR
+Use
+.I FUNCTION
+as the name of the function to contain the compiled program. (This
+option is not generally useful when the final target is a standalone
+executable.)
+.TP
+\fB\-o\fR \fIFILE\fR
+Use
+.I FILE
+as the target filename.
+.TP
+\fB\-i\fR \fIFILE\fR
+Use
+.I FILE
+as the name of the source file to place in the target file. This
+option is only meaningful if the target is an object file, and if the
+.I \-s
+option is not used.
+.TP
+.BI \-s
+Suppress inclusion of unnecessary data in the target file. By default,
+.B ebfc
+includes a .comment section in object and library files, and includes
+the source filename in the .symtab section. These items will be
+removed from the output when this option is used.
+.TP
+.BI \-h
+Display help and exit.
+.TP
+.BI \-v
+Display version number and exit.
+.TP
+.BI \-z
+Read the source file in compressed Brainfuck format.
+.SH LINKING
+When calling a compiled Brainfuck program from within a C program, the
+C prototype for the Brainfuck function should have the form:
+.P
+    extern void foo(void);
+.SH THE BRAINFUCK PROGRAMMING LANGUAGE
+A Brainfuck program has an implicit byte pointer, called "the pointer",
+which is free to move around within an array of 30000 bytes, initially
+all set to zero. The pointer itself is initialized to point to the
+beginning of this array.
+.P
+The Brainfuck programming language consists of eight commands, each of
+which is represented as a single character.
+.TP 4
+.PD 0
+.B >
+Increment the pointer.
+.TP
+.B <
+Decrement the pointer.
+.TP
+.B +
+Increment the byte at the pointer.
+.TP
+.B \-
+Decrement the byte at the pointer.
+.TP
+.B .
+Output the byte at the pointer.
+.TP
+.B ,
+Input a byte and store it in the byte at the pointer.
+.TP
+.B [
+Jump to the matching
+.B ]
+if the byte at the pointer is zero.
+.TP
+.B ]
+Jump to the matching
+.BR [ .
+.PD 1
+.P
+Any other characters in the source code are treated as comments or
+whitespace, and ignored.
+.P
+The semantics of the Brainfuck commands can also be succinctly
+expressed in terms of C, as follows (assuming that
+.I p
+has been previously defined as a
+.IR char* ):
+.TP 4
+.PD 0
+.B >
+becomes\ \ ++p;
+.TP
+.B <
+becomes\ \ \-\-p;
+.TP
+.B .
+becomes\ \ putchar(*p);
+.TP
+.B ,
+becomes\ \ *p = getchar();
+.TP
+.B [
+becomes\ \ while (*p) {
+.TP
+.B ]
+becomes\ \ }
+.PD 1
+.SH COMPRESSED BRAINFUCK
+Chris Pressey introduced a compressed format for storing and
+transmitting Brainfuck programs, which
+.B ebfc
+can read natively by using the
+.I \-z
+option.
+.P
+In compressed Brainfuck, the eight commands are encoded in three bits
+as follows:
+.TP 4
+.PD 0
+.B +
+000
+.TP
+.B \-
+001
+.TP
+.B <
+010
+.TP
+.B >
+011
+.TP
+.B [
+100
+.TP
+.B ]
+101
+.TP
+.B ,
+110
+.TP
+.B .
+111
+.PD 1
+.P
+Each byte in a compressed Brainfuck file can contain two or more
+commands. The top two bits select between one of four possible
+readings of the lower six bits, as follows:
+.TP 24
+.PD 0
+Encoding\ \ \ \ Bits
+Translation
+.TP
+singleton\ \ \ 00 abc abc
+abc
+.TP
+pair\ \ \ \ \ \ \ \ 00 abc def
+abc followed by def
+.TP
+triplet\ \ \ \ \ 10 ab cd ef
+0ab then 0cd then 0ef
+.TP
+repetition\ \ 01 abc def
+def repeated 2 + abc times (2-9)
+.TP
+repetition\ \ 01 abcd ef
+0ef repeated 2 + abcd times (2-17)
+.PD 1
+.P
+.SH ERRORS
+The compiler will issue an error message, and the compilation will
+fail, if the program contains unbalanced bracket commands, or if the
+level of nested brackets exceeds the compiler's maximum capacity
+(which is arbitrarily set at 256).
+.P
+The program's behavior is subsequently undefined if the pointer is
+moved outside of the 30000-byte array.
+.SH COPYRIGHT
+Copyright \(co 1999 Brian Raiter
+.IR <breadbox@muppetlabs.com> .
+.P
+License GPLv2+: GNU GPL version 2 or later. This is free software: you
+are free to change and redistribute it. There is NO WARRANTY, to the
+extent permitted by law.

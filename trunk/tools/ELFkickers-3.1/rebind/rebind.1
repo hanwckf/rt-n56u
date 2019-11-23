@@ -1,0 +1,62 @@
+.TH REBIND 1 "May 2011" "ELF kickers 3.0"
+.LO 1
+.SH NAME
+rebind \- modify the binding of global variables in an ELF object file
+.SH SYNOPSIS
+.B rebind
+[OPTIONS] FILE [SYMBOL ...]
+.SH DESCRIPTION
+.B rebind
+edits an ELF object file by changing the binding and/or visibility
+settings of one or more global symbols. Note that
+.B rebind
+modifies the object file directly.
+.P
+After the name of the object file, the remaining arguments list the
+symbols to modify. If no symbols are specified on the command-line,
+symbol names are read from standard input.
+.SH OPTIONS
+.TP
+\fB\-b\fR, \fB\--binding=\fR\fIBIND\fR
+Change the binding of the chosen symbols to
+.IR BIND .
+.I BIND
+must be either
+.B global
+or
+.BR weak .
+.TP
+\fB\-v\fR, \fB\--visibility=\fR\fIVIS\fR
+Change the visibility of the chosen symbols to
+.IR VIS .
+.I VIS
+must be one of
+.BR default ,
+.BR hidden ,
+.BR internal ,
+or
+.BR protected .
+.TP
+.BR \-w ", " \--weaken
+Shorthand for
+.BR \--binding=weak .
+.TP
+.BR \-h ", " \--hide
+Shorthand for
+.BR \--visibility=hidden .
+.TP
+.BR \-i ", " \--verbose
+Display on standard output what symbols are changed.
+.TP
+.B \--help
+Display help and exit.
+.TP
+.B \--version
+Display version information and exit.
+.SH COPYRIGHT
+Copyright \(co 2001, 2011 Brian Raiter
+.IR <breadbox@muppetlabs.com> .
+.P
+License GPLv2+: GNU GPL version 2 or later. This is free software: you
+are free to change and redistribute it. There is NO WARRANTY, to the
+extent permitted by law.

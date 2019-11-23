@@ -1,5 +1,5 @@
-SRC_NAME = iperf-3.1.3
-SRC_URL = https://iperf.fr/download/source/iperf-3.1.3-source.tar.gz
+SRC_NAME = iperf-3.7
+SRC_URL = https://downloads.es.net/pub/iperf/iperf-3.7.tar.gz
 THISDIR = $(shell pwd)
 
 all: download_test extract_test config_test
@@ -12,7 +12,7 @@ download_test:
 
 extract_test:
 	( if [ ! -d $(SRC_NAME) ]; then \
-		tar zxf $(SRC_NAME).tar.gz; \
+		tar -xf $(SRC_NAME).tar.gz; \
 	fi )
 
 config_test:
@@ -24,10 +24,11 @@ config_test:
 
 configure:
 	( cd $(SRC_NAME) ; \
-	sed -i 's/iperf3_profile_CFLAGS = -pg -g//' src/Makefile.in ; \
-	sed -i 's/iperf3_profile_LDFLAGS = -pg -g//' src/Makefile.in ; \
 	./configure \
 		--prefix=/usr \
+		--disable-profiling \
+		--disable-shared \
+		--enable-static \
 		--host=$(HOST_TARGET) \
 		--build=$(HOST_BUILD) ; \
 	)
@@ -39,5 +40,5 @@ clean:
 	rm -f config_done
 
 romfs:
-	$(ROMFSINST) -p +x $(THISDIR)/$(SRC_NAME)/src/.libs/iperf3 /usr/bin/iperf3
-	cp -fP $(THISDIR)/$(SRC_NAME)/src/.libs/libiperf.so* $(ROMFSDIR)/lib
+	$(ROMFSINST) -p +x $(THISDIR)/$(SRC_NAME)/src/iperf3 /usr/bin/iperf3
+

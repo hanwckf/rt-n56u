@@ -1,5 +1,5 @@
 SRC_NAME=openssl-1.0.2t
-SRC_URL=https://www.openssl.org/source/$(SRC_NAME).tar.gz 
+SRC_URL=https://www.openssl.org/source/$(SRC_NAME).tar.gz
 
 # openssl use CROSS_COMPILE prefix
 CC=gcc $(CPUFLAGS)
@@ -20,7 +20,7 @@ OPENSSL_CIPHERS = no-capieng no-cms no-gmp no-jpake no-rfc3779 no-seed \
 ifdef CONFIG_CRYPTO_DEV_LINUX
 COPTS+=-DHAVE_CRYPTODEV
 else
-OPENSSL_CIPHERS += no-engine no-hw
+OPENSSL_CIPHERS += no-hw
 endif
 
 ifneq ($(CONFIG_FIRMWARE_INCLUDE_SSWAN),y)
@@ -32,7 +32,6 @@ OPENSSL_CIPHERS += no-ec
 endif
 
 all: download_test extract_test config_test
-#all: config_test
 	$(MAKE) -C $(SRC_NAME) depend
 	$(MAKE) -C $(SRC_NAME)
 

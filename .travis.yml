@@ -7,8 +7,7 @@ compiler:
 
 addons:
     apt:
-      packages: [ fakeroot, p7zip-full, gperf, libtool-bin, curl, 
-        texinfo, python-docutils, autopoint, cmake, shellcheck ]
+      packages: [ fakeroot, p7zip-full, libtool-bin, gperf, texinfo, python-docutils, autopoint ]
 
 before_script:
     - ./trunk/tools/shellcheck.sh

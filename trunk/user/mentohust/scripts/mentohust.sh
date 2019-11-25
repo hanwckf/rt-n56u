@@ -7,8 +7,8 @@ mentohust_exec="bin_mentohust"
 conf_file="/var/mentohust.conf"
 bin_conf_file="/etc/storage/mentohust.conf"
 
-mentohust_vars="username password nic ip mask gw dns pinghost timeout interval restart_wait \
-	maxfail startmode dhcp daemon ver datafile dhcpscript service"
+mentohust_vars="username password nic ip mask gw dns pinghost timeout interval \
+	restart_wait maxfail startmode dhcp daemon ver datafile dhcpscript service"
 
 mentohust_conf_vars="Username Password Nic IP Mask Gateway DNS PingHost Timeout EchoInterval \
 	RestartWait MaxFail StartMode DhcpMode DaemonMode Version DataFile DhcpScript Service"

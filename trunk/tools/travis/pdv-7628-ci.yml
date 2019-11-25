@@ -12,8 +12,7 @@ env:
 
 addons:
     apt:
-      packages: [ fakeroot, p7zip-full, gperf, libtool-bin, curl, 
-        texinfo, python-docutils, autopoint, cmake ]
+      packages: [ fakeroot, p7zip-full, libtool-bin, gperf, texinfo, python-docutils, autopoint ]
 
 before_script:
     - cd /opt && git clone --depth=1 https://github.com/hanwckf/rt-n56u.git

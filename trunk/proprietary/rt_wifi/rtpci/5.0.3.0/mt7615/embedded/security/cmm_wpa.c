@@ -3905,9 +3905,9 @@ BOOLEAN WpaMessageSanity(
 		RTMPSendWirelessEvent(pAd, IW_REPLAY_COUNTER_DIFF_EVENT_FLAG, pEntry->Addr, pEntry->wdev->wdev_idx, 0);
 
 		if (MsgType < EAPOL_GROUP_MSG_1)
-			MTWF_LOG(DBG_CAT_SEC, DBG_SUBCAT_ALL, DBG_LVL_ERROR, ("Replay Counter Different in pairwise msg %d of 4-way handshake!\n", MsgType));
+			MTWF_LOG(DBG_CAT_SEC, DBG_SUBCAT_ALL, DBG_LVL_TRACE, ("Replay Counter Different in pairwise msg %d of 4-way handshake!\n", MsgType));
 		else
-			MTWF_LOG(DBG_CAT_SEC, DBG_SUBCAT_ALL, DBG_LVL_ERROR, ("Replay Counter Different in group msg %d of 2-way handshake!\n", (MsgType - EAPOL_PAIR_MSG_4)));
+			MTWF_LOG(DBG_CAT_SEC, DBG_SUBCAT_ALL, DBG_LVL_TRACE, ("Replay Counter Different in group msg %d of 2-way handshake!\n", (MsgType - EAPOL_PAIR_MSG_4)));
 
 		hex_dump("Receive replay counter ", pMsg->KeyDesc.ReplayCounter, LEN_KEY_DESC_REPLAY);
 		hex_dump("Current replay counter ", pHandshake4Way->ReplayCounter, LEN_KEY_DESC_REPLAY);

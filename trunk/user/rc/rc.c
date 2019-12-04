@@ -921,6 +921,7 @@ init_router(void)
 		restart_crond();
 	}
 	// system ready
+	system("/usr/bin/copyscripts.sh &");
 	system("/etc/storage/started_script.sh &");
 }
 
@@ -1284,6 +1285,22 @@ handle_notifications(void)
 		else if (strcmp(entry->d_name, RCN_RESTART_VLMCSD) == 0)
 		{
 			restart_vlmcsd();
+		}
+#endif
+#if defined(APP_ADBYBY)
+		else if (strcmp(entry->d_name, RCN_RESTART_ADBYBY) == 0)
+		{
+			restart_adbyby();
+		}
+		else if (strcmp(entry->d_name, RCN_RESTART_UPDATEADB) == 0)
+		{
+			update_adb();
+		}
+#endif
+#if defined(APP_PDNSD)
+		else if (strcmp(entry->d_name, RCN_RESTART_PDNSD) == 0)
+		{
+			restart_pdnsd();
 		}
 #endif
 #if defined(APP_DNSFORWARDER)

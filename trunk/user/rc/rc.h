@@ -547,6 +547,17 @@ void restart_vlmcsd(void);
 #if defined(APP_NAPT66)
 void start_napt66(void);
 #endif
+#if defined(APP_ADBYBY)
+void stop_adbyby(void);
+void start_adbyby(void);
+void restart_adbyby(void);
+void update_adb(void);
+#endif
+#if defined(APP_PDNSD)
+void stop_pdnsd(void);
+void start_pdnsd(void);
+void restart_pdnsd(void);
+#endif
 #if defined(APP_DNSFORWARDER)
 void stop_dnsforwarder(void);
 void start_dnsforwarder(void);

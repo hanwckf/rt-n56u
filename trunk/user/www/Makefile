@@ -192,6 +192,11 @@ ifeq ($(CONFIG_FIRMWARE_WEBUI_HIDE_VPN),y)
 	rm -f $(INSTALLDIR)/www/vpncli.asp
 	rm -f $(INSTALLDIR)/www/vpnsrv.asp
 endif
-
+ifneq ($(CONFIG_FIRMWARE_INCLUDE_ADBYBY),y)
+	rm -f $(INSTALLDIR)/www/Advanced_adbyby.asp
+endif
+ifneq ($(CONFIG_FIRMWARE_INCLUDE_PDNSD),y)
+	rm -f $(INSTALLDIR)/www/Advanced_pdnsd.asp
+endif
 clean:
 	@echo "Clean www romfs"

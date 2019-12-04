@@ -398,6 +398,44 @@ void start_napt66(void){
 }
 #endif
 
+#if defined(APP_ADBYBY)
+void stop_adbyby(void){
+	eval("/usr/bin/adbyby.sh","stop");
+}
+
+void start_adbyby(void){
+	int adbyby_mode = nvram_get_int("adbyby_enable");
+	if ( adbyby_mode == 1)
+		eval("/usr/bin/adbyby.sh","start");
+}
+
+void restart_adbyby(void){
+	stop_adbyby();
+	start_adbyby();
+}
+
+void update_adb(void){
+	eval("/usr/bin/adbyby.sh","updateadb");
+}
+#endif
+
+#if defined(APP_PDNSD)
+void stop_pdnsd(void){
+	eval("/usr/bin/pdnsd.sh","stop");
+}
+
+void start_pdnsd(void){
+	int dns_mode = nvram_get_int("dns_enable");
+	if ( dns_mode == 1)
+		eval("/usr/bin/pdnsd.sh","start");
+}
+
+void restart_pdnsd(void){
+	stop_pdnsd();
+	start_pdnsd();
+}
+#endif
+
 void
 start_httpd(int restart_fw)
 {
@@ -612,6 +650,12 @@ start_services_once(int is_ap_mode)
 #if defined(APP_VLMCSD)
 	start_vlmcsd();
 #endif
+#if defined(APP_ADBYBY)
+	start_adbyby();
+#endif
+#if defined(APP_PDNSD)
+	start_pdnsd();
+#endif
 	start_lltd();
 	start_watchdog_cpu();
 	start_crond();
@@ -651,6 +695,12 @@ stop_services(int stopall)
 #endif
 #if defined(APP_TTYD)
 	stop_ttyd();
+#endif
+#if defined(APP_ADBYBY)
+	stop_adbyby();
+#endif
+#if defined(APP_PDNSD)
+	stop_pdnsd();
 #endif
 	stop_networkmap();
 	stop_lltd();

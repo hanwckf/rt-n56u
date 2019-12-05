@@ -247,7 +247,7 @@ cat >> /etc/storage/dnsmasq/dnsmasq.conf << EOF
 addn-hosts=/etc/storage/dnsmasq/dns/hosts
 EOF
 cd /etc/storage/dnsmasq/dns
-curl -k -s -o hosts --connect-timeout 5 --retry 3 https://cdn.jsdelivr.net/gh/vokins/yhosts/master/hosts ;sed -i "1 i\## update：$(date "+%Y-%m-%d %H:%M:%S")" hosts
+curl -k -s -o hosts --connect-timeout 10 --retry 3 https://cdn.jsdelivr.net/gh/vokins/yhosts/hosts
 if [ ! -f "hosts" ]; then
 logger -t "dnsmasq" "host文件下载失败，可能是地址失效或者网络异常！"
 sed -i '/hosts/d' /etc/storage/dnsmasq/dnsmasq.conf
@@ -264,7 +264,7 @@ cat >> /etc/storage/dnsmasq/dnsmasq.conf << EOF
 addn-hosts=/etc/storage/dnsmasq/dns/tvhosts
 EOF
 cd /etc/storage/dnsmasq/dns
-curl -k -s -o tvhosts --connect-timeout 5 --retry 3 https://dev.tencent.com/u/shaoxia1991/p/yhosts/git/raw/master/data/tvbox.txt ;sed -i "1 i\## update：$(date "+%Y-%m-%d %H:%M:%S")" tvhosts
+curl -k -s -o tvhosts --connect-timeout 5 --retry 3 https://dev.tencent.com/u/shaoxia1991/p/yhosts/git/raw/master/data/tvbox.txt
 if [ ! -f "tvhosts" ]; then
 logger -t "dnsmasq" "tvbox规则文件下载失败，可能是地址失效或者网络异常！"
 sed -i '/tvhosts/d' /etc/storage/dnsmasq/dnsmasq.conf

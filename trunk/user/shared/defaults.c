@@ -412,7 +412,22 @@ struct nvram_pair router_defaults[] = {
 	{ "dns_server_bind", "0.0.0.0" },
 	{ "hdd_spindt", "0" },
 	{ "hdd_apmoff", "0" },
-
+	/*WEB DIY*/
+	{ "w_ai", "1" },
+	{ "w_vpn_s", "1" },
+	{ "w_vpn_c", "1" },
+	{ "w_wnet", "1" },
+	{ "w_sys", "1" },
+	{ "w_usb", "1" },
+	{ "w_net", "1" },
+	{ "w_log", "1" },
+	{ "w_scu", "1" },
+	{ "w_dnsf", "1" },
+	{ "w_ss", "1" },
+	{ "w_men", "1" },
+	{ "w_adbyby", "1" },
+	{ "w_pdnsd", "1" },
+	
 	{ "ip6_service", "" },
 	{ "ip6_ppe_on", "0" },
 	{ "ip6_wan_if", "0" },

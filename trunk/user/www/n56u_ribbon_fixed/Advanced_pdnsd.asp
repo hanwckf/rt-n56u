@@ -31,7 +31,7 @@ $j(document).ready(function(){
 
 function initial(){
 	show_banner(2);
-	show_menu(5,16,1);
+	show_menu(5,16);
 	show_footer();
 	fill_status(pdnsd_status());
 }

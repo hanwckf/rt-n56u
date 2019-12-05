@@ -81,7 +81,7 @@ var isMenuopen = 0;
 
 function initial(){
 	show_banner(2);
-	show_menu(5,15,1);
+	show_menu(5,15);
 	show_footer();
 	fill_adbyby_status(adbyby_status());
 	//change_adbyby_enable();
@@ -455,8 +455,8 @@ function changeBgColorrl(obj, num){
                                             <td id="adbyby_status" colspan="3"></td>
                                         </tr>
 										<tr >
-											<th width="30%" style="border-top: 0 none;">启用 Adbyby 功能 &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;</th>
-											<td style="border-top: 0 none;">
+											<th width="50%">启用 Adbyby 功能 &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;</th>
+											<td>
 													<div class="main_itoggle">
 													<div id="adbyby_enable_on_of">
 														<input type="checkbox" id="adbyby_enable_fake" <% nvram_match_x("", "adbyby_enable", "1", "value=1 checked"); %><% nvram_match_x("", "adbyby_enable", "0", "value=0"); %>  />
@@ -470,7 +470,7 @@ function changeBgColorrl(obj, num){
 										</tr>
 										<tr>
 											<th width="50%">过滤方案选择</th>
-											<td style="border-top: 0 none;">
+											<td>
 												<select name="adbyby_set" class="input">
 													<option value="0" <% nvram_match_x("","adbyby_set", "0","selected"); %>>全局模式（推荐），全部IP走adbyby过滤</option>
 													<option value="1" <% nvram_match_x("","adbyby_set", "1","selected"); %>>Plus + 模式(只过滤列表内域名结合ABP名单)</option>
@@ -482,7 +482,7 @@ function changeBgColorrl(obj, num){
 											</td>
 										</tr>
 										<tr>
-											<th width="30%" style="border-top: 0 none;">加载Adblock Plus Host List
+											<th width="50%">加载Adblock Plus Host List
 											<input id="adbyby_update_b" class="btn btn-success" style="width:110px display:none;" type="button" name="updateadb" value="强制更新" onclick="submitInternet('updateadb');" />
 											</th>
 											<td>
@@ -498,7 +498,7 @@ function changeBgColorrl(obj, num){
 											</td>
 										</tr>
 										<tr>
-											<th width="30%" style="border-top: 0 none;">加载hosts去AD</th>
+											<th width="50%">加载hosts去AD</th>
 											<td>
 													<div class="main_itoggle">
 													<div id="hosts_ad_on_of">
@@ -512,7 +512,7 @@ function changeBgColorrl(obj, num){
 											</td>
 										</tr>
 																				<tr>
-											<th width="30%" style="border-top: 0 none;">加载TVbox Hosts</th>
+											<th width="50%" >加载TVbox Hosts</th>
 											<td>
 													<div class="main_itoggle">
 													<div id="tv_hosts_on_of">
@@ -526,8 +526,8 @@ function changeBgColorrl(obj, num){
 											</td>
 										</tr>
 										<tr id="adbyby_update_tr">
-											<th style="border-top: 0 none;">规则自动更新:</th>
-											<td style="border-top: 0 none;">
+											<th>规则自动更新:</th>
+											<td>
 												<select name="adbyby_update" class="input" style="width: 60px;">
 													<option value="0" <% nvram_match_x("","adbyby_update", "0","selected"); %>>每天</option>
 													<option value="1" <% nvram_match_x("","adbyby_update", "1","selected"); %>>每隔</option>

@@ -77,6 +77,7 @@ Contributors of this project are not responsible for what happens next.
 >- HC5661A
 >- HC5861B
 >- 360P2 (USB)
+>- MI-NANO
 >- MZ-R13
 >- MZ-R13P
 >- RT-AC1200GU (USB)

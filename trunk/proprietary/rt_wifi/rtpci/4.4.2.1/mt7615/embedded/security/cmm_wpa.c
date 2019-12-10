@@ -5457,7 +5457,7 @@ VOID WPAHandshakeMsgRetryExec(
                 if (pHandshake->MsgRetryCounter > GROUP_MSG1_RETRY_LIMIT)
                 {
                     pHandshake->GTKState = REKEY_FAILURE;
-                    MTWF_LOG(DBG_CAT_AP, DBG_SUBCAT_ALL, DBG_LVL_ERROR, ("%s::Group rekey timeout from %02X:%02X:%02X:%02X:%02X:%02X\n", __FUNCTION__, PRINT_MAC(pHandshake->SAddr)));
+                    MTWF_LOG(DBG_CAT_AP, DBG_SUBCAT_ALL, DBG_LVL_TRACE, ("%s::Group rekey timeout from %02X:%02X:%02X:%02X:%02X:%02X\n", __FUNCTION__, PRINT_MAC(pHandshake->SAddr)));
                 }
                 else
                 {

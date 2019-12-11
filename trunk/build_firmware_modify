@@ -11,8 +11,10 @@ cp -f configs/templates/$1.config .config
 
 sed -i '/CONFIG_FIRMWARE_INCLUDE_ADBYBY/d' .config
 sed -i '/CONFIG_FIRMWARE_INCLUDE_PDNSD/d' .config
+sed -i 's/CONFIG_FIRMWARE_INCLUDE_DNSFORWARDER=y/CONFIG_FIRMWARE_INCLUDE_DNSFORWARDER=n/g' .config
 echo "CONFIG_FIRMWARE_INCLUDE_ADBYBY=y" >> .config #adbyby plus+
 echo "CONFIG_FIRMWARE_INCLUDE_PDNSD=y" >> .config #Pdnsd
+echo "CONFIG_FIRMWARE_INCLUDE_ALIDDNS=y" >> .config #aliddns
 
 ROOTDIR=`pwd`
 export ROOTDIR=$ROOTDIR

@@ -117,7 +117,7 @@ function fill_status(status_code){
                 <div class="row-fluid">
                     <div class="span12">
                         <div class="box well grad_colour_dark_blue">
-                            <h2 class="box_head round_top"><#menu5_21#></h2>
+                            <h2 class="box_head round_top"><#menu5_21#> - DNS加速</h2>
                             <div class="round_bottom">
                                 <div class="row-fluid">
                                     <div id="tabMenu" class="submenuBlock"></div>

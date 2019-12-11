@@ -128,7 +128,7 @@ chmod -R 744 /tmp/dnscache.conf
 }
 
 dns_close() {
-  killall -q pdnsd
+  cat /tmp/dnscache.pid | xargs kill -9
   revert_dns
   echo "Stop DNS Cache"
   logger -t "pdnsd" "关闭DNS加速。"
@@ -154,8 +154,12 @@ sed -i '/server=127.0.0.1/d' /etc/storage/dnsmasq/dnsmasq.conf
 dns_start(){
   if [ $dns_enable -eq 1 ];  then
   pdnsd_genconfig
-pdnsd -c /tmp/dnscache.conf -d
+  if [ ! -f "/var/pdnsddns" ]; then
+  ln -sf /usr/bin/pdnsd /var/pdnsddns
+  fi
+/var/pdnsddns -c /tmp/dnscache.conf -d
     change_dns
+    
  fi
 }
 

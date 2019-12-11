@@ -7,7 +7,7 @@ SRC_SSR_NAME=shadowsocksr-libev-master
 ARCHIVE_SSR_NAME=shadowsocksr-libev-master-e2373d7
 #https://github.com/shadowsocksr-backup/shadowsocksr-libev.git
 
-GFWLIST_NAME=dnsmasq_gfwlist.conf
+GFWLIST_NAME=dnsmasq_gfwlist_ipset.conf
 GFWLIST_URL=https://cokebar.github.io/gfwlist2dnsmasq/$(GFWLIST_NAME)
 GFWLIST_DIR=gfwlist
 
@@ -92,7 +92,7 @@ configure_ss:
 
 clean: clean_ssr clean_ss
 	rm -f ssr_config_done ss_config_done
-	rm -rf $(GFWLIST_DIR)
+	#rm -rf $(GFWLIST_DIR)
 
 clean_ssr:
 	( if [ -f $(SRC_SSR_NAME)/Makefile ] ; then \
@@ -109,13 +109,16 @@ ifeq ($(CONFIG_FIRMWARE_INCLUDE_SHADOWSOCKS),y)
 	chmod -R +x scripts/
 	$(ROMFSINST) $(THISDIR)/scripts/ /usr/bin/
 	$(ROMFSINST) $(THISDIR)/gfwlist/gfwlist.bz2 /etc_ro/gfwlist.bz2
+	$(ROMFSINST) $(THISDIR)/oversea/oversea_list.conf /etc_ro/oversea_list.conf
+	$(ROMFSINST) /etc_ro/ss_dom.sh
+	$(ROMFSINST) /etc_ro/ss_ip.sh
 	$(ROMFSINST) -p +x $(THISDIR)/$(SRC_SSR_NAME)/src/ss-redir /usr/bin/ssr-redir
 	$(ROMFSINST) -p +x $(THISDIR)/$(SRC_SSR_NAME)/src/ss-local /usr/bin/ssr-local
-	$(ROMFSINST) -p +x $(THISDIR)/$(SRC_SS_NAME)/src/ss-redir /usr/bin/ss-orig-redir
-	$(ROMFSINST) -p +x $(THISDIR)/$(SRC_SS_NAME)/src/ss-tunnel /usr/bin/ss-orig-tunnel
-	$(ROMFSINST) -p +x $(THISDIR)/$(SRC_SS_NAME)/src/ss-local /usr/bin/ss-orig-local
-	ln -sf /var/ss-redir $(ROMFSDIR)/usr/bin/ss-redir
-	ln -sf /var/ss-tunnel $(ROMFSDIR)/usr/bin/ss-local
+	$(ROMFSINST) -p +x $(THISDIR)/$(SRC_SS_NAME)/src/ss-redir /usr/bin/ss-redir
+	$(ROMFSINST) -p +x $(THISDIR)/$(SRC_SS_NAME)/src/ss-tunnel /usr/bin/ss-tunne
+	$(ROMFSINST) -p +x $(THISDIR)/$(SRC_SS_NAME)/src/ss-local /usr/bin/ss-local
+	#ln -sf /var/ss-redir $(ROMFSDIR)/usr/bin/ss-redir
+	#ln -sf /var/ss-tunnel $(ROMFSDIR)/usr/bin/ss-local
 endif
 ifeq ($(CONFIG_FIRMWARE_INCLUDE_SSSERVER),y)
 	$(ROMFSINST) -p +x $(THISDIR)/$(SRC_SS_NAME)/src/ss-server /usr/bin/ss-server

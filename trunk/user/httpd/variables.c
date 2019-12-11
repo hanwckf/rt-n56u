@@ -91,7 +91,40 @@
 			{"adbybyip_ip_road_x", "24", NULL, FALSE},
 			{0,0,0,0}
 		};
-
+	struct variable variables_SspConf_SspList[] = {
+			{"ssp_type_x", "24", NULL, FALSE},
+			{"ssp_name_x", "24", NULL, FALSE},
+			{"ssp_server_x", "24", NULL, FALSE},
+			{"ssp_prot_x", "24", NULL, FALSE},
+			{"ss_key_x", "24", NULL, FALSE},
+			{"ss_method_x", "24", NULL, FALSE},
+			{"ss_protocol_x", "24", NULL, FALSE},
+			{"ss_proto_param_x", "24", NULL, FALSE},
+			{"ss_obfs_x", "24", NULL, FALSE},
+			{"ss_obfs_param_x", "24", NULL, FALSE},
+			{"ssp_local_port_x", "24", NULL, FALSE},
+			{"v2_aid_x", "24", NULL, FALSE},
+			{"v2_vid_x", "24", NULL, FALSE},
+			{"v2_security_x", "24", NULL, FALSE},
+			{"v2_net_x", "24", NULL, FALSE},
+			{"v2_type_x", "24", NULL, FALSE},
+			{"v2_type_tcp_x", "24", NULL, FALSE},
+			{"v2_type_mkcp_x", "24", NULL, FALSE},
+			{"v2_mkcp_mtu_x", "24", NULL, FALSE},
+			{"v2_mkcp_tti_x", "24", NULL, FALSE},
+			{"v2_mkcp_uplink_x", "24", NULL, FALSE},
+			{"v2_mkcp_downlink_x", "24", NULL, FALSE},
+			{"v2_mkcp_readbu_x", "24", NULL, FALSE},
+			{"v2_mkcp_writebu_x", "24", NULL, FALSE},
+			{"v2_mkcp_congestion_x", "24", NULL, FALSE},
+			{"v2_webs_host_x", "24", NULL, FALSE},
+			{"v2_webs_path_x", "24", NULL, FALSE},
+			{"v2_http2_host_x", "24", NULL, FALSE},
+			{"v2_https_path_x", "24", NULL, FALSE},
+			{"v2_tls_x", "24", NULL, FALSE},
+			{"switch_enable_x", "24", NULL, FALSE},
+			{0,0,0,0}
+		};
 
 	struct variable variables_AdbybyConf_AdRULESList[] = {
 			{"adbybyrules_x", "24", NULL, FALSE},
@@ -847,6 +880,12 @@
 #if defined(APP_SHADOWSOCKS)
 	struct variable variables_ShadowsocksConf[] = {
 			{"ss_enable","",NULL, EVM_RESTART_SHADOWSOCKS},
+			{"global_server","",NULL, EVM_RESTART_SHADOWSOCKS},
+	        {"udp_relay_server","",NULL, EVM_RESTART_SHADOWSOCKS},
+	        {"ss_threads","",NULL, EVM_RESTART_SHADOWSOCKS},
+	        {"ss_run_mode","",NULL, EVM_RESTART_SHADOWSOCKS},
+	        {"pdnsd_enable","",NULL, EVM_RESTART_SHADOWSOCKS},
+	        {"tunnel_forward","",NULL, EVM_RESTART_SHADOWSOCKS},
 			{"ss_type","",NULL, EVM_RESTART_SHADOWSOCKS|EVM_RESTART_SS_TUNNEL},
 			{"ss_mode","",NULL, EVM_RESTART_SHADOWSOCKS},
 			{"ss_server","",NULL, EVM_RESTART_SHADOWSOCKS|EVM_RESTART_SS_TUNNEL},
@@ -863,13 +902,21 @@
 			{"ss_proto_param","",NULL, EVM_RESTART_SHADOWSOCKS|EVM_RESTART_SS_TUNNEL},
 			{"ss_obfs","",NULL, EVM_RESTART_SHADOWSOCKS|EVM_RESTART_SS_TUNNEL},
 			{"ss_obfs_param","",NULL, EVM_RESTART_SHADOWSOCKS|EVM_RESTART_SS_TUNNEL},
-			{"ss_watchcat","",NULL, FALSE},
+			{"socks5_proxy","",NULL, EVM_RESTART_SHADOWSOCKS},
+			{"socks5_proxy_port","",NULL, EVM_RESTART_SHADOWSOCKS},
+			{"ss_turn","",NULL, EVM_RESTART_SHADOWSOCKS},
+	        {"ss_watchcat", "",NULL, FALSE},
+	        {"ss_turn_s","",NULL, EVM_RESTART_SHADOWSOCKS},
+	        {"ss_turn_ss","",NULL, EVM_RESTART_SHADOWSOCKS},
 			{"ss_update_chnroute","",NULL, FALSE},
 			{"ss_update_gfwlist","",NULL, FALSE},
 			{"ss-tunnel_enable","",NULL, EVM_RESTART_SS_TUNNEL},
 			{"ss-tunnel_local_port","",NULL, EVM_RESTART_SS_TUNNEL},
 			{"ss-tunnel_remote","",NULL, EVM_RESTART_SS_TUNNEL},
 			{"ss-tunnel_mtu","",NULL, EVM_RESTART_SS_TUNNEL},
+			{"scripts.ss_dom.sh", "File", NULL, EVM_RESTART_SHADOWSOCKS},
+			{"scripts.ss_ip.sh", "File", NULL, EVM_RESTART_SHADOWSOCKS},
+			{"SspList", "Group", ARGV((char*)variables_SspConf_SspList, "8", "55", "ssp_staticnum_x"), EVM_RESTART_SHADOWSOCKS},
 			{0,0,0,0}
 	};
 #endif

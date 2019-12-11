@@ -2001,6 +2001,12 @@ static int shadowsocks_action_hook(int eid, webs_t wp, int argc, char **argv)
 static int shadowsocks_status_hook(int eid, webs_t wp, int argc, char **argv)
 {
 	int ss_status_code = pids("ss-redir");
+	if (ss_status_code == 0){
+		ss_status_code = pids("ssr-redir");
+	}
+	if (ss_status_code == 0){
+		ss_status_code = pids("v2ray");
+	}
 	websWrite(wp, "function shadowsocks_status() { return %d;}\n", ss_status_code);
 	int ss_tunnel_status_code = pids("ss-local");
 	websWrite(wp, "function shadowsocks_tunnel_status() { return %d;}\n", ss_tunnel_status_code);
@@ -2024,7 +2030,7 @@ static int rules_count_hook(int eid, webs_t wp, int argc, char **argv)
 	websWrite(wp, "function chnroute_count() { return '%s';}\n", count);
 #if defined(APP_SHADOWSOCKS)
 	memset(count, 0, sizeof(count));
-	fstream = popen("grep ^server /etc/storage/gfwlist/dnsmasq_gfwlist.conf |wc -l","r");
+	fstream = popen("grep ^server /etc/storage/gfwlist/dnsmasq_gfwlist_ipset.conf |wc -l","r");
 	if(fstream) {
 		fgets(count, sizeof(count), fstream);
 		pclose(fstream);
@@ -2048,6 +2054,7 @@ static int dnsforwarder_status_hook(int eid, webs_t wp, int argc, char **argv)
 	return 0;
 }
 #endif
+
 
 #if defined (APP_ADBYBY)
 static int adbyby_action_hook(int eid, webs_t wp, int argc, char **argv)
@@ -2073,7 +2080,7 @@ static int adbyby_status_hook(int eid, webs_t wp, int argc, char **argv)
 #if defined (APP_PDNSD)
 static int pdnsd_status_hook(int eid, webs_t wp, int argc, char **argv)
 {
-	int pdnsd_status_code = pids("pdnsd");
+	int pdnsd_status_code = pids("pdnsddns");
 	websWrite(wp, "function pdnsd_status() { return %d;}\n", pdnsd_status_code);
 	return 0;
 }
@@ -4178,7 +4185,7 @@ struct ej_handler ej_handlers[] =
 	{ "shadowsocks_status", shadowsocks_status_hook},
 	{ "rules_count", rules_count_hook},
 #endif
-#if defined (APP_DNSFORWARDER)
+#if defined(APP_DNSFORWARDER)
 	{ "dnsforwarder_status", dnsforwarder_status_hook},
 #endif
 #if defined (APP_ADBYBY)

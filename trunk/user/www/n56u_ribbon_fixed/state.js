@@ -376,8 +376,8 @@ function show_banner(L3){
 	show_top_status();
 }
 
-var tabtitle = new Array(16);
-var tablink = new Array(16);
+var tabtitle = new Array(17);
+var tablink = new Array(17);
 tabtitle[0] = new Array("", "<#menu5_1_1#>", "<#menu5_1_2#>", "<#menu5_1_3#>", "<#menu5_1_4#>", "<#menu5_1_5#>", "<#menu5_1_6#>");
 tabtitle[1] = new Array("", "<#menu5_1_1#>", "<#menu5_1_2#>", "<#menu5_1_3#>", "<#menu5_1_4#>", "<#menu5_1_5#>", "<#menu5_1_6#>");
 tabtitle[2] = new Array("", "<#menu5_2_1#>", "<#menu5_2_2#>", "<#menu5_2_3#>", "<#menu5_2_4#>", "<#menu5_2_5#>", "<#menu5_2_6#>");
@@ -405,6 +405,9 @@ if (found_app_adbyby()){
 }
 if (found_app_pdnsd()){
 	tabtitle[15] = new Array("", "<#menu5_21_1#>");
+}
+if (found_app_aliddns()){
+	tabtitle[16] = new Array("", "<#menu5_23_1#>");
 }
 
 //Level 3 Tab title
@@ -443,9 +446,13 @@ if (found_app_pdnsd()){
 	pdnsd_array = new Array("","Advanced_pdnsd.asp");
 	tablink[15] = (pdnsd_array);
 }
+if (found_app_aliddns()){
+	aliddns_array = new Array("","Advanced_aliddns.asp");
+	tablink[16] = (aliddns_array);
+}
 
 //Level 2 Menu
-menuL2_title = new Array(16)
+menuL2_title = new Array(17)
 menuL2_title = new Array("", "<#menu5_11#>", "<#menu5_12#>", "<#menu5_2#>", "<#menu5_3#>", "<#menu5_5#>", "<#menu5_4#>", "<#menu5_6#>", "<#menu5_10#>", "<#menu5_9#>", "<#menu5_7#>");
 if (found_app_scutclient()){
 	menuL2_title.push("<#menu5_13#>");
@@ -469,7 +476,9 @@ if (found_app_adbyby()){
 if (found_app_pdnsd()){
 	menuL2_title.push("<#menu5_21#>");
 } else menuL2_title.push("");
-
+if (found_app_aliddns()){
+	menuL2_title.push("<#menu5_23#>");
+} else menuL2_title.push("");
 
 menuL2_link  = new Array("", tablink[0][1], tablink[1][1], tablink[2][1], tablink[3][1], tablink[4][1], tablink[5][1], tablink[6][1], tablink[7][1], tablink[8][1], tablink[9][1]);
 if (found_app_scutclient()){
@@ -494,7 +503,9 @@ if (found_app_adbyby()){
 if (found_app_pdnsd()){
 	menuL2_link.push(pdnsd_array[1]);
 } else menuL2_link.push("");
-
+if (found_app_aliddns()){
+	menuL2_link.push(aliddns_array[1]);
+} else menuL2_link.push("");
 //Level 1 Menu in Gateway, Router mode
 menuL1_title = new Array("", "<#menu1#>", "<#menu3#>", "<#menu2#>", "<#menu6#>", "<#menu4#>", "<#menu5_8#>", "<#menu5#>");
 menuL1_link = new Array("", "index.asp", "aidisk.asp", "vpnsrv.asp", "vpncli.asp", "Main_TrafficMonitor_realtime.asp", "Advanced_System_Info.asp", "as.asp");

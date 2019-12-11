@@ -410,6 +410,20 @@ struct nvram_pair router_defaults[] = {
 	{ "dns_server", "223.5.5.5,114.114.114.114" },
 	{ "dns_server_port", "5333" },
 	{ "dns_server_bind", "0.0.0.0" },
+
+    /* Aliddns */
+	{ "aliddns_enable", "0" },
+	{ "aliddns_interval", "600" },
+	{ "aliddns_ttl", "600" },
+	{ "aliddns_ak", ""  },
+	{ "aliddns_sk", "" },
+	{ "aliddns_name", "" },
+	{ "aliddns_name2", "" },
+	{ "aliddns_name6", "" },
+	{ "aliddns_domain", "" },
+	{ "aliddns_domain2", "" },
+	{ "aliddns_domain6", "" },
+	
 	{ "hdd_spindt", "0" },
 	{ "hdd_apmoff", "0" },
 	/*WEB DIY*/

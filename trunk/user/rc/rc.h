@@ -558,6 +558,11 @@ void stop_pdnsd(void);
 void start_pdnsd(void);
 void restart_pdnsd(void);
 #endif
+#if defined(APP_ALIDDNS)
+void stop_aliddns(void);
+void start_aliddns(void);
+void restart_aliddns(void);
+#endif
 #if defined(APP_DNSFORWARDER)
 void stop_dnsforwarder(void);
 void start_dnsforwarder(void);

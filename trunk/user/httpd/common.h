@@ -94,6 +94,7 @@ typedef u_int8_t u8;
 #define EVM_RESTART_MENTOHUST		(1ULL << 50)
 #define EVM_RESTART_ADBYBY		    (1ULL << 51)
 #define EVM_RESTART_PDNSD		    (1ULL << 52)
+#define EVM_RESTART_ALIDDNS		    (1ULL << 53)
 #define EVM_RESTART_REBOOT		(1ULL << 62)
 
 #define EVM_BLOCK_UNSAFE		(1ULL << 63) /* special case */
@@ -154,6 +155,7 @@ typedef u_int8_t u8;
 #define EVT_RESTART_DNSFORWARDER	1
 #define EVT_RESTART_MENTOHUST		2
 #define EVT_RESTART_PDNSD		1
+#define EVT_RESTART_ALIDDNS	2
 #define EVT_RESTART_REBOOT		40
 
 struct variable

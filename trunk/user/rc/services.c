@@ -436,6 +436,23 @@ void restart_pdnsd(void){
 }
 #endif
 
+#if defined(APP_ALIDDNS)
+void stop_aliddns(void){
+	eval("/etc/storage/aliddns.sh","stop");
+}
+
+void start_aliddns(void){
+	int aliddns_mode = nvram_get_int("aliddns_enable");
+	if ( aliddns_mode == 1)
+		eval("/etc/storage/aliddns.sh","start");
+}
+
+void restart_aliddns(void){
+    stop_aliddns();
+	start_aliddns();
+}
+#endif
+
 void
 start_httpd(int restart_fw)
 {

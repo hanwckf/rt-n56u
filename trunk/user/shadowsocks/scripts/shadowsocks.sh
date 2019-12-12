@@ -3,18 +3,19 @@
 # Copyright (C) 2017 openwrt-ssr
 # Copyright (C) 2017 yushi studio <ywb94@qq.com>
 # Copyright (C) 2018 lean <coolsnowwolf@gmail.com>
+# Copyright (C) 2019 chongshengB <bkye@vip.qq.com>
 #
 # This is free software, licensed under the GNU General Public License v3.
 # See /LICENSE for more information.
 #
 
-SERVICE_DAEMONIZE=1
 NAME=shadowsocksr
 EXTRA_COMMANDS=rules
 CONFIG_FILE=/tmp/${NAME}.json
 CONFIG_UDP_FILE=/tmp/${NAME}_u.json
 CONFIG_SOCK5_FILE=/tmp/${NAME}_s.json
 v2_json_file="/tmp/v2-redir.json"
+v2udp_json_file="/tmp/v2-udpredir.json"
 server_count=0
 redir_tcp=0
 v2ray_enable=0
@@ -26,8 +27,6 @@ kcp_flag=0
 pdnsd_enable_flag=0
 switch_enable=0
 #switch_server=$1
-MAXFD=32768
-CRON_FILE=/etc/crontabs/root
 threads=1
 wan_bp_ips='/etc/storage/chinadns/chnroute.txt'
 wan_fw_ips="/tmp/whileip.txt"
@@ -60,7 +59,6 @@ logger -t "SS" "正在创建json文件..."
          fi
          fastopen="false";
 stype=`nvram get ssp_type_x$1`
-echo $stype
 if [ "$stype" == "ss" ] ;then
 	cat <<-EOF >$config_file
 {
@@ -95,6 +93,10 @@ EOF
 }
 EOF
       elif [ "$stype" == "v2ray" ] ;then
+	  v2_file=$v2_json_file
+	  if [ $2 = "1" ] ;then
+	  v2_file=$v2udp_json_file
+	  fi
 curl -k -s -o /tmp/v2ray --connect-timeout 10 --retry 3 https://dev.tencent.com/u/dtid_39de1afb676d0d78/p/kp/git/raw/master/v2ray
 if [ ! -f "/tmp/v2ray" ]; then
 logger -t "ss" "v2ray二进制文件下载失败，可能是地址失效或者网络异常！"
@@ -106,7 +108,7 @@ chmod -R 777 /tmp/v2ray
 v2ray_enable=1
 fi
 	  if [ "$(nvram get v2_net_x$1)" == "kcp" ]; then
-cat > "$v2_json_file" <<EOF
+cat > "$v2_file" <<EOF
 {
    "outbound": {
      "settings": {
@@ -180,7 +182,7 @@ cat > "$v2_json_file" <<EOF
 EOF
 fi
 if [ "$(nvram get v2_net_x$1)" == "ws" ]; then
-cat > "$v2_json_file" <<EOF
+cat > "$v2_file" <<EOF
 {
    "outbound": {
      "settings": {
@@ -247,7 +249,7 @@ cat > "$v2_json_file" <<EOF
 EOF
 fi
 if [ "$(nvram get v2_net_x$1)" == "h2" ]; then
-cat > "$v2_json_file" <<EOF
+cat > "$v2_file" <<EOF
 {
    "outbound": {
      "settings": {
@@ -314,7 +316,7 @@ cat > "$v2_json_file" <<EOF
 EOF
 fi
 if [ "$(nvram get v2_net_x$1)" == "quic" ]; then
-cat > "$v2_json_file" <<EOF
+cat > "$v2_file" <<EOF
 {
    "outbound": {
      "settings": {
@@ -426,7 +428,6 @@ logger -t "SS" "正在添加防火墙规则..."
 			w|W|b|B) ac_ips="$lan_ac_mode$lan_ac_ips";;
 		esac
 	fi
-	echo $ac_ips
 	#ac_ips="b"
 #deal	gfw firewall rule
 	gfwmode="" 
@@ -482,7 +483,7 @@ perm_cache=2048;
 cache_dir="/tmp/pdnsd";
 pid_file = /tmp/pdnsd.pid;
 run_as="nobody";
-server_port = 5335;
+server_port = 5353;
 server_ip = 127.0.0.1;
 status_ctl = on;
 query_method=tcp_only;
@@ -502,24 +503,17 @@ server {
 server {
 	label= "ssr-pdnsd";
 	ip = $tcp_dns_list;
-	port = 5353;
+	port = 443;
 	timeout=6;
 	uptest=none;
 	interval=10m;
 	purge_cache=off;
 }
 EOF
+
 chmod 600 /tmp/pdnsd.conf
 logger -t "SS" "正在启动pdnsd..."
 /usr/bin/pdnsd -c /tmp/pdnsd.conf -d
-	
-elif [ $dnsd_enable = 1 ]; then
-logger -t "SS" "正在启动dnsproxy..."
-/usr/bin/dnsproxy -d -p 5335 -R $usr_dns
-
-elif [ $dnsd_enable = 2 ]; then
-logger -t "SS" "正在启动dns-forwarder..."
-/usr/bin/dns-forwarder -b 0.0.0.0 -p 5335 -s $usr_dns:$usr_port &
 fi
 }
 
@@ -529,13 +523,12 @@ logger -t "SS" "正在启动SS程序..."
 	ARG_OTA=""
   gen_config_file $1 0
   stype=`nvram get ssp_type_x$1`
-  echo $stype
     if [ "$stype" == "ss" ] ;then
         sscmd="ss-redir"
        elif [ "$stype" == "ssr" ] ;then
         sscmd="ssr-redir"
        elif [ "$stype" == "v2ray" ] ;then
-        sscmd="v2ray"
+        sscmd="/tmp/v2ray"
     fi
 	UDP_RELAY_SERVER=$(nvram get udp_relay_server)
 	utype=`nvram get ssp_type_x$UDP_RELAY_SERVER`
@@ -544,9 +537,9 @@ logger -t "SS" "正在启动SS程序..."
        elif [ "$utype" == "ssr" ] ;then
         ucmd="ssr-redir"
        elif [ "$utype" == "v2ray" ] ;then
-        ucmd="v2ray"
+        ucmd="/tmp/v2ray"
      fi
-  
+ 
   if [ "$(nvram get ss_threads)" = "0" ] ;then
     threads=$(cat /proc/cpuinfo | grep 'processor' | wc -l)
   else
@@ -558,39 +551,34 @@ logger -t "SS" "正在启动SS程序..."
     for i in $(seq 1 $threads)  
     do 
       $sscmd -c $CONFIG_FILE $ARG_OTA -f /tmp/ssr-retcp_$i.pid >/dev/null 2>&1
-	  #sh -c "$sscmd -c $CONFIG_FILE & "
     done
 	redir_tcp=1
     echo "$(date "+%Y-%m-%d %H:%M:%S") Shadowsocks/ShadowsocksR $threads 线程启动成功!" >> /tmp/ssrplus.log  
   elif [ "$stype" == "v2ray" ] ;then
-    #$sscmd -config /var/etc/v2-ssr-retcp.json >/dev/null 2>&1 &
-	/tmp/v2ray -config $v2_json_file >/dev/null 2>&1 &
-    echo "$(date "+%Y-%m-%d %H:%M:%S") $($sscmd -version | head -1) Started!" >> /tmp/ssrplus.log
+	$sscmd -config $v2_json_file >/dev/null 2>&1 &
+    echo "$(date "+%Y-%m-%d %H:%M:%S") $($sscmd -version | head -1) 启动成功!" >> /tmp/ssrplus.log
 	fi
-	
+#UDP模式完善中------->
 	if [ "$UDP_RELAY_SERVER" != "nil" ] ;then
     redir_udp=1
     if [ "$utype" == "ss" -o "$utype" == "ssr" ] ;then
-      case "$(uci_get_by_name $UDP_RELAY_SERVER auth_enable)" in
-        1|on|true|yes|enabled) ARG_OTA="-A";;
-        *) ARG_OTA="";;
-      esac		
+     # case "$(uci_get_by_name $UDP_RELAY_SERVER auth_enable)" in
+     #   1|on|true|yes|enabled) ARG_OTA="-A";;
+     #   *) ARG_OTA="";;
+     # esac		
       gen_config_file $UDP_RELAY_SERVER 1
       last_config_file=$CONFIG_UDP_FILE
       pid_file="/tmp/ssr-reudp.pid"
       $ucmd -c $last_config_file $ARG_OTA -U -f /tmp/ssr-reudp.pid >/dev/null 2>&1
     elif [ "$utype" == "v2ray" ] ; then
-        lua /usr/share/shadowsocksr/genv2config.lua $UDP_RELAY_SERVER udp $(uci_get_by_name $UDP_RELAY_SERVER local_port) > /var/etc/v2-ssr-reudp.json
-        sed -i 's/\\//g' /var/etc/v2-ssr-reudp.json
-        $ucmd -config /var/etc/v2-ssr-reudp.json >/dev/null 2>&1 &   
+        sed -i 's/"network": "tcp"/"network": "udp"/g' $v2_file
+        $ucmd -config $v2udp_json_file >/dev/null 2>&1 &   
     fi
    fi
-
+#UDP模式结束
 	#deal with dns
 	start_pdnsd $dnsserver $dnsport
     pdnsd_enable_flag=1
-
-	
 	ss_switch=`nvram get switch_enable_x$1`
 	if [ $ss_turn = "1" ] ;then
 		if [ $ss_switch = "1" ] ;then
@@ -621,8 +609,6 @@ start_local() {
 
 rules() {
 	[ "$GLOBAL_SERVER" = "-1" ] && return 1
-	mkdir -p /var/run /var/etc
-	#UDP_RELAY_SERVER=$(uci_get_by_type global udp_relay_server)
 	[ "$UDP_RELAY_SERVER" = "same" ] && UDP_RELAY_SERVER=$GLOBAL_SERVER
 	if start_rules $GLOBAL_SERVER;then
 	return 0
@@ -643,8 +629,7 @@ if [ $ss_enable != "0" ] && [ $GLOBAL_SERVER != "nil" ]; then
     dnsport=`echo "$dnsstr"|awk -F ':'  '{print $2}'`
 	if [ "$run_mode" = "gfw" ] ;then
 	ipset add gfwlist $dnsserver 2>/dev/null
-	mkdir -p /etc/storage/dnsmasq-ss.d
-		cat /etc/storage/ss_dom.sh | grep -v '^!' | grep -v "^$" > /tmp/ss_dom.txt
+	cat /etc/storage/ss_dom.sh | grep -v '^!' | grep -v "^$" > /tmp/ss_dom.txt
 	awk '{printf("server=/%s/127.0.0.1#5353\nipset=/%s/gfwlist\n", $1, $1 )}' /tmp/ss_dom.txt > /etc/storage/gfwlist/m.gfwlist.conf
 	rm -f /tmp/ss_dom.txt
 	sed -i '/gfwlist/d' /etc/storage/dnsmasq/dnsmasq.conf
@@ -682,13 +667,7 @@ if [ $(nvram get ss_watchcat) = 1 ] ;then
 	fi
 }
 
-boot() {
-	(/usr/share/shadowsocksr/chinaipset.sh && sleep 5 && start >/dev/null 2>&1) &
-}
-
 ssp_close() {
-    #killall -q -9 ssr-monitor
-	#killall -q -9 ssr-switch
 	/usr/bin/ss-rules -f
 	srulecount=`iptables -L|grep SSR-SERVER-RULE|wc -l`
 	if [ $srulecount -gt 0 ] ;then
@@ -696,18 +675,11 @@ ssp_close() {
 	iptables -t filter -D INPUT  -j SSR-SERVER-RULE
 	iptables -X SSR-SERVER-RULE 2>/dev/null
 	fi
-	#if [ -z "$switch_server" ] ;then
     kill -9 $(ps | grep ssr-switch | grep -v grep | awk '{print $1}') >/dev/null 2>&1
-	#fi
-	#if [ $(nvram get monitor_enable) = 1 ] ;then
-    kill -9 $(ps | grep ssr-monitor | grep -v grep | awk '{print $1}') >/dev/null 2>&1
-	#fi
-	
+    kill -9 $(ps | grep ssr-monitor | grep -v grep | awk '{print $1}') >/dev/null 2>&1	
 	killall -q -9 ss-redir
 	killall -q -9 ssr-redir
 	killall -q -9 v2ray
-	killall -9 dnsproxy
-	killall -9 dns-forwarder
 	killall -q -9 ssr-server
 	killall -q -9 ssr-local
 	

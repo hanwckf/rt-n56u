@@ -723,7 +723,7 @@ struct nvram_pair router_defaults[] = {
 	{ "di_recon_pause", "0" },
 	{ "di_addr0", "114.114.114.114" },
 	{ "di_addr1", "208.67.222.222" },
-	{ "di_addr2", "14.17.42.40" },
+	{ "di_addr2", "183.232.231.172" },
 	{ "di_addr3", "8.8.8.8" },
 	{ "di_addr4", "8.8.4.4" },
 	{ "di_addr5", "208.67.220.220" },

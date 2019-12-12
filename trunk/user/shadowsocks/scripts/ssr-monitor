@@ -23,20 +23,12 @@ fi
 
 i=0
 
-GLOBAL_SERVER=$(nvram get global_server)
-server=$(uci_get_by_name $GLOBAL_SERVER server)
-lkcp_port=$(uci_get_by_name $GLOBAL_SERVER kcp_port)
-server_port=$(uci_get_by_name $GLOBAL_SERVER server_port)
-password=$(uci_get_by_name $GLOBAL_SERVER kcp_password)
-kcp_param=$(uci_get_by_name $GLOBAL_SERVER kcp_param)
-[ "$password" != "" ] && password="--key "${password}
-
 sock5_port=$(nvram get socks5_proxy_port)
 
 if echo $server|grep -E "^[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}$">/dev/null; then         
 	server=${server}
 	else
-  server=`cat /etc/ssr_ip`
+  server=`cat /etc/storage/ssr_ip`
 fi
 
 while [ "1" = "1" ]  #À¿—≠ª∑

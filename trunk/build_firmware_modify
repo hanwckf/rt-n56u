@@ -81,6 +81,10 @@ fi
 # load project root config
 . $ROOTDIR/.config
 
+if [ "$CONFIG_FIRMWARE_INCLUDE_ALIDDNS" = "y" ] ; then
+sed -i 's/CONFIG_FIRMWARE_INCLUDE_OPENSSL_EXE=n/CONFIG_FIRMWARE_INCLUDE_OPENSSL_EXE=y/g' .config
+fi
+
 if [ ! -f "$ROOTDIR/vendors/Ralink/$CONFIG_PRODUCT/config.arch" ] ; then
 	echo "Project product dir ($CONFIG_PRODUCT) not found! Terminate."
 	exit 1

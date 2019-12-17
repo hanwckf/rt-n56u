@@ -633,6 +633,33 @@ struct nvram_pair router_defaults[] = {
     { "v2_https_path", "" },
 	{ "v2_tls", "0" },
 	
+	/*SmartDns*/
+	{ "sdns_enable", "0" },
+	{ "snds_name", "smartdns" },
+	{ "sdns_port", "6053" },
+	{ "sdns_tcp_server", "0" },
+	{ "sdns_ipv6_server", "0" },
+	{ "snds_ip_change", "0" },
+	{ "sdns_www", "0" },
+	{ "snds_redirect", "0" },
+	{ "snds_cache", "0" },
+	{ "sdns_ttl", "300" },
+	{ "sdns_ttl_min", "60" },
+	{ "sdns_ttl_max", "86400" },
+	{ "sdns_coredump", "0" },
+	{ "sdnss_staticnum_x", "0" },
+	{ "sdnse_enable", "0" },
+	{ "sdnse_port", "7053" },
+	{ "sdnse_tcp", "0" },
+	{ "sdnse_speed", "0" },
+	{ "sdnse_name", "" },
+	{ "sdnse_address", "0" },
+	{ "sdnse_ns", "0" },
+	{ "sdnse_ipset", "0" },
+	{ "sdnse_as", "0" },
+	{ "sdnse_ipc", "0" },
+	{ "sdnse_cache", "0" },
+
 	/* DHCP server parameters */
 	{ "dhcp_start", DEF_LAN_DHCP_BEG },	/* First assignable DHCP address */
 	{ "dhcp_end", DEF_LAN_DHCP_END },	/* Last assignable DHCP address */
@@ -961,6 +988,12 @@ struct nvram_pair tables_defaults[] = {
     { "v2_https_path_x", "" },
 	{ "v2_tls_x", "0" },
 	
+	{ "sdnss_enable_x", "" },
+	{ "sdnss_name_x", "" },
+	{ "sdnss_ip_x", "" },
+	{ "sdnss_port_x", "" },
+	{ "sdnss_type_x", "" },
+			
 	{ "dhcp_staticmac_x", "" },
 	{ "dhcp_staticip_x", "" },
 	{ "dhcp_staticname_x", "" },

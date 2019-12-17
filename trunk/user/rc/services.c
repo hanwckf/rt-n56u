@@ -419,20 +419,21 @@ void update_adb(void){
 }
 #endif
 
-#if defined(APP_PDNSD)
-void stop_pdnsd(void){
-	eval("/usr/bin/pdnsd.sh","stop");
+
+#if defined(APP_SMARTDNS)
+void stop_smartdns(void){
+	eval("/usr/bin/smartdns.sh","stop");
 }
 
-void start_pdnsd(void){
-	int dns_mode = nvram_get_int("dns_enable");
-	if ( dns_mode == 1)
-		eval("/usr/bin/pdnsd.sh","start");
+void start_smartdns(void){
+	int smartdns_mode = nvram_get_int("sdns_enable");
+	if ( smartdns_mode == 1)
+		eval("/usr/bin/smartdns.sh","start");
 }
 
-void restart_pdnsd(void){
-	stop_pdnsd();
-	start_pdnsd();
+void restart_smartdns(void){
+	stop_smartdns();
+	start_smartdns();
 }
 #endif
 
@@ -673,6 +674,9 @@ start_services_once(int is_ap_mode)
 #if defined(APP_PDNSD)
 	start_pdnsd();
 #endif
+#if defined(APP_SMARTDNS)
+	start_smartdns();
+#endif
 	start_lltd();
 	start_watchdog_cpu();
 	start_crond();
@@ -718,6 +722,9 @@ stop_services(int stopall)
 #endif
 #if defined(APP_PDNSD)
 	stop_pdnsd();
+#endif
+#if defined(APP_SMARTDNS)
+	stop_smartdns();
 #endif
 	stop_networkmap();
 	stop_lltd();

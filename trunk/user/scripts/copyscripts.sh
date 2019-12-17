@@ -5,6 +5,19 @@ chmod 755 "/etc/storage/aliddns.sh"
 if [ ! -f "/etc/storage/ad_config_script.sh" ] ; then
 cp -rf /etc_ro/ad_config_script.sh /etc/storage/
 chmod 755 "/etc/storage/ad_config_script.sh"
+fi
+if [ ! -f "/etc/storage/smartdns_address.conf" ] ; then
+cp -rf /etc_ro/smartdns_address.conf /etc/storage/
+chmod 755 "/etc/storage/smartdns_address.conf"
+fi
+if [ ! -f "/etc/storage/smartdns_blacklist-ip.conf" ] ; then
+cp -rf /etc_ro/smartdns_blacklist-ip.conf /etc/storage/
+chmod 755 "/etc/storage/smartdns_blacklist-ip.conf"
+fi
+if [ ! -f "/etc/storage/smartdns_custom.conf" ] ; then
+cp -rf /etc_ro/smartdns_custom.conf /etc/storage/
+chmod 755 "/etc/storage/smartdns_custom.conf"
+fi
 if [ ! -f "/etc/storage/ddns_script.sh" ] ; then
 cp -rf /etc_ro/ddns_script.sh /etc/storage/
 chmod 755 "/etc/storage/ddns_script.sh"
@@ -41,4 +54,9 @@ if [ ! -f "/etc/storage/dnsmasq.oversea/oversea_list.conf" ] ; then
 mkdir -p /etc/storage/dnsmasq.oversea
 cp -rf /etc_ro/oversea_list.conf /etc/storage/dnsmasq.oversea/
 chmod 755 "/etc/storage/dnsmasq.oversea/oversea_list.conf"
+fi
+if [ ! -f "/etc/storage/gfwlist/gfwlist_list.conf" ] ; then
+mkdir -p /etc/storage/gfwlist
+cp -rf /etc_ro/gfwlist_list.conf /etc/storage/gfwlist/
+chmod 755 "/etc/storage/gfwlist/gfwlist_list.conf"
 fi

@@ -72,6 +72,7 @@
 #define RCN_RESTART_ADBYBY		"restart_adbyby"
 #define RCN_RESTART_UPDATEADB	"update_adb"
 #define RCN_RESTART_PDNSD		"restart_pdnsd"
+#define RCN_RESTART_SMARTDNS		"restart_smartdns"
 #define RCN_RESTART_ALIDDNS		"restart_aliddns"
 #define RCN_RESTART_REBOOT		"restart_reboot"
 

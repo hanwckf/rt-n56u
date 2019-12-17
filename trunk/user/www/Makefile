@@ -195,9 +195,6 @@ endif
 ifneq ($(CONFIG_FIRMWARE_INCLUDE_ADBYBY),y)
 	rm -f $(INSTALLDIR)/www/Advanced_adbyby.asp
 endif
-ifneq ($(CONFIG_FIRMWARE_INCLUDE_PDNSD),y)
-	rm -f $(INSTALLDIR)/www/Advanced_pdnsd.asp
-endif
 ifneq ($(CONFIG_FIRMWARE_INCLUDE_ALIDDNS),y)
 	rm -f $(INSTALLDIR)/www/Advanced_aliddns.asp
 endif

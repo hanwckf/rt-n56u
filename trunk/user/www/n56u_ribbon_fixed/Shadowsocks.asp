@@ -23,6 +23,7 @@
 
 <script>
 <% shadowsocks_status(); %>
+<% pdnsd_status(); %>
 <% rules_count(); %>
 var m_rules = [<% get_nvram_list("ShadowsocksConf", "SspList"); %>];
 
@@ -59,6 +60,7 @@ function initial(){
 	show_footer();
 
 	fill_ss_status(shadowsocks_status());
+	fill_pd_status(pdnsd_status());
 	$("chnroute_count").innerHTML = '<#menu5_17_3#>' + chnroute_count() ;
 	$("gfwlist_count").innerHTML = '<#menu5_17_3#>' + gfwlist_count() ;
 	switch_ss_type();
@@ -89,6 +91,15 @@ function initial(){
 function textarea_scripts_enabled(v){
 	//inputCtrl(document.form['scripts.ss.dom.sh'], v);
 	//inputCtrl(document.form['scripts.ss.ip.sh'], v);
+}
+
+function fill_pd_status(status_code){
+	var stext = "Unknown";
+	if (status_code == 0)
+		stext = "<#Stopped#>";
+	else if (status_code == 1)
+		stext = "<#Running#>";
+	$("pdnsd_status").innerHTML = '<span class="label label-' + (status_code != 0 ? 'success' : 'warning') + '">' + stext + '</span>';
 }
 
 function switch_ss_type(){
@@ -444,8 +455,11 @@ function changeBgColor(obj, num){
 									<div class="alert alert-info" style="margin: 10px;">一个兼容Shadowsocks、ShadowsocksR 、Vmess等协议的游戏加速工具。</div>
 									<div id="wnd_ss_cfg">
 									  <table width="100%" cellpadding="4" cellspacing="0" class="table">
-                                        <tr> <th>  <#running_status#></th>
+                                        <tr> <th>客户端<#running_status#></th>
                                             <td id="ss_status"></td>
+                                        </tr></th> </tr>
+										<tr> <th>PDNSD<#running_status#></th>
+                                            <td id="pdnsd_status"></td>
                                         </tr></th> </tr>
 
                                         <tr> <th><#InetControl#></th>

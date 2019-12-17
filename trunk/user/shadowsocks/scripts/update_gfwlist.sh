@@ -7,15 +7,14 @@ GFWLIST_URL="$(nvram get gfwlist_url)"
 
 logger -st "gfwlist" "开始更新gfwlist列表"
 
-rm -f /tmp/dnsmasq_gfwlist_ipset.conf
-curl -k -s -o /tmp/dnsmasq_gfwlist_ipset.conf --connect-timeout 5 --retry 3 ${GFWLIST_URL:-"https://cokebar.github.io/gfwlist2dnsmasq/dnsmasq_gfwlist_ipset.conf"}
+rm -f /tmp/gfwlist_list.conf
+curl -k -s -o /tmp/gfwlist_list.conf --connect-timeout 5 --retry 3 ${GFWLIST_URL:-"https://cokebar.github.io/gfwlist2dnsmasq/gfwlist_domain.txt"}
 
 mkdir -p /etc/storage/gfwlist/
-mv -f /tmp/dnsmasq_gfwlist_ipset.conf /etc/storage/gfwlist/dnsmasq_gfwlist_ipset.conf
+mv -f /tmp/gfwlist_list.conf /etc/storage/gfwlist/gfwlist_list.conf
 
 mtd_storage.sh save >/dev/null 2>&1
 
-restart_dhcpd
-restart_dns
+/sbin/restart_dhcpd
 
 logger -st "gfwlist" "gfwlist更新成功"

@@ -403,11 +403,11 @@ if (found_app_mentohust()){
 if (found_app_adbyby()){
 	tabtitle[14] = new Array("", "<#menu5_20_1#>");
 }
-if (found_app_pdnsd()){
-	tabtitle[15] = new Array("", "<#menu5_21_1#>");
-}
 if (found_app_aliddns()){
-	tabtitle[16] = new Array("", "<#menu5_23_1#>");
+	tabtitle[15] = new Array("", "<#menu5_23_1#>");
+}
+if (found_app_smartdns()){
+	tabtitle[16] = new Array("", "<#menu5_24_1#>");
 }
 
 //Level 3 Tab title
@@ -442,13 +442,13 @@ if (found_app_adbyby()){
 	ad_array = new Array("","Advanced_adbyby.asp");
 	tablink[14] = (ad_array);
 }
-if (found_app_pdnsd()){
-	pdnsd_array = new Array("","Advanced_pdnsd.asp");
-	tablink[15] = (pdnsd_array);
-}
 if (found_app_aliddns()){
 	aliddns_array = new Array("","Advanced_aliddns.asp");
-	tablink[16] = (aliddns_array);
+	tablink[15] = (aliddns_array);
+}
+if (found_app_smartdns()){
+	smartdns_array = new Array("","Advanced_smartdns.asp");
+	tablink[16] = (smartdns_array);
 }
 
 //Level 2 Menu
@@ -473,11 +473,11 @@ if (found_app_mentohust()){
 if (found_app_adbyby()){
 	menuL2_title.push("<#menu5_20#>");
 } else menuL2_title.push("");
-if (found_app_pdnsd()){
-	menuL2_title.push("<#menu5_21#>");
-} else menuL2_title.push("");
 if (found_app_aliddns()){
 	menuL2_title.push("<#menu5_23#>");
+} else menuL2_title.push("");
+if (found_app_smartdns()){
+	menuL2_title.push("<#menu5_24#>");
 } else menuL2_title.push("");
 
 menuL2_link  = new Array("", tablink[0][1], tablink[1][1], tablink[2][1], tablink[3][1], tablink[4][1], tablink[5][1], tablink[6][1], tablink[7][1], tablink[8][1], tablink[9][1]);
@@ -500,11 +500,11 @@ if (found_app_mentohust()){
 if (found_app_adbyby()){
 	menuL2_link.push(ad_array[1]);
 } else menuL2_link.push("");
-if (found_app_pdnsd()){
-	menuL2_link.push(pdnsd_array[1]);
-} else menuL2_link.push("");
 if (found_app_aliddns()){
 	menuL2_link.push(aliddns_array[1]);
+} else menuL2_link.push("");
+if (found_app_smartdns()){
+	menuL2_link.push(smartdns_array[1]);
 } else menuL2_link.push("");
 //Level 1 Menu in Gateway, Router mode
 menuL1_title = new Array("", "<#menu1#>", "<#menu3#>", "<#menu2#>", "<#menu6#>", "<#menu4#>", "<#menu5_8#>", "<#menu5#>");
@@ -1390,7 +1390,6 @@ var w_dnsf = '<% nvram_get_x("", "w_dnsf"); %>';
 var w_ss = '<% nvram_get_x("", "w_ss"); %>';
 var w_men = '<% nvram_get_x("", "w_men"); %>';
 var w_adbyby = '<% nvram_get_x("", "w_adbyby"); %>';
-var w_pdnsd = '<% nvram_get_x("", "w_pdnsd"); %>';
 
 if (w_ai==0){
 	menuL1_link[2] = "";
@@ -1443,10 +1442,6 @@ if (w_men==0){
 if (w_adbyby==0){
 	menuL2_link[15] = "";
 	menuL2_title[15] = "";
-}
-if (w_pdnsd==0){
-	menuL2_link[16] = "";
-	menuL2_title[16] = "";
 }
 (function($){
     var $j = $.noConflict();

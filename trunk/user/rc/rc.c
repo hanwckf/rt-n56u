@@ -1297,10 +1297,10 @@ handle_notifications(void)
 			update_adb();
 		}
 #endif
-#if defined(APP_PDNSD)
-		else if (strcmp(entry->d_name, RCN_RESTART_PDNSD) == 0)
+#if defined(APP_SMARTDNS)
+		else if (strcmp(entry->d_name, RCN_RESTART_SMARTDNS) == 0)
 		{
-			restart_pdnsd();
+			restart_smartdns();
 		}
 #endif
 #if defined(APP_ALIDDNS)

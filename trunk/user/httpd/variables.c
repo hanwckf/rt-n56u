@@ -132,6 +132,15 @@
 			{0,0,0,0}
 		};
 		
+	struct variable variables_SmartdnsConf_SdnsList[] = {
+			{"sdnss_enable_x", "24", NULL, FALSE},
+			{"sdnss_name_x", "24", NULL, FALSE},
+			{"sdnss_ip_x", "24", NULL, FALSE},
+			{"sdnss_port_x", "24", NULL, FALSE},
+			{"sdnss_type_x", "24", NULL, FALSE},
+			{0,0,0,0}
+		};
+		
 	struct variable variables_LANHostConfig_VPNSACLList[] = {
 			{"vpns_user_x", "32", NULL, FALSE},
 			{"vpns_pass_x", "32", NULL, FALSE},
@@ -961,12 +970,37 @@
 	};
 #endif
 
-#if defined(APP_PDNSD)
-    struct variable variables_PdnsdConf[] = {
-	        {"dns_enable", "", NULL, EVM_RESTART_PDNSD},
-			{"dns_server", "", NULL, EVM_RESTART_PDNSD},
-			{"dns_server_bind", "", NULL, EVM_RESTART_PDNSD},
-			{"dns_server_port", "", NULL, EVM_RESTART_PDNSD},
+#if defined(APP_SMARTDNS)
+    struct variable variables_SmartdnsConf[] = {
+	        {"sdns_enable", "", NULL, EVM_RESTART_SMARTDNS},
+			{"snds_name", "", NULL, EVM_RESTART_SMARTDNS},
+			{"sdns_port", "", NULL, EVM_RESTART_SMARTDNS},
+			{"sdns_tcp_server", "", NULL, EVM_RESTART_SMARTDNS},
+			{"sdns_ipv6_server", "", NULL, EVM_RESTART_SMARTDNS},
+			{"snds_ip_change", "", NULL, EVM_RESTART_SMARTDNS},
+			{"sdns_www", "", NULL, EVM_RESTART_SMARTDNS},
+			{"snds_redirect", "", NULL, EVM_RESTART_SMARTDNS},
+			{"snds_cache", "", NULL, EVM_RESTART_SMARTDNS},
+			{"sdns_ttl", "", NULL, EVM_RESTART_SMARTDNS},
+			{"sdns_ttl_min", "", NULL, EVM_RESTART_SMARTDNS},
+			{"sdns_ttl_max", "", NULL, EVM_RESTART_SMARTDNS},
+			{"sdns_coredump", "", NULL, EVM_RESTART_SMARTDNS},	
+			{"sdnss_staticnum_x", "", NULL, EVM_RESTART_SMARTDNS},
+			{"sdnse_enable", "", NULL, EVM_RESTART_SMARTDNS},
+			{"sdnse_port", "", NULL, EVM_RESTART_SMARTDNS},
+			{"sdnse_tcp", "", NULL, EVM_RESTART_SMARTDNS},
+			{"sdnse_speed", "", NULL, EVM_RESTART_SMARTDNS},
+			{"sdnse_name", "", NULL, EVM_RESTART_SMARTDNS},
+			{"sdnse_address", "", NULL, EVM_RESTART_SMARTDNS},
+			{"sdnse_ns", "", NULL, EVM_RESTART_SMARTDNS},
+			{"sdnse_ipset", "", NULL, EVM_RESTART_SMARTDNS},
+			{"sdnse_as", "", NULL, EVM_RESTART_SMARTDNS},
+			{"sdnse_ipc", "", NULL, EVM_RESTART_SMARTDNS},
+			{"sdnse_cache", "", NULL, EVM_RESTART_SMARTDNS},
+			{"scripts.smartdns_address.conf", "File", NULL, EVM_RESTART_SMARTDNS},
+			{"scripts.smartdns_blacklist-ip.conf", "File", NULL, EVM_RESTART_SMARTDNS},
+			{"scripts.smartdns_custom.conf", "File", NULL, EVM_RESTART_SMARTDNS},
+			{"SdnsList", "Group", ARGV((char*)variables_SmartdnsConf_SdnsList, "8", "55", "sdnss_staticnum_x"), EVM_RESTART_SMARTDNS},
 	};
 #endif
 
@@ -1109,8 +1143,8 @@
 #if defined(APP_ADBYBY)
 		{"AdbybyConf",		variables_AdbybyConf},
 #endif
-#if defined(APP_PDNSD)
-		{"PdnsdConf",		variables_PdnsdConf},
+#if defined(APP_SMARTDNS)
+		{"SmartdnsConf",		variables_SmartdnsConf},
 #endif
 		{"DwebConf",		variables_DwebConf},
 		{"LANGUAGE",			variables_Language},
@@ -1199,8 +1233,8 @@
 #if defined(APP_ADBYBY)
 		{EVM_RESTART_ADBYBY,		EVT_RESTART_ADBYBY,		RCN_RESTART_ADBYBY,	0},
 #endif
-#if defined(APP_PDNSD)
-		{EVM_RESTART_PDNSD,		EVT_RESTART_PDNSD,		RCN_RESTART_PDNSD,	0},
+#if defined(APP_SMARTDNS)
+		{EVM_RESTART_SMARTDNS,		EVT_RESTART_SMARTDNS,		RCN_RESTART_SMARTDNS,	0},
 #endif
 #if defined(APP_ALIDDNS)
 		{EVM_RESTART_ALIDDNS,		EVT_RESTART_ALIDDNS,		RCN_RESTART_ALIDDNS,	0},

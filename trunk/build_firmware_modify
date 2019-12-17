@@ -8,13 +8,10 @@ if [ ! -f configs/templates/$1.config ] ; then
 fi
 
 cp -f configs/templates/$1.config .config
-
-sed -i '/CONFIG_FIRMWARE_INCLUDE_ADBYBY/d' .config
-sed -i '/CONFIG_FIRMWARE_INCLUDE_PDNSD/d' .config
 sed -i 's/CONFIG_FIRMWARE_INCLUDE_DNSFORWARDER=y/CONFIG_FIRMWARE_INCLUDE_DNSFORWARDER=n/g' .config
 echo "CONFIG_FIRMWARE_INCLUDE_ADBYBY=y" >> .config #adbyby plus+
-echo "CONFIG_FIRMWARE_INCLUDE_PDNSD=y" >> .config #Pdnsd
 echo "CONFIG_FIRMWARE_INCLUDE_ALIDDNS=y" >> .config #aliddns
+echo "CONFIG_FIRMWARE_INCLUDE_SMARTDNS=y" >> .config #smartdns
 
 ROOTDIR=`pwd`
 export ROOTDIR=$ROOTDIR

@@ -4,28 +4,26 @@ dns_server=`nvram get dns_server`
 dns_server_bind=`nvram get dns_server_bind`
 dns_server_port=`nvram get dns_server_port`
 PDNSD_BIN="/usr/bin/pdnsd"
-
-pdnsd_genconfig() {
-  #DNS_SERVER=$(uci get flowoffload.@flow[0].dns_server 2>/dev/null)
-
-	#[ -d /var/etc ] || mkdir -p /var/etc
-	
+ss_dns=$2
+pdnsd_genconfig() {	
   if [ ! -f /tmp/dnscache/pdnsd.cache ]; then
     mkdir -p /tmp/dnscache
     echo -ne "pd13\000\000\000\000" > /tmp/dnscache/pdnsd.cache
     chown -R nobody.nogroup /tmp/dnscache
 	fi
-	
+if [ ! -z $ss_dns ];then
+dns_server="$dns_server,$ss_dns"
+fi
 	cat > /tmp/dnscache.conf <<EOF
 global {
-    perm_cache=1024;        # dns缓存大小，单位KB，建议不要写的太大
+    perm_cache=512;        # dns缓存大小，单位KB，建议不要写的太大
     cache_dir="/tmp/dnscache";     # 缓存文件的位置
     pid_file = /tmp/dnscache.pid;
     server_ip = $dns_server_bind;        # pdnsd监听的网卡，0.0.0.0是全部网卡
     server_port=$dns_server_port;           # pdnsd监听的端口，不要和别的服务冲突即可
     status_ctl = on;
     paranoid=on;                  # 二次请求模式，如果请求主DNS服务器返回的是垃圾地址，就向备用服务器请求
-    query_method=udp_only;      
+    query_method=tcp_udp;      
     neg_domain_pol = off;  
     par_queries = 400;          # 最多同时请求数
     min_ttl = 1h;               # DNS结果最短缓存时间
@@ -102,7 +100,7 @@ server {
 server {  
     label = "special";                  # 这个随便写  
     ip = 208.67.222.222,208.67.220.220; # 这里为备用DNS服务器的 ip 地址  
-    port = 5354;                        # 推荐使用53以外的端口（DNS服务器必须支持） 
+    port = 53;                        # 推荐使用53以外的端口（DNS服务器必须支持） 
     proxy_only = on;
     timeout = 5;  
 }  
@@ -152,7 +150,7 @@ sed -i '/server=127.0.0.1/d' /etc/storage/dnsmasq/dnsmasq.conf
 }
 
 dns_start(){
-  if [ $dns_enable -eq 1 ];  then
+ # if [ $dns_enable -eq 1 ];  then
   pdnsd_genconfig
   if [ ! -f "/var/pdnsddns" ]; then
   ln -sf /usr/bin/pdnsd /var/pdnsddns
@@ -160,7 +158,7 @@ dns_start(){
 /var/pdnsddns -c /tmp/dnscache.conf -d
     change_dns
     
- fi
+ #fi
 }
 
 case $1 in

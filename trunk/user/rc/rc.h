@@ -553,11 +553,6 @@ void start_adbyby(void);
 void restart_adbyby(void);
 void update_adb(void);
 #endif
-#if defined(APP_PDNSD)
-void stop_pdnsd(void);
-void start_pdnsd(void);
-void restart_pdnsd(void);
-#endif
 #if defined(APP_ALIDDNS)
 void stop_aliddns(void);
 void start_aliddns(void);

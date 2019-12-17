@@ -540,11 +540,11 @@ logger -t "SS" "正在启动SS程序..."
         ucmd="/tmp/v2ray"
      fi
  
-  if [ "$(nvram get ss_threads)" = "0" ] ;then
-    threads=$(cat /proc/cpuinfo | grep 'processor' | wc -l)
-  else
-    threads=$(nvram get ss_threads)
-  fi
+  #if [ "$(nvram get ss_threads)" = "0" ] ;then
+  #  threads=$(cat /proc/cpuinfo | grep 'processor' | wc -l)
+ # else
+ #   threads=$(nvram get ss_threads)
+ # fi
 	if [ "$stype" == "ss" -o "$stype" == "ssr" ] ;then
     last_config_file=$CONFIG_FILE
      pid_file="/tmp/ssr-retcp.pid"
@@ -577,8 +577,11 @@ logger -t "SS" "正在启动SS程序..."
    fi
 #UDP模式结束
 	#deal with dns
-	start_pdnsd $dnsserver $dnsport
+	#start_pdnsd $dnsserver $dnsport
+	if [ $(nvram get pdnsd_enable) = 0 ]; then
+	/usr/bin/pdnsd.sh start $dnsserver
     pdnsd_enable_flag=1
+	fi
 	ss_switch=`nvram get switch_enable_x$1`
 	if [ $ss_turn = "1" ] ;then
 		if [ $ss_switch = "1" ] ;then
@@ -669,6 +672,7 @@ if [ $(nvram get ss_watchcat) = 1 ] ;then
 
 ssp_close() {
 	/usr/bin/ss-rules -f
+	/usr/bin/pdnsd.sh stop
 	srulecount=`iptables -L|grep SSR-SERVER-RULE|wc -l`
 	if [ $srulecount -gt 0 ] ;then
 	iptables -F SSR-SERVER-RULE

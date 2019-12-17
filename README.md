@@ -7,7 +7,8 @@
 >- [Adbyby plus+](https://github.com/coolsnowwolf/lede) ```CONFIG_FIRMWARE_INCLUDE_ADBYBY```
 >- [Aliddns] ```CONFIG_FIRMWARE_INCLUDE_ALIDDNS```
 >- [SS plus+](https://github.com/coolsnowwolf/lede) ```CONFIG_FIRMWARE_INCLUDE_SHADOWSOCKS```
->- [PDNSD NDS](https://github.com/coolsnowwolf/lede) ```CONFIG_FIRMWARE_INCLUDE_PDNSD```
+>- [PDNSD DNS](https://github.com/coolsnowwolf/lede) ```CONFIG_FIRMWARE_INCLUDE_PDNSD```
+>- [SmartDNS](https://github.com/pymumu/smartdns) ```CONFIG_FIRMWARE_INCLUDE_SMARTDNS```
 
 ### 固件特点 ###
 - 使用[gorden5566](https://github.com/gorden5566/padavan)的汉化字典

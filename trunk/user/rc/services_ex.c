@@ -588,8 +588,8 @@ write_smb_conf_header(void)
 	fprintf(fp, "socket options = TCP_NODELAY SO_KEEPALIVE\n");
 	fprintf(fp, "unix charset = UTF8\n");
 	fprintf(fp, "display charset = UTF8\n");
-	fprintf(fp, "bind interfaces only = %s\n", "yes");
-	fprintf(fp, "interfaces = %s\n", IFNAME_BR);
+	fprintf(fp, "bind interfaces only = %s\n", "no"); //mao modi for all interfaces.
+	//fprintf(fp, "interfaces = %s\n", IFNAME_BR);
 	fprintf(fp, "unix extensions = no\n");			// fix for MAC users (thanks to 'mark2qualis')
 	fprintf(fp, "encrypt passwords = yes\n");
 	fprintf(fp, "pam password change = no\n");

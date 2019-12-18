@@ -2030,7 +2030,7 @@ static int rules_count_hook(int eid, webs_t wp, int argc, char **argv)
 	websWrite(wp, "function chnroute_count() { return '%s';}\n", count);
 #if defined(APP_SHADOWSOCKS)
 	memset(count, 0, sizeof(count));
-	fstream = popen("grep ^server /etc/storage/gfwlist/dnsmasq_gfwlist_ipset.conf |wc -l","r");
+	fstream = popen("grep ^server /etc/storage/gfwlist/gfwlist_list.conf |wc -l","r");
 	if(fstream) {
 		fgets(count, sizeof(count), fstream);
 		pclose(fstream);
@@ -2080,7 +2080,7 @@ static int adbyby_status_hook(int eid, webs_t wp, int argc, char **argv)
 #if defined (APP_SHADOWSOCKS)
 static int pdnsd_status_hook(int eid, webs_t wp, int argc, char **argv)
 {
-	int pdnsd_status_code = pids("pdnsddns");
+	int pdnsd_status_code = pids("pdnsd");
 	websWrite(wp, "function pdnsd_status() { return %d;}\n", pdnsd_status_code);
 	return 0;
 }
@@ -2091,6 +2091,21 @@ static int smartdns_status_hook(int eid, webs_t wp, int argc, char **argv)
 {
 	int smartdns_status_code = pids("smartdns");
 	websWrite(wp, "function smartdns_status() { return %d;}\n", smartdns_status_code);
+	return 0;
+}
+static int smartdns_version_hook(int eid, webs_t wp, int argc, char **argv)
+{
+	FILE *fstream = NULL;
+	char ver[18];
+	memset(ver, 0, sizeof(ver));
+	fstream = popen("/tmp/smartdns -v | awk '{printf $2}'","r");
+	if(fstream) {
+		fgets(ver, sizeof(ver), fstream);
+		pclose(fstream);
+	} else {
+		sprintf(ver, "%s", "unknown");
+	}
+	websWrite(wp, "function smartdns_version() { return '%s';}\n", ver);
 	return 0;
 }
 #endif
@@ -4211,6 +4226,7 @@ struct ej_handler ej_handlers[] =
 #endif
 #if defined (APP_SMARTDNS)
 	{ "smartdns_status", smartdns_status_hook},
+	{ "smartdns_version", smartdns_version_hook},
 #endif
 	{ "openssl_util_hook", openssl_util_hook},
 	{ "openvpn_srv_cert_hook", openvpn_srv_cert_hook},

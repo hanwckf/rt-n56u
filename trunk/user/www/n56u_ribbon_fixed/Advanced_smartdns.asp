@@ -24,6 +24,7 @@
 <script>
 var $j = jQuery.noConflict();
 <% smartdns_status(); %>
+<% smartdns_version(); %>
 
 $j(document).ready(function(){
 	init_itoggle('sdns_enable');
@@ -62,6 +63,7 @@ function initial(){
 	showTab(getHash());
 	showMRULESList();
 	fill_status(smartdns_status());
+	$("smartdns_version").innerHTML = '<#version#>' + smartdns_version() ;
 }
 
 function applyRule(){
@@ -250,6 +252,7 @@ function showMRULESList(){
                                     <div id="tabMenu" class="submenuBlock"></div>
 									<div class="alert alert-info" style="margin: 10px;">SmartDNS是一个本地高性能DNS服务器，支持避免域名污染，支持返回最快IP，支持广告过滤。</br>
 									SmartDNS官方网站:<a href="https://pymumu.github.io/smartdns/">https://pymumu.github.io/smartdns/</a>
+									</br><span class="label label-info" style="padding: 5px 5px 5px 5px;" id="smartdns_version"></span>
 </div>
 </div>
 <div id="wnd_sm_cfg">

@@ -524,9 +524,7 @@ function changeBgColor(obj, num){
                                             <td>
                                                 <select name="pdnsd_enable" class="input" style="width: 200px;">
                                                     <option value="0" >使用PDNSD TCP查询并缓存</option>
-                                                   <!-- <option value="1" >使用dnsproxy查询</option>
-													<option value="2" >使用dns-forwarder查询</option> -->
-													<option value="3" >使用本机端口为5335的DNS服务</option>
+													<option value="1" >使用SmartDNS查询</option>
                                                 </select>
                                             </td>
                                         </tr>

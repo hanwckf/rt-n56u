@@ -577,9 +577,9 @@ logger -t "SS" "正在启动SS程序..."
    fi
 #UDP模式结束
 	#deal with dns
-	#start_pdnsd $dnsserver $dnsport
 	if [ $(nvram get pdnsd_enable) = 0 ]; then
-	/usr/bin/pdnsd.sh start $dnsserver
+	start_pdnsd $dnsserver $dnsport	
+#	/usr/bin/pdnsd.sh start $dnsserver
     pdnsd_enable_flag=1
 	fi
 	ss_switch=`nvram get switch_enable_x$1`
@@ -632,8 +632,17 @@ if [ $ss_enable != "0" ] && [ $GLOBAL_SERVER != "nil" ]; then
     dnsport=`echo "$dnsstr"|awk -F ':'  '{print $2}'`
 	if [ "$run_mode" = "gfw" ] ;then
 	ipset add gfwlist $dnsserver 2>/dev/null
-	cat /etc/storage/ss_dom.sh | grep -v '^!' | grep -v "^$" > /tmp/ss_dom.txt
-	awk '{printf("server=/%s/127.0.0.1#5353\nipset=/%s/gfwlist\n", $1, $1 )}' /tmp/ss_dom.txt > /etc/storage/gfwlist/m.gfwlist.conf
+logger -st "SS" "开始处理gfwlist..."
+rm -rf /etc/storage/gfwlist
+mkdir -p /etc/storage/gfwlist/
+cat /etc/storage/ss_dom.sh | grep -v '^!' | grep -v "^$" > /tmp/ss_dom.txt
+if [ $(nvram get pdnsd_enable) = 0 ]; then
+awk '{printf("server=/%s/127.0.0.1#5353\nipset=/%s/gfwlist\n", $1, $1 )}' /etc_ro/gfwlist_list.conf > /etc/storage/gfwlist/gfwlist_list.conf
+awk '{printf("server=/%s/127.0.0.1#5353\nipset=/%s/gfwlist\n", $1, $1 )}' /tmp/ss_dom.txt > /etc/storage/gfwlist/m.gfwlist.conf
+else
+awk '{printf("ipset=/%s/gfwlist\n", $1, $1 )}' /etc_ro/gfwlist_list.conf > /etc/storage/gfwlist/gfwlist_list.conf
+awk '{printf("ipset=/%s/gfwlist\n", $1, $1 )}' /tmp/ss_dom.txt > /etc/storage/gfwlist/m.gfwlist.conf
+fi
 	rm -f /tmp/ss_dom.txt
 	sed -i '/gfwlist/d' /etc/storage/dnsmasq/dnsmasq.conf
 	sed -i '/dnsmasq.oversea/d' /etc/storage/dnsmasq/dnsmasq.conf
@@ -672,7 +681,6 @@ if [ $(nvram get ss_watchcat) = 1 ] ;then
 
 ssp_close() {
 	/usr/bin/ss-rules -f
-	/usr/bin/pdnsd.sh stop
 	srulecount=`iptables -L|grep SSR-SERVER-RULE|wc -l`
 	if [ $srulecount -gt 0 ] ;then
 	iptables -F SSR-SERVER-RULE

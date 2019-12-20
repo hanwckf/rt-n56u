@@ -586,7 +586,7 @@ struct nvram_pair router_defaults[] = {
 	{ "tunnel_forward", "8.8.4.4:53" },
 	{ "socks5_proxy", "nil" },
 	{ "socks5_proxy_port", "1080" },
-	{ "ss_turn", "1" },
+	{ "ss_turn", "0" },
 	{ "ss_watchcat", "1" },
 	{ "ss_turn_s", "600" },
 	{ "ss_turn_ss", "5" },
@@ -630,7 +630,7 @@ struct nvram_pair router_defaults[] = {
 	{ "v2_webs_host", "" },
 	{ "v2_webs_path", "" },
 	{ "v2_http2_host", "" },
-    { "v2_https_path", "" },
+    { "v2_http2_path", "" },
 	{ "v2_tls", "0" },
 	
 	/*SmartDns*/
@@ -985,7 +985,7 @@ struct nvram_pair tables_defaults[] = {
 	{ "v2_webs_host_x", "" },
 	{ "v2_webs_path_x", "" },
 	{ "v2_http2_host_x", "" },
-    { "v2_https_path_x", "" },
+    { "v2_http2_path_x", "" },
 	{ "v2_tls_x", "0" },
 	
 	{ "sdnss_enable_x", "" },

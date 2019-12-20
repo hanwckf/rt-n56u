@@ -42,6 +42,7 @@ $j(document).ready(function(){
 	init_itoggle('switch_enable_x_0');
 	init_itoggle('v2_mkcp_congestion_x_0');
 	init_itoggle('v2_tls_x_0');
+	init_itoggle('ss_udp');
 	init_itoggle('ss_router_proxy',change_ss_watchcat_display);
 	init_itoggle('ss_watchcat');
 	init_itoggle('ss_update_chnroute');
@@ -68,10 +69,8 @@ function initial(){
 	showMRULESList();
 	showssList();
 	shows5List();
-	showudpList()
 	//textarea_scripts_enabled(0);
 	var o1 = document.form.global_server;
-	var o2 = document.form.udp_relay_server;
 	var o3 = document.form.ss_threads;
 	var o4 = document.form.ss_run_mode;
 	var o5 = document.form.pdnsd_enable;
@@ -79,7 +78,6 @@ function initial(){
 	var o7 = document.form.tunnel_forward;
 
 	o1.value = '<% nvram_get_x("","global_server"); %>';
-	o2.value = '<% nvram_get_x("","udp_relay_server"); %>';
 	o3.value = '<% nvram_get_x("","ss_threads"); %>';
 	o4.value = '<% nvram_get_x("","ss_run_mode"); %>';
 	o5.value = '<% nvram_get_x("","pdnsd_enable"); %>';
@@ -172,6 +170,9 @@ var v=0;
 	showhide_div('row_v2_webs_path', v);
 	showhide_div('row_v2_http2_host', v);
 	showhide_div('row_v2_http2_path', v);
+	showhide_div('row_quic_security', v);
+	showhide_div('row_quic_key', v);
+	showhide_div('row_quic_header', v)
 
 }
 if (b=="kcp"){
@@ -191,6 +192,9 @@ var k=1;
 	showhide_div('row_v2_webs_path', v);
 	showhide_div('row_v2_http2_host', v);
 	showhide_div('row_v2_http2_path', v);
+	showhide_div('row_quic_security', v);
+	showhide_div('row_quic_key', v);
+	showhide_div('row_quic_header', v)
 }
 if (b=="ws"){
 var v=0;
@@ -208,6 +212,9 @@ var k=1;
 	showhide_div('row_v2_webs_path', k);
 	showhide_div('row_v2_http2_host', v);
 	showhide_div('row_v2_http2_path', v);
+	showhide_div('row_quic_security', v);
+	showhide_div('row_quic_key', v);
+	showhide_div('row_quic_header', v)
 }
 if (b=="h2"){
 var v=0;
@@ -225,6 +232,29 @@ var k=1;
 	showhide_div('row_v2_webs_path', v);
 	showhide_div('row_v2_http2_host', k);
 	showhide_div('row_v2_http2_path', k);
+	showhide_div('row_quic_security', v);
+	showhide_div('row_quic_key', v);
+	showhide_div('row_quic_header', v)
+}
+if (b=="quic"){
+var v=0;
+var k=1;
+	showhide_div('row_v2_type_tcp', v);
+	showhide_div('row_v2_type', v);
+	showhide_div('row_v2_mkcp_mtu', v);
+	showhide_div('row_v2_mkcp_tti', v);
+	showhide_div('row_v2_mkcp_uplink', v);
+	showhide_div('row_v2_mkcp_downlink', v);
+	showhide_div('row_v2_mkcp_readbu', v);
+	showhide_div('row_v2_mkcp_writebu', v);
+	showhide_div('row_v2_mkcp_congestion', v);
+	showhide_div('row_v2_webs_host', v);
+	showhide_div('row_v2_webs_path', v);
+	showhide_div('row_v2_http2_host', v);
+	showhide_div('row_v2_http2_path', v);
+	showhide_div('row_quic_security', k);
+	showhide_div('row_quic_key', k);
+	showhide_div('row_quic_header', k);
 }
 }
 
@@ -356,19 +386,6 @@ function shows5List(){
 	$("s5List_Block").innerHTML = code2;
 }
 
-function showudpList(){
-	var code2 = '<option value="nil" >停用</option>';
-	code2 += '<option value="-1" >与全局服务器相同</option>';
-	if(m_rules.length == 0)
-		code2 +='<option value="non" >暂无可以用服务器</option>';
-	else{
-	    for(var j = 0; j < m_rules.length; j++){
-		code2 +='<option value="'+ j +'" >['+ m_rules[j][0] + ']:'+ m_rules[j][1] + '</option>';
-	    }
-	}
-	$("udpList_Block").innerHTML = code2;
-}
-
 function changeBgColor(obj, num){
 	$("row" + num).style.background=(obj.checked)?'#D9EDF7':'whiteSmoke';
 }
@@ -488,12 +505,18 @@ function changeBgColor(obj, num){
                                                 </select>
                                             </td>
                                         </tr>
-
-                                       <tr> <th width="50%">游戏模式UDP中继服务器</th>
+										<tr> <th><#menu5_16_17#></th>
                                             <td>
-                                                <select name="udp_relay_server" id="udpList_Block" class="input" style="width: 200px;">
-                                                 
-                                                </select>
+                                                <div class="main_itoggle">
+                                                    <div id="ss_udp_on_of">
+                                                        <input type="checkbox" id="ss_udp_fake" <% nvram_match_x("", "ss_udp", "1", "value=1 checked"); %><% nvram_match_x("", "ss_udp", "0", "value=0"); %>>
+                                                    </div>
+                                                </div>
+
+                                                <div style="position: absolute; margin-left: -10000px;">
+                                                    <input type="radio" value="1" name="ss_udp" id="ss_udp_1" <% nvram_match_x("", "ss_udp", "1", "checked"); %>><#checkbox_Yes#>
+                                                    <input type="radio" value="0" name="ss_udp" id="ss_udp_0" <% nvram_match_x("", "ss_udp", "0", "checked"); %>><#checkbox_No#>
+                                                </div>
                                             </td>
                                         </tr>
 										
@@ -692,7 +715,7 @@ function changeBgColor(obj, num){
                                         </tr>
 										<tr id="row_v2_webs_path" style="display:none;"> <th width="50%">WebSocket Path</th>
                                             <td>
-                                                <input type="text" maxlength="255" class="input" size="15" name="webs_path_x_0" style="width: 145px" value="<% nvram_get_x("","webs_path"); %>" />
+                                                <input type="text" maxlength="255" class="input" size="15" name="v2_webs_path_x_0" style="width: 145px" value="<% nvram_get_x("","v2_webs_path"); %>" />
                                             </td>
                                         </tr>
 										
@@ -703,7 +726,33 @@ function changeBgColor(obj, num){
                                         </tr>
 										<tr id="row_v2_http2_path" style="display:none;"> <th width="50%">HTTP/2 Path</th>
                                             <td>
-                                                <input type="text" maxlength="255" class="input" size="15" name="v2_https_path_x_0" style="width: 145px" value="<% nvram_get_x("","v2_https_path"); %>" />
+                                                <input type="text" maxlength="255" class="input" size="15" name="v2_http2_path_x_0" style="width: 145px" value="<% nvram_get_x("","v2_https_path"); %>" />
+                                            </td>
+                                        </tr>
+                                        <tr id="row_quic_security" style="display:none;"> <th width="50%">QUIC Security</th>
+                                            <td>
+                                                <select name="v2_quic_security_x_0" class="input" style="width: 200px;">   
+                                                    <option value="none" >未配置</option>
+                                                    <option value="aes-128-gcm" >aes-128-gcm</option>
+                                                    <option value="chacha20-ietf-poly1305" >chacha20-ietf-poly1305</option>
+                                                </select>
+                                            </td>
+                                        </tr>
+                                        <tr id="row_quic_key" style="display:none;"> <th width="50%">QUIC Key</th>
+                                            <td>
+                                                <input type="text" maxlength="255" class="input" size="15" name="v2_quic_key_x_0" style="width: 145px" value="<% nvram_get_x("","v2_quic_key"); %>" />
+                                            </td>
+                                        </tr>
+                                        <tr id="row_quic_header" style="display:none;"> <th width="50%">Header</th>
+                                            <td>
+												<select name="v2_quic_header_x_0" class="input" style="width: 200px;"> 
+                                                   <option value="none" >未配置</option>												
+                                                    <option value="srtp" >VideoCall (SRTP)</option>
+													<option value="utp" >BitTorrent (uTP)</option>
+													<option value="wechat-video" >WechatVideo</option>
+													<option value="dtls" >DTLS 1.2</option>
+													<option value="wireguard" >WireGuard</option>
+                                                </select>
                                             </td>
                                         </tr>
                                        <tr id="row_v2_tls" style="display:none;"><th>TLS</th>
@@ -715,8 +764,8 @@ function changeBgColor(obj, num){
                                                 </div>
 
                                                 <div style="position: absolute; margin-left: -10000px;">
-                                                    <input type="radio" value="1" name="v2_tls_x_0" id="v2_tls_1" <% nvram_match_x("", "v2_tls", "1", "checked"); %>><#checkbox_Yes#>
-                                                    <input type="radio" value="0" name="v2_tls_x_0" id="v2_tls_0" <% nvram_match_x("", "v2_tls", "0", "checked"); %>><#checkbox_No#>
+                                                    <input type="radio" value="1" name="v2_tls_x_0" id="v2_tls_x_0_1" <% nvram_match_x("", "v2_tls", "1", "checked"); %>><#checkbox_Yes#>
+                                                    <input type="radio" value="0" name="v2_tls_x_0" id="v2_tls_x_0_0" <% nvram_match_x("", "v2_tls", "0", "checked"); %>><#checkbox_No#>
                                                 </div>
                                             </td>
                                         </tr>

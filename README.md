@@ -76,6 +76,7 @@ Contributors of this project are not responsible for what happens next.
 >- MI-3 (USB)
 >- MI-R3G (USB)
 >- HC5661A
+>- HC5761A (USB)
 >- HC5861B
 >- 360P2 (USB)
 >- MI-NANO

@@ -913,7 +913,12 @@ init_router(void)
 #endif
 		start_wan();
 	}
-
+#if defined (BOARD_HC5761A)
+	cpu_gpio_mode_set_bit(38, 1);
+	cpu_gpio_mode_set_bit(39, 0);
+	cpu_gpio_set_pin_direction(BOARD_GPIO_PWR_USB, 1);
+	cpu_gpio_set_pin(BOARD_GPIO_PWR_USB, BOARD_GPIO_PWR_USB_ON);
+#endif
 	start_services_once(is_ap_mode);
 
 	notify_leds_detect_link();
@@ -926,12 +931,6 @@ init_router(void)
 		write_storage_to_mtd();
 		restart_crond();
 	}
-#if defined (BOARD_HC5761A)
-	cpu_gpio_mode_set_bit(38, 1);
-	cpu_gpio_mode_set_bit(39, 0);
-	cpu_gpio_set_pin_direction(BOARD_GPIO_PWR_USB, 1);
-	cpu_gpio_set_pin(BOARD_GPIO_PWR_USB, BOARD_GPIO_PWR_USB_ON);
-#endif
 	// system ready
 	system("/etc/storage/started_script.sh &");
 }

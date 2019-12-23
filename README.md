@@ -49,6 +49,7 @@
 - 已适配除官方适配外的以下机型
 >- PSG1208
 >- PSG1218
+>- PSG712
 >- 5K-W20 (USB)
 >- OYE-001 (USB)
 >- NEWIFI-MINI (USB)

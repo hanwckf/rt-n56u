@@ -82,8 +82,6 @@ jobs:
         #########################################################################################
         sudo ./clear_tree
         sudo ./build_firmware_modify $TNAME
-        sudo ./clear_tree
-        sudo ./build_firmware_modify NEWIFI3
         sudo mv -f images/*.trx /opt/images/
     - name : Upload packages
       uses: actions/upload-artifact@master

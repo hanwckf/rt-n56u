@@ -116,7 +116,7 @@ logger -t "adbyby" "正在处理规则..."
 		rules_road=`nvram get adbybyrules_road_x$j`
  if [ $rules_road -ne 0 ]; then
 			logger -t "adbyby" "正在下载和合并第三方规则"
-			wget --no-check-certificate $rules_address -O /tmp/adbyby/user2.txt
+			curl -k -s -o /tmp/adbyby/user2.txt --connect-timeout 5 --retry 3 $rules_address
 			grep -v '^!' /tmp/adbyby/user2.txt | grep -E '^(@@\||\||[[:alnum:]])' | sort -u | grep -v "^$" >> $DATA_PATH/user3adblocks.txt
 			rm -f /tmp/adbyby/user2.txt
 		fi

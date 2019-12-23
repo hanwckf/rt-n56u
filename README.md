@@ -1,3 +1,7 @@
+### 自动编译 ###
+* 每周5凌晨1点由Github Actions自动编译并发布。
+* 地址：https://github.com/chongshengB/rt-n56u/releases
+
 ### 特别说明 ###
 * 汉化字典来自：https://github.com/gorden5566/padavan
 * 更新日志：https://www.jianshu.com/p/d76a63a12eae

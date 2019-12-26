@@ -2010,6 +2010,13 @@ static int shadowsocks_status_hook(int eid, webs_t wp, int argc, char **argv)
 	websWrite(wp, "function shadowsocks_status() { return %d;}\n", ss_status_code);
 	int ss_tunnel_status_code = pids("ss-local");
 	websWrite(wp, "function shadowsocks_tunnel_status() { return %d;}\n", ss_tunnel_status_code);
+	int ss_mode = nvram_get_int("ss_enable");
+	int ss_check_code = 2;
+	if ( ss_mode == 1)
+	{
+	ss_check_code = nvram_get_int("check_mode");
+	}
+	websWrite(wp, "function shadowsocks_check_status() { return %d;}\n", ss_check_code);
 	return 0;
 }
 
@@ -2030,7 +2037,7 @@ static int rules_count_hook(int eid, webs_t wp, int argc, char **argv)
 	websWrite(wp, "function chnroute_count() { return '%s';}\n", count);
 #if defined(APP_SHADOWSOCKS)
 	memset(count, 0, sizeof(count));
-	fstream = popen("grep ^server /etc/storage/gfwlist/gfwlist_list.conf |wc -l","r");
+	fstream = popen("grep ^ipset /etc/storage/gfwlist/gfwlist_list.conf |wc -l","r");
 	if(fstream) {
 		fgets(count, sizeof(count), fstream);
 		pclose(fstream);

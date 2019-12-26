@@ -819,11 +819,6 @@ init_crontab(void)
 #if defined (APP_SCUT)
 	ret |= system("/sbin/check_crontab.sh a/1 a a a a scutclient_watchcat.sh");
 #endif
-#if defined (APP_SHADOWSOCKS)
-	ret |= system("/sbin/check_crontab.sh a/5 a a a a ss-watchcat.sh");
-	ret |= system("/sbin/check_crontab.sh 0 8 a/10 a a update_chnroute.sh");
-	ret |= system("/sbin/check_crontab.sh 0 7 a/10 a a update_gfwlist.sh");
-#endif
 	return ret;
 }
 

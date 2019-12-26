@@ -61,6 +61,7 @@ function initial(){
 	show_footer();
 
 	fill_ss_status(shadowsocks_status());
+	fill_ss_check_status(shadowsocks_check_status());
 	fill_pd_status(pdnsd_status());
 	$("chnroute_count").innerHTML = '<#menu5_17_3#>' + chnroute_count() ;
 	$("gfwlist_count").innerHTML = '<#menu5_17_3#>' + gfwlist_count() ;
@@ -71,18 +72,22 @@ function initial(){
 	shows5List();
 	//textarea_scripts_enabled(0);
 	var o1 = document.form.global_server;
+	var o2 = document.form.lan_con;
 	var o3 = document.form.ss_threads;
 	var o4 = document.form.ss_run_mode;
 	var o5 = document.form.pdnsd_enable;
 	var o6 = document.form.socks5_proxy;
 	var o7 = document.form.tunnel_forward;
+	var o8 = document.form.backup_server;
 
 	o1.value = '<% nvram_get_x("","global_server"); %>';
+	o2.value = '<% nvram_get_x("","lan_con"); %>';
 	o3.value = '<% nvram_get_x("","ss_threads"); %>';
 	o4.value = '<% nvram_get_x("","ss_run_mode"); %>';
 	o5.value = '<% nvram_get_x("","pdnsd_enable"); %>';
 	o6.value = '<% nvram_get_x("","socks5_proxy"); %>';
 	o7.value = '<% nvram_get_x("","tunnel_forward"); %>';
+	o8.value = '<% nvram_get_x("","backup_server"); %>';
 
 }
 
@@ -287,6 +292,15 @@ function fill_ss_status(status_code){
 	$("ss_status").innerHTML = '<span class="label label-' + (status_code != 0 ? 'success' : 'warning') + '">' + stext + '</span>';
 }
 
+function fill_ss_check_status(status_code){
+	var stext = "<#Stopped#>";
+	if (status_code == 0)
+		stext = "主服务器";
+	else if (status_code == 1)
+		stext = "备用服务器";
+	$("ss_check_status").innerHTML = '<span class="label label-' + (status_code != 0 ? 'warning' : 'success') + '">' + stext + '</span>';
+}
+
 function fill_ss_tunnel_status(status_code){
 	var stext = "Unknown";
 	if (status_code == 0)
@@ -372,6 +386,7 @@ function showssList(){
 	    }
 	}
 	$("ssList_Block").innerHTML = code2;
+	$("ssbList_Block").innerHTML = code2;
 }
 
 function shows5List(){
@@ -472,6 +487,9 @@ function changeBgColor(obj, num){
 									<div class="alert alert-info" style="margin: 10px;">一个兼容Shadowsocks、ShadowsocksR 、Vmess等协议的游戏加速工具。</div>
 									<div id="wnd_ss_cfg">
 									  <table width="100%" cellpadding="4" cellspacing="0" class="table">
+									  <tr> <th>当前运行服务器</th>
+                                            <td id="ss_check_status"></td>
+                                        </tr></th> </tr>
                                         <tr> <th>客户端<#running_status#></th>
                                             <td id="ss_status"></td>
                                         </tr></th> </tr>
@@ -501,6 +519,13 @@ function changeBgColor(obj, num){
                                         <tr> <th>主服务器</th>
                                             <td>
                                                 <select name="global_server" id="ssList_Block" class="input" style="width: 200px;">
+                                                 
+                                                </select>
+                                            </td>
+                                        </tr>
+										<tr> <th>故障转移服务器</th>
+                                            <td>
+                                                <select name="backup_server" id="ssbList_Block" class="input" style="width: 200px;">
                                                  
                                                 </select>
                                             </td>
@@ -542,7 +567,14 @@ function changeBgColor(obj, num){
                                                 </select>
                                             </td>
                                         </tr>
-
+										 <tr> <th width="50%">内网控制</th>
+<td>
+                                                <select name="lan_con" class="input" style="width: 200px;">
+                                                    <option value="0" >全部走代理</option>
+													<option value="1" >指定IP走代理</option>
+                                                </select>
+                                            </td>
+                                        </tr>
  <tr> <th width="50%">DNS解析方式</th>
                                             <td>
                                                 <select name="pdnsd_enable" class="input" style="width: 200px;">
@@ -847,7 +879,7 @@ function changeBgColor(obj, num){
                                                 <input type="text" maxlength="6" class="input" size="15" name="ssp_local_port_x_0" style="width: 145px" value="1080">
                                             </td>
                                         </tr>
- 										<tr> <th>自动切换</th>
+ 										<!--<tr> <th>自动切换</th>
                                         <td>
                                                 <div class="main_itoggle">
                                                     <div id="switch_enable_x_0_on_of">
@@ -860,7 +892,7 @@ function changeBgColor(obj, num){
                                                     <input type="radio" value="0" name="switch_enable_x_0" id="switch_enable_x_0_0" <% nvram_match_x("", "switch_enable_x_0", "0", "checked"); %>><#checkbox_No#>
                                                 </div>
                                             </td>
-                                        </tr>
+                                        </tr>-->
 </table>
 <table width="100%" align="center" cellpadding="3" cellspacing="0" class="table">
                                         <tr id="row_rules_caption">
@@ -926,7 +958,7 @@ function changeBgColor(obj, num){
                                             </td>
 											
                                         </tr>
-										  <tr> <th>启用自动切换</th>
+										<!--  <tr> <th>启用自动切换</th>
                                             <td>
                                                 <div class="main_itoggle">
                                                     <div id="ss_turn_on_of">
@@ -940,7 +972,7 @@ function changeBgColor(obj, num){
                                                 </div>
                                             </td>
                                         </tr>
-
+-->
                                         <tr> <th width="50%">自动切换检查周期(秒)</th>
                                             <td>
                                                 <input type="text" maxlength="32" class="input" size="64" name="ss_turn_s"style="width: 80px"  value="<% nvram_get_x("","ss_turn_s"); %>" />
@@ -1026,17 +1058,41 @@ function changeBgColor(obj, num){
                                         </tr>
 										<tr>
 											<td colspan="3" >
-												<i class="icon-hand-right"></i> <a href="javascript:spoiler_toggle('script9')"><span>强制走SS代理的域名:</span></a>
-												<div id="script9">
-													<textarea rows="8" wrap="off" spellcheck="false" maxlength="314571" class="span12" name="scripts.ss_dom.sh" style="font-family:'Courier New'; font-size:12px;"><% nvram_dump("scripts.ss_dom.sh",""); %></textarea>
+												<i class="icon-hand-right"></i> <a href="javascript:spoiler_toggle('script8')"><span>不走SS代理的LAN IP:</span></a>
+												<div id="script8">
+													<textarea rows="8" wrap="off" spellcheck="false" maxlength="314571" class="span12" name="scripts.ss_lan_ip.sh" style="font-family:'Courier New'; font-size:12px;"><% nvram_dump("scripts.ss_lan_ip.sh",""); %></textarea>
 												</div>
 											</td>
 										</tr>
+										<tr>
+											<td colspan="3" >
+												<i class="icon-hand-right"></i> <a href="javascript:spoiler_toggle('script9')"><span>强制走SS代理的LAN IP:</span></a>
+												<div id="script9">
+													<textarea rows="8" wrap="off" spellcheck="false" maxlength="314571" class="span12" name="scripts.ss_lan_bip.sh" style="font-family:'Courier New'; font-size:12px;"><% nvram_dump("scripts.ss_lan_bip.sh",""); %></textarea>
+												</div>
+											</td>
+										</tr>				
 												<tr>
 											<td colspan="3" >
-												<i class="icon-hand-right"></i> <a href="javascript:spoiler_toggle('script10')"><span>强制走SS代理的IP:</span></a>
-												<div id="script10">
+												<i class="icon-hand-right"></i> <a href="javascript:spoiler_toggle('script11')"><span>强制走SS代理的WAN IP:</span></a>
+												<div id="script11">
 													<textarea rows="8" wrap="off" spellcheck="false" maxlength="314571" class="span12" name="scripts.ss_ip.sh" style="font-family:'Courier New'; font-size:12px;"><% nvram_dump("scripts.ss_ip.sh",""); %></textarea>
+												</div>
+											</td>
+										</tr>
+										<tr>
+											<td colspan="3" >
+												<i class="icon-hand-right"></i> <a href="javascript:spoiler_toggle('script12')"><span>不走SS代理的WAN IP:</span></a>
+												<div id="script12">
+													<textarea rows="8" wrap="off" spellcheck="false" maxlength="314571" class="span12" name="scripts.ss_wan_ip.sh" style="font-family:'Courier New'; font-size:12px;"><% nvram_dump("scripts.ss_wan_ip.sh",""); %></textarea>
+												</div>
+											</td>
+										</tr>
+										<tr>
+											<td colspan="3" >
+												<i class="icon-hand-right"></i> <a href="javascript:spoiler_toggle('script10')"><span>强制走SS代理的域名:</span></a>
+												<div id="script10">
+													<textarea rows="8" wrap="off" spellcheck="false" maxlength="314571" class="span12" name="scripts.ss_dom.sh" style="font-family:'Courier New'; font-size:12px;"><% nvram_dump("scripts.ss_dom.sh",""); %></textarea>
 												</div>
 											</td>
 										</tr>

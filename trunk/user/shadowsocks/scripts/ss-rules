@@ -6,7 +6,8 @@
 # This is free software, licensed under the GNU General Public License v3.
 # See /LICENSE for more information.
 #
-
+modprobe xt_TPROXY
+modprobe xt_set
 TAG="_SS_SPEC_"   # comment tag
 IPT="iptables -t nat"  # alias of iptables
 FWI=/tmp/shadowsocks_iptables.save  # firewall include file
@@ -37,6 +38,7 @@ usage() {
 		    -f                      flush the rules
 		    -g                      gfw list mode
 		    -r                      return china mode
+			-k
 		    -h                      show this help message and exit
 EOF
 	exit $1
@@ -63,38 +65,42 @@ flush_r() {
     $IPT -D PREROUTING -j SS_SPEC_WAN_AC
 	$IPT -D PREROUTING -j SS_SPEC_WAN_FW
 	$IPT -D PREROUTING -j SS_SPEC_WAN_DG
+	$IPT -D OUTPUT 1
 	ipset -X ss_spec_lan_ac 2>/dev/null
 	ipset -F ss_spec_lan_ac 2>/dev/null
 	ipset -X ss_spec_wan_ac 2>/dev/null
 	ipset -F ss_spec_wan_ac 2>/dev/null
 	ipset -X ssr_gen_router 2>/dev/null
 	ipset -F ssr_gen_router 2>/dev/null
+	ipset -X china 2>/dev/null
+	ipset -F china 2>/dev/null
 	ipset -X fplan 2>/dev/null
 	ipset -F fplan 2>/dev/null
 	ipset -X gmlan 2>/dev/null
 	ipset -F gmlan 2>/dev/null
 	ipset -X oversea 2>/dev/null
-	#ipset -F oversea 2>/dev/null
-	#ipset -F gfwlist 2>/dev/null
+	ipset -F oversea 2>/dev/null
+	ipset -F gfwlist 2>/dev/null
 	ipset -X gfwlist 2>/dev/null
+	ipset -X blacklist 2>/dev/null
+	ipset -F blacklist 2>/dev/null
+	ipset -X whitelist 2>/dev/null
+	ipset -F whitelist 2>/dev/null
 	[ -n "$FWI" ] && echo '#!/bin/sh' >$FWI
 	return 0
 }
 
 ipset_r() {
-	ipset -N gmlan hash:net 2>/dev/null
-	for ip in $LAN_GM_IP; do ipset -! add gmlan $ip ; done
 
 	if [ "$RUNMODE" = "router" ] ;then
 	ipset -! -R <<-EOF || return 1
 		create ss_spec_wan_ac hash:net
 		$(gen_iplist | sed -e "s/^/add ss_spec_wan_ac /")
-		$(for ip in $WAN_BP_IP; do echo "add ss_spec_wan_ac $ip"; done)
 EOF
 	ipset -N gfwlist hash:net 2>/dev/null
-	$IPT -N SS_SPEC_WAN_AC 
-	
+	$IPT -N SS_SPEC_WAN_AC	
 	$IPT -A SS_SPEC_WAN_AC -m set --match-set ss_spec_wan_ac dst -j RETURN
+	$IPT -A SS_SPEC_WAN_AC -m set --match-set china dst -j RETURN
 	$IPT -A SS_SPEC_WAN_AC -j SS_SPEC_WAN_FW
 	$IPT -I SS_SPEC_WAN_AC -d $server -j RETURN
 	$IPT -A PREROUTING -j SS_SPEC_WAN_AC
@@ -103,8 +109,6 @@ EOF
 	ipset -N gfwlist hash:net 2>/dev/null
 	$IPT -N SS_SPEC_WAN_AC
 	$IPT -A SS_SPEC_WAN_AC -m set --match-set gfwlist dst -j SS_SPEC_WAN_FW	
-	$IPT -A SS_SPEC_WAN_AC -m set --match-set gmlan src -m set ! --match-set china dst -j SS_SPEC_WAN_FW	
-	$IPT -A SS_SPEC_WAN_AC -m set --match-set china dst -j RETURN
 	$IPT -A SS_SPEC_WAN_AC -d $server -j RETURN
 	$IPT -A PREROUTING -j SS_SPEC_WAN_AC
 	
@@ -124,12 +128,12 @@ EOF
 	$IPT -A SS_SPEC_WAN_AC -d $server -j RETURN
 	
 	fi
-	
-	ipset -N fplan hash:net 2>/dev/null
-	for ip in $LAN_FP_IP; do ipset -! add fplan $ip ; done
-	$IPT -I SS_SPEC_WAN_AC -m set --match-set fplan src -j SS_SPEC_WAN_FW
+	ipset -N whitelist hash:net 2>/dev/null
 	ipset -N blacklist hash:net 2>/dev/null
 	$IPT -I SS_SPEC_WAN_AC -m set --match-set blacklist dst -j SS_SPEC_WAN_FW
+	$IPT -I SS_SPEC_WAN_AC -m set --match-set whitelist dst -j RETURN
+
+	for ip in $WAN_BP_IP; do ipset -! add whitelist $ip; done
 	for ip in $WAN_FW_IP; do ipset -! add blacklist $ip; done
 	return $?
 }
@@ -144,7 +148,17 @@ fw_rule() {
   $IPT -A SS_SPEC_WAN_FW -d 192.168.0.0/16 -j RETURN
   $IPT -A SS_SPEC_WAN_FW -d 224.0.0.0/4 -j RETURN
   $IPT -A SS_SPEC_WAN_FW -d 240.0.0.0/4 -j RETURN
-	$IPT -A SS_SPEC_WAN_FW -p tcp \
+  		echo $LANCON
+	if [ "$LANCON" = "all" ];then
+	ipset -N fplan hash:net 2>/dev/null
+	for ip in $LAN_FP_IP; do ipset -! add fplan $ip ; done
+	$IPT -I SS_SPEC_WAN_FW -m set --match-set fplan src -j RETURN
+	elif [ "$LANCON" = "bip" ];then
+	ipset -N fplan hash:net 2>/dev/null
+	for ip in $LAN_FP_IP; do ipset -! add fplan $ip ; done
+	lanbip="-m set --match-set fplan src"
+	fi
+	$IPT -A SS_SPEC_WAN_FW -p tcp $lanbip \
 		-j REDIRECT --to-ports $local_port 2>/dev/null || {
 		loger 3 "Can't redirect, please check the iptables."
 		exit 1
@@ -201,9 +215,7 @@ tp_rule() {
 	elif [ "$RUNMODE" = "all" ] ;then
 	$ipt -A SS_SPEC_TPROXY -p udp -j TPROXY --on-port "$LOCAL_PORT" --tproxy-mark 0x01/0x01
 	fi	
-		
-	#$ipt -I PREROUTING 1 ${IFNAME:+-i $IFNAME} -p udp $EXT_ARGS $MATCH_SET \
-	#	-m comment --comment "$TAG" -j SS_SPEC_TPROXY
+
 	
 	return $?
 }
@@ -280,7 +292,7 @@ EOF
 	return 0
 }
 
-while getopts ":s:l:S:L:i:e:a:b:w:p:G:oOuUfgrczh" arg; do
+while getopts ":s:l:S:L:i:e:a:b:w:p:G:k:oOuUfgrczh" arg; do
 	case "$arg" in
 		s)
 			server=$OPTARG
@@ -310,7 +322,7 @@ while getopts ":s:l:S:L:i:e:a:b:w:p:G:oOuUfgrczh" arg; do
 			WAN_FW_IP=$(while read ip; do echo $ip; done < $OPTARG)
 			;;
 		p)
-			LAN_FP_IP=$OPTARG
+			LAN_FP_IP=$(while read ip; do echo $ip; done < $OPTARG)
 			;;	
 		G)
 			LAN_GM_IP=$OPTARG
@@ -338,7 +350,10 @@ while getopts ":s:l:S:L:i:e:a:b:w:p:G:oOuUfgrczh" arg; do
 			;;
 		z)
 			RUNMODE=all
-			;;		
+			;;
+        k)  
+		    LANCON=$OPTARG	
+            ;;		
 		f)
 			flush_r
 			exit 0

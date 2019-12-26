@@ -579,6 +579,7 @@ struct nvram_pair router_defaults[] = {
 	/* shadowsocks */
 	{ "ss_type", "0" }, //0=ss, 1=ssr
 	{ "global_server", "nil" },
+	{ "backup_server", "nil" },
 	{ "udp_relay_server", "nil" },
 	{ "ss_threads", "0" },
 	{ "ss_run_mode", "gfw" },
@@ -587,9 +588,10 @@ struct nvram_pair router_defaults[] = {
 	{ "socks5_proxy", "nil" },
 	{ "socks5_proxy_port", "1080" },
 	{ "ss_turn", "0" },
-	{ "ss_watchcat", "1" },
+	{ "ss_watchcat", "0" },
 	{ "ss_turn_s", "600" },
 	{ "ss_turn_ss", "5" },
+	{ "lan_con", "0" },
 
 	{ "ss_enable", "0" },
 	{ "ss_mode", "1" }, 	//0=全局代理,1=绕过大陆,2=gfwlist
@@ -613,7 +615,6 @@ struct nvram_pair router_defaults[] = {
 	{ "ss-tunnel_remote", "8.8.4.4:53" },
 	{ "ss-tunnel_mtu", "1492" },
 	
-	{ "ss_watchcat", "1" },
 	{ "ss_update_chnroute", "0" },
 	{ "ss_update_gfwlist", "0" },
 	{ "ssp_staticnum_x", "0" },

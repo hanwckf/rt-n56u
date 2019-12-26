@@ -13,7 +13,6 @@ ifeq ($(CONFIG_FIRMWARE_INCLUDE_SHADOWSOCKS),y)
 	$(MAKE) -j$(HOST_NCPU) -C $(SRC_SSR_NAME)
 endif
 	$(MAKE) -j$(HOST_NCPU) -C $(SRC_SS_NAME)
-
 ifeq ($(CONFIG_FIRMWARE_INCLUDE_SHADOWSOCKS),y)
 extract_test: extract_ssr_test extract_ss_test
 else
@@ -89,7 +88,7 @@ clean_ss:
 	( if [ -f $(SRC_SS_NAME)/Makefile ] ; then \
 		$(MAKE) -C $(SRC_SS_NAME) distclean ; \
 	fi )
-
+	
 romfs:
 ifeq ($(CONFIG_FIRMWARE_INCLUDE_SHADOWSOCKS),y)
 	chmod -R +x scripts/
@@ -99,10 +98,13 @@ ifeq ($(CONFIG_FIRMWARE_INCLUDE_SHADOWSOCKS),y)
 	$(ROMFSINST) $(THISDIR)/gfwlist/gfwlist_list.conf /etc_ro/gfwlist_list.conf
 	$(ROMFSINST) /etc_ro/ss_dom.sh
 	$(ROMFSINST) /etc_ro/ss_ip.sh
+	$(ROMFSINST) /etc_ro/ss_lan_bip.sh
+	$(ROMFSINST) /etc_ro/ss_lan_ip.sh
+	$(ROMFSINST) /etc_ro/ss_wan_ip.sh
 	$(ROMFSINST) -p +x $(THISDIR)/$(SRC_SSR_NAME)/src/ss-redir /usr/bin/ssr-redir
 	$(ROMFSINST) -p +x $(THISDIR)/$(SRC_SSR_NAME)/src/ss-local /usr/bin/ssr-local
 	$(ROMFSINST) -p +x $(THISDIR)/$(SRC_SS_NAME)/src/ss-redir /usr/bin/ss-redir
-	$(ROMFSINST) -p +x $(THISDIR)/$(SRC_SS_NAME)/src/ss-tunnel /usr/bin/ss-tunne
+	#$(ROMFSINST) -p +x $(THISDIR)/$(SRC_SS_NAME)/src/ss-tunnel /usr/bin/ss-tunne
 	$(ROMFSINST) -p +x $(THISDIR)/$(SRC_SS_NAME)/src/ss-local /usr/bin/ss-local
 	$(ROMFSINST) -p +x $(THISDIR)/jq /usr/bin/jq
 	#ln -sf /var/ss-redir $(ROMFSDIR)/usr/bin/ss-redir

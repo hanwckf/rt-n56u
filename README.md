@@ -1,17 +1,23 @@
 ### 自动编译 ###
-* 每周5凌晨1点由Github Actions自动编译并发布。
-* 地址：https://github.com/chongshengB/rt-n56u/releases
+* 每周5凌晨1点由Github Actions自动编译固件并发布。
+* 固件下载地址：https://github.com/chongshengB/rt-n56u/releases
+* 更新日志:https://github.com/chongshengB/rt-n56u/blob/master/changelog.md
 
-### 特别说明 ###
-* 汉化字典来自：https://github.com/gorden5566/padavan
-* 更新日志：https://www.jianshu.com/p/d76a63a12eae
-
-***
 ### 新增以下功能 ###
 >- [Adbyby plus+](https://github.com/coolsnowwolf/lede) ```CONFIG_FIRMWARE_INCLUDE_ADBYBY```
 >- [Aliddns] ```CONFIG_FIRMWARE_INCLUDE_ALIDDNS```
 >- [SS plus+](https://github.com/coolsnowwolf/lede) ```CONFIG_FIRMWARE_INCLUDE_SHADOWSOCKS```
 >- [SmartDNS](https://github.com/pymumu/smartdns) ```CONFIG_FIRMWARE_INCLUDE_SMARTDNS```
+
+### 新增以下型号 ###
+>- PSG712
+
+***
+
+### 特别说明 ###
+* hanwckf源码：https://github.com/hanwckf/rt-n56u
+* 汉化字典来自：https://github.com/gorden5566/padavan
+* hanwckf更新日志：https://www.jianshu.com/p/d76a63a12eae
 
 ### 固件特点 ###
 - 使用[gorden5566](https://github.com/gorden5566/padavan)的汉化字典

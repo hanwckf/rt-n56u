@@ -97,7 +97,7 @@ ipset_r() {
 		create ss_spec_wan_ac hash:net
 		$(gen_iplist | sed -e "s/^/add ss_spec_wan_ac /")
 EOF
-	ipset -N gfwlist hash:net 2>/dev/null
+	ipset -N china hash:net 2>/dev/null
 	$IPT -N SS_SPEC_WAN_AC	
 	$IPT -A SS_SPEC_WAN_AC -m set --match-set ss_spec_wan_ac dst -j RETURN
 	$IPT -A SS_SPEC_WAN_AC -m set --match-set china dst -j RETURN

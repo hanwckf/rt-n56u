@@ -108,7 +108,6 @@ logger -t "adbyby" "正在处理规则..."
 	rm -f $DATA_PATH/user.txt
 	  rulesnum=`nvram get adbybyrules_staticnum_x`
 	   if [ $adbyby_rules_x -eq 1 ]; then
-	 if [ $adbyby_update -ne 0 ]; then
 	for i in $(seq 1 $rulesnum)
 	do
 	j=`expr $i - 1`
@@ -123,7 +122,6 @@ logger -t "adbyby" "正在处理规则..."
 	done
 	grep -v '^!' $DATA_PATH/user3adblocks.txt | grep -v "^$" >> $DATA_PATH/user.txt
 	rm -f $DATA_PATH/user3adblocks.txt
-	fi
 	fi
 	grep -v ^! $PROG_PATH/rules.txt >> $DATA_PATH/user.txt
 	nvram set adbyby_user=`cat /tmp/adbyby/data/user.txt | wc -l`

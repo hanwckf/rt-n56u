@@ -405,13 +405,13 @@ struct nvram_pair router_defaults[] = {
 	{ "adbyby_rules_x", "0" },
 	{ "adbybyip_staticnum_x", "0" },
 	{ "adbybyrules_staticnum_x", "0" },
-    /* Pdnsd */
+	/* Pdnsd */
 	{ "dns_enable", "0" },
 	{ "dns_server", "223.5.5.5,114.114.114.114" },
 	{ "dns_server_port", "5333" },
 	{ "dns_server_bind", "0.0.0.0" },
 
-    /* Aliddns */
+	/* Aliddns */
 	{ "aliddns_enable", "0" },
 	{ "aliddns_interval", "600" },
 	{ "aliddns_ttl", "600" },
@@ -611,7 +611,7 @@ struct nvram_pair router_defaults[] = {
 	{ "ss_obfs_param", ""},
 
 	{ "ss-tunnel_enable", "0" },
-	{ "ss-tunnel_local_port", "5301" },
+	{ "ss-tunnel_local_port", "5353" },
 	{ "ss-tunnel_remote", "8.8.4.4:53" },
 	{ "ss-tunnel_mtu", "1492" },
 	
@@ -631,7 +631,7 @@ struct nvram_pair router_defaults[] = {
 	{ "v2_webs_host", "" },
 	{ "v2_webs_path", "" },
 	{ "v2_http2_host", "" },
-    { "v2_http2_path", "" },
+	{ "v2_http2_path", "" },
 	{ "v2_tls", "0" },
 	
 	/*SmartDns*/
@@ -986,7 +986,7 @@ struct nvram_pair tables_defaults[] = {
 	{ "v2_webs_host_x", "" },
 	{ "v2_webs_path_x", "" },
 	{ "v2_http2_host_x", "" },
-    { "v2_http2_path_x", "" },
+	{ "v2_http2_path_x", "" },
 	{ "v2_tls_x", "0" },
 	
 	{ "sdnss_enable_x", "" },

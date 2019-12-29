@@ -38,7 +38,7 @@ usage() {
 		    -f                      flush the rules
 		    -g                      gfw list mode
 		    -r                      return china mode
-			-k
+		    -k
 		    -h                      show this help message and exit
 EOF
 	exit $1
@@ -62,7 +62,7 @@ flush_r() {
 	flush_iptables mangle
 	ip rule del fwmark 0x01/0x01 table 100 2>/dev/null
 	ip route del local 0.0.0.0/0 dev lo table 100 2>/dev/null
-    $IPT -D PREROUTING -j SS_SPEC_WAN_AC
+	$IPT -D PREROUTING -j SS_SPEC_WAN_AC
 	$IPT -D PREROUTING -j SS_SPEC_WAN_FW
 	$IPT -D PREROUTING -j SS_SPEC_WAN_DG
 	$IPT -D OUTPUT 1
@@ -98,20 +98,20 @@ ipset_r() {
 		$(gen_iplist | sed -e "s/^/add ss_spec_wan_ac /")
 EOF
 	ipset -N china hash:net 2>/dev/null
-	$IPT -N SS_SPEC_WAN_AC	
+	$IPT -N SS_SPEC_WAN_AC
 	$IPT -A SS_SPEC_WAN_AC -m set --match-set ss_spec_wan_ac dst -j RETURN
 	$IPT -A SS_SPEC_WAN_AC -m set --match-set china dst -j RETURN
 	$IPT -A SS_SPEC_WAN_AC -j SS_SPEC_WAN_FW
 	$IPT -I SS_SPEC_WAN_AC -d $server -j RETURN
 	$IPT -A PREROUTING -j SS_SPEC_WAN_AC
-	
+
 	elif [ "$RUNMODE" = "gfw" ] ;then
 	ipset -N gfwlist hash:net 2>/dev/null
 	$IPT -N SS_SPEC_WAN_AC
-	$IPT -A SS_SPEC_WAN_AC -m set --match-set gfwlist dst -j SS_SPEC_WAN_FW	
+	$IPT -A SS_SPEC_WAN_AC -m set --match-set gfwlist dst -j SS_SPEC_WAN_FW
 	$IPT -A SS_SPEC_WAN_AC -d $server -j RETURN
 	$IPT -A PREROUTING -j SS_SPEC_WAN_AC
-	
+
 	elif [ "$RUNMODE" = "oversea" ] ;then
 	ipset -N oversea hash:net 2>/dev/null
 	$IPT -N SS_SPEC_WAN_AC
@@ -120,13 +120,13 @@ EOF
 	$IPT -A SS_SPEC_WAN_AC -m set --match-set china dst -j SS_SPEC_WAN_FW
 	$IPT -A SS_SPEC_WAN_AC -d $server -j RETURN
 	$IPT -A PREROUTING -j SS_SPEC_WAN_AC
-	
+
 	elif [ "$RUNMODE" = "all" ] ;then
 	$IPT -N SS_SPEC_WAN_AC
 	$IPT -A SS_SPEC_WAN_AC -j SS_SPEC_WAN_FW
-    $IPT -A PREROUTING -j SS_SPEC_WAN_AC
+	$IPT -A PREROUTING -j SS_SPEC_WAN_AC
 	$IPT -A SS_SPEC_WAN_AC -d $server -j RETURN
-	
+
 	fi
 	ipset -N whitelist hash:net 2>/dev/null
 	ipset -N blacklist hash:net 2>/dev/null
@@ -140,15 +140,15 @@ EOF
 
 fw_rule() {
 	$IPT -N SS_SPEC_WAN_FW
-  $IPT -A SS_SPEC_WAN_FW -d 0.0.0.0/8 -j RETURN
-  $IPT -A SS_SPEC_WAN_FW -d 10.0.0.0/8 -j RETURN
-  $IPT -A SS_SPEC_WAN_FW -d 127.0.0.0/8 -j RETURN
-  $IPT -A SS_SPEC_WAN_FW -d 169.254.0.0/16 -j RETURN
-  $IPT -A SS_SPEC_WAN_FW -d 172.16.0.0/12 -j RETURN
-  $IPT -A SS_SPEC_WAN_FW -d 192.168.0.0/16 -j RETURN
-  $IPT -A SS_SPEC_WAN_FW -d 224.0.0.0/4 -j RETURN
-  $IPT -A SS_SPEC_WAN_FW -d 240.0.0.0/4 -j RETURN
-  		echo $LANCON
+	$IPT -A SS_SPEC_WAN_FW -d 0.0.0.0/8 -j RETURN
+	$IPT -A SS_SPEC_WAN_FW -d 10.0.0.0/8 -j RETURN
+	$IPT -A SS_SPEC_WAN_FW -d 127.0.0.0/8 -j RETURN
+	$IPT -A SS_SPEC_WAN_FW -d 169.254.0.0/16 -j RETURN
+	$IPT -A SS_SPEC_WAN_FW -d 172.16.0.0/12 -j RETURN
+	$IPT -A SS_SPEC_WAN_FW -d 192.168.0.0/16 -j RETURN
+	$IPT -A SS_SPEC_WAN_FW -d 224.0.0.0/4 -j RETURN
+	$IPT -A SS_SPEC_WAN_FW -d 240.0.0.0/4 -j RETURN
+  	echo $LANCON
 	if [ "$LANCON" = "all" ];then
 	ipset -N fplan hash:net 2>/dev/null
 	for ip in $LAN_FP_IP; do ipset -! add fplan $ip ; done
@@ -184,39 +184,39 @@ tp_rule() {
 	ipt="iptables -t mangle"
 	$ipt -N SS_SPEC_TPROXY
 	$ipt -A SS_SPEC_TPROXY -p udp --dport 53 -j RETURN
-  $ipt -A SS_SPEC_TPROXY -p udp -d 0.0.0.0/8 -j RETURN
-  $ipt -A SS_SPEC_TPROXY -p udp -d 10.0.0.0/8 -j RETURN
-  $ipt -A SS_SPEC_TPROXY -p udp -d 127.0.0.0/8 -j RETURN
-  $ipt -A SS_SPEC_TPROXY -p udp -d 169.254.0.0/16 -j RETURN
-  $ipt -A SS_SPEC_TPROXY -p udp -d 172.16.0.0/12 -j RETURN
-  $ipt -A SS_SPEC_TPROXY -p udp -d 192.168.0.0/16 -j RETURN
-  $ipt -A SS_SPEC_TPROXY -p udp -d 224.0.0.0/4 -j RETURN
-  $ipt -A SS_SPEC_TPROXY -p udp -d 240.0.0.0/4 -j RETURN
-  $ipt -A SS_SPEC_TPROXY -p udp -d $SERVER -j RETURN
-  
-  $ipt -A SS_SPEC_TPROXY -p udp -m set --match-set fplan src \
+	$ipt -A SS_SPEC_TPROXY -p udp -d 0.0.0.0/8 -j RETURN
+	$ipt -A SS_SPEC_TPROXY -p udp -d 10.0.0.0/8 -j RETURN
+	$ipt -A SS_SPEC_TPROXY -p udp -d 127.0.0.0/8 -j RETURN
+	$ipt -A SS_SPEC_TPROXY -p udp -d 169.254.0.0/16 -j RETURN
+	$ipt -A SS_SPEC_TPROXY -p udp -d 172.16.0.0/12 -j RETURN
+	$ipt -A SS_SPEC_TPROXY -p udp -d 192.168.0.0/16 -j RETURN
+	$ipt -A SS_SPEC_TPROXY -p udp -d 224.0.0.0/4 -j RETURN
+	$ipt -A SS_SPEC_TPROXY -p udp -d 240.0.0.0/4 -j RETURN
+	$ipt -A SS_SPEC_TPROXY -p udp -d $SERVER -j RETURN
+
+	$ipt -A SS_SPEC_TPROXY -p udp -m set --match-set fplan src \
 		-j TPROXY --on-port "$LOCAL_PORT" --tproxy-mark 0x01/0x01
-  
+
 	if [ "$RUNMODE" = "router" ] ;then
 	$ipt -A SS_SPEC_TPROXY -p udp -m set ! --match-set ss_spec_wan_ac dst \
 		-j TPROXY --on-port "$LOCAL_PORT" --tproxy-mark 0x01/0x01
-	
+
 	elif [ "$RUNMODE" = "gfw" ] ;then
 	$ipt -A SS_SPEC_TPROXY -p udp -m set --match-set china dst -j RETURN
 	$ipt -A SS_SPEC_TPROXY -p udp -m set --match-set gmlan src -m set ! --match-set china dst \
 		-j TPROXY --on-port "$LOCAL_PORT" --tproxy-mark 0x01/0x01
 	$ipt -A SS_SPEC_TPROXY -p udp -m set  --match-set gfwlist dst \
 		-j TPROXY --on-port "$LOCAL_PORT" --tproxy-mark 0x01/0x01
-		
+
 	elif [ "$RUNMODE" = "oversea" ] ;then
 	$ipt -A SS_SPEC_TPROXY -p udp -m set --match-set china dst \
 		-j TPROXY --on-port "$LOCAL_PORT" --tproxy-mark 0x01/0x01
-	
+
 	elif [ "$RUNMODE" = "all" ] ;then
 	$ipt -A SS_SPEC_TPROXY -p udp -j TPROXY --on-port "$LOCAL_PORT" --tproxy-mark 0x01/0x01
-	fi	
+	fi
 
-	
+
 	return $?
 }
 
@@ -269,7 +269,7 @@ gen_spec_iplist() {
 		224.0.0.0/4
 		240.0.0.0/4
 		255.255.255.255
-		$(get_wan_ip)		
+		$(get_wan_ip)
 EOF
 }
 
@@ -323,16 +323,16 @@ while getopts ":s:l:S:L:i:e:a:b:w:p:G:k:oOuUfgrczh" arg; do
 			;;
 		p)
 			LAN_FP_IP=$(while read ip; do echo $ip; done < $OPTARG)
-			;;	
+			;;
 		G)
 			LAN_GM_IP=$OPTARG
-			;;	
+			;;
 		o)
 			OUTPUT=SS_SPEC_WAN_AC
 			;;
 		O)
 			OUTPUT=SS_SPEC_WAN_FW
-			;;			
+			;;
 		u)
 			TPROXY=1
 			;;
@@ -344,16 +344,16 @@ while getopts ":s:l:S:L:i:e:a:b:w:p:G:k:oOuUfgrczh" arg; do
 			;;
 		r)
 			RUNMODE=router
-			;;	
+			;;
 		c)
 			RUNMODE=oversea
 			;;
 		z)
 			RUNMODE=all
 			;;
-        k)  
-		    LANCON=$OPTARG	
-            ;;		
+		k)
+			LANCON=$OPTARG
+			;;
 		f)
 			flush_r
 			exit 0

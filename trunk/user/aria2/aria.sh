@@ -66,8 +66,8 @@ max-overall-download-limit=0
 disable-ipv6=false
 
 ### File
-file-allocation=trunc
-#file-allocation=falloc
+#file-allocation=trunc
+file-allocation=falloc
 #file-allocation=none
 no-file-allocation-limit=10M
 allow-overwrite=false

@@ -64,7 +64,7 @@ function validForm(){
 		return false;
 	}
 	
-	if($("account").value == "root" || $("account").value == "admin" || $("account").value == "family" || $("account").value == "Family"){
+	if($("account").value == "root" || $("account").value == "family" || $("account").value == "Family"){
 		alert("<#USB_Application_account_alert#>");
 		$("account").focus();
 		return false;

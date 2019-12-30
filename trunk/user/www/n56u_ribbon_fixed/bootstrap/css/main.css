@@ -1,5 +1,5 @@
 body{
-    background: url("../img/dark-bg.jpg") repeat scroll center top transparent;
+    background-color: #282828;
     overflow-y: scroll;
 }
 body.body_iframe{

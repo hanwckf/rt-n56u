@@ -32,7 +32,7 @@
 
 #define DEF_LAN_ADDR		"192.168.2.1"
 #define DEF_LAN_DHCP_BEG	"192.168.2.100"
-#define DEF_LAN_DHCP_END	"192.168.2.244"
+#define DEF_LAN_DHCP_END	"192.168.2.200"
 #define DEF_LAN_MASK		"255.255.255.0"
 
 #define DEF_WLAN_2G_CC		"CN"

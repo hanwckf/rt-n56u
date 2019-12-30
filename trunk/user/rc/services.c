@@ -439,13 +439,13 @@ void restart_smartdns(void){
 
 #if defined(APP_ALIDDNS)
 void stop_aliddns(void){
-	eval("/etc/storage/aliddns.sh","stop");
+	eval("/usr/bin/aliddns.sh","stop");
 }
 
 void start_aliddns(void){
 	int aliddns_mode = nvram_get_int("aliddns_enable");
 	if ( aliddns_mode == 1)
-		eval("/etc/storage/aliddns.sh","start");
+		eval("/usr/bin/aliddns.sh","start");
 }
 
 void restart_aliddns(void){
@@ -671,8 +671,8 @@ start_services_once(int is_ap_mode)
 #if defined(APP_ADBYBY)
 	start_adbyby();
 #endif
-#if defined(APP_PDNSD)
-	start_pdnsd();
+#if defined(APP_ALIDDNS)
+	start_aliddns();
 #endif
 #if defined(APP_SMARTDNS)
 	start_smartdns();
@@ -720,8 +720,8 @@ stop_services(int stopall)
 #if defined(APP_ADBYBY)
 	stop_adbyby();
 #endif
-#if defined(APP_PDNSD)
-	stop_pdnsd();
+#if defined(APP_ALIDDNS)
+	stop_aliddns();
 #endif
 #if defined(APP_SMARTDNS)
 	stop_smartdns();

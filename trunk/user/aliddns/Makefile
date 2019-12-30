@@ -1,8 +1,8 @@
-
+THISDIR = $(shell pwd)
 all:
 
 clean:
 
 romfs:
-	$(ROMFSINST) /etc_ro/aliddns.sh
+	$(ROMFSINST) -p +x $(THISDIR)/aliddns.sh /usr/bin/aliddns.sh
 	$(ROMFSINST) /etc_ro/ddns_script.sh

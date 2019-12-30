@@ -1,6 +1,4 @@
 #!/bin/sh
-cp -rf /etc_ro/aliddns.sh /etc/storage/
-chmod 755 "/etc/storage/aliddns.sh"
 
 if [ ! -f "/etc/storage/ad_config_script.sh" ] ; then
 cp -rf /etc_ro/ad_config_script.sh /etc/storage/

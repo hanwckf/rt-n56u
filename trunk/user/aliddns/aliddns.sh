@@ -131,7 +131,6 @@ aliddns_keep () {
 aliddns_start
 logger -t "【AliDDNS动态域名】" "守护进程启动"
 while true; do
-sleep 43
 sleep $aliddns_interval
 [ ! -s "`which curl`" ] && aliddns_restart
 #nvramshow=`nvram showall | grep '=' | grep aliddns | awk '{print gensub(/'"'"'/,"'"'"'\"'"'"'\"'"'"'","g",$0);}'| awk '{print gensub(/=/,"='\''",1,$0)"'\'';";}'` && eval $nvramshow

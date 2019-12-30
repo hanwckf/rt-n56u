@@ -49,7 +49,7 @@ function validForm(){
 		return false;
 	}
 	
-	var re = new RegExp("[^a-zA-Z0-9 _-]+", "gi");
+	var re = new RegExp("[^\u4e00-\u9fa5_a-zA-Z0-9 _-]+", "gi");
 	if(re.test($("folder").value)){
 		alert("<#File_content_alert_desc7#>");
 		$("folder").focus();

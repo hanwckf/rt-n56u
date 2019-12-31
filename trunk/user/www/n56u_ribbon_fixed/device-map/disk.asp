@@ -88,10 +88,11 @@ function show_disk_link(){
 					$("ddnslink2").style.display = "";
 					$("ddnslink2_LAN").style.display = "";
 					
-					$("selected_account_link").href = 'ftp://'+accounts[1]+'@<% nvram_get_x("", "ddns_hostname_x"); %>';
-					showtext($("selected_account_str"), 'ftp://'+accounts[1]+'@<% nvram_get_x("", "ddns_hostname_x"); %>');
-					$("selected_account_link_LAN").href = 'ftp://'+accounts[1]+'@<% nvram_get_x("", "lan_ipaddr_t"); %>';
-					showtext($("selected_account_str_LAN"), 'ftp://'+accounts[1]+'@<% nvram_get_x("", "lan_ipaddr_t"); %>');
+ 					var account = accounts[accounts.length-1]
+					$("selected_account_link").href = 'ftp://'+account+'@<% nvram_get_x("", "ddns_hostname_x"); %>';
+					showtext($("selected_account_str"), 'ftp://'+account+'@<% nvram_get_x("", "ddns_hostname_x"); %>');
+					$("selected_account_link_LAN").href = 'ftp://'+account+'@<% nvram_get_x("", "lan_ipaddr_t"); %>';
+					showtext($("selected_account_str_LAN"), 'ftp://'+account+'@<% nvram_get_x("", "lan_ipaddr_t"); %>');
 				}
 				$("desc_2").style.display = "";
 			}else{

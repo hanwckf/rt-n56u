@@ -3348,8 +3348,11 @@ UCHAR* mt7615_get_default_bin_image_file(RTMP_ADAPTER *pAd)
 	else if (multi_inf_get_idx(pAd) == 1) {		
 		MTWF_LOG(DBG_CAT_HW, DBG_SUBCAT_ALL, DBG_LVL_OFF, ("Use %dst %s default bin.\n", multi_inf_get_idx(pAd), SECOND_BIN_FILE));
 		return SECOND_BIN_FILE;
-#endif /* MT_SECOND_CARD */
 	}
+#endif /* MT_SECOND_CARD */
+#if defined (RT_SECOND_IF_MT7612E)
+}
+#endif
 #if defined(MT_THIRD_CARD)
 	else if (multi_inf_get_idx(pAd) == 2) {		
 		MTWF_LOG(DBG_CAT_HW, DBG_SUBCAT_ALL, DBG_LVL_OFF, ("Use %dst %s default bin.\n", multi_inf_get_idx(pAd), THIRD_BIN_FILE));
@@ -3967,5 +3970,3 @@ INT Mt7615AsicArchOpsInit(RTMP_ADAPTER *pAd)
 	return TRUE;
 }
 #endif
-
-

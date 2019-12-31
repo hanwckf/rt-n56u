@@ -164,3 +164,8 @@ config  MT76X2_AP_ADJ_PWR_CONSUMPTION
 	depends on RT_FIRST_IF_MT7620
 	default n
 
+config RT_READ_MAC_FROM_MTD
+    bool "Read and set MAC address from MTD/EEPROM"
+	depends on (RT_FIRST_IF_MT7615E && RT_SECOND_IF_MT7612E)
+	default y
+

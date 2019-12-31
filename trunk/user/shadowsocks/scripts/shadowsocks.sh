@@ -89,6 +89,7 @@ vmess_link_port=$(nvram get ssp_prot_x$1)
 vmess_link_id=$(nvram get v2_vid_x$1)
 vmess_link_aid=$(nvram get v2_aid_x$1)
 vmess_link_net=$(nvram get v2_net_x$1)
+vmess_link_security=$(nvram get v2_security_x$1)
 if [ $(nvram get v2_tls_x$1) = "1" ];then
 vmess_link_tls="tls"
 else
@@ -98,6 +99,7 @@ mk_vmess=$(json_int_vmess_settings)
 mk_vmess=$(echo $mk_vmess | jq --raw-output 'setpath(["vnext",0,"address"];"'$vmess_link_add'")')
 mk_vmess=$(echo $mk_vmess | jq --raw-output 'setpath(["vnext",0,"users",0,"alterId"];'$vmess_link_aid')')
 mk_vmess=$(echo $mk_vmess | jq --raw-output 'setpath(["vnext",0,"users",0,"id"];"'$vmess_link_id'")')
+mk_vmess=$(echo $mk_vmess | jq --raw-output 'setpath(["vnext",0,"users",0,"security"];"'$vmess_link_security'")')
 mk_vmess=$(echo $mk_vmess | jq --raw-output 'setpath(["vnext",0,"port"];'$vmess_link_port')')
 vmess_settings=$mk_vmess
 mk_vmess=$(json_int_vmess_streamSettings)

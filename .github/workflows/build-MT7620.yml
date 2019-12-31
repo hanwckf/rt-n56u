@@ -37,7 +37,7 @@ jobs:
         mkdir -p /opt/images/
     - name: Build Firmware
       env:
-        TNAME: "PSG1208 PSG1218 PSG712 NEWIFI-MINI MI-MINI MI-3 OYE-001 YK-Y1 JCG-AC836M"
+        TNAME: "PSG1208 PSG1218 PSG712 NEWIFI-MINI MI-MINI MI-3 OYE-001 YK-L1 JCG-AC836M"
       run: |
         cwd=`pwd`
         CONFIG_TOOLCHAIN_DIR=${cwd//\//\\\/}\\/toolchain-mipsel

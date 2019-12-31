@@ -10,7 +10,11 @@
 >- [SS plus+](https://github.com/coolsnowwolf/lede) ```CONFIG_FIRMWARE_INCLUDE_SHADOWSOCKS```
 >- [SmartDNS](https://github.com/pymumu/smartdns) ```CONFIG_FIRMWARE_INCLUDE_SMARTDNS```
 
-### 新增以下型号 ###
+### 新增适配以下型号 ###
+>- B70(感谢Untitled提供荒野无灯的适配文件)
+>- JCG-AC856M(感谢群里的旅途中的我适配和测试,gpio值还未完全适配，但不影响使用)
+>- JCG-AC836M(感谢群里的碧霄客修改和测试)
+>- YK-L1(L1、L1C、L1W通刷)
 >- PSG712
 
 ***

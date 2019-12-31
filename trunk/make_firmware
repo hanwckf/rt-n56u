@@ -1,0 +1,5 @@
+#!/bin/sh
+
+
+[ ! -z "$1" ] && BOARD_NAME="$1"
+sudo ./build_firmware_modify "$BOARD_NAME"

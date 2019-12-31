@@ -468,8 +468,8 @@ if (found_app_mentohust()){
 } else menuL2_link.push("");
 
 //Level 1 Menu in Gateway, Router mode
-menuL1_title = new Array("", "<#menu1#>", "<#menu3#>", "<#menu2#>", "<#menu6#>", "<#menu4#>", "<#menu5_8#>", "<#menu5#>");
-menuL1_link = new Array("", "index.asp", "aidisk.asp", "vpnsrv.asp", "vpncli.asp", "Main_TrafficMonitor_realtime.asp", "Advanced_System_Info.asp", "as.asp");
+menuL1_title = new Array("", "<#menu1#>", "", "<#menu2#>", "<#menu6#>", "<#menu4#>", "<#menu5_8#>", "<#menu5#>");
+menuL1_link = new Array("", "index.asp", "", "vpnsrv.asp", "vpncli.asp", "Main_TrafficMonitor_realtime.asp", "Advanced_System_Info.asp", "as.asp");
 menuL1_icon = new Array("", "icon-home", "icon-hdd", "icon-retweet", "icon-globe", "icon-tasks", "icon-random", "icon-wrench");
 
 function show_menu(L1, L2, L3){
@@ -496,8 +496,6 @@ function show_menu(L1, L2, L3){
 		menuL2_title[4] = "";
 		menuL2_link[5] = "";  //remove Firewall
 		menuL2_title[5] = "";
-		menuL1_link[2] = "";  //remove AiDisk;
-		menuL1_title[2] = "";
 		menuL1_link[3] = "";  //remove VPN svr
 		menuL1_title[3] = "";
 		menuL1_link[4] = "";  //remove VPN cli
@@ -555,8 +553,6 @@ function show_menu(L1, L2, L3){
 	if(!support_storage()){
 		tabtitle[5].splice(1,5);
 		tablink[5].splice(1,5);
-		menuL1_link[2] = "";  //remove AiDisk
-		menuL1_title[2] = "";
 		menuL2_link[6] = "";  //remove USB
 		menuL2_title[6] = "";
 	}else{
@@ -567,8 +563,6 @@ function show_menu(L1, L2, L3){
 		if(!found_app_smbd() && !found_app_ftpd()){
 			tabtitle[5].splice(2,2);
 			tablink[5].splice(2,2);
-			menuL1_link[2] = "";
-			menuL1_title[2] = "";
 		}
 		else if(!found_app_smbd()){
 			tabtitle[5].splice(2,1);
@@ -577,8 +571,6 @@ function show_menu(L1, L2, L3){
 		else if(!found_app_ftpd()){
 			tabtitle[5].splice(3,1);
 			tablink[5].splice(3,1);
-			menuL1_link[2] = "";
-			menuL1_title[2] = "";
 		}
 	}
 

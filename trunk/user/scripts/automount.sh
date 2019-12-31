@@ -1,5 +1,5 @@
 #!/bin/sh
-
+logger -t "automount" "/sbin/automount.sh $1    $2"
 func_load_module()
 {
 	module_name=$1
@@ -63,6 +63,8 @@ if mountpoint -q "$dev_mount" ; then
 	fi
 fi
 
+logger -t "automount" "mount  device $dev_full ($ID_FS_TYPE) to $dev_mount @@@@@ $mnt_legacy"
+
 if ! mkdir -p "$dev_mount" ; then
 	logger -t "automount" "Unable to create mountpoint $dev_mount!"
 	exit 1
@@ -77,7 +79,7 @@ if [ "$ID_FS_TYPE" == "msdos" -o "$ID_FS_TYPE" == "vfat" ] ; then
 	kernel_vfat=`modprobe -l | grep vfat`
 	if [ -n "$kernel_vfat" ] ; then
 		func_load_module vfat
-		mount -t vfat "$dev_full" "$dev_mount" -o noatime,umask=0,iocharset=utf8,codepage=866,shortname=winnt
+		mount -t vfat "$dev_full" "$dev_mount" -o noatime,umask=0,iocharset=utf8,codepage=936,shortname=winnt
 	else
 		func_load_module exfat
 		mount -t exfat "$dev_full" "$dev_mount" -o noatime,umask=0,iocharset=utf8

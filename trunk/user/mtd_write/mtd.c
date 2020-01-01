@@ -255,8 +255,8 @@ mtd_write(const char *mtd, size_t part_ofs, const char *image_file, int image_fd
 	if (quiet < 2)
 		fprintf(stderr, "Writing from '%s' to MTD '%s' ... ", image_file, mtd);
 
-	if (!quiet)
-		fprintf(stderr, " [ ]");
+	if (!quiet)	
+		fprintf(stderr, "\n");
 
 	while (src_len > 0) {
 		r_len = read_safe(image_fd, buf, MIN(src_len, buf_len));
@@ -289,7 +289,7 @@ mtd_write(const char *mtd, size_t part_ofs, const char *image_file, int image_fd
 			} else {
 				if (!no_erase) {
 					if (!quiet)
-						fprintf(stderr, "\b\b\b[e]");
+						fprintf(stderr, "e");
 					if (ioctl(fd, MEMERASE, &ei) < 0) {
 						fprintf(stderr, "\n");
 						fprintf(stderr, "Erasing MTD (%s) failed at 0x%x\n", mtd, ei.start);
@@ -302,7 +302,7 @@ mtd_write(const char *mtd, size_t part_ofs, const char *image_file, int image_fd
 		}
 		
 		if (!quiet)
-			fprintf(stderr, "\b\b\b[w]");
+			fprintf(stderr, "\bw");
 		
 		/* align write to MTD writesize (UBIVOL/NAND) */
 		w_align = r_len;
@@ -330,7 +330,7 @@ mtd_write(const char *mtd, size_t part_ofs, const char *image_file, int image_fd
 			sync();
 			
 			if (!quiet)
-				fprintf(stderr, "\b\b\b[v]");
+				fprintf(stderr, "\bv");
 			
 			if (lseek(fd, -(w_align), SEEK_CUR) < 0) {
 				fprintf(stderr, "\nPost-write verify failed - %s!\n", "seek error");
@@ -351,7 +351,7 @@ mtd_write(const char *mtd, size_t part_ofs, const char *image_file, int image_fd
 	}
 
 	if (!quiet)
-		fprintf(stderr, "\b\b\b[ok]\n");
+		fprintf(stderr, "\n[ok]\n");
 
 out_err:
 

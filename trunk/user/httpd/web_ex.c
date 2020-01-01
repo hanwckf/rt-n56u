@@ -658,7 +658,7 @@ dump_file(webs_t wp, char *filename)
 	}
 
 	extensions = strrchr(filename, '.');
-	if (extensions && strcmp(extensions, ".key") == 0) {
+	if (!get_login_safe() && extensions && strcmp(extensions, ".key") == 0) {
 		return websWrite(wp, "%s", "# !!!This is hidden write-only secret key file!!!\n");
 	}
 

@@ -490,6 +490,8 @@ EOF
 ### gfwlist related (resolve by port 5353)
 #min-cache-ttl=3600
 #conf-dir=/etc/storage/gfwlist
+#server=/mit.edu/127.0.0.1#5353
+#server=/github.com/githubusercontent.com/127.0.0.1#5353
 
 EOF
 	fi

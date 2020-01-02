@@ -6,7 +6,7 @@ SMARTDNS_CONF="$SMARTDNS_CONF_DIR/smartdns.conf"
 ADDRESS_CONF="$SMARTDNS_CONF_DIR/smartdns_address.conf"
 BLACKLIST_IP_CONF="$SMARTDNS_CONF_DIR/smartdns_blacklist-ip.conf"
 CUSTOM_CONF="$SMARTDNS_CONF_DIR/smartdns_custom.conf"
-
+smartdns_file="/usr/bin/smartdns"
 sdns_enable=`nvram get sdns_enable`
 snds_name=`nvram get snds_name`
 sdns_port=`nvram get sdns_port`
@@ -233,7 +233,9 @@ chmod -R 777 $smartdns_file
 fi
 }
 start_smartdns(){
+if [ ! -f "$smartdns_file" ];then
 dl_smartdns
+fi
 args=""
 logger -t "SmartDNS" "创建配置文件."
 gensmartconf

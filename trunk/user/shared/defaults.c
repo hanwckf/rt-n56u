@@ -537,7 +537,7 @@ struct nvram_pair router_defaults[] = {
 	{ "ss_server", "127.0.0.1" },
 	{ "ss_server_port", "8989" },
 	{ "ss_key", "Secret" },
-	{ "ss_method", "rc4-md5" },
+	{ "ss_method", "chacha20-ietf-poly1305" },
 	{ "ss_udp", "0" },
 	{ "ss_local_port", "1080" },
 	{ "ss_mtu", "1492" },

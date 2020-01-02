@@ -72,13 +72,15 @@ jobs:
         echo "CONFIG_FIRMWARE_INCLUDE_FRPS=n" >> .config #内网穿透FRPS
         echo "CONFIG_FIRMWARE_INCLUDE_TUNSAFE=n" >> .config #TUNSAFE
         echo "CONFIG_FIRMWARE_INCLUDE_ALIDDNS=y" >> .config #阿里DDNS
-        echo "CONFIG_FIRMWARE_INCLUDE_SMARTDNS=y" >> .config
+        echo "CONFIG_FIRMWARE_INCLUDE_SMARTDNS=y" >> .config #smartdns
+        echo "CONFIG_FIRMWARE_INCLUDE_SMARTDNSBIN=y" >> .config #smartdns二进制文件
         ####################################################################################
-        if [ "$m"="PSG1218_nano" ]; then
+        if [ "$m" = "PSG1208" ] || [ "$m" = "PSG1218" ] || [ "$m" = "PSG712" ]; then
         sed -i '/CONFIG_FIRMWARE_INCLUDE_TTYD/d' .config
         sed -i '/CONFIG_FIRMWARE_INCLUDE_ALIDDNS/d' .config
         echo "CONFIG_FIRMWARE_INCLUDE_TTYD=n" >> .config
         echo "CONFIG_FIRMWARE_INCLUDE_ALIDDNS=n" >> .config
+        echo "CONFIG_FIRMWARE_INCLUDE_SMARTDNSBIN=n" >> .config
         fi
         sed -i "s/^CONFIG_TOOLCHAIN_DIR=.*$/CONFIG_TOOLCHAIN_DIR=${CONFIG_TOOLCHAIN_DIR}/g" .config
         sudo ./clear_tree_simple

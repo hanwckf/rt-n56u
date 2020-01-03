@@ -73,6 +73,8 @@ cat <<-EOF >$config_file
 EOF
 elif [ "$stype" == "v2ray" ] ;then
 v2_file=$v2_json_file
+v2_bin="/usr/bin/v2ray"
+if [ ! -f "$v2_bin" ]; then
 curl -k -s -o /tmp/v2ray --connect-timeout 10 --retry 3 https://dev.tencent.com/u/dtid_39de1afb676d0d78/p/kp/git/raw/master/v2ray
 if [ ! -f "/tmp/v2ray" ]; then
 logger -t "SS" "v2ray二进制文件下载失败，可能是地址失效或者网络异常！"
@@ -81,8 +83,10 @@ ssp_close
 else
 logger -t "SS" "v2ray二进制文件下载成功"
 chmod -R 777 /tmp/v2ray
-v2ray_enable=1
+v2_bin="/tmp/v2ray"
 fi
+fi
+v2ray_enable=1
 #创建v2ray json文件的代码用的是hiboyhiboy的,特此感谢
 vmess_link_add=$hostip
 vmess_link_port=$(nvram get ssp_prot_x$1)
@@ -286,7 +290,7 @@ sscmd="ss-redir"
 elif [ "$stype" == "ssr" ] ;then
 sscmd="ssr-redir"
 elif [ "$stype" == "v2ray" ] ;then
-sscmd="/tmp/v2ray"
+sscmd="$v2_bin"
 fi
 #if [ "$(nvram get ss_threads)" = "0" ] ;then
 #  threads=$(cat /proc/cpuinfo | grep 'processor' | wc -l)

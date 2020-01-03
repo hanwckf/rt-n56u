@@ -12,6 +12,7 @@ sed -i 's/CONFIG_FIRMWARE_INCLUDE_DNSFORWARDER=y/CONFIG_FIRMWARE_INCLUDE_DNSFORW
 echo "CONFIG_FIRMWARE_INCLUDE_ADBYBY=y" >> .config #adbyby plus+
 echo "CONFIG_FIRMWARE_INCLUDE_ALIDDNS=y" >> .config #aliddns
 echo "CONFIG_FIRMWARE_INCLUDE_SMARTDNS=y" >> .config #smartdns
+echo "CONFIG_FIRMWARE_INCLUDE_V2RAY=n" >> .config #集成v2ray文件
 if [ "$1" = "PSG1208" ] || [ "$1" = "PSG1218" ] || [ "$1" = "PSG712" ]; then
 echo "CONFIG_FIRMWARE_INCLUDE_SMARTDNSBIN=n" >> .config #smartdns二进制文件
 else

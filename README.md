@@ -8,6 +8,7 @@
 >- [Adbyby plus+](https://github.com/coolsnowwolf/lede) ```CONFIG_FIRMWARE_INCLUDE_ADBYBY```
 >- [Aliddns] ```CONFIG_FIRMWARE_INCLUDE_ALIDDNS```
 >- [SS plus+](https://github.com/coolsnowwolf/lede) ```CONFIG_FIRMWARE_INCLUDE_SHADOWSOCKS```
+>- [jq](https://github.com/stedolan/jq) 如jq编译出现错误，请执行sudo apt-get install gcc-multilib 
 >- [SmartDNS](https://github.com/pymumu/smartdns) ```CONFIG_FIRMWARE_INCLUDE_SMARTDNS```
 
 ### 新增适配以下型号 ###
@@ -99,7 +100,7 @@
 sudo apt update
 sudo apt install unzip libtool-bin curl cmake gperf gawk flex bison nano xxd \
 cpio git python-docutils gettext automake autopoint texinfo build-essential help2man \
-pkg-config zlib1g-dev libgmp3-dev libmpc-dev libmpfr-dev libncurses5-dev libltdl-dev
+pkg-config zlib1g-dev libgmp3-dev libmpc-dev libmpfr-dev libncurses5-dev libltdl-dev gcc-multilib
 ```
 * 克隆源码
 ```shell

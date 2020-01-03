@@ -27,7 +27,8 @@ jobs:
         #sudo apt-get update
         sudo apt-get -y install unzip libtool-bin curl cmake gperf gawk flex bison nano xxd \
         cpio git python-docutils gettext automake autopoint texinfo build-essential help2man \
-        pkg-config zlib1g-dev libgmp3-dev libmpc-dev libmpfr-dev libncurses5-dev libltdl-dev
+        pkg-config zlib1g-dev libgmp3-dev libmpc-dev libmpfr-dev libncurses5-dev libltdl-dev \
+        gcc-multilib
     - name: Clone source code
       run: |
         cd toolchain-mipsel
@@ -37,7 +38,7 @@ jobs:
         mkdir -p /opt/images/
     - name: Build Firmware
       env:
-        TNAME: "B70 K2P-5.0 K2P-USB-5.0 JCG-836PRO-5.0 JCG-AC860M-5.0 JCG-AC856M-5.0 DIR-878-5.0 DIR-882-5.0 WR1200JS MI-R3G NEWIFI3"
+        TNAME: "B70 K2P-5.0 K2P-USB-5.0 JCG-836PRO-5.0 JCG-AC860M-5.0 JCG-AC856M-5.0 DIR-878-5.0 DIR-882-5.0 WR1200JS MI-R3G NEWIFI3 NEWIFI-D1"
       run: |
         cwd=`pwd`
         CONFIG_TOOLCHAIN_DIR=${cwd//\//\\\/}\\/toolchain-mipsel
@@ -74,6 +75,7 @@ jobs:
         echo "CONFIG_FIRMWARE_INCLUDE_ALIDDNS=y" >> .config #阿里DDNS
         echo "CONFIG_FIRMWARE_INCLUDE_SMARTDNS=y" >> .config
         echo "CONFIG_FIRMWARE_INCLUDE_SMARTDNSBIN=y" >> .config #smartdns二进制文件
+        echo "CONFIG_FIRMWARE_INCLUDE_V2RAY=n" >> .config #v2ray二进制文件
         ####################################################################################
         sed -i "s/^CONFIG_TOOLCHAIN_DIR=.*$/CONFIG_TOOLCHAIN_DIR=${CONFIG_TOOLCHAIN_DIR}/g" .config
         sudo ./clear_tree_simple

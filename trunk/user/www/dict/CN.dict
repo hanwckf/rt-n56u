@@ -295,7 +295,7 @@ WAN_TTL_Value=路由器TTL值
 WAN_TTL_Value_Item0=默认值
 WAN_TTL_Value_Item1=64(Unix)
 WAN_TTL_Value_Item2=128(Windows)
-DNS_SVR=DDNS 服务器 (如 members.3322.net):
+DDNS_SVR=DDNS 服务器 (如 members.3322.net):
 DDNS_URL=DDNS URI (如 /dyndns/update?system=dyndns&hostname=):
 DDNS_Second=副动态域名服务 (DDNS) 设置
 DDNS_Common=动态域名服务 (DDNS) 通用设置

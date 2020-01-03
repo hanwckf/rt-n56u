@@ -17,7 +17,6 @@ jobs:
             stage: test
             os: linux
             compiler: gcc
-            python: 3.6
 
             addons:
                 apt:
@@ -28,14 +27,13 @@ jobs:
 
             before_install:
                 - uname -s
-                - pyenv install -s 3.6.7
+                - rvm install ruby-1.9.3-p551
+                - rvm use 1.9.3
                 - rm src/{lexer,parser}.{c,h}
                 - sed -i.bak '/^AM_INIT_AUTOMAKE(\[-Wno-portability 1\.14\])$/s/14/11/' modules/oniguruma/configure.ac
 
             install:
-                - pyenv global 3.6.7
-                - pip3 install pipenv
-                - pushd docs && pipenv sync && popd
+                - bundle install --gemfile=docs/Gemfile
                 - wget http://ftp.debian.org/debian/pool/main/b/bison/bison_3.0.2.dfsg-2_amd64.deb
                 - ar p bison_3.0.2.dfsg-2_amd64.deb data.tar.xz | tar xJ
                 - if [ -n "$COVERAGE" ]; then pip install --user cpp-coveralls; fi
@@ -106,15 +104,14 @@ jobs:
                 - uname -s
                 - brew update
                 - brew install flex bison
-                - brew upgrade pyenv
-                - pyenv install -s 3.6.7
+                - rvm install ruby-1.9.3-p551
+                - rvm use 1.9.3
+                - gem install bundler
                 - rm src/{lexer,parser}.{c,h}
                 - sed -i.bak '/^AM_INIT_AUTOMAKE(\[-Wno-portability 1\.14\])$/s/14/11/' modules/oniguruma/configure.ac
 
             install:
-                - pyenv global 3.6.7
-                - pip3 install pipenv
-                - pushd docs && pipenv sync && popd
+                - bundle install --gemfile=docs/Gemfile
                 - if [ -n "$COVERAGE" ]; then pip install --user cpp-coveralls; fi
 
 
@@ -139,9 +136,7 @@ jobs:
 
             install:
                 - sudo sh alpine-chroot-install -b v3.7 -a "$ARCH"
-                    -p 'build-base automake autoconf bison git libtool oniguruma-dev python3 python3-dev libxml2-dev libxslt-dev'
-                - /alpine/enter-chroot pip3 install pipenv
-                - alpine sh -c 'cd docs && pipenv sync'
+                    -p 'build-base automake autoconf bison libtool oniguruma-dev'
 
             before_script:
                 - autoreconf -if
@@ -151,9 +146,6 @@ jobs:
                 - alpine make
                 - alpine make check
 
-            after_failure:
-                - cat test-suite.log
-                - cat tests/*.log
 
         # Build release binary statically linked with musl libc on Alpine Linux
         # (inside chroot). If building a tagged commit, then deploy release

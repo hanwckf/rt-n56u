@@ -15,7 +15,6 @@ configure:
 	( cd $(SRC_NAME) ; \
 	autoreconf -ivf ; \
 	./configure \
-        --with-oniguruma=builtin \
         --disable-maintainer-mode \
 		--prefix=/usr \
 		--host=$(HOST_TARGET) \

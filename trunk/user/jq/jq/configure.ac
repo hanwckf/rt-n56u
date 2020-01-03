@@ -1,7 +1,4 @@
-m4_define([jq_version],
-          m4_esyscmd_s([(git rev-parse --verify -q jq-1.0 > /dev/null &&
-                        (git describe --tags --dirty --match 'jq-*'|sed 's/^jq-//')) ||
-                        echo `git rev-parse --abbrev-ref HEAD`-`git describe --always --dirty`])))
+m4_define([jq_version], [1.6])
 
 AC_INIT([jq], [jq_version], [https://github.com/stedolan/jq/issues],
              [jq], [https://stedolan.github.io/jq])
@@ -52,9 +49,8 @@ fi
 AC_CHECK_FUNCS(memmem)
 AC_CHECK_FUNCS(mkstemp)
 
-AC_CHECK_HEADER("sys/cygwin.h", [have_cygwin=1;])
-AC_CHECK_HEADER("shlwapi.h",[have_shlwapi=1;])
-AM_CONDITIONAL([WIN32], [test \( "x$have_shlwapi" = x1 \) -a ! \( "x$have_cygwin" = x1 \)])
+AC_CHECK_HEADER("shlwapi.h",[have_win32=1;])
+AM_CONDITIONAL([WIN32], [test "x$have_win32" = x1])
 
 dnl Running tests with Valgrind is slow. It is faster to iterate on
 dnl code without Valgrind until tests pass, then enable Valgrind and
@@ -75,7 +71,7 @@ dnl Code coverage
 AC_ARG_ENABLE([gcov],
    AC_HELP_STRING([--enable-gcov], [enable gcov code coverage tool]))
 
-dnl Don't attempt to build docs if python deps aren't installed
+dnl Don't attempt to build docs if there's no Ruby lying around
 AC_ARG_ENABLE([docs],
    AC_HELP_STRING([--disable-docs], [don't build docs]))
 
@@ -87,36 +83,28 @@ dnl Enable building all static
 AC_ARG_ENABLE([all-static],
    AC_HELP_STRING([--enable-all-static], [link jq with static libraries only]))
 
-AS_IF([test "x$enable_docs" = "xyes"],[
-   AC_CHECK_PROGS(pipenv_cmd, pipenv)
+AS_IF([test "x$enable_docs" != "xno"],[
+   AC_CHECK_PROGS(bundle_cmd, bundle)
 
-   AC_CACHE_CHECK([for Python dependencies], [jq_cv_python_deps],
-     [jq_cv_python_deps=yes;
-        AS_IF([test "x$pipenv_cmd" = "x" || \
-        ! bmsg="`cd ${srcdir}/docs; LC_ALL=$LANG "$pipenv_cmd" check`"],[
-           AC_MSG_ERROR([$bmsg])
+   AC_CACHE_CHECK([for Ruby dependencies], [jq_cv_ruby_deps],
+     [jq_cv_ruby_deps=yes;
+        AS_IF([test "x$bundle_cmd" = "x" || \
+        ! bmsg="`cd ${srcdir}/docs; "$bundle_cmd" check 2>/dev/null`"],[
+           AC_MSG_WARN([$bmsg])
            cat <<EOF
 *****************************************************************
-*  Python dependencies for building jq documentation not found. *
+*  Ruby dependencies for building jq documentation not found.   *
 *  You can still build, install and hack on jq, but the manpage *
 *  will not be rebuilt and some of the tests will not run.      *
 *  See docs/README.md for how to install the docs dependencies. *
 *****************************************************************
 EOF
-           jq_cv_python_deps=no
+           jq_cv_ruby_deps=no
      ])])
 
-   if test "x$jq_cv_python_deps" != "xyes"; then
+   if test "x$jq_cv_ruby_deps" != "xyes"; then
      enable_docs=no
    fi
-])
-
-dnl Disable decNumber support
-AC_ARG_ENABLE([decnum],
-   AC_HELP_STRING([--disable-decnum], [disable decnum support]))
-
-AS_IF([test "x$enable_decnum" != "xno"],[
-   AC_DEFINE([USE_DECNUM],1)
 ])
 
 AM_CONDITIONAL([ENABLE_VALGRIND], [test "x$enable_valgrind" != xno])
@@ -133,7 +121,6 @@ AC_FIND_FUNC([isatty], [c], [#include <unistd.h>], [0])
 AC_FIND_FUNC([_isatty], [c], [#include <io.h>], [0])
 AC_FIND_FUNC([strptime], [c], [#include <time.h>], [0, 0, 0])
 AC_FIND_FUNC([strftime], [c], [#include <time.h>], [0, 0, 0, 0])
-AC_FIND_FUNC([setenv], [c], [#include <stdlib.h>], [0, 0, 0])
 AC_FIND_FUNC([timegm], [c], [#include <time.h>], [0])
 AC_FIND_FUNC([gmtime_r], [c], [#include <time.h>], [0, 0])
 AC_FIND_FUNC([gmtime], [c], [#include <time.h>], [0])
@@ -145,9 +132,17 @@ AC_CHECK_MEMBER([struct tm.tm_gmtoff], [AC_DEFINE([HAVE_TM_TM_GMT_OFF],1,[Define
 AC_CHECK_MEMBER([struct tm.__tm_gmtoff], [AC_DEFINE([HAVE_TM___TM_GMT_OFF],1,[Define to 1 if the system has the __tm_gmt_off field in struct tm])],
                 [], [[#include <time.h>]])
 
-AC_FIND_FUNC([pthread_key_create], [pthread], [#include <pthread.h>], [NULL, NULL])
-AC_FIND_FUNC([pthread_once], [pthread], [#include <pthread.h>], [NULL, NULL])
-AC_FIND_FUNC([atexit], [pthread], [#include <stdlib.h>], [NULL])
+AC_ARG_ENABLE([pthread-tls],
+              [AC_HELP_STRING([--enable-pthread-tls],
+                              [Enable use of pthread thread local storage])],
+              [],
+              [enable_pthread_tls=no])
+
+if test $enable_pthread_tls = yes; then
+    AC_FIND_FUNC([pthread_key_create], [pthread], [#include <pthread.h>], [NULL, NULL])
+    AC_FIND_FUNC([pthread_once], [pthread], [#include <pthread.h>], [NULL, NULL])
+    AC_FIND_FUNC([atexit], [pthread], [#include <stdlib.h>], [NULL])
+fi
 
 dnl libm math.h functions
 AC_CHECK_MATH_FUNC(acos)
@@ -280,6 +275,6 @@ AM_CONDITIONAL([BUILD_ONIGURUMA], [test "x$build_oniguruma" = xyes])
 AC_SUBST([BUNDLER], ["$bundle_cmd"])
 
 AC_CONFIG_MACRO_DIR([config/m4])
-AC_CONFIG_FILES([Makefile libjq.pc])
+AC_CONFIG_FILES([Makefile])
 AC_OUTPUT
 

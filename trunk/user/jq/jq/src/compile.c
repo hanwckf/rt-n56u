@@ -49,11 +49,9 @@ struct inst {
   // Unbound instructions (references to other things that may or may not
   // exist) are created by "gen_foo_unbound", and bindings are created by
   // block_bind(definition, body), which binds all instructions in
-  // body which are unbound and refer to "definition" by name.
+  // body which are unboudn and refer to "definition" by name.
   struct inst* bound_by;
   char* symbol;
-  int any_unbound;
-  int referenced;
 
   int nformals;
   int nactuals;
@@ -75,8 +73,6 @@ static inst* inst_new(opcode op) {
   i->bytecode_pos = -1;
   i->bound_by = 0;
   i->symbol = 0;
-  i->any_unbound = 0;
-  i->referenced = 0;
   i->nformals = -1;
   i->nactuals = -1;
   i->subfn = gen_noop();
@@ -160,7 +156,6 @@ block gen_const_global(jv constant, const char *name) {
   inst* i = inst_new(STORE_GLOBAL);
   i->imm.constant = constant;
   i->symbol = strdup(name);
-  i->any_unbound = 0;
   return inst_block(i);
 }
 
@@ -216,22 +211,19 @@ block gen_op_unbound(opcode op, const char* name) {
   assert(opcode_describe(op)->flags & OP_HAS_BINDING);
   inst* i = inst_new(op);
   i->symbol = strdup(name);
-  i->any_unbound = 1;
   return inst_block(i);
 }
 
 block gen_op_var_fresh(opcode op, const char* name) {
   assert(opcode_describe(op)->flags & OP_HAS_VARIABLE);
-  block b = gen_op_unbound(op, name);
-  b.first->bound_by = b.first;
-  return b;
+  return block_bind(gen_op_unbound(op, name),
+                    gen_noop(), OP_HAS_VARIABLE);
 }
 
 block gen_op_bound(opcode op, block binder) {
   assert(block_is_single(binder));
   block b = gen_op_unbound(op, binder.first->symbol);
   b.first->bound_by = binder.first;
-  b.first->any_unbound = 0;
   return b;
 }
 
@@ -290,6 +282,18 @@ int block_has_only_binders(block binders, int bindflags) {
   return 1;
 }
 
+// Count a binder's (function) formal params
+static int block_count_formals(block b) {
+  int args = 0;
+  if (b.first->op == CLOSURE_CREATE_C)
+    return b.first->imm.cfunc->nargs - 1;
+  for (inst* i = b.first->arglist.first; i; i = i->next) {
+    assert(i->op == CLOSURE_PARAM);
+    args++;
+  }
+  return args;
+}
+
 // Count a call site's actual params
 static int block_count_actuals(block b) {
   int args = 0;
@@ -306,7 +310,21 @@ static int block_count_actuals(block b) {
   return args;
 }
 
-static int block_bind_subblock_inner(int* any_unbound, block binder, block body, int bindflags, int break_distance) {
+static int block_count_refs(block binder, block body) {
+  int nrefs = 0;
+  for (inst* i = body.first; i; i = i->next) {
+    if (i != binder.first && i->bound_by == binder.first) {
+      nrefs++;
+    }
+    // counting recurses into closures
+    nrefs += block_count_refs(binder, i->subfn);
+    // counting recurses into argument list
+    nrefs += block_count_refs(binder, i->arglist);
+  }
+  return nrefs;
+}
+
+static int block_bind_subblock(block binder, block body, int bindflags, int break_distance) {
   assert(block_is_single(binder));
   assert((opcode_describe(binder.first->op)->flags & bindflags) == (bindflags & ~OP_BIND_WILDCARD));
   assert(binder.first->symbol);
@@ -314,11 +332,10 @@ static int block_bind_subblock_inner(int* any_unbound, block binder, block body,
   assert(break_distance >= 0);
 
   binder.first->bound_by = binder.first;
+  if (binder.first->nformals == -1)
+    binder.first->nformals = block_count_formals(binder);
   int nrefs = 0;
   for (inst* i = body.first; i; i = i->next) {
-    if (i->any_unbound == 0)
-      continue;
-
     int flags = opcode_describe(i->op)->flags;
     if ((flags & bindflags) == (bindflags & ~OP_BIND_WILDCARD) && i->bound_by == 0 &&
         (!strcmp(i->symbol, binder.first->symbol) ||
@@ -327,6 +344,8 @@ static int block_bind_subblock_inner(int* any_unbound, block binder, block body,
           break_distance <= 3 && (i->symbol[1] == '1' + break_distance) &&
           i->symbol[2] == '\0'))) {
       // bind this instruction
+      if (i->op == CALL_JQ && i->nactuals == -1)
+        i->nactuals = block_count_actuals(i->arglist);
       if (i->nactuals == -1 || i->nactuals == binder.first->nformals) {
         i->bound_by = binder.first;
         nrefs++;
@@ -338,23 +357,12 @@ static int block_bind_subblock_inner(int* any_unbound, block binder, block body,
       // a break whenever we come across a STOREV of *anonlabel...
       break_distance++;
     }
-
-    i->any_unbound = (i->symbol && !i->bound_by);
-
     // binding recurses into closures
-    nrefs += block_bind_subblock_inner(&i->any_unbound, binder, i->subfn, bindflags, break_distance);
+    nrefs += block_bind_subblock(binder, i->subfn, bindflags, break_distance);
     // binding recurses into argument list
-    nrefs += block_bind_subblock_inner(&i->any_unbound, binder, i->arglist, bindflags, break_distance);
-
-    if (i->any_unbound)
-      *any_unbound = 1;
+    nrefs += block_bind_subblock(binder, i->arglist, bindflags, break_distance);
   }
   return nrefs;
-}
-
-static int block_bind_subblock(block binder, block body, int bindflags, int break_distance) {
-  int any_unbound;
-  return block_bind_subblock_inner(&any_unbound, binder, body, bindflags, break_distance);
 }
 
 static int block_bind_each(block binder, block body, int bindflags) {
@@ -367,7 +375,7 @@ static int block_bind_each(block binder, block body, int bindflags) {
   return nrefs;
 }
 
-static block block_bind(block binder, block body, int bindflags) {
+block block_bind(block binder, block body, int bindflags) {
   block_bind_each(binder, body, bindflags);
   return block_join(binder, body);
 }
@@ -384,7 +392,7 @@ block block_bind_library(block binder, block body, int bindflags, const char *li
     matchlen += 2;
   }
   assert(block_has_only_binders(binder, bindflags));
-  for (inst *curr = binder.last; curr; curr = curr->prev) {
+  for (inst *curr = binder.first; curr; curr = curr->next) {
     int bindflags2 = bindflags;
     char* cname = curr->symbol;
     char* tname = jv_mem_alloc(strlen(curr->symbol)+matchlen+1);
@@ -405,98 +413,81 @@ block block_bind_library(block binder, block body, int bindflags, const char *li
   return body; // We don't return a join because we don't want those sticking around...
 }
 
-static inst* block_take_last(block* b) {
-  inst* i = b->last;
-  if (i == 0)
-    return 0;
-  if (i->prev) {
-    i->prev->next = i->next;
-    b->last = i->prev;
-    i->prev = 0;
-  } else {
-    b->first = 0;
-    b->last = 0;
-  }
-  return i;
-}
-
-// Binds a sequence of binders, which *must not* alrady be bound to each other,
-// to body, throwing away unreferenced defs
+// Bind binder to body and throw away any defs in binder not referenced
+// (directly or indirectly) from body.
 block block_bind_referenced(block binder, block body, int bindflags) {
   assert(block_has_only_binders(binder, bindflags));
   bindflags |= OP_HAS_BINDING;
-
-  inst* curr;
-  while ((curr = block_take_last(&binder))) {
-    block b = inst_block(curr);
-    if (block_bind_subblock(b, body, bindflags, 0) == 0) {
-      block_free(b);
-    } else {
-      body = BLOCK(b, body);
+  block refd = gen_noop();
+  block unrefd = gen_noop();
+  int nrefs;
+  for (int last_kept = 0, kept = 0; ; ) {
+    for (inst* curr; (curr = block_take(&binder));) {
+      block b = inst_block(curr);
+      nrefs = block_bind_each(b, body, bindflags);
+      // Check if this binder is referenced from any of the ones we
+      // already know are referenced by body.
+      nrefs += block_count_refs(b, refd);
+      nrefs += block_count_refs(b, body);
+      if (nrefs) {
+        refd = BLOCK(refd, b);
+        kept++;
+      } else {
+        unrefd = BLOCK(unrefd, b);
+      }
     }
+    if (kept == last_kept)
+      break;
+    last_kept = kept;
+    binder = unrefd;
+    unrefd = gen_noop();
   }
-  return body;
-}
-
-block block_bind_self(block binder, int bindflags) {
-  assert(block_has_only_binders(binder, bindflags));
-  bindflags |= OP_HAS_BINDING;
-  block body = gen_noop();
-
-  inst* curr;
-  while ((curr = block_take_last(&binder))) {
-    block b = inst_block(curr);
-    block_bind_subblock(b, body, bindflags, 0);
-    body = BLOCK(b, body);
-  }
-  return body;
-}
-
-static void block_mark_referenced(block body) {
-  int saw_top = 0;
-  for (inst* i = body.last; i; i = i->prev) {
-    if (saw_top && i->bound_by == i && !i->referenced)
-      continue;
-    if (i->op == TOP) {
-      saw_top = 1;
-    }
-    if (i->bound_by) {
-      i->bound_by->referenced = 1;
-    }
-
-    block_mark_referenced(i->arglist);
-    block_mark_referenced(i->subfn);
-  }
+  block_free(unrefd);
+  return block_join(refd, body);
 }
 
 block block_drop_unreferenced(block body) {
-  block_mark_referenced(body);
-
-  block refd = gen_noop();
   inst* curr;
-  while ((curr = block_take(&body))) {
-    if (curr->bound_by == curr && !curr->referenced) {
-      inst_free(curr);
-    } else {
-      refd = BLOCK(refd, inst_block(curr));
+  block refd = gen_noop();
+  block unrefd = gen_noop();
+  int drop;
+  do {
+    drop = 0;
+    while ((curr = block_take(&body)) && curr->op != TOP) {
+      block b = inst_block(curr);
+      if (block_count_refs(b,refd) + block_count_refs(b,body) == 0) {
+        unrefd = BLOCK(unrefd, b);
+        drop++;
+      } else {
+        refd = BLOCK(refd, b);
+      }
     }
-  }
-  return refd;
+    if (curr && curr->op == TOP) {
+      body = BLOCK(inst_block(curr),body);
+    }
+    body = BLOCK(refd, body);
+    refd = gen_noop();
+  } while (drop != 0);
+  block_free(unrefd);
+  return body;
 }
 
 jv block_take_imports(block* body) {
   jv imports = jv_array();
 
-  /* Parser should never generate TOP before imports */
-  assert(!(body->first && body->first->op == TOP && body->first->next &&
-        (body->first->next->op == MODULEMETA || body->first->next->op == DEPS)));
-
+  inst* top = NULL;
+  if (body->first && body->first->op == TOP) {
+    top = block_take(body);
+  }
   while (body->first && (body->first->op == MODULEMETA || body->first->op == DEPS)) {
     inst* dep = block_take(body);
     if (dep->op == DEPS) {
       imports = jv_array_append(imports, jv_copy(dep->imm.constant));
     }
     inst_free(dep);
+  }
+  if (top) {
+    *body = block_join(inst_block(top),*body);
   }
   return imports;
 }
@@ -550,10 +541,7 @@ block gen_import_meta(block import, block metadata) {
 
 block gen_function(const char* name, block formals, block body) {
   inst* i = inst_new(CLOSURE_CREATE);
-  int nformals = 0;
   for (inst* i = formals.last; i; i = i->prev) {
-    nformals++;
-    i->nformals = 0;
     if (i->op == CLOSURE_PARAM_REGULAR) {
       i->op = CLOSURE_PARAM;
       body = gen_var_binding(gen_call(i->symbol, gen_noop()), i->symbol, body);
@@ -562,8 +550,6 @@ block gen_function(const char* name, block formals, block body) {
   }
   i->subfn = body;
   i->symbol = strdup(name);
-  i->any_unbound = -1;
-  i->nformals = nformals;
   i->arglist = formals;
   block b = inst_block(i);
   block_bind_subblock(b, b, OP_IS_CALL_PSEUDO | OP_HAS_BINDING, 0);
@@ -585,7 +571,6 @@ block gen_lambda(block body) {
 block gen_call(const char* name, block args) {
   block b = gen_op_unbound(CALL_JQ, name);
   b.first->arglist = args;
-  b.first->nactuals = block_count_actuals(b.first->arglist);
   return b;
 }
 
@@ -1038,7 +1023,7 @@ block gen_try_handler(block handler) {
   return gen_cond(// `if type=="object" and .__jq
                   gen_and(gen_call("_equal",
                                    BLOCK(gen_lambda(gen_const(jv_string("object"))),
-                                         gen_lambda(gen_call("type", gen_noop())))),
+                                         gen_lambda(gen_noop()))),
                           BLOCK(gen_subexp(gen_const(jv_string("__jq"))),
                                 gen_noop(),
                                 gen_op_simple(INDEX))),
@@ -1095,10 +1080,8 @@ block gen_cbinding(const struct cfunction* cfunctions, int ncfunctions, block co
   for (int cfunc=0; cfunc<ncfunctions; cfunc++) {
     inst* i = inst_new(CLOSURE_CREATE_C);
     i->imm.cfunc = &cfunctions[cfunc];
-    i->symbol = strdup(cfunctions[cfunc].name);
-    i->nformals = cfunctions[cfunc].nargs - 1;
-    i->any_unbound = 0;
-    code = BLOCK(inst_block(i), code);
+    i->symbol = strdup(i->imm.cfunc->name);
+    code = block_bind(inst_block(i), code, OP_IS_CALL_PSEUDO);
   }
   return code;
 }
@@ -1164,7 +1147,7 @@ static int expand_call_arglist(block* b, jv args, jv *env) {
         else if (curr->op == LOADV)
           locfile_locate(curr->locfile, curr->source, "jq: error: $%s is not defined", curr->symbol);
         else
-          locfile_locate(curr->locfile, curr->source, "jq: error: %s/%d is not defined", curr->symbol, curr->nactuals);
+          locfile_locate(curr->locfile, curr->source, "jq: error: %s/%d is not defined", curr->symbol, block_count_actuals(curr->arglist));
         errors++;
         // don't process this instruction if it's not well-defined
         ret = BLOCK(ret, inst_block(curr));

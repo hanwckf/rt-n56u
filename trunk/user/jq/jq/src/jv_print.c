@@ -11,10 +11,8 @@
 
 #include "jv.h"
 #include "jv_dtoa.h"
-#include "jv_dtoa_tsd.h"
 #include "jv_unicode.h"
 #include "jv_alloc.h"
-#include "jv_type_private.h"
 
 #ifndef MAX_PRINT_DEPTH
 #define MAX_PRINT_DEPTH (256)
@@ -32,8 +30,8 @@ static const jv_kind color_kinds[] =
 static char color_bufs[sizeof(color_kinds)/sizeof(color_kinds[0])][16];
 static const char *color_bufps[8];
 static const char* def_colors[] =
-  {COL("1;30"),    COL("0;37"),      COL("0;37"),     COL("0;37"),
-   COL("0;32"),      COL("1;37"),     COL("1;37")};
+  {COL("1;30"),    COL("0;39"),      COL("0;39"),     COL("0;39"),
+   COL("0;32"),      COL("1;39"),     COL("1;39")};
 #define FIELD_COLOR COL("34;1")
 
 static const char **colors = def_colors;
@@ -231,29 +229,16 @@ static void jv_dump_term(struct dtoa_context* C, jv x, int flags, int indent, FI
     put_str("true", F, S, flags & JV_PRINT_ISATTY);
     break;
   case JV_KIND_NUMBER: {
-    if (jvp_number_is_nan(x)) {
-      jv_dump_term(C, jv_null(), flags, indent, F, S);
+    double d = jv_number_value(x);
+    if (d != d) {
+      // JSON doesn't have NaN, so we'll render it as "null"
+      put_str("null", F, S, flags & JV_PRINT_ISATTY);
     } else {
-#ifdef USE_DECNUM
-      const char * literal_data = jv_number_get_literal(x);
-      if (literal_data) {
-        put_str(literal_data, F, S, flags & JV_PRINT_ISATTY);
-      } else {
-#endif
-        double d = jv_number_value(x);
-        if (d != d) {
-          // JSON doesn't have NaN, so we'll render it as "null"
-          put_str("null", F, S, flags & JV_PRINT_ISATTY);
-        } else {
-          // Normalise infinities to something we can print in valid JSON
-          if (d > DBL_MAX) d = DBL_MAX;
-          if (d < -DBL_MAX) d = -DBL_MAX;
-          put_str(jvp_dtoa_fmt(C, buf, d), F, S, flags & JV_PRINT_ISATTY);
-        }
-      }
-#ifdef USE_DECNUM
+      // Normalise infinities to something we can print in valid JSON
+      if (d > DBL_MAX) d = DBL_MAX;
+      if (d < -DBL_MAX) d = -DBL_MAX;
+      put_str(jvp_dtoa_fmt(C, buf, d), F, S, flags & JV_PRINT_ISATTY);
     }
-#endif
     break;
   }
   case JV_KIND_STRING:
@@ -372,7 +357,10 @@ static void jv_dump_term(struct dtoa_context* C, jv x, int flags, int indent, FI
 }
 
 void jv_dumpf(jv x, FILE *f, int flags) {
-  jv_dump_term(tsd_dtoa_context_get(), x, flags, 0, f, 0);
+  struct dtoa_context C;
+  jvp_dtoa_context_init(&C);
+  jv_dump_term(&C, x, flags, 0, f, 0);
+  jvp_dtoa_context_free(&C);
 }
 
 void jv_dump(jv x, int flags) {
@@ -388,8 +376,11 @@ void jv_show(jv x, int flags) {
 }
 
 jv jv_dump_string(jv x, int flags) {
+  struct dtoa_context C;
+  jvp_dtoa_context_init(&C);
   jv s = jv_string("");
-  jv_dump_term(tsd_dtoa_context_get(), x, flags, 0, 0, &s);
+  jv_dump_term(&C, x, flags, 0, 0, &s);
+  jvp_dtoa_context_free(&C);
   return s;
 }
 

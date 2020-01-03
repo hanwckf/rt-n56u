@@ -292,7 +292,7 @@ uint16_t* stack_restore(jq_state *jq){
     assert(path_len >= 0);
     jq->path = jv_array_slice(jq->path, 0, path_len);
   } else {
-    fork->path_len = 0;
+    assert(path_len == 0);
   }
   jv_free(jq->value_at_path);
   jq->value_at_path = fork->value_at_path;
@@ -509,25 +509,21 @@ jv jq_next(jq_state *jq) {
       uint16_t v = *pc++;
       jv* var = frame_local_var(jq, v, level);
       jv max = stack_pop(jq);
-      if (raising) {
-        jv_free(max);
-        goto do_backtrack;
-      } 
+      if (raising) goto do_backtrack;
       if (jv_get_kind(*var) != JV_KIND_NUMBER ||
           jv_get_kind(max) != JV_KIND_NUMBER) {
         set_error(jq, jv_invalid_with_msg(jv_string_fmt("Range bounds must be numeric")));
         jv_free(max);
         goto do_backtrack;
-      } else if (jv_number_value(*var) >= jv_number_value(max)) {
+      } else if (jv_number_value(jv_copy(*var)) >= jv_number_value(jv_copy(max))) {
         /* finished iterating */
-        jv_free(max);
         goto do_backtrack;
       } else {
-        jv curr = *var;
+        jv curr = jv_copy(*var);
         *var = jv_number(jv_number_value(*var) + 1);
 
         struct stack_pos spos = stack_get_pos(jq);
-        stack_push(jq, max);
+        stack_push(jq, jv_copy(max));
         stack_save(jq, pc - 3, spos);
 
         stack_push(jq, curr);
@@ -1014,9 +1010,6 @@ jq_state *jq_init(void) {
   jq->attrs = jv_object();
   jq->path = jv_null();
   jq->value_at_path = jv_null();
-
-  jq->nomem_handler = NULL;
-  jq->nomem_handler_data = NULL;
   return jq;
 }
 

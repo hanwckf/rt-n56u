@@ -12,6 +12,8 @@
 >- [SmartDNS](https://github.com/pymumu/smartdns) ```CONFIG_FIRMWARE_INCLUDE_SMARTDNS```
 
 ### 新增适配以下型号 ###
+>- 歌华链(感谢群里Heaven适配与测试）
+>- NEWIFI-D1
 >- B70(感谢Untitled提供荒野无灯的适配文件)
 >- JCG-AC856M(感谢群里的旅途中的我适配和测试,gpio值还未完全适配，但不影响使用)
 >- JCG-AC836M(感谢群里的碧霄客修改和测试)

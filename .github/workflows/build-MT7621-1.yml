@@ -1,4 +1,4 @@
-name: Build MT7628
+name: Build MT7621-1
 
 on: 
   release:
@@ -11,7 +11,7 @@ on:
   schedule:
     - cron: 0 17 * * 4
 #  watch:
-#    types: [started]
+   # types: [started]
 
 jobs:
   build:
@@ -38,7 +38,7 @@ jobs:
         mkdir -p /opt/images/
     - name: Build Firmware
       env:
-        TNAME: "HC5861B MI-NANO MZ-R13 MZ-R13P 360P2 HC5761A HC5661A"
+        TNAME: "K2P-5.0 JCG-836PRO-5.0 JCG-AC860M-5.0 DIR-878-5.0 DIR-882-5.0 WR1200JS JCG-AC856M-5.0"
       run: |
         cwd=`pwd`
         CONFIG_TOOLCHAIN_DIR=${cwd//\//\\\/}\\/toolchain-mipsel
@@ -81,10 +81,10 @@ jobs:
         echo "CONFIG_FIRMWARE_INCLUDE_ALIDDNS=y" >> .config #阿里DDNS
         echo "CONFIG_FIRMWARE_INCLUDE_SMARTDNS=y" >> .config
         echo "CONFIG_FIRMWARE_INCLUDE_SMARTDNSBIN=y" >> .config #smartdns二进制文件
-        if [ "$m" = "HC5761A" ] || [ "$m" = "360P2" ]; then
-        echo "CONFIG_FIRMWARE_INCLUDE_V2RAY=n" >> .config #v2ray二进制文件
-        else
+        if [ "$m" = "K2P-5.0" ] || [ "$m" = "DIR-878-5.0" ]; then
         echo "CONFIG_FIRMWARE_INCLUDE_V2RAY=y" >> .config #v2ray二进制文件
+        else
+        echo "CONFIG_FIRMWARE_INCLUDE_V2RAY=n" >> .config #v2ray二进制文件
         fi
         ####################################################################################
         sed -i "s/^CONFIG_TOOLCHAIN_DIR=.*$/CONFIG_TOOLCHAIN_DIR=${CONFIG_TOOLCHAIN_DIR}/g" .config
@@ -100,3 +100,10 @@ jobs:
         tag: AtuoBuild
         overwrite: true
         file_glob: true
+    - uses: ncipollo/release-action@v1
+      with:
+       bodyFile: "changelog.md"
+       tag: AtuoBuild
+       allowUpdates: true
+       name: Padavan-firmware
+       token: ${{ secrets.R_TOKEN }}

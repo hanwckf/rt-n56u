@@ -1007,6 +1007,7 @@
 			{"sdnse_cache", "", NULL, EVM_RESTART_SMARTDNS},
 			{"scripts.smartdns_address.conf", "File", NULL, EVM_RESTART_SMARTDNS},
 			{"scripts.smartdns_blacklist-ip.conf", "File", NULL, EVM_RESTART_SMARTDNS},
+			{"scripts.smartdns_whitelist-ip.conf", "File", NULL, EVM_RESTART_SMARTDNS},
 			{"scripts.smartdns_custom.conf", "File", NULL, EVM_RESTART_SMARTDNS},
 			{"SdnsList", "Group", ARGV((char*)variables_SmartdnsConf_SdnsList, "8", "55", "sdnss_staticnum_x"), EVM_RESTART_SMARTDNS},
 	};

@@ -5,6 +5,7 @@ SMARTDNS_CONF_DIR="/etc/storage"
 SMARTDNS_CONF="$SMARTDNS_CONF_DIR/smartdns.conf"
 ADDRESS_CONF="$SMARTDNS_CONF_DIR/smartdns_address.conf"
 BLACKLIST_IP_CONF="$SMARTDNS_CONF_DIR/smartdns_blacklist-ip.conf"
+WHITELIST_IP_CONF="$SMARTDNS_CONF_DIR/smartdns_whitelist-ip.conf"
 CUSTOM_CONF="$SMARTDNS_CONF_DIR/smartdns_custom.conf"
 smartdns_file="/usr/bin/smartdns"
 sdns_enable=`nvram get sdns_enable`
@@ -241,6 +242,7 @@ logger -t "SmartDNS" "创建配置文件."
 gensmartconf
 grep -v ^! $ADDRESS_CONF >> $SMARTDNS_CONF
 grep -v ^! $BLACKLIST_IP_CONF >> $SMARTDNS_CONF
+grep -v ^! $WHITELIST_IP_CONF >> $SMARTDNS_CONF
 grep -v ^! $CUSTOM_CONF >> $SMARTDNS_CONF
 if [ "$sdns_coredump" = "1" ]; then
 		args="$args -S"

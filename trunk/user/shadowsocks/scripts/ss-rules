@@ -2,6 +2,7 @@
 #
 # Copyright (C) 2017 openwrt-ssr
 # Copyright (C) 2017 yushi studio <ywb94@qq.com>
+# Copyright (C) 2019 chongshengB
 #
 # This is free software, licensed under the GNU General Public License v3.
 # See /LICENSE for more information.
@@ -105,9 +106,7 @@ EOF
 	elif [ "$RUNMODE" = "oversea" ] ;then
 	ipset -N oversea hash:net 2>/dev/null
 	$IPT -N SS_SPEC_WAN_AC
-	ipset -N gmlan hash:net 2>/dev/null
-	for ip in $LAN_GM_IP; do ipset -! add gmlan $ip ; done
-	$IPT -A SS_SPEC_WAN_AC -m set --match-set china dst -j SS_SPEC_WAN_FW
+	$IPT -A SS_SPEC_WAN_AC -m set --match-set oversea dst -j SS_SPEC_WAN_FW
 	$IPT -A SS_SPEC_WAN_AC -d $server -j RETURN
 	$IPT -A PREROUTING -j SS_SPEC_WAN_AC
 
@@ -169,6 +168,12 @@ ac_rule() {
 
 tp_rule() {
 	[ -n "$TPROXY" ] || return 0
+	if !(lsmod | grep -q TPROXY ); then
+		loger 4 "TPROXY or ip not found."
+		logger -t "SS" "找不到TPROXY模块,UDP模式无法启用,设置udp开关为关闭状态."
+		nvram set ss_udp=0
+		return 0
+	fi
 	ip rule add fwmark 100 lookup 100
 	ip route add local 0.0.0.0/0 dev lo table 100
 	ipt="iptables -t mangle"
@@ -190,7 +195,7 @@ tp_rule() {
 	if [ "$RUNMODE" = "router" ] ;then
 	$ipt -A SS_SPEC_TPROXY -p udp -m set ! --match-set ss_spec_wan_ac dst \
 		-j TPROXY --on-port "$LOCAL_PORT" --tproxy-mark 100
-	$ipt -A SS_SPEC_TPROXY -p udp -m set --match-set china dst \
+	$ipt -A SS_SPEC_TPROXY -p udp -m set ! --match-set china dst \
 		-j TPROXY --on-port "$LOCAL_PORT" --tproxy-mark 100
 
 	elif [ "$RUNMODE" = "gfw" ] ;then
@@ -198,13 +203,15 @@ tp_rule() {
 		-j TPROXY --on-port "$LOCAL_PORT" --tproxy-mark 100
 
 	elif [ "$RUNMODE" = "oversea" ] ;then
-	$ipt -A SS_SPEC_TPROXY -p udp -m set --match-set china dst \
+	$ipt -A SS_SPEC_TPROXY -p udp -m set --match-set oversea dst \
 		-j TPROXY --on-port "$LOCAL_PORT" --tproxy-mark 100
 
 	elif [ "$RUNMODE" = "all" ] ;then
 	$ipt -A SS_SPEC_TPROXY -p udp -j TPROXY --on-port "$LOCAL_PORT" --tproxy-mark 100
 	fi
-
+    $ipt -I SS_SPEC_TPROXY -p udp -m set --match-set blacklist dst \
+    -j TPROXY --on-port "$LOCAL_PORT" --tproxy-mark 100
+	$ipt -I SS_SPEC_TPROXY -p udp -m set --match-set whitelist dst -j RETURN
 
 	return $?
 }

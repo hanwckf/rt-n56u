@@ -149,9 +149,9 @@ mk_vmess=$(json_int)
 mk_vmess=$(echo $mk_vmess| jq --raw-output 'setpath(["outbounds",0,"settings"];'"$vmess_settings"')')
 mk_vmess=$(echo $mk_vmess| jq --raw-output 'setpath(["outbounds",0,"streamSettings"];'"$vmess_streamSettings"')')
 mk_vmess=$(echo $mk_vmess| jq --raw-output 'setpath(["outbounds",0,"protocol"];"vmess")')
-if [ $ss_udp = "1" ];then
-mk_vmess=$(echo $mk_vmess| jq --raw-output 'setpath(["inbounds",0,"settings","udp"];'true')')
-fi
+#if [ $ss_udp = "1" ];then
+#mk_vmess=$(echo $mk_vmess| jq --raw-output 'setpath(["inbounds",0,"settings","udp"];'true')')
+#fi
 echo $mk_vmess| jq --raw-output '.' > $v2_file
 #创建json文件结束
 fi
@@ -555,8 +555,7 @@ echo '{
   "settings": {
 	"network": "tcp,udp",
 	"timeout": 30,
-	"followRedirect": true,
-	"udp": false
+	"followRedirect": true
   },
   "sniffing": {
 	"enabled": true,

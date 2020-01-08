@@ -1,4 +1,4 @@
-/* newifi3(d2) */
+/* NEWIFI3(d2) */
 
 #define BOARD_PID		"NEWIFI3"
 #define BOARD_NAME		"NEWIFI3"

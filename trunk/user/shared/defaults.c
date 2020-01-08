@@ -34,7 +34,7 @@ struct nvram_pair router_defaults[] = {
 
 	/* Miscellaneous parameters */
 	{ "time_zone", DEF_TIMEZONE },
-	{ "log_float_ui", "1" },		/* WebUI syslog float panel mode */
+	{ "log_float_ui", "0" },		/* WebUI syslog float panel mode */
 	{ "log_ipaddr", "" },			/* syslog recipient IP */
 	{ "log_port", "514" },			/* syslog recipient Port */
 	{ "log_level", "0" },			/* Bitmask 0:off 1:denied 2:accepted */
@@ -444,13 +444,13 @@ struct nvram_pair router_defaults[] = {
 	{ "misc_http_x", "0" },
 	{ "misc_httpport_x", "8080" },
 	{ "https_wopen", "0" },
-	{ "https_wport", "8443" },
+	{ "https_wport", "443" },
 	{ "udpxy_wopen", "0" },
-	{ "udpxy_wport", "34040" },
+	{ "udpxy_wport", "4000" },
 	{ "ftpd_wopen", "0" },
 	{ "ftpd_wport", "21" },
 	{ "sshd_wopen", "0" },
-	{ "sshd_wport", "10022" },
+	{ "sshd_wport", "22" },
 	{ "sshd_wbfp", "2" },
 	{ "misc_lpr_x", "0" },
 	{ "misc_ping_x", "0" },
@@ -537,7 +537,7 @@ struct nvram_pair router_defaults[] = {
 	{ "ss_server", "127.0.0.1" },
 	{ "ss_server_port", "8989" },
 	{ "ss_key", "Secret" },
-	{ "ss_method", "rc4-md5" },
+	{ "ss_method", "chacha20-ietf-poly1305" },
 	{ "ss_udp", "0" },
 	{ "ss_local_port", "1080" },
 	{ "ss_mtu", "1492" },

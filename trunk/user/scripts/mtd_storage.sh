@@ -265,6 +265,9 @@ func_fill()
 #drop caches
 sync && echo 3 > /proc/sys/vm/drop_caches
 
+# Mount SATA disk
+#mdev -s
+
 EOF
 		chmod 755 "$script_started"
 	fi
@@ -490,6 +493,8 @@ EOF
 ### gfwlist related (resolve by port 5353)
 #min-cache-ttl=3600
 #conf-dir=/etc/storage/gfwlist
+#server=/mit.edu/127.0.0.1#5353
+#server=/github.com/githubusercontent.com/127.0.0.1#5353
 
 EOF
 	fi

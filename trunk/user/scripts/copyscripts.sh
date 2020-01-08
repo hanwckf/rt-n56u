@@ -4,6 +4,10 @@ if [ ! -f "/etc/storage/ad_config_script.sh" ] ; then
 cp -rf /etc_ro/ad_config_script.sh /etc/storage/
 chmod 755 "/etc/storage/ad_config_script.sh"
 fi
+if [ ! -f "/etc/storage/frp_script.sh" ] ; then
+cp -rf /etc_ro/frp_script.sh /etc/storage/
+chmod 755 "/etc/storage/frp_script.sh"
+fi
 if [ ! -f "/etc/storage/smartdns_address.conf" ] ; then
 cp -rf /etc_ro/smartdns_address.conf /etc/storage/
 chmod 755 "/etc/storage/smartdns_address.conf"

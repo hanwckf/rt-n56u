@@ -74,6 +74,7 @@
 #define RCN_RESTART_PDNSD		"restart_pdnsd"
 #define RCN_RESTART_SMARTDNS		"restart_smartdns"
 #define RCN_RESTART_ALIDDNS		"restart_aliddns"
+#define RCN_RESTART_FRP		"restart_frp"
 #define RCN_RESTART_REBOOT		"restart_reboot"
 
 ////////////////////////////////////////////////////////////

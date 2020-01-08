@@ -634,6 +634,10 @@ struct nvram_pair router_defaults[] = {
 	{ "v2_http2_path", "" },
 	{ "v2_tls", "0" },
 	
+	/*frp*/
+	{ "frpc_enable", "0" },
+	{ "frps_enable", "0" },
+	
 	/*SmartDns*/
 	{ "sdns_enable", "0" },
 	{ "snds_name", "smartdns" },

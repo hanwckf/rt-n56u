@@ -903,6 +903,15 @@
 	};
 #endif
 
+#if defined(APP_FRP)
+	struct variable variables_FrpConf[] = {
+			{"frpc_enable", "", NULL, EVM_RESTART_FRP},
+			{"frps_enable", "", NULL, EVM_RESTART_FRP},
+			{"scripts.frp_script.sh", "File", NULL, EVM_RESTART_FRP},
+			{0,0,0,0}
+	};
+#endif
+
 #if defined(APP_SHADOWSOCKS)
 	struct variable variables_ShadowsocksConf[] = {
 			{"ss_enable","",NULL, EVM_RESTART_SHADOWSOCKS},
@@ -1140,6 +1149,9 @@
 #if defined(APP_DNSFORWARDER)
 		{"dnsforwarderConf",		variables_dnsforwarderConf},
 #endif
+#if defined(APP_FRP)
+		{"FrpConf",		variables_FrpConf},
+#endif
 #if defined(APP_SCUT)
 		{"ScutclientConf",		variables_ScutclientConf},
 #endif
@@ -1234,6 +1246,9 @@
 #endif
 #if defined(APP_DNSFORWARDER)
 		{EVM_RESTART_DNSFORWARDER,	EVT_RESTART_DNSFORWARDER,	RCN_RESTART_DNSFORWARDER, 0},
+#endif
+#if defined(APP_FRP)
+		{EVM_RESTART_FRP,	EVT_RESTART_FRP,	RCN_RESTART_FRP, 0},
 #endif
 #if defined(APP_SHADOWSOCKS)
 		{EVM_RESTART_SHADOWSOCKS,	EVT_RESTART_SHADOWSOCKS,	RCN_RESTART_SHADOWSOCKS,  0},

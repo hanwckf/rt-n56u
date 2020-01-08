@@ -1311,6 +1311,12 @@ handle_notifications(void)
 			restart_smartdns();
 		}
 #endif
+#if defined(APP_FRP)
+		else if (strcmp(entry->d_name, RCN_RESTART_FRP) == 0)
+		{
+			restart_frp();
+		}
+#endif
 #if defined(APP_ALIDDNS)
 		else if (strcmp(entry->d_name, RCN_RESTART_ALIDDNS) == 0)
 		{

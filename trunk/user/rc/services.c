@@ -437,6 +437,21 @@ void restart_smartdns(void){
 }
 #endif
 
+#if defined(APP_FRP)
+void stop_frp(void){
+	eval("/usr/bin/frp.sh","stop");
+}
+
+void start_frp(void){
+	eval("/usr/bin/frp.sh","start");
+}
+
+void restart_frp(void){
+	stop_frp();
+	start_frp();
+}
+#endif
+
 #if defined(APP_ALIDDNS)
 void stop_aliddns(void){
 	eval("/usr/bin/aliddns.sh","stop");
@@ -665,6 +680,9 @@ start_services_once(int is_ap_mode)
 #if defined(APP_TTYD)
 	start_ttyd();
 #endif
+#if defined(APP_FRP)
+	start_frp();
+#endif
 #if defined(APP_VLMCSD)
 	start_vlmcsd();
 #endif
@@ -716,6 +734,13 @@ stop_services(int stopall)
 #endif
 #if defined(APP_TTYD)
 	stop_ttyd();
+#endif
+#if defined(APP_FRP)
+	stop_frp();
+#endif
+#if defined(APP_SHADOWSOCKS)
+	stop_ss();
+	stop_ss_tunnel();
 #endif
 #if defined(APP_ADBYBY)
 	stop_adbyby();

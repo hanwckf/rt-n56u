@@ -198,5 +198,8 @@ endif
 ifneq ($(CONFIG_FIRMWARE_INCLUDE_ALIDDNS),y)
 	rm -f $(INSTALLDIR)/www/Advanced_aliddns.asp
 endif
+ifeq ($(CONFIG_FIRMWARE_INCLUDE_FRPC)_$(CONFIG_FIRMWARE_INCLUDE_FRPS), n_n)
+	rm -f $(INSTALLDIR)/www/Advanced_frp.asp
+endif
 clean:
 	@echo "Clean www romfs"

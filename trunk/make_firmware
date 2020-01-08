@@ -1,0 +1,7 @@
+#!/bin/sh
+
+
+[ ! -z "$1" ] && BOARD_NAME="$1"
+sudo ./clear_tree_simple
+sudo ./build_firmware_modify "$BOARD_NAME"
+

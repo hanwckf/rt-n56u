@@ -1,0 +1,9 @@
+#!/bin/sh
+if [ $# = 0 ]; then
+  echo "Usage: $0 <TargetHost>"
+  exit 0
+fi
+
+scp `ls /opt/rt-n56u/trunk/images/*.trx` $1:/tmp/firmware.trx
+ssh $1 "mtd_write -r write /tmp/firmware.trx Firmware_Stub"
+

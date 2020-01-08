@@ -141,3 +141,26 @@ sudo ./build_firmware_modify PSG1218
 ### 请参阅 ###
 - https://www.jianshu.com/p/cb51fb0fb2ac
 - https://www.jianshu.com/p/6b8403cdea46
+
+***
+
+### Yonsm 追加 ###
+
+* 克隆源码
+```shell
+git clone --depth=1 git@github.com:Yonsm/Padavan.git /opt/rt-n56u
+```
+
+* 准备工具链：同 hanwckf
+
+* 编译源码
+```shell
+cd /opt/rt-n56u/trunk
+./make_firmware NEWIFI3
+```
+
+* 刷写固件
+```shell
+cd /opt/rt-n56u/trunk
+./flash_firmware 192.168.2.1
+```

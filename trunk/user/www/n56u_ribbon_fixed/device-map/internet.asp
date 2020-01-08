@@ -373,6 +373,8 @@ function submitInternet(v){
           <option value="../Advanced_Exposed_Content.asp"><#menu5_3_5#></option>
           <option value="../Advanced_DDNS_Content.asp"><#menu5_3_6#></option>
           <option value="../Advanced_Modem_others.asp"><#menu5_4_4#></option>
+          <option value="../vpnsrv.asp"><#menu2#></option>
+          <option value="../vpncli.asp"><#menu6#></option>
         </select>
     </td>
   </tr>

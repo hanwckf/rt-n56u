@@ -3282,7 +3282,15 @@ apply_cgi(const char *url, webs_t wp)
 	}
 	else if (!strcmp(value, " Reboot "))
 	{
-		sys_reboot();
+		int reboot_mode = nvram_get_int("reboot_mode");
+	    if ( reboot_mode == 0)
+	{
+	    sys_reboot();
+	}
+	else if ( reboot_mode == 1)
+	{
+		system("mtd_write -r unlock mtd1");
+	}
 		return 0;
 	}
 	else if (!strcmp(value, " Shutdown "))

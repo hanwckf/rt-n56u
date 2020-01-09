@@ -141,6 +141,7 @@
 			{"sdnss_ip_x", "24", NULL, FALSE},
 			{"sdnss_port_x", "24", NULL, FALSE},
 			{"sdnss_type_x", "24", NULL, FALSE},
+			{"sdnss_ipc_x", "24", NULL, FALSE},
 			{0,0,0,0}
 		};
 		
@@ -253,6 +254,7 @@
 			{"lprd_enable", "", NULL, EVM_RESTART_SPOOLER},
 			{"rawd_enable", "", NULL, EVM_RESTART_SPOOLER},
 			{"help_enable", "", NULL, FALSE},
+			{"reboot_mode", "", NULL, FALSE},
 			{"scripts.start_script.sh", "File", NULL, EVM_BLOCK_UNSAFE},
 			{"scripts.started_script.sh", "File", NULL, EVM_BLOCK_UNSAFE},
 			{"scripts.shutdown_script.sh", "File", NULL, EVM_BLOCK_UNSAFE},
@@ -929,6 +931,7 @@
 			{"ss_key","",NULL, EVM_RESTART_SHADOWSOCKS|EVM_RESTART_SS_TUNNEL},
 			{"ss_method","",NULL, EVM_RESTART_SHADOWSOCKS|EVM_RESTART_SS_TUNNEL},
 			{"ss_udp","",NULL, EVM_RESTART_SHADOWSOCKS},
+			{"ss_own","",NULL, EVM_RESTART_SHADOWSOCKS},
 			{"ss_local_port","",NULL, EVM_RESTART_SHADOWSOCKS},
 			{"ss_mtu","",NULL, EVM_RESTART_SHADOWSOCKS},
 			{"ss_router_proxy","",NULL, EVM_RESTART_SHADOWSOCKS},
@@ -1014,6 +1017,8 @@
 			{"sdnse_as", "", NULL, EVM_RESTART_SMARTDNS},
 			{"sdnse_ipc", "", NULL, EVM_RESTART_SMARTDNS},
 			{"sdnse_cache", "", NULL, EVM_RESTART_SMARTDNS},
+			{"ss_white", "", NULL, EVM_RESTART_SMARTDNS},
+			{"ss_black", "", NULL, EVM_RESTART_SMARTDNS},
 			{"scripts.smartdns_address.conf", "File", NULL, EVM_RESTART_SMARTDNS},
 			{"scripts.smartdns_blacklist-ip.conf", "File", NULL, EVM_RESTART_SMARTDNS},
 			{"scripts.smartdns_whitelist-ip.conf", "File", NULL, EVM_RESTART_SMARTDNS},

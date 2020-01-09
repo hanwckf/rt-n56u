@@ -600,6 +600,7 @@ struct nvram_pair router_defaults[] = {
 	{ "ss_key", "Secret" },
 	{ "ss_method", "rc4-md5" },
 	{ "ss_udp", "0" },
+	{ "ss_own", "1" },
 	{ "ss_local_port", "1080" },
 	{ "ss_mtu", "1492" },
 	{ "ss_router_proxy", "1" },
@@ -664,6 +665,10 @@ struct nvram_pair router_defaults[] = {
 	{ "sdnse_as", "0" },
 	{ "sdnse_ipc", "0" },
 	{ "sdnse_cache", "0" },
+	{ "ss_white", "0" },
+	{ "ss_black", "0" },
+	
+	{ "reboot_mode", "0" },
 
 	/* DHCP server parameters */
 	{ "dhcp_start", DEF_LAN_DHCP_BEG },	/* First assignable DHCP address */
@@ -998,6 +1003,7 @@ struct nvram_pair tables_defaults[] = {
 	{ "sdnss_ip_x", "" },
 	{ "sdnss_port_x", "" },
 	{ "sdnss_type_x", "" },
+	{ "sdnss_ipc_x", "" },
 			
 	{ "dhcp_staticmac_x", "" },
 	{ "dhcp_staticip_x", "" },

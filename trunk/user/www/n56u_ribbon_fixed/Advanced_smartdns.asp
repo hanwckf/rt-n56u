@@ -41,14 +41,17 @@ $j(document).ready(function(){
 	init_itoggle('sdnse_ipset');
 	init_itoggle('sdnse_cache');
 	init_itoggle('sdnse_coredump');
-		$j("#tab_sm_cfg, #tab_sm_sec, #tab_sm_cou").click(function(){
+	init_itoggle('ss_black');
+	init_itoggle('ss_white');
+	init_itoggle('sdnss_enable_x_0');
+		$j("#tab_sm_cfg, #tab_sm_sec, #tab_sm_dns, #tab_sm_cou").click(function(){
 		var newHash = $j(this).attr('href').toLowerCase();
 		showTab(newHash);
 		return false;
 	});
 });
 var m_list = [<% get_nvram_list("SmartdnsConf", "SdnsList"); %>];
-var mlist_ifield = 5;
+var mlist_ifield = 6;
 if(m_list.length > 0){
 	var m_list_ifield = m_list[0].length;
 	for (var i = 0; i < m_list.length; i++) {
@@ -62,7 +65,6 @@ function initial(){
 	showTab(getHash());
 	showMRULESList();
 	fill_status(smartdns_status());
-	$("smartdns_version").innerHTML = '<#version#>' + smartdns_version() ;
 }
 
 function applyRule(){
@@ -74,7 +76,7 @@ function applyRule(){
 		document.form.submit();
 	//}
 }
-var arrHashes = ["cfg", "sec", "cou"];
+var arrHashes = ["cfg", "sec", "dns", "cou"];
 function showTab(curHash){
 	var obj = $('tab_sm_'+curHash.slice(1));
 	if (obj == null || obj.style.display == 'none')
@@ -159,17 +161,25 @@ function showMRULESList(){
 		else{
 		adbybyrulesroad="已启用";
 		}
+		if(m_list[i][5] == 0)
+		ipc="禁用";
+		else if(m_list[i][5] == "whitelist"){
+		ipc="白名单";
+		}else{
+		ipc="黑名单";
+		}
 		code +='<tr id="rowrl' + i + '">';
 		code +='<td width="10%">&nbsp;' + adbybyrulesroad + '</td>';
-		code +='<td width="25%">&nbsp;' + m_list[i][1] + '</td>';
+		code +='<td width="20%">&nbsp;' + m_list[i][1] + '</td>';
 		code +='<td width="25%">&nbsp;' + m_list[i][2] + '</td>';
-		code +='<td width="25%">&nbsp;' + m_list[i][3] + '</td>';
+		code +='<td width="10%">&nbsp;' + m_list[i][3] + '</td>';
 		code +='<td width="10%">&nbsp;' + m_list[i][4] + '</td>';
+		code +='<td width="15%">&nbsp;' + ipc + '</td>';
 		code +='<center><td width="5%" style="text-align: center;"><input type="checkbox" name="SdnsList_s" value="' + m_list[i][mlist_ifield] + '" onClick="changeBgColorrl(this,' + i + ');" id="check' + m_list[i][mlist_ifield] + '"></td></center>';
 		code +='</tr>';
 	    }
 		code += '<tr>';
-		code += '<td colspan="5">&nbsp;</td>'
+		code += '<td colspan="6">&nbsp;</td>'
 		code += '<td><button class="btn btn-danger" type="submit" onclick="markGroupRULES(this, 64, \' Del \');" name="SdnsList"><i class="icon icon-minus icon-white"></i></button></td>';
 		code += '</tr>'
 	}
@@ -241,9 +251,11 @@ function showMRULESList(){
                                 </li>
 								 <li>
                                     <a id="tab_sm_sec" href="#sec">第二服务器</a>
-                                
                                 <li>
-                                    <a id="tab_sm_cou" href="#cou">自定义设置</a>
+								<li>
+                                    <a id="tab_sm_dns" href="#dns">上游服务器</a>
+                                <li>
+                                    <a id="tab_sm_cou" href="#cou">其他设置</a>
                                 </li>
                             </ul>
                         </div>
@@ -259,7 +271,7 @@ function showMRULESList(){
                                             <td id="smartdns_status" colspan="2"></td>
                                         </tr>
 
-                                        <tr> <th><#menu5_21_1#></th>
+                                        <tr> <th width="50%"><#menu5_21_1#></th>
                                             <td>
                                                 <div class="main_itoggle">
                                                 <div id="sdns_enable_on_of">
@@ -275,13 +287,13 @@ function showMRULESList(){
 
                                         <tr> <th width="50%">服务器名称</th>
                                             <td>
-                                                <input type="text" maxlength="15" class="input" size="15" name="snds_name" style="width: 145px" value="<% nvram_get_x("","snds_name"); %>" />
+                                                <input type="text" maxlength="15" class="input" size="15" name="snds_name" style="width: 200px" value="<% nvram_get_x("","snds_name"); %>" />
                                             </td>
                                         </tr>
 
                                         <tr> <th width="50%">本地端口</th>
                                             <td>
-                                                <input type="text" maxlength="5" class="input" size="15" name="sdns_port" style="width: 145px" value="<% nvram_get_x("", "sdns_port"); %>">
+                                                <input type="text" maxlength="5" class="input" size="15" name="sdns_port" style="width: 200px" value="<% nvram_get_x("", "sdns_port"); %>">
                                             </td>
                                         </tr>
 										 <tr> <th>TCP服务器</th>
@@ -336,10 +348,38 @@ function showMRULESList(){
                                                 </div>
                                             </td>
                                         </tr>
+										<tr> <th>加载ChnrouteIP为白名单</th>
+                                            <td>
+                                                <div class="main_itoggle">
+                                                <div id="ss_white_on_of">
+                                                    <input type="checkbox" id="ss_white_fake" <% nvram_match_x("", "ss_white", "1", "value=1 checked"); %><% nvram_match_x("", "ss_white", "0", "value=0"); %>>
+                                                </div>
+                                                </div>
+                                                <div style="position: absolute; margin-left: -10000px;">
+                                                    <input type="radio" value="1" name="ss_white" id="ss_white_1" <% nvram_match_x("", "ss_white", "1", "checked"); %>><#checkbox_Yes#>
+                                                    <input type="radio" value="0" name="ss_white" id="ss_white_0" <% nvram_match_x("", "ss_white", "0", "checked"); %>><#checkbox_No#>
+                                                </div>
+												<div><span style="color:#888;">此项可配合科学上网来实现大陆IP才走国内DNS</span></div>
+                                            </td>
+                                        </tr>
+										<tr> <th>加载ChnrouteIP为黑名单</th>
+                                            <td>
+                                                <div class="main_itoggle">
+                                                <div id="ss_black_on_of">
+                                                    <input type="checkbox" id="ss_black_fake" <% nvram_match_x("", "ss_black", "1", "value=1 checked"); %><% nvram_match_x("", "ss_black", "0", "value=0"); %>>
+                                                </div>
+                                                </div>
+                                                <div style="position: absolute; margin-left: -10000px;">
+                                                    <input type="radio" value="1" name="ss_black" id="ss_black_1" <% nvram_match_x("", "ss_black", "1", "checked"); %>><#checkbox_Yes#>
+                                                    <input type="radio" value="0" name="ss_black" id="ss_black_0" <% nvram_match_x("", "ss_black", "0", "checked"); %>><#checkbox_No#>
+                                                </div>
+												<div><span style="color:#888;">此项可配合科学上网来实现大陆IP禁止走国外DNS</span></div>
+                                            </td>
+                                        </tr>
 <tr>
 											<th width="50%">重定向</th>
 											<td>
-												<select name="snds_redirect" class="input">
+												<select name="snds_redirect" class="input" style="width: 200px">
 													<option value="0" <% nvram_match_x("","snds_redirect", "0","selected"); %>>无</option>
 													<option value="1" <% nvram_match_x("","snds_redirect", "1","selected"); %>>作为dnsmasq的上游服务器</option>
 													<option value="2" <% nvram_match_x("","snds_redirect", "2","selected"); %>>重定向53端口到SmartDns</option>
@@ -348,28 +388,29 @@ function showMRULESList(){
 										</tr>
                                         <tr> <th width="50%">缓存大小</th>
                                             <td>
-                                                <input type="text" maxlength="64" class="input" size="64" name="snds_cache" style="width: 145px" value="<% nvram_get_x("", "snds_cache"); %>">
+                                                <input type="text" maxlength="64" class="input" size="64" name="snds_cache" style="width: 200px" value="<% nvram_get_x("", "snds_cache"); %>">
 												<div><span style="color:#888;">缓存DNS的结果，缓存大小，配置零则不缓存</span></div>
                                             </td>
                                         </tr>
 										<tr> <th width="50%">域名TTL</th>
                                             <td>
-                                                <input type="text" maxlength="64" class="input" size="64" name="sdns_ttl" style="width: 145px" value="<% nvram_get_x("", "sdns_ttl"); %>">
+                                                <input type="text" maxlength="64" class="input" size="64" name="sdns_ttl" style="width: 200px" value="<% nvram_get_x("", "sdns_ttl"); %>">
 												<div><span style="color:#888;">设置所有域名的TTL</span></div>
                                             </td>
                                         </tr>
 										<tr> <th width="50%">域名TTL最小值</th>
                                             <td>
-                                                <input type="text" maxlength="64" class="input" size="64" name="sdns_ttl_min" style="width: 145px" value="<% nvram_get_x("", "sdns_ttl_min"); %>">
+                                                <input type="text" maxlength="64" class="input" size="64" name="sdns_ttl_min" style="width: 200px" value="<% nvram_get_x("", "sdns_ttl_min"); %>">
 												<div><span style="color:#888;">设置所有域名的TTL最小值</span></div>
                                             </td>
                                         </tr>
 										<tr> <th width="50%">域名TTL最大值</th>
                                             <td>
-                                                <input type="text" maxlength="64" class="input" size="64" name="sdns_ttl_max" style="width: 145px" value="<% nvram_get_x("", "sdns_ttl_max"); %>">
+                                                <input type="text" maxlength="64" class="input" size="64" name="sdns_ttl_max" style="width: 200px" value="<% nvram_get_x("", "sdns_ttl_max"); %>">
 												<div><span style="color:#888;">设置所有域名的TTL最大值</span></div>
                                             </td>
                                         </tr>
+										
 										</table>
 										</div>
 										<div id="wnd_sm_sec">
@@ -389,7 +430,7 @@ function showMRULESList(){
                                         </tr>
 										<tr> <th width="50%">本地端口</th>
                                             <td>
-                                                <input type="text" maxlength="64" class="input" size="64" name="sdnse_port" style="width: 145px" value="<% nvram_get_x("", "sdnse_port"); %>">
+                                                <input type="text" maxlength="64" class="input" size="64" name="sdnse_port" style="width: 200px" value="<% nvram_get_x("", "sdnse_port"); %>">
 										
                                             </td>
                                         </tr>
@@ -422,7 +463,7 @@ function showMRULESList(){
                                         </tr>
 										<tr> <th width="50%">服务器组</th>
                                             <td>
-                                                <input type="text" maxlength="64" class="input" size="64" name="sdnse_name" placeholder="default" style="width: 145px" value="<% nvram_get_x("", "sdnse_name"); %>">
+                                                <input type="text" maxlength="64" class="input" size="64" name="sdnse_name" placeholder="default" style="width: 200px" value="<% nvram_get_x("", "sdnse_name"); %>">
 												<div><span style="color:#888;">使用指定服务器组查询，比如office, home</span></div>
                                             </td>
                                         </tr>
@@ -507,8 +548,128 @@ function showMRULESList(){
 										
 										</table>
 										</div>
+										<div id="wnd_sm_dns">
+										<table width="100%" cellpadding="4" cellspacing="0" class="table">
+										<tbody>
+                                        <tr>
+                                         <th width="50%">启用:</th>
+										 <td>
+                                                <div class="main_itoggle">
+                                                <div id="sdnss_enable_x_0_on_of">
+                                                    <input type="checkbox" id="sdnss_enable_x_0_fake" <% nvram_match_x("", "sdnss_enable_x_0", "1", "value=1 checked"); %><% nvram_match_x("", "sdnss_enable_x_0", "0", "value=0"); %>>
+                                                </div>
+                                                </div>
+                                                <div style="position: absolute; margin-left: -10000px;">
+                                                    <input type="radio" value="1" name="sdnss_enable_x_0" id="sdnss_enable_x_0_1" <% nvram_match_x("", "sdnss_enable_x_0", "1", "checked"); %>><#checkbox_Yes#>
+                                                    <input type="radio" value="0" name="sdnss_enable_x_0" id="sdnss_enable_x_0_0" <% nvram_match_x("", "sdnss_enable_x_0", "0", "checked"); %>><#checkbox_No#>
+                                                </div>
+                                            </td>
+											</tr>
+                                        <tr>
+                                         <th>上游名称:</th>
+										 <td>
+                                                <input type="text" maxlength="255" class="span12" style="width: 200px" size="200" name="sdnss_name_x_0" value="<% nvram_get_x("", "sdnss_name_x_0"); %>" onKeyPress="return is_string(this,event);"/>
+                                            </td>
+											</tr>
+                                        <tr>
+                                         <th>上游地址:</th>
+										 <td>
+                                                <input type="text" maxlength="255" class="span12" style="width: 200px" size="200" name="sdnss_ip_x_0" value="<% nvram_get_x("", "sdnss_ip_x_0"); %>" onKeyPress="return is_string(this,event);"/>
+                                            </td>
+											</tr>
+                                        <tr>
+                                         <th>上游服务器端口:</th>
+										 <td>
+                                                <input type="text" maxlength="255" class="span12" style="width: 200px" size="200" name="sdnss_port_x_0" value="default" onKeyPress="return is_string(this,event);"/>
+											</td>
+											 </tr>
+                                        <tr>
+                                         <th>上游类型</th>
+										 <td>
+                                          	<select name="sdnss_type_x_0" class="input" style="width: 200px">
+													<option value="tcp" <% nvram_match_x("","sdnss_type_x_0", "0","selected"); %>>tcp</option>
+													<option value="udp" <% nvram_match_x("","sdnss_type_x_0", "udp","selected"); %>>udp</option>
+													<option value="tls" <% nvram_match_x("","sdnss_type_x_0", "tls","selected"); %>>tls</option>
+													<option value="https" <% nvram_match_x("","sdnss_type_x_0", "https","selected"); %>>https</option>
+												</select>
+                                            </td>
+											</tr>
+                                        <tr>
+                                         <th>IP过滤</th>
+										 <td>
+                                          	<select name="sdnss_ipc_x_0" class="input" style="width: 200px">
+													<option value="0" <% nvram_match_x("","sdnss_ipc_x_0", "0","selected"); %>>禁用</option>
+													<option value="whitelist" <% nvram_match_x("","sdnss_ipc_x_0", "whitelist","selected"); %>>白名单</option>
+													<option value="blacklist" <% nvram_match_x("","sdnss_ipc_x_0", "blacklist","selected"); %>>黑名单</option>
+												</select>
+                                            </td>
+                                            </tr>
+											</tbody>
+											</table>
+											<table width="100%" align="center" cellpadding="0" cellspacing="0" class="table">
+                                        <tr>
+                                            <td><center><input name="ManualRULESList2" type="submit" class="btn btn-primary" style="width: 100px" onclick="return markGroupRULES(this, 64, ' Add ');" value="保存上游"/></center></td>										
+                                        </tr>
+										
+										</table>
+<table width="100%" align="center" cellpadding="3" cellspacing="0" class="table">
+                                        <tr id="row_rules_caption">
+										 
+                                            <th width="10%">
+                                                启用 <i class="icon-circle-arrow-down"></i>
+                                            </th>
+											<th width="20%">
+                                                名称 <i class="icon-circle-arrow-down"></i>
+                                            </th>
+											<th width="25%">
+                                                地址 <i class="icon-circle-arrow-down"></i>
+                                            </th>
+											<th width="10%">
+                                                端口 <i class="icon-circle-arrow-down"></i>
+                                            </th>
+											<th width="10%">
+                                                协议 <i class="icon-circle-arrow-down"></i>
+                                            </th>
+											<th width="15%">
+                                                过滤 <i class="icon-circle-arrow-down"></i>
+                                            </th>
+                                            <th width="5%">
+                                                <center><i class="icon-th-list"></i></center>
+                                            </th>
+                                        </tr>
+                                        <tr id="row_rules_body" >
+                                            <td colspan="7" style="border-top: 0 none; padding: 0px;">
+                                                <div id="MRULESList_Block"></div>
+                                            </td>
+                                        </tr>
+										</table>
+										</div>
 										<div id="wnd_sm_cou">
 										<table width="100%" cellpadding="2" cellspacing="0" class="table">
+										<tr>
+											<td colspan="7" >
+												<i class="icon-hand-right"></i> <a href="javascript:spoiler_toggle('script9')"><span>域名地址:</span></a>
+												<div id="script9">
+													<textarea rows="8" wrap="off" spellcheck="false" class="span12" name="scripts.smartdns_address.conf" style="font-family:'Courier New'; font-size:12px;"><% nvram_dump("scripts.smartdns_address.conf",""); %></textarea>
+												</div>
+											</td>
+										</tr>
+										<tr>
+											<td colspan="6" >
+												<i class="icon-hand-right"></i> <a href="javascript:spoiler_toggle('script10')"><span>IP黑名单:</span></a>
+												<div id="script10">
+													<textarea rows="8" wrap="off" spellcheck="false" class="span12" name="scripts.smartdns_blacklist-ip.conf" style="font-family:'Courier New'; font-size:12px;"><% nvram_dump("scripts.smartdns_blacklist-ip.conf",""); %></textarea>
+												</div>
+											</td>
+										</tr>
+										<tr>
+											<td colspan="6" >
+												<i class="icon-hand-right"></i> <a href="javascript:spoiler_toggle('script12')"><span>IP白名单:</span></a>
+												<div id="script12">
+													<textarea rows="8" wrap="off" spellcheck="false" class="span12" name="scripts.smartdns_whitelist-ip.conf" style="font-family:'Courier New'; font-size:12px;"><% nvram_dump("scripts.smartdns_whitelist-ip.conf",""); %></textarea>
+												</div>
+											</td>
+										</tr>
 										<tr>
 											<td colspan="6" >
 												<i class="icon-hand-right"></i> <a href="javascript:spoiler_toggle('script11')"><span>自定义设置:</span></a>
@@ -533,92 +694,8 @@ function showMRULESList(){
 											
                                         </tr>
 										</table>
-										</div>
-										<table width="100%" align="center" cellpadding="6" cellspacing="0" class="table">
- <tr>
-                                            <th colspan="6" id="GWStatic" style="background-color: #E3E3E3;">上游DNS服务器</th>
-                                        </tr>
-                                        <tr id="row_rules_caption">
-										 
-                                            <th width="10%">
-                                                启用 <i class="icon-circle-arrow-down"></i>
-                                            </th>
-											<th width="25%">
-                                                DNS服务器名称 <i class="icon-circle-arrow-down"></i>
-                                            </th>
-											<th width="25%">
-                                                DNS服务器IP <i class="icon-circle-arrow-down"></i>
-                                            </th>
-											<th width="25%">
-                                                DNS服务器端口 <i class="icon-circle-arrow-down"></i>
-                                            </th>
-											<th width="10%">
-                                                协议 <i class="icon-circle-arrow-down"></i>
-                                            </th>
-                                            <th width="5%">
-                                                <center><i class="icon-th-list"></i></center>
-                                            </th>
-                                        </tr>
-                                        <tr id="row_rules_header" >
-										 <td width="10%">
-                                          	<select name="sdnss_enable_x_0" class="input" style="width: 65px">
-													<option value="0" <% nvram_match_x("","sdnss_enable_x_0", "0","selected"); %>>禁用</option>
-													<option value="1" <% nvram_match_x("","sdnss_enable_x_0", "1","selected"); %>>启用</option>
-												</select>
-                                            </td>
-											<td width="25%">
-                                                <input type="text" maxlength="255" class="span12" size="200" name="sdnss_name_x_0" value="<% nvram_get_x("", "sdnss_name_x_0"); %>" onKeyPress="return is_string(this,event);"/>
-                                            </td>
-											<td width="25%">
-                                                <input type="text" maxlength="255" class="span12" size="200" name="sdnss_ip_x_0" value="<% nvram_get_x("", "sdnss_ip_x_0"); %>" onKeyPress="return is_string(this,event);"/>
-                                            </td>
-											<td width="25%">
-                                                <input type="text" maxlength="255" class="span12" size="200" name="sdnss_port_x_0" value="default" onKeyPress="return is_string(this,event);"/>
-                                            </td>
-											 <td width="10%">
-                                          	<select name="sdnss_type_x_0" class="input" style="width: 65px">
-													<option value="tcp" <% nvram_match_x("","sdnss_type_x_0", "0","selected"); %>>tcp</option>
-													<option value="udp" <% nvram_match_x("","sdnss_type_x_0", "1","selected"); %>>udp</option>
-													<option value="tls" <% nvram_match_x("","sdnss_type_x_0", "1","selected"); %>>tls</option>
-													<option value="https" <% nvram_match_x("","sdnss_type_x_0", "1","selected"); %>>https</option>
-												</select>
-                                            </td>
-                                            <td width="5%">
-                                               <center> <button class="btn" style="max-width: 219px " type="submit" onclick="return markGroupRULES(this, 64, ' Add ');" name="ManualRULESList2" value="<#CTL_add#>" size="12"><i class="icon icon-plus"></i></button></center>
-                                            </td>
-                                        </tr>
-                                        <tr id="row_rules_body" >
-                                            <td colspan="6" style="border-top: 0 none; padding: 0px;">
-                                                <div id="MRULESList_Block"></div>
-                                            </td>
-                                        </tr>
-											<tr>
-											<td colspan="6" >
-												<i class="icon-hand-right"></i> <a href="javascript:spoiler_toggle('script9')"><span>域名地址:</span></a>
-												<div id="script9">
-													<textarea rows="8" wrap="off" spellcheck="false" class="span12" name="scripts.smartdns_address.conf" style="font-family:'Courier New'; font-size:12px;"><% nvram_dump("scripts.smartdns_address.conf",""); %></textarea>
-												</div>
-											</td>
-										</tr>
-										<tr>
-											<td colspan="6" >
-												<i class="icon-hand-right"></i> <a href="javascript:spoiler_toggle('script10')"><span>IP黑名单:</span></a>
-												<div id="script10">
-													<textarea rows="8" wrap="off" spellcheck="false" class="span12" name="scripts.smartdns_blacklist-ip.conf" style="font-family:'Courier New'; font-size:12px;"><% nvram_dump("scripts.smartdns_blacklist-ip.conf",""); %></textarea>
-												</div>
-											</td>
-										</tr>
-										<tr>
-											<td colspan="6" >
-												<i class="icon-hand-right"></i> <a href="javascript:spoiler_toggle('script12')"><span>IP白名单:</span></a>
-												<div id="script12">
-													<textarea rows="8" wrap="off" spellcheck="false" class="span12" name="scripts.smartdns_whitelist-ip.conf" style="font-family:'Courier New'; font-size:12px;"><% nvram_dump("scripts.smartdns_whitelist-ip.conf",""); %></textarea>
-												</div>
-											</td>
-										</tr></table>
-										
-                                   <table class="table">
-									
+										</div>										
+                                   <table class="table">									
                                         <tr>
                                             <td colspan="6">
                                                 <center><input class="btn btn-primary" style="width: 219px" type="button" value="<#CTL_apply#>" onclick="applyRule()" /></center>

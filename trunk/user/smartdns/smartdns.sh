@@ -31,7 +31,8 @@ sdnse_ipset=`nvram get sdnse_ipset`
 sdnse_as=`nvram get sdnse_as`
 sdnse_ipc=`nvram get sdnse_ipc`
 sdnse_cache=`nvram get sdnse_cache`
-
+ss_white=`nvram get ss_white`
+ss_black=`nvram get ss_black`
 get_tz()
 {
 	SET_TZ=""
@@ -84,27 +85,34 @@ sdnss_name=`nvram get sdnss_name_x$j`
 sdnss_ip=`nvram get sdnss_ip_x$j`
 sdnss_port=`nvram get sdnss_port_x$j`
 sdnss_type=`nvram get sdnss_type_x$j`
+sdnss_ipc=`nvram get sdnss_ipc_x$j`
+ipc=""
+if [ $sdnss_ipc = "whitelist" ]; then
+ipc="-whitelist-ip"
+elif [ $sdnss_ipc = "blacklist" ]; then
+ipc="-blacklist-ip"
+fi
 if [ $sdnss_type = "tcp" ]; then
 if [ $sdnss_port = "default" ]; then
-echo "server-tcp $sdnss_ip" >> $SMARTDNS_CONF
+echo "server-tcp $sdnss_ip $ipc" >> $SMARTDNS_CONF
 else
-echo "server-tcp $sdnss_ip:$sdnss_port" >> $SMARTDNS_CONF
+echo "server-tcp $sdnss_ip:$sdnss_port $ipc" >> $SMARTDNS_CONF
 fi
 elif [ $sdnss_type = "udp" ]; then
 if [ $sdnss_port = "default" ]; then
 echo "server $sdnss_ip" >> $SMARTDNS_CONF
 else
-echo "server $sdnss_ip:$sdnss_port" >> $SMARTDNS_CONF
+echo "server $sdnss_ip:$sdnss_port $ipc" >> $SMARTDNS_CONF
 fi
 elif [ $sdnss_type = "tls" ]; then
 if [ $sdnss_port = "default" ]; then
-echo "server-tls $sdnss_ip" >> $SMARTDNS_CONF
+echo "server-tls $sdnss_ip $ipc" >> $SMARTDNS_CONF
 else
-echo "server-tls $sdnss_ip:$sdnss_port" >> $SMARTDNS_CONF
+echo "server-tls $sdnss_ip:$sdnss_port $ipc" >> $SMARTDNS_CONF
 fi
 elif [ $sdnss_type = "https" ]; then
 if [ $sdnss_port = "default" ]; then
-echo "server-https $sdnss_ip" >> $SMARTDNS_CONF
+echo "server-https $sdnss_ip $ipc" >> $SMARTDNS_CONF
 fi	
 fi	
 fi
@@ -240,10 +248,22 @@ fi
 args=""
 logger -t "SmartDNS" "创建配置文件."
 gensmartconf
+if [ $ss_white = "1" ]; then
+rm -f /tmp/whitelist.txt
+awk '{printf("whitelist-ip %s\n", $1, $1 )}' /etc/storage/chinadns/chnroute.txt >> /tmp/whitelist.txt
+fi
+if [ $ss_black = "1" ]; then
+rm -f /tmp/blacklist.txt
+awk '{printf("blacklist-ip %s\n", $1, $1 )}' /etc/storage/chinadns/chnroute.txt >> /tmp/blacklist.txt
+fi
 grep -v ^! $ADDRESS_CONF >> $SMARTDNS_CONF
 grep -v ^! $BLACKLIST_IP_CONF >> $SMARTDNS_CONF
 grep -v ^! $WHITELIST_IP_CONF >> $SMARTDNS_CONF
 grep -v ^! $CUSTOM_CONF >> $SMARTDNS_CONF
+grep -v ^! /tmp/whitelist.txt >> $SMARTDNS_CONF
+rm -f /tmp/whitelist.txt
+grep -v ^! /tmp/blacklist.txt >> $SMARTDNS_CONF
+rm -f /tmp/blacklist.txt
 if [ "$sdns_coredump" = "1" ]; then
 		args="$args -S"
 	fi

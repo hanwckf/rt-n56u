@@ -30,6 +30,11 @@ run_mode=`nvram get ss_run_mode`
 ss_turn=`nvram get ss_turn`
 ss_udp=`nvram get ss_udp`
 lan_con=`nvram get lan_con`
+ss_own=`nvram get ss_own`
+socks=""
+if [ $ss_own = "1" ]; then
+socks="-o"
+fi
 gen_config_file() {
 hostip=`nvram get ssp_server_x$1`
 if [ $2 = "0" ] ;then

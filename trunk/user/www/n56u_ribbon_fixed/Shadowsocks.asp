@@ -37,6 +37,7 @@ $j(document).ready(function(){
 	init_itoggle('v2_mkcp_congestion_x_0');
 	init_itoggle('v2_tls_x_0');
 	init_itoggle('ss_udp');
+	init_itoggle('ss_own');
 	init_itoggle('ss_router_proxy',change_ss_watchcat_display);
 	init_itoggle('ss_watchcat');
 	init_itoggle('ss_update_chnroute');
@@ -647,19 +648,6 @@ if (ssu[0] == "ssr") {
 					</select>
 				</td>
 			</tr>
-			<tr> <th><#menu5_16_17#></th>
-				<td>
-					<div class="main_itoggle">
-						<div id="ss_udp_on_of">
-							<input type="checkbox" id="ss_udp_fake" <% nvram_match_x("", "ss_udp", "1", "value=1 checked"); %><% nvram_match_x("", "ss_udp", "0", "value=0"); %>>
-						</div>
-					</div>
-					<div style="position: absolute; margin-left: -10000px;">
-						<input type="radio" value="1" name="ss_udp" id="ss_udp_1" <% nvram_match_x("", "ss_udp", "1", "checked"); %>><#checkbox_Yes#>
-						<input type="radio" value="0" name="ss_udp" id="ss_udp_0" <% nvram_match_x("", "ss_udp", "0", "checked"); %>><#checkbox_No#>
-					</div>
-				</td>
-			</tr>
 			<tr> <th width="50%">多线程并发转发</th>
 				<td>
 					<select name="ss_threads" class="input" style="width: 200px;">
@@ -673,7 +661,7 @@ if (ssu[0] == "ssr") {
 			</tr>
 			<tr> <th width="50%">运行模式</th>
 				<td>
-					<select name="ss_run_mode" class="input" style="width: 145px;">   
+					<select name="ss_run_mode" class="input" style="width: 200px;">   
 						<option value="gfw" >gfw列表模式</option>
 						<option value="router" >绕过大陆IP模式</option>
 						<option value="all" >全局模式</option>
@@ -715,10 +703,36 @@ if (ssu[0] == "ssr") {
 					</select>
 				</td>
 			</tr>
+				<tr> <th><#menu5_16_17#></th>
+				<td>
+					<div class="main_itoggle">
+						<div id="ss_udp_on_of">
+							<input type="checkbox" id="ss_udp_fake" <% nvram_match_x("", "ss_udp", "1", "value=1 checked"); %><% nvram_match_x("", "ss_udp", "0", "value=0"); %>>
+						</div>
+					</div>
+					<div style="position: absolute; margin-left: -10000px;">
+						<input type="radio" value="1" name="ss_udp" id="ss_udp_1" <% nvram_match_x("", "ss_udp", "1", "checked"); %>><#checkbox_Yes#>
+						<input type="radio" value="0" name="ss_udp" id="ss_udp_0" <% nvram_match_x("", "ss_udp", "0", "checked"); %>><#checkbox_No#>
+					</div>
+				</td>
+			</tr>
+			<tr> <th>路由自身走代理</th>
+				<td>
+					<div class="main_itoggle">
+						<div id="ss_own_on_of">
+							<input type="checkbox" id="ss_own_fake" <% nvram_match_x("", "ss_own", "1", "value=1 checked"); %><% nvram_match_x("", "ss_own", "0", "value=0"); %>>
+						</div>
+					</div>
+					<div style="position: absolute; margin-left: -10000px;">
+						<input type="radio" value="1" name="ss_own" id="ss_own_1" <% nvram_match_x("", "ss_own", "1", "checked"); %>><#checkbox_Yes#>
+						<input type="radio" value="0" name="ss_own" id="ss_own_0" <% nvram_match_x("", "ss_own", "0", "checked"); %>><#checkbox_No#>
+					</div>
+				</td>
+			</tr>
 		</table>
 		<table class="table">
 			<tr>
-				<td style="border: 0 none; padding: 0px;"><center><input name="button" type="button" class="btn btn-primary" style="width: 219px" onclick="applyRule();" value="应用设置"/></center></td>
+				<td style="border: 0 none; padding: 0px;"><center><input name="button" type="button" class="btn btn-primary" style="width: 200px" onclick="applyRule();" value="应用设置"/></center></td>
 			</tr>
 		</table>
 	</div>
@@ -740,33 +754,33 @@ if (ssu[0] == "ssr") {
 			</tr>
 			<tr> <th width="50%">别名:（可选）</th>
 				<td>
-					<input type="text" maxlength="255" class="input" size="15" name="ssp_name_x_0" id="ssp_name_x_0" style="width: 145px" value="<% nvram_get_x("","ssp_name_x_0"); %>" />
+					<input type="text" class="input" size="15" name="ssp_name_x_0" id="ssp_name_x_0" style="width: 200px" value="<% nvram_get_x("","ssp_name_x_0"); %>" />
 				</td>
 			</tr>
 			<tr> <th width="50%">服务器IP地址</th>
 				<td>
-					<input type="text" maxlength="64" class="input" size="64" name="ssp_server_x_0" id="ssp_server_x_0" value="<% nvram_get_x("","ssp_server_x_0"); %>" />
+					<input type="text" class="input" size="15" name="ssp_server_x_0" id="ssp_server_x_0" value="<% nvram_get_x("","ssp_server_x_0"); %>" />
 				</td>
 			</tr>
 			<tr> <th width="50%">服务器端口</th>
 				<td>
-					<input type="text" maxlength="64" class="input" size="15" name="ssp_prot_x_0" id="ssp_prot_x_0" style="width: 145px" value="<% nvram_get_x("","ssp_prot_x_0"); %>" />
+					<input type="text" class="input" size="15" name="ssp_prot_x_0" id="ssp_prot_x_0" style="width: 200px" value="<% nvram_get_x("","ssp_prot_x_0"); %>" />
 				</td>
 			</tr>
 			<tr id="row_ss_password" style="display:none;">  <th width="50%">服务器密码</th>
 				<td>
-					<input type="password" maxlength="32" class="input" size="32" name="ss_key_x_0" id="ss_key" value="<% nvram_get_x("","ss_key_x_0"); %>" />
+					<input type="password" class="input" size="32" name="ss_key_x_0" id="ss_key" value="<% nvram_get_x("","ss_key_x_0"); %>" />
 					<button style="margin-left: -5px;" class="btn" type="button" onclick="passwordShowHide('ss_key')"><i class="icon-eye-close"></i></button>
 				</td>
 			</tr>	
 			<tr id="row_v2_aid" style="display:none;"> <th width="50%">AlterId</th>
 				<td>
-					<input type="text" maxlength="255" class="input" size="15" name="v2_aid_x_0" id="v2_aid_x_0" style="width: 145px" value="<% nvram_get_x("","v2_aid_x_0"); %>" />
+					<input type="text" class="input" size="15" name="v2_aid_x_0" id="v2_aid_x_0" style="width: 200px" value="<% nvram_get_x("","v2_aid_x_0"); %>" />
 				</td>
 			</tr>
 			<tr id="row_v2_vid" style="display:none;"> <th width="50%">VmessId (UUID)</th>
 				<td>
-					<input type="text" maxlength="255" class="input" size="15" name="v2_vid_x_0" id="v2_vid_x_0" style="width: 145px" value="<% nvram_get_x("","v2_vid_x_0"); %>" />
+					<input type="text" class="input" size="15" name="v2_vid_x_0" id="v2_vid_x_0" style="width: 200px" value="<% nvram_get_x("","v2_vid_x_0"); %>" />
 				</td>
 			</tr>
 			<tr id="row_v2_security" style="display:none;"><th width="50%">加密</th>
@@ -808,32 +822,32 @@ if (ssu[0] == "ssr") {
 			</tr>
 			<tr id="row_v2_mkcp_mtu" style="display:none;"> <th width="50%">MTU</th>
 				<td>
-					<input type="text" maxlength="255" class="input" size="15" name="v2_mkcp_mtu_x_0" style="width: 145px" value="<% nvram_get_x("","v2_mkcp_mtu"); %>" />
+					<input type="text" class="input" size="15" name="v2_mkcp_mtu_x_0" style="width: 200px" value="<% nvram_get_x("","v2_mkcp_mtu"); %>" />
 				</td>
 			</tr>
 			<tr id="row_v2_mkcp_tti" style="display:none;"> <th width="50%">TTI</th>
 				<td>
-					<input type="text" maxlength="255" class="input" size="15" name="v2_mkcp_tti_x_0" style="width: 145px" value="<% nvram_get_x("","v2_mkcp_tti"); %>" />
+					<input type="text" class="input" size="15" name="v2_mkcp_tti_x_0" style="width: 200px" value="<% nvram_get_x("","v2_mkcp_tti"); %>" />
 				</td>
 			</tr>
 			<tr id="row_v2_mkcp_uplink" style="display:none;"> <th width="50%">Uplink Capacity</th>
 				<td>
-					<input type="text" maxlength="255" class="input" size="15" name="v2_mkcp_uplink_x_0" style="width: 145px" value="<% nvram_get_x("","v2_mkcp_uplink"); %>" />
+					<input type="text" class="input" size="15" name="v2_mkcp_uplink_x_0" style="width: 200px" value="<% nvram_get_x("","v2_mkcp_uplink"); %>" />
 				</td>
 			</tr>
 			<tr id="row_v2_mkcp_downlink" style="display:none;"> <th width="50%">Downlink Capacity</th>
 				<td>
-					<input type="text" maxlength="255" class="input" size="15" name="v2_mkcp_downlink_x_0" style="width: 145px" value="<% nvram_get_x("","v2_mkcp_downlink"); %>" />
+					<input type="text" class="input" size="15" name="v2_mkcp_downlink_x_0" style="width: 200px" value="<% nvram_get_x("","v2_mkcp_downlink"); %>" />
 				</td>
 			</tr>
 			<tr id="row_v2_mkcp_readbu" style="display:none;"> <th width="50%">Read Buffer Size</th>
 				<td>
-					<input type="text" maxlength="255" class="input" size="15" name="v2_mkcp_readbu_x_0" style="width: 145px" value="<% nvram_get_x("","v2_mkcp_readbu"); %>" />
+					<input type="text" class="input" size="15" name="v2_mkcp_readbu_x_0" style="width: 200px" value="<% nvram_get_x("","v2_mkcp_readbu"); %>" />
 				</td>
 			</tr>
 			<tr id="row_v2_mkcp_writebu" style="display:none;"> <th width="50%">Write Buffer Size</th>
 				<td>
-					<input type="text" maxlength="255" class="input" size="15" name="v2_mkcp_writebu_x_0" style="width: 145px" value="<% nvram_get_x("","v2_mkcp_writebu"); %>" />
+					<input type="text" class="input" size="15" name="v2_mkcp_writebu_x_0" style="width: 200px" value="<% nvram_get_x("","v2_mkcp_writebu"); %>" />
 				</td>
 			</tr>
 			<tr id="row_v2_mkcp_congestion" style="display:none;"><th>Congestion</th>
@@ -851,22 +865,22 @@ if (ssu[0] == "ssr") {
 			</tr>
 			<tr id="row_v2_webs_host" style="display:none;"> <th width="50%">WebSocket Host</th>
 				<td>
-					<input type="text" maxlength="255" class="input" size="15" name="v2_webs_host_x_0" id="v2_webs_host_x_0" style="width: 145px" value="<% nvram_get_x("","v2_webs_host"); %>" />
+					<input type="text" class="input" size="15" name="v2_webs_host_x_0" id="v2_webs_host_x_0" style="width: 200px" value="<% nvram_get_x("","v2_webs_host"); %>" />
 				</td>
 			</tr>
 			<tr id="row_v2_webs_path" style="display:none;"> <th width="50%">WebSocket Path</th>
 				<td>
-					<input type="text" maxlength="255" class="input" size="15" name="v2_webs_path_x_0" id="v2_webs_path_x_0" style="width: 145px" value="<% nvram_get_x("","v2_webs_path"); %>" />
+					<input type="text" class="input" size="15" name="v2_webs_path_x_0" id="v2_webs_path_x_0" style="width: 200px" value="<% nvram_get_x("","v2_webs_path"); %>" />
 				</td>
 			</tr>
 			<tr id="row_v2_http2_host" style="display:none;"> <th width="50%">HTTP/2 Host</th>
 				<td>
-					<input type="text" maxlength="255" class="input" size="15" name="v2_http2_host_x_0" id="v2_http2_host_x_0" style="width: 145px" value="<% nvram_get_x("","v2_http2_host"); %>" />
+					<input type="text" class="input" size="15" name="v2_http2_host_x_0" id="v2_http2_host_x_0" style="width: 200px" value="<% nvram_get_x("","v2_http2_host"); %>" />
 				</td>
 			</tr>
 			<tr id="row_v2_http2_path" style="display:none;"> <th width="50%">HTTP/2 Path</th>
 				<td>
-					<input type="text" maxlength="255" class="input" size="15" name="v2_http2_path_x_0" id="v2_http2_path_x_0" style="width: 145px" value="<% nvram_get_x("","v2_https_path"); %>" />
+					<input type="text" class="input" size="15" name="v2_http2_path_x_0" id="v2_http2_path_x_0" style="width: 200px" value="<% nvram_get_x("","v2_https_path"); %>" />
 				</td>
 			</tr>
 			<tr id="row_quic_security" style="display:none;"> <th width="50%">QUIC Security</th>
@@ -880,7 +894,7 @@ if (ssu[0] == "ssr") {
 			</tr>
 			<tr id="row_quic_key" style="display:none;"> <th width="50%">QUIC Key</th>
 				<td>
-					<input type="text" maxlength="255" class="input" size="15" name="v2_quic_key_x_0" style="width: 145px" value="<% nvram_get_x("","v2_quic_key"); %>" />
+					<input type="text" class="input" size="15" name="v2_quic_key_x_0" style="width: 200px" value="<% nvram_get_x("","v2_quic_key"); %>" />
 				</td>
 			</tr>
 			<tr id="row_quic_header" style="display:none;"> <th width="50%">Header</th>
@@ -910,7 +924,7 @@ if (ssu[0] == "ssr") {
 			</tr>
 			<tr id="row_ss_method" style="display:none;">  <th width="50%">加密方式</th>
 				<td>
-					<select name="ss_method_x_0" id="ss_method_x_0" class="input" style="width: 250px;">
+					<select name="ss_method_x_0" id="ss_method_x_0" class="input" style="width: 200px;">
 						<option value="none" >none (ssr only)</option>
 						<option value="rc4" >rc4</option>
 						<option value="rc4-md5" >rc4-md5</option>
@@ -937,7 +951,7 @@ if (ssu[0] == "ssr") {
 			</tr>
 			<tr> <th width="50%"><#menu5_16_21#></th>
 				<td>
-					<input type="text" maxlength="6" class="input" size="15" name="ss_timeout" style="width: 145px" value="<% nvram_get_x("","ss_timeout"); %>" />
+					<input type="text" class="input" size="15" name="ss_timeout" style="width: 200px" value="<% nvram_get_x("","ss_timeout"); %>" />
 				</td>
 			</tr>
 			<tr id="row_ss_protocol" style="display:none;"> <th width="50%">协议</th>
@@ -956,7 +970,7 @@ if (ssu[0] == "ssr") {
 			</tr>
 			<tr id="row_ss_protocol_para" style="display:none;"> <th width="50%">传输协议参数（可选）</th>
 				<td>
-					<input type="text" maxlength="72" class="input" size="64" name="ss_proto_param_x_0" id="ss_proto_param_x_0" value="<% nvram_get_x("","ss_proto_param_x_0"); %>" />
+					<input type="text" class="input" size="15" name="ss_proto_param_x_0" id="ss_proto_param_x_0" value="<% nvram_get_x("","ss_proto_param_x_0"); %>" />
 				</td>
 			</tr>
 			<tr id="row_ss_obfs" style="display:none;"> <th width="50%">混淆</th>
@@ -971,12 +985,12 @@ if (ssu[0] == "ssr") {
 			</tr>
 			<tr id="row_ss_obfs_para" style="display:none;"> <th width="50%">混淆参数（可选）</th>
 				<td>
-					<input type="text" maxlength="72" class="input" size="64" name="ss_obfs_param_x_0" id="ss_obfs_param_x_0" value="<% nvram_get_x("","ss_obfs_param_x_0"); %>" />
+					<input type="text" class="input" size="15" name="ss_obfs_param_x_0" id="ss_obfs_param_x_0" style="width: 200px" value="<% nvram_get_x("","ss_obfs_param_x_0"); %>" />
 				</td>
 			</tr>
 			<tr> <th width="50%">本地端口</th>
 				<td>
-					<input type="text" maxlength="6" class="input" size="15" name="ssp_local_port_x_0" style="width: 145px" value="1080">
+					<input type="text" maxlength="6" class="input" size="15" name="ssp_local_port_x_0" style="width: 200px" value="1080">
 				</td>
 			</tr>
 <!--<tr> <th>自动切换</th>
@@ -1064,12 +1078,12 @@ if (ssu[0] == "ssr") {
 -->
 <tr> <th width="50%">自动切换检查周期(秒)</th>
 	<td>
-		<input type="text" maxlength="32" class="input" size="64" name="ss_turn_s"style="width: 80px"  value="<% nvram_get_x("","ss_turn_s"); %>" />
+		<input type="text" class="input" size="15" name="ss_turn_s" style="width: 200px"  value="<% nvram_get_x("","ss_turn_s"); %>" />
 	</td>
 </tr>
 <tr> <th width="50%">切换检查超时时间(秒)</th>
 	<td>
-		<input type="text" maxlength="6" class="input" size="15" name="ss_turn_ss" style="width: 80px" value="<% nvram_get_x("", "ss_turn_ss"); %>">
+		<input type="text" class="input" size="15" name="ss_turn_ss" style="width: 200px" value="<% nvram_get_x("", "ss_turn_ss"); %>">
 	</td>
 </tr>
 <tr> <th colspan="2" style="background-color: #E3E3E3;">SOCKS5代理</th> </tr>
@@ -1081,13 +1095,13 @@ if (ssu[0] == "ssr") {
 </tr>
 <tr> <th width="50%">本地端口:</th>
 	<td>
-		<input type="text" maxlength="6" class="input" size="15" name="socks5_proxy_port" style="width: 80px" value="<% nvram_get_x("", "socks5_proxy_port"); %>">
+		<input type="text" class="input" size="15" name="socks5_proxy_port" style="width: 200px" value="<% nvram_get_x("", "socks5_proxy_port"); %>">
 	</td>
 </tr>
 </table>
 <table class="table">
 	<tr>
-		<td style="border: 0 none; padding: 0px;"><center><input name="button" type="button" class="btn btn-primary" style="width: 219px" onclick="applyRule();" value="应用设置"/></center></td>
+		<td style="border: 0 none; padding: 0px;"><center><input name="button" type="button" class="btn btn-primary" style="width: 200px" onclick="applyRule();" value="应用设置"/></center></td>
 	</tr>
 </table>
 </div>
@@ -1189,7 +1203,7 @@ if (ssu[0] == "ssr") {
 		</tr>
 		<tr>
 			<td width="15%" style="text-align: left; padding-bottom: 0px;">
-				<input type="button" onClick="location.href=location.href" value="<#CTL_refresh#>" class="btn btn-primary" style="width: 219px">
+				<input type="button" onClick="location.href=location.href" value="<#CTL_refresh#>" class="btn btn-primary" style="width: 200px">
 			</td>
 		</tr>
 	</table>

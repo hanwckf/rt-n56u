@@ -1660,7 +1660,16 @@ main(int argc, char **argv)
 	}
 
 	if (!strcmp(base, "reboot")) {
-		return sys_exit();
+		int reboot_mode = nvram_get_int("reboot_mode");
+	    if ( reboot_mode == 0)
+	{
+	    return sys_exit();
+	}
+	else if ( reboot_mode == 1)
+	{
+		doSystem("/sbin/mtd_storage.sh %s", "save");
+		system("mtd_write -r unlock mtd1");
+	}
 	}
 
 	if (!strcmp(base, "shutdown") || !strcmp(base, "halt")) {

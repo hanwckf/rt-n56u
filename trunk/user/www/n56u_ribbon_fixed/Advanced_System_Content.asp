@@ -370,8 +370,8 @@ function openLink(s) {
                                         <tr>
                                             <th colspan="2" style="background-color: #E3E3E3;"><#t2Misc#></th>
                                         </tr>
-										 <tr>
-                                            <th>重启模式</th>
+											<tr>
+                                            <th>重启方式</th>
                                             <td>
                                                 <select name="reboot_mode" class="input">
                                                     <option value="0" <% nvram_match_x("", "reboot_mode", "0","selected"); %>>系统默认</option>

@@ -131,7 +131,6 @@ dir_y						+= xl2tpd
 dir_$(CONFIG_FIRMWARE_INCLUDE_RPL2TP)		+= rp-l2tp
 dir_y						+= lldt
 dir_y						+= scripts
-dir_n						+= nodejs
 dir_$(CONFIG_FIRMWARE_INCLUDE_SHADOWSOCKS)      	+= jq
 dir_$(CONFIG_FIRMWARE_INCLUDE_SHADOWSOCKS)	        += pdnsd
 dir_$(CONFIG_FIRMWARE_INCLUDE_V2RAY)	        += v2ray

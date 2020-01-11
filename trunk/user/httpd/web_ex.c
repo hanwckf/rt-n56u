@@ -95,7 +95,7 @@ nvram_commit_safe(void)
 void
 sys_reboot(void)
 {
-	kill(1, SIGQUIT);
+	kill(1, SIGTERM);
 }
 
 char *

@@ -26,7 +26,7 @@ CURRENT_SERVER=$DEFAULT_SERVER
 BACKUP_SERVER=$(nvram get backup_server)
 #判断代理是否正常
 check_proxy() {
-	curl -k -s -connect-timeout 10 --retry 3 $Foreign_wget_domain #> /dev/null 2>&1
+	curl -A "Mozilla/4.0 (compatible; MSIE 6.0; Windows NT 5.0)" $Foreign_wget_domain #> /dev/null 2>&1
 	if [ "$?" == "0" ]; then
 		return 0
 	else

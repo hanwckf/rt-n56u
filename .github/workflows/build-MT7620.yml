@@ -76,6 +76,7 @@ jobs:
         echo "CONFIG_FIRMWARE_INCLUDE_SMARTDNS=y" >> .config #smartdns
         echo "CONFIG_FIRMWARE_INCLUDE_SMARTDNSBIN=y" >> .config #smartdns二进制文件
         echo "CONFIG_FIRMWARE_INCLUDE_V2RAY=n" >> .config #v2ray二进制文件
+        echo "CONFIG_FIRMWARE_INCLUDE_KOOLPROXY=y" >> .config
         ####################################################################################
         if [ "$m" = "PSG1208" ] || [ "$m" = "PSG1218" ] || [ "$m" = "PSG712" ]; then
         sed -i '/CONFIG_FIRMWARE_INCLUDE_TTYD/d' .config
@@ -83,6 +84,7 @@ jobs:
         echo "CONFIG_FIRMWARE_INCLUDE_TTYD=n" >> .config
         echo "CONFIG_FIRMWARE_INCLUDE_ALIDDNS=n" >> .config
         echo "CONFIG_FIRMWARE_INCLUDE_SMARTDNSBIN=n" >> .config
+        echo "CONFIG_FIRMWARE_INCLUDE_KOOLPROXY=n" >> .config
         fi
         sed -i "s/^CONFIG_TOOLCHAIN_DIR=.*$/CONFIG_TOOLCHAIN_DIR=${CONFIG_TOOLCHAIN_DIR}/g" .config
         sudo ./clear_tree_simple

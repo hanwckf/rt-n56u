@@ -376,8 +376,8 @@ function show_banner(L3){
 	show_top_status();
 }
 
-var tabtitle = new Array(18);
-var tablink = new Array(18);
+var tabtitle = new Array(19);
+var tablink = new Array(19);
 tabtitle[0] = new Array("", "<#menu5_1_1#>", "<#menu5_1_2#>", "<#menu5_1_3#>", "<#menu5_1_4#>", "<#menu5_1_5#>", "<#menu5_1_6#>");
 tabtitle[1] = new Array("", "<#menu5_1_1#>", "<#menu5_1_2#>", "<#menu5_1_3#>", "<#menu5_1_4#>", "<#menu5_1_5#>", "<#menu5_1_6#>");
 tabtitle[2] = new Array("", "<#menu5_2_1#>", "<#menu5_2_2#>", "<#menu5_2_3#>", "<#menu5_2_4#>", "<#menu5_2_5#>", "<#menu5_2_6#>");
@@ -402,6 +402,13 @@ if (found_app_mentohust()){
 }
 if (found_app_adbyby()){
 	tabtitle[14] = new Array("", "<#menu5_20_1#>");
+}
+if (found_app_koolproxy()){
+	if (found_app_adbyby()){
+		tabtitle[14].push("<#menu5_26_1#>");
+	}else{
+	tabtitle[14] = new Array("", "<#menu5_26_1#>");
+	}
 }
 if (found_app_aliddns()){
 	tabtitle[15] = new Array("", "<#menu5_23_1#>");
@@ -445,6 +452,14 @@ if (found_app_adbyby()){
 	ad_array = new Array("","Advanced_adbyby.asp");
 	tablink[14] = (ad_array);
 }
+if (found_app_koolproxy()){
+	if (found_app_adbyby()){
+		tablink[14].push("Advanced_koolproxy.asp");
+	}else{
+	ad_array = new Array("","Advanced_koolproxy.asp");
+	tablink[14] = (ad_array);
+}
+}
 if (found_app_aliddns()){
 	aliddns_array = new Array("","Advanced_aliddns.asp");
 	tablink[15] = (aliddns_array);
@@ -459,7 +474,7 @@ if (found_app_frp()){
 }
 
 //Level 2 Menu
-menuL2_title = new Array(18)
+menuL2_title = new Array(19)
 menuL2_title = new Array("", "<#menu5_11#>", "<#menu5_12#>", "<#menu5_2#>", "<#menu5_3#>", "<#menu5_5#>", "<#menu5_4#>", "<#menu5_6#>", "<#menu5_10#>", "<#menu5_9#>", "<#menu5_7#>");
 if (found_app_scutclient()){
 	menuL2_title.push("<#menu5_13#>");
@@ -477,7 +492,10 @@ if (found_app_mentohust()){
 	menuL2_title.push("mentohust");
 } else menuL2_title.push("");
 
-if (found_app_adbyby()){
+
+if (found_app_koolproxy()){
+	menuL2_title.push("<#menu5_20#>");
+}else if (found_app_adbyby()){
 	menuL2_title.push("<#menu5_20#>");
 } else menuL2_title.push("");
 if (found_app_aliddns()){
@@ -508,6 +526,8 @@ if (found_app_mentohust()){
 } else menuL2_link.push("");
 
 if (found_app_adbyby()){
+	menuL2_link.push(ad_array[1]);
+} else if (found_app_koolproxy()){
 	menuL2_link.push(ad_array[1]);
 } else menuL2_link.push("");
 if (found_app_aliddns()){

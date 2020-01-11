@@ -398,6 +398,27 @@ void start_napt66(void){
 }
 #endif
 
+#if defined(APP_KOOLPROXY)
+void stop_koolproxy(void){
+	eval("/usr/bin/koolproxy.sh","stop");
+}
+
+void start_koolproxy(void){
+	int koolproxy_mode = nvram_get_int("koolproxy_enable");
+	if ( koolproxy_mode == 1)
+		eval("/usr/bin/koolproxy.sh","start");
+}
+
+void restart_koolproxy(void){
+	stop_koolproxy();
+	start_koolproxy();
+}
+
+void update_kp(void){
+	eval("/usr/bin/koolproxy.sh","updatekp");
+}
+#endif
+
 #if defined(APP_ADBYBY)
 void stop_adbyby(void){
 	eval("/usr/bin/adbyby.sh","stop");
@@ -686,6 +707,9 @@ start_services_once(int is_ap_mode)
 #if defined(APP_VLMCSD)
 	start_vlmcsd();
 #endif
+#if defined(APP_KOOLPROXY)
+	start_koolproxy();
+#endif
 #if defined(APP_ADBYBY)
 	start_adbyby();
 #endif
@@ -737,6 +761,9 @@ stop_services(int stopall)
 #endif
 #if defined(APP_FRP)
 	stop_frp();
+#endif
+#if defined(APP_KOOLPROXY)
+	stop_koolproxy();
 #endif
 #if defined(APP_SHADOWSOCKS)
 	stop_ss();

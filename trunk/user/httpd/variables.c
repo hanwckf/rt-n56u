@@ -83,6 +83,14 @@
 			{"dhcp_staticname_x", "24", NULL, FALSE},
 			{0,0,0,0}
 		};
+		
+	struct variable variables_KoolproxyConf_KpIPList[] = {
+			{"koolproxy_mac_x", "14", NULL, FALSE},
+			{"koolproxy_ip_x", "17", NULL, FALSE},
+			{"koolproxy_name_x", "24", NULL, FALSE},
+			{"koolproxy_ip_road", "24", NULL, FALSE},
+			{0,0,0,0}
+		};
 	
 	struct variable variables_AdbybyConf_AdIPList[] = {
 			{"adbybyip_mac_x", "14", NULL, FALSE},
@@ -964,6 +972,31 @@
 	};
 #endif
 
+#if defined(APP_KOOLPROXY)
+    struct variable variables_KoolproxyConf[] = {
+			{"koolproxy_enable", "", NULL, EVM_RESTART_KOOLPROXY},
+			{"hosts_ad", "", NULL, EVM_RESTART_KOOLPROXY},
+			{"tv_hosts", "", NULL, EVM_RESTART_KOOLPROXY},
+			{"koolproxy_set", "", NULL, EVM_RESTART_KOOLPROXY},
+			{"koolproxy_cpu", "", NULL, EVM_RESTART_KOOLPROXY},
+			{"koolproxy_https", "", NULL, EVM_RESTART_KOOLPROXY},
+			{"koolproxy_video", "", NULL, EVM_RESTART_KOOLPROXY},
+			{"koolproxy_prot", "", NULL, EVM_RESTART_KOOLPROXY},
+			{"koolproxy_update", "", NULL, EVM_RESTART_KOOLPROXY},
+			{"kp_staticnum_x", "", NULL, EVM_RESTART_KOOLPROXY},
+			{"rules_list", "", NULL, EVM_RESTART_KOOLPROXY},
+			{"koolproxy_txt_2", "", NULL, EVM_RESTART_KOOLPROXY},
+			{"daily_txt_2", "", NULL, EVM_RESTART_KOOLPROXY},
+			{"kp_dat_2", "", NULL, EVM_RESTART_KOOLPROXY},
+			{"ss_DNS_Redirect_IP", "", NULL, EVM_RESTART_KOOLPROXY},
+			{"scripts.koolproxy_rules_list.sh", "File", NULL, EVM_RESTART_KOOLPROXY},
+			{"scripts.koolproxy_rules_script.sh", "File", NULL, EVM_RESTART_KOOLPROXY},
+			{"scripts.ad_config_script.sh", "File", NULL, EVM_RESTART_KOOLPROXY},
+			{"KpIPList", "Group", ARGV((char*)variables_KoolproxyConf_KpIPList, "8", "55", "kp_staticnum_x"), EVM_RESTART_KOOLPROXY},
+			{0,0,0,0}
+	};
+#endif
+
 #if defined(APP_ADBYBY)
     struct variable variables_AdbybyConf[] = {
 			{"adbyby_enable", "", NULL, EVM_RESTART_ADBYBY},
@@ -1166,6 +1199,9 @@
 #if defined(APP_SHADOWSOCKS)
 		{"ShadowsocksConf",		variables_ShadowsocksConf},
 #endif
+#if defined(APP_KOOLPROXY)
+		{"KoolproxyConf",		variables_KoolproxyConf},
+#endif
 #if defined(APP_ADBYBY)
 		{"AdbybyConf",		variables_AdbybyConf},
 #endif
@@ -1258,6 +1294,9 @@
 #if defined(APP_SHADOWSOCKS)
 		{EVM_RESTART_SHADOWSOCKS,	EVT_RESTART_SHADOWSOCKS,	RCN_RESTART_SHADOWSOCKS,  0},
 		{EVM_RESTART_SS_TUNNEL,		EVT_RESTART_SS_TUNNEL,		RCN_RESTART_SS_TUNNEL,	  0},
+#endif
+#if defined(APP_KOOLPROXY)
+		{EVM_RESTART_KOOLPROXY,		EVT_RESTART_KOOLPROXY,		RCN_RESTART_KOOLPROXY,	0},
 #endif
 #if defined(APP_ADBYBY)
 		{EVM_RESTART_ADBYBY,		EVT_RESTART_ADBYBY,		RCN_RESTART_ADBYBY,	0},

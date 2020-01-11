@@ -547,6 +547,12 @@ void restart_vlmcsd(void);
 #if defined(APP_NAPT66)
 void start_napt66(void);
 #endif
+#if defined(APP_KOOLPROXY)
+void stop_koolproxy(void);
+void start_koolproxy(void);
+void restart_koolproxy(void);
+void update_kp(void);
+#endif
 #if defined(APP_ADBYBY)
 void stop_adbyby(void);
 void start_adbyby(void);

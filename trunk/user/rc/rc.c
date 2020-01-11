@@ -1295,6 +1295,16 @@ handle_notifications(void)
 			restart_vlmcsd();
 		}
 #endif
+#if defined(APP_KOOLPROXY)
+		else if (strcmp(entry->d_name, RCN_RESTART_KOOLPROXY) == 0)
+		{
+			restart_koolproxy();
+		}
+		else if (strcmp(entry->d_name, RCN_RESTART_KPUPDATE) == 0)
+		{
+			update_kp();
+		}
+#endif
 #if defined(APP_ADBYBY)
 		else if (strcmp(entry->d_name, RCN_RESTART_ADBYBY) == 0)
 		{

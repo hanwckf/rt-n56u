@@ -15,8 +15,6 @@ server_locate=0
 NAME=shadowsocksr
 ENABLE_SERVER=nil
 CONFIG_SWTICH_FILE=/tmp/${NAME}_t.json
-China_ping_domain="www.qq.com"
-Foreign_wget_domain="www.google.com"
 server_count=0
 [ -n "$2" ] && cycle_time=$2
 [ -n "$3" ] && switch_time=$3
@@ -26,32 +24,44 @@ CURRENT_SERVER=$DEFAULT_SERVER
 BACKUP_SERVER=$(nvram get backup_server)
 #判断代理是否正常
 check_proxy() {
-	curl -A "Mozilla/4.0 (compatible; MSIE 6.0; Windows NT 5.0)" $Foreign_wget_domain #> /dev/null 2>&1
-	if [ "$?" == "0" ]; then
-		return 0
-	else
-		/bin/ping -c 3 $China_ping_domain -w 5 #>/dev/null 2>&1
-		if [ "$?" == "0" ]; then
-			#goole不通baidu通则不正常
-			return 1
-		else
-			return 2
-		fi
-	fi
-	return 0
+#判断代理是否正常
+check_proxy() {
+/usr/bin/ss-check www.google.com  80 $switch_time 1
+if [ "$?" == "0" ]; then
+ return 0
+else
+ /usr/bin/ss-check www.baidu.com  80 $switch_time 1
+ if [ "$?" == "0" ]; then
+ #goole不通baidu通则不正常
+ return 1
+ else
+ return 2
+ fi
+fi
+return 0
+}
+
 }
 
 
 test_proxy() {
 	servername=$(nvram get ssp_server_x$1)
 	serverport=$(nvram get ssp_prot_x$1)
-	ret=$(ping -c 3 $servername  | grep 'loss' | awk -F ',' '{ print $3 }' | awk -F "%" '{ print $1 }') 
-	ret=$?
-	if [ "$ret" = "0" ] ;then
-		return 0
-	else
-		return 1
-	fi
+	ret=$(ping -c 3 $servername  | grep 'loss' | awk -F ',' '{ print $3 }' | awk -F "%" '{ print $1 }')
+	[ -z "$ret"  ] && return 1
+[ "$ret" -gt "50" ] && return 1
+ipset add ss_spec_wan_ac $servername 2>/dev/null
+ret=$?
+/usr/bin/ss-check $servername $serverport $switch_time 
+local ret2=$?
+if [ "$ret" = "0" ] ;then
+ipset del ss_spec_wan_ac $servername 2>/dev/null
+fi
+if [ "$ret2" = "0" ] ;then
+return 0
+else
+return 1
+fi
 }
 
 a_start() {
@@ -60,9 +70,19 @@ do
 	sleep $cycle_time
 	LOGTIME=$(date "+%Y-%m-%d %H:%M:%S")
 	#判断当前代理是否正常
-	check_proxy  
-	current_ret=$?
-
+	i=0
+    times=3
+	while [ $i -le $times ]
+do
+check_proxy  
+current_ret=$?
+if [ "$?" == "0" ]; then
+break
+fi
+i=`expr $i + 1`
+sleep 20s
+done
+	
 	if [ "$current_ret" = "1" ] ;then
 	#当前代理错误，判断有无可用的服务器
 	if [ $(nvram get check_mode) = "1" ];then

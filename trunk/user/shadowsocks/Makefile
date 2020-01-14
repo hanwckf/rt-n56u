@@ -106,6 +106,7 @@ ifeq ($(CONFIG_FIRMWARE_INCLUDE_SHADOWSOCKS),y)
 	$(ROMFSINST) -p +x $(THISDIR)/$(SRC_SS_NAME)/src/ss-redir /usr/bin/ss-redir
 	#$(ROMFSINST) -p +x $(THISDIR)/$(SRC_SS_NAME)/src/ss-tunnel /usr/bin/ss-tunne
 	$(ROMFSINST) -p +x $(THISDIR)/$(SRC_SS_NAME)/src/ss-local /usr/bin/ss-local
+	$(ROMFSINST) -p +x $(THISDIR)/scripts/ss-check /usr/bin/ss-check 
 	#ln -sf /var/ss-redir $(ROMFSDIR)/usr/bin/ss-redir
 	#ln -sf /var/ss-tunnel $(ROMFSDIR)/usr/bin/ss-local
 endif

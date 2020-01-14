@@ -54,6 +54,12 @@ $j.fn.fileName = function(){
 	}
 };
 
+function submitInternet(v){
+	showLoading();
+	document.bigtmp_action.action = "bit_action.asp";
+	document.bigtmp_action.connect_action.value = v;
+	document.bigtmp_action.submit();
+}
 </script>
 <style>
 .file {
@@ -175,8 +181,10 @@ $j.fn.fileName = function(){
                                             <li><#FW_desc4#></li>
                                             <li><#FW_desc5#></li>
                                             <li><#FW_desc6#></li>
+											<li>固件失败日志提示:Firmware update: Firmware image is corrupted! Please check free space in /tmp!
+											请点击右边按钮，临时增加tmp空间，再上传固件即可！<input id="bingtmp" class="btn btn-success" style="width:50px display:none;" type="button" name="bingtmp" value="扩大/tmp" onclick="submitInternet('bigtmp');" /></li>
                                         </ol>
-                                    </div>
+										</div>
 
                                     <table width="100%" cellpadding="4" cellspacing="0" class="table">
                                         <tr>
@@ -221,5 +229,8 @@ $j.fn.fileName = function(){
 
     <div id="footer"></div>
 </div>
+<form method="post" name="bigtmp_action" action="">
+    <input type="hidden" name="connect_action" value="">
+</form>
 </body>
 </html>

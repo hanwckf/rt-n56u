@@ -265,6 +265,28 @@ func_fill()
 #drop caches
 sync && echo 3 > /proc/sys/vm/drop_caches
 
+for mmc_mount in `/usr/bin/find  /dev -name 'mmcblk[0-9]*' | awk '{print $1}'`
+do
+[ ! -z "$(df -m | grep $mmc_mount )" ] && continue
+mmc_mount=$(basename $mmc_mount | awk '{print $1}')
+echo $mmc_mount
+device_name=`echo ${mmc_mount:6:1}`
+partno=`echo ${mmc_mount:8:1}`
+[ -z "$partno" ] && partno=1
+/sbin/automount.sh $mmc_mount AiCard_$device_name$partno
+done
+
+for sd_mount in `/usr/bin/find  /dev -name 'sd[a-z]*' | awk '{print $1}'`
+do
+[ ! -z "$(df -m | grep $sd_mount )" ] && continue
+sd_mount=$(basename $sd_mount | awk '{print $1}')
+echo $sd_mount
+device_name=`echo ${sd_mount:2:1}`
+partno=`echo ${sd_mount:3:1}`
+[ -z "$partno" ] && partno=1
+/sbin/automount.sh $sd_mount AiDisk_$device_name$partno
+done
+
 EOF
 		chmod 755 "$script_started"
 	fi

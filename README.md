@@ -12,6 +12,7 @@
 >- [SmartDNS](https://github.com/pymumu/smartdns) ```CONFIG_FIRMWARE_INCLUDE_SMARTDNS```
 
 ### 新增适配以下型号 ###
+>- 京东云路由(文件来自Lintel)
 >- 歌华链(感谢群里Heaven适配与测试）
 >- NEWIFI-D1
 >- B70(感谢Untitled提供荒野无灯的适配文件)

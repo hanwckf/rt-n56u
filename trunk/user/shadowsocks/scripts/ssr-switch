@@ -16,6 +16,7 @@ NAME=shadowsocksr
 ENABLE_SERVER=nil
 CONFIG_SWTICH_FILE=/tmp/${NAME}_t.json
 server_count=0
+current_ret=""
 [ -n "$2" ] && cycle_time=$2
 [ -n "$3" ] && switch_time=$3
 
@@ -25,19 +26,18 @@ BACKUP_SERVER=$(nvram get backup_server)
 
 #判断代理是否正常
 check_proxy() {
-	/usr/bin/ss-check www.google.com  80 $switch_time 1
-	if [ "$?" == "0" ]; then
-		return 0
+	/usr/bin/ss-check www.google.com  80 3 1
+	check=$?
+	echo $check
+	if [ "$check" == "0" ]; then
+	current_ret=0		
 	else
-		/usr/bin/ss-check www.baidu.com  80 $switch_time 1
-		if [ "$?" == "0" ]; then
-#goole不通baidu通则不正常
-return 1
-else
-	return 2
-fi
-fi
-return 0
+	/usr/bin/ss-check www.baidu.com  80 3 1
+	check=$?
+	if [ "$check" == "0" ]; then
+	current_ret=1
+	fi
+	fi
 }
 
 a_start() {
@@ -45,20 +45,15 @@ while [ "1" = "1" ]  #死循环
 do
 	sleep $cycle_time
 	LOGTIME=$(date "+%Y-%m-%d %H:%M:%S")
+	for i in `seq 1 3` 
+	do
+	check_proxy
 #判断当前代理是否正常
-i=0
-times=3
-while [ $i -le $times ]
-do
-	check_proxy  
-	current_ret=$?
-	if [ "$?" == "0" ]; then
-		break
-	fi
-	i=`expr $i + 1`
-	sleep 20s
+if [ "$current_ret" = "0" ] ;then
+continue
+fi
+sleep 20s
 done
-
 if [ "$current_ret" = "1" ] ;then
 #当前代理错误，判断有无可用的服务器
 if [ $(nvram get check_mode) = "1" ];then
@@ -72,20 +67,18 @@ echo "$(date "+%Y-%m-%d %H:%M:%S") 检测到主服务器故障，切换到备用
 /usr/bin/shadowsocks.sh reserver &
 nvram set check_mode=1
 fi
-
-
 done
 }
 
 case $1 in
 start)
-    a_start
-    ;;
+	a_start
+	;;
 stop)
-    a_close
-    ;;
+	a_close
+	;;
 *)
-    echo "check"
-#exit 0
-    ;;
+	echo "check"
+	#exit 0
+	;;
 esac

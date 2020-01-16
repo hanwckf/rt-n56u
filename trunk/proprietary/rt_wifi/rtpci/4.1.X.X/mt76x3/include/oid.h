@@ -73,6 +73,9 @@
 /*#define MAX_NUM_OF_CHS             		54 */ /* 14 channels @2.4G +  12@UNII(lower/middle) + 16@HiperLAN2 + 11@UNII(upper) + 0 @Japan + 1 as NULL termination */
 #define MAX_NUMBER_OF_EVENT				10	/* entry # in EVENT table */
 
+#if defined (CONFIG_RT_FIRST_IF_MT7603E) && defined (CONFIG_RT_SECOND_IF_MT7615E)
+#define CONFIG_RT_MAX_CLIENTS           48
+#endif
 #define CONFIG_MAX_CLIENTS CONFIG_RT_MAX_CLIENTS
 
 #define MAX_NUMBER_OF_MAC			CONFIG_MAX_CLIENTS

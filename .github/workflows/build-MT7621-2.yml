@@ -38,7 +38,7 @@ jobs:
         mkdir -p /opt/images/
     - name: Build Firmware
       env:
-        TNAME: "B70 NEWIFI-D1 GHL K2P-USB-5.0 NEWIFI3 MI-R3G"
+        TNAME: "JDC-1-5.0 B70 NEWIFI-D1 GHL K2P-USB-5.0 NEWIFI3 MI-R3G"
       run: |
         cwd=`pwd`
         CONFIG_TOOLCHAIN_DIR=${cwd//\//\\\/}\\/toolchain-mipsel

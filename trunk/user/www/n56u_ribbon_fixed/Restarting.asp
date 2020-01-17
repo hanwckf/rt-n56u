@@ -12,14 +12,14 @@
 <script>
 var action_mode = '<% get_parameter("action_mode"); %>';
 var boot_time = parent.board_boot_time();
-
+var lan_ipaddr = '<% nvram_get_x("", "lan_ipaddr_t"); %>';
 function redirect(){
 	setTimeout("redirect1();", (boot_time+2)*1000);
 }
 
 function redirect1(){
 	if(action_mode == " RestoreNVRAM ")
-		parent.location.href = "http://192.168.2.1/";
+		parent.location.href = 'http://' + lan_ipaddr + '/';
 	else
 		parent.location.href = "/";
 }

@@ -248,7 +248,7 @@ func_fill()
 
 	# create started script
 	if [ ! -f "$script_started" ] ; then
-		cat > "$script_started" <<EOF
+		cat > "$script_started" <<'EOF'
 #!/bin/sh
 
 ### Custom user script

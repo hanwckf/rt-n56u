@@ -90,6 +90,7 @@ logger -t "SS" "trojan二进制文件下载成功"
 chmod -R 777 /tmp/trojan
 tj_bin="/tmp/trojan"
 fi
+fi
 if [ $(nvram get v2_tls_x$1) = "1" ];then
 tj_link_tls="true"
 tj_link_tls_host=$(nvram get tj_tls_host_x$1)

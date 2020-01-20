@@ -108,6 +108,7 @@ if (b=="ss"){
 	showhide_div('row_v2_net', v);
 	showhide_div('row_v2_type', v);
 	showhide_div('row_v2_tls', v);
+	showhide_div('row_tj_tls_host', 0);
 }
 if (b=="ssr"){
 	var v=1;
@@ -123,6 +124,23 @@ if (b=="ssr"){
 	showhide_div('row_v2_net', 0);
 	showhide_div('row_v2_type', 0);
 	showhide_div('row_v2_tls', 0);
+	showhide_div('row_tj_tls_host', 0);
+}
+if (b=="trojan"){
+	var v=1;
+	showhide_div('row_ss_protocol', 0);
+	showhide_div('row_ss_protocol_para', 0);
+	showhide_div('row_ss_obfs', 0);
+	showhide_div('row_ss_obfs_para', 0);
+	showhide_div('row_ss_password', v);
+	showhide_div('row_ss_method', 0);
+	showhide_div('row_v2_aid', 0);
+	showhide_div('row_v2_vid', 0);
+	showhide_div('row_v2_security', 0);
+	showhide_div('row_v2_net', 0);
+	showhide_div('row_v2_type', 0);
+	showhide_div('row_v2_tls', v);
+	showhide_div('row_tj_tls_host', v);
 }
 if (b=="v2ray"){
 	switch_v2_type();
@@ -139,6 +157,7 @@ if (b=="v2ray"){
 	showhide_div('row_v2_net', v);
 	showhide_div('row_v2_type', v);
 	showhide_div('row_v2_tls', v);
+	showhide_div('row_tj_tls_host', 0);
 }
 }
 function switch_v2_type(){
@@ -435,7 +454,7 @@ function import_ssr_url(btn, urlname, sid) {
 //var ssu = ssrurl.match(/ssr:\/\/([A-Za-z0-9_-]+)/i);
 var ssu = ssrurl.split('://');
 console.log(ssu.length);
-if ((ssu[0] != "ssr" && ssu[0] != "ss" && ssu[0] != "vmess") || ssu[1] == "") {
+if ((ssu[0] != "ssr" && ssu[0] != "ss" && ssu[0] != "vmess" && ssu[0] != "trojan") || ssu[1] == "") {
 	s.innerHTML = "<font color='red'>无效格式</font>";
 	return false;
 }
@@ -500,7 +519,30 @@ if (ssu[0] == "ssr") {
 	}
 	s.innerHTML = "<font color='green'>导入Shadowsocks配置信息成功</font>";
 	return false;
-} else if (ssu[0] == "vmess") {
+} else if (ssu[0] == "trojan") {
+            var ploc = ssu[1].indexOf("#");
+            if (ploc > 0) {
+                url0 = ssu[1].substr(0, ploc);
+                param = ssu[1].substr(ploc + 1);
+            } else {
+                url0 = ssu[1]
+            }
+            var sstr = b64decsafe(url0);
+            document.getElementById('ssp_type_x_0').value = "trojan";
+            document.getElementById('ssp_type_x_0').dispatchEvent(event);
+            var team = sstr.split('@');
+            console.log(param);
+            var part1 = team[0].split(':');
+            var part2 = team[1].split(':');
+            document.getElementById('ssp_server_x_0').value = part2[0];
+            document.getElementById('ssp_prot_x_0').value = part2[1];
+            document.getElementById('ss_key').value = part1[1];
+            if (param != undefined) {
+                document.getElementById('ssp_name_x_0').value = decodeURI(param);
+            }
+            s.innerHTML = "<font color='green'>导入Trojan配置信息成功</font>";
+            return false;
+}else if (ssu[0] == "vmess") {
 	var sstr = b64DecodeUnicode(ssu[1]);
 	console.log(sstr);
 	var ploc = sstr.indexOf("/?");
@@ -748,6 +790,7 @@ if (ssu[0] == "ssr") {
 					<select name="ssp_type_x_0" id="ssp_type_x_0" class="input" style="width: 200px;" onchange="switch_ss_type()">
 						<option value="ss" >SS</option>
 						<option value="ssr" >SSR</option>
+						<option value="trojan" >Trojan</option>
 						<option value="v2ray" >V2ray</option>
 					</select>
 				</td>
@@ -920,6 +963,11 @@ if (ssu[0] == "ssr") {
 						<input type="radio" value="1" name="v2_tls_x_0" id="v2_tls_x_0_1" <% nvram_match_x("", "v2_tls", "1", "checked"); %>><#checkbox_Yes#>
 						<input type="radio" value="0" name="v2_tls_x_0" id="v2_tls_x_0_0" <% nvram_match_x("", "v2_tls", "0", "checked"); %>><#checkbox_No#>
 					</div>
+				</td>
+			</tr>
+			<tr id="row_tj_tls_host" style="display:none;"><th>TLS Host</th>
+				<td>
+					<input type="text" class="input" size="15" name="tj_tls_host_x" style="width: 200px" value="<% nvram_get_x("", "tj_tls_host"); %>">
 				</td>
 			</tr>
 			<tr id="row_ss_method" style="display:none;">  <th width="50%">加密方式</th>

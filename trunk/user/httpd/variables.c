@@ -133,6 +133,7 @@
 			{"v2_quic_key_x", "24", NULL, FALSE},
 			{"v2_quic_security_x", "24", NULL, FALSE},
 			{"v2_tls_x", "24", NULL, FALSE},
+			{"tj_tls_host_x", "24", NULL, FALSE},
 			{"switch_enable_x", "24", NULL, FALSE},
 			{0,0,0,0}
 		};
@@ -922,6 +923,21 @@
 	};
 #endif
 
+#if defined(APP_CADDY)
+	struct variable variables_CaddyConf[] = {
+			{"caddy_enable", "", NULL, EVM_RESTART_CADDY},
+			{"caddy_file", "", NULL, EVM_RESTART_CADDY},
+			{"caddy_wan", "", NULL, EVM_RESTART_CADDY},
+			{"caddy_storage", "", NULL, EVM_RESTART_CADDY},
+			{"caddy_dir", "", NULL, EVM_RESTART_CADDY},
+			{"caddyf_wan_port", "", NULL, EVM_RESTART_CADDY},
+			{"caddyw_wan_port", "", NULL, EVM_RESTART_CADDY},
+			{"caddy_wip6", "", NULL, EVM_RESTART_CADDY},
+			{"scripts.caddy_script.sh", "File", NULL, EVM_RESTART_CADDY},
+			{0,0,0,0}
+	};
+#endif
+
 #if defined(APP_SHADOWSOCKS)
 	struct variable variables_ShadowsocksConf[] = {
 			{"ss_enable","",NULL, EVM_RESTART_SHADOWSOCKS},
@@ -1202,6 +1218,9 @@
 #if defined(APP_KOOLPROXY)
 		{"KoolproxyConf",		variables_KoolproxyConf},
 #endif
+#if defined(APP_CADDY)
+		{"CaddyConf",		variables_CaddyConf},
+#endif
 #if defined(APP_ADBYBY)
 		{"AdbybyConf",		variables_AdbybyConf},
 #endif
@@ -1297,6 +1316,9 @@
 #endif
 #if defined(APP_KOOLPROXY)
 		{EVM_RESTART_KOOLPROXY,		EVT_RESTART_KOOLPROXY,		RCN_RESTART_KOOLPROXY,	0},
+#endif
+#if defined(APP_CADDY)
+		{EVM_RESTART_CADDY,		EVT_RESTART_CADDY,		RCN_RESTART_CADDY,	0},
 #endif
 #if defined(APP_ADBYBY)
 		{EVM_RESTART_ADBYBY,		EVT_RESTART_ADBYBY,		RCN_RESTART_ADBYBY,	0},

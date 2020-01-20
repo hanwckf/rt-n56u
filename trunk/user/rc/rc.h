@@ -569,6 +569,11 @@ void stop_frp(void);
 void start_frp(void);
 void restart_frp(void);
 #endif
+#if defined(APP_CADDY)
+void stop_caddy(void);
+void start_caddy(void);
+void restart_caddy(void);
+#endif
 #if defined(APP_DNSFORWARDER)
 void stop_dnsforwarder(void);
 void start_dnsforwarder(void);

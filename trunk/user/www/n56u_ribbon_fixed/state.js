@@ -419,7 +419,9 @@ if (found_app_smartdns()){
 if (found_app_frp()){
 	tabtitle[17] = new Array("", "<#menu5_25_1#>");
 }
-
+if (found_app_caddy()){
+	tabtitle[18] = new Array("", "<#menu5_27_1#>");
+}
 //Level 3 Tab title
 
 tablink[0] = new Array("", "Advanced_Wireless2g_Content.asp", "Advanced_WGuest2g_Content.asp", "Advanced_WMode2g_Content.asp", "Advanced_ACL2g_Content.asp", "Advanced_WSecurity2g_Content.asp", "Advanced_WAdvanced2g_Content.asp");
@@ -472,6 +474,10 @@ if (found_app_frp()){
 	frp_array = new Array("","Advanced_frp.asp");
 	tablink[17] = (frp_array);
 }
+if (found_app_caddy()){
+	caddy_array = new Array("","Advanced_caddy.asp");
+	tablink[18] = (caddy_array);
+}
 
 //Level 2 Menu
 menuL2_title = new Array(19)
@@ -507,6 +513,9 @@ if (found_app_smartdns()){
 if (found_app_frp()){
 	menuL2_title.push("<#menu5_25#>");
 } else menuL2_title.push("");
+if (found_app_caddy()){
+	menuL2_title.push("<#menu5_27#>");
+} else menuL2_title.push("");
 
 menuL2_link  = new Array("", tablink[0][1], tablink[1][1], tablink[2][1], tablink[3][1], tablink[4][1], tablink[5][1], tablink[6][1], tablink[7][1], tablink[8][1], tablink[9][1]);
 if (found_app_scutclient()){
@@ -538,6 +547,9 @@ if (found_app_smartdns()){
 } else menuL2_link.push("");
 if (found_app_frp()){
 	menuL2_link.push(frp_array[1]);
+} else menuL2_link.push("");
+if (found_app_caddy()){
+	menuL2_link.push(caddy_array[1]);
 } else menuL2_link.push("");
 //Level 1 Menu in Gateway, Router mode
 menuL1_title = new Array("", "<#menu1#>", "", "<#menu2#>", "<#menu6#>", "<#menu4#>", "<#menu5_8#>", "<#menu5#>");

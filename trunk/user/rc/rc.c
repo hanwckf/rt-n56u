@@ -1327,6 +1327,12 @@ handle_notifications(void)
 			restart_frp();
 		}
 #endif
+#if defined(APP_CADDY)
+		else if (strcmp(entry->d_name, RCN_RESTART_CADDY) == 0)
+		{
+			restart_caddy();
+		}
+#endif
 #if defined(APP_ALIDDNS)
 		else if (strcmp(entry->d_name, RCN_RESTART_ALIDDNS) == 0)
 		{

@@ -660,6 +660,16 @@ struct nvram_pair router_defaults[] = {
 	{ "v2_http2_path", "" },
 	{ "v2_tls", "0" },
 	
+	/*caddy*/
+	{ "caddy_enable", "0" },
+	{ "caddy_file", "0" },
+	{ "caddy_wan", "0" },
+	{ "caddy_storage", "-1" },
+	{ "caddy_dir", "/tmp" },
+	{ "caddyf_wan_port", "19998" },
+	{ "caddyw_wan_port", "19999" },
+	{ "caddy_wip6", "0" },
+	
 	/*frp*/
 	{ "frpc_enable", "0" },
 	{ "frps_enable", "0" },

@@ -2007,6 +2007,9 @@ static int shadowsocks_status_hook(int eid, webs_t wp, int argc, char **argv)
 	if (ss_status_code == 0){
 		ss_status_code = pids("v2ray");
 	}
+	if (ss_status_code == 0){
+		ss_status_code = pids("trojan");
+	}
 	websWrite(wp, "function shadowsocks_status() { return %d;}\n", ss_status_code);
 	int ss_tunnel_status_code = pids("ss-local");
 	websWrite(wp, "function shadowsocks_tunnel_status() { return %d;}\n", ss_tunnel_status_code);
@@ -2118,6 +2121,15 @@ static int smartdns_status_hook(int eid, webs_t wp, int argc, char **argv)
 {
 	int smartdns_status_code = pids("smartdns");
 	websWrite(wp, "function smartdns_status() { return %d;}\n", smartdns_status_code);
+	return 0;
+}
+#endif
+
+#if defined (APP_CADDY)
+static int caddy_status_hook(int eid, webs_t wp, int argc, char **argv)
+{
+	int caddy_status_code = pids("caddy_filebrowser");
+	websWrite(wp, "function caddy_status() { return %d;}\n", caddy_status_code);
 	return 0;
 }
 #endif
@@ -2336,6 +2348,11 @@ ej_firmware_caps_hook(int eid, webs_t wp, int argc, char **argv)
 #else
 	int found_app_koolproxy = 0;
 #endif
+#if defined(APP_CADDY)
+	int found_app_caddy = 1;
+#else
+	int found_app_caddy = 0;
+#endif
 #if defined(APP_ADBYBY)
 	int found_app_adbyby = 1;
 #else
@@ -2531,6 +2548,7 @@ ej_firmware_caps_hook(int eid, webs_t wp, int argc, char **argv)
 		"function found_app_dnsforwarder() { return %d;}\n"
 		"function found_app_shadowsocks() { return %d;}\n"
 		"function found_app_koolproxy() { return %d;}\n"
+		"function found_app_caddy() { return %d;}\n"
 		"function found_app_adbyby() { return %d;}\n"
 		"function found_app_smartdns() { return %d;}\n"
 		"function found_app_frp() { return %d;}\n"
@@ -2558,6 +2576,7 @@ ej_firmware_caps_hook(int eid, webs_t wp, int argc, char **argv)
 		found_app_dnsforwarder,
 		found_app_shadowsocks,
 		found_app_koolproxy,
+		found_app_caddy,
 		found_app_adbyby,
 		found_app_smartdns,
 		found_app_frp,
@@ -4283,6 +4302,9 @@ struct ej_handler ej_handlers[] =
 #endif
 #if defined(APP_DNSFORWARDER)
 	{ "dnsforwarder_status", dnsforwarder_status_hook},
+#endif
+#if defined(APP_CADDY)
+	{ "caddy_status", caddy_status_hook},
 #endif
 #if defined (APP_ADBYBY)
 	{ "adbyby_action", adbyby_action_hook},

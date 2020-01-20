@@ -473,6 +473,21 @@ void restart_frp(void){
 }
 #endif
 
+#if defined(APP_CADDY)
+void stop_caddy(void){
+	eval("/usr/bin/caddy.sh","stop");
+}
+
+void start_caddy(void){
+	eval("/usr/bin/caddy.sh","start");
+}
+
+void restart_caddy(void){
+	stop_caddy();
+	start_caddy();
+}
+#endif
+
 #if defined(APP_ALIDDNS)
 void stop_aliddns(void){
 	eval("/usr/bin/aliddns.sh","stop");
@@ -719,6 +734,9 @@ start_services_once(int is_ap_mode)
 #if defined(APP_SMARTDNS)
 	start_smartdns();
 #endif
+#if defined(APP_CADDY)
+	start_caddy();
+#endif
 	start_lltd();
 	start_watchdog_cpu();
 	start_crond();
@@ -777,6 +795,9 @@ stop_services(int stopall)
 #endif
 #if defined(APP_SMARTDNS)
 	stop_smartdns();
+#endif
+#if defined(APP_CADDY)
+	stop_caddy();
 #endif
 	stop_networkmap();
 	stop_lltd();

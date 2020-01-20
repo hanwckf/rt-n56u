@@ -15,6 +15,7 @@ CONFIG_UDP_FILE=/tmp/${NAME}_u.json
 CONFIG_SOCK5_FILE=/tmp/${NAME}_s.json
 v2_json_file="/tmp/v2-redir.json"
 v2udp_json_file="/tmp/v2-udpredir.json"
+trojan_json_file="/tmp/tj-redir.json"
 server_count=0
 redir_tcp=0
 v2ray_enable=0
@@ -74,6 +75,60 @@ cat <<-EOF >$config_file
 	"protocol_param": "$(nvram get ss_proto_param_x$1)",
 	"obfs": "$(nvram get ss_obfs_x$1)",
 	"obfs_param": "$(nvram get ss_obfs_param_x$1)"
+}
+EOF
+elif [ "$stype" == "trojan" ] ;then
+tj_bin="/usr/bin/trojan"
+if [ ! -f "$tj_bin" ]; then
+curl -k -s -o /tmp/trojan --connect-timeout 10 --retry 3 https://dev.tencent.com/u/dtid_39de1afb676d0d78/p/kp/git/raw/master/trojan
+if [ ! -f "/tmp/trojan" ]; then
+logger -t "SS" "trojan二进制文件下载失败，可能是地址失效或者网络异常！"
+nvram set ss_enable=0
+ssp_close
+else
+logger -t "SS" "trojan二进制文件下载成功"
+chmod -R 777 /tmp/trojan
+tj_bin="/tmp/trojan"
+fi
+if [ $(nvram get v2_tls_x$1) = "1" ];then
+tj_link_tls="true"
+tj_link_tls_host=$(nvram get tj_tls_host_x$1)
+else
+tj_link_tls="false"
+tj_link_tls_host=""
+fi
+#tj_file=$trojan_json_file
+cat <<-EOF >$trojan_json_file
+	{
+    "run_type": "nat",
+    "local_addr": "0.0.0.0",
+    "local_port": $(nvram get ssp_local_port_x$1),
+    "remote_addr": "$hostip",
+    "remote_port": $(nvram get ssp_prot_x$1),
+    "password": [
+        "$(nvram get ss_key_x$1)"
+    ],
+    "log_level": 1,
+    "ssl": {
+        "verify": false,
+        "verify_hostname": $tj_link_tls,
+        "cert": "",
+        "cipher": "ECDHE-ECDSA-AES128-GCM-SHA256:ECDHE-RSA-AES128-GCM-SHA256:ECDHE-ECDSA-AES256-GCM-SHA384:ECDHE-RSA-AES256-GCM-SHA384:ECDHE-ECDSA-CHACHA20-POLY1305-SHA256:ECDHE-RSA-CHACHA20-POLY1305-SHA256:ECDHE-RSA-AES128-SHA:ECDHE-RSA-AES256-SHA:RSA-AES128-GCM-SHA256:RSA-AES256-GCM-SHA384:RSA-AES128-SHA:RSA-AES256-SHA:RSA-3DES-EDE-SHA",
+        "sni": "$tj_link_tls_host",
+        "alpn": [
+            "h2",
+            "http/1.1"
+        ],
+        "reuse_session": true,
+        "session_ticket": false,
+        "curves": ""
+    },
+    "tcp": {
+        "no_delay": true,
+        "keep_alive": true,
+        "fast_open": false,
+        "fast_open_qlen": 20
+    }
 }
 EOF
 elif [ "$stype" == "v2ray" ] ;then
@@ -294,6 +349,8 @@ if [ "$stype" == "ss" ] ;then
 sscmd="ss-redir"
 elif [ "$stype" == "ssr" ] ;then
 sscmd="ssr-redir"
+elif [ "$stype" == "trojan" ] ;then
+sscmd="$tj_bin"
 elif [ "$stype" == "v2ray" ] ;then
 sscmd="$v2_bin"
 fi
@@ -310,7 +367,10 @@ do
 $sscmd -c $CONFIG_FILE $ARG_OTA -f /tmp/ssr-retcp_$i.pid >/dev/null 2>&1
 done
 redir_tcp=1
-echo "$(date "+%Y-%m-%d %H:%M:%S") Shadowsocks/ShadowsocksR $threads 线程启动成功!" >> /tmp/ssrplus.log  
+echo "$(date "+%Y-%m-%d %H:%M:%S") Shadowsocks/ShadowsocksR $threads 线程启动成功!" >> /tmp/ssrplus.log 
+elif [ "$stype" == "trojan" ] ;then
+$sscmd --config $trojan_json_file >> /tmp/ssrplus.log 2>&1 &
+echo "$(date "+%Y-%m-%d %H:%M:%S") $($sscmd --version 2>&1 | head -1) Started!" >> /tmp/ssrplus.log 
 elif [ "$stype" == "v2ray" ] ;then
 $sscmd -config $v2_json_file >/dev/null 2>&1 &
 echo "$(date "+%Y-%m-%d %H:%M:%S") $($sscmd -version | head -1) 启动成功!" >> /tmp/ssrplus.log
@@ -443,6 +503,7 @@ kill -9 $(ps | grep ssr-monitor | grep -v grep | awk '{print $1}') >/dev/null 2>
 killall -q -9 ss-redir
 killall -q -9 ssr-redir
 killall -q -9 v2ray
+killall -q -9 trojan
 killall -q -9 ssr-server
 killall -q -9 ssr-local
 killall -9 pdnsd
@@ -480,6 +541,40 @@ auto_update
 ENABLE_SERVER=$(nvram get global_server)
 logger -t "SS" "备用服务器启动成功"
 logger -t "SS" "内网IP控制为:$lancons"
+}
+json_int_trojan () {
+echo '{
+    "run_type": "nat",
+    "local_addr": "0.0.0.0",
+    "local_port": $(nvram get ssp_local_port_x$1),
+    "remote_addr": "$hostip",
+    "remote_port": $(nvram get ssp_prot_x$1),
+    "password": [
+        "$(nvram get ss_key_x$1)"
+    ],
+    "log_level": 1,
+    "ssl": {
+        "verify": false,
+        "verify_hostname": false,
+        "cert": "",
+        "cipher": "ECDHE-ECDSA-AES128-GCM-SHA256:ECDHE-RSA-AES128-GCM-SHA256:ECDHE-ECDSA-AES256-GCM-SHA384:ECDHE-RSA-AES256-GCM-SHA384:ECDHE-ECDSA-CHACHA20-POLY1305-SHA256:ECDHE-RSA-CHACHA20-POLY1305-SHA256:ECDHE-RSA-AES128-SHA:ECDHE-RSA-AES256-SHA:RSA-AES128-GCM-SHA256:RSA-AES256-GCM-SHA384:RSA-AES128-SHA:RSA-AES256-SHA:RSA-3DES-EDE-SHA",
+        "sni": "",
+        "alpn": [
+            "h2",
+            "http/1.1"
+        ],
+        "reuse_session": true,
+        "session_ticket": false,
+        "curves": ""
+    },
+    "tcp": {
+        "no_delay": true,
+        "keep_alive": true,
+        "fast_open": false,
+        "fast_open_qlen": 20
+    }
+}
+'
 }
 json_int_vmess_settings () {
 echo '{

@@ -134,6 +134,7 @@ dir_y						+= scripts
 dir_$(CONFIG_FIRMWARE_INCLUDE_SHADOWSOCKS)      	+= jq
 dir_$(CONFIG_FIRMWARE_INCLUDE_SHADOWSOCKS)	        += pdnsd
 dir_$(CONFIG_FIRMWARE_INCLUDE_V2RAY)	        += v2ray
+dir_$(CONFIG_FIRMWARE_INCLUDE_TROJAN)	        += trojan
 dir_$(OPENSSH_ENABLED)				+= openssh
 dir_$(DROPBEAR_ENABLED)				+= dropbear
 dir_$(CONFIG_FIRMWARE_INCLUDE_HTOP)		+= htop
@@ -168,6 +169,7 @@ dir_$(CONFIG_FIRMWARE_INCLUDE_MINIEAP)			+= minieap
 dir_$(CONFIG_FIRMWARE_INCLUDE_NJIT_CLIENT)		+= njit-client
 dir_$(CONFIG_FIRMWARE_INCLUDE_MENTOHUST)		+= mentohust
 dir_$(CONFIG_FIRMWARE_INCLUDE_SMARTDNS)		+= smartdns
+dir_$(CONFIG_FIRMWARE_INCLUDE_CADDY)		+= caddy
 
 ifdef CONFIG_BLK_DEV_SD
 dir_$(CONFIG_FIRMWARE_INCLUDE_HDPARM)		+= hdparm

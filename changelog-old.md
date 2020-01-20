@@ -1,10 +1,20 @@
+##2020.01.16##
+* 增修复ssp+故障切换问题
+* 增加京东云路由适配(来自Lintel)
+
+##2020.01.11##
+* 增加koolproxy
+* 修复ssp+故障切换问题
+* 修复frp重启无效问题，加了守护
+* 修复用mtd_write -r unlock mtd1重启方式,脚本无法保存的问题。
+* 修改控制台reboot命令逻辑，选择mtd_write -r unlock mtd1重启方式后，输入reboot也是用这种方式重启,方便定时重启的人使用
+
 ##2020.01.09##
 * ssp+界面增加路由自身走代理开关，页面布局进行微调。
 * smartdns增加黑白名单开关，上游服务器增加黑白名单过滤选项，页面布局进行重新分布
 * frp增加web界面
 * 增加mtd_write -r unlock mtd1重启方式，32M的路由可以前往系统管理-->设置里选择.(THX HIBOY)
 * 删除YK-L1配置文件5G相关。
-* 可能还会继续有更多.........请看源码的commit
 
 ##2020.01.03##
 * 增加jq源码，如jq编译出现错误，请执行sudo apt-get install gcc-multilib

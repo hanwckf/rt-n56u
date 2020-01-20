@@ -1,5 +1,6 @@
 ### 固件说明 ###
-* 每周5凌晨1点由Github Actions自动编译固件并发布。
+* 集成/取消新增插件请修改此文件: trunk/build_firmware_modify
+* 不定时自动编译或者每周5凌晨1点由Github Actions自动编译固件并发布,具体请以固件下载地址显示的更新日志为准
 * 固件下载地址：https://github.com/chongshengB/rt-n56u/releases
 * 更新日志:https://github.com/chongshengB/rt-n56u/blob/master/changelog.md
 * 交流群:1020793396
@@ -12,8 +13,8 @@
 >- [SmartDNS](https://github.com/pymumu/smartdns) ```CONFIG_FIRMWARE_INCLUDE_SMARTDNS```
 
 ### 新增适配以下型号 ###
->- 京东云路由(文件来自Lintel)
->- 歌华链(感谢群里Heaven适配与测试）
+>- 京东云路由(文件来自Lintel) 编译代码: JDC-1
+>- 歌华链(感谢群里Heaven适配与测试）编译代码: GHL
 >- NEWIFI-D1
 >- B70(感谢Untitled提供荒野无灯的适配文件)
 >- JCG-AC856M(感谢群里的旅途中的我适配和测试,gpio值还未完全适配，但不影响使用)

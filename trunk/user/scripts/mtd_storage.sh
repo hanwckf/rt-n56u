@@ -265,8 +265,21 @@ func_fill()
 #drop caches
 sync && echo 3 > /proc/sys/vm/drop_caches
 
-# Mount SATA disk
+# SATA disk
 #mdev -s
+
+# ShadowSocks server
+#iptables -A INPUT -p tcp --dport 8989 -j ACCEPT
+#ss-server -p 8989 -k your_password -m chacha20
+
+# HomeAssistant asuswrt device tracker
+#/bin/ln -s /tmp/dnsmasq.leases /var/lib/misc/dnsmasq.leases
+
+# Roaming assistant for mt76xx WiFi
+#iwpriv ra0 set KickStaRssiLow=-85
+#iwpriv ra0 set AssocReqRssiThres=-80
+#iwpriv rai0 set KickStaRssiLow=-85
+#iwpriv rai0 set AssocReqRssiThres=-80
 
 EOF
 		chmod 755 "$script_started"
@@ -494,6 +507,7 @@ EOF
 #min-cache-ttl=3600
 #conf-dir=/etc/storage/gfwlist
 #server=/mit.edu/127.0.0.1#5353
+#server=/openwrt.org/127.0.0.1#5353
 #server=/github.com/githubusercontent.com/127.0.0.1#5353
 
 EOF

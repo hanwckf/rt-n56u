@@ -1,0 +1,246 @@
+#!/bin/sh
+#
+# Copyright (C) 2018-2020 Ruilin Peng (Nick) <pymumu@gmail.com>.
+#
+# smartdns is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# smartdns is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+INST_DIR=$(cd $(dirname $0);pwd)
+ISWSL=1 # 1 means not WSL, 0 means wsl 
+
+showhelp()
+{
+	echo "Usage: install [OPTION]"
+	echo "Options:"
+	echo " -i               install smartdns."
+	echo " -u               uninstall smartdns."
+	echo " --prefix [dir]   prefix directory."
+	echo " -h               show this message."
+}
+
+start_service()
+{
+	if [ $ISSYSTEMD -ne 0 ]; then
+		chkconfig smartdns on >/dev/null 2>&1
+		service smartdns start
+		return $?
+	fi
+
+	systemctl daemon-reload
+	systemctl enable smartdns
+	systemctl start smartdns
+}
+
+stop_service()
+{
+	if [ $ISSYSTEMD -ne 0 ]; then
+		service smartdns stop
+		chkconfig smartdns off >/dev/null 2>&1
+		return 0
+	fi
+
+	systemctl stop smartdns
+	systemctl disable smartdns
+
+	return 0
+}
+
+clean_service()
+{
+	if [ $ISSYSTEMD -ne 0 ]; then
+		return 0
+	fi
+	systemctl daemon-reload
+}
+
+get_systemd_path()
+{
+	service="`systemctl --no-legend| grep .service | head -n 1 | awk '{print $1}'`"
+	SERVICE_PATH="`systemctl show $service | grep FragmentPath | awk -F'=' '{print $2}'`"
+	dirname $SERVICE_PATH
+}
+
+install_files()
+{
+	install -v -d $SMARTDNS_CONF_DIR
+	if [ $? -ne 0 ]; then
+		return 1
+	fi
+
+	install -v -m 0755 -t $PREFIX/usr/sbin src/smartdns
+	if [ $? -ne 0 ]; then
+		return 1
+	fi
+
+	install -v -m 0640 -t  $PREFIX$SMARTDNS_CONF_DIR etc/smartdns/smartdns.conf
+	if [ $? -ne 0 ]; then
+		return 1
+	fi
+
+	install -v -m 0640 -t  $PREFIX/etc/default etc/default/smartdns
+	if [ $? -ne 0 ]; then
+		return 1
+	fi
+	
+	install -v -m 0755 -t $SMARTDNS_INIT_DIR etc/init.d/smartdns 
+	if [ $? -ne 0 ]; then
+		if [ $ISSYSTEMD -ne 0 ]; then
+			return 1
+		fi
+	fi
+
+	if [ $ISSYSTEMD -eq 0 ]; then
+		SYSTEM_UNIT_PATH="`get_systemd_path`"
+		if [ -z "$SYSTEM_UNIT_PATH" ]; then
+			return 1
+		fi
+		install -v -m 0644 -t $PREFIX$SYSTEM_UNIT_PATH systemd/smartdns.service 
+		if [ $? -ne 0 ]; then
+			return 1
+		fi
+	fi
+
+	return 0
+}
+
+uninstall_smartdns()
+{
+	if [ -z "$PREFIX" ]; then
+		stop_service 2>/dev/null
+	fi	
+	rm -f $PREFIX$SMARTDNS_CONF_DIR/smartdns.conf
+	rmdir $PREFIX$SMARTDNS_CONF_DIR 2>/dev/null
+	rm -f $PREFIX/usr/sbin/smartdns
+	rm -f $PREFIX/etc/default/smartdns
+
+	if [ $ISWSL -eq 0 ]; then
+		sed -i '\#%sudo ALL=NOPASSWD: /etc/init.d/smartdns#d' /etc/sudoers 2>/dev/null
+	fi
+
+	if [ $ISSYSTEMD -eq 0 ]; then
+		SYSTEM_UNIT_PATH="`get_systemd_path`"
+		if [ ! -z "$SYSTEM_UNIT_PATH" ]; then
+			rm -f $PREFIX$SYSTEM_UNIT_PATH/smartdns.service
+		fi
+	fi
+
+	if [ -z "$PREFIX" ]; then
+		clean_service
+	fi	
+}
+
+
+install_smartdns()
+{
+	local ret
+
+	which smartdns >/dev/null 2>&1
+	if [ $? -eq 0 ]; then
+		echo "Already installed."
+		return 1
+	fi
+
+	install_files
+	ret=$?
+	if [ $ret -ne 0 ]; then
+		uninstall_smartdns
+		return $ret
+	fi
+
+	if [ -z "$PREFIX" ]; then
+		start_service
+	fi
+
+	if [ $ISWSL -eq 0 ]; then
+		grep "%sudo ALL=NOPASSWD: /etc/init.d/smartdns" /etc/sudoers >/dev/null 2>&1
+		if [ $? -ne 0 ]; then
+			echo "%sudo ALL=NOPASSWD: /etc/init.d/smartdns" >> /etc/sudoers
+		fi
+	fi
+
+	return 0
+}
+
+init_dir()
+{
+	local ID=`id -u`
+	if [ $ID -ne 0 ]; then
+		echo "Please run as root."
+		return 1
+	fi
+
+	SMARTDNS_CONF_DIR=$PREFIX/etc/smartdns
+	SMARTDNS_INIT_DIR=$PREFIX/etc/init.d
+	which systemctl >/dev/null 2>&1
+	ISSYSTEMD="$?"
+	# Running under WSL (Windows Subsystem for Linux)?
+	cat /proc/version | grep Microsoft >/dev/null 2>&1; 
+	if [ $? -eq 0 ]; then
+		ISSYSTEMD=1
+		ISWSL=0
+	fi
+
+	cd $INST_DIR
+}
+
+main()
+{
+	ACTION=""
+
+	OPTS=`getopt -o iuh --long help,prefix: \
+		-n  "" -- "$@"`
+
+	if [ $? != 0 ] ; then echo "Terminating..." >&2 ; exit 1 ; fi
+
+	# Note the quotes around `$TEMP': they are essential!
+	eval set -- "$OPTS"
+
+	while true; do
+		case "$1" in
+		--prefix)
+			PREFIX="$2"
+			shift 2;;
+		-h | --help )
+			showhelp
+			return 0
+			shift ;;
+		-i )
+			ACTION="INSTALL"
+			shift ;;
+		-u )
+			ACTION="UNINSTALL"
+			shift ;;
+		-- ) shift; break ;;
+		* ) break ;;
+  		esac
+	done
+
+	init_dir
+
+	if [ -z "$ACTION" ]; then
+		showhelp
+		return 0
+	elif [ "$ACTION" = "INSTALL" ]; then
+		install_smartdns
+		return $?
+	elif [ "$ACTION" = "UNINSTALL" ]; then
+		uninstall_smartdns
+		return 0
+	fi	
+
+}
+
+main $@
+exit $?
+
+

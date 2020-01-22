@@ -287,7 +287,7 @@ if (b=="2"){
                                         </tr>
 										<tr id="row_wpassword" style="display:none;">  <th width="50%">webdav密码:</th>
 				<td>
-					<input type="password" class="input" size="32" name="caddy_wname" id="w_key" value="<% nvram_get_x("","caddy_wpassword"); %>" />
+					<input type="password" class="input" size="32" name="caddy_wpassword" id="w_key" value="<% nvram_get_x("","caddy_wpassword"); %>" />
 					<button style="margin-left: -5px;" class="btn" type="button" onclick="passwordShowHide('w_key')"><i class="icon-eye-close"></i></button>
 				</td>
 			</tr>

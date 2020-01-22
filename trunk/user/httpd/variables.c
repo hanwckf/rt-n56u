@@ -856,6 +856,8 @@
 			{"wl_guest_wpa_psk", "", NULL, EVM_RESTART_WIFI5},
 			{"wl_guest_macrule", "", NULL, EVM_RESTART_WIFI5},
 			{"wl_guest_mcs_mode", "", NULL, EVM_RESTART_WIFI5},
+			{"wl_KickStaRssiLow", "", NULL, EVM_RESTART_WIFI5},
+			{"wl_AssocReqRssiThres", "", NULL, EVM_RESTART_WIFI5},
 			{"RBRList", "Group", ARGV((char*)variables_WLANConfig11a_RBRList, "16", "32", "wl_wdsnum_x"), EVM_RESTART_WIFI5},
 #endif
 			{0,0,0,0}
@@ -933,6 +935,8 @@
 			{"caddyf_wan_port", "", NULL, EVM_RESTART_CADDY},
 			{"caddyw_wan_port", "", NULL, EVM_RESTART_CADDY},
 			{"caddy_wip6", "", NULL, EVM_RESTART_CADDY},
+			{"caddy_wname", "", NULL, EVM_RESTART_CADDY},
+			{"caddy_wpassword", "", NULL, EVM_RESTART_CADDY},
 			{"scripts.caddy_script.sh", "File", NULL, EVM_RESTART_CADDY},
 			{0,0,0,0}
 	};
@@ -1178,6 +1182,8 @@
 			{"rt_guest_wpa_psk", "", NULL, EVM_RESTART_WIFI2},
 			{"rt_guest_macrule", "", NULL, EVM_RESTART_WIFI2},
 			{"rt_guest_mcs_mode", "", NULL, EVM_RESTART_WIFI2},
+			{"rt_KickStaRssiLow", "", NULL, EVM_RESTART_WIFI2},
+			{"rt_AssocReqRssiThres", "", NULL, EVM_RESTART_WIFI2},
 			{"rt_RBRList", "Group", ARGV((char*)variables_WLANConfig11b_rt_RBRList, "16", "32", "rt_wdsnum_x"), EVM_RESTART_WIFI2},
 			{0,0,0,0}
 		};

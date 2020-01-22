@@ -46,6 +46,7 @@ function initial(){
 	show_footer();
 show_caddy_stroage();
 show_caddy_dir();
+switch_caddy_type();
 fill_status(caddy_status());
 	var o1 = document.form.caddy_storage;
 	var o2 = document.form.caddy_dir;
@@ -112,6 +113,25 @@ function show_caddy_dir(){
 		}
 	}
 	$("caddy_dir").innerHTML = code;
+}
+
+function switch_caddy_type(){
+var b = document.form.caddy_file.value;
+if (b=="0"){
+	var v=0;
+	showhide_div('row_wname', 0);
+	showhide_div('row_wpassword', 0);
+}
+if (b=="1"){
+	var v=1;
+	showhide_div('row_wname', 1);
+	showhide_div('row_wpassword', 1);
+}
+if (b=="2"){
+	var v=1;
+	showhide_div('row_wname', 1);
+	showhide_div('row_wpassword', 1);
+}
 }
 </script>
 </head>
@@ -225,7 +245,7 @@ function show_caddy_dir(){
 											<tr>
                                             <th width="30%">启动模式:</th>
                                             <td colspan="2">
-                                                <select name="caddy_file" class="input">
+                                                <select id="caddy_file" name="caddy_file" class="input" onchange="switch_caddy_type()">
                                                     <option value="0" <% nvram_match_x("","caddy_file", "0","selected"); %>>File Browser</option>
                                                     <option value="1" <% nvram_match_x("","caddy_file", "1","selected"); %>>WebDAV</option>
 													<option value="2" <% nvram_match_x("","caddy_file", "2","selected"); %>>File Browser+WebDAV</option>
@@ -259,6 +279,18 @@ function show_caddy_dir(){
                                                 <input type="text" name="caddyw_wan_port" maxlength="8"  class="input" size="60" value="<% nvram_get_x("","caddyw_wan_port"); %>" /><a href="http://<% nvram_get_x("", "lan_ipaddr_t"); %>:<% nvram_get_x("","caddyw_wan_port"); %>" target="_blank">打开管理页面</a>
                                             </td>
                                         </tr>
+										<tr id="row_wname" style="display:none;">
+                                            <th>webdav用户名:</th>
+                                            <td>
+                                                <input type="text" name="caddy_wname" maxlength="8"  class="input" size="60" value="<% nvram_get_x("","caddy_wname"); %>" />
+                                            </td>
+                                        </tr>
+										<tr id="row_wpassword" style="display:none;">  <th width="50%">webdav密码:</th>
+				<td>
+					<input type="password" class="input" size="32" name="caddy_wname" id="w_key" value="<% nvram_get_x("","caddy_wpassword"); %>" />
+					<button style="margin-left: -5px;" class="btn" type="button" onclick="passwordShowHide('w_key')"><i class="icon-eye-close"></i></button>
+				</td>
+			</tr>
 										<tr id="row_post_wan_script">
 											<td colspan="2">
 												<i class="icon-hand-right"></i> <a href="javascript:spoiler_toggle('script2')"><span>caddy脚本-不懂请不要乱改！！！</span></a>

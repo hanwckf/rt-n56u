@@ -4,6 +4,8 @@ caddy_dir=`nvram get caddy_dir`
 caddy_file=`nvram get caddy_file`
 caddyf_wan_port=`nvram get caddyf_wan_port`
 caddyw_wan_port=`nvram get caddyw_wan_port`
+caddyw_wname=`nvram get caddyw_wname`
+caddyw_wpassword=`nvram get caddyw_wpassword`
 caddyfile="$caddy_dir/caddy/caddyfile"
 rm -f $caddyfile
 if [ "$caddy_file" = "0" ] || [ "$caddy_file" = "2" ]; then
@@ -28,7 +30,7 @@ gzip
 filebrowser /document $caddy_storage {
   database /etc/storage/caddy_filebrowser.db
 }
-basicauth / admin admin
+basicauth / $caddyw_wname $caddyw_wpassword
 webdav /disk {
     scope $caddy_storage
     allow $caddy_storage 

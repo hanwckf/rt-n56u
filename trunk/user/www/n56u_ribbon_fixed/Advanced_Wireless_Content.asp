@@ -543,6 +543,21 @@ function validate_wlphrase(s, v, obj){
                                             </td>
                                         </tr>
                                         <tr>
+                                        	<tr>
+                                            <th>剔除已连接的弱信号设备:</th>
+                                            <td>
+                                                <input type="text" maxlength="4" size="4" name="wl_KickStaRssiLow" class="input" value="<% nvram_get_x("", "wl_KickStaRssiLow"); %>" />
+                                                &nbsp;<span style="color:#888;">[-100..0]</span>
+                                            </td>
+                                        </tr>
+                                        <tr>
+                                            <th>限制弱信号设备接入:</th>
+                                            <td>
+                                                <input type="text" maxlength="4" size="4" name="wl_AssocReqRssiThres" class="input" value="<% nvram_get_x("", "wl_AssocReqRssiThres"); %>" />
+                                                &nbsp;<span style="color:#888;">[-100..0]</span>
+                                            </td>
+                                        </tr>
+                                        <tr>
                                             <th><#WIFIRegionCode#></th>
                                             <td>
                                                 <select name="wl_country_code" class="input" onChange="return change_common_wl(this, 'WLANConfig11a', 'wl_country_code')">

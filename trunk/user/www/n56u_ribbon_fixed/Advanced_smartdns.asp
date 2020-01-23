@@ -147,6 +147,7 @@ function markGroupRULES(o, c, b) {
 	}
 	pageChanged = 0;
 	document.form.action_mode.value = b;
+	document.form.current_page.value = "Advanced_smartdns.asp#dns";
 	return true;
 }
 
@@ -267,11 +268,11 @@ function showMRULESList(){
 </div>
 <div id="wnd_sm_cfg">
                                     <table width="100%" cellpadding="4" cellspacing="0" class="table">
-                                        <tr> <th><#running_status#></th>
+                                        <tr> <th width="50%"><#running_status#></th>
                                             <td id="smartdns_status" colspan="2"></td>
                                         </tr>
 
-                                        <tr> <th width="50%"><#menu5_21_1#></th>
+                                        <tr> <th><#menu5_21_1#></th>
                                             <td>
                                                 <div class="main_itoggle">
                                                 <div id="sdns_enable_on_of">
@@ -285,13 +286,13 @@ function showMRULESList(){
                                             </td>
                                         </tr>
 
-                                        <tr> <th width="50%">服务器名称</th>
+                                        <tr> <th>服务器名称</th>
                                             <td>
                                                 <input type="text" maxlength="15" class="input" size="15" name="snds_name" style="width: 200px" value="<% nvram_get_x("","snds_name"); %>" />
                                             </td>
                                         </tr>
 
-                                        <tr> <th width="50%">本地端口</th>
+                                        <tr> <th>本地端口</th>
                                             <td>
                                                 <input type="text" maxlength="5" class="input" size="15" name="sdns_port" style="width: 200px" value="<% nvram_get_x("", "sdns_port"); %>">
                                             </td>
@@ -377,7 +378,7 @@ function showMRULESList(){
                                             </td>
                                         </tr>
 <tr>
-											<th width="50%">重定向</th>
+											<th>重定向</th>
 											<td>
 												<select name="snds_redirect" class="input" style="width: 200px">
 													<option value="0" <% nvram_match_x("","snds_redirect", "0","selected"); %>>无</option>
@@ -386,27 +387,27 @@ function showMRULESList(){
 												</select>
 											</td>
 										</tr>
-                                        <tr> <th width="50%">缓存大小</th>
+                                        <tr> <th>缓存大小</th>
                                             <td>
-                                                <input type="text" maxlength="64" class="input" size="64" name="snds_cache" style="width: 200px" value="<% nvram_get_x("", "snds_cache"); %>">
+                                                <input type="text" maxlength="64" class="input" size="15" name="snds_cache" style="width: 200px" value="<% nvram_get_x("", "snds_cache"); %>">
 												<div><span style="color:#888;">缓存DNS的结果，缓存大小，配置零则不缓存</span></div>
                                             </td>
                                         </tr>
-										<tr> <th width="50%">域名TTL</th>
+										<tr> <th>域名TTL</th>
                                             <td>
-                                                <input type="text" maxlength="64" class="input" size="64" name="sdns_ttl" style="width: 200px" value="<% nvram_get_x("", "sdns_ttl"); %>">
+                                                <input type="text" maxlength="64" class="input" size="15" name="sdns_ttl" style="width: 200px" value="<% nvram_get_x("", "sdns_ttl"); %>">
 												<div><span style="color:#888;">设置所有域名的TTL</span></div>
                                             </td>
                                         </tr>
-										<tr> <th width="50%">域名TTL最小值</th>
+										<tr> <th>域名TTL最小值</th>
                                             <td>
-                                                <input type="text" maxlength="64" class="input" size="64" name="sdns_ttl_min" style="width: 200px" value="<% nvram_get_x("", "sdns_ttl_min"); %>">
+                                                <input type="text" maxlength="64" class="input" size="15" name="sdns_ttl_min" style="width: 200px" value="<% nvram_get_x("", "sdns_ttl_min"); %>">
 												<div><span style="color:#888;">设置所有域名的TTL最小值</span></div>
                                             </td>
                                         </tr>
-										<tr> <th width="50%">域名TTL最大值</th>
+										<tr> <th>域名TTL最大值</th>
                                             <td>
-                                                <input type="text" maxlength="64" class="input" size="64" name="sdns_ttl_max" style="width: 200px" value="<% nvram_get_x("", "sdns_ttl_max"); %>">
+                                                <input type="text" maxlength="64" class="input" size="15" name="sdns_ttl_max" style="width: 200px" value="<% nvram_get_x("", "sdns_ttl_max"); %>">
 												<div><span style="color:#888;">设置所有域名的TTL最大值</span></div>
                                             </td>
                                         </tr>
@@ -415,7 +416,7 @@ function showMRULESList(){
 										</div>
 										<div id="wnd_sm_sec">
 										<table width="100%" cellpadding="2" cellspacing="0" class="table">
-										<tr> <th>启用</th>
+										<tr> <th width="50%">启用</th>
                                             <td>
                                                 <div class="main_itoggle">
                                                 <div id="sdnse_enable_on_of">
@@ -428,7 +429,7 @@ function showMRULESList(){
                                                 </div>
                                             </td>
                                         </tr>
-										<tr> <th width="50%">本地端口</th>
+										<tr> <th>本地端口</th>
                                             <td>
                                                 <input type="text" maxlength="64" class="input" size="64" name="sdnse_port" style="width: 200px" value="<% nvram_get_x("", "sdnse_port"); %>">
 										

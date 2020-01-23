@@ -109,7 +109,7 @@ cat <<-EOF >$trojan_json_file
     "password": [
         "$(nvram get ss_key_x$1)"
     ],
-    "log_level": 1,
+    "log_level": 99,
     "ssl": {
         "verify": false,
         "verify_hostname": $tj_link_tls,
@@ -218,56 +218,56 @@ echo $mk_vmess| jq --raw-output '.' > $v2_file
 fi
 }
 start_rules() {
-logger -t "SS" "正在添加防火墙规则..."
-server=`nvram get ssp_server_x$1`
-cat /etc/storage/ss_ip.sh | grep -v '^!' | grep -v "^$" > $wan_fw_ips
-cat /etc/storage/ss_wan_ip.sh | grep -v '^!' | grep -v "^$" > $wan_bp_ips
+    logger -t "SS" "正在添加防火墙规则..."
+    server=`nvram get ssp_server_x$1`
+    cat /etc/storage/ss_ip.sh | grep -v '^!' | grep -v "^$" > $wan_fw_ips
+    cat /etc/storage/ss_wan_ip.sh | grep -v '^!' | grep -v "^$" > $wan_bp_ips
 #resolve name
 if echo $server|grep -E "^[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}$">/dev/null; then         
-server=${server}
+    server=${server}
 elif  [ "$server" != "${server#*:[0-9a-fA-F]}" ] ;then
-server=${server}
+    server=${server}
 else
-server=`ping ${server} -s 1 -c 1 | grep PING | cut -d'(' -f 2 | cut -d')' -f1`
-if echo $server|grep -E "^[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}$">/dev/null; then
-	echo $server >/etc/storage/ssr_ip
-else
-	server=`cat /etc/storage/ssr_ip`
-fi
+    server=`ping ${server} -s 1 -c 1 | grep PING | cut -d'(' -f 2 | cut -d')' -f1`
+    if echo $server|grep -E "^[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}$">/dev/null; then
+       echo $server >/etc/storage/ssr_ip
+   else
+       server=`cat /etc/storage/ssr_ip`
+   fi
 fi
 local_port=$(nvram get ssp_local_port_x$1)
 lan_ac_ips=$lan_ac_ips
 lan_ac_mode="b"
 router_proxy="1"
 if [ "$ss_udp" = 1 ]; then
-ARG_UDP="-u"
+    ARG_UDP="-u"
 fi
 if [ -n "$lan_ac_ips" ]; then
-case "$lan_ac_mode" in
-	w|W|b|B) ac_ips="$lan_ac_mode$lan_ac_ips";;
+    case "$lan_ac_mode" in
+       w|W|b|B) ac_ips="$lan_ac_mode$lan_ac_ips";;
 esac
 fi
 #ac_ips="b"
 gfwmode="" 
 if [ "$run_mode" = "gfw" ]; then
-gfwmode="-g"
+    gfwmode="-g"
 elif [ "$run_mode" = "router" ]; then
-gfwmode="-r"
+    gfwmode="-r"
 elif [ "$run_mode" = "oversea" ]; then
-gfwmode="-c"
+    gfwmode="-c"
 elif [ "$run_mode" = "all" ]; then
-gfwmode="-z"
+    gfwmode="-z"
 fi
 if [ "$lan_con" = "0" ];then
-rm -f $lan_fp_ips
-lancon="all"
-lancons="全部IP走代理"
-cat /etc/storage/ss_lan_ip.sh | grep -v '^!' | grep -v "^$" > $lan_fp_ips
+    rm -f $lan_fp_ips
+    lancon="all"
+    lancons="全部IP走代理"
+    cat /etc/storage/ss_lan_ip.sh | grep -v '^!' | grep -v "^$" > $lan_fp_ips
 elif [ "$lan_con" = "1" ];then
-rm -f $lan_fp_ips
-lancon="bip"
-lancons="指定IP走代理,请到规则管理页面添加需要走代理的IP。"
-cat /etc/storage/ss_lan_bip.sh | grep -v '^!' | grep -v "^$" > $lan_fp_ips
+    rm -f $lan_fp_ips
+    lancon="bip"
+    lancons="指定IP走代理,请到规则管理页面添加需要走代理的IP。"
+    cat /etc/storage/ss_lan_bip.sh | grep -v '^!' | grep -v "^$" > $lan_fp_ips
 fi
 /usr/bin/ss-rules \
 -s "$server" \
@@ -287,22 +287,22 @@ return $?
 }
 start_pdnsd() 
 {
-pdnsd_bin="/usr/bin/pdnsd"
-pdnsd_cache="/tmp/pdnsd"
-pdnsd_file="/tmp/pdnsd.conf"
-pdnsd_pid="/tmp/pdnsd.pid"
-usr_dns="$1"
-usr_port="$2"
-tcp_dns_list="208.67.222.222, 208.67.220.220"
-[ -z "$usr_dns" ] && usr_dns="8.8.4.4"
-[ -z "$usr_port" ] && usr_port="53"
-dnsd_enable=`nvram get pdnsd_enable`
-if [ $dnsd_enable = 0 ]; then
-if [ ! -d $pdnsd_cache ];then
-	mkdir -p $pdnsd_cache
-	echo -ne "pd13\000\000\000\000" >$pdnsd_cache/pdnsd.cache
-	chown -R nobody:nogroup $pdnsd_cache
-fi
+    pdnsd_bin="/usr/bin/pdnsd"
+    pdnsd_cache="/tmp/pdnsd"
+    pdnsd_file="/tmp/pdnsd.conf"
+    pdnsd_pid="/tmp/pdnsd.pid"
+    usr_dns="$1"
+    usr_port="$2"
+    tcp_dns_list="208.67.222.222, 208.67.220.220"
+    [ -z "$usr_dns" ] && usr_dns="8.8.4.4"
+    [ -z "$usr_port" ] && usr_port="53"
+    dnsd_enable=`nvram get pdnsd_enable`
+    if [ $dnsd_enable = 0 ]; then
+        if [ ! -d $pdnsd_cache ];then
+           mkdir -p $pdnsd_cache
+           echo -ne "pd13\000\000\000\000" >$pdnsd_cache/pdnsd.cache
+           chown -R nobody:nogroup $pdnsd_cache
+       fi
 cat > $pdnsd_file <<EOF
 global {
 perm_cache=512;
@@ -342,160 +342,158 @@ $pdnsd_bin -c $pdnsd_file -d
 fi
 }
 start_redir() {
-logger -t "SS" "正在启动SS程序..."
-ARG_OTA=""
-gen_config_file $1 0
-stype=`nvram get ssp_type_x$1`
-if [ "$stype" == "ss" ] ;then
-sscmd="ss-redir"
-elif [ "$stype" == "ssr" ] ;then
-sscmd="ssr-redir"
-elif [ "$stype" == "trojan" ] ;then
-sscmd="$tj_bin"
-elif [ "$stype" == "v2ray" ] ;then
-sscmd="$v2_bin"
-fi
+    logger -t "SS" "正在启动SS程序..."
+    ARG_OTA=""
+    gen_config_file $1 0
+    stype=`nvram get ssp_type_x$1`
+    if [ "$stype" == "ss" ] ;then
+        sscmd="ss-redir"
+    elif [ "$stype" == "ssr" ] ;then
+        sscmd="ssr-redir"
+    elif [ "$stype" == "trojan" ] ;then
+        sscmd="$tj_bin"
+    elif [ "$stype" == "v2ray" ] ;then
+        sscmd="$v2_bin"
+    fi
 #if [ "$(nvram get ss_threads)" = "0" ] ;then
 #  threads=$(cat /proc/cpuinfo | grep 'processor' | wc -l)
 # else
 #   threads=$(nvram get ss_threads)
 # fi
 if [ "$stype" == "ss" -o "$stype" == "ssr" ] ;then
-last_config_file=$CONFIG_FILE
-pid_file="/tmp/ssr-retcp.pid"
-for i in $(seq 1 $threads)  
-do 
-$sscmd -c $CONFIG_FILE $ARG_OTA -f /tmp/ssr-retcp_$i.pid >/dev/null 2>&1
-done
-redir_tcp=1
-echo "$(date "+%Y-%m-%d %H:%M:%S") Shadowsocks/ShadowsocksR $threads 线程启动成功!" >> /tmp/ssrplus.log 
+    last_config_file=$CONFIG_FILE
+    pid_file="/tmp/ssr-retcp.pid"
+    for i in $(seq 1 $threads)  
+    do 
+        $sscmd -c $CONFIG_FILE $ARG_OTA -f /tmp/ssr-retcp_$i.pid >/dev/null 2>&1
+    done
+    redir_tcp=1
+    echo "$(date "+%Y-%m-%d %H:%M:%S") Shadowsocks/ShadowsocksR $threads 线程启动成功!" >> /tmp/ssrplus.log 
 elif [ "$stype" == "trojan" ] ;then
-$sscmd --config $trojan_json_file >> /tmp/ssrplus.log 2>&1 &
-echo "$(date "+%Y-%m-%d %H:%M:%S") $($sscmd --version 2>&1 | head -1) Started!" >> /tmp/ssrplus.log 
+    $sscmd --config $trojan_json_file >> /tmp/ssrplus.log 2>&1 &
+    echo "$(date "+%Y-%m-%d %H:%M:%S") $($sscmd --version 2>&1 | head -1) Started!" >> /tmp/ssrplus.log 
 elif [ "$stype" == "v2ray" ] ;then
-$sscmd -config $v2_json_file >/dev/null 2>&1 &
-echo "$(date "+%Y-%m-%d %H:%M:%S") $($sscmd -version | head -1) 启动成功!" >> /tmp/ssrplus.log
+    $sscmd -config $v2_json_file >/dev/null 2>&1 &
+    echo "$(date "+%Y-%m-%d %H:%M:%S") $($sscmd -version | head -1) 启动成功!" >> /tmp/ssrplus.log
 fi
 ss_switch=`nvram get backup_server`
 if [ $ss_switch != "nil" ] ;then
-switch_time=$(nvram get ss_turn_s)
-switch_timeout=$(nvram get ss_turn_ss)
-/usr/bin/ssr-switch start $switch_time $switch_timeout &
-socks="-o"
+    switch_time=$(nvram get ss_turn_s)
+    switch_timeout=$(nvram get ss_turn_ss)
+    /usr/bin/ssr-switch start $switch_time $switch_timeout &
+    socks="-o"
 fi
 return $?
 }
 start_dns()
 {
-dnsstr="$(nvram get tunnel_forward)"
-dnsserver=`echo "$dnsstr"|awk -F ':'  '{print $1}'`
-dnsport=`echo "$dnsstr"|awk -F ':'  '{print $2}'`
-if [ $(nvram get pdnsd_enable) = 0 ]; then
-start_pdnsd $dnsserver $dnsport	
-pdnsd_enable_flag=1
-fi
-if [ "$run_mode" = "router" ]; then
-echo "create china hash:net family inet hashsize 1024 maxelem 65536" > /tmp/china.ipset
-awk '!/^$/&&!/^#/{printf("add china %s'" "'\n",$0)}' /etc/storage/chinadns/chnroute.txt >> /tmp/china.ipset
-ipset -! flush china
-ipset -! restore < /tmp/china.ipset 2>/dev/null
-rm -f /tmp/china.ipset
-elif [ "$run_mode" = "gfw" ] ;then
-ipset add gfwlist $dnsserver 2>/dev/null
-logger -st "SS" "开始处理gfwlist..."
-rm -rf /etc/storage/gfwlist
-mkdir -p /etc/storage/gfwlist/
-cat /etc/storage/ss_dom.sh | grep -v '^!' | grep -v "^$" > /tmp/ss_dom.txt
-if [ $(nvram get pdnsd_enable) = 0 ]; then
-awk '{printf("server=/%s/127.0.0.1#5353\nipset=/%s/gfwlist\n", $1, $1 )}' /etc_ro/gfwlist_list.conf > /etc/storage/gfwlist/gfwlist_list.conf
-awk '{printf("server=/%s/127.0.0.1#5353\nipset=/%s/gfwlist\n", $1, $1 )}' /tmp/ss_dom.txt > /etc/storage/gfwlist/m.gfwlist.conf
-else
-awk '{printf("ipset=/%s/gfwlist\n", $1, $1 )}' /etc_ro/gfwlist_list.conf > /etc/storage/gfwlist/gfwlist_list.conf
-awk '{printf("ipset=/%s/gfwlist\n", $1, $1 )}' /tmp/ss_dom.txt > /etc/storage/gfwlist/m.gfwlist.conf
-fi
-rm -f /tmp/ss_dom.txt
-sed -i '/gfwlist/d' /etc/storage/dnsmasq/dnsmasq.conf
-sed -i '/dnsmasq.oversea/d' /etc/storage/dnsmasq/dnsmasq.conf
+    if [ "$run_mode" = "router" ]; then
+        echo "create china hash:net family inet hashsize 1024 maxelem 65536" > /tmp/china.ipset
+        awk '!/^$/&&!/^#/{printf("add china %s'" "'\n",$0)}' /etc/storage/chinadns/chnroute.txt >> /tmp/china.ipset
+        ipset -! flush china
+        ipset -! restore < /tmp/china.ipset 2>/dev/null
+        rm -f /tmp/china.ipset
+    elif [ "$run_mode" = "gfw" ] ;then
+        ipset add gfwlist $dnsserver 2>/dev/null
+        logger -st "SS" "开始处理gfwlist..."
+        rm -rf /etc/storage/gfwlist
+        mkdir -p /etc/storage/gfwlist/
+        cat /etc/storage/ss_dom.sh | grep -v '^!' | grep -v "^$" > /tmp/ss_dom.txt
+        if [ $(nvram get pdnsd_enable) = 0 ]; then
+            dnsstr="$(nvram get tunnel_forward)"
+            dnsserver=`echo "$dnsstr"|awk -F ':'  '{print $1}'`
+            dnsport=`echo "$dnsstr"|awk -F ':'  '{print $2}'`
+            start_pdnsd $dnsserver $dnsport	
+            pdnsd_enable_flag=1
+            awk '{printf("server=/%s/127.0.0.1#5353\nipset=/%s/gfwlist\n", $1, $1 )}' /etc_ro/gfwlist_list.conf > /etc/storage/gfwlist/gfwlist_list.conf
+            awk '{printf("server=/%s/127.0.0.1#5353\nipset=/%s/gfwlist\n", $1, $1 )}' /tmp/ss_dom.txt > /etc/storage/gfwlist/m.gfwlist.conf
+        else
+            awk '{printf("ipset=/%s/gfwlist\n", $1, $1 )}' /etc_ro/gfwlist_list.conf > /etc/storage/gfwlist/gfwlist_list.conf
+            awk '{printf("ipset=/%s/gfwlist\n", $1, $1 )}' /tmp/ss_dom.txt > /etc/storage/gfwlist/m.gfwlist.conf
+        fi
+        rm -f /tmp/ss_dom.txt
+        sed -i '/gfwlist/d' /etc/storage/dnsmasq/dnsmasq.conf
+        sed -i '/dnsmasq.oversea/d' /etc/storage/dnsmasq/dnsmasq.conf
 cat >> /etc/storage/dnsmasq/dnsmasq.conf << EOF
 conf-dir=/etc/storage/gfwlist/
 EOF
-elif [ "$run_mode" = "oversea" ] ;then
-ipset add gfwlist $dnsserver 2>/dev/null
-mkdir -p /etc/storage/dnsmasq.oversea
-sed -i '/dnsmasq-ss/d' /etc/storage/dnsmasq/dnsmasq.conf
-sed -i '/dnsmasq.oversea/d' /etc/storage/dnsmasq/dnsmasq.conf
+    elif [ "$run_mode" = "oversea" ] ;then
+        ipset add gfwlist $dnsserver 2>/dev/null
+        mkdir -p /etc/storage/dnsmasq.oversea
+        sed -i '/dnsmasq-ss/d' /etc/storage/dnsmasq/dnsmasq.conf
+        sed -i '/dnsmasq.oversea/d' /etc/storage/dnsmasq/dnsmasq.conf
 cat >> /etc/storage/dnsmasq/dnsmasq.conf << EOF
 conf-dir=/etc/storage/dnsmasq.oversea
 EOF
-else
-ipset -N ss_spec_wan_ac hash:net 2>/dev/null
-ipset add ss_spec_wan_ac $dnsserver 2>/dev/null 
-fi
-/sbin/restart_dhcpd
+    else
+        ipset -N ss_spec_wan_ac hash:net 2>/dev/null
+        ipset add ss_spec_wan_ac $dnsserver 2>/dev/null 
+    fi
+    /sbin/restart_dhcpd
 }
 start_local() {
-local_server=$(nvram get socks5_proxy)
-[ "$local_server" = "nil" ] && return 1
-mkdir -p /var/run /var/etc
-gen_config_file $local_server 2
-/usr/bin/ssr-local -c $CONFIG_SOCK5_FILE -u  \
--l $(nvram get socks5_proxy_prot) \
--b 0.0.0.0 \
--f /tmp/ssr-local.pid >/dev/null 2>&1
-local_enable=1	
+    local_server=$(nvram get socks5_proxy)
+    [ "$local_server" = "nil" ] && return 1
+    mkdir -p /var/run /var/etc
+    gen_config_file $local_server 2
+    /usr/bin/ssr-local -c $CONFIG_SOCK5_FILE -u  \
+    -l $(nvram get socks5_proxy_prot) \
+    -b 0.0.0.0 \
+    -f /tmp/ssr-local.pid >/dev/null 2>&1
+    local_enable=1	
 }
 rules() {
-[ "$GLOBAL_SERVER" = "-1" ] && return 1
-[ "$UDP_RELAY_SERVER" = "same" ] && UDP_RELAY_SERVER=$GLOBAL_SERVER
-if start_rules $GLOBAL_SERVER;then
-return 0
-else
-return 1
-fi
+    [ "$GLOBAL_SERVER" = "-1" ] && return 1
+    [ "$UDP_RELAY_SERVER" = "same" ] && UDP_RELAY_SERVER=$GLOBAL_SERVER
+    if start_rules $GLOBAL_SERVER;then
+        return 0
+    else
+        return 1
+    fi
 }
 ssp_start() { 
-GLOBAL_SERVER=`nvram get global_server`
-echo $GLOBAL_SERVER
-ss_enable=`nvram get ss_enable`
-if [ $ss_enable != "0" ] && [ $GLOBAL_SERVER != "nil" ]; then
-start_redir $GLOBAL_SERVER
-start_rules $GLOBAL_SERVER
-start_dns
-start_local
-start_watchcat
-auto_update
-ENABLE_SERVER=$(nvram get global_server)
-[ "$ENABLE_SERVER" = "-1" ] && return 1
-logger -t "SS" "启动成功。"
-logger -t "SS" "内网IP控制为:$lancons"
-nvram set check_mode=0
-fi
+    GLOBAL_SERVER=`nvram get global_server`
+    echo $GLOBAL_SERVER
+    ss_enable=`nvram get ss_enable`
+    if [ $ss_enable != "0" ] && [ $GLOBAL_SERVER != "nil" ]; then
+        start_redir $GLOBAL_SERVER
+        start_rules $GLOBAL_SERVER
+        start_dns
+        start_local
+        start_watchcat
+        auto_update
+        ENABLE_SERVER=$(nvram get global_server)
+        [ "$ENABLE_SERVER" = "-1" ] && return 1
+        logger -t "SS" "启动成功。"
+        logger -t "SS" "内网IP控制为:$lancons"
+        nvram set check_mode=0
+    fi
 }
 start_watchcat()
 {
-if [ $(nvram get ss_watchcat) = 1 ] ;then
-let total_count=server_count+redir_tcp+redir_udp+tunnel_enable+v2ray_enable+local_enable+pdnsd_enable_flag
-if [ $total_count -gt 0 ]
-then
+    if [ $(nvram get ss_watchcat) = 1 ] ;then
+        let total_count=server_count+redir_tcp+redir_udp+tunnel_enable+v2ray_enable+local_enable+pdnsd_enable_flag
+        if [ $total_count -gt 0 ]
+        then
 #param:server(count) redir_tcp(0:no,1:yes)  redir_udp tunnel kcp local gfw
 /usr/bin/ssr-monitor $server_count $redir_tcp $redir_udp $tunnel_enable $v2ray_enable $local_enable $pdnsd_enable_flag >/dev/null 2>&1 &
 fi
 fi
 }
 auto_update(){
-sed -i '/update_chnroute/d' /etc/storage/cron/crontabs/$http_username
-sed -i '/update_gfwlist/d' /etc/storage/cron/crontabs/$http_username
-sed -i '/ss-watchcat/d' /etc/storage/cron/crontabs/$http_username
-if [ $(nvram get ss_update_chnroute) = "1" ]; then
+    sed -i '/update_chnroute/d' /etc/storage/cron/crontabs/$http_username
+    sed -i '/update_gfwlist/d' /etc/storage/cron/crontabs/$http_username
+    sed -i '/ss-watchcat/d' /etc/storage/cron/crontabs/$http_username
+    if [ $(nvram get ss_update_chnroute) = "1" ]; then
 cat >> /etc/storage/cron/crontabs/$http_username << EOF
 0 8 */10 * * /usr/bin/update_chnroute.sh > /dev/null 2>&1
 EOF
-fi
-if [ $(nvram get ss_update_gfwlist) = "1" ]; then
+    fi
+    if [ $(nvram get ss_update_gfwlist) = "1" ]; then
 cat >> /etc/storage/cron/crontabs/$http_username << EOF
 0 7 */10 * * /usr/bin/update_gfwlist.sh > /dev/null 2>&1
 EOF
-fi
+    fi
 }
 ssp_close() {
 /usr/bin/ss-rules -f
@@ -505,22 +503,6 @@ killall -q -9 ss-redir
 killall -q -9 ssr-redir
 killall -q -9 v2ray
 killall -q -9 trojan
-killall -q -9 ssr-server
-killall -q -9 ssr-local
-killall -9 pdnsd
-sed -i '/gfwlist/d' /etc/storage/dnsmasq/dnsmasq.conf
-sed -i '/dnsmasq.oversea/d' /etc/storage/dnsmasq/dnsmasq.conf
-if [ -f "/etc/storage/dnsmasq-ss.d" ]; then
-rm -f /etc/storage/dnsmasq-ss.d
-fi 
-/sbin/restart_dhcpd
-}
-rssp_close() {
-/usr/bin/ss-rules -f
-kill -9 $(ps | grep ssr-monitor | grep -v grep | awk '{print $1}') >/dev/null 2>&1	
-killall -q -9 ss-redir
-killall -q -9 ssr-redir
-killall -q -9 v2ray
 killall -q -9 ssr-server
 killall -q -9 ssr-local
 killall -9 pdnsd
@@ -723,7 +705,7 @@ ssp_close
 ssp_start
 ;;
 reserver)
-rssp_close
+ssp_close
 ressp
 ;;
 *)

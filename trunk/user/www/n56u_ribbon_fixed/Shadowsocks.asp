@@ -63,10 +63,11 @@ function initial(){
 	showMRULESList();
 	showssList();
 	shows5List();
+	switch_ss_mode();
 	var o1 = document.form.global_server;
 	var o2 = document.form.lan_con;
 	var o3 = document.form.ss_threads;
-	var o4 = document.form.ss_run_mode;
+	//var o4 = document.form.ss_run_mode;
 	var o5 = document.form.pdnsd_enable;
 	var o6 = document.form.socks5_proxy;
 	var o7 = document.form.tunnel_forward;
@@ -74,7 +75,7 @@ function initial(){
 	o1.value = '<% nvram_get_x("","global_server"); %>';
 	o2.value = '<% nvram_get_x("","lan_con"); %>';
 	o3.value = '<% nvram_get_x("","ss_threads"); %>';
-	o4.value = '<% nvram_get_x("","ss_run_mode"); %>';
+	//o4.value = '<% nvram_get_x("","ss_run_mode"); %>';
 	o5.value = '<% nvram_get_x("","pdnsd_enable"); %>';
 	o6.value = '<% nvram_get_x("","socks5_proxy"); %>';
 	o7.value = '<% nvram_get_x("","tunnel_forward"); %>';
@@ -264,6 +265,19 @@ if (b=="quic"){
 	showhide_div('row_quic_header', k);
 }
 }
+function switch_ss_mode(){
+var b = document.form.ss_run_mode.value;
+if (b=="gfw"){
+	showhide_div('row_pdnsd_enable', 1);
+	showhide_div('row_tunnel_forward', 1);
+	showhide_div('row_pdnsd_run', 1);
+	
+}else{
+    showhide_div('row_pdnsd_enable', 0);
+	showhide_div('row_tunnel_forward', 0);
+	showhide_div('row_pdnsd_run', 0);
+	}
+}
 function applyRule(){
 	showLoading();
 	document.form.action_mode.value = " Restart ";
@@ -339,7 +353,9 @@ function markGroupRULES(o, c, b) {
 	}
 	pageChanged = 0;
 	document.form.action_mode.value = b;
+	document.form.current_page.value = "Shadowsocks.asp#add";
 	return true;
+	
 }
 function showMRULESList(){
 	var code = '<table width="100%" cellspacing="0" cellpadding="3" class="table table-list">';
@@ -445,7 +461,7 @@ function import_ssr_url(btn, urlname, sid) {
 	var s = document.getElementById(urlname + '-status');
 	if (!s)
 		return false;
-	var ssrurl = prompt("在这里黏贴配置链接 ssr:// | ss:// | vmess://", "");
+	var ssrurl = prompt("在这里黏贴配置链接 ssr:// | ss:// | vmess:// | trojan://", "");
 	if (ssrurl == null || ssrurl == "") {
 		s.innerHTML = "<font color='red'>用户取消</font>";
 		return false;
@@ -657,7 +673,7 @@ if (ssu[0] == "ssr") {
 			<tr> <th>客户端<#running_status#></th>
 				<td id="ss_status"></td>
 			</tr></th> </tr>
-			<tr> <th>PDNSD<#running_status#></th>
+			<tr id="row_pdnsd_run" style="display:none;"> <th>PDNSD<#running_status#></th>
 				<td id="pdnsd_status"></td>
 			</tr></th> </tr>
 			<tr> <th><#InetControl#></th>
@@ -703,11 +719,11 @@ if (ssu[0] == "ssr") {
 			</tr>
 			<tr> <th width="50%">运行模式</th>
 				<td>
-					<select name="ss_run_mode" class="input" style="width: 200px;">   
-						<option value="gfw" >gfw列表模式</option>
-						<option value="router" >绕过大陆IP模式</option>
-						<option value="all" >全局模式</option>
-						<option value="oversea" >海外用户回国模式</option>
+					<select name="ss_run_mode" id="ss_run_mode" class="input" style="width: 200px;" onchange="switch_ss_mode()">   
+						<option value="gfw" <% nvram_match_x("","ss_run_mode", "gfw","selected"); %> >gfw列表模式</option>
+						<option value="router" <% nvram_match_x("","ss_run_mode", "router","selected"); %> >绕过大陆IP模式</option>
+						<option value="all" <% nvram_match_x("","ss_run_mode", "all","selected"); %> >全局模式</option>
+						<option value="oversea" <% nvram_match_x("","ss_run_mode", "oversea","selected"); %> >海外用户回国模式</option>
 					</select>
 				</td>
 			</tr>
@@ -719,7 +735,7 @@ if (ssu[0] == "ssr") {
 					</select>
 				</td>
 			</tr>
-			<tr> <th width="50%">DNS解析方式</th>
+			<tr id="row_pdnsd_enable" style="display:none;"> <th width="50%">GFW域名DNS解析方式</th>
 				<td>
 					<select name="pdnsd_enable" class="input" style="width: 200px;">
 						<option value="0" >使用PDNSD TCP查询并缓存</option>
@@ -727,10 +743,11 @@ if (ssu[0] == "ssr") {
 					</select>
 				</td>
 			</tr>
-			<tr> <th width="50%">访问国外域名DNS服务器</th>
+			<tr id="row_tunnel_forward" style="display:none;"> <th width="50%">GFW域名DNS服务器</th>
 				<td>
 					<select name="tunnel_forward" class="input" style="width: 200px;" >
 						<option value="8.8.4.4:53" >Google Public DNS (8.8.4.4)</option>
+						<option value="8.8.8.8:53" >Google Public DNS (8.8.8.8)</option>
 						<option value="208.67.222.222:53" >OpenDNS (208.67.222.222)</option>
 						<option value="208.67.220.220:53" >OpenDNS (208.67.220.220)</option>
 						<option value="209.244.0.3:53" >Level 3 Public DNS (209.244.0.3)</option>
@@ -788,10 +805,10 @@ if (ssu[0] == "ssr") {
 			<tr> <th width="50%">服务器节点类型</th>
 				<td>
 					<select name="ssp_type_x_0" id="ssp_type_x_0" class="input" style="width: 200px;" onchange="switch_ss_type()">
-						<option value="ss" >SS</option>
-						<option value="ssr" >SSR</option>
-						<option value="trojan" >Trojan</option>
-						<option value="v2ray" >V2ray</option>
+						<option value="ss" <% nvram_match_x("","ssp_type_x_0", "ss","selected"); %> >SS</option>
+						<option value="ssr" <% nvram_match_x("","ssp_type_x_0", "ssr","selected"); %> >SSR</option>
+						<option value="trojan" <% nvram_match_x("","ssp_type_x_0", "trojan","selected"); %> >Trojan</option>
+						<option value="v2ray" <% nvram_match_x("","ssp_type_x_0", "v2ray","selected"); %> >V2ray</option>
 					</select>
 				</td>
 			</tr>
@@ -829,37 +846,37 @@ if (ssu[0] == "ssr") {
 			<tr id="row_v2_security" style="display:none;"><th width="50%">加密</th>
 				<td>
 					<select name="v2_security_x_0" id="v2_security_x_0" class="input" style="width: 200px;">   
-						<option value="auto" >AUTO</option>
-						<option value="none" >NONE</option>
-						<option value="aes-128-gcm" >AES-128-GCM</option>
-						<option value="chacha20-poly1305" >CHACHA20-POLY1305</option>
+						<option value="auto" <% nvram_match_x("","v2_security_x_0", "auto","selected"); %> >AUTO</option>
+						<option value="none" <% nvram_match_x("","v2_security_x_0", "none","selected"); %> >NONE</option>
+						<option value="aes-128-gcm" <% nvram_match_x("","v2_security_x_0", "aes-128-gcm","selected"); %> >AES-128-GCM</option>
+						<option value="chacha20-poly1305" <% nvram_match_x("","v2_security_x_0", "chacha20-poly1305","selected"); %> >CHACHA20-POLY1305</option>
 					</select>
 				</td>
 			</tr>
 			<tr id="row_v2_net" style="display:none;"> <th width="50%">传输方式</th>
 				<td>
 					<select name="v2_net_x_0" id="v2_net_x_0" class="input" style="width: 200px;" onchange="switch_v2_type()">   
-						<option value="tcp" >TCP</option>
-						<option value="kcp" >mKCP</option>
-						<option value="ws" >WebSocket</option>
-						<option value="h2" >HTTP/2</option>
-						<option value="quic" >QUIC</option>
+						<option value="tcp" <% nvram_match_x("","v2_net_x_0", "tcp","selected"); %> >TCP</option>
+						<option value="kcp" <% nvram_match_x("","v2_net_x_0", "kcp","selected"); %> >mKCP</option>
+						<option value="ws" <% nvram_match_x("","v2_net_x_0", "ws","selected"); %> >WebSocket</option>
+						<option value="h2" <% nvram_match_x("","v2_net_x_0", "h2","selected"); %> >HTTP/2</option>
+						<option value="quic" <% nvram_match_x("","v2_net_x_0", "quic","selected"); %> >QUIC</option>
 					</select>
 				</td>
 			</tr>
 			<tr id="row_v2_type" style="display:none;"> <th width="50%">伪装类型</th>
 				<td>
 					<select id="row_v2_type_tcp" name="v2_type_tcp_x_0" class="input" style="width: 200px;display:none;">   
-						<option value="none" >未配置</option>
-						<option value="http" >HTTP</option>
+						<option value="none" <% nvram_match_x("","v2_type_tcp_x_0", "none","selected"); %> >未配置</option>
+						<option value="http" <% nvram_match_x("","v2_type_tcp_x_0", "http","selected"); %> >HTTP</option>
 					</select>
 					<select id="row_v2_type_mkcp" name="v2_type_mkcp_x_0" class="input" style="width: 200px;display:none;"> 
-						<option value="none" >未配置</option>												
-						<option value="srtp" >VideoCall (SRTP)</option>
-						<option value="utp" >BitTorrent (uTP)</option>
-						<option value="wechat-video" >WechatVideo</option>
-						<option value="dtls" >DTLS 1.2</option>
-						<option value="wireguard" >WireGuard</option>
+						<option value="none" <% nvram_match_x("","v2_type_mkcp_x_0", "none","selected"); %> >未配置</option>												
+						<option value="srtp" <% nvram_match_x("","v2_type_mkcp_x_0", "srtp","selected"); %> >VideoCall (SRTP)</option>
+						<option value="utp" <% nvram_match_x("","v2_type_mkcp_x_0", "utp","selected"); %> >BitTorrent (uTP)</option>
+						<option value="wechat-video" <% nvram_match_x("","v2_type_mkcp_x_0", "wechat-video","selected"); %> >WechatVideo</option>
+						<option value="dtls" <% nvram_match_x("","v2_type_mkcp_x_0", "dtls","selected"); %> >DTLS 1.2</option>
+						<option value="wireguard" <% nvram_match_x("","v2_type_mkcp_x_0", "wireguard","selected"); %> >WireGuard</option>
 					</select>
 				</td>
 			</tr>
@@ -897,58 +914,58 @@ if (ssu[0] == "ssr") {
 				<td>
 					<div class="main_itoggle">
 						<div id="v2_mkcp_congestion_x_0_on_of">
-							<input type="checkbox" id="v2_mkcp_congestion_x_0_fake" <% nvram_match_x("", "v2_mkcp_congestion", "1", "value=1 checked"); %><% nvram_match_x("", "v2_mkcp_congestion", "0", "value=0"); %>>
+							<input type="checkbox" id="v2_mkcp_congestion_x_0_fake" <% nvram_match_x("", "v2_mkcp_congestion_x_0", "1", "value=1 checked"); %><% nvram_match_x("", "v2_mkcp_congestion_x_0", "0", "value=0"); %>>
 						</div>
 					</div>
 					<div style="position: absolute; margin-left: -10000px;">
-						<input type="radio" value="1" name="v2_mkcp_congestion_x_0" id="v2_tls_1" <% nvram_match_x("", "v2_mkcp_congestion", "1", "checked"); %>><#checkbox_Yes#>
-						<input type="radio" value="0" name="v2_mkcp_congestion_x_0" id="v2_tls_0" <% nvram_match_x("", "v2_mkcp_congestion", "0", "checked"); %>><#checkbox_No#>
+						<input type="radio" value="1" name="v2_mkcp_congestion_x_0" id="v2_tls_1" <% nvram_match_x("", "v2_mkcp_congestion_x_0", "1", "checked"); %>><#checkbox_Yes#>
+						<input type="radio" value="0" name="v2_mkcp_congestion_x_0" id="v2_tls_0" <% nvram_match_x("", "v2_mkcp_congestion_x_0", "0", "checked"); %>><#checkbox_No#>
 					</div>
 				</td>
 			</tr>
 			<tr id="row_v2_webs_host" style="display:none;"> <th width="50%">WebSocket Host</th>
 				<td>
-					<input type="text" class="input" size="15" name="v2_webs_host_x_0" id="v2_webs_host_x_0" style="width: 200px" value="<% nvram_get_x("","v2_webs_host"); %>" />
+					<input type="text" class="input" size="15" name="v2_webs_host_x_0" id="v2_webs_host_x_0" style="width: 200px" value="<% nvram_get_x("","v2_webs_host_x_0"); %>" />
 				</td>
 			</tr>
 			<tr id="row_v2_webs_path" style="display:none;"> <th width="50%">WebSocket Path</th>
 				<td>
-					<input type="text" class="input" size="15" name="v2_webs_path_x_0" id="v2_webs_path_x_0" style="width: 200px" value="<% nvram_get_x("","v2_webs_path"); %>" />
+					<input type="text" class="input" size="15" name="v2_webs_path_x_0" id="v2_webs_path_x_0" style="width: 200px" value="<% nvram_get_x("","v2_webs_path_x_0"); %>" />
 				</td>
 			</tr>
 			<tr id="row_v2_http2_host" style="display:none;"> <th width="50%">HTTP/2 Host</th>
 				<td>
-					<input type="text" class="input" size="15" name="v2_http2_host_x_0" id="v2_http2_host_x_0" style="width: 200px" value="<% nvram_get_x("","v2_http2_host"); %>" />
+					<input type="text" class="input" size="15" name="v2_http2_host_x_0" id="v2_http2_host_x_0" style="width: 200px" value="<% nvram_get_x("","v2_http2_host_x_0"); %>" />
 				</td>
 			</tr>
 			<tr id="row_v2_http2_path" style="display:none;"> <th width="50%">HTTP/2 Path</th>
 				<td>
-					<input type="text" class="input" size="15" name="v2_http2_path_x_0" id="v2_http2_path_x_0" style="width: 200px" value="<% nvram_get_x("","v2_https_path"); %>" />
+					<input type="text" class="input" size="15" name="v2_http2_path_x_0" id="v2_http2_path_x_0" style="width: 200px" value="<% nvram_get_x("","v2_http2_path_x_0"); %>" />
 				</td>
 			</tr>
 			<tr id="row_quic_security" style="display:none;"> <th width="50%">QUIC Security</th>
 				<td>
 					<select name="v2_quic_security_x_0" class="input" style="width: 200px;">   
-						<option value="none" >未配置</option>
-						<option value="aes-128-gcm" >aes-128-gcm</option>
-						<option value="chacha20-ietf-poly1305" >chacha20-ietf-poly1305</option>
+						<option value="none" <% nvram_match_x("","v2_quic_security_x_0", "none","selected"); %> >未配置</option>
+						<option value="aes-128-gcm" <% nvram_match_x("","v2_quic_security_x_0", "aes-128-gcm","selected"); %> >aes-128-gcm</option>
+						<option value="chacha20-ietf-poly1305" <% nvram_match_x("","v2_quic_security_x_0", "chacha20-ietf-poly1305","selected"); %> >chacha20-ietf-poly1305</option>
 					</select>
 				</td>
 			</tr>
 			<tr id="row_quic_key" style="display:none;"> <th width="50%">QUIC Key</th>
 				<td>
-					<input type="text" class="input" size="15" name="v2_quic_key_x_0" style="width: 200px" value="<% nvram_get_x("","v2_quic_key"); %>" />
+					<input type="text" class="input" size="15" name="v2_quic_key_x_0" style="width: 200px" value="<% nvram_get_x("","v2_quic_key_x_0"); %>" />
 				</td>
 			</tr>
 			<tr id="row_quic_header" style="display:none;"> <th width="50%">Header</th>
 				<td>
 					<select name="v2_quic_header_x_0" class="input" style="width: 200px;"> 
-						<option value="none" >未配置</option>												
-						<option value="srtp" >VideoCall (SRTP)</option>
-						<option value="utp" >BitTorrent (uTP)</option>
-						<option value="wechat-video" >WechatVideo</option>
-						<option value="dtls" >DTLS 1.2</option>
-						<option value="wireguard" >WireGuard</option>
+						<option value="none" <% nvram_match_x("","v2_quic_header_x_0", "none","selected"); %> >未配置</option>												
+						<option value="srtp" <% nvram_match_x("","v2_quic_header_x_0", "srtp","selected"); %> >VideoCall (SRTP)</option>
+						<option value="utp" <% nvram_match_x("","v2_quic_header_x_0", "utp","selected"); %> >BitTorrent (uTP)</option>
+						<option value="wechat-video" <% nvram_match_x("","v2_quic_header_x_0", "wechat-video","selected"); %> >WechatVideo</option>
+						<option value="dtls" <% nvram_match_x("","v2_quic_header_x_0", "dtls","selected"); %> >DTLS 1.2</option>
+						<option value="wireguard" <% nvram_match_x("","v2_quic_header_x_0", "wireguard","selected"); %> >WireGuard</option>
 					</select>
 				</td>
 			</tr>
@@ -956,44 +973,44 @@ if (ssu[0] == "ssr") {
 				<td>
 					<div class="main_itoggle">
 						<div id="v2_tls_x_0_on_of">
-							<input type="checkbox" id="v2_tls_x_0_fake" <% nvram_match_x("", "v2_tls", "1", "value=1 checked"); %><% nvram_match_x("", "v2_tls", "0", "value=0"); %>>
+							<input type="checkbox" id="v2_tls_x_0_fake" <% nvram_match_x("", "v2_tls_x_0", "1", "value=1 checked"); %><% nvram_match_x("", "v2_tls_x_0", "0", "value=0"); %>>
 						</div>
 					</div>
 					<div style="position: absolute; margin-left: -10000px;">
-						<input type="radio" value="1" name="v2_tls_x_0" id="v2_tls_x_0_1" <% nvram_match_x("", "v2_tls", "1", "checked"); %>><#checkbox_Yes#>
-						<input type="radio" value="0" name="v2_tls_x_0" id="v2_tls_x_0_0" <% nvram_match_x("", "v2_tls", "0", "checked"); %>><#checkbox_No#>
+						<input type="radio" value="1" name="v2_tls_x_0" id="v2_tls_x_0_1" <% nvram_match_x("", "v2_tls_x_0", "1", "checked"); %>><#checkbox_Yes#>
+						<input type="radio" value="0" name="v2_tls_x_0" id="v2_tls_x_0_0" <% nvram_match_x("", "v2_tls_x_0", "0", "checked"); %>><#checkbox_No#>
 					</div>
 				</td>
 			</tr>
 			<tr id="row_tj_tls_host" style="display:none;"><th>TLS Host</th>
 				<td>
-					<input type="text" class="input" size="15" name="tj_tls_host_x" style="width: 200px" value="<% nvram_get_x("", "tj_tls_host"); %>">
+					<input type="text" class="input" size="15" name="tj_tls_host_x_0" style="width: 200px" value="<% nvram_get_x("", "tj_tls_host_x_0"); %>">
 				</td>
 			</tr>
 			<tr id="row_ss_method" style="display:none;">  <th width="50%">加密方式</th>
 				<td>
 					<select name="ss_method_x_0" id="ss_method_x_0" class="input" style="width: 200px;">
-						<option value="none" >none (ssr only)</option>
-						<option value="rc4" >rc4</option>
-						<option value="rc4-md5" >rc4-md5</option>
-						<option value="aes-128-cfb" >aes-128-cfb</option>
-						<option value="aes-192-cfb" >aes-192-cfb</option>
-						<option value="aes-256-cfb" >aes-256-cfb</option>
-						<option value="aes-128-ctr" >aes-128-ctr</option>
-						<option value="aes-192-ctr" >aes-192-ctr</option>
-						<option value="aes-256-ctr" >aes-256-ctr</option>
-						<option value="camellia-128-cfb" >camellia-128-cfb</option>
-						<option value="camellia-192-cfb" >camellia-192-cfb</option>
-						<option value="camellia-256-cfb" >camellia-256-cfb</option>
-						<option value="bf-cfb" >bf-cfb</option>
-						<option value="salsa20" >salsa20</option>
-						<option value="chacha20" >chacha20</option>
-						<option value="chacha20-ietf" >chacha20-ietf</option>
-						<option value="aes-128-gcm" >aes-128-gcm (ss only)</option>
-						<option value="aes-192-gcm" >aes-192-gcm (ss only)</option>
-						<option value="aes-256-gcm" >aes-256-gcm (ss only)</option>
-						<option value="chacha20-ietf-poly1305" >chacha20-ietf-poly1305 (ss only)</option>
-						<option value="xchacha20-ietf-poly1305" >xchacha20-ietf-poly1305 (ss only)</option>
+						<option value="none" <% nvram_match_x("","ss_method_x_0", "none","selected"); %> >none (ssr only)</option>
+						<option value="rc4" <% nvram_match_x("","ss_method_x_0", "rc4","selected"); %> >rc4</option>
+						<option value="rc4-md5" <% nvram_match_x("","ss_method_x_0", "rc4-md5","selected"); %> >rc4-md5</option>
+						<option value="aes-128-cfb" <% nvram_match_x("","ss_method_x_0", "aes-128-cfb","selected"); %> >aes-128-cfb</option>
+						<option value="aes-192-cfb" <% nvram_match_x("","ss_method_x_0", "aes-192-cfb","selected"); %> >aes-192-cfb</option>
+						<option value="aes-256-cfb" <% nvram_match_x("","ss_method_x_0", "aes-256-cfb","selected"); %> >aes-256-cfb</option>
+						<option value="aes-128-ctr" <% nvram_match_x("","ss_method_x_0", "aes-128-ctr","selected"); %> >aes-128-ctr</option>
+						<option value="aes-192-ctr" <% nvram_match_x("","ss_method_x_0", "aes-192-ctr","selected"); %> >aes-192-ctr</option>
+						<option value="aes-256-ctr" <% nvram_match_x("","ss_method_x_0", "aes-256-ctr","selected"); %> >aes-256-ctr</option>
+						<option value="camellia-128-cfb" <% nvram_match_x("","ss_method_x_0", "camellia-128-cfb","selected"); %> >camellia-128-cfb</option>
+						<option value="camellia-192-cfb" <% nvram_match_x("","ss_method_x_0", "camellia-192-cfb","selected"); %> >camellia-192-cfb</option>
+						<option value="camellia-256-cfb" <% nvram_match_x("","ss_method_x_0", "camellia-256-cfb","selected"); %> >camellia-256-cfb</option>
+						<option value="bf-cfb" <% nvram_match_x("","ss_method_x_0", "bf-cfb","selected"); %> >bf-cfb</option>
+						<option value="salsa20" <% nvram_match_x("","ss_method_x_0", "salsa20","selected"); %> >salsa20</option>
+						<option value="chacha20" <% nvram_match_x("","ss_method_x_0", "chacha20","selected"); %> >chacha20</option>
+						<option value="chacha20-ietf" <% nvram_match_x("","ss_method_x_0", "chacha20-ietf","selected"); %> >chacha20-ietf</option>
+						<option value="aes-128-gcm" <% nvram_match_x("","ss_method_x_0", "es-128-gcm","selected"); %> >aes-128-gcm (ss only)</option>
+						<option value="aes-192-gcm" <% nvram_match_x("","ss_method_x_0", "aes-192-gcm","selected"); %> >aes-192-gcm (ss only)</option>
+						<option value="aes-256-gcm" <% nvram_match_x("","ss_method_x_0", "aes-256-gcm","selected"); %> >aes-256-gcm (ss only)</option>
+						<option value="chacha20-ietf-poly1305" <% nvram_match_x("","ss_method_x_0", "chacha20-ietf-poly1305","selected"); %> >chacha20-ietf-poly1305 (ss only)</option>
+						<option value="xchacha20-ietf-poly1305" <% nvram_match_x("","ss_method_x_0", "xchacha20-ietf-poly1305","selected"); %> >xchacha20-ietf-poly1305 (ss only)</option>
 					</select>
 				</td>
 			</tr>
@@ -1005,14 +1022,14 @@ if (ssu[0] == "ssr") {
 			<tr id="row_ss_protocol" style="display:none;"> <th width="50%">协议</th>
 				<td>
 					<select name="ss_protocol_x_0" id="ss_protocol_x_0" class="input" style="width: 200px;">   
-						<option value="origin" >origin</option>
-						<option value="auth_sha1" >auth_sha1</option>
-						<option value="auth_sha1_v2" >auth_sha1_v2</option>
-						<option value="auth_sha1_v4" >auth_sha1_v4</option>
-						<option value="auth_aes128_md5" >auth_aes128_md5</option>
-						<option value="auth_aes128_sha1" >auth_aes128_sha1</option>
-						<option value="auth_chain_a" >auth_chain_a</option>
-						<option value="auth_chain_b" >auth_chain_b</option>
+						<option value="origin" <% nvram_match_x("","ss_protocol_x_0", "origin","selected"); %> >origin</option>
+						<option value="auth_sha1" <% nvram_match_x("","ss_protocol_x_0", "auth_sha1","selected"); %> >auth_sha1</option>
+						<option value="auth_sha1_v2" <% nvram_match_x("","ss_protocol_x_0", "auth_sha1_v2","selected"); %> >auth_sha1_v2</option>
+						<option value="auth_sha1_v4" <% nvram_match_x("","ss_protocol_x_0", "auth_sha1_v4","selected"); %> >auth_sha1_v4</option>
+						<option value="auth_aes128_md5" <% nvram_match_x("","ss_protocol_x_0", "auth_aes128_md5","selected"); %> >auth_aes128_md5</option>
+						<option value="auth_aes128_sha1" <% nvram_match_x("","ss_protocol_x_0", "auth_aes128_sha1","selected"); %> >auth_aes128_sha1</option>
+						<option value="auth_chain_a" <% nvram_match_x("","ss_protocol_x_0", "auth_chain_a","selected"); %> >auth_chain_a</option>
+						<option value="auth_chain_b" <% nvram_match_x("","ss_protocol_x_0", "auth_chain_b","selected"); %> >auth_chain_b</option>
 					</select>
 				</td>
 			</tr>
@@ -1024,10 +1041,10 @@ if (ssu[0] == "ssr") {
 			<tr id="row_ss_obfs" style="display:none;"> <th width="50%">混淆</th>
 				<td>
 					<select name="ss_obfs_x_0" id="ss_obfs_x_0" class="input" style="width: 200px;">   
-						<option value="plain" >plain</option>
-						<option value="http_simple" >http_simple</option>
-						<option value="http_post" >http_post</option>
-						<option value="tls1.2_ticket_auth" >tls1.2_ticket_auth</option>
+						<option value="plain" <% nvram_match_x("","ss_obfs_x_0", "plain","selected"); %> >plain</option>
+						<option value="http_simple" <% nvram_match_x("","ss_obfs_x_0", "http_simple","selected"); %> >http_simple</option>
+						<option value="http_post" <% nvram_match_x("","ss_obfs_x_0", "http_post","selected"); %> >http_post</option>
+						<option value="tls1.2_ticket_auth" <% nvram_match_x("","ss_obfs_x_0", "tls1.2_ticket_auth","selected"); %> >tls1.2_ticket_auth</option>
 					</select>
 				</td>
 			</tr>

@@ -1,9 +1,11 @@
-##2020.01.20##
-* 应群友建议,增加caddy filebrowser和WEBDAV(文件来自ntgeralt）
-* SSP增加trojan
-* 修复京东云NTFS和MMC自动挂载
-* 修复在源码更改了路由默认IP后，编译出来的固件恢复出厂IP跳转错误的问题
-* 可能还会继续有更多.........请看源码的commit
+##2020.01.23##
+* 应群友建议,增加无线弱信号剔除功能
+* 继续修复SSP自动切换
+* 调整修改ssp web页面的一些小问题
+* 修正ssp和smartdns页面增加服务器页面跳转的问题
+* webdav增加自定义用户名和密码
+* 升级smartdns源码
+* 调整了固件版本命名:改成日期
 
 ##往期更新日志##
 *https://github.com/chongshengB/rt-n56u/blob/master/changelog-old.md

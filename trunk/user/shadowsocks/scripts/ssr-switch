@@ -24,48 +24,57 @@ DEFAULT_SERVER=$(nvram get global_server)
 CURRENT_SERVER=$DEFAULT_SERVER
 BACKUP_SERVER=$(nvram get backup_server)
 
-#判断代理是否正常
 check_proxy() {
-	/usr/bin/ss-check www.google.com  80 3 1
-	check=$?
-	echo $check
-	if [ "$check" == "0" ]; then
-	current_ret=0		
-	else
-	/usr/bin/ss-check www.baidu.com  80 3 1
-	check=$?
-	if [ "$check" == "0" ]; then
-	current_ret=1
-	fi
-	fi
+  result=0
+  for i in $(seq 1 3)
+  do
+    /usr/bin/ss-check www.google.com 80 $switch_time 1
+    check=$?
+    if [ "$check" == "0" ]; then
+      # echo "$(date "+%Y-%m-%d %H:%M:%S") Check Google Proxy Success, count=$i" >> /tmp/ssrplus.log
+      result=0
+      break
+    else
+    	/usr/bin/ss-check www.youtube.com 80 $switch_time 1
+    check=$?
+    if [ "$check" == "0" ]; then
+      # echo "$(date "+%Y-%m-%d %H:%M:%S") Check Google Proxy Success, count=$i" >> /tmp/ssrplus.log
+      result=0
+      break
+    else
+      # echo "$(date "+%Y-%m-%d %H:%M:%S") Check Google Proxy Fail, count=$i" >> /tmp/ssrplus.log
+      /usr/bin/ss-check www.baidu.com 80 $switch_time 1
+      check=$?
+      if [ "$check" == "0" ]; then
+        result=1
+      else
+        result=2
+      fi
+    fi
+    fi
+    sleep 20;
+  done
+  current_ret=$result;
 }
 
 a_start() {
 while [ "1" = "1" ]  #死循环
 do
 	sleep $cycle_time
-	LOGTIME=$(date "+%Y-%m-%d %H:%M:%S")
-	for i in `seq 1 3` 
-	do
 	check_proxy
-#判断当前代理是否正常
-if [ "$current_ret" = "0" ] ;then
-continue
-fi
-sleep 20s
-done
+    current_ret = $?
 if [ "$current_ret" = "1" ] ;then
 #当前代理错误，判断有无可用的服务器
 if [ $(nvram get check_mode) = "1" ];then
 	echo "$(date "+%Y-%m-%d %H:%M:%S") 备用服务器也故障了,请检测主备服务器是否正常！" >> /tmp/ssrplus.log
-	/usr/bin/shadowsocks.sh stop &
 	nvram set ss_enable=0
 	nvram set check_mode=0
+	/usr/bin/shadowsocks.sh stop &
 	exit 0
 fi
 echo "$(date "+%Y-%m-%d %H:%M:%S") 检测到主服务器故障，切换到备用服务器。" >> /tmp/ssrplus.log
-/usr/bin/shadowsocks.sh reserver &
 nvram set check_mode=1
+/usr/bin/shadowsocks.sh reserver &
 fi
 done
 }
@@ -76,9 +85,5 @@ start)
 	;;
 stop)
 	a_close
-	;;
-*)
-	echo "check"
-	#exit 0
 	;;
 esac

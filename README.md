@@ -7,10 +7,14 @@
 
 ### 新增以下功能 ###
 >- [Adbyby plus+](https://github.com/coolsnowwolf/lede) ```CONFIG_FIRMWARE_INCLUDE_ADBYBY```
->- [Aliddns] ```CONFIG_FIRMWARE_INCLUDE_ALIDDNS```
+>- [Koolproxy]( http://koolshare.cn/thread-64086-1-1.html) ```CONFIG_FIRMWARE_INCLUDE_KOOLPROXY```
+>- [caddy](https://github.com/hacdias/filebrowser) ```CONFIG_FIRMWARE_INCLUDE_CADDY```
 >- [SS plus+](https://github.com/coolsnowwolf/lede) ```CONFIG_FIRMWARE_INCLUDE_SHADOWSOCKS```
->- [jq](https://github.com/stedolan/jq) 如jq编译出现错误，请执行sudo apt-get install gcc-multilib 
+>- [Trojan](https://github.com/trojan-gfw/trojan) ```CONFIG_FIRMWARE_INCLUDE_TROJAN```
+>- [V2ray](https://github.com/v2ray/v2ray-core) ```CONFIG_FIRMWARE_INCLUDE_V2RAY```
 >- [SmartDNS](https://github.com/pymumu/smartdns) ```CONFIG_FIRMWARE_INCLUDE_SMARTDNS```
+>- [Aliddns] ```CONFIG_FIRMWARE_INCLUDE_ALIDDNS```
+>- [jq](https://github.com/stedolan/jq) 如jq编译出现错误，请执行sudo apt-get install gcc-multilib 
 
 ### 新增适配以下型号 ###
 >- 京东云路由(文件来自Lintel) 编译代码: JDC-1

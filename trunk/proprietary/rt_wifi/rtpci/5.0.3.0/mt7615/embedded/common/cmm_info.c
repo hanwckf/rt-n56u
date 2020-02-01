@@ -13152,11 +13152,6 @@ INT	Set_Led_Proc(RTMP_ADAPTER *pAd, RTMP_STRING *arg)
 			break;
 	}
 
-	printk("\n%s\n", __func__);
-
-	for (j = 0; j < i; j++)
-		printk("%02x\n", (UINT)led_param[j]);
-
 #if defined(MT7615) || defined(MT7622)
 	if (IS_MT7615(pAd))
 		AndesLedEnhanceOP(pAd, led_param[0], led_param[1], led_param[2], led_param[3], \

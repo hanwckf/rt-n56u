@@ -552,8 +552,8 @@ if (found_app_caddy()){
 	menuL2_link.push(caddy_array[1]);
 } else menuL2_link.push("");
 //Level 1 Menu in Gateway, Router mode
-menuL1_title = new Array("", "<#menu1#>", "", "<#menu2#>", "<#menu6#>", "<#menu4#>", "<#menu5_8#>", "<#menu5#>");
-menuL1_link = new Array("", "index.asp", "", "vpnsrv.asp", "vpncli.asp", "Main_TrafficMonitor_realtime.asp", "Advanced_System_Info.asp", "as.asp");
+menuL1_title = new Array("", "<#menu1#>", "", "", "", "<#menu4#>", "<#menu5_8#>", "<#menu5#>");
+menuL1_link = new Array("", "index.asp", "", "", "", "Main_TrafficMonitor_realtime.asp", "Advanced_System_Info.asp", "as.asp");
 menuL1_icon = new Array("", "icon-home", "icon-hdd", "icon-retweet", "icon-globe", "icon-tasks", "icon-random", "icon-wrench");
 
 function show_menu(L1, L2, L3){
@@ -580,10 +580,6 @@ function show_menu(L1, L2, L3){
 		menuL2_title[4] = "";
 		menuL2_link[5] = "";  //remove Firewall
 		menuL2_title[5] = "";
-		menuL1_link[3] = "";  //remove VPN svr
-		menuL1_title[3] = "";
-		menuL1_link[4] = "";  //remove VPN cli
-		menuL1_title[4] = "";
 		
 		if (lan_proto == '1'){
 			tabtitle[2].splice(2,1);
@@ -598,13 +594,6 @@ function show_menu(L1, L2, L3){
 			tablink[3].splice(2,1);
 			tabtitle[3].splice(2,1);
 		}
-	}
-
-	if (!support_vpn()){
-		menuL1_link[3] = "";
-		menuL1_link[4] = "";
-		menuL1_title[3] = "";
-		menuL1_title[4] = "";
 	}
 
 	for (i=0;i<num_ephy;i++){

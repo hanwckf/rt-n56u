@@ -287,6 +287,9 @@ partno=`echo ${sd_mount:3:1}`
 /sbin/automount.sh $sd_mount AiDisk_$device_name$partno
 done
 
+# Mount SATA disk
+#mdev -s
+
 EOF
 		chmod 755 "$script_started"
 	fi

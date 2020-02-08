@@ -187,6 +187,7 @@ ifneq ($(CONFIG_FIRMWARE_INCLUDE_SHADOWSOCKS),y)
 	rm -f $(INSTALLDIR)/www/Shadowsocks_action.asp
 	rm -f $(INSTALLDIR)/www/Shadowsocks_log.asp
 endif
+
 ifeq ($(CONFIG_FIRMWARE_WEBUI_HIDE_VPN),y)
 	rm -f $(INSTALLDIR)/www/vpn_clients.asp
 	rm -f $(INSTALLDIR)/www/vpncli.asp
@@ -207,5 +208,6 @@ endif
 ifeq ($(CONFIG_FIRMWARE_INCLUDE_FRPC)_$(CONFIG_FIRMWARE_INCLUDE_FRPS), n_n)
 	rm -f $(INSTALLDIR)/www/Advanced_frp.asp
 endif
+
 clean:
 	@echo "Clean www romfs"

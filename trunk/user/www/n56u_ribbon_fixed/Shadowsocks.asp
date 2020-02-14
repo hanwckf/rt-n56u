@@ -112,9 +112,20 @@ if (b=="ss"){
 	showhide_div('row_tj_tls_host', 0);
 }
 if (b=="kumasocks"){
-	var v=0;
+	var v=1;
+	showhide_div('row_ss_protocol', 0);
+	showhide_div('row_ss_protocol_para', 0);
+	showhide_div('row_ss_obfs', 0);
+	showhide_div('row_ss_obfs_para', 0);
 	showhide_div('row_ss_password', 0);
 	showhide_div('row_ss_method', 0);
+	showhide_div('row_v2_aid', 0);
+	showhide_div('row_v2_vid', 0);
+	showhide_div('row_v2_security', 0);
+	showhide_div('row_v2_net', 0);
+	showhide_div('row_v2_type', 0);
+	showhide_div('row_v2_tls', 0);
+	showhide_div('row_tj_tls_host', 0);
 }
 if (b=="ssr"){
 	var v=1;

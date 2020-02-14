@@ -111,6 +111,11 @@ if (b=="ss"){
 	showhide_div('row_v2_tls', v);
 	showhide_div('row_tj_tls_host', 0);
 }
+if (b=="kumasocks"){
+	var v=0;
+	showhide_div('row_ss_password', 0);
+	showhide_div('row_ss_method', 0);
+}
 if (b=="ssr"){
 	var v=1;
 	showhide_div('row_ss_protocol', v);
@@ -470,7 +475,7 @@ function import_ssr_url(btn, urlname, sid) {
 //var ssu = ssrurl.match(/ssr:\/\/([A-Za-z0-9_-]+)/i);
 var ssu = ssrurl.split('://');
 console.log(ssu.length);
-if ((ssu[0] != "ssr" && ssu[0] != "ss" && ssu[0] != "vmess" && ssu[0] != "trojan") || ssu[1] == "") {
+if ((ssu[0] != "ssr" && ssu[0] != "ss" && ssu[0] != "vmess" && ssu[0] != "kumasocks"&& ssu[0] != "trojan") || ssu[1] == "") {
 	s.innerHTML = "<font color='red'>无效格式</font>";
 	return false;
 }
@@ -807,6 +812,7 @@ if (ssu[0] == "ssr") {
 					<select name="ssp_type_x_0" id="ssp_type_x_0" class="input" style="width: 200px;" onchange="switch_ss_type()">
 						<option value="ss" <% nvram_match_x("","ssp_type_x_0", "ss","selected"); %> >SS</option>
 						<option value="ssr" <% nvram_match_x("","ssp_type_x_0", "ssr","selected"); %> >SSR</option>
+						<option value="kumasocks" <% nvram_match_x("","ssp_type_x_0", "kumasocks","selected"); %> >kumasocks</option>
 						<option value="trojan" <% nvram_match_x("","ssp_type_x_0", "trojan","selected"); %> >Trojan</option>
 						<option value="v2ray" <% nvram_match_x("","ssp_type_x_0", "v2ray","selected"); %> >V2ray</option>
 					</select>

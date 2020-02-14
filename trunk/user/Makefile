@@ -135,6 +135,7 @@ dir_$(CONFIG_FIRMWARE_INCLUDE_SHADOWSOCKS)      	+= jq
 dir_$(CONFIG_FIRMWARE_INCLUDE_SHADOWSOCKS)	        += pdnsd
 dir_$(CONFIG_FIRMWARE_INCLUDE_V2RAY)	        += v2ray
 dir_$(CONFIG_FIRMWARE_INCLUDE_TROJAN)	        += trojan
+dir_$(CONFIG_FIRMWARE_INCLUDE_KUMASOCKS)	+= kumasocks
 dir_$(OPENSSH_ENABLED)				+= openssh
 dir_$(DROPBEAR_ENABLED)				+= dropbear
 dir_$(CONFIG_FIRMWARE_INCLUDE_HTOP)		+= htop

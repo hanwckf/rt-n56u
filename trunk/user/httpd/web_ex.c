@@ -2007,8 +2007,12 @@ static int shadowsocks_status_hook(int eid, webs_t wp, int argc, char **argv)
 	if (ss_status_code == 0){
 		ss_status_code = pids("v2ray");
 	}
+
 	if (ss_status_code == 0){
 		ss_status_code = pids("trojan");
+	}
+	if (ss_status_code == 0){
+		ss_status_code = pids("kumasocks");
 	}
 	websWrite(wp, "function shadowsocks_status() { return %d;}\n", ss_status_code);
 	int ss_tunnel_status_code = pids("ss-local");

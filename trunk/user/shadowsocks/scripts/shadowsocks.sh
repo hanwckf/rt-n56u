@@ -13,6 +13,7 @@ http_username=`nvram get http_username`
 CONFIG_FILE=/tmp/${NAME}.json
 CONFIG_UDP_FILE=/tmp/${NAME}_u.json
 CONFIG_SOCK5_FILE=/tmp/${NAME}_s.json
+CONFIG_KUMASOCKS_FILE=/tmp/kumasocks.toml
 v2_json_file="/tmp/v2-redir.json"
 v2udp_json_file="/tmp/v2-udpredir.json"
 trojan_json_file="/tmp/tj-redir.json"
@@ -76,6 +77,12 @@ cat <<-EOF >$config_file
 	"obfs": "$(nvram get ss_obfs_x$1)",
 	"obfs_param": "$(nvram get ss_obfs_param_x$1)"
 }
+EOF
+elif [ "$stype" == "kumasocks" ] ;then
+kumasocks_bin="/usr/bin/kumasocks"
+cat <<-EOF >$CONFIG_KUMASOCKS_FILE
+	listen-addr = "0.0.0.0:$(nvram get ssp_local_port_x$1)"
+	proxy-addr = "socks5://$hostip:$(nvram get ssp_prot_x$1)"
 EOF
 elif [ "$stype" == "trojan" ] ;then
 tj_bin="/usr/bin/trojan"
@@ -352,6 +359,8 @@ start_redir() {
         sscmd="ssr-redir"
     elif [ "$stype" == "trojan" ] ;then
         sscmd="$tj_bin"
+    elif [ "$stype" == "kumasocks" ] ;then
+	sscmd="$kumasocks_bin"
     elif [ "$stype" == "v2ray" ] ;then
         sscmd="$v2_bin"
     fi
@@ -371,6 +380,9 @@ if [ "$stype" == "ss" -o "$stype" == "ssr" ] ;then
     echo "$(date "+%Y-%m-%d %H:%M:%S") Shadowsocks/ShadowsocksR $threads 线程启动成功!" >> /tmp/ssrplus.log 
 elif [ "$stype" == "trojan" ] ;then
     $sscmd --config $trojan_json_file >> /tmp/ssrplus.log 2>&1 &
+    echo "$(date "+%Y-%m-%d %H:%M:%S") $($sscmd --version 2>&1 | head -1) Started!" >> /tmp/ssrplus.log 
+elif [ "$stype" == "kumasocks" ] ;then
+    $sscmd -c $CONFIG_KUMASOCKS_FILE >> /tmp/ssrplus.log 2>&1 &
     echo "$(date "+%Y-%m-%d %H:%M:%S") $($sscmd --version 2>&1 | head -1) Started!" >> /tmp/ssrplus.log 
 elif [ "$stype" == "v2ray" ] ;then
     $sscmd -config $v2_json_file >/dev/null 2>&1 &
@@ -505,6 +517,7 @@ killall -q -9 v2ray
 killall -q -9 trojan
 killall -q -9 ssr-server
 killall -q -9 ssr-local
+killall -q -9 kumasocks
 killall -9 pdnsd
 sed -i '/gfwlist/d' /etc/storage/dnsmasq/dnsmasq.conf
 sed -i '/dnsmasq.oversea/d' /etc/storage/dnsmasq/dnsmasq.conf

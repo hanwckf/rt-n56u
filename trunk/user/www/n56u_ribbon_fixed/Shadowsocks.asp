@@ -63,7 +63,6 @@ function initial(){
 	showMRULESList();
 	showssList();
 	shows5List();
-	switch_ss_mode();
 	var o1 = document.form.global_server;
 	var o2 = document.form.lan_con;
 	var o3 = document.form.ss_threads;
@@ -264,19 +263,6 @@ if (b=="quic"){
 	showhide_div('row_quic_key', k);
 	showhide_div('row_quic_header', k);
 }
-}
-function switch_ss_mode(){
-var b = document.form.ss_run_mode.value;
-if (b=="gfw"){
-	showhide_div('row_pdnsd_enable', 1);
-	showhide_div('row_tunnel_forward', 1);
-	showhide_div('row_pdnsd_run', 1);
-	
-}else{
-    showhide_div('row_pdnsd_enable', 0);
-	showhide_div('row_tunnel_forward', 0);
-	showhide_div('row_pdnsd_run', 0);
-	}
 }
 function applyRule(){
 	showLoading();
@@ -590,6 +576,10 @@ if (ssu[0] == "ssr") {
 		document.getElementById('v2_http2_host_x_0').value = ssm.host;
 		document.getElementById('v2_http2_path_x_0').value = ssm.path;
 	}
+	if (ssm.tls == "tls" ) {
+		document.getElementById('v2_tls_x_0').value = 1;
+		document.getElementById('v2_tls_x_0').checked = true;
+	}
 	s.innerHTML = "<font color='green'>导入V2ray配置信息成功</font>";
 	return false;
 }
@@ -719,7 +709,7 @@ if (ssu[0] == "ssr") {
 			</tr>
 			<tr> <th width="50%">运行模式</th>
 				<td>
-					<select name="ss_run_mode" id="ss_run_mode" class="input" style="width: 200px;" onchange="switch_ss_mode()">   
+					<select name="ss_run_mode" id="ss_run_mode" class="input" style="width: 200px;" >   
 						<option value="gfw" <% nvram_match_x("","ss_run_mode", "gfw","selected"); %> >gfw列表模式</option>
 						<option value="router" <% nvram_match_x("","ss_run_mode", "router","selected"); %> >绕过大陆IP模式</option>
 						<option value="all" <% nvram_match_x("","ss_run_mode", "all","selected"); %> >全局模式</option>
@@ -735,7 +725,7 @@ if (ssu[0] == "ssr") {
 					</select>
 				</td>
 			</tr>
-			<tr id="row_pdnsd_enable" style="display:none;"> <th width="50%">GFW域名DNS解析方式</th>
+			<tr id="row_pdnsd_enable"> <th width="50%">DNS解析方式</th>
 				<td>
 					<select name="pdnsd_enable" class="input" style="width: 200px;">
 						<option value="0" >使用PDNSD TCP查询并缓存</option>
@@ -743,7 +733,7 @@ if (ssu[0] == "ssr") {
 					</select>
 				</td>
 			</tr>
-			<tr id="row_tunnel_forward" style="display:none;"> <th width="50%">GFW域名DNS服务器</th>
+			<tr id="row_tunnel_forward"> <th width="50%">DNS服务器</th>
 				<td>
 					<select name="tunnel_forward" class="input" style="width: 200px;" >
 						<option value="8.8.4.4:53" >Google Public DNS (8.8.4.4)</option>
@@ -971,15 +961,8 @@ if (ssu[0] == "ssr") {
 			</tr>
 			<tr id="row_v2_tls" style="display:none;"><th>TLS</th>
 				<td>
-					<div class="main_itoggle">
-						<div id="v2_tls_x_0_on_of">
-							<input type="checkbox" id="v2_tls_x_0_fake" <% nvram_match_x("", "v2_tls_x_0", "1", "value=1 checked"); %><% nvram_match_x("", "v2_tls_x_0", "0", "value=0"); %>>
-						</div>
-					</div>
-					<div style="position: absolute; margin-left: -10000px;">
-						<input type="radio" value="1" name="v2_tls_x_0" id="v2_tls_x_0_1" <% nvram_match_x("", "v2_tls_x_0", "1", "checked"); %>><#checkbox_Yes#>
-						<input type="radio" value="0" name="v2_tls_x_0" id="v2_tls_x_0_0" <% nvram_match_x("", "v2_tls_x_0", "0", "checked"); %>><#checkbox_No#>
-					</div>
+				<input type="checkbox" name="v2_tls_x_0" id="v2_tls_x_0" <% nvram_match_x("", "v2_tls_x_0", "1", "value=1 checked"); %><% nvram_match_x("", "v2_tls_x_0", "0", "value=0"); %>>
+
 				</td>
 			</tr>
 			<tr id="row_tj_tls_host" style="display:none;"><th>TLS Host</th>

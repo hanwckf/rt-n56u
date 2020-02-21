@@ -15,6 +15,7 @@ sdns_tcp_server=`nvram get sdns_tcp_server`
 sdns_ipv6_server=`nvram get sdns_ipv6_server`
 snds_ip_change=`nvram get snds_ip_change`
 sdns_www=`nvram get sdns_www`
+sdns_exp=`nvram get sdns_exp`
 snds_redirect=`nvram get snds_redirect`
 snds_cache=`nvram get snds_cache`
 sdns_ttl=`nvram get sdns_ttl`
@@ -33,6 +34,12 @@ sdnse_ipc=`nvram get sdnse_ipc`
 sdnse_cache=`nvram get sdnse_cache`
 ss_white=`nvram get ss_white`
 ss_black=`nvram get ss_black`
+
+if [ $(nvram get ss_enable) = 1 ] && [ $(nvram get ss_run_mode) = "router" ] && [ $(nvram get pdnsd_enable) = 0 ]; then
+logger -t "SmartDNS" "系统检测到SS模式为绕过大陆模式，并且启用了pdnsd,请先调整SS解析使用自定义模式！程序将退出。"
+nvram set sdns_enable=0
+exit 0
+fi
 get_tz()
 {
 	SET_TZ=""
@@ -73,6 +80,11 @@ if [ $sdns_www -eq 1 ];then
 echo "prefetch-domain yes" >> $SMARTDNS_CONF
 else
 echo "prefetch-domain no" >> $SMARTDNS_CONF
+fi
+if [ $sdns_exp -eq 1 ];then
+echo "serve-expired yes" >> $SMARTDNS_CONF
+else
+echo "serve-expired no" >> $SMARTDNS_CONF
 fi
 echo "log-level info" >> $SMARTDNS_CONF
 listnum=`nvram get sdnss_staticnum_x`
@@ -117,6 +129,16 @@ fi
 fi	
 fi
 done
+if [ $ss_white = "1" ]; then
+rm -f /tmp/whitelist.txt
+awk '{printf("whitelist-ip %s\n", $1, $1 )}' /etc/storage/chinadns/chnroute.txt >> /tmp/whitelist.conf
+echo "conf-file /tmp/whitelist.conf" >> $SMARTDNS_CONF
+fi
+if [ $ss_black = "1" ]; then
+rm -f /tmp/blacklist.txt
+awk '{printf("blacklist-ip %s\n", $1, $1 )}' /etc/storage/chinadns/chnroute.txt >> /tmp/blacklist.conf
+echo "conf-file /tmp/blacklist.conf" >> $SMARTDNS_CONF
+fi
 }
 
 gensdnssecond(){
@@ -248,22 +270,15 @@ fi
 args=""
 logger -t "SmartDNS" "创建配置文件."
 gensmartconf
-if [ $ss_white = "1" ]; then
-rm -f /tmp/whitelist.txt
-awk '{printf("whitelist-ip %s\n", $1, $1 )}' /etc/storage/chinadns/chnroute.txt >> /tmp/whitelist.txt
-fi
-if [ $ss_black = "1" ]; then
-rm -f /tmp/blacklist.txt
-awk '{printf("blacklist-ip %s\n", $1, $1 )}' /etc/storage/chinadns/chnroute.txt >> /tmp/blacklist.txt
-fi
+
 grep -v ^! $ADDRESS_CONF >> $SMARTDNS_CONF
 grep -v ^! $BLACKLIST_IP_CONF >> $SMARTDNS_CONF
 grep -v ^! $WHITELIST_IP_CONF >> $SMARTDNS_CONF
 grep -v ^! $CUSTOM_CONF >> $SMARTDNS_CONF
-grep -v ^! /tmp/whitelist.txt >> $SMARTDNS_CONF
-rm -f /tmp/whitelist.txt
-grep -v ^! /tmp/blacklist.txt >> $SMARTDNS_CONF
-rm -f /tmp/blacklist.txt
+#grep -v ^! /tmp/whitelist.txt >> $SMARTDNS_CONF
+#rm -f /tmp/whitelist.txt
+#grep -v ^! /tmp/blacklist.txt >> $SMARTDNS_CONF
+#rm -f /tmp/blacklist.txt
 if [ "$sdns_coredump" = "1" ]; then
 		args="$args -S"
 	fi

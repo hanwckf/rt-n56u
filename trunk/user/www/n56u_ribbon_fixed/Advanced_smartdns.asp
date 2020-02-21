@@ -31,6 +31,7 @@ $j(document).ready(function(){
 	init_itoggle('sdns_ipv6_server');
 	init_itoggle('snds_ip_change');
 	init_itoggle('sdns_www');
+	init_itoggle('sdns_exp');
 	init_itoggle('sdnse_enable');
 	init_itoggle('sdnse_address');
 	init_itoggle('sdnse_tcp');
@@ -346,6 +347,19 @@ function showMRULESList(){
                                                 <div style="position: absolute; margin-left: -10000px;">
                                                     <input type="radio" value="1" name="sdns_www" id="sdns_www_1" <% nvram_match_x("", "sdns_www", "1", "checked"); %>><#checkbox_Yes#>
                                                     <input type="radio" value="0" name="sdns_www" id="sdns_www_0" <% nvram_match_x("", "sdns_www", "0", "checked"); %>><#checkbox_No#>
+                                                </div>
+                                            </td>
+                                        </tr>
+										<tr> <th>过期缓存服务</th>
+                                            <td>
+                                                <div class="main_itoggle">
+                                                <div id="sdns_exp_on_of">
+                                                    <input type="checkbox" id="sdns_exp_fake" <% nvram_match_x("", "sdns_exp", "1", "value=1 checked"); %><% nvram_match_x("", "sdns_exp", "0", "value=0"); %>>
+                                                </div>
+                                                </div>
+                                                <div style="position: absolute; margin-left: -10000px;">
+                                                    <input type="radio" value="1" name="sdns_exp" id="sdns_exp_1" <% nvram_match_x("", "sdns_exp", "1", "checked"); %>><#checkbox_Yes#>
+                                                    <input type="radio" value="0" name="sdns_exp" id="sdns_exp_0" <% nvram_match_x("", "sdns_exp", "0", "checked"); %>><#checkbox_No#>
                                                 </div>
                                             </td>
                                         </tr>

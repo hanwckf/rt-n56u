@@ -419,6 +419,24 @@ void update_kp(void){
 }
 #endif
 
+#if defined(APP_ADGUARDHOME)
+void stop_adguardhome(void){
+	eval("/usr/bin/adguardhome.sh","stop");
+}
+
+void start_adguardhome(void){
+	int adg_mode = nvram_get_int("adg_enable");
+	if ( adg_mode == 1)
+		eval("/usr/bin/adguardhome.sh","start");
+}
+
+void restart_adguardhome(void){
+	stop_adguardhome();
+	start_adguardhome();
+}
+
+#endif
+
 #if defined(APP_ADBYBY)
 void stop_adbyby(void){
 	eval("/usr/bin/adbyby.sh","stop");
@@ -709,34 +727,34 @@ start_services_once(int is_ap_mode)
 #if defined(APP_DNSFORWARDER)
 	start_dnsforwarder();
 #endif
-#if defined(APP_SHADOWSOCKS)
-	start_ss();
-	start_ss_tunnel();
-#endif
+//#if defined(APP_SHADOWSOCKS)
+//	start_ss();
+//	start_ss_tunnel();
+//#endif
 #if defined(APP_TTYD)
 	start_ttyd();
 #endif
-#if defined(APP_FRP)
-	start_frp();
-#endif
+//#if defined(APP_FRP)
+//	start_frp();
+//#endif
 #if defined(APP_VLMCSD)
 	start_vlmcsd();
 #endif
-#if defined(APP_KOOLPROXY)
-	start_koolproxy();
-#endif
-#if defined(APP_ADBYBY)
-	start_adbyby();
-#endif
-#if defined(APP_ALIDDNS)
-	start_aliddns();
-#endif
-#if defined(APP_SMARTDNS)
-	start_smartdns();
-#endif
-#if defined(APP_CADDY)
-	start_caddy();
-#endif
+//#if defined(APP_KOOLPROXY)
+//	start_koolproxy();
+//#endif
+//#if defined(APP_ADBYBY)
+//	start_adbyby();
+//#endif
+//#if defined(APP_ALIDDNS)
+//	start_aliddns();
+//#endif
+//#if defined(APP_SMARTDNS)
+//	start_smartdns();
+//#endif
+//#if defined(APP_CADDY)
+//	start_caddy();
+//#endif
 	start_lltd();
 	start_watchdog_cpu();
 	start_crond();
@@ -782,6 +800,9 @@ stop_services(int stopall)
 #endif
 #if defined(APP_KOOLPROXY)
 	stop_koolproxy();
+#endif
+#if defined(APP_ADGUARDHOME)
+	stop_adguardhome();
 #endif
 #if defined(APP_SHADOWSOCKS)
 	stop_ss();

@@ -70,6 +70,7 @@
 #define RCN_RESTART_SS_TUNNEL		"restart_ss_tunnel"
 #define RCN_RESTART_GFWLIST_UPD		"restart_gfwlist_upd"
 #define RCN_RESTART_KOOLPROXY		"restart_koolproxy"
+#define RCN_RESTART_ADGUARDHOME		"restart_adguardhome"
 #define RCN_RESTART_KPUPDATE	"update_kp"
 #define RCN_RESTART_ADBYBY		"restart_adbyby"
 #define RCN_RESTART_UPDATEADB	"update_adb"

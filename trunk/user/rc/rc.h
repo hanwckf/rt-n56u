@@ -553,6 +553,11 @@ void start_koolproxy(void);
 void restart_koolproxy(void);
 void update_kp(void);
 #endif
+#if defined(APP_ADGUARDHOME)
+void stop_adguardhome(void);
+void start_adguardhome(void);
+void restart_adguardhome(void);
+#endif
 #if defined(APP_ADBYBY)
 void stop_adbyby(void);
 void start_adbyby(void);

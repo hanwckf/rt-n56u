@@ -21,6 +21,7 @@
 <script type="text/javascript" src="/client_function.js"></script>
 <script type="text/javascript" src="/popup.js"></script>
 <script type="text/javascript" src="/help.js"></script>
+<script type="text/javascript" src="/help_b.js"></script>
 <script>
 var $j = jQuery.noConflict();
 
@@ -81,7 +82,8 @@ var isMenuopen = 0;
 
 function initial(){
 	show_banner(2);
-	show_menu(5,15,1);
+	show_menu(5,15);
+	showmenu();
 	show_footer();
 	fill_adbyby_status(adbyby_status());
 	//change_adbyby_enable();
@@ -95,13 +97,17 @@ function initial(){
 		//load_body();
 }
 
+function showmenu(){
+showhide_div('adlink', found_app_koolproxy());
+}
+
 function textarea_scripts_enabled(v){
 	inputCtrl(document.form['scripts.adbyby_rules.sh'], v);
 	inputCtrl(document.form['scripts.adbyby_blockip.sh'], v);
 	inputCtrl(document.form['scripts.adbyby_adblack.sh'], v);
 	inputCtrl(document.form['scripts.adbyby_adesc.sh'], v);
 	inputCtrl(document.form['scripts.adbyby_adhost.sh'], v);
-	//inputCtrl(document.form['scripts.adbyby_config_script.sh'], v);
+	inputCtrl(document.form['scripts.adbyby_host.sh'], v);
 }
 
 function applyRule(){
@@ -439,15 +445,25 @@ function changeBgColorrl(obj, num){
 				<div class="row-fluid">
 					<div class="span12">
 						<div class="box well grad_colour_dark_blue">
-							<h2 class="box_head round_top"><#menu5_20#> - Adbyby Plus+</h2>
+							<h2 class="box_head round_top"><#menu5_20_1#> - <#menu5_20#></h2>
 							<div class="round_bottom">
+							<div>
+                            <ul class="nav nav-tabs" style="margin-bottom: 10px;">
+								
+								<li class="active">
+                                    <a href="Advanced_adbyby.asp"><#menu5_20_1#></a>
+                                </li>
+								 <li id="adlink" style="display:none">
+                                    <a href="Advanced_koolproxy.asp"><#menu5_26_1#></a>
+                                </li>
+                            </ul>
+                        </div>
 								<div class="row-fluid">
 									<div id="tabMenu" class="submenuBlock"></div>
 									<div class="alert alert-info" style="margin: 10px;">广告屏蔽大师 Plus + 可以全面过滤各种横幅、弹窗、视频广告，同时阻止跟踪、隐私窃取及各种恶意网站<br />
-									<div>Plus + 版本可以和 Adblock Plus Host 结合方式运行，过滤广告不损失带宽</div>
+									<div>Plus + 版本可以和 Hosts 结合方式运行，过滤广告不损失带宽</div>
 									<div>静态规则：【<% nvram_get_x("", "adbyby_ltime"); %>】 |视频规则：【<% nvram_get_x("", "adbyby_vtime"); %>】</div>
-									<div>Adb List：【<% nvram_get_x("", "adbyby_adb"); %>】条 |第三方规则：【<% nvram_get_x("", "adbyby_user"); %>】条</div>
-									<div>Hosts AD：【<% nvram_get_x("", "adbyby_hostsad"); %>】条 |TV box：【<% nvram_get_x("", "adbyby_tvbox"); %>】条</div>
+									<div>Hosts AD：【<% nvram_get_x("", "adbyby_hostsad"); %>】条 |第三方规则：【<% nvram_get_x("", "adbyby_user"); %>】条</div>
 									<div> </div>
 									</div>
 									<table width="100%" align="center" cellpadding="4" cellspacing="0" class="table">
@@ -469,60 +485,14 @@ function changeBgColorrl(obj, num){
 											</td>
 										</tr>
 										<tr>
-											<th width="50%">过滤方案选择</th>
+											<th width="50%">
+											<a class="help_tooltip" href="javascript: void(0)" onmouseover="openTooltip(this, 0, 1);">过滤方案选择:</a></th>
 											<td>
 												<select name="adbyby_set" class="input">
 													<option value="0" <% nvram_match_x("","adbyby_set", "0","selected"); %>>全局模式（推荐），全部IP走adbyby过滤</option>
 													<option value="1" <% nvram_match_x("","adbyby_set", "1","selected"); %>>Plus + 模式(只过滤列表内域名结合ABP名单)</option>
 													<option value="2" <% nvram_match_x("","adbyby_set", "2","selected"); %>>内网IP列表控制模式</option>
 												</select>
-												<div><span style="color:#888;">Plus + 模式，过滤效果稍差,推荐全局模式</span></div>
-												<div><span style="color:#888;">内网IP列表模式默认是不过滤所有IP的</span></div>
-												<div><span style="color:#888;">请在内网控制选项里添加需要过滤的IP。</span></div>
-											</td>
-										</tr>
-										<tr>
-											<th width="50%">加载Adblock Plus Host List
-											<input id="adbyby_update_b" class="btn btn-success" style="width:110px display:none;" type="button" name="updateadb" value="强制更新" onclick="submitInternet('updateadb');" />
-											</th>
-											<td>
-													<div class="main_itoggle">
-													<div id="adbyby_adb_update_on_of">
-														<input type="checkbox" id="adbyby_adb_update_fake" <% nvram_match_x("", "adbyby_adb_update", "1", "value=1 checked"); %><% nvram_match_x("", "adbyby_adb_update", "0", "value=0"); %>  />
-													</div>
-												</div>
-												<div style="position: absolute; margin-left: -10000px;">
-													<input type="radio" value="1" name="adbyby_adb_update" id="adbyby_adb_update_1" class="input" value="1" <% nvram_match_x("", "adbyby_adb_update", "1", "checked"); %> /><#checkbox_Yes#>
-													<input type="radio" value="0" name="adbyby_adb_update" id="adbyby_adb_update_0" class="input" value="0" <% nvram_match_x("", "adbyby_adb_update", "0", "checked"); %> /><#checkbox_No#>
-												</div>
-											</td>
-										</tr>
-										<tr>
-											<th width="50%">加载hosts去AD</th>
-											<td>
-													<div class="main_itoggle">
-													<div id="hosts_ad_on_of">
-														<input type="checkbox" id="hosts_ad_fake" <% nvram_match_x("", "hosts_ad", "1", "value=1 checked"); %><% nvram_match_x("", "hosts_ad", "0", "value=0"); %>  />
-													</div>
-												</div>
-												<div style="position: absolute; margin-left: -10000px;">
-													<input type="radio" value="1" name="hosts_ad" id="hosts_ad_1" class="input" value="1" <% nvram_match_x("", "hosts_ad", "1", "checked"); %> /><#checkbox_Yes#>
-													<input type="radio" value="0" name="hosts_ad" id="hosts_ad_0" class="input" value="0" <% nvram_match_x("", "hosts_ad", "0", "checked"); %> /><#checkbox_No#>
-												</div>
-											</td>
-										</tr>
-																				<tr>
-											<th width="50%" >加载TVbox Hosts</th>
-											<td>
-													<div class="main_itoggle">
-													<div id="tv_hosts_on_of">
-														<input type="checkbox" id="tv_hosts_fake" <% nvram_match_x("", "tv_hosts", "1", "value=1 checked"); %><% nvram_match_x("", "tv_hosts", "0", "value=0"); %>  />
-													</div>
-												</div>
-												<div style="position: absolute; margin-left: -10000px;">
-													<input type="radio" value="1" name="tv_hosts" id="tv_hosts_1" class="input" value="1" <% nvram_match_x("", "tv_hosts", "1", "checked"); %> /><#checkbox_Yes#>
-													<input type="radio" value="0" name="tv_hosts" id="tv_hosts_0" class="input" value="0" <% nvram_match_x("", "tv_hosts", "0", "checked"); %> /><#checkbox_No#>
-												</div>
 											</td>
 										</tr>
 										<tr id="adbyby_update_tr">
@@ -539,6 +509,28 @@ function changeBgColorrl(obj, num){
 												<select name="adbyby_update_min" id="adbyby_update_min" class="input" style="width: 50px">
 
                                                 </select>分
+											</td>
+										</tr>
+										<tr>
+											<th width="50%">加载hosts规则</th>
+											<td>
+													<div class="main_itoggle">
+													<div id="hosts_ad_on_of">
+														<input type="checkbox" id="hosts_ad_fake" <% nvram_match_x("", "hosts_ad", "1", "value=1 checked"); %><% nvram_match_x("", "hosts_ad", "0", "value=0"); %>  />
+													</div>
+												</div>
+												<div style="position: absolute; margin-left: -10000px;">
+													<input type="radio" value="1" name="hosts_ad" id="hosts_ad_1" class="input" value="1" <% nvram_match_x("", "hosts_ad", "1", "checked"); %> /><#checkbox_Yes#>
+													<input type="radio" value="0" name="hosts_ad" id="hosts_ad_0" class="input" value="0" <% nvram_match_x("", "hosts_ad", "0", "checked"); %> /><#checkbox_No#>
+												</div>
+											</td>
+										</tr>
+										<tr>
+											<td colspan="3">
+												<i class="icon-hand-right"></i> <a href="javascript:spoiler_toggle('script15')"><span>hosts规则下载列表(一行一个地址):</span></a>
+												<div id="script15">
+													<textarea rows="8" wrap="off" spellcheck="false" maxlength="314571" class="span12" name="scripts.adbyby_host.sh" style="font-family:'Courier New'; font-size:12px;"><% nvram_dump("scripts.adbyby_host.sh",""); %></textarea>
+												</div>
 											</td>
 										</tr>
 										</table>

@@ -63,10 +63,11 @@ function initial(){
 	showMRULESList();
 	showssList();
 	shows5List();
+	switch_dns();
 	var o1 = document.form.global_server;
 	var o2 = document.form.lan_con;
 	var o3 = document.form.ss_threads;
-	//var o4 = document.form.ss_run_mode;
+	var o4 = document.form.china_dns;
 	var o5 = document.form.pdnsd_enable;
 	var o6 = document.form.socks5_proxy;
 	var o7 = document.form.tunnel_forward;
@@ -74,11 +75,12 @@ function initial(){
 	o1.value = '<% nvram_get_x("","global_server"); %>';
 	o2.value = '<% nvram_get_x("","lan_con"); %>';
 	o3.value = '<% nvram_get_x("","ss_threads"); %>';
-	//o4.value = '<% nvram_get_x("","ss_run_mode"); %>';
+	o4.value = '<% nvram_get_x("","china_dns"); %>';
 	o5.value = '<% nvram_get_x("","pdnsd_enable"); %>';
 	o6.value = '<% nvram_get_x("","socks5_proxy"); %>';
 	o7.value = '<% nvram_get_x("","tunnel_forward"); %>';
 	o8.value = '<% nvram_get_x("","backup_server"); %>';
+	switch_dns();
 }
 function textarea_scripts_enabled(v){
 //inputCtrl(document.form['scripts.ss.dom.sh'], v);
@@ -108,22 +110,6 @@ if (b=="ss"){
 	showhide_div('row_v2_net', v);
 	showhide_div('row_v2_type', v);
 	showhide_div('row_v2_tls', v);
-	showhide_div('row_tj_tls_host', 0);
-}
-if (b=="kumasocks"){
-	var v=1;
-	showhide_div('row_ss_protocol', 0);
-	showhide_div('row_ss_protocol_para', 0);
-	showhide_div('row_ss_obfs', 0);
-	showhide_div('row_ss_obfs_para', 0);
-	showhide_div('row_ss_password', 0);
-	showhide_div('row_ss_method', 0);
-	showhide_div('row_v2_aid', 0);
-	showhide_div('row_v2_vid', 0);
-	showhide_div('row_v2_security', 0);
-	showhide_div('row_v2_net', 0);
-	showhide_div('row_v2_type', 0);
-	showhide_div('row_v2_tls', 0);
 	showhide_div('row_tj_tls_host', 0);
 }
 if (b=="ssr"){
@@ -173,6 +159,23 @@ if (b=="v2ray"){
 	showhide_div('row_v2_net', v);
 	showhide_div('row_v2_type', v);
 	showhide_div('row_v2_tls', v);
+	showhide_div('row_tj_tls_host', 0);
+}
+if (b=="kumasocks"){
+	var v=0;
+	var v=1;
+	showhide_div('row_ss_protocol', 0);
+	showhide_div('row_ss_protocol_para', 0);
+	showhide_div('row_ss_obfs', 0);
+	showhide_div('row_ss_obfs_para', 0);
+	showhide_div('row_ss_password', 0);
+	showhide_div('row_ss_method', 0);
+	showhide_div('row_v2_aid', 0);
+	showhide_div('row_v2_vid', 0);
+	showhide_div('row_v2_security', 0);
+	showhide_div('row_v2_net', 0);
+	showhide_div('row_v2_type', 0);
+	showhide_div('row_v2_tls', 0);
 	showhide_div('row_tj_tls_host', 0);
 }
 }
@@ -279,6 +282,17 @@ if (b=="quic"){
 	showhide_div('row_quic_key', k);
 	showhide_div('row_quic_header', k);
 }
+}
+function switch_dns(){
+var b = document.form.pdnsd_enable.value;
+if (b=="0"){
+	showhide_div('row_china_dns', 1);
+	showhide_div('row_tunnel_forward', 1);
+	
+}else{
+	showhide_div('row_china_dns', 0);
+	showhide_div('row_tunnel_forward', 0);
+	}
 }
 function applyRule(){
 	showLoading();
@@ -472,7 +486,7 @@ function import_ssr_url(btn, urlname, sid) {
 //var ssu = ssrurl.match(/ssr:\/\/([A-Za-z0-9_-]+)/i);
 var ssu = ssrurl.split('://');
 console.log(ssu.length);
-if ((ssu[0] != "ssr" && ssu[0] != "ss" && ssu[0] != "vmess" && ssu[0] != "kumasocks"&& ssu[0] != "trojan") || ssu[1] == "") {
+if ((ssu[0] != "ssr" && ssu[0] != "ss" && ssu[0] != "vmess" && ssu[0] != "trojan") || ssu[1] == "") {
 	s.innerHTML = "<font color='red'>无效格式</font>";
 	return false;
 }
@@ -670,7 +684,8 @@ if (ssu[0] == "ssr") {
 					</div>
 <div class="row-fluid">
 	<div id="tabMenu" class="submenuBlock"></div>
-	<div class="alert alert-info" style="margin: 10px;">一个兼容Shadowsocks、ShadowsocksR 、Vmess等协议的游戏加速工具。</div>
+	<div class="alert alert-info" style="margin: 10px;"><p>一个兼容Shadowsocks、ShadowsocksR 、Vmess等协议的游戏加速工具。</p>
+	<p>绕过大陆IP模式建议配合smartdns做分流。当然如果你不懂可以直接用pdnsd。</p><p>绕过大陆模式启用pdnsd会自动检测并关闭当前正在运行的smartdns,因绕过大陆模式中,pdnsd需要把DNS转发到自身，所以两者不能共存。</p></div>
 	<div id="wnd_ss_cfg">
 		<table width="100%" cellpadding="4" cellspacing="0" class="table">
 			<tr> <th>当前运行服务器</th>
@@ -743,13 +758,26 @@ if (ssu[0] == "ssr") {
 			</tr>
 			<tr id="row_pdnsd_enable"> <th width="50%">DNS解析方式</th>
 				<td>
-					<select name="pdnsd_enable" class="input" style="width: 200px;">
+					<select name="pdnsd_enable" id="pdnsd_enable" class="input" style="width: 200px;" onchange="switch_dns()">
 						<option value="0" >使用PDNSD TCP查询并缓存</option>
-						<option value="1" >使用SmartDNS查询</option>
+						<option value="1" >使用自定义服务器</option>
+					</select>
+				</td>
+				
+			</tr>
+			<tr id="row_china_dns" style="display:none;"> <th width="50%">中国DNS服务器</th>
+				<td>
+					<select name="china_dns" class="input" style="width: 200px;" >
+						<option value="223.5.5.5#53" >阿里DNS (223.5.5.5)</option>
+						<option value="114.114.114.114#53" >114 DNS (114.114.114.114)</option>
+						<option value="117.50.11.11#53" >OneDNS (117.50.11.11)</option>
+						<option value="180.76.76.76#53" >百度DNS (180.76.76.76)</option>
+						<option value="119.29.29.29#53" >DNSPOD DNS (119.29.29.29)</option>
+						<option value="1.2.4.8#53" >cnnic DNS (1.2.4.8)</option>
 					</select>
 				</td>
 			</tr>
-			<tr id="row_tunnel_forward"> <th width="50%">DNS服务器</th>
+			<tr id="row_tunnel_forward" style="display:none;"> <th width="50%">外国DNS服务器</th>
 				<td>
 					<select name="tunnel_forward" class="input" style="width: 200px;" >
 						<option value="8.8.4.4:53" >Google Public DNS (8.8.4.4)</option>
@@ -813,9 +841,9 @@ if (ssu[0] == "ssr") {
 					<select name="ssp_type_x_0" id="ssp_type_x_0" class="input" style="width: 200px;" onchange="switch_ss_type()">
 						<option value="ss" <% nvram_match_x("","ssp_type_x_0", "ss","selected"); %> >SS</option>
 						<option value="ssr" <% nvram_match_x("","ssp_type_x_0", "ssr","selected"); %> >SSR</option>
-						<option value="kumasocks" <% nvram_match_x("","ssp_type_x_0", "kumasocks","selected"); %> >kumasocks</option>
 						<option value="trojan" <% nvram_match_x("","ssp_type_x_0", "trojan","selected"); %> >Trojan</option>
 						<option value="v2ray" <% nvram_match_x("","ssp_type_x_0", "v2ray","selected"); %> >V2ray</option>
+						<option value="kumasocks" <% nvram_match_x("","ssp_type_x_0", "kumasocks","selected"); %> >kumasocks</option>
 					</select>
 				</td>
 			</tr>
@@ -1249,6 +1277,14 @@ if (ssu[0] == "ssr") {
 				<i class="icon-hand-right"></i> <a href="javascript:spoiler_toggle('script10')"><span>强制走SS代理的域名:</span></a>
 				<div id="script10">
 					<textarea rows="8" wrap="off" spellcheck="false" maxlength="314571" class="span12" name="scripts.ss_dom.sh" style="font-family:'Courier New'; font-size:12px;"><% nvram_dump("scripts.ss_dom.sh",""); %></textarea>
+				</div>
+			</td>
+		</tr>
+		<tr>
+			<td colspan="3" >
+				<i class="icon-hand-right"></i> <a href="javascript:spoiler_toggle('script15')"><span>不走SS代理的域名:</span></a>
+				<div id="script15">
+					<textarea rows="8" wrap="off" spellcheck="false" maxlength="314571" class="span12" name="scripts.uss_dom.sh" style="font-family:'Courier New'; font-size:12px;"><% nvram_dump("scripts.uss_dom.sh",""); %></textarea>
 				</div>
 			</td>
 		</tr>

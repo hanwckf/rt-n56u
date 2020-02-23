@@ -1,14 +1,8 @@
 #!/bin/sh
 #copyright by hiboy
-#source /etc/storage/script/init.sh
+
 TAG="AD_BYBY"		  # iptables tag
 koolproxy_enable=`nvram get koolproxy_enable`
-[ -z $koolproxy_enable ] && koolproxy_enable=0 && nvram set koolproxy_enable=0
-if [ "$koolproxy_enable" != "0" ] ; then
-#nvramshow=`nvram showall | grep '=' | grep ss | awk '{print gensub(/'"'"'/,"'"'"'\"'"'"'\"'"'"'","g",$0);}'| awk '{print gensub(/=/,"='\''",1,$0)"'\'';";}'` && eval $nvramshow
-#nvramshow=`nvram showall | grep '=' | grep adbyby | awk '{print gensub(/'"'"'/,"'"'"'\"'"'"'\"'"'"'","g",$0);}'| awk '{print gensub(/=/,"='\''",1,$0)"'\'';";}'` && eval $nvramshow
-#nvramshow=`nvram showall | grep '=' | grep adm | awk '{print gensub(/'"'"'/,"'"'"'\"'"'"'\"'"'"'","g",$0);}'| awk '{print gensub(/=/,"='\''",1,$0)"'\'';";}'` && eval $nvramshow
-#nvramshow=`nvram showall | grep '=' | grep koolproxy | awk '{print gensub(/'"'"'/,"'"'"'\"'"'"'\"'"'"'","g",$0);}'| awk '{print gensub(/=/,"='\''",1,$0)"'\'';";}'` && eval $nvramshow
 koolproxy_set=`nvram get koolproxy_set`
 [ -z $koolproxy_set ] && koolproxy_set=0 && nvram set koolproxy_set=0
 ss_link_1=`nvram get ss_link_1`
@@ -63,7 +57,7 @@ cmd_log=""
 if [ "$cmd_log_enable" = "1" ] || [ "$koolproxy_renum" -gt "0" ] ; then
 	cmd_log="$cmd_log2"
 fi
-fi
+
 #检查 dnsmasq 目录参数
 #confdir=`grep "/tmp/ss/dnsmasq.d" /etc/storage/dnsmasq/dnsmasq.conf | sed 's/.*\=//g'`
 #if [ -z "$confdir" ] ; then 
@@ -74,11 +68,6 @@ confdir_x="$(echo -e $confdir | sed -e "s/\//"'\\'"\//g")"
 gfwlist="/r.gfwlist.conf"
 gfw_black_list="gfwlist"
 
-if [ ! -z "$(echo $scriptfilepath | grep -v "/tmp/script/" | grep kool_proxy)" ]  && [ ! -s /tmp/script/_kool_proxy ] ; then
-	mkdir -p /tmp/script
-	{ echo '#!/bin/sh' ; echo $scriptfilepath '"$@"' '&' ; } > /tmp/script/_kool_proxy
-	chmod 777 /tmp/script/_kool_proxy
-fi
 hosts_ad () {
 rm -rf /etc/storage/dnsmasq/dns;cd /etc
 mkdir -p /etc/storage/dnsmasq/dns/conf
@@ -126,50 +115,12 @@ exit 0
 }
 
 koolproxy_mount () {
-
-ss_opt_x=`nvram get ss_opt_x`
-upanPath=""
-[ "$ss_opt_x" = "3" ] && upanPath="`df -m | grep /dev/mmcb | grep -E "$(echo $(/usr/bin/find /dev/ -name 'mmcb*') | sed -e 's@/dev/ /dev/@/dev/@g' | sed -e 's@ @|@g')" | grep "/media" | awk '{print $NF}' | sort -u | awk 'NR==1' `"
-[ "$ss_opt_x" = "4" ] && upanPath="`df -m | grep /dev/sd | grep -E "$(echo $(/usr/bin/find /dev/ -name 'sd*') | sed -e 's@/dev/ /dev/@/dev/@g' | sed -e 's@ @|@g')" | grep "/media" | awk '{print $NF}' | sort -u | awk 'NR==1' `"
-[ -z "$upanPath" ] && [ "$ss_opt_x" = "1" ] && upanPath="`df -m | grep /dev/mmcb | grep -E "$(echo $(/usr/bin/find /dev/ -name 'mmcb*') | sed -e 's@/dev/ /dev/@/dev/@g' | sed -e 's@ @|@g')" | grep "/media" | awk '{print $NF}' | sort -u | awk 'NR==1' `"
-[ -z "$upanPath" ] && [ "$ss_opt_x" = "1" ] && upanPath="`df -m | grep /dev/sd | grep -E "$(echo $(/usr/bin/find /dev/ -name 'sd*') | sed -e 's@/dev/ /dev/@/dev/@g' | sed -e 's@ @|@g')" | grep "/media" | awk '{print $NF}' | sort -u | awk 'NR==1' `"
-if [ "$ss_opt_x" = "5" ] ; then
-	# 指定目录
-	opt_cifs_dir=`nvram get opt_cifs_dir`
-	if [ -d $opt_cifs_dir ] ; then
-		upanPath="$opt_cifs_dir"
-	else
-		logger -t "【opt】" "错误！未找到指定目录 $opt_cifs_dir"
-	fi
-fi
-if [ "$ss_opt_x" = "6" ] ; then
-	opt_cifs_2_dir=`nvram get opt_cifs_2_dir`
-	# 远程共享
-	if mountpoint -q "$opt_cifs_2_dir" && [ -d "$opt_cifs_2_dir" ] ; then
-		upanPath="$opt_cifs_2_dir"
-	else
-		logger -t "【opt】" "错误！未找到指定远程共享目录 $opt_cifs_2_dir"
-	fi
-fi
-echo "$upanPath"
-if [ ! -z "$upanPath" ] ; then 
-	logger -t "【koolproxy】" "已挂载储存设备, 主程序放外置设备存储"
-	initopt
-	mkdir -p $upanPath/ad/7620koolproxy
-	rm -f /tmp/7620koolproxy
-	ln -sf "$upanPath/ad/7620koolproxy" /tmp/7620koolproxy
-	if [ -s /etc_ro/7620koolproxy_*.tgz ] && [ ! -s "$upanPath/ad/7620koolproxy/koolproxy" ] ; then
-		logger -t "【koolproxy】" "使用内置主程序"
-		tar -xzvf "/etc_ro/koolproxy.tgz" -C "$upanPath/ad/7620koolproxy"
-	fi
-else
 	logger -t "【koolproxy】" "未挂载储存设备, 主程序放路由内存存储"
 	mkdir -p /tmp/7620koolproxy
 	if [ -s /etc_ro/koolproxy.tgz ] && [ ! -s "/tmp/7620koolproxy/koolproxy" ] ; then
 		logger -t "【koolproxy】" "使用内置主程序"
 		tar -xzvf "/etc_ro/koolproxy.tgz" -C "/tmp"
-	fi
-fi
+    fi
 export PATH='/tmp/7620koolproxy:/etc/storage/bin:/tmp/script:/etc/storage/script:/opt/usr/sbin:/opt/usr/bin:/opt/sbin:/opt/bin:/usr/local/sbin:/usr/sbin:/usr/bin:/sbin:/bin'
 chmod 777 /tmp/7620koolproxy/koolproxy
 mkdir -p /tmp/7620koolproxy/data/
@@ -209,7 +160,7 @@ if [ "$1" = "x" ] ; then
 	[ -f $relock ] && rm -f $relock
 fi
 nvram set koolproxy_status=0
-eval "$scriptfilepath &"
+
 exit 0
 }
 
@@ -227,27 +178,15 @@ fi
 }
 
 koolproxy_check () {
-koolproxy_get_status
-if [ "$koolproxy_enable" != "1" ] && [ "$needed_restart" = "1" ] ; then
+#koolproxy_get_status
+if [ "$koolproxy_enable" != "1" ]; then
 	[ ! -z "`pidof koolproxy`" ] && logger -t "【koolproxy】" "停止 koolproxy" && koolproxy_close
-	{ kill_ps "$scriptname" exit0; exit 0; }
+
 fi
 if [ "$koolproxy_enable" = "1" ] ; then
-	if [ "$needed_restart" = "1" ] ; then
 		koolproxy_close
 		koolproxy_start
-	else
-		[ -z "`pidof koolproxy`" ] || [ ! -s "/tmp/7620koolproxy/koolproxy" ] && koolproxy_restart
-		PIDS=$(ps -w | grep "/tmp/7620koolproxy/koolproxy" | grep -v "grep" | wc -l)
-		if [ "$PIDS" != 0 ] ; then
-			port=$(iptables -t nat -L | grep 'ports 3000' | wc -l)
-			if [ "$port" = 0 ] ; then
-				logger -t "【koolproxy】" "检查:找不到3000转发规则, 重新添加"
-				koolproxy_add_rules
-			fi
-		fi
-	fi
-hosts_ad
+        hosts_ad
 fi
 }
 
@@ -426,15 +365,11 @@ killall -15 koolproxy sh_ad_kp_keey_k.sh
 killall -9 koolproxy sh_ad_kp_keey_k.sh
 rm -f /tmp/adbyby_host.conf
 rm -f /tmp/7620koolproxy.tgz /tmp/cron_adb.lock /tmp/sh_ad_kp_keey_k.sh /tmp/cp_rules.lock
-kill_ps "/tmp/script/_kool_proxy"
-kill_ps "_kool_proxy.sh"
-kill_ps "$scriptname"
+
 }
 
 koolproxy_start () {
-#check_webui_yes
-#nvram set button_script_1_s="KP"
-/etc/storage/ez_buttons_script.sh 3 & #更新按钮状态
+
 if [ -z "`pidof koolproxy`" ] && [ "$koolproxy_enable" = "1" ] && [ ! -f /tmp/cron_adb.lock ] ; then
 	touch /tmp/cron_adb.lock
 	for module in ip_set ip_set_bitmap_ip ip_set_bitmap_ipmac ip_set_bitmap_port ip_set_hash_ip ip_set_hash_ipport ip_set_hash_ipportip ip_set_hash_ipportnet ip_set_hash_net ip_set_hash_netport ip_set_list_set xt_set xt_TPROXY
@@ -442,17 +377,10 @@ if [ -z "`pidof koolproxy`" ] && [ "$koolproxy_enable" = "1" ] && [ ! -f /tmp/cr
 		modprobe $module
 	done 
 	koolproxy_mount
-	if [ ! -s "/tmp/7620koolproxy/koolproxy" ] ; then
-		logger -t "【koolproxy】" "开始下载 koolproxy"
-		wgetcurl.sh /tmp/7620koolproxy/koolproxy $koolproxyfile2 $koolproxyfile22
-	fi
-	if [ ! -s "/tmp/7620koolproxy/koolproxy" ] ; then
-		logger -t "【koolproxy】" "开始下载 koolproxy"
-		wgetcurl.sh /tmp/7620koolproxy/koolproxy $koolproxyfile $koolproxyfilecdn N
-	fi
-	if [ ! -s "/tmp/7620koolproxy/koolproxy" ] ; then
-		logger -t "【koolproxy】" "下载失败, 注意检查端口是否有冲突,程序是否下载完整,10 秒后自动尝试重新启动" && sleep 10 && koolproxy_restart x
-	fi
+#koolproxy下载,为了控制体积可能会增加
+#	if [ ! -s "/tmp/7620koolproxy/koolproxy" ] ; then
+#		logger -t "【koolproxy】" "下载失败, 注意检查端口是否有冲突,程序是否下载完整,10 秒后自动尝试重新启动" && sleep 10 && koolproxy_restart x
+#	fi
 	# 恢复上次保存的证书
 	mkdir -p /etc/storage/koolproxy /tmp/7620koolproxy/data/certs /tmp/7620koolproxy/data/private
 	[ -f /etc/storage/koolproxy/base.key.pem ] && cp -f /etc/storage/koolproxy/base.key.pem /tmp/7620koolproxy/data/private/base.key.pem
@@ -658,7 +586,6 @@ rm -f /tmp/7620koolproxy.tgz /tmp/cron_adb.lock
 /etc/storage/ez_buttons_script.sh 3 & #更新按钮状态
 logger -t "【koolproxy】" "守护进程启动"
 #koolproxy_get_status
-eval "$scriptfilepath keep &"
 
 }
 

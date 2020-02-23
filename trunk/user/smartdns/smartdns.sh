@@ -35,11 +35,14 @@ sdnse_cache=`nvram get sdnse_cache`
 ss_white=`nvram get ss_white`
 ss_black=`nvram get ss_black`
 
+check_ss(){
 if [ $(nvram get ss_enable) = 1 ] && [ $(nvram get ss_run_mode) = "router" ] && [ $(nvram get pdnsd_enable) = 0 ]; then
 logger -t "SmartDNS" "系统检测到SS模式为绕过大陆模式，并且启用了pdnsd,请先调整SS解析使用自定义模式！程序将退出。"
 nvram set sdns_enable=0
 exit 0
 fi
+}
+
 get_tz()
 {
 	SET_TZ=""
@@ -130,12 +133,14 @@ fi
 fi
 done
 if [ $ss_white = "1" ]; then
-rm -f /tmp/whitelist.txt
+rm -f /tmp/whitelist.conf
+logger -t "SmartDNS" "开始处理白名单IP"
 awk '{printf("whitelist-ip %s\n", $1, $1 )}' /etc/storage/chinadns/chnroute.txt >> /tmp/whitelist.conf
 echo "conf-file /tmp/whitelist.conf" >> $SMARTDNS_CONF
 fi
 if [ $ss_black = "1" ]; then
-rm -f /tmp/blacklist.txt
+rm -f /tmp/blacklist.conf
+logger -t "SmartDNS" "开始处理黑名单IP"
 awk '{printf("blacklist-ip %s\n", $1, $1 )}' /etc/storage/chinadns/chnroute.txt >> /tmp/blacklist.conf
 echo "conf-file /tmp/blacklist.conf" >> $SMARTDNS_CONF
 fi
@@ -311,6 +316,7 @@ logger -t "SmartDNS" "SmartDNS已关闭"
 
 case $1 in
 start)
+    check_ss
 	start_smartdns
 	;;
 stop)

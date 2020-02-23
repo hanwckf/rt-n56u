@@ -42,7 +42,8 @@ $j(document).ready(function() {
 
 function initial(){
 	show_banner(2);
-	show_menu(5,15,2);
+	show_menu(5,15);
+	showmenu();
 	show_footer();
 	fill_koolproxy_status(koolproxy_status());
 	change_koolproxy_enable();
@@ -50,6 +51,10 @@ function initial(){
 	change_ss_DNS_Redirect();
 	if (!login_safe())
 		textarea_scripts_enabled(0);
+}
+
+function showmenu(){
+showhide_div('adlink', found_app_adbyby());
 }
 
 function textarea_scripts_enabled(v){
@@ -169,8 +174,18 @@ function button_updatead(){
 				<div class="row-fluid">
 					<div class="span12">
 						<div class="box well grad_colour_dark_blue">
-							<h2 class="box_head round_top"><#menu5_20#> - koolproxy</h2>
+							<h2 class="box_head round_top"><#menu5_26_1#> - <#menu5_20#></h2>
 							<div class="round_bottom">
+							<div>
+                            <ul class="nav nav-tabs" style="margin-bottom: 10px;">
+								<li id="adlink" style="display:none">
+                                    <a href="Advanced_adbyby.asp"><#menu5_20_1#></a>
+                                </li>
+								 <li class="active">
+                                    <a href="Advanced_koolproxy.asp"><#menu5_26_1#></a>
+                                </li>
+                            </ul>
+                        </div>
 								<div class="row-fluid">
 									<div id="tabMenu" class="submenuBlock"></div>
 									<div class="alert alert-info" style="margin: 10px;">koolproxy - 广告拦截。<a href="http://koolshare.cn/thread-64086-1-1.html" target="blank">项目地址: http://koolshare.cn/thread-64086-1-1.html</a> <a href="https://t.me/joinchat/AAAAAD-tO7GPvfOU131_vg" target="blank">Telegram</a>

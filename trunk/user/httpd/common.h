@@ -98,6 +98,7 @@ typedef u_int8_t u8;
 #define EVM_RESTART_FRP	    (1ULL << 54)
 #define EVM_RESTART_KOOLPROXY		    (1ULL << 55)
 #define EVM_RESTART_CADDY		    (1ULL << 56)
+#define EVM_RESTART_ADGUARDHOME		    (1ULL << 57)
 #define EVM_RESTART_REBOOT		(1ULL << 62)
 
 #define EVM_BLOCK_UNSAFE		(1ULL << 63) /* special case */
@@ -163,6 +164,7 @@ typedef u_int8_t u8;
 #define EVT_RESTART_SMARTDNS	1
 #define EVT_RESTART_FRP      	2
 #define EVT_RESTART_CADDY      	2
+#define EVT_RESTART_ADGUARDHOME      	1
 #define EVT_RESTART_REBOOT		40
 
 struct variable

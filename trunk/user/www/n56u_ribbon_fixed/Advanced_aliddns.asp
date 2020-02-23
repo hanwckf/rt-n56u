@@ -36,7 +36,7 @@ $j(document).ready(function() {
 
 function initial(){
 	show_banner(2);
-	show_menu(5,16);
+	show_menu(5,17);
 	show_footer();
 
 	change_aliddns_enable_bridge(1);
@@ -131,7 +131,7 @@ function change_aliddns_enable_bridge(mflag){
 				<div class="row-fluid">
 					<div class="span12">
 						<div class="box well grad_colour_dark_blue">
-							<h2 class="box_head round_top">阿里DDNS - 域名解析</h2>
+							<h2 class="box_head round_top"><#menu5_23#> - <#menu5_30#></h2>
 							<div class="round_bottom">
 								<div class="row-fluid">
 									<div id="tabMenu" class="submenuBlock"></div>

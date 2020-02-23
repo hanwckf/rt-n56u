@@ -51,6 +51,10 @@ if [ ! -f "/etc/storage/adbyby_adhost.sh" ] ; then
 cp -rf /etc_ro/adbyby_adhost.sh /etc/storage/
 chmod 755 "/etc/storage/adbyby_adhost.sh"
 fi
+if [ ! -f "/etc/storage/adbyby_host.sh" ] ; then
+cp -rf /etc_ro/adbyby_host.sh /etc/storage/
+chmod 755 "/etc/storage/adbyby_host.sh"
+fi
 if [ ! -f "/etc/storage/adbyby_blockip.sh" ] ; then
 cp -rf /etc_ro/adbyby_blockip.sh /etc/storage/
 chmod 755 "/etc/storage/adbyby_blockip.sh"
@@ -62,6 +66,10 @@ fi
 if [ ! -f "/etc/storage/ss_dom.sh" ] ; then
 cp -rf /etc_ro/ss_dom.sh /etc/storage/
 chmod 755 "/etc/storage/ss_dom.sh"
+fi
+if [ ! -f "/etc/storage/uss_dom.sh" ] ; then
+cp -rf /etc_ro/uss_dom.sh /etc/storage/
+chmod 755 "/etc/storage/uss_dom.sh"
 fi
 if [ ! -f "/etc/storage/ss_ip.sh" ] ; then
 cp -rf /etc_ro/ss_ip.sh /etc/storage/

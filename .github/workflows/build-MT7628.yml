@@ -86,6 +86,7 @@ jobs:
         echo "CONFIG_FIRMWARE_INCLUDE_CADDY=y" >> .config #在线文件管理服务
         echo "CONFIG_FIRMWARE_INCLUDE_CADDYBIN=n" >> .config #集成caddu执行文件，此文件有13M,请注意固件大小。如果不集成，会从网上下载下来执行，不影响正常使用
         echo "CONFIG_FIRMWARE_INCLUDE_KUMASOCKS=y" >> .config
+        echo "CONFIG_FIRMWARE_INCLUDE_ADGUARDHOME=y" >> .config
         if [ "$m" = "HC5761A" ] || [ "$m" = "360P2" ]; then
         echo "CONFIG_FIRMWARE_INCLUDE_V2RAY=n" >> .config #v2ray二进制文件
         else

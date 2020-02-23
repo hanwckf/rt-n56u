@@ -383,8 +383,7 @@ elif [ "$stype" == "trojan" ] ;then
     $sscmd --config $trojan_json_file >> /tmp/ssrplus.log 2>&1 &
     echo "$(date "+%Y-%m-%d %H:%M:%S") $($sscmd --version 2>&1 | head -1) Started!" >> /tmp/ssrplus.log 
 elif [ "$stype" == "kumasocks" ] ;then
-    $sscmd -c $CONFIG_KUMASOCKS_FILE >> /tmp/ssrplus.log 2>&1 &
-    echo "$(date "+%Y-%m-%d %H:%M:%S") $($sscmd --version 2>&1 | head -1) Started!" >> /tmp/ssrplus.log 
+    $sscmd -c $CONFIG_KUMASOCKS_FILE  &
 elif [ "$stype" == "v2ray" ] ;then
     $sscmd -config $v2_json_file >/dev/null 2>&1 &
     echo "$(date "+%Y-%m-%d %H:%M:%S") $($sscmd -version | head -1) 启动成功!" >> /tmp/ssrplus.log

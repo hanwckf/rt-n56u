@@ -533,15 +533,30 @@ svc_timecheck(void)
 	char reboot_schedule[PATH_MAX];
 	if (nvram_match("reboot_schedule_enable", "1"))
 	{
+		if (nvram_match("ntp_ready", "1"))
+		{
 			snprintf(reboot_schedule, sizeof(reboot_schedule), "%s", nvram_safe_get("reboot_schedule"));
 			if (strlen(reboot_schedule) == 11 && atoi(reboot_schedule) > 2359)
 			{
 				if (timecheck_reboot(reboot_schedule))
 				{
 					logmessage("reboot scheduler", "[%s] The system is going down for reboot\n", __FUNCTION__);
-					kill(1, SIGTERM);
+					//kill(1, SIGTERM);
+					int reboot_mode = nvram_get_int("reboot_mode");
+	                if ( reboot_mode == 0)
+	                {
+	                sys_exit();
+	                }
+	                else if ( reboot_mode == 1)
+	                {
+		            doSystem("/sbin/mtd_storage.sh %s", "save");
+		            system("mtd_write -r unlock mtd1");
+	                }
 				}
 			}
+		}
+		//else
+		//	logmessage("reboot scheduler", "[%s] NTP sync error\n", __FUNCTION__);
 	}
 
 	return 0;
@@ -1047,6 +1062,8 @@ ntpc_updated_main(int argc, char *argv[])
 		system("hwclock -w");
 #endif
 		logmessage("NTP Client", "System time changed, offset: %ss", offset);
+		sleep(5);
+		nvram_set_int("ntp_ready", 1);
 	}
 
 	return 0;
@@ -1264,4 +1281,3 @@ watchdog_main(int argc, char *argv[])
 
 	return 0;
 }
-

@@ -929,6 +929,7 @@ init_router(void)
 		restart_crond();
 	}
 	// system ready
+	nvram_set_int("ntp_ready", 0);
 	system("/usr/bin/copyscripts.sh &");
 	system("/etc/storage/started_script.sh &");
 	system("/usr/bin/autostart.sh &");

@@ -325,6 +325,7 @@ hosts_ads(){
 adbyby_hosts=`nvram get hosts_ad`
 nvram set adbyby_hostsad=0
 if [ "$adbyby_hosts" = "1" ]; then
+rm -rf $PROG_PATH/hosts
 grep -v '^#' /etc/storage/adbyby_host.sh | grep -v "^$" > $PROG_PATH/hostlist.txt
 for ip in `cat $PROG_PATH/hostlist.txt`
 do
@@ -337,7 +338,7 @@ else
 grep -v '^#' /tmp/host.txt | grep -v "^$" >> $PROG_PATH/hosts
 fi
 done
-
+rm -f /tmp/host.txt
 logger -t "adbyby" "正在对hosts文件进行去重处理."
 sort $PROG_PATH/hosts | uniq
 nvram set adbyby_hostsad=`grep -v '^!' $PROG_PATH/hosts | wc -l`

@@ -444,7 +444,7 @@ fi
     elif [ "$run_mode" = "gfw" ] ;then
         logger -st "SS" "开始处理gfwlist..."
         rm -rf /etc/storage/gfwlist
-        mkdir -p /etc/storage/dnsmasq.gfwlist/
+        mkdir -p /etc/storage/gfwlist/
         cat /etc/storage/ss_dom.sh | grep -v '^!' | grep -v "^$" > /tmp/ss_dom.txt
         if [ $(nvram get pdnsd_enable) = 0 ]; then
             dnsstr="$(nvram get tunnel_forward)"

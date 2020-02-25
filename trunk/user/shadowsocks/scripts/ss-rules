@@ -61,6 +61,8 @@ flush_r() {
 			$ipt_n -F ${chain:1} 2>/dev/null && $ipt_n -X ${chain:1}
 		done
 	}
+	sed -i '/dnsmasq.dom/d' /etc/storage/dnsmasq/dnsmasq.conf
+	rm -rf /tmp/dnsmasq.dom
 	flush_iptables nat
 	flush_iptables mangle
 	ip rule del fwmark 100 lookup 100 2>/dev/null
@@ -87,7 +89,7 @@ flush_r() {
 }
 
 ipset_r() {
-
+    mkdir -p /tmp/dnsmasq.dom
 	if [ "$RUNMODE" = "router" ] ;then
 	ipset -! -R <<-EOF || return 1
 		create ss_spec_wan_ac hash:net
@@ -107,6 +109,7 @@ EOF
 	$ipt_n -A SS_SPEC_WAN_AC -m set --match-set gfwlist dst -j SS_SPEC_WAN_FW
 	$ipt_n -I SS_SPEC_WAN_AC 1 -d $server -j RETURN
 	$ipt_n -I PREROUTING $SSNU -j SS_SPEC_WAN_AC
+	awk '{printf("server=/%s/127.0.0.1#5353\nipset=/%s/gfwlist\n", $1, $1 )}' /etc_ro/gfwlist_list.conf > /tmp/dnsmasq.dom/gfwlist_list.conf
 
 	elif [ "$RUNMODE" = "oversea" ] ;then
 	ipset -N oversea hash:net 2>/dev/null
@@ -124,11 +127,23 @@ EOF
 	fi
 	ipset -N whitelist hash:net 2>/dev/null
 	ipset -N blacklist hash:net 2>/dev/null
+	cat /etc/storage/ss_dom.sh | grep -v '^!' | grep -v "^$" > /tmp/ss_dom.txt
+	awk '{printf("ipset=/%s/blacklist\n", $1, $1 )}' /tmp/ss_dom.txt > /tmp/dnsmasq.dom/ss_dom.conf
+	cat /etc/storage/uss_dom.sh | grep -v '^!' | grep -v "^$" > /tmp/uss_dom.txt
+	awk '{printf("ipset=/%s/whitelist\n", $1, $1 )}' /tmp/uss_dom.txt > /tmp/dnsmasq.dom/uss_dom.conf
+    rm -f /tmp/ss_dom.txt
+	rm -f /tmp/uss_dom.txt
 	$ipt_n -I SS_SPEC_WAN_AC 2 -m set --match-set blacklist dst -j SS_SPEC_WAN_FW
 	$ipt_n -I SS_SPEC_WAN_AC 2 -m set --match-set whitelist dst -j RETURN
 
 	for ip in $WAN_BP_IP; do ipset -! add whitelist $ip; done
 	for ip in $WAN_FW_IP; do ipset -! add blacklist $ip; done
+	
+	sed -i '/dnsmasq.dom/d' /etc/storage/dnsmasq/dnsmasq.conf
+cat >> /etc/storage/dnsmasq/dnsmasq.conf << EOF
+conf-dir=/tmp/dnsmasq.dom/
+EOF
+
 	return $?
 }
 

@@ -225,6 +225,7 @@ echo $mk_vmess| jq --raw-output '.' > $v2_file
 #创建json文件结束
 fi
 }
+
 start_rules() {
     logger -t "SS" "正在添加防火墙规则..."
     server=`nvram get ssp_server_x$1`
@@ -293,6 +294,7 @@ fi
 $socks $gfwmode $ARG_UDP
 return $?
 }
+
 start_pdnsd() 
 {
     pdnsd_bin="/usr/bin/pdnsd"
@@ -349,11 +351,12 @@ logger -t "SS" "正在启动pdnsd..."
 $pdnsd_bin -c $pdnsd_file -d
 fi
 }
+
 start_redir() {
-    logger -t "SS" "正在启动SS程序..."
     ARG_OTA=""
     gen_config_file $1 0
     stype=`nvram get ssp_type_x$1`
+	logger -t "SS" "正在启动$stype程序..."
     if [ "$stype" == "ss" ] ;then
         sscmd="ss-redir"
     elif [ "$stype" == "ssr" ] ;then
@@ -397,6 +400,7 @@ if [ $ss_switch != "nil" ] ;then
 fi
 return $?
 }
+
 start_dns()
 {
     if [ "$run_mode" = "router" ]; then
@@ -407,10 +411,13 @@ start_dns()
         rm -f /tmp/china.ipset
 		if [ $(nvram get pdnsd_enable) = 0 ]; then
 		if [ $(nvram get sdns_enable) = 1 ]; then
-		logger -st "SS" "检测到系统正在运行smartdns,将关闭smartdns,启动pdnsd!"
+		smart_process=`pidof smartdns`
+	    if [ -n "$smart_process" ];then 
+		logger -t "SS" "关闭smartdns进程..."
 		/usr/bin/smartdns.sh stop
+	    fi
 		nvram set sdns_enable=0
-        fi
+		fi
             dnsstr="$(nvram get tunnel_forward)"
             dnsserver=`echo "$dnsstr"|awk -F ':'  '{print $1}'`
             dnsport=`echo "$dnsstr"|awk -F ':'  '{print $2}'`
@@ -440,31 +447,87 @@ cat >> /etc/storage/dnsmasq/dnsmasq.conf << EOF
 conf-dir=/tmp/cdn/
 EOF
 fi
-fi
+		elif [ $(nvram get pdnsd_enable) = 1 ]; then
+		if [ $(nvram get ssp_dns_ip) = 2 ]; then
+		rm -f /tmp/whitelist.conf
+		rm -f /tmp/smartdnsgfw.conf
+		rm -f /tmp/smartdnschina.conf
+		awk '{printf("whitelist-ip %s\n", $1, $1 )}' /etc/storage/chinadns/chnroute.txt >> /tmp/whitelist.conf
+		cat >> /tmp/smartdnschina.conf << EOF
+server-name smartdns
+bind :6053
+bind-tcp :6053
+cache-size 100
+prefetch-domain yes
+serve-expired yes
+log-level info
+server 223.5.5.5 -whitelist-ip 
+server 119.29.29.29 -whitelist-ip
+server-tcp 8.8.8.8 
+server-tls dns.google
+server-https https://ndns.233py.com/dns-query
+conf-file /tmp/whitelist.conf
+EOF
+		/usr/bin/smartdns -f -c /tmp/smartdnschina.conf &>/dev/null &
+sed -i '/no-resolv/d' /etc/storage/dnsmasq/dnsmasq.conf
+sed -i '/server=127.0.0.1/d' /etc/storage/dnsmasq/dnsmasq.conf
+cat >> /etc/storage/dnsmasq/dnsmasq.conf << EOF
+no-resolv
+server=127.0.0.1#6053
+EOF
+		elif [ $(nvram get ssp_dns_ip) = 0 ]; then
+        /usr/bin/smartdns.sh stop
+		/usr/bin/smartdns.sh start
+		fi
+        fi
     elif [ "$run_mode" = "gfw" ] ;then
         logger -st "SS" "开始处理gfwlist..."
         rm -rf /etc/storage/gfwlist
         mkdir -p /etc/storage/gfwlist/
-        cat /etc/storage/ss_dom.sh | grep -v '^!' | grep -v "^$" > /tmp/ss_dom.txt
         if [ $(nvram get pdnsd_enable) = 0 ]; then
             dnsstr="$(nvram get tunnel_forward)"
             dnsserver=`echo "$dnsstr"|awk -F ':'  '{print $1}'`
             dnsport=`echo "$dnsstr"|awk -F ':'  '{print $2}'`
             start_pdnsd $dnsserver $dnsport	
             pdnsd_enable_flag=1
-            awk '{printf("server=/%s/127.0.0.1#5353\nipset=/%s/gfwlist\n", $1, $1 )}' /etc_ro/gfwlist_list.conf > /etc/storage/gfwlist/gfwlist_list.conf
-            awk '{printf("server=/%s/127.0.0.1#5353\nipset=/%s/gfwlist\n", $1, $1 )}' /tmp/ss_dom.txt > /etc/storage/gfwlist/m.gfwlist.conf
-        else
-            awk '{printf("ipset=/%s/gfwlist\n", $1, $1 )}' /etc_ro/gfwlist_list.conf > /etc/storage/gfwlist/gfwlist_list.conf
-            awk '{printf("ipset=/%s/gfwlist\n", $1, $1 )}' /tmp/ss_dom.txt > /etc/storage/gfwlist/m.gfwlist.conf
-        fi
-		ipset add gfwlist $dnsserver 2>/dev/null
-        rm -f /tmp/ss_dom.txt
-        sed -i '/gfwlist/d' /etc/storage/dnsmasq/dnsmasq.conf
-        sed -i '/dnsmasq.oversea/d' /etc/storage/dnsmasq/dnsmasq.conf
-cat >> /etc/storage/dnsmasq/dnsmasq.conf << EOF
-conf-dir=/etc/storage/gfwlist/
+			ipset add gfwlist $dnsserver 2>/dev/null
+		elif [ $(nvram get pdnsd_enable) = 1 ]; then
+		if [ $(nvram get ssp_dns_ip) = 2 ]; then
+		rm -f /tmp/whitelist.conf
+		rm -f /tmp/smartdnsgfw.conf
+		rm -f /tmp/smartdnschina.conf
+		cat >> /tmp/smartdnsgfw.conf << EOF
+server-name smartdns
+bind :6053 -no-speed-check -no-dualstack-selection
+bind-tcp :6053 -no-speed-check -no-dualstack-selection
+bind :5353  -no-speed-check -group gfwlist -no-rule-addr -no-rule-nameserver -no-rule-soa -no-dualstack-selection -no-cache
+bind-tcp :5353 -no-speed-check -group gfwlist -no-rule-addr -no-rule-nameserver -no-rule-soa -no-dualstack-selection -no-cache
+cache-size 100
+prefetch-domain yes
+serve-expired yes
+force-AAAA-SOA yes
+log-level info
+server 223.5.5.5
+server 119.29.29.29
+server-tcp 8.8.8.8 -group gfwlist -exclude-default-group
+server-tls dns.google  -group gfwlist -exclude-default-group
+server-https https://ndns.233py.com/dns-query  -group gfwlist -exclude-default-group
 EOF
+		/usr/bin/smartdns -f -c /tmp/smartdnsgfw.conf &>/dev/null &
+		ipset add gfwlist 8.8.8.8 2>/dev/null
+		ipset add gfwlist dns.google 2>/dev/null
+		ipset add gfwlist ndns.233py.com 2>/dev/null
+		sed -i '/no-resolv/d' /etc/storage/dnsmasq/dnsmasq.conf
+sed -i '/server=127.0.0.1/d' /etc/storage/dnsmasq/dnsmasq.conf
+cat >> /etc/storage/dnsmasq/dnsmasq.conf << EOF
+no-resolv
+server=127.0.0.1#6053
+EOF
+		elif [ $(nvram get ssp_dns_ip) = 0 ]; then
+        /usr/bin/smartdns.sh stop
+		/usr/bin/smartdns.sh start
+		fi
+		fi
     elif [ "$run_mode" = "oversea" ] ;then
         ipset add gfwlist $dnsserver 2>/dev/null
         mkdir -p /etc/storage/dnsmasq.oversea
@@ -479,17 +542,32 @@ EOF
     fi
     /sbin/restart_dhcpd
 }
+
+
+# ================================= 启动 Socks5代理 ===============================
 start_local() {
-    local_server=$(nvram get socks5_proxy)
-    [ "$local_server" = "nil" ] && return 1
-    mkdir -p /var/run /var/etc
-    gen_config_file $local_server 2
-    /usr/bin/ssr-local -c $CONFIG_SOCK5_FILE -u  \
-    -l $(nvram get socks5_proxy_prot) \
-    -b 0.0.0.0 \
-    -f /tmp/ssr-local.pid >/dev/null 2>&1
-    local_enable=1	
+s5_enable=$(nvram get socks5_enable)
+    s5_port=$(nvram get socks5_port)
+    if [ $s5_enable != 0 ]; then
+		srelay -i:$s5_port
+	fi
+	if [ $s5_enable = 1 ] || [ $s5_enable = 3 ]; then
+		fport=$(iptables -t filter -L INPUT -v -n --line-numbers | grep dpt:$s5_port | cut -d " " -f 1 | sort -nr | wc -l)
+			if [ "$fport" = 0 ] ; then
+				iptables -t filter -I INPUT -p tcp --dport $s5_port -j ACCEPT
+			fi
+			logger -t "SS" "WAN IPV4放行 socks5 $s5_port tcp端口"
+	fi
+	if [ $s5_enable = 2 ] || [ $s5_enable = 3 ]; then
+		f6port=$(ip6tables -t filter -L INPUT -v -n --line-numbers | grep dpt:$s5_port | cut -d " " -f 1 | sort -nr | wc -l)
+			if [ "$f6port" = 0 ] ; then
+				ip6tables -t filter -I INPUT -p tcp --dport $s5_port -j ACCEPT
+			fi
+			logger -t "SS" "WAN IPV6放行 socks5 $s5_port tcp端口"
+	fi
+
 }
+
 rules() {
     [ "$GLOBAL_SERVER" = "-1" ] && return 1
     [ "$UDP_RELAY_SERVER" = "same" ] && UDP_RELAY_SERVER=$GLOBAL_SERVER
@@ -499,6 +577,36 @@ rules() {
         return 1
     fi
 }
+
+start_watchcat()
+{
+    if [ $(nvram get ss_watchcat) = 1 ] ;then
+        let total_count=server_count+redir_tcp+redir_udp+tunnel_enable+v2ray_enable+local_enable+pdnsd_enable_flag
+        if [ $total_count -gt 0 ]
+        then
+#param:server(count) redir_tcp(0:no,1:yes)  redir_udp tunnel kcp local gfw
+/usr/bin/ssr-monitor $server_count $redir_tcp $redir_udp $tunnel_enable $v2ray_enable $local_enable $pdnsd_enable_flag >/dev/null 2>&1 &
+fi
+fi
+}
+
+auto_update(){
+    sed -i '/update_chnroute/d' /etc/storage/cron/crontabs/$http_username
+    sed -i '/update_gfwlist/d' /etc/storage/cron/crontabs/$http_username
+    sed -i '/ss-watchcat/d' /etc/storage/cron/crontabs/$http_username
+    if [ $(nvram get ss_update_chnroute) = "1" ]; then
+cat >> /etc/storage/cron/crontabs/$http_username << EOF
+0 8 */10 * * /usr/bin/update_chnroute.sh > /dev/null 2>&1
+EOF
+    fi
+    if [ $(nvram get ss_update_gfwlist) = "1" ]; then
+cat >> /etc/storage/cron/crontabs/$http_username << EOF
+0 7 */10 * * /usr/bin/update_gfwlist.sh > /dev/null 2>&1
+EOF
+    fi
+}
+
+# ================================= 启动 SS ===============================
 ssp_start() { 
     GLOBAL_SERVER=`nvram get global_server`
     echo $GLOBAL_SERVER
@@ -517,44 +625,22 @@ ssp_start() {
         nvram set check_mode=0
     fi
 }
-start_watchcat()
-{
-    if [ $(nvram get ss_watchcat) = 1 ] ;then
-        let total_count=server_count+redir_tcp+redir_udp+tunnel_enable+v2ray_enable+local_enable+pdnsd_enable_flag
-        if [ $total_count -gt 0 ]
-        then
-#param:server(count) redir_tcp(0:no,1:yes)  redir_udp tunnel kcp local gfw
-/usr/bin/ssr-monitor $server_count $redir_tcp $redir_udp $tunnel_enable $v2ray_enable $local_enable $pdnsd_enable_flag >/dev/null 2>&1 &
-fi
-fi
-}
-auto_update(){
-    sed -i '/update_chnroute/d' /etc/storage/cron/crontabs/$http_username
-    sed -i '/update_gfwlist/d' /etc/storage/cron/crontabs/$http_username
-    sed -i '/ss-watchcat/d' /etc/storage/cron/crontabs/$http_username
-    if [ $(nvram get ss_update_chnroute) = "1" ]; then
-cat >> /etc/storage/cron/crontabs/$http_username << EOF
-0 8 */10 * * /usr/bin/update_chnroute.sh > /dev/null 2>&1
-EOF
-    fi
-    if [ $(nvram get ss_update_gfwlist) = "1" ]; then
-cat >> /etc/storage/cron/crontabs/$http_username << EOF
-0 7 */10 * * /usr/bin/update_gfwlist.sh > /dev/null 2>&1
-EOF
-    fi
-}
+
+# ================================= 关闭SS ===============================
+
 ssp_close() {
+rm -rf /tmp/cdn
 /usr/bin/ss-rules -f
 kill -9 $(ps | grep ssr-switch | grep -v grep | awk '{print $1}') >/dev/null 2>&1
 kill -9 $(ps | grep ssr-monitor | grep -v grep | awk '{print $1}') >/dev/null 2>&1	
-killall -q -9 ss-redir
-killall -q -9 ssr-redir
-killall -q -9 v2ray
-killall -q -9 trojan
-killall -q -9 ssr-server
-killall -q -9 ssr-local
-killall -q -9 kumasocks
-killall -9 pdnsd
+kill_process
+if [ $(nvram get sdns_enable) = 0 ]; then
+sed -i '/no-resolv/d' /etc/storage/dnsmasq/dnsmasq.conf
+sed -i '/server=127.0.0.1#6053/d' /etc/storage/dnsmasq/dnsmasq.conf
+rm -f /tmp/whitelist.conf
+rm -f /tmp/smartdnsgfw.conf
+rm -f /tmp/smartdnschina.conf
+fi
 sed -i '/no-resolv/d' /etc/storage/dnsmasq/dnsmasq.conf
 sed -i '/server=127.0.0.1#5353/d' /etc/storage/dnsmasq/dnsmasq.conf
 sed -i '/cdn/d' /etc/storage/dnsmasq/dnsmasq.conf
@@ -563,8 +649,95 @@ sed -i '/dnsmasq.oversea/d' /etc/storage/dnsmasq/dnsmasq.conf
 if [ -f "/etc/storage/dnsmasq-ss.d" ]; then
 rm -f /etc/storage/dnsmasq-ss.d
 fi 
+clear_iptable
 /sbin/restart_dhcpd
 }
+
+clear_iptable()
+{
+	s5_port=$(nvram get socks5_port)
+	iptables -t filter -D INPUT -p tcp --dport $s5_port -j ACCEPT
+	iptables -t filter -D INPUT -p tcp --dport $s5_port -j ACCEPT
+	ip6tables -t filter -D INPUT -p tcp --dport $s5_port -j ACCEPT
+	ip6tables -t filter -D INPUT -p tcp --dport $s5_port -j ACCEPT
+	
+}
+
+kill_process(){
+	v2ray_process=`pidof v2ray`
+	if [ -n "$v2ray_process" ];then 
+		logger -t "SS" "关闭V2Ray进程..."
+		killall v2ray >/dev/null 2>&1
+		kill -9 "$v2ray_process" >/dev/null 2>&1
+	fi
+	ssredir=`pidof ss-redir`
+	if [ -n "$ssredir" ];then 
+		logger -t "SS" "关闭V2Ray进程..."
+		killall ss-redir >/dev/null 2>&1
+		kill -9 "$ssredir" >/dev/null 2>&1
+	fi
+
+	rssredir=`pidof ssr-redir`
+	if [ -n "$rssredir" ];then 
+		logger -t "SS" "关闭ssr-redir进程..."
+		killall ssr-redir >/dev/null 2>&1
+		kill -9 "$rssredir" >/dev/null 2>&1
+	fi
+	
+	trojandir=`pidof trojan`
+	if [ -n "$trojandir" ];then 
+		logger -t "SS" "关闭trojan进程..."
+		killall trojan >/dev/null 2>&1
+		kill -9 "$trojandir" >/dev/null 2>&1
+	fi
+	
+	kumasocks_process=`pidof kumasocks`
+	if [ -n "$kumasocks_process" ];then 
+		logger -t "SS" "关闭kumasocks进程..."
+		killall kumasocks >/dev/null 2>&1
+		kill -9 "$kumasocks_process" >/dev/null 2>&1
+	fi
+	
+	socks5_process=`pidof srelay`
+	if [ -n "$socks5_process" ];then 
+		logger -t "SS" "关闭socks5进程..."
+		killall srelay >/dev/null 2>&1
+		kill -9 "$socks5_process" >/dev/null 2>&1
+	fi
+	
+	ssrs_process=`pidof ssr-server`
+	if [ -n "$ssrs_process" ];then 
+		logger -t "SS" "关闭ssr-server进程..."
+		killall ssr-server >/dev/null 2>&1
+		kill -9 "$ssrs_process" >/dev/null 2>&1
+	fi
+	
+	pdnsd_process=`pidof pdnsd`
+	if [ -n "$pdnsd_process" ];then 
+		logger -t "SS" "关闭pdnsd进程..."
+		killall pdnsd >/dev/null 2>&1
+		kill -9 "$pdnsd_process" >/dev/null 2>&1
+	fi
+	
+	smart_process=`pidof smartdns`
+	if [ -n "$smart_process" ];then 
+	if [ $(nvram get pdnsd_enable) = 0 ] || [ $(nvram get ssp_dns_ip) = 2 ]; then
+	if [ $(nvram get sdns_enable) = 0 ]; then
+		logger -t "SS" "关闭smartdns进程..."
+		killall smartdns >/dev/null 2>&1
+		kill -9 "$smart_process" >/dev/null 2>&1
+	else
+	    if [ $(nvram get sdns_enable) = 1 ] && [ "$(nvram get ss_run_mode)" = "router" ] && [ $(nvram get pdnsd_enable) = 0 ] && [ $(nvram get ss_enable) = 1 ]; then
+		logger -t "SS" "关闭smartdns进程..."
+		/usr/bin/smartdns.sh stop
+		nvram set sdns_enable=0
+	    fi
+		fi
+    fi
+	fi
+}
+
+# ================================= 重启 SS ===============================
 ressp() {
 BACKUP_SERVER=$(nvram get backup_server)
 start_redir $BACKUP_SERVER
@@ -577,6 +750,8 @@ ENABLE_SERVER=$(nvram get global_server)
 logger -t "SS" "备用服务器启动成功"
 logger -t "SS" "内网IP控制为:$lancons"
 }
+
+# ================================= 配置文件 ===============================
 json_int_trojan () {
 echo '{
     "run_type": "nat",
@@ -680,7 +855,7 @@ json_int () {
 echo '{
 "log": {
 "error": "/tmp/syslog.log",
-"loglevel": "info"
+"loglevel": "error"
 },
 "inbounds": [
 {
@@ -744,6 +919,7 @@ echo '{
 }
 '
 }
+
 case $1 in
 start)
 ssp_start

@@ -151,6 +151,9 @@
 			{"sdnss_port_x", "24", NULL, FALSE},
 			{"sdnss_type_x", "24", NULL, FALSE},
 			{"sdnss_ipc_x", "24", NULL, FALSE},
+			{"sdnss_named_x", "24", NULL, FALSE},
+			{"sdnss_non_x", "24", NULL, FALSE},
+			{"sdnss_ipset_x", "24", NULL, FALSE},
 			{0,0,0,0}
 		};
 		
@@ -955,6 +958,8 @@
 	        {"pdnsd_enable","",NULL, EVM_RESTART_SHADOWSOCKS},
 			{"china_dns","",NULL, EVM_RESTART_SHADOWSOCKS},
 	        {"tunnel_forward","",NULL, EVM_RESTART_SHADOWSOCKS},
+			{"ssp_dns_ip","",NULL, EVM_RESTART_SHADOWSOCKS},
+	        {"ssp_dns_port","",NULL, EVM_RESTART_SHADOWSOCKS},
 			{"ss_type","",NULL, EVM_RESTART_SHADOWSOCKS|EVM_RESTART_SS_TUNNEL},
 			{"ss_mode","",NULL, EVM_RESTART_SHADOWSOCKS},
 			{"ss_server","",NULL, EVM_RESTART_SHADOWSOCKS|EVM_RESTART_SS_TUNNEL},
@@ -972,8 +977,8 @@
 			{"ss_proto_param","",NULL, EVM_RESTART_SHADOWSOCKS|EVM_RESTART_SS_TUNNEL},
 			{"ss_obfs","",NULL, EVM_RESTART_SHADOWSOCKS|EVM_RESTART_SS_TUNNEL},
 			{"ss_obfs_param","",NULL, EVM_RESTART_SHADOWSOCKS|EVM_RESTART_SS_TUNNEL},
-			{"socks5_proxy","",NULL, EVM_RESTART_SHADOWSOCKS},
-			{"socks5_proxy_port","",NULL, EVM_RESTART_SHADOWSOCKS},
+			{"socks5_port","",NULL, EVM_RESTART_SHADOWSOCKS},
+			{"socks5_enable","",NULL, EVM_RESTART_SHADOWSOCKS},
 			{"ss_turn","",NULL, EVM_RESTART_SHADOWSOCKS},
 			{"lan_con","",NULL, EVM_RESTART_SHADOWSOCKS},
 	        {"ss_watchcat", "",NULL, FALSE},

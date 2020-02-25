@@ -177,7 +177,7 @@ function showMRULESList(){
 		code +='<tr id="rowrl' + i + '">';
 		code +='<td width="10%">&nbsp;' + adbybyrulesroad + '</td>';
 		code +='<td width="20%">&nbsp;' + m_list[i][1] + '</td>';
-		code +='<td width="25%">&nbsp;' + m_list[i][2] + '</td>';
+		code +='<td width="25%" class="spanb">' + m_list[i][2] + '</td>';
 		code +='<td width="10%">&nbsp;' + m_list[i][3] + '</td>';
 		code +='<td width="10%">&nbsp;' + m_list[i][4] + '</td>';
 		code +='<td width="15%">&nbsp;' + ipc + '</td>';
@@ -198,6 +198,11 @@ function showMRULESList(){
 .nav-tabs > li > a {
     padding-right: 6px;
     padding-left: 6px;
+}
+.spanb{
+    overflow:hidden;
+　　text-overflow:ellipsis;
+　　white-space:nowrap;
 }
 </style>
 </head>
@@ -630,6 +635,28 @@ function showMRULESList(){
 													<option value="0" <% nvram_match_x("","sdnss_ipc_x_0", "0","selected"); %>>禁用</option>
 													<option value="whitelist" <% nvram_match_x("","sdnss_ipc_x_0", "whitelist","selected"); %>>白名单</option>
 													<option value="blacklist" <% nvram_match_x("","sdnss_ipc_x_0", "blacklist","selected"); %>>黑名单</option>
+												</select>
+                                            </td>
+                                            </tr>
+											<tr><th colspan="2" style="background-color: #E3E3E3;">指定服务器组可用于单独解析gfwlist,如果不需要配合SS解析gfwlist,可以不填</th></tr>
+											 <tr>
+											 <th>服务器组(留空为不指定):</th>
+										 <td>
+                                                <input type="text" maxlength="255" class="span12" style="width: 200px" size="200" name="sdnss_named_x_0" value="<% nvram_get_x("", "sdnss_named_x_0"); %>" />
+											</td>
+											 </tr>
+											  <tr>
+											 <th>加入ipset(解析gfwlist要用):</th>
+										 <td>
+                                                <input type="text" maxlength="255" class="span12" style="width: 200px" size="200" name="sdnss_ipset_x_0" value="<% nvram_get_x("", "sdnss_ipset_x_0"); %>" />注意IP直接填,如果是域名:例如https://ndns.233py.com/dns-query 只填写ndns.233py.com就可以了.
+											</td>
+											 </tr>
+											 <tr>
+											 <th>将服务器从默认组中排除</th>
+										 <td>
+                                          	<select name="sdnss_non_x_0" class="input" style="width: 200px">
+													<option value="0" <% nvram_match_x("","sdnss_non_x_0", "0","selected"); %>>否</option>
+													<option value="1" <% nvram_match_x("","sdnss_non_x_0", "1","selected"); %>>是</option>
 												</select>
                                             </td>
                                             </tr>

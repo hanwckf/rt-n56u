@@ -37,7 +37,7 @@ ss_black=`nvram get ss_black`
 
 check_ss(){
 if [ $(nvram get ss_enable) = 1 ] && [ $(nvram get ss_run_mode) = "router" ] && [ $(nvram get pdnsd_enable) = 0 ]; then
-logger -t "SmartDNS" "系统检测到SS模式为绕过大陆模式，并且启用了pdnsd,请先调整SS解析使用自定义模式！程序将退出。"
+logger -t "SmartDNS" "系统检测到SS模式为绕过大陆模式，并且启用了pdnsd,请先调整SS解析使用SmartDNS+手动配置模式！程序将退出。"
 nvram set sdns_enable=0
 exit 0
 fi
@@ -101,33 +101,54 @@ sdnss_ip=`nvram get sdnss_ip_x$j`
 sdnss_port=`nvram get sdnss_port_x$j`
 sdnss_type=`nvram get sdnss_type_x$j`
 sdnss_ipc=`nvram get sdnss_ipc_x$j`
+sdnss_named=`nvram get sdnss_named_x$j`
+sdnss_non=`nvram get sdnss_non_x$j`
+sdnss_ipset=`nvram get sdnss_ipset_x$j`
 ipc=""
+named=""
+non=""
+sipset=""
 if [ $sdnss_ipc = "whitelist" ]; then
 ipc="-whitelist-ip"
 elif [ $sdnss_ipc = "blacklist" ]; then
 ipc="-blacklist-ip"
 fi
+if [ $sdnss_named != "" ]; then
+named="-group $sdnss_named"
+fi
+if [ $sdnss_non = "1" ]; then
+non="-exclude-default-group"
+fi
+if [ $sdnss_ipset != "" ]; then
+rm -f /tmp/sdnsipset.conf
+detect_domain $sipset
+if [ "$?" == "0" ];then
+echo "ipset /$sipset/gfwlist" >> /tmp/sdnsipset.conf
+else
+ipset add gfwlist $sipset 2>/dev/null
+fi
+fi
 if [ $sdnss_type = "tcp" ]; then
 if [ $sdnss_port = "default" ]; then
-echo "server-tcp $sdnss_ip $ipc" >> $SMARTDNS_CONF
+echo "server-tcp $sdnss_ip $ipc $named $non" >> $SMARTDNS_CONF
 else
-echo "server-tcp $sdnss_ip:$sdnss_port $ipc" >> $SMARTDNS_CONF
+echo "server-tcp $sdnss_ip:$sdnss_port $ipc $named $non" >> $SMARTDNS_CONF
 fi
 elif [ $sdnss_type = "udp" ]; then
 if [ $sdnss_port = "default" ]; then
 echo "server $sdnss_ip" >> $SMARTDNS_CONF
 else
-echo "server $sdnss_ip:$sdnss_port $ipc" >> $SMARTDNS_CONF
+echo "server $sdnss_ip:$sdnss_port $ipc $named $non" >> $SMARTDNS_CONF
 fi
 elif [ $sdnss_type = "tls" ]; then
 if [ $sdnss_port = "default" ]; then
-echo "server-tls $sdnss_ip $ipc" >> $SMARTDNS_CONF
+echo "server-tls $sdnss_ip $ipc $named $non" >> $SMARTDNS_CONF
 else
-echo "server-tls $sdnss_ip:$sdnss_port $ipc" >> $SMARTDNS_CONF
+echo "server-tls $sdnss_ip:$sdnss_port $ipc $named $non" >> $SMARTDNS_CONF
 fi
 elif [ $sdnss_type = "https" ]; then
 if [ $sdnss_port = "default" ]; then
-echo "server-https $sdnss_ip $ipc" >> $SMARTDNS_CONF
+echo "server-https $sdnss_ip $ipc $named $non" >> $SMARTDNS_CONF
 fi	
 fi	
 fi
@@ -180,7 +201,7 @@ if [ "$sdnse_address" = "1" ]; then
 		ADDR=""
 	fi
 echo "bind" "$ADDR:$sdnse_port $ARGS" >> $SMARTDNS_CONF
-	if [ "$sdnse_tcp" = "0" ]; then
+	if [ "$sdnse_tcp" = "1" ]; then
 		echo "bind-tcp" "$ADDR:$sdnse_port$ARGS" >> $SMARTDNS_CONF
 	fi
 fi
@@ -301,8 +322,18 @@ if [ $snds_redirect = "2" ]; then
 
 }
 
-stop_smartdns(){
+detect_domain(){
+	domain1=`echo $1|grep -E "^https://|^http://|www|/"`
+	domain2=`echo $1|grep -E "\."`
+	if [ -n "$domain1" ] || [ -z "$domain2" ];then
+		return 1
+	else
+		return 0
+	fi
+}
 
+stop_smartdns(){
+rm -f /tmp/sdnsipset.conf
 killall -9 smartdns
 del_dns
 clear_iptable $sdns_port $sdns_ipv6_server

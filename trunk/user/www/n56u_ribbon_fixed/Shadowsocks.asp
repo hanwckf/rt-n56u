@@ -43,7 +43,7 @@ $j(document).ready(function(){
 	init_itoggle('ss_update_chnroute');
 	init_itoggle('ss_update_gfwlist');
 	init_itoggle('ss_turn');
-	$j("#tab_ss_cfg, #tab_ss_add, #tab_ss_ssl, #tab_ss_cli, #tab_ss_log").click(function(){
+	$j("#tab_ss_cfg, #tab_ss_add, #tab_ss_ssl, #tab_ss_cli, #tab_ss_log, #tab_ss_help").click(function(){
 		var newHash = $j(this).attr('href').toLowerCase();
 		showTab(newHash);
 		return false;
@@ -62,14 +62,14 @@ function initial(){
 	showTab(getHash());
 	showMRULESList();
 	showssList();
-	shows5List();
+	//shows5List();
 	switch_dns();
 	var o1 = document.form.global_server;
 	var o2 = document.form.lan_con;
 	var o3 = document.form.ss_threads;
 	var o4 = document.form.china_dns;
 	var o5 = document.form.pdnsd_enable;
-	var o6 = document.form.socks5_proxy;
+	var o6 = document.form.socks5_enable;
 	var o7 = document.form.tunnel_forward;
 	var o8 = document.form.backup_server;
 	o1.value = '<% nvram_get_x("","global_server"); %>';
@@ -77,7 +77,7 @@ function initial(){
 	o3.value = '<% nvram_get_x("","ss_threads"); %>';
 	o4.value = '<% nvram_get_x("","china_dns"); %>';
 	o5.value = '<% nvram_get_x("","pdnsd_enable"); %>';
-	o6.value = '<% nvram_get_x("","socks5_proxy"); %>';
+	o6.value = '<% nvram_get_x("","socks5_enable"); %>';
 	o7.value = '<% nvram_get_x("","tunnel_forward"); %>';
 	o8.value = '<% nvram_get_x("","backup_server"); %>';
 	switch_dns();
@@ -288,11 +288,22 @@ var b = document.form.pdnsd_enable.value;
 if (b=="0"){
 	showhide_div('row_china_dns', 1);
 	showhide_div('row_tunnel_forward', 1);
+	showhide_div('row_ssp_dns_ip', 0);
+	showhide_div('row_ssp_dns_port', 0);
 	
-}else{
+}
+if (b=="1"){
 	showhide_div('row_china_dns', 0);
 	showhide_div('row_tunnel_forward', 0);
-	}
+	showhide_div('row_ssp_dns_ip', 1);
+	showhide_div('row_ssp_dns_port', 1);
+}
+if (b=="2"){
+	showhide_div('row_china_dns', 0);
+	showhide_div('row_tunnel_forward', 0);
+	showhide_div('row_ssp_dns_ip', 0);
+	showhide_div('row_ssp_dns_port', 0);
+}
 }
 function applyRule(){
 	showLoading();
@@ -335,7 +346,7 @@ function fill_ss_tunnel_status(status_code){
 		stext = "<#Running#>";
 	$("ss_tunnel_status").innerHTML = '<span class="label label-' + (status_code != 0 ? 'success' : 'warning') + '">' + stext + '</span>';
 }
-var arrHashes = ["cfg", "add", "ssl", "cli", "log"];
+var arrHashes = ["cfg", "add", "ssl", "cli", "log", "help"];
 function showTab(curHash){
 	var obj = $('tab_ss_'+curHash.slice(1));
 	if (obj == null || obj.style.display == 'none')
@@ -680,13 +691,15 @@ if (ssu[0] == "ssr") {
 							<li>
 								<a id="tab_ss_log" href="#log">运行日志</a>
 							</li>
+							<li>
+								<a id="tab_ss_help" href="#help">帮助文档</a>
+							</li>
 						</ul>
 					</div>
 <div class="row-fluid">
 	<div id="tabMenu" class="submenuBlock"></div>
-	<div class="alert alert-info" style="margin: 10px;"><p>一个兼容Shadowsocks、ShadowsocksR 、Vmess等协议的游戏加速工具。</p>
-	<p>绕过大陆IP模式建议配合smartdns做分流。当然如果你不懂可以直接用pdnsd。</p><p>绕过大陆模式启用pdnsd会自动检测并关闭当前正在运行的smartdns,因绕过大陆模式中,pdnsd需要把DNS转发到自身，所以两者不能共存。</p></div>
 	<div id="wnd_ss_cfg">
+	<div class="alert alert-info" style="margin: 10px;">一个兼容Shadowsocks、ShadowsocksR 、Vmess等协议的游戏加速工具。</div>
 		<table width="100%" cellpadding="4" cellspacing="0" class="table">
 			<tr> <th>当前运行服务器</th>
 				<td id="ss_check_status"></td>
@@ -760,10 +773,10 @@ if (ssu[0] == "ssr") {
 				<td>
 					<select name="pdnsd_enable" id="pdnsd_enable" class="input" style="width: 200px;" onchange="switch_dns()">
 						<option value="0" >使用PDNSD TCP查询并缓存</option>
-						<option value="1" >使用自定义服务器</option>
+						<option value="1" >使用SmartDNS服务器</option>
+						<option value="2" >使用其它服务器</option>
 					</select>
 				</td>
-				
 			</tr>
 			<tr id="row_china_dns" style="display:none;"> <th width="50%">中国DNS服务器</th>
 				<td>
@@ -796,6 +809,12 @@ if (ssu[0] == "ssr") {
 					</select>
 				</td>
 			</tr>
+			<tr id="row_ssp_dns_ip" style="display:none;"> <th width="50%">SmartDNS加载方式:</th>
+				<td>
+				自动配置<input type="radio" value="2" name="ssp_dns_ip" id="ssp_dns_ip_2" <% nvram_match_x("", "ssp_dns_ip", "2", "checked"); %>>
+				手动配置<input type="radio" value="1" name="ssp_dns_ip" id="ssp_dns_ip_1" <% nvram_match_x("", "ssp_dns_ip", "1", "checked"); %>>
+				</td>
+			</tr>
 				<tr> <th><#menu5_16_17#></th>
 				<td>
 					<div class="main_itoggle">
@@ -822,6 +841,28 @@ if (ssu[0] == "ssr") {
 					</div>
 				</td>
 			</tr>
+			<tr> <th colspan="2" style="background-color: #E3E3E3;">SOCKS5代理</th> </tr>
+<!--<tr> <th>服务器</th>
+	<td>
+		<select name="socks5_proxy" id="s5List_Block" class="input" style="width: 200px;">
+		</select>
+	</td>
+</tr>-->
+<tr id="row_socks5" > <th width="50%">启动socks5代理</th>
+				<td>
+					<select name="socks5_enable" class="input" style="width: 200px;" >
+						<option value="0" >禁用</option>
+						<option value="1" >WAN IPV4</option>
+						<option value="2" >WAN IPV6</option>
+						<option value="3" >IPV4+IPV6</option>
+					</select>
+				</td>
+			</tr>
+<tr> <th width="50%">访问代理端口:</th>
+	<td>
+		<input type="text" class="input" size="15" name="socks5_port" style="width: 200px" value="<% nvram_get_x("", "socks5_port"); %>">
+	</td>
+</tr>
 		</table>
 		<table class="table">
 			<tr>
@@ -831,6 +872,7 @@ if (ssu[0] == "ssr") {
 	</div>
 <div id="wnd_ss_add">
 	<table width="100%" cellpadding="4" cellspacing="0" class="table">
+	<tr> <th colspan="2" style="background-color: #E3E3E3;">添加/删除/编辑节点</th> </tr>
 		<tr> <th width="50%">导入节点信息:</th>
 			<td>
 				<input type="button" class="btn btn-primary" value="点击输入节点URL" onclick="return import_ssr_url(this, '<%=self.option%>', '<%=self.value%>')" />
@@ -1179,18 +1221,6 @@ if (ssu[0] == "ssr") {
 		<input type="text" class="input" size="15" name="ss_turn_ss" style="width: 200px" value="<% nvram_get_x("", "ss_turn_ss"); %>">
 	</td>
 </tr>
-<tr> <th colspan="2" style="background-color: #E3E3E3;">SOCKS5代理</th> </tr>
-<tr> <th>服务器</th>
-	<td>
-		<select name="socks5_proxy" id="s5List_Block" class="input" style="width: 200px;">
-		</select>
-	</td>
-</tr>
-<tr> <th width="50%">本地端口:</th>
-	<td>
-		<input type="text" class="input" size="15" name="socks5_proxy_port" style="width: 200px" value="<% nvram_get_x("", "socks5_proxy_port"); %>">
-	</td>
-</tr>
 </table>
 <table class="table">
 	<tr>
@@ -1307,6 +1337,24 @@ if (ssu[0] == "ssr") {
 				<input type="button" onClick="location.href=location.href" value="<#CTL_refresh#>" class="btn btn-primary" style="width: 200px">
 			</td>
 		</tr>
+	</table>
+</div>
+<div id="wnd_ss_help" style="display:none">
+	<table width="100%" cellpadding="4" cellspacing="0" class="table">
+		<tr> <th colspan="2" style="background-color: #E3E3E3;">PDNSD说明:</th> </tr>
+		<tr> <th width="100%">绕过大陆模式启用pdnsd会自动检测并关闭当前正在运行的smartdns,因绕过大陆模式中,pdnsd需要把DNS转发到自身，所以两者不能共存。</th></tr>
+		<tr> <th width="100%">绕过大陆模式启用pdnsd会加载CDN域名规则来分流常用网站跑国内DNS，</th></tr>
+		<tr> <th colspan="2" style="background-color: #E3E3E3;">SmartDNS说明:</th> </tr>
+		<tr> <th width="100%">自动配置:此选项将加载预设的配置文件启动smartdns,不用你手动配置,适合小白,当然配置不一定会很适合你自身.</th></tr>
+		<tr> <th width="100%">手动配置:启动SS后需要自行到smartdns页面配置相关上游,端口之类，适合老手</br>
+		gfwlist模式下建议:启用第二服务器,端口5353,服务器组gfwlist,上游服务器添加服务器组,并从默认组排除。</br>
+		绕过模式下建议:国内DNS加载白名单。
+		</th></tr>
+
+		<tr> <th colspan="2" style="background-color: #E3E3E3;">Socks5代理说明:</th> </tr>
+		<tr> <th width="100%">WAN IPV4:允许外网IPV4访问socks5</th></tr>
+		<tr> <th width="100%">WAN IPV6:允许外网IPV6访问socks5</th></tr>
+		<tr> <th width="100%">IPV4+IPV6:运行外网IPV4+IPV6访问socks5</th></tr>
 	</table>
 </div>
 </div>

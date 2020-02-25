@@ -17,3 +17,5 @@ set(CMAKE_FIND_ROOT_PATH_MODE_PROGRAM NEVER)
 # Search headers and libraries in the target environment only.
 set(CMAKE_FIND_ROOT_PATH_MODE_LIBRARY ONLY)
 set(CMAKE_FIND_ROOT_PATH_MODE_INCLUDE ONLY)
+
+add_definitions($ENV{CPUFLAGS})

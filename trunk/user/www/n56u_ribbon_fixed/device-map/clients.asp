@@ -158,6 +158,20 @@ function add_client_row(table, atIndex, client, blocked, j){
 	var rssiCell = row.insertCell(4);
 	var blockCell = row.insertCell(5);
 
+	var arpon = <% nvram_get_x("","dhcp_static_arp"); %>;
+	var mdhcp = <% nvram_get_x("","dhcp_static_x"); %>;
+	if (arpon == 1 && mdhcp == 1){
+	   var j;
+	   for(j = 0; j < m_dhcp.length; ++j){
+	      if (client[2] == m_dhcp[j][0]){
+	         client[0] = m_dhcp[j][2];
+	         if (client[1] == m_dhcp[j][1]){
+	            client[1] = m_dhcp[j][1];
+	         }
+	      }
+	   }    
+	}
+
 	typeCell.style.textAlign = "center";
 	typeCell.innerHTML = "<img title='"+ DEVICE_TYPE[client[5]]+"' src='/bootstrap/img/wl_device/" + client[5] +".gif'>";
 	nameCell.innerHTML = (client[6] == "1") ? "<a href=http://" + client[0] + " target='blank'>" + client[0] + "</a>" : client[0];
@@ -456,6 +470,3 @@ function networkmap_update(s){
 </script>
 </body>
 </html>
-
-
-

@@ -119,15 +119,6 @@ fi
 if [ $sdnss_non = "1" ]; then
 non="-exclude-default-group"
 fi
-if [ $sdnss_ipset != "" ]; then
-rm -f /tmp/sdnsipset.conf
-detect_domain $sipset
-if [ "$?" == "0" ];then
-echo "ipset /$sipset/gfwlist" >> /tmp/sdnsipset.conf
-else
-ipset add gfwlist $sipset 2>/dev/null
-fi
-fi
 if [ $sdnss_type = "tcp" ]; then
 if [ $sdnss_port = "default" ]; then
 echo "server-tcp $sdnss_ip $ipc $named $non" >> $SMARTDNS_CONF
@@ -150,6 +141,15 @@ elif [ $sdnss_type = "https" ]; then
 if [ $sdnss_port = "default" ]; then
 echo "server-https $sdnss_ip $ipc $named $non" >> $SMARTDNS_CONF
 fi	
+fi
+if [ $sdnss_ipset != "" ]; then
+#ipset add gfwlist $sdnss_ipset 2>/dev/null
+CheckIPAddr $sdnss_ipset
+if [ "$?" == "1" ];then
+echo "ipset /$sdnss_ipset/smartdns" >> $SMARTDNS_CONF
+else
+ipset add smartdns $sdnss_ipset 2>/dev/null
+fi
 fi	
 fi
 done
@@ -290,17 +290,20 @@ chmod -R 777 $smartdns_file
 fi
 }
 start_smartdns(){
+rm -f /tmp/sdnsipset.conf
+
 if [ ! -f "$smartdns_file" ];then
 dl_smartdns
 fi
 args=""
 logger -t "SmartDNS" "创建配置文件."
+ipset -N smartdns hash:net 2>/dev/null
 gensmartconf
 
-grep -v ^! $ADDRESS_CONF >> $SMARTDNS_CONF
-grep -v ^! $BLACKLIST_IP_CONF >> $SMARTDNS_CONF
-grep -v ^! $WHITELIST_IP_CONF >> $SMARTDNS_CONF
-grep -v ^! $CUSTOM_CONF >> $SMARTDNS_CONF
+grep -v '^#' $ADDRESS_CONF | grep -v "^$" >> $SMARTDNS_CONF
+grep -v '^#' $BLACKLIST_IP_CONF | grep -v "^$" >> $SMARTDNS_CONF
+grep -v '^#' $WHITELIST_IP_CONF | grep -v "^$" >> $SMARTDNS_CONF
+grep -v '^#' $CUSTOM_CONF | grep -v "^$" >> $SMARTDNS_CONF
 #grep -v ^! /tmp/whitelist.txt >> $SMARTDNS_CONF
 #rm -f /tmp/whitelist.txt
 #grep -v ^! /tmp/blacklist.txt >> $SMARTDNS_CONF
@@ -322,19 +325,39 @@ if [ $snds_redirect = "2" ]; then
 
 }
 
-detect_domain(){
-	domain1=`echo $1|grep -E "^https://|^http://|www|/"`
-	domain2=`echo $1|grep -E "\."`
-	if [ -n "$domain1" ] || [ -z "$domain2" ];then
-		return 1
-	else
-		return 0
-	fi
+CheckIPAddr()
+{
+echo $1|grep "^[0-9]\{1,3\}\.\([0-9]\{1,3\}\.\)\{2\}[0-9]\{1,3\}$" > /dev/null;
+#IP地址必须为全数字
+        if [ $? -ne 0 ]
+        then
+                return 1
+        fi
+        ipaddr=$1
+        a=`echo $ipaddr|awk -F . '{print $1}'`  #以"."分隔，取出每个列的值
+        b=`echo $ipaddr|awk -F . '{print $2}'`
+        c=`echo $ipaddr|awk -F . '{print $3}'`
+        d=`echo $ipaddr|awk -F . '{print $4}'`
+        for num in $a $b $c $d
+        do
+                if [ $num -gt 255 ] || [ $num -lt 0 ]    #每个数值必须在0-255之间
+                then
+                        return 1
+                fi
+        done
+                return 0
 }
 
 stop_smartdns(){
-rm -f /tmp/sdnsipset.conf
-killall -9 smartdns
+rm -f /tmp/whitelist.conf
+rm -f /tmp/blacklist.conf
+smartdns_process=`pidof smartdns`
+if [ -n "$smartdns_process" ];then 
+	logger -t "SS" "关闭smartdns进程..."
+	killall smartdns >/dev/null 2>&1
+	kill -9 "$smartdns_process" >/dev/null 2>&1
+fi
+ipset -X smartdns 2>/dev/null
 del_dns
 clear_iptable $sdns_port $sdns_ipv6_server
 if [ "$snds_redirect" = "2" ]; then

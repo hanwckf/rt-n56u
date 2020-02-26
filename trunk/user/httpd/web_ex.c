@@ -3946,6 +3946,15 @@ static char mentohust_log_txt[] =
 
 #endif
 
+#if defined (APP_KOOLPROXY)
+static void
+do_kp_crt_file(const char *url, FILE *stream)
+{
+    dump_file(stream, "/etc/storage/koolproxy/ca.crt");
+	fputs("\r\n", stream); /* terminator */
+}
+#endif
+
 struct mime_handler mime_handlers[] = {
 	/* cached javascript files w/o translations */
 	{ "jquery.js", "text/javascript", NULL, NULL, do_file, 0 }, // 2012.06 Eagle23
@@ -3987,6 +3996,9 @@ struct mime_handler mime_handlers[] = {
 	{ "Settings_**.CFG", "application/force-download", NULL, NULL, do_nvram_file, 1 },
 	{ "Storage_**.TBZ", "application/force-download", NULL, NULL, do_storage_file, 1 },
 	{ "syslog.txt", "application/force-download", syslog_txt, NULL, do_syslog_file, 1 },
+#if defined(APP_KOOLPROXY)
+	{ "kp_ca.crt", "application/force-download", NULL, NULL, do_kp_crt_file, 1 },
+#endif
 #if defined(APP_SCUT)
 	{ "scutclient.log", "application/force-download", scutclient_log_txt, NULL, do_scutclient_log_file, 1 },
 #endif
@@ -3996,6 +4008,7 @@ struct mime_handler mime_handlers[] = {
 #if defined(APP_OPENVPN)
 	{ "client.ovpn", "application/force-download", NULL, NULL, do_export_ovpn_client, 1 },
 #endif
+
 
 	/* no-cached POST objects */
 	{ "update.cgi*", "text/javascript", no_cache_IE, do_html_apply_post, do_update_cgi, 1 },

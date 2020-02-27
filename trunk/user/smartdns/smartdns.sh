@@ -353,7 +353,7 @@ rm -f /tmp/whitelist.conf
 rm -f /tmp/blacklist.conf
 smartdns_process=`pidof smartdns`
 if [ -n "$smartdns_process" ];then 
-	logger -t "SS" "关闭smartdns进程..."
+	logger -t "SmartDNS" "关闭smartdns进程..."
 	killall smartdns >/dev/null 2>&1
 	kill -9 "$smartdns_process" >/dev/null 2>&1
 fi

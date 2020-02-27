@@ -611,13 +611,14 @@ struct nvram_pair router_defaults[] = {
 	{ "dns_forwarder_server", "8.8.4.4:53" },
 	
 	/* shadowsocks */
-	{ "ss_type", "0" }, //0=ss, 1=ssr
+	{ "ss_type", "0" },
 	{ "global_server", "nil" },
 	{ "backup_server", "nil" },
 	{ "udp_relay_server", "nil" },
 	{ "ss_threads", "0" },
 	{ "ss_run_mode", "gfw" },
 	{ "pdnsd_enable", "0" },
+	{ "ssp_local_port", "1080" },
 	{ "china_dns", "223.5.5.5#53" },
 	{ "tunnel_forward", "8.8.4.4:53" },
 	{ "ssp_dns_ip", "2" },
@@ -630,7 +631,7 @@ struct nvram_pair router_defaults[] = {
 	{ "lan_con", "0" },
 
 	{ "ss_enable", "0" },
-	{ "ss_mode", "1" }, 	//0=全局代理,1=绕过大陆,2=gfwlist
+	{ "ss_mode", "1" },
 	{ "ss_server", "127.0.0.1" },
 	{ "ss_server_port", "8989" },
 	{ "ss_key", "Secret" },
@@ -640,7 +641,7 @@ struct nvram_pair router_defaults[] = {
 	{ "ss_local_port", "1080" },
 	{ "ss_mtu", "1492" },
 	{ "ss_router_proxy", "1" },
-	{ "ss_lower_port_only", "1" },		//1:22-1023;2:53,80,443
+	{ "ss_lower_port_only", "1" },
 	{ "ss_timeout", "60"},
 	{ "ss_protocol", "origin"},
 	{ "ss_proto_param", ""},
@@ -670,6 +671,26 @@ struct nvram_pair router_defaults[] = {
 	{ "v2_http2_host", "" },
 	{ "v2_http2_path", "" },
 	{ "v2_tls", "0" },
+	
+	/*SS 订阅*/
+	{ "ss_list", "0" },
+	{ "d_server", "" },
+	{ "d_port", "" },
+	{ "d_type", "" },
+	{ "d_v2_aid", "" },
+	{ "d_v2_uid", "" },
+	{ "d_v2_security", "" },
+	{ "d_v2_net", "" },
+	{ "d_v2_type", "" },
+	{ "d_v2_host", "" },
+	{ "d_v2_path", "" },
+	{ "d_v2_tls", "" },
+	{ "d_ss_password", "" },
+	{ "d_ss_method", "" },
+	{ "d_ss_protocol", "" },
+	{ "d_ss_protoparam", "" },
+	{ "d_ss_obfs", "" },
+	{ "d_ss_obfsparam", "" },
 	
 	/* AdguargHome */
 	{ "adg_enable", "0" },
@@ -1043,7 +1064,7 @@ struct nvram_pair tables_defaults[] = {
 	{ "ss_proto_param_x", "" },
 	{ "ss_obfs_x", "" },
 	{ "ss_obfs_param_x", "" },
-	{ "ssp_local_port_x", "" },
+	//{ "ssp_local_port_x", "" },
 	{ "v2_aid_x", "" },
 	{ "v2_vid_x", "" },
 	{ "v2_security_x", "" },

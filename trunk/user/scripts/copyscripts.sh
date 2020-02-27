@@ -1,4 +1,9 @@
 #!/bin/sh
+if [ ! -f "/etc/storage/dlink/dlink.js" ] ; then
+mkdir -p /etc/storage/dlink
+cp -rf /etc_ro/dlink.js /etc/storage/dlink/
+chmod 755 "/etc/storage/dlink/dlink.js"
+fi
 if [ ! -f "/etc/storage/koolproxy_rules_script.sh" ] ; then
 cp -rf /etc_ro/koolproxy_rules_script.sh /etc/storage/
 chmod 755 "/etc/storage/koolproxy_rules_script.sh"
@@ -62,6 +67,10 @@ fi
 if [ ! -f "/etc/storage/adbyby_rules.sh" ] ; then
 cp -rf /etc_ro/adbyby_rules.sh /etc/storage/
 chmod 755 "/etc/storage/adbyby_rules.sh"
+fi
+if [ ! -f "/etc/storage/ss_dlink.sh" ] ; then
+cp -rf /etc_ro/ss_dlink.sh /etc/storage/
+chmod 755 "/etc/storage/ss_dlink.sh"
 fi
 if [ ! -f "/etc/storage/ss_dom.sh" ] ; then
 cp -rf /etc_ro/ss_dom.sh /etc/storage/

@@ -538,6 +538,8 @@ void start_ss_tunnel(void);
 void restart_ss_tunnel(void);
 void update_chnroute(void);
 void update_gfwlist(void);
+void update_dlink(void);
+void reset_dlink(void);
 #endif
 #if defined(APP_VLMCSD)
 void stop_vlmcsd(void);

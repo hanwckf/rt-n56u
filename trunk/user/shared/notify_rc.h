@@ -69,6 +69,8 @@
 #define RCN_RESTART_DNSFORWARDER	"restart_dns_forwarder"
 #define RCN_RESTART_SS_TUNNEL		"restart_ss_tunnel"
 #define RCN_RESTART_GFWLIST_UPD		"restart_gfwlist_upd"
+#define RCN_RESTART_DLINK		"restart_dlink"
+#define RCN_RESTART_REDLINK		"restart_redlink"
 #define RCN_RESTART_KOOLPROXY		"restart_koolproxy"
 #define RCN_RESTART_ADGUARDHOME		"restart_adguardhome"
 #define RCN_RESTART_KPUPDATE	"update_kp"

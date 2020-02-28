@@ -143,8 +143,12 @@ i=0
 	#	fi
 	#else
 		logger -t "SS" "使用常规网络下载..."
-		curl --connect-timeout 8 -s -L $ssr_subscribe_link > /tmp/ssr_subscribe_file.txt
-		wget --no-check-certificate -qO /tmp/ssr_subscribe_file.txt $ssr_subscribe_link
+		#curl --connect-timeout 8 -s -L $ssr_subscribe_link > /tmp/ssr_subscribe_file.txt
+		if [ "`echo $ssr_subscribe_link|grep ^https`" ];then
+				wget --no-check-certificate -qO /tmp/ssr_subscribe_file.txt $ssr_subscribe_link
+			else
+				wget -qO /tmp/ssr_subscribe_file.txt $ssr_subscribe_link
+			fi
 	#fi
 
 	#虽然为0但是还是要检测下是否下载到正确的内容
@@ -268,7 +272,7 @@ add_ssr_servers(){
 
 add_v2ray_servers(){
     let i+=1
-    logger -t "SS" "正在处理第$j个节点..."
+    logger -t "SS" "正在处理第$i个节点..."
 	add_link=""
 	add_link="$add_link["'"v2ray", '
 	add_link="$add_link"'"'"$v2ray_ps"'", '

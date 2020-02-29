@@ -121,19 +121,20 @@ non="-exclude-default-group"
 fi
 if [ $sdnss_type = "tcp" ]; then
 if [ $sdnss_port = "default" ]; then
-echo "server-tcp $sdnss_ip $ipc $named $non" >> $SMARTDNS_CONF
+echo "server-tcp $sdnss_ip:53 $ipc $named $non" >> $SMARTDNS_CONF
 else
 echo "server-tcp $sdnss_ip:$sdnss_port $ipc $named $non" >> $SMARTDNS_CONF
 fi
 elif [ $sdnss_type = "udp" ]; then
 if [ $sdnss_port = "default" ]; then
 echo "server $sdnss_ip" >> $SMARTDNS_CONF
+echo "server $sdnss_ip:53 $ipc $named $non" >> $SMARTDNS_CONF
 else
 echo "server $sdnss_ip:$sdnss_port $ipc $named $non" >> $SMARTDNS_CONF
 fi
 elif [ $sdnss_type = "tls" ]; then
 if [ $sdnss_port = "default" ]; then
-echo "server-tls $sdnss_ip $ipc $named $non" >> $SMARTDNS_CONF
+echo "server-tls $sdnss_ip:53 $ipc $named $non" >> $SMARTDNS_CONF
 else
 echo "server-tls $sdnss_ip:$sdnss_port $ipc $named $non" >> $SMARTDNS_CONF
 fi

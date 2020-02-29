@@ -691,6 +691,8 @@ struct nvram_pair router_defaults[] = {
 	{ "d_ss_protoparam", "" },
 	{ "d_ss_obfs", "" },
 	{ "d_ss_obfsparam", "" },
+	{ "d_keyword_n", "" },
+	{ "d_keyword_y", "" },
 	
 	/* AdguargHome */
 	{ "adg_enable", "0" },

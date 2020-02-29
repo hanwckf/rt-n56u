@@ -1,1 +1,2 @@
-var d_rules = [[]];
+﻿var d_rules = [
+];

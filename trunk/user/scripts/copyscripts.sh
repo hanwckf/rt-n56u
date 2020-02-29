@@ -1,8 +1,8 @@
 #!/bin/sh
 if [ ! -f "/etc/storage/dlink/dlink.js" ] ; then
-mkdir -p /etc/storage/dlink
-cp -rf /etc_ro/dlink.js /etc/storage/dlink/
-chmod 755 "/etc/storage/dlink/dlink.js"
+#mkdir -p /etc/storage/dlink
+cp -rf /etc_ro/dlink.js /etc/storage/
+chmod 755 "/etc/storage/dlink.js"
 fi
 #if [ ! -f "/etc/storage/dlink/dlink.js" ] ; then
 mkdir -p /etc/ssl

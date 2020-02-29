@@ -978,6 +978,9 @@
 			{"d_ss_protoparam","",NULL, EVM_RESTART_SHADOWSOCKS},
 			{"d_ss_obfs","",NULL, EVM_RESTART_SHADOWSOCKS},
 			{"d_ss_obfsparam","",NULL, EVM_RESTART_SHADOWSOCKS},
+			{"d_keyword_n","",NULL, FALSE},
+			{"d_keyword_y","",NULL, FALSE},
+			{"d_ss_obfsparam","",NULL, EVM_RESTART_SHADOWSOCKS},
 			{"ss_type","",NULL, EVM_RESTART_SHADOWSOCKS|EVM_RESTART_SS_TUNNEL},
 			{"ss_mode","",NULL, EVM_RESTART_SHADOWSOCKS},
 			{"ssp_local_port","",NULL, EVM_RESTART_SHADOWSOCKS},
@@ -1016,6 +1019,7 @@
 			{"scripts.ss_lan_bip.sh", "File", NULL, EVM_RESTART_SHADOWSOCKS},
 			{"scripts.ss_wan_ip.sh", "File", NULL, EVM_RESTART_SHADOWSOCKS},
 			{"scripts.ss_dlink.sh", "File", NULL, FALSE},
+			{"scripts.dlink.js", "File", NULL, FALSE},
 			{"SspList", "Group", ARGV((char*)variables_SspConf_SspList, "8", "55", "ssp_staticnum_x"), EVM_RESTART_SHADOWSOCKS},
 			{0,0,0,0}
 	};

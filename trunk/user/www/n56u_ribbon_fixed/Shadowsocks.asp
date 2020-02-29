@@ -18,26 +18,27 @@
 <script type="text/javascript" src="/itoggle.js"></script>
 <script type="text/javascript" src="/popup.js"></script>
 <script type="text/javascript" src="/help.js"></script>
-<script type="text/javascript" src="/dlink/dlink.js"></script>
+<script type="text/javascript" src="/dlink.js"></script>
 <script>
 <% shadowsocks_status(); %>
 <% pdnsd_status(); %>
 <% rules_count(); %>
 var m_rules = [<% get_nvram_list("ShadowsocksConf", "SspList"); %>];
 var mrules_ifield = 17;
-var drules_ifield = 17;
+//var drules_ifield = 17;
 if(m_rules.length > 0){
 	var m_rules_ifield = m_rules[0].length;
 	for (var i = 0; i < m_rules.length; i++) {
 		m_rules[i][mrules_ifield] = i;
 	}
 }
+/*
 if(d_rules.length > 0){
 	var d_rules_ifield = d_rules[0].length;
 	for (var i = 0; i < d_rules.length; i++) {
 		d_rules[i][drules_ifield] = i;
 	}
-}
+}*/
 var $j = jQuery.noConflict();
 $j(document).ready(function(){
 	init_itoggle('ss_enable');
@@ -427,7 +428,7 @@ function showMRULESList(){
 
 function showDRULESList(){
 
-	var code = '<table width="100%" cellspacing="0" cellpadding="3" class="table table-list">';
+	var code = '<table width="100%" cellspacing="0" cellpadding="3" class="table table-list" ><tbody id="dlist">';
 	if(d_rules.length == 0)
 		code +='<tr><td colspan="5" style="text-align: center;"><div class="alert alert-info"><#IPConnection_VSList_Norule#></div></td></tr>';
 	else{
@@ -437,22 +438,22 @@ function showDRULESList(){
 			}else{
 				s_method=d_rules[i][5]
 			}
-			code +='<tr id="rowrl' + i + '">';
-			code +='<td width="10%">&nbsp;' + d_rules[i][0] + '</td>';
+			code +='<tr name="d_list" id="rowrl' + i + '">';
+			code +='<td width="5%">&nbsp;' + d_rules[i][0] + '</td>';
 			code +='<td width="20%">&nbsp;' + d_rules[i][1] + '</td>';
-			code +='<td width="30%"><input type="text" maxlength="6" class="input" size="15" name="ssp_name_x_0" style="width: 145px" disabled="disabled" value="' + d_rules[i][2] + '"/></td>';
-			code +='<td width="15%">&nbsp;' + d_rules[i][3] + '</td>';
-			code +='<td width="20%"><input type="text" maxlength="6" class="input" size="15" name="ssp_method_x_0" style="width: 80px" disabled="disabled" value="' + s_method + '"/></td>';
-			code +='<td width="8%">&nbsp;' + d_rules[i][10] + '</td>';
-			code +='<center><td width="5%" style="text-align: center;"><input type="checkbox" name="SspList_s" value="' + d_rules[i][mrules_ifield] + '" onClick="changeBgColorrl(this,' + i + ');" id="check' + d_rules[i][mrules_ifield] + '"></td></center>';
+			code +='<td width="20%"><input type="text" maxlength="6" class="input" size="15" name="ssp_name_x_0" style="width: 145px" disabled="disabled" value="' + d_rules[i][2] + '"/></td>';
+			code +='<td width="10%">&nbsp;' + d_rules[i][3] + '</td>';
+			code +='<td width="15%"><input type="text" maxlength="6" class="input" size="15" name="ssp_method_x_0" style="width: 80px" disabled="disabled" value="' + s_method + '"/></td>';
+			code +='<td width="15%">&nbsp;待开发</td>';
+			code +='<center><td width="5%" style="text-align: center;"><input type="checkbox" name="del_dlink" value="" onClick="changeBgColorrl(this,' + i + ');" id="check' + d_rules[i][mrules_ifield] + '"></td></center>';
 			code +='</tr>';
 		}
 		code += '<tr>';
 		code += '<td colspan="6">&nbsp;</td>'
-		//code += '<td><button class="btn btn-danger" type="submit" onclick="markGroupRULES(this, 64, \' Del \');" name="DlinkList"><i class="icon icon-minus icon-white"></i></button></td>';
+		code += '<td><button type="button" class="btn btn-danger" id="btn_del" onClick="del_dlinks();"><i class="icon icon-minus icon-white"></i></button></td>';
 		code += '</tr>'
 	}
-	code +='</table>';
+	code +='</tbody></table>';
 	$("DRULESList_Block").innerHTML = code;
 }
 
@@ -663,16 +664,16 @@ if (ssu[0] == "ssr") {
             } else {
                 url0 = ssu[1]
             }
-            var sstr = b64decsafe(url0);
+            var sstr = url0;
             document.getElementById('ssp_type_x_0').value = "trojan";
             document.getElementById('ssp_type_x_0').dispatchEvent(event);
             var team = sstr.split('@');
-            console.log(param);
-            var part1 = team[0].split(':');
-            var part2 = team[1].split(':');
-            document.getElementById('ssp_server_x_0').value = part2[0];
-            document.getElementById('ssp_prot_x_0').value = part2[1];
-            document.getElementById('ss_key').value = part1[1];
+            var password = team[0]
+			var serverPart = team[1].split(':');
+			var port = serverPart[1].split('?')[0];
+			document.getElementById('ssp_server_x_0').value = serverPart[0];
+			document.getElementById('ssp_prot_x_0').value = port;
+			document.getElementById('ss_key').value = password;
             if (param != undefined) {
                 document.getElementById('ssp_name_x_0').value = decodeURI(param);
             }
@@ -719,6 +720,22 @@ if (ssu[0] == "ssr") {
 }
 }
 
+//THX 花妆男-->
+function del_dlinks() {
+	var ListNode = document.getElementById('dlist');
+	console.log(ListNode);
+	var trListNode = ListNode.getElementsByTagName('tr');
+	var checkboxList = document.getElementsByName('del_dlink');
+	for (var i = 0; i < checkboxList.length; i++) {
+		if (checkboxList[i].checked) {
+			ListNode.removeChild(trListNode[i]);
+			d_rules.splice(i, 1);
+			i--
+		}
+	}
+	document.getElementById("dlll").value = "var d_rules = " + JSON.stringify(d_rules);
+};
+//<-----
 //]]></script>
 <style>
 .nav-tabs > li > a {
@@ -883,12 +900,13 @@ if (ssu[0] == "ssr") {
 			<tr id="row_pdnsd_enable"> <th width="50%">DNS解析方式</th>
 				<td>
 					<select name="pdnsd_enable" id="pdnsd_enable" class="input" style="width: 200px;" onchange="switch_dns()">
-						<option value="0" >使用PDNSD TCP查询并缓存</option>
+						<!--<option value="0" >使用PDNSD TCP查询并缓存</option>-->
 						<option value="1" >使用SmartDNS服务器</option>
 						<option value="2" >使用其它服务器</option>
 					</select>
 				</td>
 			</tr>
+			<!--
 			<tr id="row_china_dns" style="display:none;"> <th width="50%">中国DNS服务器</th>
 				<td>
 					<select name="china_dns" class="input" style="width: 200px;" >
@@ -919,7 +937,7 @@ if (ssu[0] == "ssr") {
 						<option value="114.114.115.115:53" >Oversea Mode DNS-1 (114.114.115.115)</option>
 					</select>
 				</td>
-			</tr>
+			</tr>-->
 			<tr id="row_ssp_dns_ip" style="display:none;"> <th width="50%">SmartDNS加载方式:</th>
 				<td>
 				自动配置<input type="radio" value="2" name="ssp_dns_ip" id="ssp_dns_ip_2" <% nvram_match_x("", "ssp_dns_ip", "2", "checked"); %>>
@@ -1282,6 +1300,12 @@ if (ssu[0] == "ssr") {
 				</div>
 			</td>
 		</tr>
+		<tr>
+				<td>
+					排除节点关键字：<input type="text" maxlength="6" class="input" size="15" name="d_keyword_n" style="width: 200px" placeholder="请以'|'为分隔符" value="<% nvram_get_x("","d_keyword_n"); %>">
+					匹配节点关键字：<input type="text" maxlength="6" class="input" size="15" name="d_keyword_y" style="width: 200px" placeholder="请以'|'为分隔符" value="<% nvram_get_x("","d_keyword_y"); %>">
+				</td>
+			</tr>
 	<tr>
 		<td style="border: 0 none; padding: 0px;"><center><input name="button" type="button" class="btn btn-primary" style="width: 100px" onclick="applyRule();" value="保存设置"/> 
 		<input type="button" id="btn_connect_1" class="btn btn-info" value="更新订阅" onclick="submitInternet('Update_dlink');">
@@ -1296,17 +1320,17 @@ if (ssu[0] == "ssr") {
 		<th width="20%">
 			别名 <i class="icon-circle-arrow-down"></i>
 		</th>
-		<th width="24%">
-			服务器地址 <i class="icon-circle-arrow-down"></i>
+		<th width="20%"><center>
+			地址 <i class="icon-circle-arrow-down"></i></center>
 		</th>
-		<th width="17%">
-			服务器端口 <i class="icon-circle-arrow-down"></i>
+		<th width="15%"><center>
+			端口 <i class="icon-circle-arrow-down"></i></center>
 		</th>
-		<th width="15%">
-			加密方式 <i class="icon-circle-arrow-down"></i>
+		<th width="15%"><center>
+			加密 <i class="icon-circle-arrow-down"></i></center>
 		</th>
-		<th width="15%">
-			本地端口 <i class="icon-circle-arrow-down"></i>
+		<th width="15%"><center>
+			延迟 <i class="icon-circle-arrow-down"></i></center>
 		</th>
 		<th width="10%">
 			<center><i class="icon-th-list"></i></center>
@@ -1474,6 +1498,15 @@ if (ssu[0] == "ssr") {
 				</div>
 			</td>
 		</tr>
+		
+		<tr style="display:none">
+			<td colspan="3" >
+				<div id="script15">
+					<textarea rows="8" wrap="off" spellcheck="false" maxlength="314571" class="span12" id="dlll" name="scripts.dlink.js" style="font-family:'Courier New'; font-size:12px;"><% nvram_dump("scripts.dlink.js",""); %></textarea>
+				</div>
+			</td>
+		</tr>
+		
 		<tr>
 			<td colspan="2">
 				<center><input class="btn btn-primary" style="width: 219px" type="button" value="<#CTL_apply#>" onclick="applyRule()" /></center>

@@ -28,7 +28,7 @@ after_script:
 env:
     global:
       - targets="PSG1208 PSG1218 NEWIFI-MINI MI-MINI MI-3 OYE-001"
-      - toolchain_url="https://github.com/hanwckf/padavan-toolchain/releases/download/v1.0/mipsel-linux-uclibc.tar.xz"
+      - toolchain_url="https://github.com/hanwckf/padavan-toolchain/releases/download/v1.1/mipsel-linux-uclibc.tar.xz"
       - secure: URLT7NCfQa0gh0Uty8uZqvvD9D8RolF0eKwXLIsCy+3w4pd4Qiwe6N/zRew41UZ+cC7PXjZeysc0XjuY58DncW9zEWgFAcfcrikkBaZEZhk6iAu4Y8AgYS5qMynLR6h8SE/QhThJBjIUQGhBNdP9Cze6smqlK0Q1gHbFndfndxcAuf7HaaJPvpV4enV5yyouyC4JBXLkth4yAyidZjHclZeSLzSQQxvU68X2fFLazNRcmqZb2GW8DUx/lCVllScgIFaPXkWlzZEgeESE3kDLoum1zTkf/btJswX+d/mxMOrJiYx/ur+NXhBGyE7yaPCoc+4cpg+R7mPKIGVyJ6WPgQm7lrcn2QWTtYmEizZ0qiCK7yU1hPbOe6VU9QfrbUNVoalYI4Hx0stmiZV1Vpx73L5oy/ZQEAayS7rhSBntN6KozgRPrA/ZqrE6mI1Ky6lQAYfsekqivZq7nNfyV7VSX4A3iZ73NY4LEXrbuordSWIpW9RuIt0i6zfBUD4nDN6PlYnrL7lp4Nq/14TI/x2eq95TQ/+zYk0pT4svp2OKUyOp89k2Y2R25BHCyOVynkwNSk6zN9IgmTyD5TQTV2ceIj61mGbnKkn2+8wWfaSq2IdKmttBfxkVpWlSA7qfCign4WuigClt5Ng7935zIT9UqzIftoESPWaseNy1prbItjk=
 
 git:

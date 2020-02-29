@@ -25,6 +25,7 @@
 #include <linux/types.h>
 #include <linux/wait.h>
 #include <linux/vmalloc.h>
+#include <linux/uidgid.h>
 
 #include <net/inet_connection_sock.h>
 #include <net/inet_sock.h>

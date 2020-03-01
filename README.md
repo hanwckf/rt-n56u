@@ -3,7 +3,8 @@
 * 不定时自动编译或者每周5凌晨1点由Github Actions自动编译固件并发布,具体请以固件下载地址显示的更新日志为准
 * 固件下载地址：https://github.com/chongshengB/rt-n56u/releases
 * 更新日志:https://github.com/chongshengB/rt-n56u/blob/master/changelog.md
-* 交流群:1020793396
+* TG讨论:https://t.me/chspadavan
+* 交流群:1020793396(已满)
 
 ### 新增以下功能 ###
 >- [Adbyby plus+](https://github.com/coolsnowwolf/lede) ```CONFIG_FIRMWARE_INCLUDE_ADBYBY```

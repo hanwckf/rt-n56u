@@ -60,7 +60,7 @@ int inet_csk_bind_conflict(const struct sock *sk,
 	struct hlist_node *node;
 	int reuse = sk->sk_reuse;
 	int reuseport = sk->sk_reuseport;
-	int uid = sock_i_uid((struct sock *)sk);
+	kuid_t uid = sock_i_uid((struct sock *)sk);
 
 	/*
 	 * Unlike other sk lookup places we do not check
@@ -79,7 +79,7 @@ int inet_csk_bind_conflict(const struct sock *sk,
 			    sk2->sk_state == TCP_LISTEN) &&
 			    (!reuseport || !sk2->sk_reuseport ||
 			    (sk2->sk_state != TCP_TIME_WAIT &&
-			     uid != sock_i_uid(sk2)))) {
+			     !uid_eq(uid, sock_i_uid(sk2))))) {
 				const __be32 sk2_rcv_saddr = sk_rcv_saddr(sk2);
 				if (!sk2_rcv_saddr || !sk_rcv_saddr(sk) ||
 				    sk2_rcv_saddr == sk_rcv_saddr(sk))
@@ -103,7 +103,11 @@ int inet_csk_get_port(struct sock *sk, unsigned short snum)
 	int ret, attempts = 5;
 	struct net *net = sock_net(sk);
 	int smallest_size = -1, smallest_rover;
+<<<<<<< HEAD
 	int uid = sock_i_uid(sk);
+=======
+	kuid_t uid = sock_i_uid(sk);
+>>>>>>> 6ea98e38a30400393b18e8f7b3a316c524eb3021
 
 	local_bh_disable();
 	if (!snum) {
@@ -128,7 +132,11 @@ again:
 					      sk->sk_state != TCP_LISTEN) ||
 					     (tb->fastreuseport > 0 &&
 					      sk->sk_reuseport &&
+<<<<<<< HEAD
 					      tb->fastuid == uid)) &&
+=======
+					      uid_eq(tb->fastuid, uid))) &&
+>>>>>>> 6ea98e38a30400393b18e8f7b3a316c524eb3021
 					    (tb->num_owners < smallest_size || smallest_size == -1)) {
 						smallest_size = tb->num_owners;
 						smallest_rover = rover;
@@ -185,15 +193,23 @@ tb_found:
 		if (((tb->fastreuse > 0 &&
 		      sk->sk_reuse && sk->sk_state != TCP_LISTEN) ||
 		     (tb->fastreuseport > 0 &&
+<<<<<<< HEAD
 		      sk->sk_reuseport && tb->fastuid == uid)) &&
+=======
+		      sk->sk_reuseport && uid_eq(tb->fastuid, uid))) &&
+>>>>>>> 6ea98e38a30400393b18e8f7b3a316c524eb3021
 		    smallest_size == -1) {
 			goto success;
 		} else {
 			ret = 1;
 			if (inet_csk(sk)->icsk_af_ops->bind_conflict(sk, tb)) {
 				if (((sk->sk_reuse && sk->sk_state != TCP_LISTEN) ||
+<<<<<<< HEAD
 				     (tb->fastreuseport > 0 &&
 				sk->sk_reuseport && tb->fastuid == uid)) &&
+=======
+				     (sk->sk_reuseport && uid_eq(tb->fastuid, uid))) &&
+>>>>>>> 6ea98e38a30400393b18e8f7b3a316c524eb3021
 				    smallest_size != -1 && --attempts >= 0) {
 					spin_unlock(&head->lock);
 					goto again;
@@ -215,15 +231,29 @@ tb_not_found:
 		if (sk->sk_reuseport) {
 			tb->fastreuseport = 1;
 			tb->fastuid = uid;
+<<<<<<< HEAD
 		} else 
 			tb->fastreuseport = 0;
+=======
+		} else {
+			tb->fastreuseport = 0;
+			tb->fastuid = 0;
+		}
+>>>>>>> 6ea98e38a30400393b18e8f7b3a316c524eb3021
 	} else {
 		if (tb->fastreuse &&
 		    (!sk->sk_reuse || sk->sk_state == TCP_LISTEN))
 			tb->fastreuse = 0;
 		if (tb->fastreuseport &&
+<<<<<<< HEAD
 		    (!sk->sk_reuseport || tb->fastuid != uid)) 
 			tb->fastreuseport = 0;
+=======
+		    (!sk->sk_reuseport || !uid_eq(tb->fastuid, uid))) {
+			tb->fastreuseport = 0;
+			tb->fastuid = 0;
+		}
+>>>>>>> 6ea98e38a30400393b18e8f7b3a316c524eb3021
 	}
 success:
 	if (!inet_csk(sk)->icsk_bind_hash)

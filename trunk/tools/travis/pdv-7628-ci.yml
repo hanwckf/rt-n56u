@@ -8,7 +8,7 @@ compiler:
 env:
     global:
       - targets="HC5861B MI-NANO MZ-R13 360P2 HC5761A HC5661A"
-      - toolchain_url="https://github.com/hanwckf/padavan-toolchain/releases/download/v1.0/mipsel-linux-uclibc.tar.xz"
+      - toolchain_url="https://github.com/hanwckf/padavan-toolchain/releases/download/v1.1/mipsel-linux-uclibc.tar.xz"
 
 addons:
     apt:

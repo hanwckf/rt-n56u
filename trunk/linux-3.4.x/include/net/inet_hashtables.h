@@ -25,6 +25,7 @@
 #include <linux/types.h>
 #include <linux/wait.h>
 #include <linux/vmalloc.h>
+#include <linux/uidgid.h>
 
 #include <net/inet_connection_sock.h>
 #include <net/inet_sock.h>
@@ -83,7 +84,7 @@ struct inet_bind_bucket {
 	unsigned short		port;
 	signed char		fastreuse;
 	signed char		fastreuseport;
-	int			fastuid;
+	kuid_t			fastuid;
 	int			num_owners;
 	struct hlist_node	node;
 	struct hlist_head	owners;

@@ -4409,6 +4409,9 @@ static int can_merge(struct ext4_free_data *entry1,
 	return 0;
 }
 
+#pragma GCC push_options
+#pragma GCC optimize ("O1")
+
 static noinline_for_stack int
 ext4_mb_free_metadata(handle_t *handle, struct ext4_buddy *e4b,
 		      struct ext4_free_data *new_entry)
@@ -4485,6 +4488,8 @@ ext4_mb_free_metadata(handle_t *handle, struct ext4_buddy *e4b,
 				  &new_entry->efd_jce);
 	return 0;
 }
+
+#pragma GCC pop_options
 
 /**
  * ext4_free_blocks() -- Free given blocks and update quota

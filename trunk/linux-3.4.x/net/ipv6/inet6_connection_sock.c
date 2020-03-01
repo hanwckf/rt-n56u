@@ -50,7 +50,8 @@ int inet6_csk_bind_conflict(const struct sock *sk,
 			     sk2->sk_state == TCP_LISTEN) &&
 			    (!reuseport || !sk2->sk_reuseport ||
 			     (sk2->sk_state != TCP_TIME_WAIT &&
-			      uid != sock_i_uid((struct sock *)sk2)))) {
+			      !uid_eq(uid,
+				      sock_i_uid((struct sock *)sk2))))) {
 				if (ipv6_rcv_saddr_equal(sk, sk2))
 					break;
 			}

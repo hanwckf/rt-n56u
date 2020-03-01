@@ -97,6 +97,8 @@
 #include <linux/inet.h>
 #include <linux/netdevice.h>
 #include <linux/slab.h>
+#include <linux/uidgid.h>
+
 #include <net/tcp_states.h>
 #include <linux/skbuff.h>
 #include <linux/proc_fs.h>
@@ -141,7 +143,7 @@ static int udp_lib_lport_inuse(struct net *net, __u16 num,
 {
 	struct sock *sk2;
 	struct hlist_nulls_node *node;
-	int uid = sock_i_uid(sk);
+	kuid_t uid = sock_i_uid(sk);
 
 	sk_nulls_for_each(sk2, node, &hslot->head)
 		if (net_eq(sock_net(sk2), net) &&
@@ -151,7 +153,7 @@ static int udp_lib_lport_inuse(struct net *net, __u16 num,
 		    (!sk2->sk_bound_dev_if || !sk->sk_bound_dev_if ||
 		     sk2->sk_bound_dev_if == sk->sk_bound_dev_if) &&
 		    (!sk2->sk_reuseport || !sk->sk_reuseport ||
-		     uid != sock_i_uid(sk2)) &&
+		      !uid_eq(uid, sock_i_uid(sk2))) &&
 		    (*saddr_comp)(sk, sk2)) {
 			if (bitmap)
 				__set_bit(udp_sk(sk2)->udp_port_hash >> log,
@@ -174,7 +176,7 @@ static int udp_lib_lport_inuse2(struct net *net, __u16 num,
 {
 	struct sock *sk2;
 	struct hlist_nulls_node *node;
-	int uid = sock_i_uid(sk);
+	kuid_t uid = sock_i_uid(sk);
 	int res = 0;
 
 	spin_lock(&hslot2->lock);
@@ -186,7 +188,7 @@ static int udp_lib_lport_inuse2(struct net *net, __u16 num,
 		    (!sk2->sk_bound_dev_if || !sk->sk_bound_dev_if ||
 		     sk2->sk_bound_dev_if == sk->sk_bound_dev_if) &&
 		    (!sk2->sk_reuseport || !sk->sk_reuseport ||
-		      uid != sock_i_uid(sk2)) &&
+		      !uid_eq(uid, sock_i_uid(sk2))) &&
 		    (*saddr_comp)(sk, sk2)) {
 			res = 1;
 			break;
@@ -431,7 +433,7 @@ begin:
 			reuseport = sk->sk_reuseport;
 			if (reuseport) {
 				hash = inet_ehashfn(net, daddr, hnum,
-						    saddr, sport);
+						    saddr, htons(sport));
 				matches = 1;
 			}
 		} else if (score == badness && reuseport) {
@@ -512,7 +514,7 @@ begin:
 			reuseport = sk->sk_reuseport;
 			if (reuseport) {
 				hash = inet_ehashfn(net, daddr, hnum,
-						    saddr, sport);
+						    saddr, htons(sport));
 				matches = 1;
 			}
 		} else if (score == badness && reuseport) {

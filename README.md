@@ -120,12 +120,13 @@ git clone --depth=1 https://github.com/chongshengB/rt-n56u.git /opt/rt-n56u
 cd /opt/rt-n56u/toolchain-mipsel
 
 # 可以从源码编译工具链，这需要一些时间：
+# Manjaro/ArchLinux用户请使用gcc-8
 ./clean_toolchain
 ./build_toolchain
 
 # 或者下载预编译的工具链：
 mkdir -p toolchain-3.4.x
-wget https://github.com/hanwckf/padavan-toolchain/releases/download/v1.0/mipsel-linux-uclibc.tar.xz
+wget https://github.com/hanwckf/padavan-toolchain/releases/download/v1.1/mipsel-linux-uclibc.tar.xz
 tar -xvf mipsel-linux-uclibc.tar.xz -C toolchain-3.4.x
 ```
 * (可选) 修改机型配置文件

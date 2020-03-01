@@ -1,14 +1,10 @@
 #!/bin/sh
-if [ ! -f "/etc/storage/dlink/dlink.js" ] ; then
-#mkdir -p /etc/storage/dlink
+if [ ! -f "/etc/storage/dlink.js" ] ; then
 cp -rf /etc_ro/dlink.js /etc/storage/
 chmod 755 "/etc/storage/dlink.js"
 fi
-#if [ ! -f "/etc/storage/dlink/dlink.js" ] ; then
 mkdir -p /etc/ssl
 tar -xzf /etc_ro/certs.tgz -C /etc/ssl
-
-#fi
 if [ ! -f "/etc/storage/koolproxy_rules_script.sh" ] ; then
 cp -rf /etc_ro/koolproxy_rules_script.sh /etc/storage/
 chmod 755 "/etc/storage/koolproxy_rules_script.sh"

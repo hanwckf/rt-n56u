@@ -155,6 +155,7 @@ gen_config_file() {
 	    "tcp": {
 	        "no_delay": true,
 	        "keep_alive": true,
+			"reuse_port": true,
 	        "fast_open": false,
 	        "fast_open_qlen": 20
 	    }

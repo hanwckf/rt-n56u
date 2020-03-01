@@ -1093,6 +1093,8 @@
 			{"sdns_tcp_server", "", NULL, EVM_RESTART_SMARTDNS},
 			{"sdns_ipv6_server", "", NULL, EVM_RESTART_SMARTDNS},
 			{"snds_ip_change", "", NULL, EVM_RESTART_SMARTDNS},
+			{"snds_ip_change_time", "", NULL, EVM_RESTART_SMARTDNS},
+			{"snds_ipv6", "", NULL, EVM_RESTART_SMARTDNS},
 			{"sdns_www", "", NULL, EVM_RESTART_SMARTDNS},
 			{"sdns_exp", "", NULL, EVM_RESTART_SMARTDNS},
 			{"snds_redirect", "", NULL, EVM_RESTART_SMARTDNS},

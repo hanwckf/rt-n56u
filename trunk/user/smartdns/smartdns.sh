@@ -14,6 +14,7 @@ sdns_port=`nvram get sdns_port`
 sdns_tcp_server=`nvram get sdns_tcp_server`
 sdns_ipv6_server=`nvram get sdns_ipv6_server`
 snds_ip_change=`nvram get snds_ip_change`
+snds_ipv6=`nvram get snds_ipv6`
 sdns_www=`nvram get sdns_www`
 sdns_exp=`nvram get sdns_exp`
 snds_redirect=`nvram get snds_redirect`
@@ -78,6 +79,9 @@ gensdnssecond
 echo "cache-size $snds_cache" >> $SMARTDNS_CONF
 if [ $snds_ip_change -eq 1 ];then
 echo "dualstack-ip-selection yes" >> $SMARTDNS_CONF
+echo "dualstack-ip-selection-threshold $(nvram get snds_ip_change_time)" >> $SMARTDNS_CONF
+elif [ $snds_ipv6 -eq 1 ];then
+echo "force-AAAA-SOA yes" >> $SMARTDNS_CONF
 fi
 if [ $sdns_www -eq 1 ];then
 echo "prefetch-domain yes" >> $SMARTDNS_CONF

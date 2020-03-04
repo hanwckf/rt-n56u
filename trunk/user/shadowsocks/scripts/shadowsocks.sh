@@ -24,7 +24,6 @@ redir_udp=0
 tunnel_enable=0
 local_enable=0
 pdnsd_enable_flag=0
-threads=1
 wan_bp_ips="/tmp/whiteip.txt"
 wan_fw_ips="/tmp/blackip.txt"
 lan_fp_ips="/tmp/lan_ip.txt"
@@ -365,6 +364,7 @@ start_rules() {
 	return $?
 }
 
+
 ###############PDNSD
 start_pdnsd() {
 	pdnsd_bin="/usr/bin/pdnsd"
@@ -443,6 +443,8 @@ start_redir() {
 		sscmd="$kumasocks_bin"
 	elif [ "$stype" == "v2ray" ]; then
 		sscmd="$v2_bin"
+	elif [ "$stype" == "socks5" ]; then
+		sscmd="/usr/bin/ipt2socks"
 	fi
 	if [ "$(nvram get ss_threads)" = "0" ]; then
 		threads=$(cat /proc/cpuinfo | grep 'processor' | wc -l)
@@ -466,6 +468,16 @@ start_redir() {
 			usleep 500000
 		done
 		echo "$(date "+%Y-%m-%d %H:%M:%S") $($sscmd --version 2>&1 | head -1) Started!" >>/tmp/ssrplus.log
+	elif [ "$stype" == "socks5" ]; then
+	if [ $(nvram get s5_username_x$1) != "" ]; then
+	unp="-a $(nvram get s5_username_x$1)"
+	if [ $(nvram get s5_password_x$1) != "" ]; then
+	unp="$unp -k $(nvram get s5_password_x$1)"
+	fi
+	fi
+	for i in $(seq 1 $threads); do
+$sscmd -T -4 -b 0.0.0.0 -s $(nvram get ssp_server_x$1) -p $(nvram get ssp_prot_x$1) -l $(nvram get ssp_local_port) -R ssr-retcp $unp >/dev/null 2>&1 &done
+  echo "$(date "+%Y-%m-%d %H:%M:%S") Socks5 REDIRECT/TPROXY, $threads Threads Started!" >>/tmp/ssrplus.log
 	elif [ "$stype" == "kumasocks" ]; then
 		$sscmd -c $CONFIG_KUMASOCKS_FILE &
 	elif [ "$stype" == "v2ray" ]; then
@@ -571,16 +583,16 @@ EOF
 		logger -st "SS" "开始处理gfwlist..."
 		rm -rf /etc/storage/gfwlist
 		mkdir -p /etc/storage/gfwlist/
-###############PDNSD
-#		if [ $(nvram get pdnsd_enable) = 0 ]; then
-#			dnsstr="$(nvram get tunnel_forward)"
-#			dnsserver=$(echo "$dnsstr" | awk -F ':' '{print $1}')
-#			dnsport=$(echo "$dnsstr" | awk -F ':' '{print $2}')
-#			start_pdnsd $dnsserver $dnsport
-#			pdnsd_enable_flag=1
-#			ipset add gfwlist $dnsserver 2>/dev/null
+
+		if [ $(nvram get pdnsd_enable) = 0 ]; then
+			dnsstr="$(nvram get tunnel_forward)"
+			dnsserver=$(echo "$dnsstr" | awk -F ':' '{print $1}')
+			dnsport=$(echo "$dnsstr" | awk -F ':' '{print $2}')
+			start_pdnsd $dnsserver $dnsport
+			pdnsd_enable_flag=1
+			ipset add gfwlist $dnsserver 2>/dev/null
 			
-		if [ $(nvram get pdnsd_enable) = 1 ]; then
+		elif [ $(nvram get pdnsd_enable) = 1 ]; then
 			if [ $(nvram get ssp_dns_ip) = 2 ]; then
 				rm -f /tmp/whitelist.conf
 				rm -f /tmp/smartdnsgfw.conf
@@ -637,25 +649,32 @@ EOF
 # ================================= 启动 Socks5代理 ===============================
 start_local() {
 	s5_enable=$(nvram get socks5_enable)
+	s5_wenable=$(nvram get socks5_wenable)
+	s5_aenable=$(nvram get socks5_aenable)
+	s5_s_username=$(nvram get socks5_s_username)
+	s5_s_password=$(nvram get socks5_s_password)
 	s5_port=$(nvram get socks5_port)
-	if [ $s5_enable != 0 ]; then
-		srelay -i:$s5_port
+	if [ "$s5_enable" = "1" ]; then
+	if [ "$s5_aenable" = "1" ]; then
+    microsocks -i 0.0.0.0 -p $s5_port -1 -u $s5_s_username -P $s5_s_password >/dev/null 2>&1 &
+	else
+    microsocks -i 0.0.0.0 -p $s5_port >/dev/null 2>&1 &
 	fi
-	if [ $s5_enable = 1 ] || [ $s5_enable = 3 ]; then
+	if [ $s5_wenable = 1 ] || [ $s5_wenable = 3 ]; then
 		fport=$(iptables -t filter -L INPUT -v -n --line-numbers | grep dpt:$s5_port | cut -d " " -f 1 | sort -nr | wc -l)
 		if [ "$fport" = 0 ]; then
 			iptables -t filter -I INPUT -p tcp --dport $s5_port -j ACCEPT
 		fi
 		logger -t "SS" "WAN IPV4放行 socks5 $s5_port tcp端口"
 	fi
-	if [ $s5_enable = 2 ] || [ $s5_enable = 3 ]; then
+	if [ $s5_wenable = 2 ] || [ $s5_wenable = 3 ]; then
 		f6port=$(ip6tables -t filter -L INPUT -v -n --line-numbers | grep dpt:$s5_port | cut -d " " -f 1 | sort -nr | wc -l)
 		if [ "$f6port" = 0 ]; then
 			ip6tables -t filter -I INPUT -p tcp --dport $s5_port -j ACCEPT
 		fi
 		logger -t "SS" "WAN IPV6放行 socks5 $s5_port tcp端口"
 	fi
-
+	fi
 }
 
 
@@ -787,6 +806,13 @@ kill_process() {
 		killall kumasocks >/dev/null 2>&1
 		kill -9 "$kumasocks_process" >/dev/null 2>&1
 	fi
+	
+	ipt2socks_process=$(pidof ipt2socks)
+	if [ -n "$ipt2socks_process" ]; then
+		logger -t "SS" "关闭ipt2socks进程..."
+		killall ipt2socks >/dev/null 2>&1
+		kill -9 "$ipt2socks_process" >/dev/null 2>&1
+	fi
 
 	socks5_process=$(pidof srelay)
 	if [ -n "$socks5_process" ]; then
@@ -807,6 +833,13 @@ kill_process() {
 		logger -t "SS" "关闭pdnsd进程..."
 		killall pdnsd >/dev/null 2>&1
 		kill -9 "$pdnsd_process" >/dev/null 2>&1
+	fi
+	
+	microsocks_process=$(pidof microsocks)
+	if [ -n "$microsocks_process" ]; then
+		logger -t "SS" "关闭socks5服务端进程..."
+		killall microsocks >/dev/null 2>&1
+		kill -9 "$microsocks_process" >/dev/null 2>&1
 	fi
 
 	smart_process=$(pidof smartdns)

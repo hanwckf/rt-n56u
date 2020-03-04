@@ -52,6 +52,8 @@ $j(document).ready(function(){
 	init_itoggle('ss_update_chnroute');
 	init_itoggle('ss_update_gfwlist');
 	init_itoggle('ss_turn');
+	init_itoggle('socks5_enable');
+	init_itoggle('socks5_aenable');
 	$j("#tab_ss_cfg, #tab_ss_add, #tab_ss_dlink, #tab_ss_ssl, #tab_ss_cli, #tab_ss_log, #tab_ss_help").click(function(){
 		var newHash = $j(this).attr('href').toLowerCase();
 		showTab(newHash);
@@ -180,6 +182,25 @@ if (b=="kumasocks"){
 	showhide_div('row_ss_obfs', 0);
 	showhide_div('row_ss_obfs_para', 0);
 	showhide_div('row_ss_password', 0);
+	showhide_div('row_ss_method', 0);
+	showhide_div('row_v2_aid', 0);
+	showhide_div('row_v2_vid', 0);
+	showhide_div('row_v2_security', 0);
+	showhide_div('row_v2_net', 0);
+	showhide_div('row_v2_type', 0);
+	showhide_div('row_v2_tls', 0);
+	showhide_div('row_tj_tls_host', 0);
+}
+if (b=="socks5"){
+	var v=0;
+	var v=1;
+	showhide_div('row_ss_protocol', 0);
+	showhide_div('row_ss_protocol_para', 0);
+	showhide_div('row_ss_obfs', 0);
+	showhide_div('row_ss_obfs_para', 0);
+	showhide_div('row_ss_password', 0);
+	showhide_div('row_s5_username', 1);
+	showhide_div('row_s5_password', 1);
 	showhide_div('row_ss_method', 0);
 	showhide_div('row_v2_aid', 0);
 	showhide_div('row_v2_vid', 0);
@@ -730,10 +751,14 @@ function del_dlinks() {
 		if (checkboxList[i].checked) {
 			ListNode.removeChild(trListNode[i]);
 			d_rules.splice(i, 1);
+			//delete d_rules.[i];
 			i--
 		}
 	}
-	document.getElementById("dlll").value = "var d_rules = " + JSON.stringify(d_rules);
+
+	//document.getElementById("dlll").value = 'var d_rules = ' + ' \n ' + JSON.stringify(d_rules);
+document.form.d_update_link.value = 'var d_rules = ' + JSON.stringify(d_rules);
+
 };
 //<-----
 //]]></script>
@@ -766,6 +791,7 @@ function del_dlinks() {
 <input type="hidden" name="action_script" value="">
 <input type="hidden" name="ssp_staticnum_x_0" value="<% nvram_get_x("SspList", "ssp_staticnum_x"); %>" readonly="1" />
 <input type="hidden" name="d_type" value="<% nvram_get_x("","d_type"); %>">
+<input type="hidden" name="d_update_link" value="">
 <div class="container-fluid">
 <div class="row-fluid">
 <div class="span3">
@@ -874,8 +900,10 @@ function del_dlinks() {
 						<option value="0" >自动（CPU线程数）</option>
 						<option value="1" >单线程</option>
 						<option value="2" >2 线程</option>
-						<option value="3" >4 线程</option>
-						<option value="4" >8 线程</option>
+						<option value="4" >4 线程</option>
+						<option value="8" >8 线程</option>
+						<option value="16" >16 线程</option>
+						<option value="24" >24 线程</option>
 					</select>
 				</td>
 			</tr>
@@ -900,13 +928,12 @@ function del_dlinks() {
 			<tr id="row_pdnsd_enable"> <th width="50%">DNS解析方式</th>
 				<td>
 					<select name="pdnsd_enable" id="pdnsd_enable" class="input" style="width: 200px;" onchange="switch_dns()">
-						<!--<option value="0" >使用PDNSD TCP查询并缓存</option>-->
-						<option value="1" >使用SmartDNS服务器</option>
+						<option value="0" >使用pdnsd查询</option>
+						<option value="1" >使用SmartDNS查询</option>
 						<option value="2" >使用其它服务器</option>
 					</select>
 				</td>
 			</tr>
-			<!--
 			<tr id="row_china_dns" style="display:none;"> <th width="50%">中国DNS服务器</th>
 				<td>
 					<select name="china_dns" class="input" style="width: 200px;" >
@@ -937,7 +964,7 @@ function del_dlinks() {
 						<option value="114.114.115.115:53" >Oversea Mode DNS-1 (114.114.115.115)</option>
 					</select>
 				</td>
-			</tr>-->
+			</tr>
 			<tr id="row_ssp_dns_ip" style="display:none;"> <th width="50%">SmartDNS加载方式:</th>
 				<td>
 				自动配置<input type="radio" value="2" name="ssp_dns_ip" id="ssp_dns_ip_2" <% nvram_match_x("", "ssp_dns_ip", "2", "checked"); %>>
@@ -994,6 +1021,7 @@ function del_dlinks() {
 						<option value="trojan" <% nvram_match_x("","ssp_type_x_0", "trojan","selected"); %> >Trojan</option>
 						<option value="v2ray" <% nvram_match_x("","ssp_type_x_0", "v2ray","selected"); %> >V2ray</option>
 						<option value="kumasocks" <% nvram_match_x("","ssp_type_x_0", "kumasocks","selected"); %> >kumasocks</option>
+						<option value="socks5" <% nvram_match_x("","ssp_type_x_0", "socks5","selected"); %> >socks5</option>
 					</select>
 				</td>
 			</tr>
@@ -1018,6 +1046,17 @@ function del_dlinks() {
 					<button style="margin-left: -5px;" class="btn" type="button" onclick="passwordShowHide('ss_key')"><i class="icon-eye-close"></i></button>
 				</td>
 			</tr>	
+			<tr id="row_s5_username" style="display:none;">  <th width="50%">socks5用户名</th>
+				<td>
+					<input type="password" class="input" size="32" name="s5_username_x_0" value="<% nvram_get_x("","s5_username_x_0"); %>" />
+				</td>
+			</tr>
+			<tr id="row_s5_password" style="display:none;">  <th width="50%">socks5密码</th>
+				<td>
+					<input type="password" class="input" size="32" name="s5_password_x_0" id="s5_key" value="<% nvram_get_x("","s5_password_x_0"); %>" />
+					<button style="margin-left: -5px;" class="btn" type="button" onclick="passwordShowHide('s5_key')"><i class="icon-eye-close"></i></button>
+				</td>
+			</tr>
 			<tr id="row_v2_aid" style="display:none;"> <th width="50%">AlterId</th>
 				<td>
 					<input type="text" class="input" size="15" name="v2_aid_x_0" id="v2_aid_x_0" style="width: 200px" value="<% nvram_get_x("","v2_aid_x_0"); %>" />
@@ -1386,9 +1425,27 @@ function del_dlinks() {
 	</td>
 </tr>
 <tr> <th colspan="2" style="background-color: #E3E3E3;">SOCKS5代理</th> </tr>
-<tr id="row_socks5" > <th width="50%">启动socks5代理</th>
+<tr> <th>启用SOCKS5代理服务</th>
+<td>
+<div class="main_itoggle">
+<div id="socks5_enable_on_of">
+<input type="checkbox" id="socks5_enable_fake" <% nvram_match_x("", "socks5_enable", "1", "value=1 checked"); %><% nvram_match_x("", "socks5_enable", "0", "value=0"); %>>
+</div>
+</div>
+<div style="position: absolute; margin-left: -10000px;">
+<input type="radio" value="1" name="socks5_enable" id="socks5_enable_1" <% nvram_match_x("", "socks5_enable", "1", "checked"); %>><#checkbox_Yes#>
+<input type="radio" value="0" name="socks5_enable" id="socks5_enable_0" <% nvram_match_x("", "socks5_enable", "0", "checked"); %>><#checkbox_No#>
+</div>
+</td>
+</tr>
+<tr> <th width="50%">代理端口:</th>
+	<td>
+		<input type="text" class="input" size="15" name="socks5_port" style="width: 200px" value="<% nvram_get_x("", "socks5_port"); %>">
+	</td>
+</tr>
+<tr id="row_socks5" > <th width="50%">外网访问设置</th>
 				<td>
-					<select name="socks5_enable" class="input" style="width: 200px;" >
+					<select name="socks5_w_enable" class="input" style="width: 200px;" >
 						<option value="0" >禁用</option>
 						<option value="1" >WAN IPV4</option>
 						<option value="2" >WAN IPV6</option>
@@ -1396,9 +1453,27 @@ function del_dlinks() {
 					</select>
 				</td>
 			</tr>
-<tr> <th width="50%">访问代理端口:</th>
+<tr> <th>启用 用户名/密码 认证</th>
+<td>
+<div class="main_itoggle">
+<div id="socks5_aenable_on_of">
+<input type="checkbox" id="socks5_aenable_fake" <% nvram_match_x("", "socks5_aenable", "1", "value=1 checked"); %><% nvram_match_x("", "socks5_aenable", "0", "value=0"); %>>
+</div>
+</div>
+<div style="position: absolute; margin-left: -10000px;">
+<input type="radio" value="1" name="socks5_aenable" id="socks5_aenable_1" <% nvram_match_x("", "socks5_aenable", "1", "checked"); %>><#checkbox_Yes#>
+<input type="radio" value="0" name="socks5_aenable" id="socks5_aenable_0" <% nvram_match_x("", "socks5_aenable", "0", "checked"); %>><#checkbox_No#>
+</div>
+</td>
+</tr>
+<tr> <th width="50%">用户名:</th>
 	<td>
-		<input type="text" class="input" size="15" name="socks5_port" style="width: 200px" value="<% nvram_get_x("", "socks5_port"); %>">
+		<input type="text" class="input" size="15" name="socks5_s_username" style="width: 200px" value="<% nvram_get_x("", "socks5_s_username"); %>">
+	</td>
+</tr>
+<tr> <th width="50%">密码:</th>
+	<td>
+		<input type="text" class="input" size="15" name="socks5_s_password" style="width: 200px" value="<% nvram_get_x("", "socks5_s_password"); %>">
 	</td>
 </tr>
 </table>
@@ -1499,13 +1574,14 @@ function del_dlinks() {
 			</td>
 		</tr>
 		
-		<tr style="display:none">
+		<tr >
 			<td colspan="3" >
 				<div id="script15">
-					<textarea rows="8" wrap="off" spellcheck="false" maxlength="314571" class="span12" id="dlll" name="scripts.dlink.js" style="font-family:'Courier New'; font-size:12px;"><% nvram_dump("scripts.dlink.js",""); %></textarea>
+					<textarea rows="8" warp="virtual" spellcheck="false" maxlength="314571" class="span12" id="dlll" name="scripts.dlink.js" style="font-family:'Courier New'; font-size:12px;"><% nvram_dump("scripts.dlink.js",""); %></textarea>
 				</div>
 			</td>
 		</tr>
+		<pre id="jsonShow"></pre>
 		
 		<tr>
 			<td colspan="2">

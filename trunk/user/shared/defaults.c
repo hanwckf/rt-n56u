@@ -623,7 +623,11 @@ struct nvram_pair router_defaults[] = {
 	{ "tunnel_forward", "8.8.4.4:53" },
 	{ "ssp_dns_ip", "2" },
 	{ "socks5_enable", "0" },
+	{ "socks5_wenable", "0" },
 	{ "socks5_port", "1088" },
+	{"socks5_aenable", "0" },
+	{"socks5_s_username", "" },
+	{"socks5_s_password", "" },
 	{ "ss_turn", "0" },
 	{ "ss_watchcat", "0" },
 	{ "ss_turn_s", "600" },
@@ -693,6 +697,8 @@ struct nvram_pair router_defaults[] = {
 	{ "d_ss_obfsparam", "" },
 	{ "d_keyword_n", "" },
 	{ "d_keyword_y", "" },
+	{ "d_update_link", "" },
+
 	
 	/* AdguargHome */
 	{ "adg_enable", "0" },
@@ -1064,6 +1070,8 @@ struct nvram_pair tables_defaults[] = {
 	{ "ssp_prot_x", "" },
 	{ "switch_enable_x", "1" },
 	{ "ss_key_x", "" },
+	{"s5_username_x", "" },
+	{"s5_password_x", "" },
 	{ "ss_method_x", "" },
 	{ "ss_protocol_x", "" },
 	{ "ss_proto_param_x", "" },

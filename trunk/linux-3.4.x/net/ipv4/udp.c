@@ -433,7 +433,7 @@ begin:
 			reuseport = sk->sk_reuseport;
 			if (reuseport) {
 				hash = inet_ehashfn(net, daddr, hnum,
-						    saddr, htons(sport));
+						    saddr, sport);
 				matches = 1;
 			}
 		} else if (score == badness && reuseport) {
@@ -514,7 +514,7 @@ begin:
 			reuseport = sk->sk_reuseport;
 			if (reuseport) {
 				hash = inet_ehashfn(net, daddr, hnum,
-						    saddr, htons(sport));
+						    saddr, sport);
 				matches = 1;
 			}
 		} else if (score == badness && reuseport) {

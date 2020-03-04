@@ -57,7 +57,8 @@ gen_config_file() {
 				"password": "$(nvram get ss_key_x$1)",
 				"timeout": 60,
 				"method": "$(nvram get ss_method_x$1)",
-				"plugin": "$(nvram get ss_plugin_x$1)"
+				"plugin": "$(nvram get ss_plugin_x$1)",
+				"reuse_port": true
 			}
 		EOF
 	elif [ "$stype" == "ssr" ]; then
@@ -95,7 +96,8 @@ gen_config_file() {
 				"protocol": "$ssr_protocol",
 				"protocol_param": "$ssr_proto_param",
 				"obfs": "$ssr_obfs",
-				"obfs_param": "$ssr_obfs_param"
+				"obfs_param": "$ssr_obfs_param",
+				"reuse_port": true
 			}
 		EOF
 	elif [ "$stype" == "kumasocks" ]; then

@@ -124,6 +124,8 @@ if (b=="ss"){
 	showhide_div('row_v2_type', v);
 	showhide_div('row_v2_tls', v);
 	showhide_div('row_tj_tls_host', 0);
+	showhide_div('row_s5_username', 0);
+	showhide_div('row_s5_password', 0);
 }
 if (b=="ssr"){
 	var v=1;
@@ -140,6 +142,8 @@ if (b=="ssr"){
 	showhide_div('row_v2_type', 0);
 	showhide_div('row_v2_tls', 0);
 	showhide_div('row_tj_tls_host', 0);
+	showhide_div('row_s5_username', 0);
+	showhide_div('row_s5_password', 0);
 }
 if (b=="trojan"){
 	var v=1;
@@ -156,6 +160,8 @@ if (b=="trojan"){
 	showhide_div('row_v2_type', 0);
 	showhide_div('row_v2_tls', v);
 	showhide_div('row_tj_tls_host', v);
+	showhide_div('row_s5_username', 0);
+	showhide_div('row_s5_password', 0);
 }
 if (b=="v2ray"){
 	switch_v2_type();
@@ -173,6 +179,8 @@ if (b=="v2ray"){
 	showhide_div('row_v2_type', v);
 	showhide_div('row_v2_tls', v);
 	showhide_div('row_tj_tls_host', 0);
+	showhide_div('row_s5_username', 0);
+	showhide_div('row_s5_password', 0);
 }
 if (b=="kumasocks"){
 	var v=0;
@@ -190,6 +198,8 @@ if (b=="kumasocks"){
 	showhide_div('row_v2_type', 0);
 	showhide_div('row_v2_tls', 0);
 	showhide_div('row_tj_tls_host', 0);
+	showhide_div('row_s5_username', 0);
+	showhide_div('row_s5_password', 0);
 }
 if (b=="socks5"){
 	var v=0;

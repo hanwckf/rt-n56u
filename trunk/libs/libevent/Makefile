@@ -27,8 +27,8 @@ configure:
 	./autogen.sh ; \
 	./configure \
 		--prefix=$(STAGEDIR) \
-		--enable-static \
-		--disable-shared \
+		--disable-static \
+		--enable-shared \
 		--disable-debug-mode \
 		--disable-samples \
 		--host=$(HOST_TARGET) \

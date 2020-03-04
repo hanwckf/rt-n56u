@@ -1,5 +1,4 @@
 SRC_NAME = dnsmasq-2.80
-SRC_URL = http://www.thekelleys.org.uk/dnsmasq/dnsmasq-2.80.tar.gz
 THISDIR = $(shell pwd)
 
 COPTS := -DHAVE_BROKEN_RTC -DNO_INOTIFY -DNO_AUTH -DNO_LOOP
@@ -13,19 +12,8 @@ ifneq ($(CONFIG_FIRMWARE_INCLUDE_IPSET),y)
 COPTS += -DNO_IPSET
 endif
 
-all: download_test extract_test
+all:
 	$(MAKE) -j$(HOST_NCPU) -C $(SRC_NAME) COPTS="$(COPTS)"
-
-download_test:
-	( if [ ! -f $(SRC_NAME).tar.gz ]; then \
-		wget -t5 --timeout=20 --no-check-certificate -O $(SRC_NAME).tar.gz $(SRC_URL); \
-	fi )
-
-extract_test:
-	( if [ ! -d $(SRC_NAME) ]; then \
-		tar zxf $(SRC_NAME).tar.gz; \
-	fi )
-
 
 clean:
 	$(MAKE) -C $(SRC_NAME) clean
@@ -35,3 +23,4 @@ romfs:
 	cp $(SRC_NAME)/src/dnsmasq .
 	$(STRIP) dnsmasq
 	$(ROMFSINST) /usr/sbin/dnsmasq
+	$(ROMFSINST) -p +x $(THISDIR)/dnsmasq.sh /usr/bin/dnsmasq.sh

@@ -578,6 +578,8 @@
 			{"dhcp_dnsv6_x", "", NULL, EVM_RESTART_DHCPD},
 			{"dhcp_wins_x", "", NULL, EVM_RESTART_DHCPD|EVM_REAPPLY_VPNSVR},
 			{"dhcp_verbose", "", NULL, EVM_RESTART_DHCPD},
+			{"dhcp_filter_aaa", "", NULL, EVM_RESTART_DHCPD},
+			{"dhcp_min_ttl", "", NULL, EVM_RESTART_DHCPD},
 			{"dhcp_static_x", "", NULL, EVM_RESTART_DHCPD},
 			{"dhcp_static_arp", "", NULL, EVM_RESTART_DHCPD},
 			{"dhcp_staticnum_x", "", NULL, EVM_RESTART_DHCPD},

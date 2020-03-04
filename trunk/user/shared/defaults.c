@@ -767,6 +767,8 @@ struct nvram_pair router_defaults[] = {
 	{ "dhcp_dns3_x", "" },
 	{ "dhcp_dnsv6_x", "" },
 	{ "dhcp_wins_x", "" },
+	{ "dhcp_filter_aaa", "" },
+	{ "dhcp_min_ttl", "0" },
 	{ "dhcp_verbose", "0" },		/* 0 : quiet, 1: verbose DHCP, 2: verbose DHCPv6, 3: verbose all */
 	{ "dhcp_static_x", "0" },
 	{ "dhcp_static_arp", "0" },

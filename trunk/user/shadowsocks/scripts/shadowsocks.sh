@@ -583,7 +583,6 @@ EOF
 		fi
 	elif [ "$run_mode" = "gfw" ]; then
 		logger -st "SS" "开始处理gfwlist..."
-		rm -rf /etc/storage/gfwlist
 		mkdir -p /etc/storage/gfwlist/
 
 		if [ $(nvram get pdnsd_enable) = 0 ]; then

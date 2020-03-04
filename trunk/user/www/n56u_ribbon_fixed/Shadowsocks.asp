@@ -751,13 +751,11 @@ function del_dlinks() {
 		if (checkboxList[i].checked) {
 			ListNode.removeChild(trListNode[i]);
 			d_rules.splice(i, 1);
-			//delete d_rules.[i];
 			i--
 		}
 	}
 
-	//document.getElementById("dlll").value = 'var d_rules = ' + ' \n ' + JSON.stringify(d_rules);
-document.form.d_update_link.value = 'var d_rules = ' + JSON.stringify(d_rules);
+	document.getElementById("dlll").value = 'var d_rules = ' + ' \n ' + JSON.stringify(d_rules);
 
 };
 //<-----
@@ -791,7 +789,6 @@ document.form.d_update_link.value = 'var d_rules = ' + JSON.stringify(d_rules);
 <input type="hidden" name="action_script" value="">
 <input type="hidden" name="ssp_staticnum_x_0" value="<% nvram_get_x("SspList", "ssp_staticnum_x"); %>" readonly="1" />
 <input type="hidden" name="d_type" value="<% nvram_get_x("","d_type"); %>">
-<input type="hidden" name="d_update_link" value="">
 <div class="container-fluid">
 <div class="row-fluid">
 <div class="span3">
@@ -1574,14 +1571,13 @@ document.form.d_update_link.value = 'var d_rules = ' + JSON.stringify(d_rules);
 			</td>
 		</tr>
 		
-		<tr >
+		<tr style="display:none">
 			<td colspan="3" >
 				<div id="script15">
 					<textarea rows="8" warp="virtual" spellcheck="false" maxlength="314571" class="span12" id="dlll" name="scripts.dlink.js" style="font-family:'Courier New'; font-size:12px;"><% nvram_dump("scripts.dlink.js",""); %></textarea>
 				</div>
 			</td>
 		</tr>
-		<pre id="jsonShow"></pre>
 		
 		<tr>
 			<td colspan="2">

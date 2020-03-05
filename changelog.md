@@ -1,3 +1,7 @@
+##2020.03.05##
+* 修复自动编译固件过大问题
+* Dnsmasq增加禁止解析IPV6和最小TTL(取自lean lede)
+
 ##2020.03.04##
 * 增加简单订阅功能
 * 替换SSP里的kmsocks,srelay为L大SSP最新使用的ipt2socks,micorsocks

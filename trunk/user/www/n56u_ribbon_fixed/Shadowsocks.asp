@@ -751,6 +751,15 @@ if (ssu[0] == "ssr") {
 }
 }
 
+function ctls(){
+document.getElementById('v2_tls_x_0').value = 1;
+if(document.getElementById('v2_tls_x_0').checked){
+document.getElementById('v2_tls_x_0').value = 1;
+}else{
+document.getElementById('v2_tls_x_0').value = 0;
+}
+
+}
 //THX 花妆男-->
 function del_dlinks() {
 	var ListNode = document.getElementById('dlist');
@@ -1202,7 +1211,7 @@ function del_dlinks() {
 			</tr>
 			<tr id="row_v2_tls" style="display:none;"><th>TLS</th>
 				<td>
-				<input type="checkbox" name="v2_tls_x_0" id="v2_tls_x_0" <% nvram_match_x("", "v2_tls_x_0", "1", "value=1 checked"); %><% nvram_match_x("", "v2_tls_x_0", "0", "value=0"); %>>
+				<input type="checkbox" name="v2_tls_x_0" id="v2_tls_x_0" onclick="ctls();" <% nvram_match_x("", "v2_tls_x_0", "1", "value=1 checked"); %><% nvram_match_x("", "v2_tls_x_0", "0", "value=0"); %>>
 
 				</td>
 			</tr>

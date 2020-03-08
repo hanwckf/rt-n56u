@@ -1,50 +1,47 @@
-SRC_NAME=openssl-1.0.2t
-SRC_URL=https://www.openssl.org/source/$(SRC_NAME).tar.gz
+SRC_NAME=openssl-1.1.1
 
 # openssl use CROSS_COMPILE prefix
 CC=gcc $(CPUFLAGS)
+CXX=g++ $(CPUFLAGS)
+AR=ar
+RANLIB=ranlib
 
-COPTS=-ffunction-sections -fdata-sections -I$(DESTDIR)/include
+COPTS=$(CFLAGS) -Os
 COPTS+=$(if $(CONFIG_IPV6),-DOPENSSL_USE_IPV6=1,)
 COPTS+=-DOPENSSL_SMALL_FOOTPRINT
+COPTS+=-DOPENSSL_PREFER_CHACHA_OVER_GCM
 
 LOPTS=-Wl,--gc-sections -L$(DESTDIR)/lib
 
-OPENSSL_APPS =
+OPENSSL_OPTIONS = no-capieng no-asm no-cms no-rfc3779 no-seed no-async \
+                  no-ec2m no-err no-idea no-rc5 no-rmd160 no-blake2 \
+                  no-static-engine no-hw-padlock no-md2 no-sse2 no-dso no-ts no-mdc2 \
+                  no-cast no-whirlpool no-sctp no-srp no-ssl3 \
+                  no-aria no-sm2 no-sm3 no-sm4
 
-OPENSSL_CIPHERS = no-capieng no-cms no-gmp no-jpake no-rfc3779 no-seed \
-                  no-ec2m no-err no-threads no-idea no-rc5 no-ripemd no-rmd160 \
-                  no-static-engine no-md2 no-sse2 no-dso no-ts no-sha0 no-mdc2 no-krb5 \
-                  no-smime no-ans1 no-cast no-whirlpool no-sctp no-srp no-ssl2 no-ssl3
-
-ifdef CONFIG_CRYPTO_DEV_LINUX
-COPTS+=-DHAVE_CRYPTODEV
-else
-OPENSSL_CIPHERS += no-hw
+ifneq ($(CONFIG_FIRMWARE_INCLUDE_TOR),y)
+OPENSSL_OPTIONS += no-threads
 endif
+
+#ifdef CONFIG_CRYPTO_DEV_LINUX
+#OPENSSL_OPTIONS += enable-devcryptoeng
+#else
+OPENSSL_OPTIONS += no-hw no-devcryptoeng
+ifneq ($(CONFIG_FIRMWARE_INCLUDE_TOR),y)
+OPENSSL_OPTIONS += no-engine
+endif
+#endif
 
 ifneq ($(CONFIG_FIRMWARE_INCLUDE_SSWAN),y)
-OPENSSL_CIPHERS += no-rc2
+OPENSSL_OPTIONS += no-rc2
 endif
 
-ifneq ($(CONFIG_FIRMWARE_INCLUDE_OPENSSL_EC),y)
-OPENSSL_CIPHERS += no-ec
+ifeq (,$(filter y,$(CONFIG_FIRMWARE_INCLUDE_OPENSSL_EC) $(CONFIG_FIRMWARE_INCLUDE_TOR)))
+OPENSSL_OPTIONS += no-ec
 endif
 
-all: download_test extract_test config_test
-	$(MAKE) -C $(SRC_NAME) depend
-	$(MAKE) -C $(SRC_NAME)
-
-download_test:
-	( if [ ! -f $(SRC_NAME).tar.gz ]; then \
-		wget -t5 --timeout=20 --no-check-certificate -O $(SRC_NAME).tar.gz $(SRC_URL); \
-	fi )
-
-extract_test:
-	( if [ ! -d $(SRC_NAME) ]; then \
-		tar xzf $(SRC_NAME).tar.gz; \
-		patch -d $(SRC_NAME) -p1 -i ../openssl-orig.patch; \
-	fi )
+all: config_test
+	$(MAKE) -j$(HOST_NCPU) -C $(SRC_NAME)
 
 config_test:
 	( if [ -f ./config_done ]; then \
@@ -56,37 +53,29 @@ config_test:
 configure:
 	( cd $(SRC_NAME) ; \
 	./Configure \
-		linux-mipsel \
+		linux-mips32 \
 		shared \
 		--prefix=/ \
-		--install_prefix=$(STAGEDIR) \
 		--openssldir=/etc/ssl \
 		$(COPTS) \
 		$(LOPTS) \
-	)
-	( cd $(SRC_NAME) ; \
-	./Configure \
-		linux-mipsel \
-		shared \
-		--prefix=/ \
-		--install_prefix=$(STAGEDIR) \
-		--openssldir=/etc/ssl \
-		no-symlinks \
-		$(COPTS) \
-		$(LOPTS) \
-		$(OPENSSL_APPS) \
-		$(OPENSSL_CIPHERS) ; \
+		$(OPENSSL_OPTIONS) ; \
 	)
 
 clean:
 	$(MAKE) -C $(SRC_NAME) distclean
-	rm -rf $(SRC_NAME)/include/*
 	rm -f config_done
 
 install:
 	$(MAKE) -C $(SRC_NAME) install DESTDIR="$(STAGEDIR)"
+	$(MAKE) -C $(SRC_NAME) install_ssldirs DESTDIR="$(STAGEDIR)"
+	# remove unneeded
 	rm -f $(DESTDIR)/lib/libssl.a
 	rm -f $(DESTDIR)/lib/libcrypto.a
+	# fix pkgconfig
+	sed -i 's,^prefix=.*,prefix=$(STAGEDIR),g' $(STAGEDIR)/lib/pkgconfig/libcrypto.pc
+	sed -i 's,^prefix=.*,prefix=$(STAGEDIR),g' $(STAGEDIR)/lib/pkgconfig/libssl.pc
+	sed -i 's,^prefix=.*,prefix=$(STAGEDIR),g' $(STAGEDIR)/lib/pkgconfig/openssl.pc
 
 romfs:
 	cp -fP $(DESTDIR)/lib/libssl.so* $(ROMFSDIR)/lib

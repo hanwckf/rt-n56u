@@ -22,6 +22,7 @@ SERVER_CRT=server.crt
 CLIENT_KEY=client.key
 CLIENT_CRT=client.crt
 TA_KEY=ta.key
+ECPARAM=ecparam.pem
 ## number of bits to use when generate new key
 RSA_BITS=1024
 ## number of bits for prime
@@ -49,19 +50,19 @@ func_help() {
   echo >&2
   echo "    `$BOLD`commands:`$NORM` [ server, client, client_csr, client_sign ]" >&2
   echo >&2
-  echo "    `$BOLD`server`$NORM` [ -n `$BOLD`common_name`$NORM` ] [ -b `$BOLD`rsa_bits`$NORM` ] [ -d `$BOLD`days_valid`$NORM` ]" >&2
+  echo "    `$BOLD`server`$NORM` [ -n `$BOLD`common_name`$NORM` ] [ -b `$BOLD`rsa_bits/ec_name`$NORM` ] [ -d `$BOLD`days_valid`$NORM` ]" >&2
   echo "           The following files for OpenVPN server are created:" >&2
   echo "           - root CA key and certificate" >&2
   echo "           - server key and certificate" >&2
   echo "           - Diffie-Hellman parameters key" >&2
-  echo "           - TLS-Auth HMAC signature key" >&2
-  echo "           `$BOLD`Note:`$NORM` $CA_CRT and ${TA_KEY}(if TLS-Auth is used) should be sent to clients." >&2
+  echo "           - TLS-Auth/TLS-Crypt HMAC signature key" >&2
+  echo "           `$BOLD`Note:`$NORM` $CA_CRT and ${TA_KEY}(if TLS-Auth or TLS-Crypt is used) should be sent to clients." >&2
   echo >&2
-  echo "    `$BOLD`client`$NORM` -n `$BOLD`common_name`$NORM` [ -b `$BOLD`rsa_bits`$NORM` ] [ -d `$BOLD`days_valid`$NORM` ]" >&2
+  echo "    `$BOLD`client`$NORM` -n `$BOLD`common_name`$NORM` [ -b `$BOLD`rsa_bits/ec_name`$NORM` ] [ -d `$BOLD`days_valid`$NORM` ]" >&2
   echo "           Create both client key and sign it on server side. It is not quite correct," >&2
   echo "           but it saves time if you administer both server and client devices." >&2
   echo >&2
-  echo "    `$BOLD`client_csr`$NORM` -n `$BOLD`common_name`$NORM` [ -b `$BOLD`rsa_bits`$NORM` ]" >&2
+  echo "    `$BOLD`client_csr`$NORM` -n `$BOLD`common_name`$NORM` [ -b `$BOLD`rsa_bits/ec_name`$NORM` ]" >&2
   echo "           The following files for OpenVPN client are created:" >&2
   echo "           - client key" >&2
   echo "           - certificate signing request (client.csr)" >&2
@@ -69,6 +70,10 @@ func_help() {
   echo >&2
   echo "    `$BOLD`client_sign`$NORM` -f `$BOLD`csr_file_path`$NORM` [ -d `$BOLD`days_valid`$NORM` ]" >&2
   echo "           Create client certificate." >&2
+  echo >&2
+  echo "    `$BOLD`ssl_view`$NORM` -f `$BOLD`crt/csr_file_path`$NORM`" >&2
+  echo "           Allows you to see the contents of the requests or certificates using the" >&2
+  echo "           `$BOLD`openssl`$NORM` utility." >&2
   echo >&2
   echo >&2
   echo "`$BOLD`Example:`$NORM`" >&2
@@ -90,6 +95,7 @@ case "$ACTION" in
   client_csr) ;;
   client_sign) ;;
   server) ;;
+  ssl_view) ;;
   *) func_help ;;
 esac
 
@@ -111,7 +117,6 @@ write_ext_cfs() {
   rm -f $SSL_EXT_FILE
   cat > $SSL_EXT_FILE << EOF
 [ server ]
-nsCertType=server
 extendedKeyUsage=serverAuth
 keyUsage=critical,digitalSignature,keyEncipherment
 [ client ]
@@ -143,8 +148,13 @@ make_cert() {
     openssl req -nodes $CA_TRUE -days $3 -new -outform PEM \
             -out $2 -key $1 -sha1 -subj "/CN=$5" &>/dev/null
   else
+    local C_PARAM="rsa:$4"
+    if echo $4 | grep -q '^[bpsw]'; then
+	openssl ecparam -name "$RSA_BITS" -out "$ECPARAM"
+	C_PARAM="ec:$ECPARAM"
+    fi
     echo_process "Creating new ${2}: $5"
-    openssl req -nodes $CA_TRUE -days $3 -newkey rsa:$4 \
+    openssl req -nodes $CA_TRUE -days $3 -newkey $C_PARAM \
             -outform PEM -out $2 -keyout $1 -sha1 -subj "/CN=$5" &>/dev/null
   fi
   [ -f $1 ] && chmod 600 $1
@@ -192,16 +202,16 @@ make_ta() {
   # $1 --> ta key name
   #
   if [ ! -x $OPENVPN ] ; then
-    echo_process "Skipping TLS Auth key. $OPENVPN not found."
+    echo_process "Skipping TLS Auth/Crypt key. $OPENVPN not found."
     echo_done
     return 1
   fi
   if [ -f $1 ] ; then
-    echo_process "Skipping TLS Auth key. File exists"
+    echo_process "Skipping TLS Auth/Crypt key. File exists"
     echo_done
     return 0
   fi
-  echo_process "Creating TLS Auth key"
+  echo_process "Creating TLS Auth/Crypt key"
   $OPENVPN --genkey --secret $1 &>/dev/null
   [ -s $1 ] && chmod 600 $1
   echo_done
@@ -225,6 +235,8 @@ server() {
   make_dh $DH_BITS
   ## Create TLS Auth key
   make_ta $TA_KEY
+
+  [[ -f "$ECPARAM" ]] && rm -f "$CRT_PATH_SRV/$ECPARAM"
 }
 
 client_csr() {
@@ -236,6 +248,8 @@ client_csr() {
   fi
   [ -z "$CN" ] && func_help
   make_cert $CLIENT_KEY client.csr $CERT_DAYS $RSA_BITS "$CN"
+
+  [[ -f "$ECPARAM" ]] && rm -f "$CRT_PATH_X/$ECPARAM"
 }
 
 client_sign() {
@@ -260,6 +274,15 @@ client() {
   client_csr
   CSR_PATH="$CRT_PATH_CLI/client.csr"
   client_sign
+}
+
+ssl_view () {
+  [ -z "$CSR_PATH" ] && func_help
+case ${CSR_PATH##*.} in
+	crt) openssl x509 -in "$CSR_PATH" -noout -text ;;
+	csr) openssl req -in "$CSR_PATH" -noout -text ;;
+	*)   func_help ;;
+esac
 }
 
 eval $ACTION

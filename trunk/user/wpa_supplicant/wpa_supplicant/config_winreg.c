@@ -2,14 +2,8 @@
  * WPA Supplicant / Configuration backend: Windows registry
  * Copyright (c) 2003-2008, Jouni Malinen <j@w1.fi>
  *
- * This program is free software; you can redistribute it and/or modify
- * it under the terms of the GNU General Public License version 2 as
- * published by the Free Software Foundation.
- *
- * Alternatively, this software may be distributed under the terms of BSD
- * license.
- *
- * See README and COPYING for more details.
+ * This software may be distributed under the terms of the BSD license.
+ * See README for more details.
  *
  * This file implements a configuration backend for Windows registry. All the
  * configuration information is stored in the registry and the format for
@@ -105,13 +99,12 @@ static int wpa_config_read_blobs(struct wpa_config *config, HKEY hk)
 			break;
 		}
 		blob->name = os_strdup((char *) name);
-		blob->data = os_malloc(datalen);
+		blob->data = os_memdup(data, datalen);
 		if (blob->name == NULL || blob->data == NULL) {
 			wpa_config_free_blob(blob);
 			errors++;
 			break;
 		}
-		os_memcpy(blob->data, data, datalen);
 		blob->len = datalen;
 
 		wpa_config_set_blob(config, blob);
@@ -208,6 +201,7 @@ static int wpa_config_read_global_os_version(struct wpa_config *config,
 static int wpa_config_read_global(struct wpa_config *config, HKEY hk)
 {
 	int errors = 0;
+	int val;
 
 	wpa_config_read_reg_dword(hk, TEXT("ap_scan"), &config->ap_scan);
 	wpa_config_read_reg_dword(hk, TEXT("fast_reauth"),
@@ -239,6 +233,7 @@ static int wpa_config_read_global(struct wpa_config *config, HKEY hk)
 #ifdef CONFIG_WPS
 	if (wpa_config_read_global_uuid(config, hk))
 		errors++;
+	wpa_config_read_reg_dword(hk, TEXT("auto_uuid"), &config->auto_uuid);
 	config->device_name = wpa_config_read_reg_string(
 		hk, TEXT("device_name"));
 	config->manufacturer = wpa_config_read_reg_string(
@@ -247,13 +242,39 @@ static int wpa_config_read_global(struct wpa_config *config, HKEY hk)
 		hk, TEXT("model_name"));
 	config->serial_number = wpa_config_read_reg_string(
 		hk, TEXT("serial_number"));
-	config->device_type = wpa_config_read_reg_string(
-		hk, TEXT("device_type"));
+	{
+		char *t = wpa_config_read_reg_string(
+			hk, TEXT("device_type"));
+		if (t && wps_dev_type_str2bin(t, config->device_type))
+			errors++;
+		os_free(t);
+	}
+	config->config_methods = wpa_config_read_reg_string(
+		hk, TEXT("config_methods"));
 	if (wpa_config_read_global_os_version(config, hk))
 		errors++;
 	wpa_config_read_reg_dword(hk, TEXT("wps_cred_processing"),
 				  &config->wps_cred_processing);
 #endif /* CONFIG_WPS */
+#ifdef CONFIG_P2P
+	config->p2p_ssid_postfix = wpa_config_read_reg_string(
+		hk, TEXT("p2p_ssid_postfix"));
+	wpa_config_read_reg_dword(hk, TEXT("p2p_group_idle"),
+				  (int *) &config->p2p_group_idle);
+#endif /* CONFIG_P2P */
+
+	wpa_config_read_reg_dword(hk, TEXT("bss_max_count"),
+				  (int *) &config->bss_max_count);
+	wpa_config_read_reg_dword(hk, TEXT("filter_ssids"),
+				  &config->filter_ssids);
+	wpa_config_read_reg_dword(hk, TEXT("max_num_sta"),
+				  (int *) &config->max_num_sta);
+	wpa_config_read_reg_dword(hk, TEXT("disassoc_low_ack"),
+				  (int *) &config->disassoc_low_ack);
+
+	wpa_config_read_reg_dword(hk, TEXT("okc"), &config->okc);
+	wpa_config_read_reg_dword(hk, TEXT("pmf"), &val);
+	config->pmf = val;
 
 	return errors ? -1 : 0;
 }
@@ -281,6 +302,7 @@ static struct wpa_ssid * wpa_config_read_network(HKEY hk, const TCHAR *netw,
 		RegCloseKey(nhk);
 		return NULL;
 	}
+	dl_list_init(&ssid->psk_list);
 	ssid->id = id;
 
 	wpa_config_set_network_defaults(ssid);
@@ -326,15 +348,6 @@ static struct wpa_ssid * wpa_config_read_network(HKEY hk, const TCHAR *netw,
 			errors++;
 		}
 		wpa_config_update_psk(ssid);
-	}
-
-	if ((ssid->key_mgmt & (WPA_KEY_MGMT_PSK | WPA_KEY_MGMT_FT_PSK |
-			       WPA_KEY_MGMT_PSK_SHA256)) &&
-	    !ssid->psk_set) {
-		wpa_printf(MSG_ERROR, "WPA-PSK accepted for key management, "
-			   "but no PSK configured for network '" TSTR "'.",
-			   netw);
-		errors++;
 	}
 
 	if ((ssid->group_cipher & WPA_CIPHER_CCMP) &&
@@ -422,7 +435,7 @@ static int wpa_config_read_networks(struct wpa_config *config, HKEY hk)
 }
 
 
-struct wpa_config * wpa_config_read(const char *name)
+struct wpa_config * wpa_config_read(const char *name, struct wpa_config *cfgp)
 {
 	TCHAR buf[256];
 	int errors = 0;
@@ -430,7 +443,12 @@ struct wpa_config * wpa_config_read(const char *name)
 	HKEY hk;
 	LONG ret;
 
-	config = wpa_config_alloc_empty(NULL, NULL);
+	if (name == NULL)
+		return NULL;
+	if (cfgp)
+		config = cfgp;
+	else
+		config = wpa_config_alloc_empty(NULL, NULL);
 	if (config == NULL)
 		return NULL;
 	wpa_printf(MSG_DEBUG, "Reading configuration profile '%s'", name);
@@ -562,13 +580,22 @@ static int wpa_config_write_global(struct wpa_config *config, HKEY hk)
 		uuid_bin2str(config->uuid, buf, sizeof(buf));
 		wpa_config_write_reg_string(hk, "uuid", buf);
 	}
+	wpa_config_write_reg_dword(hk, TEXT("auto_uuid"), config->auto_uuid,
+				   0);
 	wpa_config_write_reg_string(hk, "device_name", config->device_name);
 	wpa_config_write_reg_string(hk, "manufacturer", config->manufacturer);
 	wpa_config_write_reg_string(hk, "model_name", config->model_name);
 	wpa_config_write_reg_string(hk, "model_number", config->model_number);
 	wpa_config_write_reg_string(hk, "serial_number",
 				    config->serial_number);
-	wpa_config_write_reg_string(hk, "device_type", config->device_type);
+	{
+		char _buf[WPS_DEV_TYPE_BUFSIZE], *buf;
+		buf = wps_dev_type_bin2str(config->device_type,
+					   _buf, sizeof(_buf));
+		wpa_config_write_reg_string(hk, "device_type", buf);
+	}
+	wpa_config_write_reg_string(hk, "config_methods",
+				    config->config_methods);
 	if (WPA_GET_BE32(config->os_version)) {
 		char vbuf[10];
 		os_snprintf(vbuf, sizeof(vbuf), "%08x",
@@ -578,6 +605,30 @@ static int wpa_config_write_global(struct wpa_config *config, HKEY hk)
 	wpa_config_write_reg_dword(hk, TEXT("wps_cred_processing"),
 				   config->wps_cred_processing, 0);
 #endif /* CONFIG_WPS */
+#ifdef CONFIG_P2P
+	wpa_config_write_reg_string(hk, "p2p_ssid_postfix",
+				    config->p2p_ssid_postfix);
+	wpa_config_write_reg_dword(hk, TEXT("p2p_group_idle"),
+				   config->p2p_group_idle, 0);
+#endif /* CONFIG_P2P */
+
+	wpa_config_write_reg_dword(hk, TEXT("bss_max_count"),
+				   config->bss_max_count,
+				   DEFAULT_BSS_MAX_COUNT);
+	wpa_config_write_reg_dword(hk, TEXT("filter_ssids"),
+				   config->filter_ssids, 0);
+	wpa_config_write_reg_dword(hk, TEXT("max_num_sta"),
+				   config->max_num_sta, DEFAULT_MAX_NUM_STA);
+	wpa_config_write_reg_dword(hk, TEXT("ap_isolate"),
+				   config->ap_isolate, DEFAULT_AP_ISOLATE);
+	wpa_config_write_reg_dword(hk, TEXT("disassoc_low_ack"),
+				   config->disassoc_low_ack, 0);
+
+	wpa_config_write_reg_dword(hk, TEXT("okc"), config->okc, 0);
+	wpa_config_write_reg_dword(hk, TEXT("pmf"), config->pmf, 0);
+
+	wpa_config_write_reg_dword(hk, TEXT("external_sim"),
+				   config->external_sim, 0);
 
 	return 0;
 }
@@ -821,6 +872,8 @@ static int wpa_config_write_network(HKEY hk, struct wpa_ssid *ssid, int id)
 	INT(scan_ssid);
 	write_bssid(netw, ssid);
 	write_psk(netw, ssid);
+	STR(sae_password);
+	STR(sae_password_id);
 	write_proto(netw, ssid);
 	write_key_mgmt(netw, ssid);
 	write_pairwise(netw, ssid);
@@ -830,6 +883,7 @@ static int wpa_config_write_network(HKEY hk, struct wpa_ssid *ssid, int id)
 	write_eap(netw, ssid);
 	STR(identity);
 	STR(anonymous_identity);
+	STR(imsi_identity);
 	STR(password);
 	STR(ca_cert);
 	STR(ca_path);
@@ -874,13 +928,18 @@ static int wpa_config_write_network(HKEY hk, struct wpa_ssid *ssid, int id)
 	INT_DEFe(fragment_size, DEFAULT_FRAGMENT_SIZE);
 #endif /* IEEE8021X_EAPOL */
 	INT(mode);
-	INT(proactive_key_caching);
+	write_int(netw, "proactive_key_caching", ssid->proactive_key_caching,
+		  -1);
 	INT(disabled);
-	INT(peerkey);
 #ifdef CONFIG_IEEE80211W
-	INT(ieee80211w);
+	write_int(netw, "ieee80211w", ssid->ieee80211w,
+		  MGMT_FRAME_PROTECTION_DEFAULT);
 #endif /* CONFIG_IEEE80211W */
 	STR(id_str);
+#ifdef CONFIG_HS20
+	INT(update_identifier);
+#endif /* CONFIG_HS20 */
+	INT(group_rekey);
 
 #undef STR
 #undef INT

@@ -2,14 +2,8 @@
  * WPA Supplicant - Layer2 packet handling with Microsoft NDISUIO
  * Copyright (c) 2003-2006, Jouni Malinen <j@w1.fi>
  *
- * This program is free software; you can redistribute it and/or modify
- * it under the terms of the GNU General Public License version 2 as
- * published by the Free Software Foundation.
- *
- * Alternatively, this software may be distributed under the terms of BSD
- * license.
- *
- * See README and COPYING for more details.
+ * This software may be distributed under the terms of the BSD license.
+ * See README for more details.
  *
  * This implementation requires Windows specific event loop implementation,
  * i.e., eloop_win.c. In addition, the NDISUIO connection is shared with
@@ -137,11 +131,17 @@ int l2_packet_send(struct l2_packet_data *l2, const u8 *dst_addr, u16 proto,
 		DWORD err = GetLastError();
 #ifndef _WIN32_WCE
 		if (err == ERROR_IO_PENDING) {
-			/* For now, just assume that the packet will be sent in
-			 * time before the next write happens. This could be
-			 * cleaned up at some point to actually wait for
-			 * completion before starting new writes.
-			 */
+			wpa_printf(MSG_DEBUG, "L2(NDISUIO): Wait for pending "
+				   "write to complete");
+			res = GetOverlappedResult(
+				driver_ndis_get_ndisuio_handle(), &overlapped,
+				&written, TRUE);
+			if (!res) {
+				wpa_printf(MSG_DEBUG, "L2(NDISUIO): "
+					   "GetOverlappedResult failed: %d",
+					   (int) GetLastError());
+				return -1;
+			}
 			return 0;
 		}
 #endif /* _WIN32_WCE */
@@ -450,6 +450,18 @@ struct l2_packet_data * l2_packet_init(
 }
 
 
+struct l2_packet_data * l2_packet_init_bridge(
+	const char *br_ifname, const char *ifname, const u8 *own_addr,
+	unsigned short protocol,
+	void (*rx_callback)(void *ctx, const u8 *src_addr,
+			    const u8 *buf, size_t len),
+	void *rx_callback_ctx, int l2_hdr)
+{
+	return l2_packet_init(br_ifname, own_addr, protocol, rx_callback,
+			      rx_callback_ctx, l2_hdr);
+}
+
+
 void l2_packet_deinit(struct l2_packet_data *l2)
 {
 	if (l2 == NULL)
@@ -513,4 +525,11 @@ int l2_packet_get_ip_addr(struct l2_packet_data *l2, char *buf, size_t len)
 
 void l2_packet_notify_auth_start(struct l2_packet_data *l2)
 {
+}
+
+
+int l2_packet_set_packet_filter(struct l2_packet_data *l2,
+				enum l2_packet_filter_type type)
+{
+	return -1;
 }

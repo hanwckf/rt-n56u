@@ -88,6 +88,7 @@ static const char *forbidden_list[] = {
 	"auth ",
 	"cipher ",
 	"comp-lzo",
+	"compress",
 	"persist-key",
 	"persist-tun",
 	NULL
@@ -103,7 +104,7 @@ openvpn_check_key(const char *key_name, int is_server)
 	if (!check_if_file_exist(key_file)) {
 		logmessage(LOGNAME, "Unable to start %s: key file \"%s\" not found!", 
 			(is_server) ? SERVER_LOG_NAME : CLIENT_LOG_NAME, key_file);
-		
+
 		if (is_server)
 			logmessage(SERVER_LOG_NAME, "Please manual build the certificates via \"%s\" script.", 
 				"openvpn-cert.sh");
@@ -126,7 +127,7 @@ openvpn_create_client_secret(const char *secret_name)
 		fprintf(fp, "%s\n", nvram_safe_get("vpnc_user"));
 		fprintf(fp, "%s\n", nvram_safe_get("vpnc_pass"));
 		fclose(fp);
-		
+
 		chmod(secret_file, 0600);
 	}
 }
@@ -155,27 +156,27 @@ openvpn_create_server_acl(FILE *fp, const char *ccd, unsigned int vnet, unsigned
 		if (*acl_user && is_valid_ipv4(acl_rnet) && is_valid_ipv4(acl_rmsk)) {
 			FILE *fp_ccf;
 			char ccf[80];
-			
+
 			snprintf(ccf, sizeof(ccf), "%s/%s", vpns_ccd, acl_user);
 			fp_ccf = fopen(ccf, "w+");
 			if (fp_ccf) {
 				char acl_addr_var[16];
 				struct in_addr pool_in;
 				unsigned int vp_a;
-				
+
 				snprintf(acl_addr_var, sizeof(acl_addr_var), "vpns_addr_x%d", i);
 				vp_a = (unsigned int)nvram_get_int(acl_addr_var);
-				
+
 				if (vp_a > 1 && vp_a < 255 ) {
 					pool_in.s_addr = htonl((vnet & vmsk) | vp_a);
 					fprintf(fp_ccf, "ifconfig-push %s %s\n", inet_ntoa(pool_in), VPN_SERVER_SUBNET_MASK);
 					fprintf(fp, "route %s %s %s\n", acl_rnet, acl_rmsk, inet_ntoa(pool_in));
 				}
-				
+
 				fprintf(fp_ccf, "iroute %s %s\n", acl_rnet, acl_rmsk);
-				
+
 				fclose(fp_ccf);
-				
+
 				chmod(ccf, 0644);
 			}
 		}
@@ -266,6 +267,9 @@ openvpn_add_cipher(FILE *fp, int cipher_idx)
 	case 14:
 		cipher_str = "AES-256-GCM";
 		break;
+	case 15:
+		cipher_str = "CHACHA20-POLY1305";
+		break;
 	default:
 		return;
 	}
@@ -274,30 +278,33 @@ openvpn_add_cipher(FILE *fp, int cipher_idx)
 }
 
 static void
-openvpn_add_lzo(FILE *fp, int clzo_idx, int is_server_mode)
+openvpn_add_compress(FILE *fp, int compress_idx, int is_server_mode)
 {
-	char *clzo_str;
+	char *alg_str;
 
-	switch (clzo_idx)
+	switch (compress_idx)
 	{
 	case 1:
-		/* also use for obtain comp-lzo from server */
-		clzo_str = "no";
+		/* also use for obtain compress from server */
+		alg_str = "";
 		break;
 	case 2:
-		clzo_str = "adaptive";
+		alg_str = " lzo";
 		break;
 	case 3:
-		clzo_str = "yes";
+		alg_str = " lz4";
+		break;
+	case 4:
+		alg_str = " lz4-v2";
 		break;
 	default:
 		return;
 	}
 
-	fprintf(fp, "comp-lzo %s\n", clzo_str);
+	fprintf(fp, "compress%s\n", alg_str);
 
 	if (is_server_mode)
-		fprintf(fp, "push \"comp-lzo %s\"\n", clzo_str);
+		fprintf(fp, "push \"compress%s\"\n", alg_str);
 }
 
 static void
@@ -364,12 +371,16 @@ openvpn_create_server_conf(const char *conf_file, int is_tun)
 		p_prot = "tcp6-server";
 	else if (i_prot == 2)
 		p_prot = "udp6";
+	else if (i_prot == 5)
+		p_prot = "tcp-server";
+	else if (i_prot == 4)
+		p_prot = "udp";
 	else
 #endif
 	if (i_prot == 1)
-		p_prot = "tcp-server";
+		p_prot = "tcp4-server";
 	else
-		p_prot = "udp";
+		p_prot = "udp4";
 
 	/* fixup ipv4/ipv6 mismatch */
 	if (i_prot != i_prot_ori)
@@ -384,24 +395,24 @@ openvpn_create_server_conf(const char *conf_file, int is_tun)
 
 	if (is_tun) {
 		unsigned int vnet, vmsk;
-		
+
 		vnet = ntohl(inet_addr(nvram_safe_get("vpns_vnet")));
 		vmsk = ntohl(inet_addr(VPN_SERVER_SUBNET_MASK));
 		pool_in.s_addr = htonl(vnet & vmsk);
-		
+
 		fprintf(fp, "dev %s\n", IFNAME_SERVER_TUN);
 		fprintf(fp, "topology %s\n", "subnet");
 		fprintf(fp, "server %s %s\n", inet_ntoa(pool_in), VPN_SERVER_SUBNET_MASK);
 		fprintf(fp, "client-config-dir %s\n", "ccd");
-		
+
 		openvpn_create_server_acl(fp, "ccd", vnet, vmsk);
-		
+
 		pool_in.s_addr = htonl(laddr & lmask);
 		fprintf(fp, "push \"route %s %s\"\n", inet_ntoa(pool_in), lannm);
 	} else {
 		char sp_b[INET_ADDRSTRLEN], sp_e[INET_ADDRSTRLEN];
 		unsigned int vp_b, vp_e, lnet;
-		
+
 		lnet = ~(lmask) - 1;
 		vp_b = (unsigned int)nvram_safe_get_int("vpns_cli0", 245, 1, 254);
 		vp_e = (unsigned int)nvram_safe_get_int("vpns_cli1", 254, 2, 254);
@@ -411,25 +422,25 @@ openvpn_create_server_conf(const char *conf_file, int is_tun)
 			vp_e = lnet;
 		if (vp_e < vp_b)
 			vp_e = vp_b;
-		
+
 		pool_in.s_addr = htonl((laddr & lmask) | vp_b);
 		strcpy(sp_b, inet_ntoa(pool_in));
-		
+
 		pool_in.s_addr = htonl((laddr & lmask) | vp_e);
 		strcpy(sp_e, inet_ntoa(pool_in));
-		
+
 		fprintf(fp, "dev %s\n", IFNAME_SERVER_TAP);
 		fprintf(fp, "server-bridge %s %s %s %s\n", lanip, lannm, sp_b, sp_e);
 	}
 
 	openvpn_add_auth(fp, nvram_get_int("vpns_ov_mdig"));
 	openvpn_add_cipher(fp, nvram_get_int("vpns_ov_ciph"));
-	openvpn_add_lzo(fp, nvram_get_int("vpns_ov_clzo"), 1);
+	openvpn_add_compress(fp, nvram_get_int("vpns_ov_compress"), 1);
 
 	i_items = 0;
 	if (i_rdgw) {
 		fprintf(fp, "push \"redirect-gateway def1 %s\"\n", "bypass-dhcp");
-		
+
 		if (i_dhcp) {
 			dns1 = nvram_safe_get("dhcp_dns1_x");
 			dns2 = nvram_safe_get("dhcp_dns2_x");
@@ -442,7 +453,7 @@ openvpn_create_server_conf(const char *conf_file, int is_tun)
 				fprintf(fp, "push \"dhcp-option %s %s\"\n", "DNS", dns2);
 			}
 		}
-		
+
 		if (i_items < 1)
 			fprintf(fp, "push \"dhcp-option %s %s\"\n", "DNS", lanip);
 	}
@@ -466,9 +477,11 @@ openvpn_create_server_conf(const char *conf_file, int is_tun)
 	fprintf(fp, "cert %s/%s\n", SERVER_CERT_DIR, openvpn_server_keys[2]);
 	fprintf(fp, "key %s/%s\n", SERVER_CERT_DIR, openvpn_server_keys[3]);
 
-	if (i_atls)
+	if (i_atls == 1) {
 		fprintf(fp, "tls-auth %s/%s %d\n", SERVER_CERT_DIR, openvpn_server_keys[4], 0);
-
+	} else if (i_atls == 2) {
+		fprintf(fp, "tls-crypt %s/%s\n", SERVER_CERT_DIR, openvpn_server_keys[4]);
+	}
 	fprintf(fp, "persist-key\n");
 	fprintf(fp, "persist-tun\n");
 	fprintf(fp, "user %s\n", SYS_USER_NOBODY);
@@ -530,12 +543,16 @@ openvpn_create_client_conf(const char *conf_file, int is_tun)
 		p_prot = "tcp6-client";
 	else if (i_prot == 2)
 		p_prot = "udp6";
+	else if (i_prot == 5)
+		p_prot = "tcp-client";
+	else if (i_prot == 4)
+		p_prot = "udp";
 	else
 #endif
 	if (i_prot == 1)
-		p_prot = "tcp-client";
+		p_prot = "tcp4-client";
 	else
-		p_prot = "udp";
+		p_prot = "udp4";
 
 	/* fixup ipv4/ipv6 mismatch */
 	if (i_prot != i_prot_ori)
@@ -559,12 +576,14 @@ openvpn_create_client_conf(const char *conf_file, int is_tun)
 		fprintf(fp, "key %s/%s\n", CLIENT_CERT_DIR, openvpn_client_keys[2]);
 	}
 
-	if (i_atls)
+	if (i_atls == 1) {
 		fprintf(fp, "tls-auth %s/%s %d\n", CLIENT_CERT_DIR, openvpn_client_keys[3], 1);
-
+	} else if (i_atls == 2) {
+		fprintf(fp, "tls-crypt %s/%s\n", CLIENT_CERT_DIR, openvpn_client_keys[3]);
+	}
 	openvpn_add_auth(fp, nvram_get_int("vpnc_ov_mdig"));
 	openvpn_add_cipher(fp, nvram_get_int("vpnc_ov_ciph"));
-	openvpn_add_lzo(fp, nvram_get_int("vpnc_ov_clzo"), 0);
+	openvpn_add_compress(fp, nvram_get_int("vpnc_ov_compress"), 0);
 
 	if (i_auth == 1) {
 		fprintf(fp, "auth-user-pass %s\n", "secret");
@@ -697,7 +716,7 @@ on_server_client_disconnect(int is_tun)
 					fprintf(fp2, "%s %s %s %s\n", ifname, addr_l, addr_r, peer_name);
 			}
 		}
-		
+
 		fclose(fp1);
 	}
 
@@ -977,8 +996,8 @@ int
 ovpn_server_expcli_main(int argc, char **argv)
 {
 	FILE *fp;
-	int i, i_prot, i_atls, rsa_bits, days_valid;
-	const char *p_prot, *wan_addr;
+	int i, i_prot, i_atls, days_valid;
+	const char *p_prot, *wan_addr, *rsa_bits;
 	const char *tmp_ovpn_path = "/tmp/export_ovpn";
 	const char *tmp_ovpn_conf = "/tmp/client.ovpn";
 #if defined (USE_IPV6)
@@ -986,13 +1005,13 @@ ovpn_server_expcli_main(int argc, char **argv)
 #endif
 
 	if (argc < 2 || strlen(argv[1]) < 1) {
-		printf("Usage: %s common_name [rsa_bits] [days_valid]\n", argv[0]);
+		printf("Usage: %s common_name [rsa_bits/ec_name] [days_valid]\n", argv[0]);
 		return 1;
 	}
 
-	rsa_bits = 1024;
-	if (argc > 2 && atoi(argv[2]) >= 1024)
-		rsa_bits = atoi(argv[2]);
+	rsa_bits = "1024";
+	if (argc > 2)
+		rsa_bits = argv[2];
 
 	days_valid = 365;
 	if (argc > 3 && atoi(argv[3]) > 0)
@@ -1012,7 +1031,7 @@ ovpn_server_expcli_main(int argc, char **argv)
 	/* Generate client cert and key */
 	doSystem("rm -rf %s", tmp_ovpn_path);
 	setenv("CRT_PATH_CLI", tmp_ovpn_path, 1);
-	doSystem("/usr/bin/openvpn-cert.sh %s -n '%s' -b %d -d %d", "client", argv[1], rsa_bits, days_valid);
+	doSystem("/usr/bin/openvpn-cert.sh %s -n '%s' -b %s -d %d", "client", argv[1], rsa_bits, days_valid);
 	unsetenv("CRT_PATH_CLI");
 
 	i_prot = nvram_get_int("vpns_ov_prot");
@@ -1023,12 +1042,16 @@ ovpn_server_expcli_main(int argc, char **argv)
 		p_prot = "tcp6-client";
 	else if (i_prot == 2)
 		p_prot = "udp6";
+	else if (i_prot == 5)
+		p_prot = "tcp-client";
+	else if (i_prot == 4)
+		p_prot = "udp";
 	else
 #endif
 	if (i_prot == 1)
-		p_prot = "tcp-client";
+		p_prot = "tcp4-client";
 	else
-		p_prot = "udp";
+		p_prot = "udp4";
 
 	wan_addr = get_ddns_fqdn();
 	if (!wan_addr) {
@@ -1067,17 +1090,19 @@ ovpn_server_expcli_main(int argc, char **argv)
 	fprintf(fp, "persist-tun\n");
 	openvpn_add_auth(fp, nvram_get_int("vpns_ov_mdig"));
 	openvpn_add_cipher(fp, nvram_get_int("vpns_ov_ciph"));
-	openvpn_add_lzo(fp, nvram_get_int("vpns_ov_clzo"), 0);
+	openvpn_add_compress(fp, nvram_get_int("vpns_ov_compress"), 0);
 	fprintf(fp, "nice %d\n", 0);
 	fprintf(fp, "verb %d\n", 3);
 	fprintf(fp, "mute %d\n", 10);
-	fprintf(fp, ";ns-cert-type %s\n", "server");
+	fprintf(fp, ";remote-cert-tls %s\n", "server");
 	openvpn_add_key(fp, SERVER_CERT_DIR, openvpn_server_keys[0], "ca");
 	openvpn_add_key(fp, tmp_ovpn_path, openvpn_client_keys[1], "cert");
 	openvpn_add_key(fp, tmp_ovpn_path, openvpn_client_keys[2], "key");
-	if (i_atls) {
+	if (i_atls == 1) {
 		openvpn_add_key(fp, SERVER_CERT_DIR, openvpn_server_keys[4], "tls-auth");
 		fprintf(fp, "key-direction %d\n", 1);
+	} else if (i_atls == 2) {
+		openvpn_add_key(fp, SERVER_CERT_DIR, openvpn_server_keys[4], "tls-crypt");
 	}
 	fclose(fp);
 

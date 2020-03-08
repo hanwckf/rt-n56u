@@ -2,21 +2,17 @@
  * wpa_supplicant/hostapd / OS specific functions for Win32 systems
  * Copyright (c) 2005-2006, Jouni Malinen <j@w1.fi>
  *
- * This program is free software; you can redistribute it and/or modify
- * it under the terms of the GNU General Public License version 2 as
- * published by the Free Software Foundation.
- *
- * Alternatively, this software may be distributed under the terms of BSD
- * license.
- *
- * See README and COPYING for more details.
+ * This software may be distributed under the terms of the BSD license.
+ * See README for more details.
  */
 
 #include "includes.h"
+#include <time.h>
 #include <winsock2.h>
 #include <wincrypt.h>
 
 #include "os.h"
+#include "common.h"
 
 void os_sleep(os_time_t sec, os_time_t usec)
 {
@@ -49,6 +45,17 @@ int os_get_time(struct os_time *t)
 	t->usec = (os_time_t) (tt % 1000000);
 
 	return 0;
+}
+
+
+int os_get_reltime(struct os_reltime *t)
+{
+	/* consider using performance counters or so instead */
+	struct os_time now;
+	int res = os_get_time(&now);
+	t->sec = now.sec;
+	t->usec = now.usec;
+	return res;
 }
 
 
@@ -88,6 +95,24 @@ int os_mktime(int year, int month, int day, int hour, int min, int sec,
 		tz_offset = 0;
 
 	*t = (os_time_t) t_local - tz_offset;
+	return 0;
+}
+
+
+int os_gmtime(os_time_t t, struct os_tm *tm)
+{
+	struct tm *tm2;
+	time_t t2 = t;
+
+	tm2 = gmtime(&t2);
+	if (tm2 == NULL)
+		return -1;
+	tm->sec = tm2->tm_sec;
+	tm->min = tm2->tm_min;
+	tm->hour = tm2->tm_hour;
+	tm->day = tm2->tm_mday;
+	tm->month = tm2->tm_mon + 1;
+	tm->year = tm2->tm_year + 1900;
 	return 0;
 }
 
@@ -191,6 +216,24 @@ char * os_readfile(const char *name, size_t *len)
 }
 
 
+int os_fdatasync(FILE *stream)
+{
+	HANDLE h;
+
+	if (stream == NULL)
+		return -1;
+
+	h = (HANDLE) _get_osfhandle(_fileno(stream));
+	if (h == INVALID_HANDLE_VALUE)
+		return -1;
+
+	if (!FlushFileBuffers(h))
+		return -1;
+
+	return 0;
+}
+
+
 void * os_zalloc(size_t size)
 {
 	return calloc(1, size);
@@ -219,4 +262,34 @@ size_t os_strlcpy(char *dest, const char *src, size_t siz)
 	}
 
 	return s - src - 1;
+}
+
+
+int os_memcmp_const(const void *a, const void *b, size_t len)
+{
+	const u8 *aa = a;
+	const u8 *bb = b;
+	size_t i;
+	u8 res;
+
+	for (res = 0, i = 0; i < len; i++)
+		res |= aa[i] ^ bb[i];
+
+	return res;
+}
+
+
+int os_exec(const char *program, const char *arg, int wait_completion)
+{
+	return -1;
+}
+
+
+void * os_memdup(const void *src, size_t len)
+{
+	void *r = os_malloc(len);
+
+	if (r)
+		os_memcpy(r, src, len);
+	return r;
 }

@@ -2,18 +2,12 @@
  * wpa_gui - AddInterface class
  * Copyright (c) 2008, Jouni Malinen <j@w1.fi>
  *
- * This program is free software; you can redistribute it and/or modify
- * it under the terms of the GNU General Public License version 2 as
- * published by the Free Software Foundation.
- *
- * Alternatively, this software may be distributed under the terms of BSD
- * license.
- *
- * See README and COPYING for more details.
+ * This software may be distributed under the terms of the BSD license.
+ * See README for more details.
  */
 
 #include <cstdio>
-#include "wpa_ctrl.h"
+#include "common/wpa_ctrl.h"
 
 #include <QMessageBox>
 
@@ -35,7 +29,7 @@
 AddInterface::AddInterface(WpaGui *_wpagui, QWidget *parent)
 	: QDialog(parent), wpagui(_wpagui)
 {
-	setWindowTitle("Select network interface to add");
+	setWindowTitle(tr("Select network interface to add"));
 	resize(400, 200);
 	vboxLayout = new QVBoxLayout(this);
 
@@ -44,11 +38,11 @@ AddInterface::AddInterface(WpaGui *_wpagui, QWidget *parent)
 	interfaceWidget->setUniformRowHeights(true);
 	interfaceWidget->setSortingEnabled(true);
 	interfaceWidget->setColumnCount(3);
-	interfaceWidget->headerItem()->setText(0, "driver");
-	interfaceWidget->headerItem()->setText(1, "interface");
-	interfaceWidget->headerItem()->setText(2, "description");
-	interfaceWidget->setItemsExpandable(FALSE);
-	interfaceWidget->setRootIsDecorated(FALSE);
+	interfaceWidget->headerItem()->setText(0, tr("driver"));
+	interfaceWidget->headerItem()->setText(1, tr("interface"));
+	interfaceWidget->headerItem()->setText(2, tr("description"));
+	interfaceWidget->setItemsExpandable(false);
+	interfaceWidget->setRootIsDecorated(false);
 	vboxLayout->addWidget(interfaceWidget);
 
 	connect(interfaceWidget,
@@ -202,9 +196,9 @@ void AddInterface::interfaceSelected(QTreeWidgetItem *sel)
 	 */
 	snprintf(cmd, sizeof(cmd),
 		 "INTERFACE_ADD %s\t%s\t%s\t%s\t%s\t%s",
-		 sel->text(1).toAscii().constData(),
+		 sel->text(1).toLocal8Bit().constData(),
 		 "default",
-		 sel->text(0).toAscii().constData(),
+		 sel->text(0).toLocal8Bit().constData(),
 		 "yes", "", "");
 	cmd[sizeof(cmd) - 1] = '\0';
 
@@ -218,15 +212,15 @@ void AddInterface::interfaceSelected(QTreeWidgetItem *sel)
 
 	if (ret < 0) {
 		QMessageBox::warning(this, "wpa_gui",
-				     "Add interface command could not be "
-				     "completed.");
+				     tr("Add interface command could not be "
+					"completed."));
 		return;
 	}
 
 	buf[len] = '\0';
 	if (buf[0] != 'O' || buf[1] != 'K') {
 		QMessageBox::warning(this, "wpa_gui",
-				     "Failed to add the interface.");
+				     tr("Failed to add the interface."));
 		return;
 	}
 
@@ -235,8 +229,8 @@ void AddInterface::interfaceSelected(QTreeWidgetItem *sel)
 #ifdef CONFIG_NATIVE_WINDOWS
 	if (!addRegistryInterface(sel->text(1))) {
 		QMessageBox::information(this, "wpa_gui",
-					 "Failed to add the interface into "
-					 "registry.");
+					 tr("Failed to add the interface into "
+					    "registry."));
 	}
 #endif /* CONFIG_NATIVE_WINDOWS */
 

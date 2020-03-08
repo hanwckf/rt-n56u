@@ -143,7 +143,7 @@ gen_config_file() {
 	        "verify": false,
 	        "verify_hostname": $tj_link_tls,
 	        "cert": "",
-	        "cipher": "ECDHE-ECDSA-AES128-GCM-SHA256:ECDHE-RSA-AES128-GCM-SHA256:ECDHE-ECDSA-AES256-GCM-SHA384:ECDHE-RSA-AES256-GCM-SHA384:ECDHE-ECDSA-CHACHA20-POLY1305-SHA256:ECDHE-RSA-CHACHA20-POLY1305-SHA256:ECDHE-RSA-AES128-SHA:ECDHE-RSA-AES256-SHA:RSA-AES128-GCM-SHA256:RSA-AES256-GCM-SHA384:RSA-AES128-SHA:RSA-AES256-SHA:RSA-3DES-EDE-SHA",
+	        "cipher_tls13": "TLS_AES_128_GCM_SHA256:TLS_CHACHA20_POLY1305_SHA256:TLS_AES_256_GCM_SHA384",
 	        "sni": "$tj_link_tls_host",
 	        "alpn": [
 	            "h2",
@@ -233,6 +233,9 @@ gen_config_file() {
 		mk_vmess=$(json_int_vmess_streamSettings)
 		mk_vmess=$(echo $mk_vmess | jq --raw-output 'setpath(["network"];"'$vmess_link_net'")')
 		mk_vmess=$(echo $mk_vmess | jq --raw-output 'setpath(["security"];"'$vmess_link_tls'")')
+		if [ "$vmess_link_tls" = "tls" ]; then
+		mk_vmess=$(echo $mk_vmess | jq --raw-output 'setpath(["tlsSettings","serverName"];"'$vmess_link_webs_host'")')
+		fi
 		# tcp star
 		if [ "$vmess_link_net" = "tcp" ]; then
 			[ ! -z "$vmess_link_type_tcp" ] && mk_vmess=$(echo $mk_vmess | jq --raw-output 'setpath(["tcpSettings","type"];"'$vmess_link_type_tcp'")')
@@ -893,7 +896,7 @@ echo '{
         "verify": false,
         "verify_hostname": false,
         "cert": "",
-        "cipher": "ECDHE-ECDSA-AES128-GCM-SHA256:ECDHE-RSA-AES128-GCM-SHA256:ECDHE-ECDSA-AES256-GCM-SHA384:ECDHE-RSA-AES256-GCM-SHA384:ECDHE-ECDSA-CHACHA20-POLY1305-SHA256:ECDHE-RSA-CHACHA20-POLY1305-SHA256:ECDHE-RSA-AES128-SHA:ECDHE-RSA-AES256-SHA:RSA-AES128-GCM-SHA256:RSA-AES256-GCM-SHA384:RSA-AES128-SHA:RSA-AES256-SHA:RSA-3DES-EDE-SHA",
+        "cipher_tls13": "TLS_AES_128_GCM_SHA256:TLS_CHACHA20_POLY1305_SHA256:TLS_AES_256_GCM_SHA384",
         "sni": "",
         "alpn": [
             "h2",
@@ -935,7 +938,8 @@ echo '{
 "network": "",
 "security": "",
 "tlsSettings": {
-"allowInsecure": true
+"allowInsecure": true,
+ "serverName":" "
 },
 "tcpSettings": {
 "type": "none",

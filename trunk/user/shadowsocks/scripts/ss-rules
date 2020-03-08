@@ -204,6 +204,7 @@ tp_rule() {
 	ip route add local 0.0.0.0/0 dev lo table 100
 	ipt="iptables -t mangle"
 	$ipt_n -N SS_SPEC_TPROXY
+	$ipt_n -A SS_SPEC_TPROXY -p udp --dport 443 -j RETURN
 	$ipt_n -A SS_SPEC_TPROXY -p udp --dport 53 -j RETURN
 	$ipt_n -A SS_SPEC_TPROXY -p udp -d 0.0.0.0/8 -j RETURN
 	$ipt_n -A SS_SPEC_TPROXY -p udp -d 10.0.0.0/8 -j RETURN

@@ -2,14 +2,8 @@
  * WPA Supplicant - Layer2 packet handling with libpcap/libdnet and WinPcap
  * Copyright (c) 2003-2006, Jouni Malinen <j@w1.fi>
  *
- * This program is free software; you can redistribute it and/or modify
- * it under the terms of the GNU General Public License version 2 as
- * published by the Free Software Foundation.
- *
- * Alternatively, this software may be distributed under the terms of BSD
- * license.
- *
- * See README and COPYING for more details.
+ * This software may be distributed under the terms of the BSD license.
+ * See README for more details.
  */
 
 #include "includes.h"
@@ -60,15 +54,16 @@ static int l2_packet_init_libdnet(struct l2_packet_data *l2)
 
 	l2->eth = eth_open(l2->ifname);
 	if (!l2->eth) {
-		printf("Failed to open interface '%s'.\n", l2->ifname);
-		perror("eth_open");
+		wpa_printf(MSG_ERROR,
+			   "Failed to open interface '%s' - eth_open: %s",
+			   l2->ifname, strerror(errno));
 		return -1;
 	}
 
 	if (eth_get(l2->eth, &own_addr) < 0) {
-		printf("Failed to get own hw address from interface '%s'.\n",
-		       l2->ifname);
-		perror("eth_get");
+		wpa_printf(MSG_ERROR,
+			   "Failed to get own hw address from interface '%s' - eth_get: %s",
+			   l2->ifname, strerror(errno));
 		eth_close(l2->eth);
 		l2->eth = NULL;
 		return -1;
@@ -317,6 +312,18 @@ struct l2_packet_data * l2_packet_init(
 }
 
 
+struct l2_packet_data * l2_packet_init_bridge(
+	const char *br_ifname, const char *ifname, const u8 *own_addr,
+	unsigned short protocol,
+	void (*rx_callback)(void *ctx, const u8 *src_addr,
+			    const u8 *buf, size_t len),
+	void *rx_callback_ctx, int l2_hdr)
+{
+	return l2_packet_init(br_ifname, own_addr, protocol, rx_callback,
+			      rx_callback_ctx, l2_hdr);
+}
+
+
 void l2_packet_deinit(struct l2_packet_data *l2)
 {
 	if (l2 == NULL)
@@ -383,4 +390,11 @@ void l2_packet_notify_auth_start(struct l2_packet_data *l2)
 	eloop_register_timeout(0, 10000, l2_packet_receive_timeout,
 			       l2, l2->pcap);
 #endif /* CONFIG_WINPCAP */
+}
+
+
+int l2_packet_set_packet_filter(struct l2_packet_data *l2,
+				enum l2_packet_filter_type type)
+{
+	return -1;
 }

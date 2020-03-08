@@ -2,14 +2,8 @@
  * EAP peer: Method registration
  * Copyright (c) 2004-2007, Jouni Malinen <j@w1.fi>
  *
- * This program is free software; you can redistribute it and/or modify
- * it under the terms of the GNU General Public License version 2 as
- * published by the Free Software Foundation.
- *
- * Alternatively, this software may be distributed under the terms of BSD
- * license.
- *
- * See README and COPYING for more details.
+ * This software may be distributed under the terms of the BSD license.
+ * See README for more details.
  */
 
 #ifndef EAP_METHODS_H
@@ -22,7 +16,6 @@ const struct eap_method * eap_peer_get_methods(size_t *count);
 
 struct eap_method * eap_peer_method_alloc(int version, int vendor,
 					  EapType method, const char *name);
-void eap_peer_method_free(struct eap_method *method);
 int eap_peer_method_register(struct eap_method *method);
 
 
@@ -32,7 +25,6 @@ EapType eap_peer_get_type(const char *name, int *vendor);
 const char * eap_get_name(int vendor, EapType type);
 size_t eap_get_names(char *buf, size_t buflen);
 char ** eap_get_names_as_string_array(size_t *num);
-int eap_peer_register_methods(void);
 void eap_peer_unregister_methods(void);
 
 #else /* IEEE8021X_EAPOL */
@@ -88,5 +80,31 @@ static inline int eap_peer_method_unload(struct eap_method *method)
 }
 
 #endif /* CONFIG_DYNAMIC_EAP_METHODS */
+
+/* EAP peer method registration calls for statically linked in methods */
+int eap_peer_md5_register(void);
+int eap_peer_tls_register(void);
+int eap_peer_unauth_tls_register(void);
+int eap_peer_wfa_unauth_tls_register(void);
+int eap_peer_mschapv2_register(void);
+int eap_peer_peap_register(void);
+int eap_peer_ttls_register(void);
+int eap_peer_gtc_register(void);
+int eap_peer_otp_register(void);
+int eap_peer_sim_register(void);
+int eap_peer_leap_register(void);
+int eap_peer_psk_register(void);
+int eap_peer_aka_register(void);
+int eap_peer_aka_prime_register(void);
+int eap_peer_fast_register(void);
+int eap_peer_pax_register(void);
+int eap_peer_sake_register(void);
+int eap_peer_gpsk_register(void);
+int eap_peer_wsc_register(void);
+int eap_peer_ikev2_register(void);
+int eap_peer_vendor_test_register(void);
+int eap_peer_tnc_register(void);
+int eap_peer_pwd_register(void);
+int eap_peer_eke_register(void);
 
 #endif /* EAP_METHODS_H */

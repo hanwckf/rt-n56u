@@ -16,7 +16,9 @@
       <command>wpa_gui</command>
       <arg>-p <replaceable>path to ctrl sockets</replaceable></arg>
       <arg>-i <replaceable>ifname</replaceable></arg>
+      <arg>-m <replaceable>seconds</replaceable></arg>
       <arg>-t</arg>
+      <arg>-q</arg>
     </cmdsynopsis>
   </refsynopsisdiv>
 
@@ -51,11 +53,26 @@
       </varlistentry>
 
       <varlistentry>
+	<term>-m seconds</term>
+
+	<listitem><para>Set the update interval in seconds for the signal
+	strength meter. This value must be a positive integer, otherwise
+	meter is not enabled (default behavior).</para></listitem>
+      </varlistentry>
+
+      <varlistentry>
 	<term>-t</term>
 
         <listitem><para>Start program in the system tray only (if the window
 	manager supports it). By default the main status window is
 	shown.</para></listitem>
+      </varlistentry>
+
+      <varlistentry>
+	<term>-q</term>
+
+        <listitem><para>Run program in the quiet mode - do not display tray
+	icon pop-up messages.</para></listitem>
       </varlistentry>
     </variablelist>
   </refsect1>
@@ -74,12 +91,12 @@
   </refsect1>
   <refsect1>
     <title>Legal</title>
-    <para>wpa_supplicant is copyright (c) 2003-2007,
+    <para>wpa_supplicant is copyright (c) 2003-2018,
     Jouni Malinen <email>j@w1.fi</email> and
     contributors.
     All Rights Reserved.</para>
 
-    <para>This program is dual-licensed under both the GPL version 2
-    and BSD license. Either license may be used at your option.</para>
+    <para>This program is licensed under the BSD license (the one with
+    advertisement clause removed).</para>
   </refsect1>
 </refentry>

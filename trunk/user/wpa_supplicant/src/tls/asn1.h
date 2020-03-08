@@ -2,14 +2,8 @@
  * ASN.1 DER parsing
  * Copyright (c) 2006, Jouni Malinen <j@w1.fi>
  *
- * This program is free software; you can redistribute it and/or modify
- * it under the terms of the GNU General Public License version 2 as
- * published by the Free Software Foundation.
- *
- * Alternatively, this software may be distributed under the terms of BSD
- * license.
- *
- * See README and COPYING for more details.
+ * This software may be distributed under the terms of the BSD license.
+ * See README for more details.
  */
 
 #ifndef ASN1_H
@@ -26,6 +20,7 @@
 #define ASN1_TAG_EXTERNAL	0x08 /* not yet parsed */
 #define ASN1_TAG_REAL		0x09 /* not yet parsed */
 #define ASN1_TAG_ENUMERATED	0x0A /* not yet parsed */
+#define ASN1_TAG_EMBEDDED_PDV	0x0B /* not yet parsed */
 #define ASN1_TAG_UTF8STRING	0x0C /* not yet parsed */
 #define ANS1_TAG_RELATIVE_OID	0x0D
 #define ASN1_TAG_SEQUENCE	0x10 /* shall be constructed */
@@ -41,7 +36,8 @@
 #define ASN1_TAG_VISIBLESTRING	0x1A
 #define ASN1_TAG_GENERALSTRING	0x1B /* not yet parsed */
 #define ASN1_TAG_UNIVERSALSTRING	0x1C /* not yet parsed */
-#define ASN1_TAG_BMPSTRING	0x1D /* not yet parsed */
+#define ASN1_TAG_CHARACTERSTRING	0x1D /* not yet parsed */
+#define ASN1_TAG_BMPSTRING	0x1E /* not yet parsed */
 
 #define ASN1_CLASS_UNIVERSAL		0
 #define ASN1_CLASS_APPLICATION		1
@@ -63,9 +59,14 @@ struct asn1_oid {
 
 
 int asn1_get_next(const u8 *buf, size_t len, struct asn1_hdr *hdr);
+int asn1_parse_oid(const u8 *buf, size_t len, struct asn1_oid *oid);
 int asn1_get_oid(const u8 *buf, size_t len, struct asn1_oid *oid,
 		 const u8 **next);
-void asn1_oid_to_str(struct asn1_oid *oid, char *buf, size_t len);
+void asn1_oid_to_str(const struct asn1_oid *oid, char *buf, size_t len);
 unsigned long asn1_bit_string_to_long(const u8 *buf, size_t len);
+int asn1_oid_equal(const struct asn1_oid *a, const struct asn1_oid *b);
+
+extern struct asn1_oid asn1_sha1_oid;
+extern struct asn1_oid asn1_sha256_oid;
 
 #endif /* ASN1_H */

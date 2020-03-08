@@ -2,14 +2,8 @@
  * wpa_gui - WpaGui class
  * Copyright (c) 2005-2006, Jouni Malinen <j@w1.fi>
  *
- * This program is free software; you can redistribute it and/or modify
- * it under the terms of the GNU General Public License version 2 as
- * published by the Free Software Foundation.
- *
- * Alternatively, this software may be distributed under the terms of BSD
- * license.
- *
- * See README and COPYING for more details.
+ * This software may be distributed under the terms of the BSD license.
+ * See README for more details.
  */
 
 #ifndef WPAGUI_H
@@ -22,14 +16,40 @@
 
 class UserDataRequest;
 
+class WpaGuiApp : public QApplication
+{
+	Q_OBJECT
+public:
+	WpaGuiApp(int &argc, char **argv);
+
+#if !defined(QT_NO_SESSIONMANAGER) && QT_VERSION < 0x050000
+	virtual void saveState(QSessionManager &manager);
+#endif
+
+	WpaGui *w;
+	int argc;
+	char **argv;
+};
 
 class WpaGui : public QMainWindow, public Ui::WpaGui
 {
 	Q_OBJECT
 
 public:
+
+	enum TrayIconType {
+		TrayIconOffline = 0,
+		TrayIconAcquiring,
+		TrayIconConnected,
+		TrayIconSignalNone,
+		TrayIconSignalWeak,
+		TrayIconSignalOk,
+		TrayIconSignalGood,
+		TrayIconSignalExcellent,
+	};
+
 	WpaGui(QApplication *app, QWidget *parent = 0, const char *name = 0,
-	       Qt::WFlags fl = 0);
+	       Qt::WindowFlags fl = 0);
 	~WpaGui();
 
 	virtual int ctrlRequest(const char *cmd, char *buf, size_t *buflen);
@@ -55,6 +75,7 @@ public slots:
 	virtual void scan();
 	virtual void eventHistory();
 	virtual void ping();
+	virtual void signalMeterUpdate();
 	virtual void processMsg(char *msg);
 	virtual void processCtrlReq(const char *req);
 	virtual void receiveMsgs();
@@ -76,7 +97,12 @@ public slots:
 	virtual void showTrayMessage(QSystemTrayIcon::MessageIcon type,
 				     int sec, const QString &msg);
 	virtual void showTrayStatus();
+	virtual void updateTrayIcon(TrayIconType type);
+	virtual void updateTrayToolTip(const QString &msg);
+	virtual QIcon loadThemedIcon(const QStringList &names,
+				     const QIcon &fallback);
 	virtual void wpsDialog();
+	virtual void peersDialog();
 	virtual void tabChanged(int index);
 	virtual void wpsPbc();
 	virtual void wpsGeneratePin();
@@ -95,6 +121,7 @@ protected slots:
 
 private:
 	ScanResults *scanres;
+	Peers *peers;
 	bool networkMayHaveChanged;
 	char *ctrl_iface;
 	EventHistory *eh;
@@ -116,9 +143,12 @@ private:
 	QAction *quitAction;
 	QMenu *tray_menu;
 	QSystemTrayIcon *tray_icon;
+	TrayIconType currentIconType;
+	QString wpaStateTranslate(char *state);
 	void createTrayIcon(bool);
 	bool ackTrayIcon;
 	bool startInTray;
+	bool quietMode;
 
 	int openCtrlConnection(const char *ifname);
 
@@ -127,6 +157,9 @@ private:
 	QString bssFromScan;
 
 	void stopWpsRun(bool success);
+
+	QTimer *signalMeterTimer;
+	int signalMeterInterval;
 
 #ifdef CONFIG_NATIVE_WINDOWS
 	QAction *fileStartServiceAction;

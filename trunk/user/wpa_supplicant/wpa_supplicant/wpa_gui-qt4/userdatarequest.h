@@ -2,14 +2,8 @@
  * wpa_gui - UserDataRequest class
  * Copyright (c) 2005-2006, Jouni Malinen <j@w1.fi>
  *
- * This program is free software; you can redistribute it and/or modify
- * it under the terms of the GNU General Public License version 2 as
- * published by the Free Software Foundation.
- *
- * Alternatively, this software may be distributed under the terms of BSD
- * license.
- *
- * See README and COPYING for more details.
+ * This software may be distributed under the terms of the BSD license.
+ * See README for more details.
  */
 
 #ifndef USERDATAREQUEST_H
@@ -26,7 +20,7 @@ class UserDataRequest : public QDialog, public Ui::UserDataRequest
 
 public:
 	UserDataRequest(QWidget *parent = 0, const char *name = 0,
-			bool modal = false, Qt::WFlags fl = 0);
+			bool modal = false, Qt::WindowFlags fl = 0);
 	~UserDataRequest();
 
 	int setParams(WpaGui *_wpagui, const char *reqMsg);

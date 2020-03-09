@@ -1,0 +1,29 @@
+name: Build padavan k2p
+on: push
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Install depends
+      run: |
+        sudo apt-get update
+        sudo apt-get -y install unzip libtool-bin curl cmake gperf gawk flex bison nano xxd cpio git python-docutils gettext automake autopoint texinfo build-essential help2man pkg-config zlib1g-dev libgmp3-dev libmpc-dev libmpfr-dev libncurses5-dev libltdl-dev
+    - name: Clone source code
+      run: |
+        git clone --depth=1 https://github.com/hanwckf/rt-n56u.git /opt/rt-n56u
+    - name: Prepare toolchain
+      run: |
+        cd /opt/rt-n56u/toolchain-mipsel
+        mkdir -p toolchain-3.4.x
+        wget https://github.com/hanwckf/padavan-toolchain/releases/download/v1.1/mipsel-linux-uclibc.tar.xz
+        tar -xvf mipsel-linux-uclibc.tar.xz -C toolchain-3.4.x
+    - name: Build
+      run: |
+        cd /opt/rt-n56u/trunk
+        sudo ./clear_tree
+        sudo ./build_firmware_modify K2P
+    - name : Upload artifact
+      uses: actions/upload-artifact@master
+      with:
+        name: Padavan_K2P
+        path: /opt/rt-n56u/trunk/images

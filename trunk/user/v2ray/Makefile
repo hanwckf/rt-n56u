@@ -22,6 +22,7 @@ upx:
 	upx -k --best --lzma ./v2ctl ; \
 	mkdir v2c ; \
 	cp config.json v2c ; \
+
 romfs:
 
 	$(ROMFSINST) -p +x $(THISDIR)/v2ray/v2ray /usr/bin/v2ray

@@ -166,7 +166,7 @@ dir_$(CONFIG_FIRMWARE_INCLUDE_NJIT_CLIENT)		+= njit-client
 dir_$(CONFIG_FIRMWARE_INCLUDE_MENTOHUST)		+= mentohust
 dir_$(CONFIG_FIRMWARE_INCLUDE_xTUN) 			+= xTun
 dir_$(CONFIG_FIRMWARE_INCLUDE_N2N)			+= n2n
-dir_$(CONFIG_FIRMWARE_INCLUDE_N2N)                      += v2ray
+dir_$(CONFIG_FIRMWARE_INCLUDE_V2RAY)                      += v2ray
 
 ifdef CONFIG_BLK_DEV_SD
 dir_$(CONFIG_FIRMWARE_INCLUDE_HDPARM)		+= hdparm

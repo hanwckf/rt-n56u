@@ -28,6 +28,7 @@ var $j = jQuery.noConflict();
 $j(document).ready(function() {
 	init_itoggle('adbyby_enable');
 	init_itoggle('hosts_ad');
+	init_itoggle('anti_ad');
 	init_itoggle('tv_hosts');
 	init_itoggle('adbyby_adb_update');
 	init_itoggle('adbyby_ip_x', change_adbyby_ip_enabled);
@@ -462,8 +463,10 @@ function changeBgColorrl(obj, num){
 									<div id="tabMenu" class="submenuBlock"></div>
 									<div class="alert alert-info" style="margin: 10px;">广告屏蔽大师 Plus + 可以全面过滤各种横幅、弹窗、视频广告，同时阻止跟踪、隐私窃取及各种恶意网站<br />
 									<div>Plus + 版本可以和 Hosts 结合方式运行，过滤广告不损失带宽</div>
-									<div>静态规则：【<% nvram_get_x("", "adbyby_ltime"); %>】 |视频规则：【<% nvram_get_x("", "adbyby_vtime"); %>】</div>
-									<div>Hosts AD：【<% nvram_get_x("", "adbyby_hostsad"); %>】条 |第三方规则：【<% nvram_get_x("", "adbyby_user"); %>】条</div>
+									<div>anti-AD项目地址:<a href="https://github.com/privacy-protection-tools/anti-AD">https://github.com/privacy-protection-tools/anti-AD</a></div>
+									<div>静态规则：【<% nvram_get_x("", "adbyby_ltime"); %>】 | 视频规则：【<% nvram_get_x("", "adbyby_vtime"); %>】</div>
+									<div>anti-AD规则：【<% nvram_get_x("", "anti_ad_count"); %>】条 | Hosts AD：【<% nvram_get_x("", "adbyby_hostsad"); %>】条</div>
+									<div>第三方规则：【<% nvram_get_x("", "adbyby_user"); %>】条</div>
 									<div> </div>
 									</div>
 									<table width="100%" align="center" cellpadding="4" cellspacing="0" class="table">
@@ -511,6 +514,27 @@ function changeBgColorrl(obj, num){
                                                 </select>分
 											</td>
 										</tr>
+										<tr>
+											<th width="50%">
+											<a class="help_tooltip" href="javascript: void(0)" onmouseover="openTooltip(this, 2, 1);">加载anti-AD项目规则:</a></th>
+											<td>
+													<div class="main_itoggle">
+													<div id="anti_ad_on_of">
+														<input type="checkbox" id="anti_ad_fake" <% nvram_match_x("", "anti_ad", "1", "value=1 checked"); %><% nvram_match_x("", "anti_ad", "0", "value=0"); %>  />
+													</div>
+												</div>
+												<div style="position: absolute; margin-left: -10000px;">
+													<input type="radio" value="1" name="anti_ad" id="anti_ad_1" class="input" value="1" <% nvram_match_x("", "anti_ad", "1", "checked"); %> /><#checkbox_Yes#>
+													<input type="radio" value="0" name="anti_ad" id="anti_ad_0" class="input" value="0" <% nvram_match_x("", "anti_ad", "0", "checked"); %> /><#checkbox_No#>
+												</div>
+											</td>
+										</tr>
+										<tr>
+                                            <th width="50%">加载anti-AD下载地址:</th>
+                                            <td>
+                                                <input type="text"  class="input" size="60" name="anti_ad_link" value="<% nvram_get_x("","anti_ad_link"); %>" />
+                                            </td>
+                                        </tr>
 										<tr>
 											<th width="50%">加载hosts规则</th>
 											<td>

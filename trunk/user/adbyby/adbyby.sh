@@ -66,7 +66,7 @@ add_rules()
 	rm -f /tmp/adbyby/data/*.bak
 
 	touch /tmp/local-md5.json && md5sum /tmp/adbyby/data/lazy.txt /tmp/adbyby/data/video.txt > /tmp/local-md5.json
-	touch /tmp/md5.json && curl -k -s -o /tmp/md5.json --connect-timeout 5 --retry 3 https://coding.net/u/adbyby/p/xwhyc-rules/git/raw/master/md5.json
+	touch /tmp/md5.json && curl -k -s -o /tmp/md5.json --connect-timeout 5 --retry 3 https://adbyby.coding.net/p/xwhyc-rules/d/xwhyc-rules/git/raw/master/md5.json
 
 	lazy_local=$(grep 'lazy' /tmp/local-md5.json | awk -F' ' '{print $1}')
 	video_local=$(grep 'video' /tmp/local-md5.json | awk -F' ' '{print $1}')  
@@ -76,8 +76,8 @@ add_rules()
 	if [ "$lazy_online"x != "$lazy_local"x -o "$video_online"x != "$video_local"x ]; then
 	echo "MD5 not match! Need update!"
 	logger -t "adbyby" "发现更新的规则,下载规则！"
-	touch /tmp/lazy.txt && curl -k -s -o /tmp/lazy.txt --connect-timeout 5 --retry 3 https://coding.net/u/adbyby/p/xwhyc-rules/git/raw/master/lazy.txt
-	touch /tmp/video.txt && curl -k -s -o /tmp/video.txt --connect-timeout 5 --retry 3 https://coding.net/u/adbyby/p/xwhyc-rules/git/raw/master/video.txt
+	touch /tmp/lazy.txt && curl -k -s -o /tmp/lazy.txt --connect-timeout 5 --retry 3 https://adbyby.coding.net/p/xwhyc-rules/d/xwhyc-rules/git/raw/master/lazy.txt
+	touch /tmp/video.txt && curl -k -s -o /tmp/video.txt --connect-timeout 5 --retry 3 https://adbyby.coding.net/p/xwhyc-rules/d/xwhyc-rules/git/raw/master/video.txt
 	touch /tmp/local-md5.json && md5sum /tmp/lazy.txt /tmp/video.txt > /tmp/local-md5.json
 	lazy_local=$(grep 'lazy' /tmp/local-md5.json | awk -F' ' '{print $1}')
 	video_local=$(grep 'video' /tmp/local-md5.json | awk -F' ' '{print $1}')
@@ -214,6 +214,7 @@ add_dns()
 {
 	mkdir -p /etc/storage/dnsmasq-adbyby.d
 	mkdir -p /tmp/dnsmasq.d
+	anti_ad
 	awk '!/^$/&&!/^#/{printf("ipset=/%s/'"adbyby_esc"'\n",$0)}' $PROG_PATH/adesc.conf > /etc/storage/dnsmasq-adbyby.d/06-dnsmasq.esc
 	awk '!/^$/&&!/^#/{printf("address=/%s/'"0.0.0.0"'\n",$0)}' $PROG_PATH/adblack.conf > /etc/storage/dnsmasq-adbyby.d/07-dnsmasq.black
 	sed -i '/dnsmasq-adbyby/d' /etc/storage/dnsmasq/dnsmasq.conf
@@ -320,6 +321,20 @@ adbyby_uprules()
 #{
 #	/tmp/adbyby/adblock.sh &
 #}
+anti_ad(){
+anti_ad=`nvram get anti_ad`
+anti_ad_link=`nvram get anti_ad_link`
+nvram set anti_ad_count=0
+if [ "$anti_ad" = "1" ]; then
+wget --no-check-certificate -O /etc/storage/dnsmasq-adbyby.d/anti-ad-for-dnsmasq.conf $anti_ad_link
+if [ ! -f "/etc/storage/dnsmasq-adbyby.d/anti-ad-for-dnsmasq.conf" ]; then
+	logger -t "adbyby" "anti_AD下载失败！"
+else
+	logger -t "adbyby" "anti_AD下载成功,处理中..."
+nvram set anti_ad_count=`grep -v '^#' /etc/storage/dnsmasq-adbyby.d/anti-ad-for-dnsmasq.conf | wc -l`
+fi
+fi
+}
 
 hosts_ads(){
 adbyby_hosts=`nvram get hosts_ad`

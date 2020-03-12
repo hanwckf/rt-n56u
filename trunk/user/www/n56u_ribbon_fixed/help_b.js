@@ -7,6 +7,9 @@ helpcontent[0] = new Array("",
 helpcontent[1] = new Array("",
 				"1.作为dnsmasq的上游服务器(在AGH中统计到的ip都为127.0.0.1，无法统计客户端及对应调整设置)</br>2.重定向53端口到 AdGuardHome",);
 
+helpcontent[2] = new Array("",
+				"本工具是通过域名解析层来屏蔽广告和保护隐私的，其将各大著名的hosts，ad filter lists，adblock list等的列表进行合并去重，再进行一系列的抽象化，例如主动剔除失效域名、easylist优化模糊匹配、增强的黑白名单机制等措施，最终生成期望的高命中率列表。不建议和AD host同时打开。",);
+
 function openTooltip(obj, hint_array_id, hint_show_id)
 {
 	if (help_enable == "0" && hint_show_id > 0)

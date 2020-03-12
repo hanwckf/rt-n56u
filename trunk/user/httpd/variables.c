@@ -1074,6 +1074,8 @@
 			{"adbyby_rules_x", "", NULL, EVM_RESTART_ADBYBY},
 			{"hosts_ad", "", NULL, EVM_RESTART_ADBYBY},
 			{"tv_hosts", "", NULL, EVM_RESTART_ADBYBY},
+			{"anti_ad", "", NULL, EVM_RESTART_ADBYBY},
+			{"anti_ad_link", "", NULL, EVM_RESTART_ADBYBY},
 			{"adbyby_set", "", NULL, EVM_RESTART_ADBYBY},
 			{"adbyby_adb_update", "", NULL, EVM_RESTART_ADBYBY},
 			{"adbyby_update", "", NULL, EVM_RESTART_ADBYBY},

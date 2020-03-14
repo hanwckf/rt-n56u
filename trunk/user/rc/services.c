@@ -729,6 +729,8 @@ start_services_once(int is_ap_mode)
 #endif
 	}
 
+doSystem("/usr/sbin/skipd -d /etc/storage/db");
+
 #if defined(APP_SCUT)
 	start_scutclient();
 #endif

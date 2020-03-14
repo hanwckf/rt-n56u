@@ -22,7 +22,7 @@ configure:
 	./autogen.sh ; \
 	./configure \
 		--prefix=$(STAGEDIR) \
-		--enable-shared=no \
+		--enable-shared=yes \
 	    --enable-static=yes \
 		--host=$(HOST_TARGET) \
 		--build=$(HOST_BUILD) ; \

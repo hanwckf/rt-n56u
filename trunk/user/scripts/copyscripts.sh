@@ -1,4 +1,8 @@
 #!/bin/sh
+if [ ! -d "/etc/storage/dbus-1/" ];then
+mkdir -p /etc/storage/dbus-1
+cp -r /etc_ro/dbus-1/ /etc/storage/dbus-1
+fi
 if [ ! -f "/etc/storage/dlink.js" ] ; then
 cp -rf /etc_ro/dlink.js /etc/storage/
 chmod 755 "/etc/storage/dlink.js"

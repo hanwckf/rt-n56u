@@ -103,7 +103,8 @@ ifeq ($(CONFIG_FIRMWARE_INCLUDE_SHADOWSOCKS),y)
 	$(ROMFSINST) /etc_ro/ss_lan_ip.sh
 	$(ROMFSINST) /etc_ro/ss_wan_ip.sh
 	$(ROMFSINST) /etc_ro/ss_dlink.sh
-	$(ROMFSINST) /etc_ro/dlink.js
+	#$(ROMFSINST) /etc_ro/dlink.js
+	$(ROMFSINST) $(THISDIR)/ss/ /etc_ro/ss/
 	$(ROMFSINST) -p +x $(THISDIR)/$(SRC_SSR_NAME)/src/ss-redir /usr/bin/ssr-redir
 	$(ROMFSINST) -p +x $(THISDIR)/$(SRC_SSR_NAME)/src/ss-local /usr/bin/ssr-local
 	$(ROMFSINST) -p +x $(THISDIR)/$(SRC_SS_NAME)/src/ss-redir /usr/bin/ss-redir

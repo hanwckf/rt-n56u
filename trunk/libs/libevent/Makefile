@@ -27,8 +27,8 @@ configure:
 	./autogen.sh ; \
 	./configure \
 		--prefix=$(STAGEDIR) \
-		--enable-static \
-		--disable-shared \
+		--disable-static \
+		--enable-shared \
 		--disable-debug-mode \
 		--disable-samples \
 		--host=$(HOST_TARGET) \
@@ -45,4 +45,5 @@ install:
 	$(MAKE) -C $(SRC_NAME) install DESTDIR=""
 
 romfs:
+	cp -fP $(DESTDIR)/lib/libevent-2.1.so* $(ROMFSDIR)/lib
 

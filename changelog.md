@@ -1,16 +1,12 @@
-##2020.03.05##
-* 修复自动编译固件过大问题
-* Dnsmasq增加禁止解析IPV6和最小TTL(取自lean lede)
-
-##2020.03.04##
-* 增加简单订阅功能
-* 替换SSP里的kmsocks,srelay为L大SSP最新使用的ipt2socks,micorsocks
-* SSP增加自动配置smartdns选项。
-* 重新用go 1.14编译了v2ray的二进制文件
-* 修复gfwlist显示0的问题
-* 内核SO_REUSEPORT，Trojan和SSR支持多线程
-* smartdns增加服务器组选项，可以配合gfwlist使用
-
+##2020.03.15##
+* 抛弃jq，增加支持lua脚本，SSP订阅采用Lean大的脚本修改而来，速度杠杠的。
+* SSP:用dns2tcp代替pdnsd,增加chinadns-ng用在绕过大陆模式
+* 更新的SSP源码可能或多或少有问题，可以加群反馈。PS最近真的太忙了，可能修复时间会慢一点
+* adbyby plus+增加anti-AD规则
+* 重新加回VPN菜单在首页显示，如需关闭可进菜单定制页面关闭。
+* 更改adguardhome下载地址为CDN地址。
+* 升级openssl为1.1.1d
+* 更多更新请自行查看commit
 
 ##往期更新日志##
 *https://github.com/chongshengB/rt-n56u/blob/master/changelog-old.md

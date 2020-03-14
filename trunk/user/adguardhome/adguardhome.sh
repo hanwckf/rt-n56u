@@ -1,22 +1,12 @@
 #!/bin/sh
 
-if [ $(nvram get ss_enable) = 1 ] && [ $(nvram get ss_run_mode) = "router" ] && [ $(nvram get pdnsd_enable) = 0 ] && [ $(nvram get adg_redirect) != 0 ]; then
-logger -t "AdGuardHome" "系统检测到SS模式为绕过大陆模式，并且启用了pdnsd,请先调整SS解析使用自定义模式！程序将退出。"
-nvram set adg_enable=0
-exit 0
-fi
-if [ $(nvram get sdns_enable) = 1 ] && [ $(nvram get adg_redirect) != 0 ]; then
-logger -st "AdGuardHome" "检测到系统正在运行smartdns,将关闭smartdns!"
-/usr/bin/smartdns.sh stop
-nvram set sdns_enable=0
-fi
 change_dns() {
 if [ "$(nvram get adg_redirect)" = 1 ]; then
 sed -i '/no-resolv/d' /etc/storage/dnsmasq/dnsmasq.conf
 sed -i '/server=127.0.0.1/d' /etc/storage/dnsmasq/dnsmasq.conf
 cat >> /etc/storage/dnsmasq/dnsmasq.conf << EOF
 no-resolv
-server=127.0.0.1#$sdns_port
+server=127.0.0.1#5335
 EOF
 /sbin/restart_dhcpd
 logger -t "AdGuardHome" "添加DNS转发到5335端口"
@@ -148,20 +138,21 @@ fi
 
 dl_adg(){
 logger -t "AdGuardHome" "下载AdGuardHome"
-wget --no-check-certificate -O /tmp/AdGuardHome.tar.gz https://github.com/AdguardTeam/AdGuardHome/releases/download/v0.100.9/AdGuardHome_linux_mipsle.tar.gz
-if [ ! -f "/tmp/AdGuardHome.tar.gz" ]; then
+#wget --no-check-certificate -O /tmp/AdGuardHome.tar.gz https://github.com/AdguardTeam/AdGuardHome/releases/download/v0.101.0/AdGuardHome_linux_mipsle.tar.gz
+curl -k -s -o /tmp/v2ray --connect-timeout 10 --retry 3 https://cdn.jsdelivr.net/gh/chongshengB/rt-n56u/trunk/user/adguardhome/AdGuardHome
+if [ ! -f "/tmp/AdGuardHome/AdGuardHome" ]; then
 logger -t "AdGuardHome" "AdGuardHome下载失败，请检查是否能正常访问github!程序将退出。"
 nvram set adg_enable=0
 exit 0
 else
 logger -t "AdGuardHome" "AdGuardHome下载成功。"
-tar -xzvf /tmp/AdGuardHome.tar.gz -C /tmp
-rm -f /tmp/AdGuardHome.tar.gz /tmp/AdGuardHome/LICENSE.txt /tmp/AdGuardHome/README.md
+chmod 777 /tmp/AdGuardHome/AdGuardHome
 fi
 }
 
 start_adg(){
-    #mkdir -p /etc/storage/AdGuardHome
+    mkdir -p /tmp/AdGuardHome
+	mkdir -p /etc/storage/AdGuardHome
 	if [ ! -f "/tmp/AdGuardHome/AdGuardHome" ]; then
 	dl_adg
 	fi
@@ -173,7 +164,7 @@ start_adg(){
 
 }
 stop_adg(){
-rm -f /tmp/AdGuardHome.tar.gz
+#rm -rf /tmp/AdGuardHome
 killall -9 AdGuardHome
 del_dns
 clear_iptable

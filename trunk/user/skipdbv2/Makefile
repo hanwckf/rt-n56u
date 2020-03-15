@@ -1,8 +1,8 @@
 ﻿SRC_NAME = skipdbv2
 THISDIR = $(shell pwd)
 
-all:
-	$(MAKE) -C $(SRC_NAME) $@ $^
+all: config_test
+	$(MAKE) -C $(SRC_NAME)
 
 config_test:
 	( if [ -f ./config_done ]; then \

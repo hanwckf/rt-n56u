@@ -138,7 +138,7 @@ function validForm(){
 		if(!document.form.ss_date_x_Sun.checked && !document.form.ss_date_x_Mon.checked &&
 		!document.form.ss_date_x_Tue.checked && !document.form.ss_date_x_Wed.checked &&
 		!document.form.ss_date_x_Thu.checked && !document.form.ss_date_x_Fri.checked &&
-		!document.form.ss_date_x_Sat.checked && document.form.reboot_schedule_enable_x[0].checked)
+		!document.form.ss_date_x_Sat.checked && document.form.ss_schedule_enable_x[0].checked)
 		{
 			alert(Untranslated.filter_lw_date_valid);
 			document.form.ss_date_x_Sun.focus();

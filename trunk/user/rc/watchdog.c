@@ -559,6 +559,24 @@ svc_timecheck(void)
 		//	logmessage("reboot scheduler", "[%s] NTP sync error\n", __FUNCTION__);
 	}
 
+	char ss_schedule[PATH_MAX];
+	if (nvram_match("ss_schedule_enable", "1"))
+	{
+		if (nvram_match("ntp_ready", "1"))
+		{
+			snprintf(ss_schedule, sizeof(ss_schedule), "%s", nvram_safe_get("ss_schedule"));
+			if (strlen(ss_schedule) == 11 && atoi(ss_schedule) > 2359)
+			{
+				if (timecheck_reboot(ss_schedule))
+				{
+					//logmessage("reboot scheduler", "[%s] The system is going down for reboot\n", __FUNCTION__);
+		            doSystem("/usr/bin/update_dlink.sh %s", "update");
+					sleep(70);
+				}
+			}
+		}
+	}
+
 	return 0;
 }
 	

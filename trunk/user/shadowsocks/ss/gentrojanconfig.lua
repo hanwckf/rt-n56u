@@ -8,7 +8,7 @@ local servertmp = ssrindext:read("*all")
 local server = cjson.decode(servertmp)
 
 local trojan = {
-	log_level = 3,
+	log_level = 99,
 	run_type = proto,
 	local_addr = "0.0.0.0",
 	local_port = tonumber(local_port),

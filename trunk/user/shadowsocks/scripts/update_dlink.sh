@@ -20,6 +20,12 @@ reset_link() {
 	logger -t "SS" "已重置订阅节点文件,请手动刷新页面..."
 }
 
+update_link() {
+logger -t "SS" "开始更新订阅脚本..."
+grep -v '^#' /etc/storage/ss_dlink.sh | grep -v "^$" > /tmp/dlist.txt
+dbus list ssconf_basic_json | cut -d '_' -f 4 | cut -d '=' -f 1 > /tmp/dlinkold.txt
+lua /etc_ro/ss/dlink.lua
+}
 
 case $1 in
 start)
@@ -27,6 +33,9 @@ start)
 	;;
 reset)
 	reset_link
+	;;
+update)
+	update_link
 	;;
 *) 
     ;;

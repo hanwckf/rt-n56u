@@ -90,7 +90,6 @@ function initial(){
 	o6.value = '<% nvram_get_x("","socks5_enable"); %>';
 	o7.value = '<% nvram_get_x("","tunnel_forward"); %>';
 	switch_dns();
-	//getAllConfigs();
 	if(ss_schedule_support){
 		document.form.ss_date_x_Sun.checked = getDateCheck(document.form.ss_schedule.value, 0);
 		document.form.ss_date_x_Mon.checked = getDateCheck(document.form.ss_schedule.value, 1);
@@ -166,6 +165,7 @@ if (b=="ss"){
 	showhide_div('row_v2_net', v);
 	showhide_div('row_v2_type', v);
 	showhide_div('row_v2_tls', v);
+	showhide_div('row_v2_mux', 0);
 	showhide_div('row_tj_tls_host', 0);
 	showhide_div('row_s5_username', 0);
 	showhide_div('row_s5_password', 0);
@@ -187,6 +187,7 @@ if (b=="ssr"){
 	showhide_div('row_v2_net', 0);
 	showhide_div('row_v2_type', 0);
 	showhide_div('row_v2_tls', 0);
+	showhide_div('row_v2_mux', 0);
 	showhide_div('row_tj_tls_host', 0);
 	showhide_div('row_s5_username', 0);
 	showhide_div('row_s5_password', 0);
@@ -208,7 +209,8 @@ if (b=="trojan"){
 	showhide_div('row_v2_net', 0);
 	showhide_div('row_v2_type', 0);
 	showhide_div('row_v2_tls', v);
-	showhide_div('ssp_tls_host', v);
+	showhide_div('row_v2_mux', 0);
+	showhide_div('row_tj_tls_host', v);
 	showhide_div('row_s5_username', 0);
 	showhide_div('row_s5_password', 0);
 	showhide_div('row_ss_plugin', 0);
@@ -230,7 +232,8 @@ if (b=="v2ray"){
 	showhide_div('row_v2_net', v);
 	showhide_div('row_v2_type', v);
 	showhide_div('row_v2_tls', v);
-	showhide_div('ssp_tls_host', v);
+	showhide_div('row_v2_mux', v);
+	showhide_div('row_tj_tls_host', v);
 	showhide_div('row_s5_username', 0);
 	showhide_div('row_s5_password', 0);
 	showhide_div('row_ss_plugin', 0);
@@ -252,6 +255,7 @@ if (b=="kumasocks"){
 	showhide_div('row_v2_net', 0);
 	showhide_div('row_v2_type', 0);
 	showhide_div('row_v2_tls', 0);
+	showhide_div('row_v2_mux', 0);
 	showhide_div('row_tj_tls_host', 0);
 	showhide_div('row_s5_username', 0);
 	showhide_div('row_s5_password', 0);
@@ -276,6 +280,7 @@ if (b=="socks5"){
 	showhide_div('row_v2_net', 0);
 	showhide_div('row_v2_type', 0);
 	showhide_div('row_v2_tls', 0);
+	showhide_div('row_v2_mux', 0);
 	showhide_div('row_tj_tls_host', 0);
 	showhide_div('row_ss_plugin', 0);
 	showhide_div('row_ss_plugin_opts', 0);
@@ -755,7 +760,7 @@ if (ssu[0] == "ssr") {
 	document.getElementById('ss_protocol_param').value = dictvalue(pdict, 'protoparam');
 	var rem = pdict['remarks'];
 	if (typeof (rem) != 'undefined' && rem != '' && rem.length > 0)
-		document.getElementById('ssp_name_x_0').value = b64decutf8safe(rem);
+		document.getElementById('ssp_name').value = b64decutf8safe(rem);
 	s.innerHTML = "<font color='green'>导入ShadowsocksR配置信息成功</font>";
 	return false;
 } else if (ssu[0] == "ss") {
@@ -840,6 +845,9 @@ if (ssu[0] == "ssr") {
 	if (ssm.tls == "tls" ) {
 		document.getElementById('v2_tls').value = 1;
 		document.getElementById('v2_tls').checked = true;
+		document.getElementById('ssp_insecure').value = 1;
+		document.getElementById('ssp_insecure').checked = true;
+		document.getElementById('ssp_tls_host').value = ssm.host;
 	}
 	s.innerHTML = "<font color='green'>导入V2ray配置信息成功</font>";
 	return false;
@@ -853,6 +861,24 @@ if(document.getElementById('v2_tls').checked){
 document.getElementById('v2_tls').value = 1;
 }else{
 document.getElementById('v2_tls').value = 0;
+}
+}
+
+function cmux(){
+document.getElementById('v2_mux').value = 1;
+if(document.getElementById('v2_mux').checked){
+document.getElementById('v2_mux').value = 1;
+}else{
+document.getElementById('v2_mux').value = 0;
+}
+}
+
+function cais(){
+document.getElementById('ssp_insecure').value = 1;
+if(document.getElementById('ssp_insecure').checked){
+document.getElementById('ssp_insecure').value = 1;
+}else{
+document.getElementById('ssp_insecure').value = 0;
 }
 }
 //-----------TLS开关
@@ -976,32 +1002,37 @@ function showNodeData(idName,obj){
       server: document.getElementById("ssp_server").value,
 	  server_port: document.getElementById("ssp_prot").value,
 	  insecure: document.getElementById("ssp_insecure").value,
-	  //mux: document.getElementById("v2_mux").value,
+	  mux: document.getElementById("v2_mux").value,
 	  security: document.getElementById("v2_security").value,
 	  vmess_id: document.getElementById("v2_vmess_id").value,
 	  alter_id: document.getElementById("v2_alter_id").value,
 	  transport: document.getElementById("v2_transport").value,
-	  tls: document.getElementById("v2_tls").value,
-	  tls_host: document.getElementById("ssp_tls_host").value,
-	  ws_host: document.getElementById("v2_ws_host").value,
-	  ws_path: document.getElementById("v2_ws_path").value,
-	  h2_host: document.getElementById("v2_h2_host").value,
-	  h2_path: document.getElementById("v2_h2_path").value,
 	  tcp_guise: document.getElementById("v2_tcp_guise").value,
-	  //http_host: document.getElementById("v2_http_host").value,
-	  //http_path: document.getElementById("v2_http_path").value,
-	  kcp_guise: document.getElementById("v2_kcp_guise").value,
-	  mtu: document.getElementById("v2_mtu").value,
-	  tti: document.getElementById("v2_tti").value,
-	  uplink_capacity: document.getElementById("v2_uplink_capacity").value,
-	  downlink_capacity: document.getElementById("v2_downlink_capacity").value,
-	  read_buffer_size: document.getElementById("v2_read_buffer_size").value,
-	  write_buffer_size: document.getElementById("v2_write_buffer_size").value,
-	  quic_guise: document.getElementById("v2_quic_guise").value,
-	  quic_key: document.getElementById("v2_quic_key").value,
-	  quic_security: document.getElementById("v2_quic_security").value, 
+	//http_host: document.getElementById("v2_http_host").value,
+	//http_path: document.getElementById("v2_http_path").value,
+	  tls: document.getElementById("v2_tls").value,
+	  tls_host: document.getElementById("ssp_tls_host").value, 
 	  coustom: "1", 
-    }
+ }
+ if (document.getElementById("v2_transport").value == "kcp"){
+	DataObj.kcp_guise = document.getElementById("v2_kcp_guise").value;
+	DataObj.mtu = document.getElementById("v2_mtu").value;
+	DataObj.tti = document.getElementById("v2_tti").value;
+	DataObj.uplink_capacity = document.getElementById("v2_uplink_capacity").value;
+	DataObj.downlink_capacity = document.getElementById("v2_downlink_capacity").value;
+	DataObj.read_buffer_size = document.getElementById("v2_read_buffer_size").value;
+	DataObj.write_buffer_size = document.getElementById("v2_write_buffer_size").value;
+ }else if (document.getElementById("v2_transport").value == "ws"){
+	DataObj.ws_host = document.getElementById("v2_ws_host").value;
+	DataObj.ws_path = document.getElementById("v2_ws_path").value;
+ }else if (document.getElementById("v2_transport").value == "h2"){
+	DataObj.h2_host = document.getElementById("v2_h2_host").value;
+	DataObj.h2_path = document.getElementById("v2_h2_path").value;
+ }else if (document.getElementById("v2_transport").value == "quic"){
+	DataObj.quic_guise = document.getElementById("v2_quic_guise").value;
+	DataObj.quic_key = document.getElementById("v2_quic_key").value;
+	DataObj.quic_security = document.getElementById("v2_quic_security").value;
+ } 
 	}else if (type == "trojan"){
  var DataObj = {
       type: document.getElementById("ssp_type").value, 
@@ -1012,51 +1043,32 @@ function showNodeData(idName,obj){
 	  insecure: document.getElementById("ssp_insecure").value,
 	  tls: document.getElementById("v2_tls").value,
 	  tls_host: document.getElementById("ssp_tls_host").value,
-	  coustom: 1, 
+	  coustom: "1", 
     }
 	}
 	var post_dbus = JSON.stringify(DataObj)
 	node_global_max += 1;
-	//post_dbus = escape(post_dbus);
 	var p = "ssconf_basic";
 	var ns = {};
 	ns[p + "_json_" + node_global_max] = post_dbus;
-	//ns[p + "_json_1212"] = "deleting";
 	push_data(ns);
+	console.log(DataObj)
 }	 
 //post数据到后台处理
 function push_data(obj) {
 	$j.ajax({
 		type: "POST",
-		url: '/applydb.cgi?userm=add&p=ss',
+		url: '/applydb.cgi?p=ss',
 		contentType: "application/x-www-form-urlencoded",
 		dataType: 'text',
 		data: $j.param(obj),
 		success: function(response) {
-			
-			//reloadAbleJSFn("dbssr","/dbconf?p=ss&v=<% uptime(); %>");
-			
-			//showMRULESList();
-			//$j('#table99').bootstrapTable('refresh');
 			$j("#vpnc_settings").fadeOut(200);
 			location.reload();
 		}
 	});
-	//$j("#vpnc_settings").fadeIn(200);
 }
-function reloadAbleJSFn(id,newJS) { 
-	 var oldjs = null;
-	 var t = null;
-	 var oldjs = document.getElementById(id);
-	 if(oldjs) oldjs.parentNode.removeChild(oldjs);
-	 var scriptObj = document.createElement("script");
-	 scriptObj.src = newJS;
-	 scriptObj.type = "text/javascript";
-	 scriptObj.id = id;
-	 document.getElementsByTagName("head")[0].appendChild(scriptObj);
-	 console.log(newJS);
- }
-	
+
 function showsdlinkList(){
 var key = "ssconf_basic_json_" + document.getElementById("nodeList").value;
 var result = JSON.parse(db_ss[key]);
@@ -1108,7 +1120,7 @@ var result = JSON.parse(db_ss[key]);
 <input type="hidden" name="ssp_staticnum_x_0" value="<% nvram_get_x("SspList", "ssp_staticnum_x"); %>" readonly="1" />
 <input type="hidden" id="d_type" name="d_type" value="<% nvram_get_x("","d_type"); %>">
 <input type="hidden" name="ss_schedule" value="<% nvram_get_x("", "ss_schedule"); %>" disabled>
-    <input type="hidden" name="ss_schedule_enable" value="<% nvram_get_x("", "ss_schedule_enable"); %>">
+<input type="hidden" name="ss_schedule_enable" value="<% nvram_get_x("", "ss_schedule_enable"); %>">
 <div class="container-fluid">
 <div class="row-fluid">
 <div class="span3">
@@ -1590,6 +1602,11 @@ var result = JSON.parse(db_ss[key]);
 					<input type="text" class="input" size="15" name="ssp_tls_host" id="ssp_tls_host" style="width: 200px" value="">
 				</td>
 			</tr>
+			<tr id="row_v2_mux" style="display:none;"><th>MUX</th>
+				<td>
+				<input type="checkbox" name="v2_mux" id="v2_mux" onclick="cmux();" >
+				</td>
+			</tr>
 			<tr> <th width="50%">本地端口</th>
 				<td>
 					<input type="text" maxlength="6" class="input" size="15" name="ssp_local_port_x_0" style="width: 200px" value="1080">
@@ -1617,56 +1634,69 @@ var result = JSON.parse(db_ss[key]);
 </div>
 <!--添加订阅节点-->
 <div id="wnd_ss_dlink" style="display:none">
-<table width="100%" cellpadding="4" cellspacing="0" class="table">
-		<tr> <th colspan="2" style="background-color: #E3E3E3;">订阅节点:添加完地址请先点击一下保存设置按钮,再点击更新订阅按钮。</th> </tr>
+	<table width="100%" cellpadding="4" cellspacing="0" class="table">
 		<tr>
-			<td colspan="3" >
-				<i class="icon-hand-right"></i> <a href="javascript:spoiler_toggle('script19')"><span>订阅地址(一行一个地址):</span></a>
+			<th colspan="2" style="background-color: #E3E3E3;">订阅节点:添加完地址请先点击一下保存设置按钮,再点击更新订阅按钮。</th>
+		</tr>
+		<tr>
+			<td colspan="3">
+				<i class="icon-hand-right"></i> <a
+					href="javascript:spoiler_toggle('script19')"><span>订阅地址(一行一个地址):</span></a>
 				<div id="script19">
-					<textarea rows="8" wrap="off" spellcheck="false" maxlength="314571" class="span12" name="scripts.ss_dlink.sh" style="font-family:'Courier New'; font-size:12px;"><% nvram_dump("scripts.ss_dlink.sh",""); %></textarea>
+					<textarea rows="8" wrap="off" spellcheck="false" maxlength="314571" class="span12"
+						name="scripts.ss_dlink.sh"
+						style="font-family:'Courier New'; font-size:12px;"><% nvram_dump("scripts.ss_dlink.sh",""); %></textarea>
 				</div>
 			</td>
 		</tr>
-		</table>
-<!--
-                                    <table width="100%" cellpadding="4" cellspacing="0" class="table">
-		
-	<tr id="ss_schedule_enable_tr" width="50%">
-		
-                                            <th width="50%">启用定时更新订阅</th>
-                                            <td>
-                                                <div class="main_itoggle">
-                                                    <div id="ss_schedule_enable_on_of">
-                                                        <input type="checkbox" id="ss_schedule_enable_fake" <% nvram_match_x("", "ss_schedule_enable", "1", "value=1 checked"); %><% nvram_match_x("", "ss_schedule_enable", "0", "value=0"); %>>
-                                                    </div>
-                                                </div>
+	</table>
+	<table width="100%" cellpadding="4" cellspacing="0" class="table">
 
-                                                <div style="position: absolute; margin-left: -10000px;">
-                                                    <input type="radio" name="ss_schedule_enable_x" id="ss_schedule_enable_1" class="input" value="1" <% nvram_match_x("", "ss_schedule_enable", "1", "checked"); %>/><#checkbox_Yes#>
-                                                    <input type="radio" name="ss_schedule_enable_x" id="ss_schedule_enable_0" class="input" value="0" <% nvram_match_x("", "ss_schedule_enable", "0", "checked"); %>/><#checkbox_No#>
-                                                </div>
-                                            </td>
-                                        </tr>
-				<tr id="ss_schedule_date_tr">
-					<th>自动更新星期</th>
-					<td>
-						<input type="checkbox" name="ss_date_x_Sun" class="input" onclick="check_Timefield_checkbox();">日
-						<input type="checkbox" name="ss_date_x_Mon" class="input" onclick="check_Timefield_checkbox();">一
-						<input type="checkbox" name="ss_date_x_Tue" class="input" onclick="check_Timefield_checkbox();">二
-						<input type="checkbox" name="ss_date_x_Wed" class="input" onclick="check_Timefield_checkbox();">三
-						<input type="checkbox" name="ss_date_x_Thu" class="input" onclick="check_Timefield_checkbox();">四
-						<input type="checkbox" name="ss_date_x_Fri" class="input" onclick="check_Timefield_checkbox();">五
-						<input type="checkbox" name="ss_date_x_Sat" class="input" onclick="check_Timefield_checkbox();">六
-					</td>
-				</tr>
-				<tr id="ss_schedule_time_tr">
-					<th>自动更新时间</th>
-					<td>
-						<input type="text" maxlength="2" class="input_3_table" style="width: 30px" name="ss_time_x_hour" onKeyPress="return validator.isNumber(this,event);" onblur="validator.timeRange(this, 0);" autocorrect="off" autocapitalize="off">时:
-						<input type="text" maxlength="2" class="input_3_table" style="width: 30px" name="ss_time_x_min" onKeyPress="return validator.isNumber(this,event);" onblur="validator.timeRange(this, 1);" autocorrect="off" autocapitalize="off">分
-					</td>
-				</tr>
-			</table>-->
+		<tr id="ss_schedule_enable_tr" width="50%">
+
+			<th width="50%">启用定时更新订阅</th>
+			<td>
+				<div class="main_itoggle">
+					<div id="ss_schedule_enable_on_of">
+						<input type="checkbox" id="ss_schedule_enable_fake"
+							<% nvram_match_x("", "ss_schedule_enable", "1", "value=1 checked"); %><% nvram_match_x("", "ss_schedule_enable", "0", "value=0"); %>>
+					</div>
+				</div>
+
+				<div style="position: absolute; margin-left: -10000px;">
+					<input type="radio" name="ss_schedule_enable_x" id="ss_schedule_enable_1" class="input" value="1"
+						<% nvram_match_x("", "ss_schedule_enable", "1", "checked"); %> />
+					<#checkbox_Yes#>
+						<input type="radio" name="ss_schedule_enable_x" id="ss_schedule_enable_0" class="input"
+							value="0" <% nvram_match_x("", "ss_schedule_enable", "0", "checked"); %> />
+						<#checkbox_No#>
+				</div>
+			</td>
+		</tr>
+		<tr id="ss_schedule_date_tr">
+			<th>自动更新星期</th>
+			<td>
+				<input type="checkbox" name="ss_date_x_Sun" class="input" onclick="check_Timefield_checkbox();">日
+				<input type="checkbox" name="ss_date_x_Mon" class="input" onclick="check_Timefield_checkbox();">一
+				<input type="checkbox" name="ss_date_x_Tue" class="input" onclick="check_Timefield_checkbox();">二
+				<input type="checkbox" name="ss_date_x_Wed" class="input" onclick="check_Timefield_checkbox();">三
+				<input type="checkbox" name="ss_date_x_Thu" class="input" onclick="check_Timefield_checkbox();">四
+				<input type="checkbox" name="ss_date_x_Fri" class="input" onclick="check_Timefield_checkbox();">五
+				<input type="checkbox" name="ss_date_x_Sat" class="input" onclick="check_Timefield_checkbox();">六
+			</td>
+		</tr>
+		<tr id="ss_schedule_time_tr">
+			<th>自动更新时间</th>
+			<td>
+				<input type="text" maxlength="2" class="input_3_table" style="width: 30px" name="ss_time_x_hour"
+					onKeyPress="return validator.isNumber(this,event);" onblur="validator.timeRange(this, 0);"
+					autocorrect="off" autocapitalize="off">时:
+				<input type="text" maxlength="2" class="input_3_table" style="width: 30px" name="ss_time_x_min"
+					onKeyPress="return validator.isNumber(this,event);" onblur="validator.timeRange(this, 1);"
+					autocorrect="off" autocapitalize="off">分
+			</td>
+		</tr>
+	</table>
 			 <table width="100%" cellpadding="4" cellspacing="0" class="table">
 	<tr>
 		<td style="border: 0 none; padding: 0px;"><center>

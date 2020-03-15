@@ -985,6 +985,8 @@
 			{"d_keyword_n","",NULL, FALSE},
 			{"d_keyword_y","",NULL, FALSE},
 			{"d_update_link","",NULL, FALSE},
+			{"ss_schedule_enable", "", NULL, FALSE},
+			{"ss_schedule", "", NULL, FALSE},
 			{"d_ss_obfsparam","",NULL, EVM_RESTART_SHADOWSOCKS},
 			{"ss_type","",NULL, EVM_RESTART_SHADOWSOCKS|EVM_RESTART_SS_TUNNEL},
 			{"ss_mode","",NULL, EVM_RESTART_SHADOWSOCKS},

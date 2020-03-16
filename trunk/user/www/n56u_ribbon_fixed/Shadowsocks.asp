@@ -1228,6 +1228,14 @@ var result = JSON.parse(db_ss[key]);
 					</select>
 				</td>
 			</tr>
+			<tr> <th width="50%">需要代理的端口</th>
+				<td>
+					<select name="s_dports" class="input" style="width: 200px;">
+						<option value="0" <% nvram_match_x("","s_dports", "0","selected"); %>>所有端口（默认）</option>
+						<option value="1" <% nvram_match_x("","s_dports", "1","selected"); %>>仅常用端口(不走P2P流量到代理)</option>
+					</select>
+				</td>
+			</tr>
 			<tr> <th width="50%">内网控制</th>
 				<td>
 					<select name="lan_con" class="input" style="width: 200px;">

@@ -960,6 +960,7 @@
 	        {"ss_threads","",NULL, EVM_RESTART_SHADOWSOCKS},
 	        {"ss_run_mode","",NULL, EVM_RESTART_SHADOWSOCKS},
 	        {"pdnsd_enable","",NULL, EVM_RESTART_SHADOWSOCKS},
+			{"s_dports","",NULL, EVM_RESTART_SHADOWSOCKS},
 			{"china_dns","",NULL, EVM_RESTART_SHADOWSOCKS},
 	        {"tunnel_forward","",NULL, EVM_RESTART_SHADOWSOCKS},
 			{"ssp_dns_ip","",NULL, EVM_RESTART_SHADOWSOCKS},

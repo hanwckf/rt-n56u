@@ -139,6 +139,12 @@ start_rules() {
 		lancons="指定IP走代理,请到规则管理页面添加需要走代理的IP。"
 		cat /etc/storage/ss_lan_bip.sh | grep -v '^!' | grep -v "^$" >$lan_fp_ips
 	fi
+	dports=$(nvram get s_dports)
+	if [ $dports = "1" ]; then
+		proxyport=" "
+	else
+		proxyport="-m multiport --dports 22,53,587,465,995,993,143,80,443"
+	fi
 	/usr/bin/ss-rules \
 	-s "$server" \
 	-l "$local_port" \
@@ -151,6 +157,7 @@ start_rules() {
 	-p "$lan_fp_ips" \
 	-G "$lan_gm_ips" \
 	-G "$lan_gm_ips" \
+	-D "$proxyport" \
 	-k "$lancon" \
 	$socks $gfwmode $ARG_UDP
 	return $?

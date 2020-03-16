@@ -621,6 +621,7 @@ struct nvram_pair router_defaults[] = {
 	{ "ss_threads", "0" },
 	{ "ss_run_mode", "gfw" },
 	{ "pdnsd_enable", "0" },
+	{ "s_dports", "0" },
 	{ "ssp_local_port", "1080" },
 	{ "china_dns", "223.5.5.5#53" },
 	{ "tunnel_forward", "8.8.8.8#53" },

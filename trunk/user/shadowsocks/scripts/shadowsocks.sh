@@ -140,7 +140,7 @@ start_rules() {
 		cat /etc/storage/ss_lan_bip.sh | grep -v '^!' | grep -v "^$" >$lan_fp_ips
 	fi
 	dports=$(nvram get s_dports)
-	if [ $dports = "1" ]; then
+	if [ $dports = "0" ]; then
 		proxyport=" "
 	else
 		proxyport="-m multiport --dports 22,53,587,465,995,993,143,80,443"

@@ -2030,6 +2030,8 @@ applydb_cgi(webs_t wp, char *urlPrefix, char *webDir, int arg,
 	action_mode = websGetVar(wp, "action_mode", "");
 	action_script = websGetVar(wp, "action_script", "");
 	char userm[] = "deleting";
+	char useping[] = "ping";
+	char useaping[] = "allping";
 	
 	dbclient client;
 	dbclient_start(&client);
@@ -2064,6 +2066,10 @@ applydb_cgi(webs_t wp, char *urlPrefix, char *webDir, int arg,
 			//logmessage("HTTPD", "name: %s post: %s", dbvar, userm);
 			if(strcmp(dbval,userm) == 0)
 				doSystem("dbus remove %s", dbvar);
+			else if(strcmp(dbval,useping) == 0)
+				doSystem("/etc_ro/ss/ping.sh %s >/dev/null 2>&1 &", dbvar);
+			else if(strcmp(dbval,useaping) == 0)
+				doSystem("/etc_ro/ss/allping.sh >/dev/null 2>&1 &");
 			else
 				doSystem("dbus set %s='%s'", dbvar, dbval);
 		}
@@ -2096,6 +2102,10 @@ applydb_cgi(webs_t wp, char *urlPrefix, char *webDir, int arg,
 			//logmessage("HTTPD", "name: %s post: %s", dbvar, dbval);
 			if(strcmp(dbval,userm) == 0)
 				doSystem("dbus remove %s", dbvar);
+			else if(strcmp(dbval,useping) == 0)
+				doSystem("/etc_ro/ss/ping.sh %s >/dev/null 2>&1 &", dbvar);
+			else if(strcmp(dbval,useaping) == 0)
+				doSystem("/etc_ro/ss/allping.sh >/dev/null 2>&1 &");
 			else
 				doSystem("dbus set %s='%s'", dbvar, dbval);
 		}

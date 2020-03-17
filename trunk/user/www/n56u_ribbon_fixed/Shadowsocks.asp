@@ -59,6 +59,12 @@ node_global_max = 0;
 		$j("#btn_del_link").click(function () {
 			del_dlink();
 		});
+		$j("#btn_ping_link").click(function () {
+			ping_dlink();
+		});
+		$j("#btn_aping_link").click(function () {
+			aping_dlink();
+		});
 	});
 
 function initial(){
@@ -567,14 +573,17 @@ function showMRULESList(){
 		valign: 'middle',
 		width:'200px'
     },{
-        field: 'server_port',
-        title: '端口',
-		align: 'center',
-		valign: 'middle',
-		width:'50px'
-    },{
         field: 'ping',
         title: 'ping',
+		align: 'center',
+		valign: 'middle',
+		width:'50px',
+		cellStyle:cellStylesales,
+		formatter: actionFormatter2,
+		sortable: true
+    },{
+        field: 'lost',
+        title: '丢包',
 		align: 'center',
 		valign: 'middle',
 		width:'50px'
@@ -588,6 +597,36 @@ function showMRULESList(){
 	 }]
 });
 }
+
+ function cellStylesales(value, row, index) {
+ var ping=row.ping
+if(typeof(ping) == "undefined"){
+ return ""
+ }else if(ping < 100){
+ return {css:{background:'#04B404',color:'#000'}};
+ }else if(ping < 300){
+ return {css:{background:'#ffeb3b',color:'#000'}};
+ }else{
+ return {css:{background:'#f44336',color:'#000'}};
+ }
+     
+    }
+
+function actionFormatter2(value, row, index) {
+	var ping = row.ping
+	var result = "";
+	console.log(row.ping)
+
+	if(typeof(ping) == "undefined"){
+	result += "-";
+	}else if(ping != "failed"){
+	result += ping + "ms";
+	}else{
+	result += ping
+}
+	return result;
+}
+
 
 function actionFormatter(value, row, index) {
 	var id = row.ids
@@ -643,6 +682,51 @@ function EditViewById(id){
 		},
 		success: function(response) {
 			location.reload();
+		}
+	});
+}
+
+//ping节点
+ function ping_dlink(){
+	var row=$j("#table99").bootstrapTable('getSelections');
+	var p = "ssconf_basic";
+	var ns = {};
+		for(var key  in  row){
+	
+		ns[row[key].ids] = "ping";
+	}
+	$j.ajax({
+		url: "/applydb.cgi?useping=1&p=ss",
+		type: 'POST',
+		contentType: "application/x-www-form-urlencoded",
+		dataType: 'text',
+		data: $j.param(ns),
+		error: function(xhr) {
+			console.log("error in posting config of table");
+		},
+		success: function(response) {
+			//location.reload();
+			alert("执行脚本成功")
+		}
+	});
+}
+
+//ping全部节点
+ function aping_dlink(){
+	var ns = {};
+	ns[1] = "allping";
+	$j.ajax({
+		url: "/applydb.cgi?useping=1&p=ss",
+		type: 'POST',
+		contentType: "application/x-www-form-urlencoded",
+		dataType: 'text',
+		data: $j.param(ns),
+		error: function(xhr) {
+			console.log("error in posting config of table");
+		},
+		success: function(response) {
+			//location.reload();
+			alert("执行脚本成功")
 		}
 	});
 }
@@ -1333,6 +1417,8 @@ var result = JSON.parse(db_ss[key]);
 						<option value="c" >订阅节点</option>
 					</select>
 					<input type="button" id="btn_add_link" class="btn btn-info" value="添加/导入节点">
+					<input type="button" id="btn_ping_link" class="btn btn-info" value="ping节点">
+					<input type="button" id="btn_aping_link" class="btn btn-info" value="ping全部节点">
 					<input type="button" id="btn_del_link" class="btn btn-danger" value="批量删除节点">
 					<input type="button" id="btn_connect_1" class="btn btn-danger" value="清空所有节点" onclick="submitInternet('Reset_dlink');">
 </th> </tr>

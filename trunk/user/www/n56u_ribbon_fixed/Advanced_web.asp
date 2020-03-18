@@ -63,10 +63,10 @@ if (found_app_dnsforwarder()){
 if (found_app_mentohust()){
 	showhide_div('row_wmen', true);
 }
-if (found_app_adbyby()){
+if (found_app_adbyby() || found_app_koolproxy()){
 	showhide_div('row_wadbyby', true);
 }
-if (found_app_pdnsd()){
+if (found_app_smartdns() || found_app_adguardhome()){
 	showhide_div('row_wpdnsd', true);
 }
 }
@@ -138,20 +138,6 @@ function applyRule(){
 									<div>此选项只能屏蔽页面的显示，并不会删除程序。</div>
 									</div>
 									<table width="100%" align="center" cellpadding="4" cellspacing="0" class="table">
-									<tr >
-											<th width="50%">AiDisk</th>
-											<td>
-													<div class="main_itoggle">
-													<div id="w_ai_on_of">
-														<input type="checkbox" id="w_ai_fake" <% nvram_match_x("", "w_ai", "1", "value=1 checked"); %><% nvram_match_x("", "w_ai", "0", "value=0"); %>  />
-													</div>
-												</div>
-												<div style="position: absolute; margin-left: -10000px;">
-													<input type="radio" value="1" name="w_ai" id="w_ai_1" class="input" <% nvram_match_x("", "w_vpn_s", "1", "checked"); %> /><#checkbox_Yes#>
-													<input type="radio" value="0" name="w_ai" id="w_ai_0" class="input" <% nvram_match_x("", "w_vpn_s", "0", "checked"); %> /><#checkbox_No#>
-												</div>
-											</td>
-										</tr>
 										<tr >
 											<th width="50%">VPN服务器</th>
 											<td>
@@ -280,7 +266,7 @@ function applyRule(){
 											</td>
 										</tr>
 										<tr id="row_wss" style="display:none">
-											<th width="50%">ShadowSocks</th>
+											<th width="50%">科学上网</th>
 											<td>
 													<div class="main_itoggle">
 													<div id="w_ss_on_of">
@@ -308,7 +294,7 @@ function applyRule(){
 											</td>
 										</tr>
 										<tr id="row_wadbyby" style="display:none">
-											<th width="50%">Adbyby plus+</th>
+											<th width="50%">广告管理</th>
 											<td>
 													<div class="main_itoggle">
 													<div id="w_adbyby_on_of">

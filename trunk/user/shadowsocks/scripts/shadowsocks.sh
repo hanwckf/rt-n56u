@@ -15,7 +15,6 @@ CONFIG_UDP_FILE=/tmp/${NAME}_u.json
 CONFIG_SOCK5_FILE=/tmp/${NAME}_s.json
 CONFIG_KUMASOCKS_FILE=/tmp/kumasocks.toml
 v2_json_file="/tmp/v2-redir.json"
-v2udp_json_file="/tmp/v2-udpredir.json"
 trojan_json_file="/tmp/tj-redir.json"
 server_count=0
 redir_tcp=0
@@ -29,20 +28,28 @@ wan_fw_ips="/tmp/blackip.txt"
 lan_fp_ips="/tmp/lan_ip.txt"
 run_mode=`nvram get ss_run_mode`
 ss_turn=`nvram get ss_turn`
-ss_udp=`nvram get ss_udp`
 lan_con=`nvram get lan_con`
-ss_own=`nvram get ss_own`
+GLOBAL_SERVER=`nvram get global_server`
 socks=""
 
-if [ $ss_own = "1" ]; then
-   socks="-o"
-fi
 gen_config_file() {
     hostip=$(nvram get ssp_server_x$1)
+	if [ "$2" = "0" ]; then
 	config_file=$CONFIG_FILE
+	else
+	config_file=$CONFIG_UDP_FILE
+	fi
 	fastopen="false"
+	if [ "$2" = "0" ]; then
 	stype=$(nvram get d_type)
-	logger -t "SS" "正在创建$stype客户端的json文件..."
+	else
+	if [ "$UDP_RELAY_SERVER" == "$GLOBAL_SERVER" ]; then
+	stype=$(nvram get d_type)
+	else
+	stype=$(nvram get ud_type)
+	fi
+	fi
+
 	if [ "$stype" == "ss" ]; then
 		lua /etc_ro/ss/genssconfig.lua $1 1080 >$config_file
 		sed -i 's/\\//g' $config_file
@@ -52,6 +59,7 @@ gen_config_file() {
 	elif [ "$stype" == "trojan" ]; then
 		tj_bin="/usr/bin/trojan"
 		if [ ! -f "$tj_bin" ]; then
+		if [ ! -f "/tmp/trojan" ];then
 			curl -k -s -o /tmp/trojan --connect-timeout 10 --retry 3 https://cdn.jsdelivr.net/gh/chongshengB/rt-n56u/trunk/user/trojan/trojan
 			if [ ! -f "/tmp/trojan" ]; then
 				logger -t "SS" "trojan二进制文件下载失败，可能是地址失效或者网络异常！"
@@ -62,13 +70,22 @@ gen_config_file() {
 				chmod -R 777 /tmp/trojan
 				tj_bin="/tmp/trojan"
 			fi
+			else
+			tj_bin="/tmp/trojan"
+			fi		
 		fi
 		#tj_file=$trojan_json_file
+		if [ "$2" = "0" ]; then
 		lua /etc_ro/ss/gentrojanconfig.lua $1 nat 1080 >$trojan_json_file
 		sed -i 's/\\//g' $trojan_json_file
+		else
+		lua /etc_ro/ss/gentrojanconfig.lua $1 client 10801 >/tmp/trojan-ssr-reudp.json
+		sed -i 's/\\//g' /tmp/trojan-ssr-reudp.json
+		fi
 	elif [ "$stype" == "v2ray" ]; then
 		v2_bin="/usr/bin/v2ray"
 		if [ ! -f "$v2_bin" ]; then
+		if [ ! -f "/tmp/v2ray" ];then
 			curl -k -s -o /tmp/v2ray --connect-timeout 10 --retry 3 https://cdn.jsdelivr.net/gh/chongshengB/rt-n56u/trunk/user/v2ray/v2ray
 			if [ ! -f "/tmp/v2ray" ]; then
 				logger -t "SS" "v2ray二进制文件下载失败，可能是地址失效或者网络异常！"
@@ -79,16 +96,24 @@ gen_config_file() {
 				chmod -R 777 /tmp/v2ray
 				v2_bin="/tmp/v2ray"
 			fi
+			else
+			v2_bin="/tmp/v2ray"
+			fi
 		fi
 		v2ray_enable=1
+		if [ "$2" = "1" ]; then
+		lua /etc_ro/ss/genv2config.lua $1 udp 1080 >/tmp/v2-ssr-reudp.json
+		sed -i 's/\\//g' /tmp/v2-ssr-reudp.json
+		else
 		lua /etc_ro/ss/genv2config.lua $1 tcp 1080 >$v2_json_file
 		sed -i 's/\\//g' $v2_json_file
+		fi
 		fi
 }
 
 start_rules() {
     logger -t "SS" "正在添加防火墙规则..."
-	lua /etc_ro/ss/getconfig.lua $1 > /tmp/server.txt
+	lua /etc_ro/ss/getconfig.lua $GLOBAL_SERVER > /tmp/server.txt
 	server=`cat /tmp/server.txt` 
 	cat /etc/storage/ss_ip.sh | grep -v '^!' | grep -v "^$" >$wan_fw_ips
 	cat /etc/storage/ss_wan_ip.sh | grep -v '^!' | grep -v "^$" >$wan_bp_ips
@@ -109,8 +134,13 @@ start_rules() {
 	lan_ac_ips=$lan_ac_ips
 	lan_ac_mode="b"
 	router_proxy="1"
-	if [ "$ss_udp" = 1 ]; then
+	if [ "$GLOBAL_SERVER" == "$UDP_RELAY_SERVER" ]; then
 		ARG_UDP="-u"
+	elif [ "$UDP_RELAY_SERVER" != "nil" ]; then
+		ARG_UDP="-U"
+		lua /etc_ro/ss/getconfig.lua $UDP_RELAY_SERVER > /tmp/userver.txt
+	    udp_server=`cat /tmp/userver.txt` 
+		udp_local_port="1080"
 	fi
 	if [ -n "$lan_ac_ips" ]; then
 		case "$lan_ac_mode" in
@@ -121,6 +151,7 @@ start_rules() {
 	gfwmode=""
 	if [ "$run_mode" = "gfw" ]; then
 		gfwmode="-g"
+		socks="-o"
 	elif [ "$run_mode" = "router" ]; then
 		gfwmode="-r"
 	elif [ "$run_mode" = "oversea" ]; then
@@ -165,9 +196,8 @@ start_rules() {
 
 start_redir() {
 	ARG_OTA=""
-		gen_config_file $1 0
-		stype=$(nvram get d_type)
-	logger -t "SS" "正在启动$stype程序..."
+	gen_config_file $GLOBAL_SERVER 0
+	stype=$(nvram get d_type)
 	if [ "$stype" == "ss" ]; then
 		sscmd="ss-redir"
 	elif [ "$stype" == "ssr" ]; then
@@ -177,17 +207,31 @@ start_redir() {
 	elif [ "$stype" == "v2ray" ]; then
 		sscmd="$v2_bin"
 	fi
+	if [ "$UDP_RELAY_SERVER" = "$GLOBAL_SERVER" ]; then
+	utype=$(nvram get d_type)
+	else
+	utype=$(nvram get ud_type)
+	fi
+	if [ "$utype" == "ss" ]; then
+		ucmd="ss-redir"
+	elif [ "$utype" == "ssr" ]; then
+		ucmd="ssr-redir"
+	elif [ "$utype" == "v2ray" ]; then
+		ucmd="$v2_bin"
+	elif [ "$utype" == "trojan" ]; then
+		ucmd="$tj_bin"
+	fi
 	if [ "$(nvram get ss_threads)" = "0" ]; then
 		threads=$(cat /proc/cpuinfo | grep 'processor' | wc -l)
 	else
 		threads=$(nvram get ss_threads)
 	fi
+	logger -t "SS" "启动$stype主服务器..."
 	if [ "$stype" == "ss" -o "$stype" == "ssr" ]; then
 		last_config_file=$CONFIG_FILE
 		pid_file="/tmp/ssr-retcp.pid"
 		for i in $(seq 1 $threads); do
 			$sscmd -c $CONFIG_FILE $ARG_OTA -f /tmp/ssr-retcp_$i.pid >/dev/null 2>&1
-			logger -t "SS" "启动$stype第$i线程..."
 			usleep 500000
 		done
 		redir_tcp=1
@@ -195,7 +239,6 @@ start_redir() {
 	elif [ "$stype" == "trojan" ]; then
 		for i in $(seq 1 $threads); do
 			$sscmd --config $trojan_json_file >>/tmp/ssrplus.log 2>&1 &
-			logger -t "SS" "启动$stype第$i线程..."
 			usleep 500000
 		done
 		echo "$(date "+%Y-%m-%d %H:%M:%S") $($sscmd --version 2>&1 | head -1) Started!" >>/tmp/ssrplus.log
@@ -203,11 +246,29 @@ start_redir() {
 		$sscmd -config $v2_json_file >/dev/null 2>&1 &
 		echo "$(date "+%Y-%m-%d %H:%M:%S") $($sscmd -version | head -1) 启动成功!" >>/tmp/ssrplus.log
 	fi
+	if [ "$UDP_RELAY_SERVER" != "nil" ]; then
+		redir_udp=1
+		logger -t "SS" "启动$utype游戏UDP中级服务器"
+		if [ "$utype" == "ss" -o "$utype" == "ssr" ]; then
+			ARG_OTA=""
+			gen_config_file $UDP_RELAY_SERVER 1
+			last_config_file=$CONFIG_UDP_FILE
+			pid_file="/var/run/ssr-reudp.pid"
+			$ucmd -c $last_config_file $ARG_OTA -U -f /var/run/ssr-reudp.pid >/dev/null 2>&1
+		elif [ "$utype" == "v2ray" ]; then
+			gen_config_file $UDP_RELAY_SERVER 1
+			$v2_bin -config /tmp/v2-ssr-reudp.json >/dev/null 2>&1 &
+		elif [ "$utype" == "trojan" ]; then
+			gen_config_file $UDP_RELAY_SERVER 1
+			$tj_bin --config /tmp/trojan-ssr-reudp.json >/dev/null 2>&1 &
+			ipt2socks -U -b 0.0.0.0 -4 -s 127.0.0.1 -p 10801 -l 1080 >/dev/null 2>&1 &
+		fi
+	fi
 	ss_switch=$(nvram get backup_server)
 	if [ $ss_switch != "nil" ]; then
 		switch_time=$(nvram get ss_turn_s)
 		switch_timeout=$(nvram get ss_turn_ss)
-		/usr/bin/ssr-switch start $switch_time $switch_timeout &
+		#/usr/bin/ssr-switch start $switch_time $switch_timeout &
 		socks="-o"
 	fi
 	return $?
@@ -221,7 +282,7 @@ start_dns() {
 		ipset -! flush china
 		ipset -! restore </tmp/china.ipset 2>/dev/null
 		rm -f /tmp/china.ipset
-		if [ $(nvram get pdnsd_enable) = 0 ]; then
+		if [ $(nvram get ss_chdns) = 1 ]; then
 		logger -t "SS" "下载cdn域名文件..."
 		wget --no-check-certificate --timeout=8 -qO - https://gitee.com/bkye/rules/raw/master/cdn.txt > /tmp/cdn.txt
 		if [ ! -f "/tmp/cdn.txt" ]; then
@@ -317,15 +378,17 @@ start_local() {
 	fi
 }
 
-
 rules() {
-    [ "$GLOBAL_SERVER" = "-1" ] && return 1
-    [ "$UDP_RELAY_SERVER" = "same" ] && UDP_RELAY_SERVER=$GLOBAL_SERVER
-    if start_rules $GLOBAL_SERVER;then
-        return 0
-    else
-        return 1
-    fi
+	[ "$GLOBAL_SERVER" = "nil" ] && return 1
+	UDP_RELAY_SERVER=$(nvram get udp_relay_server)
+	if [ "$UDP_RELAY_SERVER" = "same" ]; then
+	UDP_RELAY_SERVER=$GLOBAL_SERVER
+	fi
+	if start_rules; then
+		return 0
+	else
+		return 1
+	fi
 }
 
 start_watchcat() {
@@ -356,12 +419,10 @@ EOF
 
 # ================================= 启动 SS ===============================
 ssp_start() { 
-    GLOBAL_SERVER=`nvram get global_server`
-    echo $GLOBAL_SERVER
     ss_enable=`nvram get ss_enable`
-    if [ $ss_enable != "0" ] && [ $GLOBAL_SERVER != "nil" ]; then
-        start_redir $GLOBAL_SERVER
-        start_rules $GLOBAL_SERVER
+	if rules; then
+        start_redir
+        #start_rules
 		#start_AD
         start_dns
         start_local

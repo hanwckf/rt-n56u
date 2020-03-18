@@ -21,7 +21,7 @@
 <script type="text/javascript" src="/itoggle.js"></script>
 <script type="text/javascript" src="/popup.js"></script>
 <script type="text/javascript" src="/help.js"></script>
-<script type="text/javascript" id="dbssr" src="/dbconf?p=ss&v=<% uptime(); %>"></script>
+<script type="text/javascript" src="/dbconf?p=ss&v=<% uptime(); %>"></script>
 <script type="text/javascript" src="/validator.js"></script>
 <script>
 
@@ -35,8 +35,7 @@ node_global_max = 0;
 	$j(document).ready(function () {
 		init_itoggle('ss_enable');
 		init_itoggle('switch_enable_x_0');
-		init_itoggle('ss_udp');
-		init_itoggle('ss_own');
+		init_itoggle('ss_chdns');
 		init_itoggle('ss_router_proxy', change_ss_watchcat_display);
 		init_itoggle('ss_watchcat');
 		init_itoggle('ss_update_chnroute');
@@ -72,8 +71,6 @@ function initial(){
 	show_menu(13,13,0);
 	show_footer();
 	fill_ss_status(shadowsocks_status());
-	fill_ss_check_status(shadowsocks_check_status());
-	fill_pd_status(pdnsd_status());
 	$("chnroute_count").innerHTML = '<#menu5_17_3#>' + chnroute_count() ;
 	$("gfwlist_count").innerHTML = '<#menu5_17_3#>' + gfwlist_count() ;
 	switch_ss_type();
@@ -88,6 +85,7 @@ function initial(){
 	var o5 = document.form.pdnsd_enable;
 	var o6 = document.form.socks5_enable;
 	var o7 = document.form.tunnel_forward;
+	var o8 = document.form.udp_relay_server;
 	o1.value = '<% nvram_get_x("","global_server"); %>';
 	o2.value = '<% nvram_get_x("","lan_con"); %>';
 	o3.value = '<% nvram_get_x("","ss_threads"); %>';
@@ -95,6 +93,7 @@ function initial(){
 	o5.value = '<% nvram_get_x("","pdnsd_enable"); %>';
 	o6.value = '<% nvram_get_x("","socks5_enable"); %>';
 	o7.value = '<% nvram_get_x("","tunnel_forward"); %>';
+	o8.value = '<% nvram_get_x("","udp_relay_server"); %>';
 	switch_dns();
 	if(ss_schedule_support){
 		document.form.ss_date_x_Sun.checked = getDateCheck(document.form.ss_schedule.value, 0);
@@ -119,14 +118,6 @@ function initial(){
 function textarea_scripts_enabled(v){
 //inputCtrl(document.form['scripts.ss.dom.sh'], v);
 //inputCtrl(document.form['scripts.ss.ip.sh'], v);
-}
-function fill_pd_status(status_code){
-	var stext = "Unknown";
-	if (status_code == 0)
-		stext = "<#Stopped#>";
-	else if (status_code == 1)
-		stext = "<#Running#>";
-	$("pdnsd_status").innerHTML = '<span class="label label-' + (status_code != 0 ? 'success' : 'warning') + '">' + stext + '</span>';
 }
 
 function change_on(){
@@ -457,22 +448,6 @@ function fill_ss_status(status_code){
 		stext = "<#Running#>";
 	$("ss_status").innerHTML = '<span class="label label-' + (status_code != 0 ? 'success' : 'warning') + '">' + stext + '</span>';
 }
-function fill_ss_check_status(status_code){
-	var stext = "<#Stopped#>";
-	if (status_code == 0)
-		stext = "主服务器";
-	else if (status_code == 1)
-		stext = "备用服务器";
-	$("ss_check_status").innerHTML = '<span class="label label-' + (status_code != 0 ? 'warning' : 'success') + '">' + stext + '</span>';
-}
-function fill_ss_tunnel_status(status_code){
-	var stext = "Unknown";
-	if (status_code == 0)
-		stext = "<#Stopped#>";
-	else if (status_code == 1)
-		stext = "<#Running#>";
-	$("ss_tunnel_status").innerHTML = '<span class="label label-' + (status_code != 0 ? 'success' : 'warning') + '">' + stext + '</span>';
-}
 var arrHashes = ["cfg", "add", "dlink", "ssl", "cli", "log", "help"];
 function showTab(curHash){
 	var obj = $('tab_ss_'+curHash.slice(1));
@@ -598,32 +573,30 @@ function showMRULESList(){
 });
 }
 
- function cellStylesales(value, row, index) {
- var ping=row.ping
-if(typeof(ping) == "undefined"){
- return ""
- }else if(ping < 100){
- return {css:{background:'#04B404',color:'#000'}};
- }else if(ping < 300){
- return {css:{background:'#ffeb3b',color:'#000'}};
- }else{
- return {css:{background:'#f44336',color:'#000'}};
- }
-     
-    }
+function cellStylesales(value, row, index) {
+	var ping = row.ping
+	if (typeof (ping) == "undefined") {
+		return ""
+	} else if (ping < 100) {
+		return { css: { background: '#04B404', color: '#000' } };
+	} else if (ping < 300) {
+		return { css: { background: '#ffeb3b', color: '#000' } };
+	} else {
+		return { css: { background: '#f44336', color: '#000' } };
+	}
+}
 
 function actionFormatter2(value, row, index) {
 	var ping = row.ping
 	var result = "";
-	console.log(row.ping)
 
-	if(typeof(ping) == "undefined"){
-	result += "-";
-	}else if(ping != "failed"){
-	result += ping + "ms";
-	}else{
-	result += ping
-}
+	if (typeof (ping) == "undefined") {
+		result += "-";
+	} else if (ping != "failed") {
+		result += ping + "ms";
+	} else {
+		result += ping
+	}
 	return result;
 }
 
@@ -669,7 +642,7 @@ function EditViewById(id){
 	
 		ns[p + "_json_" + row[key].ids] = "deleting";
 	}
-	console.log(ns)
+	//console.log(ns)
 	
 	$j.ajax({
 		url: "/applydb.cgi?userm1=del&p=ss",
@@ -805,7 +778,7 @@ function import_ssr_url(btn, urlname, sid) {
 	s.innerHTML = "";
 //var ssu = ssrurl.match(/ssr:\/\/([A-Za-z0-9_-]+)/i);
 var ssu = ssrurl.split('://');
-console.log(ssu.length);
+//console.log(ssu.length);
 if ((ssu[0] != "ssr" && ssu[0] != "ss" && ssu[0] != "vmess" && ssu[0] != "trojan") || ssu[1] == "") {
 	s.innerHTML = "<font color='red'>无效格式</font>";
 	return false;
@@ -970,12 +943,13 @@ document.getElementById('ssp_insecure').value = 0;
 // 渲染父节点  obj 需要渲染的数据 keyStr key需要去除的字符串
 function showNodeList(obj,keyStr){
   var nodeList = document.getElementById("nodeList"); // 获取节点
+  var unodeList = document.getElementById("u_nodeList"); // 获取节点
   for(var key  in  obj){ // 遍历对象
 	var optionObj = JSON.parse(obj[key] ); // 字符串转为对象
 	var text = '[ '+ (optionObj.type ? optionObj.type:"类型获取失败") +' ] ' + (optionObj.alias?optionObj.alias:"名字获取失败"); // 判断下怕获取失败 ，括号是运算的问题
 	 // 添加 
-	nodeList.options.add(new Option(text, 
-	  key.replace(keyStr,''))); // 通过 replacce把不要的字符去掉
+	nodeList.options.add(new Option(text, key.replace(keyStr,''))); // 通过 replacce把不要的字符去掉
+	unodeList.options.add(new Option(text, key.replace(keyStr,''))); // 通过 replacce把不要的字符去掉
   } 
 }
 
@@ -1036,7 +1010,7 @@ function updateDateTime()
 //点击保存节点按钮
 function showNodeData(idName,obj){
       var nodeData = document.getElementById(idName);
-	  console.log(nodeData);
+	  //console.log(nodeData);
       for (var key in obj) {
           var tr = document.createElement("tr");
           var td = document.createElement("td");
@@ -1136,7 +1110,7 @@ function showNodeData(idName,obj){
 	var ns = {};
 	ns[p + "_json_" + node_global_max] = post_dbus;
 	push_data(ns);
-	console.log(DataObj)
+	//console.log(DataObj)
 }	 
 //post数据到后台处理
 function push_data(obj) {
@@ -1153,10 +1127,16 @@ function push_data(obj) {
 	});
 }
 
-function showsdlinkList(){
-var key = "ssconf_basic_json_" + document.getElementById("nodeList").value;
-var result = JSON.parse(db_ss[key]);
+function showsdlinkList() {
+	var key = "ssconf_basic_json_" + document.getElementById("nodeList").value;
+	var result = JSON.parse(db_ss[key]);
 	document.getElementById("d_type").value = result.type;
+}
+
+function showsudlinkList() {
+	var key = "ssconf_basic_json_" + document.getElementById("u_nodeList").value;
+	var result = JSON.parse(db_ss[key]);
+	document.getElementById("ud_type").value = result.type;
 }
 </script>
 <style>
@@ -1203,6 +1183,7 @@ var result = JSON.parse(db_ss[key]);
 <input type="hidden" name="action_script" value="">
 <input type="hidden" name="ssp_staticnum_x_0" value="<% nvram_get_x("SspList", "ssp_staticnum_x"); %>" readonly="1" />
 <input type="hidden" id="d_type" name="d_type" value="<% nvram_get_x("","d_type"); %>">
+<input type="hidden" id="ud_type" name="ud_type" value="<% nvram_get_x("","ud_type"); %>">
 <input type="hidden" name="ss_schedule" value="<% nvram_get_x("", "ss_schedule"); %>" disabled>
 <input type="hidden" name="ss_schedule_enable" value="<% nvram_get_x("", "ss_schedule_enable"); %>">
 <div class="container-fluid">
@@ -1254,11 +1235,12 @@ var result = JSON.parse(db_ss[key]);
 <div class="row-fluid">
 	<div id="tabMenu" class="submenuBlock"></div>
 	<div id="wnd_ss_cfg">
-	<div class="alert alert-info" style="margin: 10px;">一个兼容Shadowsocks、ShadowsocksR 、Vmess等协议的游戏加速工具。</div>
+	<div class="alert alert-info" style="margin: 10px;">一个兼容Shadowsocks、ShadowsocksR 、Vmess等协议的游戏加速工具。
+	<div><span style="color:#E53333;">注意:</span></div>
+	<div><span style="color:#E53333;">1.chinadns-ng仅当绕过大陆模式有域名污染时才建议打开来分流防止污染！当然会占用一部分内存。</span></div>
+	<div><span style="color:#E53333;">2.服务器确定连上后,网页还是打不开,可尝试切换国外DNS</span></div>
+</div>
 		<table width="100%" cellpadding="4" cellspacing="0" class="table">
-			<tr> <th>当前运行服务器</th>
-				<td id="ss_check_status"></td>
-			</tr></th> </tr>
 			<tr> <th>客户端<#running_status#></th>
 				<td id="ss_status"></td>
 			</tr></th> </tr>
@@ -1286,6 +1268,15 @@ var result = JSON.parse(db_ss[key]);
 			<tr> <th>主服务器</th>
 				<td>
 					<select name="global_server" id="nodeList" class="input" style="width: 200px;" onchange="showsdlinkList()">
+					<option value="nil" >停用</option>
+					</select>
+				</td>
+			</tr>
+			<tr> <th>游戏UDP中继服务器</th>
+				<td>
+					<select name="udp_relay_server" id="u_nodeList" class="input" style="width: 200px;" onchange="showsudlinkList()">
+						<option value="nil" >停用</option>
+						<option value="same" >与主服务相同</option>
 					</select>
 				</td>
 			</tr>
@@ -1328,7 +1319,7 @@ var result = JSON.parse(db_ss[key]);
 					</select>
 				</td>
 			</tr>
-			<tr id="row_pdnsd_enable"> <th width="50%">DNS解析方式</th>
+			<tr id="row_pdnsd_enable"> <th width="50%">DNS解析方式(仅GFW模式生效)</th>
 				<td>
 					<select name="pdnsd_enable" id="pdnsd_enable" class="input" style="width: 200px;" onchange="switch_dns()">
 						<option value="0" >使用dns2tcp查询</option>
@@ -1336,7 +1327,20 @@ var result = JSON.parse(db_ss[key]);
 					</select>
 				</td>
 			</tr>
-			<tr id="row_china_dns" style="display:none;"> <th width="50%">中国DNS服务器</th>
+			<tr> <th>加载chinadns-ng(仅绕过模式生效)</th>
+				<td>
+					<div class="main_itoggle">
+						<div id="ss_chdns_on_of">
+							<input type="checkbox" id="ss_chdns_fake" <% nvram_match_x("", "ss_chdns", "1", "value=1 checked"); %><% nvram_match_x("", "ss_chdns", "0", "value=0"); %>>
+						</div>
+					</div>
+					<div style="position: absolute; margin-left: -10000px;">
+						<input type="radio" value="1" name="ss_chdns" id="ss_chdns_1" <% nvram_match_x("", "ss_chdns", "1", "checked"); %>><#checkbox_Yes#>
+						<input type="radio" value="0" name="ss_chdns" id="ss_chdns_0" <% nvram_match_x("", "ss_chdns", "0", "checked"); %>><#checkbox_No#>
+					</div>
+				</td>
+			</tr>
+			<tr id="row_china_dns" style="display:none;"> <th width="50%">国内DNS(仅chinadns-ng生效)</th>
 				<td>
 					<select name="china_dns" class="input" style="width: 200px;" >
 						<option value="223.5.5.5#53" >阿里DNS (223.5.5.5)</option>
@@ -1348,7 +1352,7 @@ var result = JSON.parse(db_ss[key]);
 					</select>
 				</td>
 			</tr>
-			<tr id="row_tunnel_forward" style="display:none;"> <th width="50%">外国DNS服务器</th>
+			<tr id="row_tunnel_forward" style="display:none;"> <th width="50%">国外DNS</th>
 				<td>
 					<select name="tunnel_forward" class="input" style="width: 200px;" >
 						<option value="8.8.4.4#53" >Google Public DNS (8.8.4.4)</option>
@@ -1373,32 +1377,6 @@ var result = JSON.parse(db_ss[key]);
 				手动配置<input type="radio" value="1" name="ssp_dns_ip" id="ssp_dns_ip_1" <% nvram_match_x("", "ssp_dns_ip", "1", "checked"); %>>
 				</td>
 			</tr>-->
-				<tr> <th><#menu5_16_17#></th>
-				<td>
-					<div class="main_itoggle">
-						<div id="ss_udp_on_of">
-							<input type="checkbox" id="ss_udp_fake" <% nvram_match_x("", "ss_udp", "1", "value=1 checked"); %><% nvram_match_x("", "ss_udp", "0", "value=0"); %>>
-						</div>
-					</div>
-					<div style="position: absolute; margin-left: -10000px;">
-						<input type="radio" value="1" name="ss_udp" id="ss_udp_1" <% nvram_match_x("", "ss_udp", "1", "checked"); %>><#checkbox_Yes#>
-						<input type="radio" value="0" name="ss_udp" id="ss_udp_0" <% nvram_match_x("", "ss_udp", "0", "checked"); %>><#checkbox_No#>
-					</div>
-				</td>
-			</tr>
-			<tr> <th>路由自身走代理</th>
-				<td>
-					<div class="main_itoggle">
-						<div id="ss_own_on_of">
-							<input type="checkbox" id="ss_own_fake" <% nvram_match_x("", "ss_own", "1", "value=1 checked"); %><% nvram_match_x("", "ss_own", "0", "value=0"); %>>
-						</div>
-					</div>
-					<div style="position: absolute; margin-left: -10000px;">
-						<input type="radio" value="1" name="ss_own" id="ss_own_1" <% nvram_match_x("", "ss_own", "1", "checked"); %>><#checkbox_Yes#>
-						<input type="radio" value="0" name="ss_own" id="ss_own_0" <% nvram_match_x("", "ss_own", "0", "checked"); %>><#checkbox_No#>
-					</div>
-				</td>
-			</tr>
 
 		</table>
 		<table class="table">
@@ -1699,11 +1677,6 @@ var result = JSON.parse(db_ss[key]);
 			<tr id="row_v2_mux" style="display:none;"><th>MUX</th>
 				<td>
 				<input type="checkbox" name="v2_mux" id="v2_mux" onclick="cmux();" >
-				</td>
-			</tr>
-			<tr> <th width="50%">本地端口</th>
-				<td>
-					<input type="text" maxlength="6" class="input" size="15" name="ssp_local_port_x_0" style="width: 200px" value="1080">
 				</td>
 			</tr>
 <!--<tr> <th>自动切换</th>
@@ -2028,16 +2001,9 @@ var result = JSON.parse(db_ss[key]);
 </div>
 <div id="wnd_ss_help" style="display:none">
 	<table width="100%" cellpadding="4" cellspacing="0" class="table">
-		<tr> <th colspan="2" style="background-color: #E3E3E3;">PDNSD说明:</th> </tr>
-		<tr> <th width="100%">绕过大陆模式启用pdnsd会自动检测并关闭当前正在运行的smartdns,因绕过大陆模式中,pdnsd需要把DNS转发到自身，所以两者不能共存。</th></tr>
-		<tr> <th width="100%">绕过大陆模式启用pdnsd会加载CDN域名规则来分流常用网站跑国内DNS，</th></tr>
-		<tr> <th colspan="2" style="background-color: #E3E3E3;">SmartDNS说明:</th> </tr>
-		<tr> <th width="100%">自动配置:此选项将加载预设的配置文件启动smartdns,不用你手动配置,适合小白,当然配置不一定会很适合你自身.</th></tr>
-		<tr> <th width="100%">手动配置:启动SS后需要自行到smartdns页面配置相关上游,端口之类，适合老手</br>
-		gfwlist模式下建议:启用第二服务器,端口5353,服务器组gfwlist,上游服务器添加服务器组,并从默认组排除。</br>
-		绕过模式下建议:国内DNS加载白名单。
-		</th></tr>
-
+		<tr> <th colspan="2" style="background-color: #E3E3E3;">chinadns-ng说明:</th> </tr>
+		<tr> <th width="100%">绕过大陆模式启用chinadns会加载CDN域名规则来分流常用网站跑国内DNS,加载gfwlist列表来分流到国外DNS</th></tr>
+		<tr> <th width="100%">此模式会占用一部分内存资源,内存少的机器请谨慎开启。</th></tr>
 		<tr> <th colspan="2" style="background-color: #E3E3E3;">Socks5代理说明:</th> </tr>
 		<tr> <th width="100%">WAN IPV4:允许外网IPV4访问socks5</th></tr>
 		<tr> <th width="100%">WAN IPV6:允许外网IPV6访问socks5</th></tr>

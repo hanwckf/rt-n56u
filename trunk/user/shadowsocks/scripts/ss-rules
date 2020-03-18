@@ -57,9 +57,9 @@ flush_r() {
 	flush_iptables() {
 		ipt="iptables -t $1"
 		DAT=$(iptables-save -t $1)
-		eval $(echo "$DAT" | grep "$TAG" | sed -e 's/^-A/$ipt_n -D/' -e 's/$/;/')
+		eval $(echo "$DAT" | grep "$TAG" | sed -e 's/^-A/$ipt -D/' -e 's/$/;/')
 		for chain in $(echo "$DAT" | awk '/^:SS_SPEC/{print $1}'); do
-			$ipt_n -F ${chain:1} 2>/dev/null && $ipt_n -X ${chain:1}
+			$ipt -F ${chain:1} 2>/dev/null && $ipt -X ${chain:1}
 		done
 	}
 	sed -i '/dnsmasq.dom/d' /etc/storage/dnsmasq/dnsmasq.conf
@@ -206,42 +206,45 @@ tp_rule() {
 	ip rule add fwmark 100 lookup 100
 	ip route add local 0.0.0.0/0 dev lo table 100
 	ipt="iptables -t mangle"
-	$ipt_n -N SS_SPEC_TPROXY
-	$ipt_n -A SS_SPEC_TPROXY -p udp --dport 443 -j RETURN
-	$ipt_n -A SS_SPEC_TPROXY -p udp --dport 53 -j RETURN
-	$ipt_n -A SS_SPEC_TPROXY -p udp -d 0.0.0.0/8 -j RETURN
-	$ipt_n -A SS_SPEC_TPROXY -p udp -d 10.0.0.0/8 -j RETURN
-	$ipt_n -A SS_SPEC_TPROXY -p udp -d 127.0.0.0/8 -j RETURN
-	$ipt_n -A SS_SPEC_TPROXY -p udp -d 169.254.0.0/16 -j RETURN
-	$ipt_n -A SS_SPEC_TPROXY -p udp -d 172.16.0.0/12 -j RETURN
-	$ipt_n -A SS_SPEC_TPROXY -p udp -d 192.168.0.0/16 -j RETURN
-	$ipt_n -A SS_SPEC_TPROXY -p udp -d 224.0.0.0/4 -j RETURN
-	$ipt_n -A SS_SPEC_TPROXY -p udp -d 240.0.0.0/4 -j RETURN
-	$ipt_n -A SS_SPEC_TPROXY -p udp -d $SERVER -j RETURN
+	$ipt -N SS_SPEC_TPROXY
+	$ipt -A SS_SPEC_TPROXY -p udp --dport 443 -j RETURN
+	$ipt -A SS_SPEC_TPROXY -p udp --dport 53 -j RETURN
+	$ipt -A SS_SPEC_TPROXY -p udp -d 0.0.0.0/8 -j RETURN
+	$ipt -A SS_SPEC_TPROXY -p udp -d 10.0.0.0/8 -j RETURN
+	$ipt -A SS_SPEC_TPROXY -p udp -d 127.0.0.0/8 -j RETURN
+	$ipt -A SS_SPEC_TPROXY -p udp -d 169.254.0.0/16 -j RETURN
+	$ipt -A SS_SPEC_TPROXY -p udp -d 172.16.0.0/12 -j RETURN
+	$ipt -A SS_SPEC_TPROXY -p udp -d 192.168.0.0/16 -j RETURN
+	$ipt -A SS_SPEC_TPROXY -p udp -d 224.0.0.0/4 -j RETURN
+	$ipt -A SS_SPEC_TPROXY -p udp -d 240.0.0.0/4 -j RETURN
+	$ipt -A SS_SPEC_TPROXY -p udp -d $SERVER -j RETURN
 
-	$ipt_n -A SS_SPEC_TPROXY -p udp $PROXY_PORTS $lanbip \
-		-j TPROXY --on-port "$LOCAL_PORT" --tproxy-mark 100
+	#$ipt -A SS_SPEC_TPROXY -p udp $PROXY_PORTS $lanbip \
+		#-j TPROXY --on-port "$LOCAL_PORT" --tproxy-mark 100
 
 	if [ "$RUNMODE" = "router" ] ;then
-	$ipt_n -A SS_SPEC_TPROXY -p udp -m set ! --match-set ss_spec_wan_ac dst \
+	$ipt -A SS_SPEC_TPROXY -p udp -m set ! --match-set ss_spec_wan_ac dst \
 		-j TPROXY --on-port "$LOCAL_PORT" --tproxy-mark 100
-	$ipt_n -A SS_SPEC_TPROXY -p udp $PROXY_PORTS -m set ! --match-set china dst \
+	$ipt -A SS_SPEC_TPROXY -p udp $PROXY_PORTS -m set ! --match-set china dst \
 		-j TPROXY --on-port "$LOCAL_PORT" --tproxy-mark 100
+	$ipt -A PREROUTING -p udp -j SS_SPEC_TPROXY
 
 	elif [ "$RUNMODE" = "gfw" ] ;then
-	$ipt_n -A SS_SPEC_TPROXY -p udp -m set  --match-set gfwlist dst \
-		-j TPROXY --on-port "$LOCAL_PORT" --tproxy-mark 100
+	$ipt -A SS_SPEC_TPROXY -p udp -m set  --match-set gfwlist dst -j TPROXY --on-port "$LOCAL_PORT" --tproxy-mark 100
+	$ipt -A PREROUTING -p udp -j SS_SPEC_TPROXY
 
 	elif [ "$RUNMODE" = "oversea" ] ;then
-	$ipt_n -A SS_SPEC_TPROXY -p udp $PROXY_PORTS -m set --match-set oversea dst \
+	$ipt -A SS_SPEC_TPROXY -p udp $PROXY_PORTS -m set --match-set oversea dst \
 		-j TPROXY --on-port "$LOCAL_PORT" --tproxy-mark 100
+	$ipt -A PREROUTING -p udp -j SS_SPEC_TPROXY
 
 	elif [ "$RUNMODE" = "all" ] ;then
-	$ipt_n -A SS_SPEC_TPROXY -p udp -j TPROXY --on-port "$LOCAL_PORT" --tproxy-mark 100
+	$ipt -A SS_SPEC_TPROXY -p udp -j TPROXY --on-port "$LOCAL_PORT" --tproxy-mark 100
+	$ipt -A PREROUTING -p udp -j SS_SPEC_TPROXY
 	fi
-    $ipt_n -I SS_SPEC_TPROXY -p udp $PROXY_PORTS -m set --match-set blacklist dst \
+    $ipt -I SS_SPEC_TPROXY -p udp $PROXY_PORTS -m set --match-set blacklist dst \
     -j TPROXY --on-port "$LOCAL_PORT" --tproxy-mark 100
-	$ipt_n -I SS_SPEC_TPROXY -p udp -m set --match-set whitelist dst -j RETURN
+	$ipt -I SS_SPEC_TPROXY -p udp -m set --match-set whitelist dst -j RETURN
 
 	return $?
 }

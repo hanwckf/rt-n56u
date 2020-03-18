@@ -1,12 +1,4 @@
 #!/bin/sh
-if [ ! -d "/etc/storage/dbus-1/" ];then
-mkdir -p /etc/storage/dbus-1
-cp -r /etc_ro/dbus-1/ /etc/storage/dbus-1
-fi
-if [ ! -f "/etc/storage/dlink.js" ] ; then
-cp -rf /etc_ro/dlink.js /etc/storage/
-chmod 755 "/etc/storage/dlink.js"
-fi
 mkdir -p /etc/ssl
 tar -xzf /etc_ro/certs.tgz -C /etc/ssl
 if [ ! -f "/etc/storage/koolproxy_rules_script.sh" ] ; then

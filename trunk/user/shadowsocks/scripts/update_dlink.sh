@@ -1,6 +1,6 @@
 #!/bin/sh
 #===================================================================
-#chongshengB 20200228
+#chongshengB 20200319
 
 
 start_link() {
@@ -12,11 +12,16 @@ lua /etc_ro/ss/dlink.lua
 
 reset_link() {
 	confs=`dbus list ssconf_basic_ | cut -d "=" -f 1`
+	logger -t "SS" "关闭ShadowSocksR Plus+..."
+	/usr/bin/shadowsocks.sh stop 
 	logger -t "SS" "正在删除订阅节点..."
 	for conf in $confs
 	do
 		dbus remove $conf
 	done
+	nvram set ss_enable=0
+	nvram set global_server="nil"
+	nvram set udp_relay_server="nil"
 	logger -t "SS" "已重置订阅节点文件,请手动刷新页面..."
 }
 

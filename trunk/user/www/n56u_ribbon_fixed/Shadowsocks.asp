@@ -237,7 +237,7 @@ if (b=="v2ray"){
 	showhide_div('row_ss_plugin_opts', 0);
 	showhide_div('row_ssp_insecure', 1);
 }
-if (b=="kumasocks"){
+if (b=="socks5"){
 	var v=0;
 	var v=1;
 	showhide_div('row_ss_protocol', 0);
@@ -256,29 +256,6 @@ if (b=="kumasocks"){
 	showhide_div('row_tj_tls_host', 0);
 	showhide_div('row_s5_username', 0);
 	showhide_div('row_s5_password', 0);
-	showhide_div('row_ss_plugin', 0);
-	showhide_div('row_ss_plugin_opts', 0);
-	showhide_div('row_ssp_insecure', 0);
-}
-if (b=="socks5"){
-	var v=0;
-	var v=1;
-	showhide_div('row_ss_protocol', 0);
-	showhide_div('row_ss_protocol_para', 0);
-	showhide_div('row_ss_obfs', 0);
-	showhide_div('row_ss_obfs_para', 0);
-	showhide_div('row_ss_password', 0);
-	showhide_div('row_s5_username', 1);
-	showhide_div('row_s5_password', 1);
-	showhide_div('row_ss_method', 0);
-	showhide_div('row_v2_aid', 0);
-	showhide_div('row_v2_vid', 0);
-	showhide_div('row_v2_security', 0);
-	showhide_div('row_v2_net', 0);
-	showhide_div('row_v2_type', 0);
-	showhide_div('row_v2_tls', 0);
-	showhide_div('row_v2_mux', 0);
-	showhide_div('row_tj_tls_host', 0);
 	showhide_div('row_ss_plugin', 0);
 	showhide_div('row_ss_plugin_opts', 0);
 	showhide_div('row_ssp_insecure', 0);
@@ -1103,6 +1080,14 @@ function showNodeData(idName,obj){
 	  tls_host: document.getElementById("ssp_tls_host").value,
 	  coustom: "1", 
     }
+	}else if (type == "socks5"){
+ var DataObj = {
+      type: document.getElementById("ssp_type").value, 
+      alias: document.getElementById("ssp_name").value,
+      server: document.getElementById("ssp_server").value,
+	  server_port: document.getElementById("ssp_prot").value,
+	  coustom: "1", 
+    }
 	}
 	var post_dbus = JSON.stringify(DataObj)
 	node_global_max += 1;
@@ -1110,7 +1095,7 @@ function showNodeData(idName,obj){
 	var ns = {};
 	ns[p + "_json_" + node_global_max] = post_dbus;
 	push_data(ns);
-	//console.log(DataObj)
+	console.log(DataObj)
 }	 
 //post数据到后台处理
 function push_data(obj) {
@@ -1420,8 +1405,7 @@ function showsudlinkList() {
 						<option value="ssr" >SSR</option>
 						<option value="trojan" >Trojan</option>
 						<option value="v2ray" >V2ray</option>
-						<!--<option value="kumasocks" >kumasocks</option>
-						<option value="socks5" >socks5</option>-->
+						<option value="socks5" >SOCKS5</option>
 					</select>
 				</td>
 			</tr>

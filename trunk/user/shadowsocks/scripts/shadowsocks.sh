@@ -33,7 +33,6 @@ GLOBAL_SERVER=`nvram get global_server`
 socks=""
 
 gen_config_file() {
-    hostip=$(nvram get ssp_server_x$1)
 	if [ "$2" = "0" ]; then
 	config_file=$CONFIG_FILE
 	else
@@ -108,6 +107,9 @@ gen_config_file() {
 		lua /etc_ro/ss/genv2config.lua $1 tcp 1080 >$v2_json_file
 		sed -i 's/\\//g' $v2_json_file
 		fi
+		elif [ "$stype" == "socks5" ]; then
+		kumasocks_bin="/usr/bin/kumasocks"
+		lua /etc_ro/ss/gensocks.lua $1 1080 > $CONFIG_KUMASOCKS_FILE
 		fi
 }
 
@@ -206,6 +208,8 @@ start_redir() {
 		sscmd="$tj_bin"
 	elif [ "$stype" == "v2ray" ]; then
 		sscmd="$v2_bin"
+	elif [ "$stype" == "socks5" ]; then
+		sscmd="$kumasocks_bin"
 	fi
 	if [ "$UDP_RELAY_SERVER" = "$GLOBAL_SERVER" ]; then
 	utype=$(nvram get d_type)
@@ -245,6 +249,8 @@ start_redir() {
 	elif [ "$stype" == "v2ray" ]; then
 		$sscmd -config $v2_json_file >/dev/null 2>&1 &
 		echo "$(date "+%Y-%m-%d %H:%M:%S") $($sscmd -version | head -1) 启动成功!" >>/tmp/ssrplus.log
+	elif [ "$stype" == "socks5" ]; then
+		$sscmd -c $CONFIG_KUMASOCKS_FILE &
 	fi
 	if [ "$UDP_RELAY_SERVER" != "nil" ]; then
 		redir_udp=1

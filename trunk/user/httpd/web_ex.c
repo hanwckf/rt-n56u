@@ -2008,7 +2008,7 @@ static int shadowsocks_action_hook(int eid, webs_t wp, int argc, char **argv)
 	websWrite(wp, "<script>restart_needed_time(%d);</script>\n", needed_seconds);
 	return 0;
 }
-
+#if defined(APP_SHADOWSOCKS)
 static int
 applydb_cgi(webs_t wp, char *urlPrefix, char *webDir, int arg,
 		char *url, char *path, char *query)
@@ -2154,7 +2154,7 @@ do_dbconf(char *url, FILE *stream)
 	free(dup_pattern);
 	dbclient_end(&client);
 }
-
+#endif
 static int shadowsocks_status_hook(int eid, webs_t wp, int argc, char **argv)
 {
 	int ss_status_code = pids("ss-redir");
@@ -3914,7 +3914,7 @@ do_uncgi_query(const char *query)
 	if (strlen(post_buf) > 0)
 		init_cgi(post_buf);
 }
-
+#if defined(APP_SHADOWSOCKS)
 static void do_html_post_and_get(char *url, FILE *stream, int len, char *boundary){
 	char *query = NULL;
 
@@ -3947,7 +3947,7 @@ static void do_html_post_and_get(char *url, FILE *stream, int len, char *boundar
 	//websScan(post_buf_backup);
 	init_cgi(post_buf);
 }
-
+#endif
 static void
 do_html_apply_post(const char *url, FILE *stream, int clen, char *boundary)
 {
@@ -4217,8 +4217,10 @@ struct mime_handler mime_handlers[] = {
 	/* no-cached POST objects */
 	{ "update.cgi*", "text/javascript", no_cache_IE, do_html_apply_post, do_update_cgi, 1 },
 	{ "apply.cgi*", "text/html", no_cache_IE, do_html_apply_post, do_apply_cgi, 1 },
+#if defined(APP_SHADOWSOCKS)
 	{ "applydb.cgi*", "text/html", no_cache_IE7, do_html_post_and_get, do_applydb_cgi, 1 },
 	{ "dbconf", "text/javascript", no_cache_IE, do_html_apply_post, do_dbconf, 0 },
+#endif
 
 	{ "upgrade.cgi*",    "text/html", no_cache_IE, do_upgrade_fw_post, do_upgrade_fw_cgi, 1 },
 	{ "restore_nv.cgi*", "text/html", no_cache_IE, do_restore_nv_post, do_restore_nv_cgi, 1 },

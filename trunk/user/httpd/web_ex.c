@@ -2112,6 +2112,7 @@ applydb_cgi(webs_t wp, char *urlPrefix, char *webDir, int arg,
 	}
 	}
 	dbclient_end(&client);
+	doSystem("/sbin/mtd_storage.sh %s", "save");
 	return 0;
 }
 

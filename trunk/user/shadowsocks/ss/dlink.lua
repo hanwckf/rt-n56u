@@ -409,7 +409,7 @@ local function processData(szType, content)
 end
 -- wget
 local function wget(url)
-	local stdout = io.popen('wget --no-check-certificate -t 3 -T 10 -O- "' .. url .. '"')
+	local stdout = io.popen('curl -k -s --connect-timeout 15 --retry 5 "' .. url .. '"')
 	local sresult = stdout:read("*all")
     return trim(sresult)
 end

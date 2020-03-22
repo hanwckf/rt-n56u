@@ -11,6 +11,7 @@ modprobe xt_TPROXY
 modprobe xt_set
 TAG="_SS_SPEC_"   # comment tag
 ipt_n="iptables -t nat"  # alias of iptables
+ipt_m="iptables -t mangle"  # alias of iptables
 FWI=/tmp/shadowsocks_iptables.save  # firewall include file
 ADNU=$(iptables -t nat -L  PREROUTING -n --line-number | grep "ADBYBY" |cut -c1-1)
 SSNU=$(($ADNU+1))
@@ -68,6 +69,7 @@ flush_r() {
 	flush_iptables mangle
 	ip rule del fwmark 100 lookup 100 2>/dev/null
 	ip route del local 0.0.0.0/0 dev lo table 100 2>/dev/null
+	$ipt_m -D PREROUTING -p udp -j SS_SPEC_TPROXY
 	$ipt_n -D PREROUTING -j SS_SPEC_WAN_AC
 	$ipt_n -X SS_SPEC_WAN_AC
 	$ipt_n -D PREROUTING -j SS_SPEC_WAN_FW
@@ -142,8 +144,6 @@ EOF
 	rm -f /tmp/uss_dom.txt
 	$ipt_n -I SS_SPEC_WAN_AC 2 -m set --match-set blacklist dst -j SS_SPEC_WAN_FW
 	$ipt_n -I SS_SPEC_WAN_AC 2 -m set --match-set whitelist dst -j RETURN
-	
-	$ipt_n -I SS_SPEC_WAN_AC 2 -m set --match-set whitelist dst -j RETURN
 
 	for ip in $WAN_BP_IP; do ipset -! add whitelist $ip; done
 	for ip in $WAN_FW_IP; do ipset -! add blacklist $ip; done
@@ -199,52 +199,56 @@ tp_rule() {
 	[ -n "$TPROXY" ] || return 0
 	if !(lsmod | grep -q TPROXY ); then
 		loger 4 "TPROXY or ip not found."
-		logger -t "SS" "找不到TPROXY模块,UDP模式无法启用,设置udp开关为关闭状态."
-		nvram set ss_udp=0
+		logger -t "SS" "找不到TPROXY模块,UDP模式无法启用"
 		return 0
 	fi
-	ip rule add fwmark 100 lookup 100
+	ip rule add fwmark 0x01/0x01 table 100
 	ip route add local 0.0.0.0/0 dev lo table 100
-	ipt="iptables -t mangle"
-	$ipt -N SS_SPEC_TPROXY
-	$ipt -A SS_SPEC_TPROXY -p udp --dport 443 -j RETURN
-	$ipt -A SS_SPEC_TPROXY -p udp --dport 53 -j RETURN
-	$ipt -A SS_SPEC_TPROXY -p udp -d 0.0.0.0/8 -j RETURN
-	$ipt -A SS_SPEC_TPROXY -p udp -d 10.0.0.0/8 -j RETURN
-	$ipt -A SS_SPEC_TPROXY -p udp -d 127.0.0.0/8 -j RETURN
-	$ipt -A SS_SPEC_TPROXY -p udp -d 169.254.0.0/16 -j RETURN
-	$ipt -A SS_SPEC_TPROXY -p udp -d 172.16.0.0/12 -j RETURN
-	$ipt -A SS_SPEC_TPROXY -p udp -d 192.168.0.0/16 -j RETURN
-	$ipt -A SS_SPEC_TPROXY -p udp -d 224.0.0.0/4 -j RETURN
-	$ipt -A SS_SPEC_TPROXY -p udp -d 240.0.0.0/4 -j RETURN
-	$ipt -A SS_SPEC_TPROXY -p udp -d $SERVER -j RETURN
+
+	$ipt_m -N SS_SPEC_TPROXY
+	$ipt_m -A SS_SPEC_TPROXY -p udp --dport 443 -j RETURN
+	$ipt_m -A SS_SPEC_TPROXY -p udp --dport 53 -j RETURN
+	$ipt_m -A SS_SPEC_TPROXY -p udp -d 0.0.0.0/8 -j RETURN
+	$ipt_m -A SS_SPEC_TPROXY -p udp -d 10.0.0.0/8 -j RETURN
+	$ipt_m -A SS_SPEC_TPROXY -p udp -d 127.0.0.0/8 -j RETURN
+	$ipt_m -A SS_SPEC_TPROXY -p udp -d 169.254.0.0/16 -j RETURN
+	$ipt_m -A SS_SPEC_TPROXY -p udp -d 172.16.0.0/12 -j RETURN
+	$ipt_m -A SS_SPEC_TPROXY -p udp -d 192.168.0.0/16 -j RETURN
+	$ipt_m -A SS_SPEC_TPROXY -p udp -d 224.0.0.0/4 -j RETURN
+	$ipt_m -A SS_SPEC_TPROXY -p udp -d 240.0.0.0/4 -j RETURN
+	$ipt_m -A SS_SPEC_TPROXY -p udp -d $SERVER -j RETURN
+	if [ "$TPROXY" -ne 1 ]; then
+	$ipt_n -I SS_SPEC_WAN_AC 1 -d $server -j RETURN
+	fi
 
 	#$ipt -A SS_SPEC_TPROXY -p udp $PROXY_PORTS $lanbip \
 		#-j TPROXY --on-port "$LOCAL_PORT" --tproxy-mark 100
 
 	if [ "$RUNMODE" = "router" ] ;then
-	$ipt -A SS_SPEC_TPROXY -p udp -m set ! --match-set ss_spec_wan_ac dst \
-		-j TPROXY --on-port "$LOCAL_PORT" --tproxy-mark 100
-	$ipt -A SS_SPEC_TPROXY -p udp $PROXY_PORTS -m set ! --match-set china dst \
-		-j TPROXY --on-port "$LOCAL_PORT" --tproxy-mark 100
-	$ipt -A PREROUTING -p udp -j SS_SPEC_TPROXY
+	$ipt_m -A SS_SPEC_TPROXY -p udp $PROXY_PORTS -m set ! --match-set ss_spec_wan_ac dst \
+		-j TPROXY --on-port "$LOCAL_PORT" --tproxy-mark 0x01/0x01
+	$ipt_m -A SS_SPEC_TPROXY -p udp $PROXY_PORTS -m set ! --match-set china dst \
+		-j TPROXY --on-port "$LOCAL_PORT" --tproxy-mark 0x01/0x01
+	$ipt_m -I SS_SPEC_TPROXY -p udp --dport 5353 -j RETURN
+	$ipt_m -A PREROUTING -p udp -j SS_SPEC_TPROXY
 
 	elif [ "$RUNMODE" = "gfw" ] ;then
-	$ipt -A SS_SPEC_TPROXY -p udp -m set  --match-set gfwlist dst -j TPROXY --on-port "$LOCAL_PORT" --tproxy-mark 100
-	$ipt -A PREROUTING -p udp -j SS_SPEC_TPROXY
+	$ipt_m -A SS_SPEC_TPROXY -p udp -m set  $PROXY_PORTS --match-set gfwlist dst -j TPROXY --on-port "$LOCAL_PORT" --tproxy-mark 0x01/0x01
+	$ipt_m -I SS_SPEC_TPROXY -p udp --dport 5353 -j RETURN
+	$ipt_m -A PREROUTING -p udp -j SS_SPEC_TPROXY
 
 	elif [ "$RUNMODE" = "oversea" ] ;then
-	$ipt -A SS_SPEC_TPROXY -p udp $PROXY_PORTS -m set --match-set oversea dst \
-		-j TPROXY --on-port "$LOCAL_PORT" --tproxy-mark 100
-	$ipt -A PREROUTING -p udp -j SS_SPEC_TPROXY
+	$ipt_m -A SS_SPEC_TPROXY -p udp $PROXY_PORTS -m set --match-set oversea dst \
+		-j TPROXY --on-port "$LOCAL_PORT" --tproxy-mark 0x01/0x01
+	$ipt_m -A PREROUTING -p udp -j SS_SPEC_TPROXY
 
 	elif [ "$RUNMODE" = "all" ] ;then
-	$ipt -A SS_SPEC_TPROXY -p udp -j TPROXY --on-port "$LOCAL_PORT" --tproxy-mark 100
-	$ipt -A PREROUTING -p udp -j SS_SPEC_TPROXY
+	$ipt_m -A SS_SPEC_TPROXY -p udp $PROXY_PORTS -j TPROXY --on-port "$LOCAL_PORT" --tproxy-mark 0x01/0x01
+	$ipt_m -A PREROUTING -p udp -j SS_SPEC_TPROXY
 	fi
-    $ipt -I SS_SPEC_TPROXY -p udp $PROXY_PORTS -m set --match-set blacklist dst \
-    -j TPROXY --on-port "$LOCAL_PORT" --tproxy-mark 100
-	$ipt -I SS_SPEC_TPROXY -p udp -m set --match-set whitelist dst -j RETURN
+    $ipt_m -I SS_SPEC_TPROXY -p udp $PROXY_PORTS -m set --match-set blacklist dst \
+    -j TPROXY --on-port "$LOCAL_PORT" --tproxy-mark 0x01/0x01
+	$ipt_m -I SS_SPEC_TPROXY -p udp -m set --match-set whitelist dst -j RETURN
 
 	return $?
 }

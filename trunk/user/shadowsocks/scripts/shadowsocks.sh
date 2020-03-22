@@ -136,9 +136,9 @@ start_rules() {
 	lan_ac_ips=$lan_ac_ips
 	lan_ac_mode="b"
 	router_proxy="1"
-	if [ "$GLOBAL_SERVER" == "$UDP_RELAY_SERVER" ]; then
-		ARG_UDP="-u"
-	elif [ "$UDP_RELAY_SERVER" != "nil" ]; then
+	#if [ "$GLOBAL_SERVER" == "$UDP_RELAY_SERVER" ]; then
+	#	ARG_UDP="-u"
+	if [ "$UDP_RELAY_SERVER" != "nil" ]; then
 		ARG_UDP="-U"
 		lua /etc_ro/ss/getconfig.lua $UDP_RELAY_SERVER > /tmp/userver.txt
 	    udp_server=`cat /tmp/userver.txt` 
@@ -153,10 +153,10 @@ start_rules() {
 	gfwmode=""
 	if [ "$run_mode" = "gfw" ]; then
 		gfwmode="-g"
-		socks="-o"
+		#socks="-o"
 	elif [ "$run_mode" = "router" ]; then
 		gfwmode="-r"
-		socks="-o"
+		#socks="-o"
 	elif [ "$run_mode" = "oversea" ]; then
 		gfwmode="-c"
 	elif [ "$run_mode" = "all" ]; then
@@ -255,7 +255,7 @@ start_redir() {
 	fi
 	if [ "$UDP_RELAY_SERVER" != "nil" ]; then
 		redir_udp=1
-		logger -t "SS" "启动$utype游戏UDP中级服务器"
+		logger -t "SS" "启动$utype游戏UDP中继服务器"
 		if [ "$utype" == "ss" -o "$utype" == "ssr" ]; then
 			ARG_OTA=""
 			gen_config_file $UDP_RELAY_SERVER 1
@@ -427,9 +427,13 @@ EOF
 # ================================= 启动 SS ===============================
 ssp_start() { 
     ss_enable=`nvram get ss_enable`
-	if rules; then
+	[ "$GLOBAL_SERVER" = "nil" ] && return 1
+	UDP_RELAY_SERVER=$(nvram get udp_relay_server)
+	if [ "$UDP_RELAY_SERVER" = "same" ]; then
+	UDP_RELAY_SERVER=$GLOBAL_SERVER
+	fi
         start_redir
-        #start_rules
+        start_rules
 		#start_AD
         start_dns
         start_local
@@ -437,10 +441,10 @@ ssp_start() {
         auto_update
         ENABLE_SERVER=$(nvram get global_server)
         [ "$ENABLE_SERVER" = "-1" ] && return 1
+
         logger -t "SS" "启动成功。"
         logger -t "SS" "内网IP控制为:$lancons"
         nvram set check_mode=0
-    fi
 }
 
 # ================================= 关闭SS ===============================

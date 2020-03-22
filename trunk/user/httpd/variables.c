@@ -1016,6 +1016,7 @@
 			{"socks5_s_password","",NULL, EVM_RESTART_SHADOWSOCKS},
 			{"ss_turn","",NULL, EVM_RESTART_SHADOWSOCKS},
 			{"lan_con","",NULL, EVM_RESTART_SHADOWSOCKS},
+			{"ss_chnroute_url","",NULL, FALSE},
 	        {"ss_watchcat", "",NULL, FALSE},
 	        {"ss_turn_s","",NULL, EVM_RESTART_SHADOWSOCKS},
 	        {"ss_turn_ss","",NULL, EVM_RESTART_SHADOWSOCKS},
@@ -1032,7 +1033,6 @@
 			{"scripts.ss_lan_bip.sh", "File", NULL, EVM_RESTART_SHADOWSOCKS},
 			{"scripts.ss_wan_ip.sh", "File", NULL, EVM_RESTART_SHADOWSOCKS},
 			{"scripts.ss_dlink.sh", "File", NULL, FALSE},
-			{"scripts.dlink.js", "File", NULL, FALSE},
 			{"SspList", "Group", ARGV((char*)variables_SspConf_SspList, "8", "55", "ssp_staticnum_x"), EVM_RESTART_SHADOWSOCKS},
 			{0,0,0,0}
 	};

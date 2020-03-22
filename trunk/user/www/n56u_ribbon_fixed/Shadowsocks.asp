@@ -9,12 +9,15 @@
 <link rel="icon" href="images/favicon.png">
 <link rel="stylesheet" type="text/css" href="/bootstrap/css/bootstrap.min.css">
 <link rel="stylesheet" type="text/css" href="/bootstrap/css/bootstrap-table.min.css">
+<link rel="stylesheet" type="text/css" href="/bootstrap/css/bootstrap-select.min.css">
 <link rel="stylesheet" type="text/css" href="/bootstrap/css/main.css">
 <link rel="stylesheet" type="text/css" href="/bootstrap/css/engage.itoggle.css">
 <script type="text/javascript" src="/jquery.js"></script>
 <script type="text/javascript" src="/bootstrap/js/bootstrap.min.js"></script>
 <script type="text/javascript" src="/bootstrap/js/bootstrap-table.min.js"></script>
 <script type="text/javascript" src="/bootstrap/js/bootstrap-table-zh-CN.min.js"></script>
+<script type="text/javascript" src="/bootstrap/js/bootstrap-select.min.js"></script>
+<script type="text/javascript" src="/bootstrap/js/defaults-zh_CN.min.js"></script>
 <script type="text/javascript" src="/bootstrap/js/engage.itoggle.min.js"></script>
 <script type="text/javascript" src="/state.js"></script>
 <script type="text/javascript" src="/general.js"></script>
@@ -78,22 +81,21 @@ function initial(){
 	showMRULESList();
 	switch_dns();
 	showNodeList(db_ss,"ssconf_basic_json_");
-	var o1 = document.form.global_server;
 	var o2 = document.form.lan_con;
 	var o3 = document.form.ss_threads;
 	var o4 = document.form.china_dns;
 	var o5 = document.form.pdnsd_enable;
 	var o6 = document.form.socks5_enable;
 	var o7 = document.form.tunnel_forward;
-	var o8 = document.form.udp_relay_server;
-	o1.value = '<% nvram_get_x("","global_server"); %>';
+
+	$j('#nodeList').selectpicker('val', '<% nvram_get_x("","global_server"); %>');
+	$j('#u_nodeList').selectpicker('val', '<% nvram_get_x("","udp_relay_server"); %>');
 	o2.value = '<% nvram_get_x("","lan_con"); %>';
 	o3.value = '<% nvram_get_x("","ss_threads"); %>';
 	o4.value = '<% nvram_get_x("","china_dns"); %>';
 	o5.value = '<% nvram_get_x("","pdnsd_enable"); %>';
 	o6.value = '<% nvram_get_x("","socks5_enable"); %>';
 	o7.value = '<% nvram_get_x("","tunnel_forward"); %>';
-	o8.value = '<% nvram_get_x("","udp_relay_server"); %>';
 	switch_dns();
 	if(ss_schedule_support){
 		document.form.ss_date_x_Sun.checked = getDateCheck(document.form.ss_schedule.value, 0);
@@ -923,11 +925,36 @@ function showNodeList(obj,keyStr){
   var unodeList = document.getElementById("u_nodeList"); // 获取节点
   for(var key  in  obj){ // 遍历对象
 	var optionObj = JSON.parse(obj[key] ); // 字符串转为对象
+	if(optionObj.ping != "failed"){   //过滤ping不通的节点
 	var text = '[ '+ (optionObj.type ? optionObj.type:"类型获取失败") +' ] ' + (optionObj.alias?optionObj.alias:"名字获取失败"); // 判断下怕获取失败 ，括号是运算的问题
 	 // 添加 
 	nodeList.options.add(new Option(text, key.replace(keyStr,''))); // 通过 replacce把不要的字符去掉
 	unodeList.options.add(new Option(text, key.replace(keyStr,''))); // 通过 replacce把不要的字符去掉
+	showdlist();
+	}
   } 
+}
+
+function showdlist() {
+	$j('#nodeList>option').sort(function (a, b) {
+		//按option中的值排序
+		var aText = $j(a).val() * 1;
+		var bText = $j(b).val() * 1;
+		if (aText > bText) return -1;
+		if (aText < bText) return 1;
+		return 0;
+	}).appendTo('#nodeList');
+	$j('#nodeList>option').eq(0).attr("selected", "selected");
+	//udp列表
+	$j('#u_nodeList>option').sort(function (a, b) {
+		//按option中的值排序
+		var aText = $j(a).val() * 1;
+		var bText = $j(b).val() * 1;
+		if (aText > bText) return -1;
+		if (aText < bText) return 1;
+		return 0;
+	}).appendTo('#u_nodeList');
+	$j('#u_nodeList>option').eq(0).attr("selected", "selected");
 }
 
 function check_Timefield_checkbox(){
@@ -1250,16 +1277,18 @@ function showsudlinkList() {
 					</div>
 				</td>
 			</tr>
-			<tr> <th>主服务器</th>
+			<tr> <th>主服务器:
+				</th>
 				<td>
-					<select name="global_server" id="nodeList" class="input" style="width: 200px;" onchange="showsdlinkList()">
-					<option value="nil" >停用</option>
+					<select name="global_server" id="nodeList" class="selectpicker" data-live-search="true" style="width: 200px;" onchange="showsdlinkList()">
+					<option value="nil" >停用</option>         
 					</select>
 				</td>
 			</tr>
-			<tr> <th>游戏UDP中继服务器</th>
+			<tr> <th>游戏UDP中继服务器:
+			</th>
 				<td>
-					<select name="udp_relay_server" id="u_nodeList" class="input" style="width: 200px;" onchange="showsudlinkList()">
+					<select name="udp_relay_server" id="u_nodeList" class="selectpicker" data-live-search="true" style="width: 200px;" onchange="showsudlinkList()">
 						<option value="nil" >停用</option>
 						<option value="same" >与主服务相同</option>
 					</select>

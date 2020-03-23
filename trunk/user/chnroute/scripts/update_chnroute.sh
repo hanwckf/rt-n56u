@@ -3,7 +3,7 @@
 set -e -o pipefail
 
 [ "$1" != "force" ] && [ "$(nvram get ss_update_chnroute)" != "1" ] && exit 0
-CHNROUTE_URL="$(nvram get chnroute_url)"
+CHNROUTE_URL="$(nvram get ss_chnroute_url)"
 
 logger -st "chnroute" "Starting update..."
 rm -f /tmp/chinadns_chnroute.txt
@@ -20,6 +20,6 @@ mv -f /tmp/chinadns_chnroute.txt /etc/storage/chinadns/chnroute.txt
 
 mtd_storage.sh save >/dev/null 2>&1
 
-[ -f /usr/bin/shadowsocks.sh ] && [ "$(nvram get ss_enable)" = "1" ] && /usr/bin/shadowsocks.sh restart >/dev/null 2>&1
+[ -f /usr/bin/shadowsocks.sh ] && [ "$(nvram get ss_enable)" = "1" ] && [ "$(nvram get ss_run_mode)" = "router" ] && /usr/bin/shadowsocks.sh restart >/dev/null 2>&1
 
 logger -st "chnroute" "Update done"

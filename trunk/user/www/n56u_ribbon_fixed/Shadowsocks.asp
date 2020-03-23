@@ -16,15 +16,12 @@
 <script type="text/javascript" src="/bootstrap/js/bootstrap.min.js"></script>
 <script type="text/javascript" src="/bootstrap/js/bootstrap-table.min.js"></script>
 <script type="text/javascript" src="/bootstrap/js/bootstrap-table-zh-CN.min.js"></script>
-<script type="text/javascript" src="/bootstrap/js/bootstrap-select.min.js"></script>
-<script type="text/javascript" src="/bootstrap/js/defaults-zh_CN.min.js"></script>
 <script type="text/javascript" src="/bootstrap/js/engage.itoggle.min.js"></script>
 <script type="text/javascript" src="/state.js"></script>
 <script type="text/javascript" src="/general.js"></script>
 <script type="text/javascript" src="/itoggle.js"></script>
 <script type="text/javascript" src="/popup.js"></script>
 <script type="text/javascript" src="/help.js"></script>
-<script type="text/javascript" src="/dbconf?p=ss&v=<% uptime(); %>"></script>
 <script type="text/javascript" src="/validator.js"></script>
 <script>
 
@@ -80,7 +77,6 @@ function initial(){
 	showTab(getHash());
 	showMRULESList();
 	switch_dns();
-	showNodeList(db_ss,"ssconf_basic_json_");
 	var o2 = document.form.lan_con;
 	var o3 = document.form.ss_threads;
 	var o4 = document.form.china_dns;
@@ -88,8 +84,6 @@ function initial(){
 	var o6 = document.form.socks5_enable;
 	var o7 = document.form.tunnel_forward;
 
-	$j('#nodeList').selectpicker('val', '<% nvram_get_x("","global_server"); %>');
-	$j('#u_nodeList').selectpicker('val', '<% nvram_get_x("","udp_relay_server"); %>');
 	o2.value = '<% nvram_get_x("","lan_con"); %>';
 	o3.value = '<% nvram_get_x("","ss_threads"); %>';
 	o4.value = '<% nvram_get_x("","china_dns"); %>';
@@ -466,20 +460,62 @@ function markGroupRULES(o, c, b) {
 	
 }
 function showMRULESList(){
-	 var myss = new Array();
-	 var i = 0;
-      for(var key  in  db_ss){ // 遍历对象
-	  var dbss = JSON.parse(db_ss[key] )
-		dbss.ids = key.replace("ssconf_basic_json_",'');
-		myss[i] = dbss;
-		i = i+1;
-		if (myss != null) {
-			var node_i = parseInt(key.replace("ssconf_basic_json_",''));
-			if (node_i > node_global_max) {
-				node_global_max = node_i;
-			}
-		}
-		}
+$j.ajax({
+url:'/dbconf?p=ss&v=<% uptime(); %>',
+type:'get',
+success:function(res){
+//显示节点下拉列表 by 花妆男
+// 渲染父节点  obj 需要渲染的数据 keyStr key需要去除的字符串
+var keyStr="ssconf_basic_json_";
+var nodeList = document.getElementById("nodeList"); // 获取节点
+var unodeList = document.getElementById("u_nodeList"); // 获取节点
+for(var key  in  db_ss){ // 遍历对象
+var optionObj = JSON.parse(db_ss[key] ); // 字符串转为对象
+if(optionObj.ping != "failed"){   //过滤ping不通的节点
+var text = '[ '+ (optionObj.type ? optionObj.type:"类型获取失败") +' ] ' + (optionObj.alias?optionObj.alias:"名字获取失败"); // 判断下怕获取失败 ，括号是运算的问题
+ // 添加 
+nodeList.options.add(new Option(text, key.replace(keyStr,''))); // 通过 replacce把不要的字符去掉
+unodeList.options.add(new Option(text, key.replace(keyStr,''))); // 通过 replacce把不要的字符去掉
+
+$j('#nodeList>option').sort(function (a, b) {
+	var aText = $j(a).val() * 1;
+	var bText = $j(b).val() * 1;
+	if (aText > bText) return -1;
+	if (aText < bText) return 1;
+	return 0;
+}).appendTo('#nodeList');
+$j('#nodeList>option').eq(0).attr("selected", "selected");
+//udp列表
+$j('#u_nodeList>option').sort(function (a, b) {
+	var aText = $j(a).val() * 1;
+	var bText = $j(b).val() * 1;
+	if (aText > bText) return -1;
+	if (aText < bText) return 1;
+	return 0;
+}).appendTo('#u_nodeList');
+$j('#u_nodeList>option').eq(0).attr("selected", "selected");
+//$j('#nodeList').selectpicker('val', '<% nvram_get_x("","global_server"); %>'); //主服务器列表默认
+//$j('#u_nodeList').selectpicker('val', '<% nvram_get_x("","udp_relay_server"); %>'); //UDP服务器列表默认
+document.form.global_server.value = '<% nvram_get_x("","global_server"); %>';
+document.form.udp_relay_server.value = '<% nvram_get_x("","udp_relay_server"); %>';
+}
+} 
+
+//订阅节点表格
+var myss = new Array();
+var i = 0;
+for(var key  in  db_ss){ // 遍历对象
+var dbss = JSON.parse(db_ss[key] )
+dbss.ids = key.replace("ssconf_basic_json_",'');
+myss[i] = dbss;
+i = i+1;
+if (myss != null) {
+	var node_i = parseInt(key.replace("ssconf_basic_json_",''));
+	if (node_i > node_global_max) {
+		node_global_max = node_i;
+	}
+}
+}
 	$j('#table99').bootstrapTable({
     data: myss, 
     striped: true,
@@ -550,6 +586,9 @@ function showMRULESList(){
 		formatter: actionFormatter
 	 }]
 });
+
+}
+})
 }
 
 function cellStylesales(value, row, index) {
@@ -589,6 +628,7 @@ function actionFormatter(value, row, index) {
 
 	return result;
 }
+
 //编辑节点
 function EditViewById(id){
 	alert("此功能待完善...TODO...")
@@ -918,44 +958,6 @@ document.getElementById('ssp_insecure').value = 0;
 }
 }
 //-----------TLS开关
-//显示节点下拉列表 by 花妆男
-// 渲染父节点  obj 需要渲染的数据 keyStr key需要去除的字符串
-function showNodeList(obj,keyStr){
-  var nodeList = document.getElementById("nodeList"); // 获取节点
-  var unodeList = document.getElementById("u_nodeList"); // 获取节点
-  for(var key  in  obj){ // 遍历对象
-	var optionObj = JSON.parse(obj[key] ); // 字符串转为对象
-	if(optionObj.ping != "failed"){   //过滤ping不通的节点
-	var text = '[ '+ (optionObj.type ? optionObj.type:"类型获取失败") +' ] ' + (optionObj.alias?optionObj.alias:"名字获取失败"); // 判断下怕获取失败 ，括号是运算的问题
-	 // 添加 
-	nodeList.options.add(new Option(text, key.replace(keyStr,''))); // 通过 replacce把不要的字符去掉
-	unodeList.options.add(new Option(text, key.replace(keyStr,''))); // 通过 replacce把不要的字符去掉
-	showdlist();
-	}
-  } 
-}
-
-function showdlist() {
-	$j('#nodeList>option').sort(function (a, b) {
-		//按option中的值排序
-		var aText = $j(a).val() * 1;
-		var bText = $j(b).val() * 1;
-		if (aText > bText) return -1;
-		if (aText < bText) return 1;
-		return 0;
-	}).appendTo('#nodeList');
-	$j('#nodeList>option').eq(0).attr("selected", "selected");
-	//udp列表
-	$j('#u_nodeList>option').sort(function (a, b) {
-		//按option中的值排序
-		var aText = $j(a).val() * 1;
-		var bText = $j(b).val() * 1;
-		if (aText > bText) return -1;
-		if (aText < bText) return 1;
-		return 0;
-	}).appendTo('#u_nodeList');
-	$j('#u_nodeList>option').eq(0).attr("selected", "selected");
-}
 
 function check_Timefield_checkbox(){
 	if( document.form.ss_date_x_Sun.checked == true 
@@ -1280,7 +1282,7 @@ function showsudlinkList() {
 			<tr> <th>主服务器:
 				</th>
 				<td>
-					<select name="global_server" id="nodeList" class="selectpicker" data-live-search="true" style="width: 200px;" onchange="showsdlinkList()">
+					<select name="global_server" id="nodeList" style="width: 200px;" onchange="showsdlinkList()">
 					<option value="nil" >停用</option>         
 					</select>
 				</td>
@@ -1288,7 +1290,7 @@ function showsudlinkList() {
 			<tr> <th>游戏UDP中继服务器:
 			</th>
 				<td>
-					<select name="udp_relay_server" id="u_nodeList" class="selectpicker" data-live-search="true" style="width: 200px;" onchange="showsudlinkList()">
+					<select name="udp_relay_server" id="u_nodeList" style="width: 200px;" onchange="showsudlinkList()">
 						<option value="nil" >停用</option>
 						<option value="same" >与主服务相同</option>
 					</select>
@@ -1909,6 +1911,11 @@ function showsudlinkList() {
 				<input type="button" id="btn_connect_3" class="btn btn-info" value=<#menu5_17_2#> onclick="submitInternet('Update_chnroute');">
 			</td>
 		</tr>
+		<tr> <th width="50%">自定义国内IP更新地址:</th>
+	<td>
+		<input type="text" class="input" size="15" name="ss_chnroute_url" style="width: 200px"  value="<% nvram_get_x("","ss_chnroute_url"); %>" />
+	</td>
+</tr>
 		<tr> <th><#menu5_16_19#></th>
 			<td>
 				<div class="main_itoggle">

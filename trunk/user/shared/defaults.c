@@ -637,6 +637,7 @@ struct nvram_pair router_defaults[] = {
 	{ "ss_turn_s", "600" },
 	{ "ss_turn_ss", "5" },
 	{ "lan_con", "0" },
+	{ "ss_chnroute_url", "https://ispip.clang.cn/all_cn.txt"},
 	{ "ss_adblock_url", "https://gitee.com/privacy-protection-tools/anti-ad/raw/master/anti-ad-for-dnsmasq.conf"},
 	{ "ss_schedule_enable", "0" },
 	{ "ss_schedule", "00000000000" },

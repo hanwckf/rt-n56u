@@ -75,7 +75,7 @@ static void mt7603_switch_channel(RTMP_ADAPTER *pAd, UCHAR channel, BOOLEAN scan
 	pAd->LatchRfRegs.Channel = channel;
 
 
-	DBGPRINT(RT_DEBUG_OFF,
+	DBGPRINT(RT_DEBUG_TRACE,
 			("%s(): Switch to Ch#%d(%dT%dR), BBP_BW=%d\n",
 			__FUNCTION__,
 			channel,

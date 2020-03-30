@@ -224,7 +224,7 @@ BOOLEAN MulticastFilterTableInsertEntry(
 		{
 			if (MAC_ADDR_EQUAL(pMemberAddr, pMemberEntry->Addr))
 			{
-				DBGPRINT(RT_DEBUG_ERROR, ("%s: already in Members list.\n", __FUNCTION__));
+				DBGPRINT(RT_DEBUG_TRACE, ("%s: already in Members list.\n", __FUNCTION__));
 				return FALSE;
 			}
 
@@ -396,7 +396,7 @@ BOOLEAN MulticastFilterTableDeleteEntry(
 		}
 		else
 		{
-			DBGPRINT(RT_DEBUG_ERROR, ("%s: the Group doesn't exist.\n", __FUNCTION__));
+			DBGPRINT(RT_DEBUG_TRACE, ("%s: the Group doesn't exist.\n", __FUNCTION__));
 		}
 	} while(FALSE);
 

@@ -842,7 +842,7 @@ BOOLEAN MacTableDeleteEntry(RTMP_ADAPTER *pAd, USHORT wcid, UCHAR *pAddr)
 #endif /* CONFIG_WIFI_PKT_FWD */
 
 #ifdef MTFWD
-		DBGPRINT(RT_DEBUG_OFF, ("Del Sta:%pM\n", pEntry->Addr));
+		DBGPRINT(RT_DEBUG_TRACE, ("Del Sta:%pM\n", pEntry->Addr));
 		RtmpOSWrielessEventSend(pEntry->wdev->if_dev,
 					RT_WLAN_EVENT_CUSTOM,
 					FWD_CMD_DEL_TX_SRC,

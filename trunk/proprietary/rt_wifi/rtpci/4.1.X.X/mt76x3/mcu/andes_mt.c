@@ -480,7 +480,7 @@ static VOID CmdPsRetrieveStartRspFromCR(RTMP_ADAPTER *pAd, char *Data, UINT16 Le
 	{
 		tr_entry->ps_state = APPS_RETRIEVE_WAIT_EVENT;
 		RTEnqueueInternalCmd(pAd, CMDTHREAD_PS_CLEAR, (VOID *)&WlanIdx, sizeof(UINT32));
-		DBGPRINT(RT_DEBUG_ERROR | DBG_FUNC_PS,("---->%s Entry(wcid=%d) left.\n", __func__, WlanIdx));
+		DBGPRINT(RT_DEBUG_TRACE | DBG_FUNC_PS,("---->%s Entry(wcid=%d) left.\n", __func__, WlanIdx));
 		goto NEXT;
 	}
    
@@ -587,7 +587,7 @@ VOID AndesPsRetrieveStartRsp(RTMP_ADAPTER *pAd, char *Data, UINT16 Len)
 	if (IS_ENTRY_NONE(pEntry))
 	{
 		MtPsRedirectDisableCheck(pAd, WlanIdx);
-		DBGPRINT(RT_DEBUG_ERROR | DBG_FUNC_PS, ("---->%s Entry(wcid=%d) left.\n", __FUNCTION__, WlanIdx));
+		DBGPRINT(RT_DEBUG_TRACE | DBG_FUNC_PS, ("---->%s Entry(wcid=%d) left.\n", __FUNCTION__, WlanIdx));
 		return;
 	}
 
@@ -704,7 +704,7 @@ static VOID CmdPsClearRsp(struct cmd_msg *msg, char *Data, UINT16 Len)
 		}
 	}
 	if(IS_ENTRY_NONE(pEntry)) {
-		DBGPRINT(RT_DEBUG_ERROR | DBG_FUNC_PS, ("wcid=%d, pEntry none when CmdPsClearRsp\n", WlanIndex));
+		DBGPRINT(RT_DEBUG_TRACE | DBG_FUNC_PS, ("wcid=%d, pEntry none when CmdPsClearRsp\n", WlanIndex));
 		return;
 	}
 

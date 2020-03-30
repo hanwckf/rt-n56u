@@ -2082,7 +2082,7 @@ typedef struct _WIFI_NODE_TYPE {
 #define INF_MAIN_DEV_NAME		"rai0"
 #define INF_MBSSID_DEV_NAME		"rai"
 #else
-#if CONFIG_RTPCI_AP_RF_OFFSET == 0x48000
+#if CONFIG_RTPCI_AP_RF_OFFSET == 0x48000 || CONFIG_RT_FIRST_CARD == 7603
 #define INF_MAIN_DEV_NAME		"rai"
 #define INF_MBSSID_DEV_NAME		"rai"
 #else
@@ -2095,7 +2095,7 @@ typedef struct _WIFI_NODE_TYPE {
 #define INF_MSTA_DEV_NAME		"ra"
 
 
-#if CONFIG_RTPCI_AP_RF_OFFSET == 0x48000
+#if CONFIG_RTPCI_AP_RF_OFFSET == 0x48000 || CONFIG_RT_FIRST_CARD == 7603
 #define INF_WDS_DEV_NAME		"wdsi"
 #define INF_APCLI_DEV_NAME		"apclii"
 #define INF_MESH_DEV_NAME		"meshi"

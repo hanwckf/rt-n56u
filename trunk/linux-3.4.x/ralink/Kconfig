@@ -394,7 +394,7 @@ source "drivers/net/wireless/ralink/mt7615/embedded/Kconfig"
 endmenu
 endif
 
-if (!RT_FIRST_IF_NONE || !RT_SECOND_IF_NONE) && !RT_FIRST_IF_MT7615E && !RT_SECOND_IF_MT7615E
+if (!RT_FIRST_IF_NONE || !RT_SECOND_IF_NONE) && !RT_FIRST_IF_MT7615E
 menu "Wireless drivers common configs"
 source "drivers/net/wireless/ralink/Kconfig"
 endmenu

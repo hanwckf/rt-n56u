@@ -198,7 +198,7 @@ BOOLEAN rtmp_ee_prom_read16(RTMP_ADAPTER *pAd, UINT16 Offset, UINT16 *pValue)
 
 	*pValue = data;
 
-	if ((*pValue == 0xffff) || (*pValue == 0x0000))
+	if ( IsEmpty == 0x0000 )
 		IsEmpty = 1;
 
 	return IsEmpty;

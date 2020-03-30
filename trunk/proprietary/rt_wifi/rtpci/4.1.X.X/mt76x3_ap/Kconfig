@@ -1,224 +1,187 @@
-config MT76X3_AP
-	tristate "MediaTek MT7603E 802.11 AP driver"
+config MT7603E_RLT_AP_SUPPORT
+	tristate "MT7603 802.11n AP support"
+#	depends on NET_RADIO 
+	select MT76X3_AP
 	select WIRELESS_EXT
 	select WEXT_SPY
 	select WEXT_PRIV
 
-config  MT76X3_AP_LED
-	bool "LED support"
-	depends on MT76X3_AP
-	default y
+config MT76X3_AP
+	tristate
 
-config  MT76X3_AP_LED_SOFT
-	bool "Soft LED support"
-	depends on MT76X3_AP && !MT76X3_AP_LED && RALINK_GPIO_LED
+#config RLT_AP_SUPPORT
+#	bool "7603"
+#	depends on MT7603E_RLT_AP_SUPPORT
+#	default y
+config MT7603E_WDS_SUPPORT
+	bool "WDS"
+	depends on MT7603E_RLT_AP_SUPPORT
+
+config MT7603E_MBSS_SUPPORT
+	bool "MBSSID"
+	depends on MT7603E_RLT_AP_SUPPORT
+
+config MT7603E_SNIFFER_SUPPORT
+	bool "SNIFFER"
+	depends on MT7603E_RLT_AP_SUPPORT
+	default n
+config MT7603E_CFG80211_SUPPORT
+	bool "CFG80211"
+	depends on MT7603E_RLT_AP_SUPPORT
 	default n
 
-config  MT76X3_AP_LED_SOFT_GPIO
-	int "Soft LED GPIO pin"
-	depends on MT76X3_AP && MT76X3_AP_LED_SOFT
-	default -1
+config MT7603E_SNIFFER_MIB_CMD
+	bool "SNIFFER_MIB_CMD"
+	depends on MT7603E_SNIFFER_SUPPORT
+	default n
 
-config  MT76X3_AP_LLTD
+config MT7603E_ALL_NET_EVENT
+	bool "ALL_NET_EVENT"
+	depends on MT7603E_RLT_AP_SUPPORT
+	default n
+
+config MT7603E_ACL_V2_SUPPORT
+	bool "ACL_V2"
+	depends on MT7603E_RLT_AP_SUPPORT
+	
+config MT7603E_NEW_MBSSID_MODE
+	bool "New MBSSID MODE"
+	depends on MT7603E_RLT_AP_SUPPORT && MT7603E_MBSS_SUPPORT
+	depends on RALINK_RT3883 || RALINK_RT3352 || RALINK_RT5350 || MT7603E_RALINK_RT6352 || RALINK_MT7620
+	default n
+
+config MT7603E_ENHANCE_NEW_MBSSID_MODE
+    bool "Enhanced MBSSID mode"
+    depends on MT7603E_NEW_MBSSID_MODE
+    default n
+
+config MT7603E_APCLI_SUPPORT
+	bool "AP-Client Support"
+	depends on MT7603E_RLT_AP_SUPPORT
+	default y
+	
+config ROAMING_ENHANCE_SUPPORT
+	bool "Roaming Enhance Support"
+	depends on MT7603E_RLT_AP_SUPPORT
+	depends on APCLI_SUPPORT
+	default n
+
+config MT7603E_MULTI_APCLI_SUPPORT
+	bool "MULTI AP-Client Support"
+	depends on MT7603E_APCLI_SUPPORT
+
+config MT7603E_MAC_REPEATER_SUPPORT
+	bool "MAC Repeater Support"
+	depends on MT7603E_RLT_AP_SUPPORT
+	depends on MT7603E_APCLI_SUPPORT
+	depends on MT7603E_RALINK_RT6352 || RALINK_MT7620 || MT7603E_RALINK_MT7603E || MT7603E_RALINK_MT7603U
+	default y
+
+config MT7603E_AIRPLAY_SUPPORT
+	bool "AirPlay Support"
+	depends on MT7603E_APCLI_SUPPORT
+
+#config MT7603E_MESH_SUPPORT
+#	bool "MESH Support"
+#	depends on MT7603E_RLT_AP_SUPPORT
+
+config MT7603E_DFS_SUPPORT
+	bool "DFS"
+	depends on MT7603E_RLT_AP_SUPPORT
+	select RALINK_TIMER_DFS
+
+config MT7603E_DOT11R_FT_SUPPORT
+	bool "802.11r Fast BSS Transition"
+	depends on MT7603E_RLT_AP_SUPPORT
+
+config MT7603E_DOT11K_RRM_SUPPORT
+	bool "802.11k Radio Resource Management"
+	depends on MT7603E_RLT_AP_SUPPORT
+	default n
+
+config MT7603E_WNM_SUPPORT
+	bool "802.11v Wireless Network Management Support"
+	depends on MT7603E_RLT_AP_SUPPORT
+	default n
+
+config MT7603E_INTERWORKING
+	bool "802.11u Interworking/Gas Support"
+        depends on MT_AP_SUPPORT
+        default n
+
+config MT7603E_MAP_SUPPORT
+	bool "Multi-AP Support"
+	depends on MT_AP_SUPPORT
+	#select MBO_SUPPORT
+	default n
+
+config MT7603E_BAND_STEERING_7603
+	bool "Band Steering"
+	depends on MT7603E_RLT_AP_SUPPORT
+	default n
+
+config MT7603E_LLTD_SUPPORT
 	bool "LLTD (Link Layer Topology Discovery Protocol)"
-	depends on MT76X3_AP
+	depends on MT7603E_RLT_AP_SUPPORT
 	default y
 
-config  MT76X3_AP_WDS
-	bool "WDS support"
-	depends on MT76X3_AP
+config MT7603E_NINTENDO_AP
+	bool "Nintendo AP"
+	depends on MT7603E_RLT_AP_SUPPORT
+
+config MT7603E_COC_SUPPORT
+	bool "CoC Support"
+	depends on MT7603E_RLT_AP_SUPPORT
+	default n
+
+#config  MT7603E_RT2860V2_SNMP
+#	bool "Net-SNMP Support"
+#	depends on MT7603E_RLT_AP_SUPPORT
+
+config MT7603E_MCAST_RATE_SPECIFIC
+	bool "User specific tx rate of mcast pkt"
+	depends on MT7603E_RLT_AP_SUPPORT
+
+config MT7603E_PREVENT_ARP_SPOOFING_SUPPORT
+	bool "Detect ARP spoof pkts attack"
+	depends on MT7603E_RLT_AP_SUPPORT
+
+#config MT7603E_EXT_BUILD_CHANNEL_LIST
+#	bool "Extension Channel List"
+#	depends on MT7603E_RLT_AP_SUPPORT
+
+#config MT7603E_AUTO_CH_SELECT_ENHANCE
+#	bool "Auto Channel Selection Enhancement"
+#	depends on MT7603E_RLT_AP_SUPPORT
+
+config MT7603E_SECURITY_IMPROVEMENT_SUPPORT
+	bool "WPA2 security improvement support"
+	depends on MT7603E_RLT_AP_SUPPORT
 	default y
+	---help---
+	  WPA2 security improvement support
 
-config  MT76X3_AP_MBSS
-	bool "MBSSID support"
-	depends on MT76X3_AP
+
+config MT7603E_WPA3_SUPPORT
+	bool "WPA3 support"
+	select MT7603E_DOT11W_PMF_SUPPORT
+	select MT7603E_SECURITY_IMPROVEMENT_SUPPORT
+	depends on MT7603E_RLT_AP_SUPPORT
 	default y
+	---help---
+	  WPA3 support
 
-config  MT76X3_AP_APCLI
-	bool "AP-Client support"
-	depends on MT76X3_AP
+config MT7603E_OWE_SUPPORT
+	bool "Enhanced Open/OWE support"
+	select MT7603E_DOT11W_PMF_SUPPORT
+	depends on MT7603E_RLT_AP_SUPPORT
 	default y
+	---help---
+	  Enhanced Open/OWE support
 
-config  MT76X3_AP_MULTI_APCLI
-	bool "Multi AP-Client support"
-	depends on MT76X3_AP
-	depends on MT76X3_AP_APCLI
-	default n
-
-config  MT76X3_AP_MAC_REPEATER
-	bool "MAC Repeater Mode support"
-	depends on MT76X3_AP
-	depends on MT76X3_AP_APCLI
-	default n
-
-config  MT76X3_AP_AIRPLAY
-	bool "AirPlay support"
-	depends on MT76X3_AP
-	depends on MT76X3_AP_APCLI
-	default n
-
-#config  MT76X3_AP_DFS
-#	bool "DFS support"
-#	depends on MT76X3_AP
-#	default n
-
-config  MT76X3_AP_CARRIER
-	bool "Carrier Detection support"
-	depends on MT76X3_AP
-	default n
-
-config  MT76X3_AP_SMART_CARRIER_SENSE
-	bool "Smart Carrier Sense support"
-	depends on MT76X3_AP
+config MT7603E_NEW_BW2040_COEXIST_SUPPORT
+	bool "New BW20/40 Coexist support"
+	depends on MT7603E_RLT_AP_SUPPORT
 	default y
-
-config  MT76X3_AP_GREENAP
-	bool "Green AP mode support"
-	depends on MT76X3_AP
-	default n
-
-config  MT76X3_AP_IDS
-	bool "IDS (Intrusion Detection System) support"
-	depends on MT76X3_AP
-	default y
-
-config  MT76X3_AP_DLS
-	bool "802.11e DLS (Direct-Link Setup) support"
-	depends on MT76X3_AP
-	default n
-
-config MT76X3_AP_SINGLE_SKU
-	bool "Single SKU regspec"
-	depends on MT76X3_AP
-	default n
-
-config MT76X3_AP_DOT11R_FT
-	bool "802.11r Fast BSS Transition support"
-	depends on MT76X3_AP
-	default y
-
-config MT76X3_AP_DOT11K_RRM
-	bool "802.11k Radio Resource Management support"
-	depends on MT76X3_AP
-	default y
-
-config  MT76X3_AP_EXT_CHANNEL_LIST
-	bool "Extension Channel List 802.11d compat"
-	depends on MT76X3_AP
-	default y
-
-config MT76X3_AP_80211N_DRAFT3
-	bool "802.11n Draft3 (BSS Coexistence)"
-	depends on MT76X3_AP
-	default n
-
-config MT76X3_AP_80211W_PMF
-	bool "802.11w Protected Management Frames (PMF) support"
-	depends on MT76X3_AP
-	default n
-
-#config MT76X3_AP_WAPI
-#	bool "WAPI support"
-#	depends on MT76X3_AP
-#	default n
-
-config MT76X3_AP_WSC
-	bool "WSC (WiFi Simple Config)"
-	depends on MT76X3_AP
-	default n
-
-config MT76X3_AP_WSC_V2
-	bool "WSC V2 (WiFi Simple Config Version 2)"
-	depends on MT76X3_AP
-	depends on MT76X3_AP_WSC
-	default n
-
-config MT76X3_AP_WSC_NFC
-	bool "WSC out-of-band (NFC)"
-	depends on MT76X3_AP
-	depends on MT76X3_AP_WSC
-	default n
-
-config MT76X3_AP_ED_MONITOR
-	bool "ED CCA Monitor support"
-	depends on MT76X3_AP
-	default n
-
-config MT76X3_AP_IGMP_SNOOP
-	bool "IGMP snooping (M2U in wireless driver)"
-	depends on MT76X3_AP
-	default n
-
-config MT76X3_AP_MCAST_RATE_SPECIFIC
-	bool "User specific TX rate of mcast packets"
-	depends on MT76X3_AP
-	default n
-
-config MT76X3_AP_DELAYED_TCP_ACK
-	bool "Delayed TCP ACK support"
-	depends on MT76X3_AP
-	default n
-
-#config MT76X3_AP_HDR_TRANS
-#	bool "Header Translation RX support"
-#	depends on MT76X3_AP
-#	default n
-
-config MT76X3_AP_NETIF_BLOCK
-	bool "NETIF Block"
-	depends on MT76X3_AP
-	default n
-	help
-	  Support Net interface block while Tx-Sw queue full
-
-#config MT76X3_AP_VIDEO_TURBINE
-#	bool "Video Turbine support"
-#	depends on MT76X3_AP
-#	default n
-
-config MT76X3_AP_SNMP
-	bool "Support SNMPD counters"
-	depends on MT76X3_AP
-	default y
-
-#config MT76X3_AP_CFG80211
-#	bool "CFG80211 support (Linux wireless configuration API)"
-#	depends on MT76X3_AP
-#	depends on CFG80211
-#	default n
-
-config MT76X3_AP_READ_MAC_FROM_MTD
-	bool "Read and set MAC address from MTD/EEPROM"
-	depends on MT76X3_AP
-	default n
-
-#config MT76X3_AP_MEMORY_OPTIMIZATION
-#	bool "Memory optimization (shrink ring size). Need for < 32Mb RAM devices"
-#	depends on MT76X3_AP
-#	default n
-
-#config MT76X3_AP_BIG_ENDIAN
-#	bool "Big-endian platform support"
-#	depends on MT76X3_AP
-#	default n
-
-#config MT76X3_AP_MC_SUPPORT
-#	bool "Multiple PCIe card support"
-#	depends on MT76X3_AP
-#	default n
-
-config MT76X3_AP_ATE
-	bool "Provide ATE testmode commands support"
-	depends on MT76X3_AP
-	select MT76X3_AP_QA
-	default n
-
-config MT76X3_AP_QA
-	bool "Provide QA tool support"
-	depends on MT76X3_AP
-	depends on MT76X3_AP_ATE
-	default y
-
-config MT76X3_AP_DEBUG
-	bool "Include Debug messages"
-	default n
+	---help---
+	  Both Beacon and Radio fallback to BW20 for anti-interference

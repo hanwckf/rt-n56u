@@ -66,22 +66,24 @@ Note:
 */
 VOID MBSS_Init(RTMP_ADAPTER *pAd, RTMP_OS_NETDEV_OP_HOOK *pNetDevOps)
 {
+#define MBSS_MAX_DEV_NUM	32
 	PNET_DEV pDevNew;
 	INT32 IdBss, MaxNumBss;
 	//INT status;
 	RTMP_OS_NETDEV_OP_HOOK netDevHook;
 
+	/* sanity check to avoid redundant virtual interfaces are created */
+	if (pAd->FlgMbssInit != FALSE)
+		return;
+
+
 	MaxNumBss = pAd->ApCfg.BssidNum;
 	if (MaxNumBss > MAX_MBSSID_NUM(pAd))
 		MaxNumBss = MAX_MBSSID_NUM(pAd);
 
-	/* sanity check to avoid redundant virtual interfaces are created */
-	if (!pAd->FlgMbssInit)
-	{
-		/* first IdBss must not be 0 (BSS0), must be 1 (BSS1) */
-		for(IdBss=FIRST_MBSSID; IdBss<MAX_MBSSID_NUM(pAd); IdBss++)
-			pAd->ApCfg.MBSSID[IdBss].wdev.if_dev = NULL;
-	}
+	/* first IdBss must not be 0 (BSS0), must be 1 (BSS1) */
+	for(IdBss=FIRST_MBSSID; IdBss<MAX_MBSSID_NUM(pAd); IdBss++)
+		pAd->ApCfg.MBSSID[IdBss].wdev.if_dev = NULL;
 
 	/* create virtual network interface */
 	for(IdBss=FIRST_MBSSID; IdBss<MaxNumBss; IdBss++)
@@ -95,10 +97,7 @@ VOID MBSS_Init(RTMP_ADAPTER *pAd, RTMP_OS_NETDEV_OP_HOOK *pNetDevOps)
 #ifdef HOSTAPD_SUPPORT
 		IoctlIF = pAd->IoctlIF;
 #endif /* HOSTAPD_SUPPORT */
-		BSS_STRUCT *pMbss;
-
-		if (pAd->ApCfg.MBSSID[IdBss].wdev.if_dev)
-			continue;
+        BSS_STRUCT *pMbss;
 
 		dev_name = get_dev_name_prefix(pAd, INT_MBSSID);
 		pDevNew = RtmpOSNetDevCreate(MC_RowID, &IoctlIF, INT_MBSSID, IdBss, sizeof(struct mt_dev_priv), dev_name);
@@ -115,7 +114,7 @@ VOID MBSS_Init(RTMP_ADAPTER *pAd, RTMP_OS_NETDEV_OP_HOOK *pNetDevOps)
 			DBGPRINT(RT_DEBUG_TRACE, ("Register MBSSID IF (%s)\n", RTMP_OS_NETDEV_GET_DEVNAME(pDevNew)));
 		}
 
-		pMbss = &pAd->ApCfg.MBSSID[IdBss];
+        pMbss = &pAd->ApCfg.MBSSID[IdBss];
 		wdev = &pAd->ApCfg.MBSSID[IdBss].wdev;
 		wdev->wdev_type = WDEV_TYPE_AP;
 		wdev->func_dev = &pAd->ApCfg.MBSSID[IdBss];
@@ -156,11 +155,12 @@ VOID MBSS_Init(RTMP_ADAPTER *pAd, RTMP_OS_NETDEV_OP_HOOK *pNetDevOps)
 			wdev_bcn_buf_init(pAd, &pMbss->bcn_buf);
 		} else {
 			DBGPRINT(RT_DEBUG_ERROR, ("%s():func_dev is NULL!\n", __FUNCTION__));
-			break;
+			return;
 		}
 	}
 
 	pAd->FlgMbssInit = TRUE;
+
 }
 
 
@@ -184,13 +184,15 @@ VOID MBSS_Remove(RTMP_ADAPTER *pAd)
 {
 	struct wifi_dev *wdev;
 	UINT IdBss;
-	BSS_STRUCT *pMbss;
+    BSS_STRUCT *pMbss;
+
+
 
 	for(IdBss=FIRST_MBSSID; IdBss<MAX_MBSSID_NUM(pAd); IdBss++)
 	{
 		wdev = &pAd->ApCfg.MBSSID[IdBss].wdev;
-		pMbss = &pAd->ApCfg.MBSSID[IdBss];
-		if (pMbss) {
+        pMbss = &pAd->ApCfg.MBSSID[IdBss];
+        if (pMbss) {
 			wdev_bcn_buf_deinit(pAd, &pMbss->bcn_buf);
 		}
 		if (wdev->if_dev)
@@ -251,7 +253,7 @@ INT32 mbss_cr_enable(PNET_DEV pDev)
 
 	pAd = RTMP_OS_NETDEV_GET_PRIV(pDev);
 	BssId = RT28xx_MBSS_IdxGet(pAd, pDev);
-	DBGPRINT(RT_DEBUG_TRACE, ("##### %s, BssId = %d\n", __func__, BssId));
+    printk("##### %s, BssId = %d\n", __func__, BssId);
 	if (BssId < 0)
 		return -1;
 
@@ -373,6 +375,19 @@ INT32 MBSS_Open(PNET_DEV pDev)
 		 pAd->ApCfg.MBSSID[BssId].bcn_buf.bBcnSntReq = TRUE;
 #endif /* AIRPLAY_SUPPORT */
 
+#ifdef BAND_STEERING
+		if(pAd->ApCfg.BandSteering)
+		{
+			PBND_STRG_CLI_TABLE table;
+			table = Get_BndStrgTable(pAd, BssId);
+			if(table)
+			{
+				/* Inform daemon interface ready */
+				BndStrg_SetInfFlags(pAd, &pAd->ApCfg.MBSSID[BssId].wdev, table, TRUE);
+			}
+		}
+#endif
+
 	return 0;
 }
 
@@ -397,7 +412,6 @@ INT MBSS_Close(PNET_DEV pDev)
 	PRTMP_ADAPTER pAd;
 	INT BssId;
 	UINT32 u4MaxMBSSIDSize;
-
 	pAd = RTMP_OS_NETDEV_GET_PRIV(pDev);
 	BssId = RT28xx_MBSS_IdxGet(pAd, pDev);
     if (BssId < 0)
@@ -417,9 +431,22 @@ INT MBSS_Close(PNET_DEV pDev)
 
 	pAd->ApCfg.MBSSID[BssId].bcn_buf.bBcnSntReq = FALSE;
 
+
 	APMakeAllBssBeacon(pAd);
 	APUpdateAllBeaconFrame(pAd);
 
+#ifdef BAND_STEERING
+	if(pAd->ApCfg.BandSteering)
+	{
+		PBND_STRG_CLI_TABLE table;
+		table = Get_BndStrgTable(pAd, BssId);
+		if(table)
+		{
+			/* Inform daemon interface down */
+			BndStrg_SetInfFlags(pAd, &pAd->ApCfg.MBSSID[BssId].wdev, table, FALSE);
+		}
+	}
+#endif /* BAND_STEERING */
 	return 0;
 }
 

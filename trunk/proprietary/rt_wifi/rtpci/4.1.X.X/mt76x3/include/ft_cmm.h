@@ -48,12 +48,12 @@
 #define FT_KDP_FUNC_SOCK_COMM			/* used socket to communicate with driver */
 #define FT_KDP_FUNC_R0KH_IP_RECORD		/* used to keep IP of any R0KH */
 /*#define FT_KDP_FUNC_INFO_BROADCAST	broadcast my AP information periodically */
-//#define FT_KDP_TEST
+#define FT_KDP_TEST
 
 #define FT_KDP_RALINK_PASSPHRASE		"Ralink"
-#define FT_KDP_KEY_DEFAULT				"1234567812345678"
+#define FT_KDP_KEY_DEFAULT				"12345678"
 #define FT_KDP_KEY_ENCRYPTION_EXTEND	8 /* 8B for AES encryption extend size */
-#define FT_DEFAULT_MDID					"A1"
+#define FT_DEFAULT_MDID					"RT"
 
 #define FT_REASSOC_DEADLINE				20
 
@@ -71,7 +71,7 @@
 #define FT_KDP_S1KHID_MAX_SIZE			6
 #define FT_KDP_PMKR1_MAX_SIZE			32 /* 256-bit key */
 
-#define FT_R1KH_ENTRY_TABLE_SIZE		256
+#define FT_R1KH_ENTRY_TABLE_SIZE		64
 #define FT_R1KH_ENTRY_HASH_TABLE_SIZE	FT_R1KH_ENTRY_TABLE_SIZE
 
 /* ----- FT KDP ----- */
@@ -154,7 +154,6 @@ typedef struct __FT_R1KH_ENTRY
 	struct __FT_R1KH_ENTRY *pNext;
 	UINT32 KeyLifeTime;
 	UINT32 RassocDeadline;
-	NDIS_802_11_AUTHENTICATION_MODE AuthMode;
 	UINT8 PmkR0Name[16];
 	UINT8 PmkR1Name[16];
 	UINT8 PmkR1Key[32];
@@ -178,6 +177,13 @@ typedef struct __FT_TAB
 	ULONG FT_R1khEntryTabSize;
 
 	BOOLEAN FT_R1khEntryTabReady;
+	#ifdef FT_R1KH_KEEP
+	/*
+	Keep the R1KH catch table on  Radio Off state for MBO-4.2.6(E)
+	case to meet the R1KH miss case.
+	*/
+	BOOLEAN FT_RadioOff;
+#endif /* FT_R1KH_KEEP */
 } FT_TAB, *PFT_TAB; 
 
 typedef struct __FT_MDIE_INFO

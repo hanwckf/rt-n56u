@@ -40,6 +40,9 @@
 #ifdef LINUX
 /* Put platform dependent declaration here */
 /* For example, linux type definition */
+#if defined(DOT11_SAE_SUPPORT) || defined(CONFIG_OWE_SUPPORT)
+typedef char INT8;
+#endif
 typedef unsigned char UINT8;
 typedef unsigned short UINT16;
 typedef unsigned int UINT32;
@@ -176,6 +179,9 @@ typedef struct _QUEUE_HEADER {
 	PQUEUE_ENTRY Head;
 	PQUEUE_ENTRY Tail;
 	UINT Number;
+#ifdef MAX_CONTINUOUS_TX_CNT
+	UINT8 AlreadyDeqCnt;/* Add a flag to record already De-queue count*/
+#endif
 } QUEUE_HEADER, *PQUEUE_HEADER;
 
 typedef struct _CR_REG {

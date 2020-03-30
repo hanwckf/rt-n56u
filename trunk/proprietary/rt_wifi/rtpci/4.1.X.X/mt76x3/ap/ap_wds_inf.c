@@ -37,8 +37,8 @@
 #include "rt_os_net.h"
 
 
-struct rtnl_link_stats64 *
-RT28xx_get_wds_ether_stats64(PNET_DEV net_dev, struct rtnl_link_stats64 *stats);
+NET_DEV_STATS *RT28xx_get_wds_ether_stats(PNET_DEV net_dev);
+
 
 /* Register WDS interface */
 VOID RT28xx_WDS_Init(VOID *pAd, PNET_DEV net_dev)
@@ -50,7 +50,7 @@ VOID RT28xx_WDS_Init(VOID *pAd, PNET_DEV net_dev)
 	netDevOpHook.stop = WdsVirtualIF_close;
 	netDevOpHook.xmit = rt28xx_send_packets;
 	netDevOpHook.ioctl = rt28xx_ioctl;
-	netDevOpHook.get_stats = RT28xx_get_wds_ether_stats64;
+	netDevOpHook.get_stats = RT28xx_get_wds_ether_stats;
 	NdisMoveMemory(&netDevOpHook.devAddr[0], RTMP_OS_NETDEV_GET_PHYADDR(net_dev), MAC_ADDR_LEN);
 	DBGPRINT(RT_DEBUG_TRACE, ("The new WDS interface MAC = %02X:%02X:%02X:%02X:%02X:%02X\n", 
 				PRINT_MAC(netDevOpHook.devAddr)));
@@ -65,6 +65,8 @@ INT WdsVirtualIF_open(PNET_DEV dev)
 {
 	VOID *pAd;
 
+	/* increase MODULE use count */
+	RT_MOD_INC_USE_COUNT();
 
 	DBGPRINT(RT_DEBUG_TRACE, ("%s: ===> VirtualIF_open\n", RTMP_OS_NETDEV_GET_DEVNAME(dev)));
 
@@ -72,9 +74,9 @@ INT WdsVirtualIF_open(PNET_DEV dev)
 	if (VIRTUAL_IF_UP(pAd) != 0)
 		return -1;
 
-	/* increase MODULE use count */
-	RT_MOD_INC_USE_COUNT();
-	
+#ifdef CONFIG_RA_HW_NAT_WIFI_NEW_ARCH
+	RT_MOD_HNAT_REG(dev);
+#endif
 	RTMP_OS_NETDEV_START_QUEUE(dev);
 	return 0;
 }
@@ -91,7 +93,10 @@ INT WdsVirtualIF_close(PNET_DEV dev)
 
 	//RTMP_OS_NETDEV_CARRIER_OFF(dev);
 	RTMP_OS_NETDEV_STOP_QUEUE(dev);
-	
+
+#ifdef CONFIG_RA_HW_NAT_WIFI_NEW_ARCH
+	RT_MOD_HNAT_DEREG(dev);
+#endif
 	VIRTUAL_IF_DOWN(pAd);
 
 	RT_MOD_DEC_USE_COUNT();

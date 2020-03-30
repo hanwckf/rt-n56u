@@ -147,6 +147,6 @@ typedef struct GNU_PACKED _HEADER_PS_POLL{
 #define SIFS_TIME_5G		16
 
 #define RIFS_TIME		2	//802.11n
-#define EIFS_TIME		360
+#define EIFS_TIME		84/*360*/
 #endif /* _DOT11_BASE_H_ */
 

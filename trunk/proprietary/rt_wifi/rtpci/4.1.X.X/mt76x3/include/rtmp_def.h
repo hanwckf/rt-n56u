@@ -80,7 +80,11 @@
 #ifdef MEMORY_OPTIMIZATION
 #define MAX_RX_PROCESS		32
 #else
+#ifdef BB_SOC
+#define MAX_RX_PROCESS		64
+#else
 #define MAX_RX_PROCESS		128	/*64 //32 */
+#endif /* BB_SOC */
 #endif
 #define NUM_OF_LOCAL_TXBUF      2
 #define TXD_SIZE		16	/* TXD_SIZE = TxD + TxInfo */
@@ -107,6 +111,8 @@
 #define MAX_NUM_OF_TUPLE_CACHE  2
 #define MAX_MCAST_LIST_SIZE     32
 #define MAX_LEN_OF_VENDOR_DESC  64
+/*#define MAX_SIZE_OF_MCAST_PSQ   (NUM_OF_LOCAL_TXBUF >> 2) // AP won't spend more than 1/4 of total buffers on M/BCAST PSQ */
+#define MAX_SIZE_OF_MCAST_PSQ               32
 
 #define MAX_RX_PROCESS_CNT	(RX_RING_SIZE)
 
@@ -136,11 +142,11 @@
 	clConfig.clNum = RX_RING_SIZE * 4;
 */
 
-#define MAX_PACKETS_IN_MCAST_PS_QUEUE	    32
+#define MAX_PACKETS_IN_MCAST_PS_QUEUE		128
 #ifdef BB_SOC
-#define MAX_PACKETS_IN_PS_QUEUE             64
+#define MAX_PACKETS_IN_PS_QUEUE				64
 #else /* BB_SOC */
-#define MAX_PACKETS_IN_PS_QUEUE             128	/*32 */
+#define MAX_PACKETS_IN_PS_QUEUE				128	/*32 */
 #endif /* !BB_SOC */
 #define WMM_NUM_OF_AC                       4	/* AC0, AC1, AC2, and AC3 */
 
@@ -161,7 +167,11 @@
 
 /* RxFilter */
 #define STANORMAL	 0x17f97
+#ifdef MIXMODE_SUPPORT
+#define APNORMAL	 0x1ce70a
+#else 
 #define APNORMAL	 0x15f97
+#endif
 
 #ifdef EXT_BUILD_CHANNEL_LIST
 #define MAX_PRECONFIG_DESP_ENTRY_SIZE  11
@@ -480,22 +490,18 @@ enum WIFI_MODE{
 #undef MAX_APCLI_NUM
 #ifdef MULTI_APCLI_SUPPORT
 #define MAX_APCLI_NUM				2
-#ifdef APCLI_CONNECTION_TRIAL
-#ifdef MT7603
-#error "MULTI_APCLI_SUPPORT is exclusive with APCLI_CONNECTION_TRIAL"
-#else
-#undef	MAX_APCLI_NUM
-#define MAX_APCLI_NUM				(2+1)
-#endif
-#endif /* APCLI_CONNECTION_TRIAL */
 #else /* MULTI_APCLI_SUPPORT*/
 #define MAX_APCLI_NUM				1
-#ifdef APCLI_CONNECTION_TRIAL
-#undef	MAX_APCLI_NUM
-#define MAX_APCLI_NUM				(1+1)
-#endif /* APCLI_CONNECTION_TRIAL */
 #endif /* !MULTI_APCLI_SUPPORT */
 #endif /* APCLI_SUPPORT */
+
+#ifdef APCLI_SAE_SUPPORT
+enum _REPEATER_MLME_ENQ_IDX_CHK_TBL {
+	REPT_MLME_START_IDX = 64,
+	REPT_MLME_LAST_IDX = 95,
+	REPT_MLME_MAX_IDX = 96,/*shall not over this.*/
+};
+#endif
 
 #define MAX_P2P_NUM				0
 
@@ -622,7 +628,7 @@ enum WIFI_MODE{
 #define BSSID_WCID		1	/* in infra mode, always put bssid with this WCID */
 #define MCAST_WCID	0x0
 
-#if defined(MULTI_APCLI_SUPPORT) || defined(APCLI_CONNECTION_TRIAL)
+#ifdef MULTI_APCLI_SUPPORT
 #define APCLI_MCAST_WCID(_num)\
 	(MAX_LEN_OF_MAC_TABLE + HW_BEACON_MAX_NUM + MAX_APCLI_NUM + _num)
 #else /* MULTI_APCLI_SUPPORT */
@@ -671,16 +677,35 @@ enum WIFI_MODE{
 #define MAX_LEN_OF_BSS_TABLE             1
 #define MAX_REORDERING_MPDU_NUM			 256
 #else
+#ifdef BB_SOC
+#ifdef NEIGHBORING_AP_STAT
+#define MAX_LEN_OF_BSS_TABLE             64
+#else
+#define MAX_LEN_OF_BSS_TABLE             20
+#endif /*NEIGHBORING_AP_STAT*/
+#else /* BB_SOC */
+#ifdef ECONET_ALPHA_RELEASE
+#define MAX_LEN_OF_BSS_TABLE             96 /* 64 */
+#else
 #define MAX_LEN_OF_BSS_TABLE             128 /* 64 */
+#endif /* ECONET_ALPHA_RELEASE */
+#endif /* !BB_SOC */
 #define MAX_REORDERING_MPDU_NUM			 512
 #endif
 
+#if defined(MAX_CONTINUOUS_TX_CNT) || defined(NEW_IXIA_METHOD)
+#undef MAX_REORDERING_MPDU_NUM
+#define MAX_REORDERING_MPDU_NUM 2048
+#endif
 /* key related definitions */
 #define SHARE_KEY_NUM                   4
 #define MAX_LEN_OF_SHARE_KEY            16	/* byte count */
 #define MAX_LEN_OF_PEER_KEY             16	/* byte count */
 #define PAIRWISE_KEY_NUM                64	/* in MAC ASIC pairwise key table */
 #define GROUP_KEY_NUM                   4
+#ifdef WH_EZ_SETUP
+#define LEN_PSK							64
+#endif
 #define PMK_LEN                         32
 #define WDS_PAIRWISE_KEY_OFFSET         60	/* WDS links uses pairwise key#60 ~ 63 in ASIC pairwise key table */
 #define	PMKID_NO                        4	/* Number of PMKID saved supported */
@@ -699,6 +724,12 @@ enum WIFI_MODE{
 #define APPS_RETRIEVE_WAIT_EVENT	4
 #define APPS_RETRIEVE_DONE			5
 
+#ifdef MTFWD
+enum nl_msg_id {
+	FWD_CMD_ADD_TX_SRC = 3,
+	FWD_CMD_DEL_TX_SRC = 4,
+};
+#endif
 
 /*#define PWR_UNKNOWN                   2 */
 
@@ -750,6 +781,23 @@ enum WIFI_MODE{
 #define REASON_QOS_REQUEST_TIMEOUT        39
 #define REASON_QOS_CIPHER_NOT_SUPPORT     45
 
+#ifdef WIFI_DIAG
+#define REASON_STANDARD_MAX				0xFFFF	/* 65535 */
+#define REASON_UNKNOWN					(REASON_STANDARD_MAX + 1)
+#define REASON_AGING_TIME_OUT			(REASON_STANDARD_MAX + 2)
+#define REASON_CONTINUE_TX_FAIL			(REASON_STANDARD_MAX + 3)
+#define REASON_RSSI_TOO_LOW				(REASON_STANDARD_MAX + 4)
+#define REASON_AUTH_WRONG_ALGORITHM		(REASON_STANDARD_MAX + 5)
+#define REASON_CHALLENGE_FAIL			(REASON_STANDARD_MAX + 6)
+#define REASON_4WAY_HS_MSG1_FAIL		(REASON_STANDARD_MAX + 7)
+#define REASON_4WAY_HS_MSG2_FAIL		(REASON_STANDARD_MAX + 8)
+#define REASON_4WAY_HS_MSG3_FAIL		(REASON_STANDARD_MAX + 9)
+#define REASON_4WAY_HS_MSG4_FAIL		(REASON_STANDARD_MAX + 10)
+#define REASON_2WAY_HS_MSG1_FAIL		(REASON_STANDARD_MAX + 11)
+#define REASON_2WAY_HS_MSG2_FAIL		(REASON_STANDARD_MAX + 12)
+#define REASON_DECRYPTION_FAIL			(REASON_STANDARD_MAX + 13)
+#endif
+
 #ifdef DOT11V_WNM_SUPPORT
 #define REASON_DISASSOC_DUE_TO_BSS_TRANSITION_MANAGEMENT	12
 #endif /* DOT11V_WNM_SUPPORT */
@@ -779,6 +827,13 @@ enum WIFI_MODE{
 #define MLME_ROBUST_MGMT_POLICY_VIOLATION 31
 #endif /* DOT11W_PMF_SUPPORT */
 
+#ifdef WH_EZ_SETUP
+#ifdef NEW_CONNECTION_ALGO
+#undef MLME_ASSOC_REJ_TEMPORARILY
+#define MLME_ASSOC_REJ_TEMPORARILY		  30
+#endif
+#endif
+
 #define MLME_QOS_UNSPECIFY                32
 #define MLME_REQUEST_DECLINED             37
 #define MLME_REQUEST_WITH_INVALID_PARAM   38
@@ -797,6 +852,24 @@ enum WIFI_MODE{
 #define MLME_FAIL_NO_RESOURCE           0x52
 #define MLME_STATE_MACHINE_REJECT       0x53
 #define MLME_MAC_TABLE_FAIL             0x54
+
+#ifdef DOT11_SAE_SUPPORT
+#define MLME_INVALID_PMKID                53
+#define MLME_ANTI_CLOGGING_TOKEN_REQ      76
+#endif
+
+#if defined(DOT11_SAE_SUPPORT) || defined(CONFIG_OWE_SUPPORT)
+#define MLME_FINITE_CYCLIC_GROUP_NOT_SUPPORTED 77
+#endif
+
+#ifdef CONFIG_OWE_SUPPORT
+#define IE_WLAN_EXTENSION	255
+#define IE_EXTENSION_ID_ECDH	32
+#endif
+#ifdef WH_EZ_SETUP
+#define MLME_EZ_CONNECTION_LOOP			110
+#define MLME_EZ_DISCONNECT_NON_EZ		111
+#endif
 
 /* IE code */
 #define IE_SSID                         0
@@ -855,11 +928,16 @@ enum WIFI_MODE{
 #define IE_QOS_MAP_SET			110 /* 802.11u */
 #define IE_ROAMING_CONSORTIUM	111 /* 802.11u */
 #define IE_EXT_CAPABILITY                127	/* 802.11n D3.03 */
+#define IE_LAST_BCN_REPORT_INDICATION_REQUEST	164 /*Last Beacon Report Indication Request*/
 #define IE_OPERATING_MODE_NOTIFY	199
 
 #define IE_WPA                          221	/* WPA */
 #define IE_VENDOR_SPECIFIC              221	/* Wifi WMM (WME) */
 #define	IE_WFA_WSC							221
+
+#if defined(DOT11R_FT_SUPPORT) || defined(DOT11K_RRM_SUPPORT)
+#define IE_FT_MDIE				54
+#endif
 
 #define OUI_P2P					0x09
 #define OUI_HS2_INDICATION		0x10
@@ -929,7 +1007,7 @@ enum WIFI_MODE{
 
 
 
-#ifdef CONFIG_DOT11U_INTERWORKING
+#ifdef DOT11U_INTERWORKING
 #define GAS_STATE_MACHINE		39
 #endif
 
@@ -940,6 +1018,29 @@ enum WIFI_MODE{
 
 #ifdef CONFIG_HOTSPOT
 #define HSCTRL_STATE_MACHINE		42
+#endif
+
+#ifdef MIXMODE_SUPPORT
+#define MIX_MODE_STATE_MACHINE 50//48
+#endif
+
+#ifdef WH_EZ_SETUP
+#ifdef EZ_MOD_SUPPORT
+#define EZ_STATE_MACHINE		98
+#else
+//! Levarage from MP1.0 CL#170063
+#define EZ_ROAM_STATE_MACHINE		98
+#define AP_TRIBAND_STATE_MACHINE	99
+#endif
+#endif
+
+#ifdef DOT11K_RRM_SUPPORT
+#define NEIGHBOR_STATE_MACHINE  48
+#define BCN_STATE_MACHINE  49
+#endif
+
+#ifdef WIFI_DIAG
+#define WIFI_DAIG_STATE_MACHINE 51
 #endif
 
 /*
@@ -1182,6 +1283,44 @@ enum WIFI_MODE{
 	STA's SYNC state machine: states, events, total function #
 */
 #define SYNC_IDLE                       0	/* merge NO_BSS,IBSS_IDLE,IBSS_ACTIVE and BSS in to 1 state */
+#ifdef WH_EZ_SETUP
+
+#ifdef EZ_MOD_SUPPORT
+
+#define EZ_IDLE                  							0
+#define EZ_MAX_STATE            							1
+#define EZ_MAX_MSG              							4
+#define EZ_MACHINE_BASE										0
+
+#define EZ_ROAM_REQ											0
+#define EZ_TRIBAND_RESTART_NON_EZ_REQ 						1
+#define EZ_PERIODIC_EXEC_REQ									2
+#define EZ_UPDATE_SSID_PSK_REQ									3
+
+#define EZ_FUNC_SIZE               							(EZ_MAX_STATE * EZ_MAX_MSG)
+
+#else
+//! Levarage from MP1.0 CL#170063
+#define EZ_ROAM_IDLE                    0
+#define EZ_ROAM_MAX_STATE            1
+#define EZ_ROAM_MAX_MSG              1
+#define EZ_ROAM_MACHINE_BASE		0
+
+#define EZ_ROAM_REQ		0
+#define EZ_ROAM_FUNC_SIZE               (EZ_ROAM_MAX_STATE * EZ_ROAM_MAX_MSG)
+
+
+#define AP_TRIBAND_IDLE                    0
+#define AP_MAX_TRIBAND_STATE            1
+#define AP_MAX_TRIBAND_MSG              2
+#define AP_TRIBAND_MACHINE_BASE		0
+
+#define AP_TRIBAND_UPDATE_CHANNEL_REQ		0
+#define AP_TRIBAND_RESTART_NON_EZ_REQ		1
+#define AP_TRIBAND_FUNC_SIZE               (AP_MAX_TRIBAND_STATE * AP_MAX_TRIBAND_MSG)
+#endif
+#endif
+
 #define JOIN_WAIT_BEACON                1
 #define SCAN_LISTEN                     2
 #define SCAN_PENDING                    3
@@ -1298,7 +1437,12 @@ enum WIFI_MODE{
 #define APCLI_AUTH_REQ_IDLE                0
 #define APCLI_AUTH_WAIT_SEQ2               1
 #define APCLI_AUTH_WAIT_SEQ4               2
+#ifdef APCLI_SAE_SUPPORT
+#define APCLI_AUTH_WAIT_SAE					3
+#define APCLI_MAX_AUTH_STATE               4
+#else
 #define APCLI_MAX_AUTH_STATE               3
+#endif
 
 #define APCLI_AUTH_MACHINE_BASE            0
 #define APCLI_MT2_MLME_AUTH_REQ            0
@@ -1306,7 +1450,14 @@ enum WIFI_MODE{
 #define APCLI_MT2_PEER_AUTH_EVEN           2
 #define APCLI_MT2_PEER_DEAUTH              3
 #define APCLI_MT2_AUTH_TIMEOUT             4
+#ifdef APCLI_SAE_SUPPORT
+#define APCLI_MT2_MLME_SAE_AUTH_REQ        5
+#define APCLI_MT2_MLME_SAE_AUTH_COMMIT     6
+#define APCLI_MT2_MLME_SAE_AUTH_CONFIRM    7
+#define APCLI_MAX_AUTH_MSG                 8
+#else
 #define APCLI_MAX_AUTH_MSG                 5
+#endif
 
 #define APCLI_AUTH_FUNC_SIZE               (APCLI_MAX_AUTH_STATE * APCLI_MAX_AUTH_MSG)
 
@@ -1339,8 +1490,6 @@ enum WIFI_MODE{
 
 #define APCLI_SYNC_FUNC_SIZE              (APCLI_MAX_SYNC_STATE * APCLI_MAX_SYNC_MSG)
 
-#define APCLI_MAX_PROBE_RETRY_NUM         4
-
 /*ApCli ctrl state machine */
 #define APCLI_CTRL_DISCONNECTED           0	/* merge NO_BSS,IBSS_IDLE,IBSS_ACTIVE and BSS in to 1 state */
 #define APCLI_CTRL_PROBE                  1
@@ -1349,13 +1498,7 @@ enum WIFI_MODE{
 #define APCLI_CTRL_ASSOC                  4
 #define APCLI_CTRL_DEASSOC                5
 #define APCLI_CTRL_CONNECTED              6
-#ifndef	APCLI_CONNECTION_TRIAL
 #define APCLI_MAX_CTRL_STATE              7
-#else
-#undef APCLI_MAC_CTRL_STATE
-#define APCLI_CTRL_TRIAL_TRIGGERED        7
-#define APCLI_MAX_CTRL_STATE              8
-#endif	/* APCLI_CONNECTION_TRIAL */
 
 #define APCLI_CTRL_MACHINE_BASE           0
 #define APCLI_CTRL_JOIN_REQ               0
@@ -1370,10 +1513,15 @@ enum WIFI_MODE{
 #define APCLI_CTRL_ASSOC_REQ_TIMEOUT      9
 #define APCLI_CTRL_MT2_AUTH_REQ			  10
 #define APCLI_CTRL_MT2_ASSOC_REQ		  11
-#define APCLI_CTRL_SCAN_DONE              12
-#define APCLI_MIC_FAILURE_REPORT_FRAME 	  13
+#define APCLI_CTRL_DEL_MACREPENTRY         12
+//#define APCLI_MAX_CTRL_MSG                12
 #ifndef APCLI_CONNECTION_TRIAL
-#define APCLI_MAX_CTRL_MSG                14
+#define APCLI_MAX_CTRL_MSG                13
+#ifdef WH_EZ_SETUP
+#undef APCLI_MAX_CTRL_MSG
+#define APCLI_CTRL_JOIN_FAIL	          14
+#define APCLI_MAX_CTRL_MSG			      15
+#endif /* WH_EZ_SETUP */
 #else
 #undef APCLI_MAX_CTRL_MSG
 #define	APCLI_CTRL_TRIAL_CONNECT		  14
@@ -1381,8 +1529,15 @@ enum WIFI_MODE{
 #define APCLI_CTRL_TRIAL_PHASE2_TIMEOUT	  16
 #define APCLI_CTRL_TRIAL_RETRY_TIMEOUT	  17
 #define APCLI_MAX_CTRL_MSG				  18
-#endif	/* APCLI_CONNECTION_TRIAL */
+#endif /* APCLI_CONNECTION_TRIAL */
+
 #define APCLI_CTRL_FUNC_SIZE              (APCLI_MAX_CTRL_STATE * APCLI_MAX_CTRL_MSG)
+
+#ifdef WH_EZ_SETUP
+#ifdef NEW_CONNECTION_ALGO
+#define APCLI_DISCONNECT_SUB_REASON_APCLI_EZ_CONNECTION_LOOP	11
+#endif
+#endif
 
 
 #endif /* APCLI_SUPPORT */
@@ -1523,10 +1678,11 @@ enum WIFI_MODE{
 #define BW_40		BAND_WIDTH_40
 #define BW_80		BAND_WIDTH_80
 #define BW_160		BAND_WIDTH_160
-
 #define BW_10		BAND_WIDTH_10	/* 802.11j has 10MHz. This definition is for internal usage. doesn't fill in the IE or other field. */
-
-
+#define BW_5		BAND_WIDTH_5
+#define BW_8080		BAND_WIDTH_8080
+#define BW_25		BAND_WIDTH_25
+#define BW_NUM		BAND_WIDTH_NUM
 
 #define RF_BW_20	1
 #define RF_BW_40	2
@@ -1691,23 +1847,21 @@ enum WIFI_MODE{
 #define PAIRWISE_KEY                1
 #define GROUP_KEY                   2
 
-#ifdef OPTIMISTIC_TRAINUP
-#define RA_TRAINDIV 1
-#else
-#define RA_TRAINDIV 2
-#endif /* OPTIMISTIC_TRAINUP */
+
 
 /* Rate Adaptation timing */
 #define RA_RATE		5					/* RA every fifth 100msec period */
 #define RA_INTERVAL		(RA_RATE*100)	/* RA Interval in msec */
 
 /* Rate Adaptation simpling interval setting */
-#define DEF_QUICK_RA_TIME_INTERVAL		80 /* Quick RA 100 msec after rate change */
-#define DEF_RA_TIME_INTRVAL			400
-#define FASTRATEUPERRTH				20 /* < 20% errors to allow fast up rate */
+#define DEF_QUICK_RA_TIME_INTERVAL	100
+
+#define DEF_RA_TIME_INTRVAL			500
 
 /*definition of DRS */
 #define MAX_TX_RATE_INDEX			33		/* Maximum Tx Rate Table Index value */
+
+#define SWIFT_TRAIN_UP_RECORD		8
 
 /* pre-allocated free NDIS PACKET/BUFFER poll for internal usage */
 #define MAX_NUM_OF_FREE_NDIS_PACKET 128
@@ -1726,10 +1880,10 @@ enum WIFI_MODE{
 #define I_ORIGINATOR                   FALSE
 
 #define DEFAULT_BBP_TX_POWER        0
-#define DEFAULT_RF_TX_POWER         8
-#define DEFAULT_MAX_TX_POWER        20
+#define DEFAULT_RF_TX_POWER         5
+#define DEFAULT_BBP_TX_FINE_POWER_CTRL 0
 
-#define MAX_INI_BUFFER_SIZE		10000   /* 4096 */
+#define MAX_INI_BUFFER_SIZE		4096
 #define MAX_PARAM_BUFFER_SIZE		(2048)	/* enough for ACL (18*64) */
 											/*18 : the length of Mac address acceptable format "01:02:03:04:05:06;") */
 											/*64 : MAX_NUM_OF_ACL_LIST */
@@ -1795,7 +1949,7 @@ enum WIFI_MODE{
 #define INT_MESH			0x0500
 #define INT_P2P				0x0600
 #define INT_MONITOR			0x0700
-
+#define MAX_INT_TYPES		7
 
 // TODO: Shiang-usw, need to revise this, consider both wdev->wdev_type and pEntry->EntryType!!
 
@@ -1823,6 +1977,10 @@ enum WIFI_MODE{
 #define ENTRY_CAT_AP			0x002
 #define ENTRY_CAT_WDS			0x004
 #define ENTRY_CAT_MESH			0x008
+#ifdef AIR_MONITOR
+
+#define ENTRY_CAT_MONITOR		0x010
+#endif
 #define ENTRY_CAT_MCAST		0x400
 #define ENTRY_CAT_WDEV			0x800
 #define ENTRY_CAT_MASK			0xfff
@@ -1849,13 +2007,18 @@ typedef struct _WIFI_NODE_TYPE {
 
 #define ENTRY_WDS			ENTRY_CAT_WDS
 #define ENTRY_MESH			ENTRY_CAT_MESH
-
+#ifdef AIR_MONITOR
+#define ENTRY_MONITOR			ENTRY_CAT_MONITOR
+#endif
 #define ENTRY_NONE			ENTRY_CAT_NONE
 
 
 #define IS_ENTRY_NONE(_x)		((_x)->EntryType == ENTRY_CAT_NONE)
 #define IS_ENTRY_CLIENT(_x)		((_x)->EntryType == ENTRY_CLIENT)
 #define IS_ENTRY_WDS(_x)		((_x)->EntryType & ENTRY_CAT_WDS)
+#ifdef AIR_MONITOR
+#define IS_ENTRY_MONITOR(_x)    	((_x)->EntryType == ENTRY_CAT_MONITOR)
+#endif /* AIR_MONITOR */
 #define IS_ENTRY_APCLI(_x)		((_x)->EntryType == ENTRY_APCLI)
 #define IS_ENTRY_ADHOC(_x)		((_x)->EntryType & ENTRY_ADHOC)
 #define IS_ENTRY_AP(_x)			((_x)->EntryType & ENTRY_CAT_AP)
@@ -1873,6 +2036,9 @@ typedef struct _WIFI_NODE_TYPE {
 #define SET_ENTRY_WDS(_x)		((_x)->EntryType = ENTRY_WDS)
 #define SET_ENTRY_APCLI(_x)		((_x)->EntryType = ENTRY_APCLI)
 #define SET_ENTRY_AP(_x)		((_x)->EntryType = ENTRY_AP)
+#ifdef AIR_MONITOR
+#define SET_ENTRY_MONITOR(_x)   	((_x)->EntryType = ENTRY_MONITOR)
+#endif /* AIR_MONITOR */
 #define SET_ENTRY_ADHOC(_x)                ((_x)->EntryType = ENTRY_ADHOC)
 #define SET_ENTRY_MESH(_x)		((_x)->EntryType = ENTRY_MESH)
 #define SET_ENTRY_DLS(_x)		((_x)->EntryType = ENTRY_DLS)
@@ -1890,25 +2056,45 @@ typedef struct _WIFI_NODE_TYPE {
 #define IS_OPMODE_AP(_x)		((_x)->OpMode == OPMODE_AP)
 #define IS_OPMODE_STA(_x)		((_x)->OpMode == OPMODE_STA)
 
-
-#if (CONFIG_RT_FIRST_CARD == 7603)
+#if defined(ANDROID_SUPPORT) || defined(RT_CFG80211_SUPPORT)
+#if CONFIG_RTPCI_AP_RF_OFFSET == 0x48000
+#define INF_MAIN_DEV_NAME		"wlani"
+#define INF_MBSSID_DEV_NAME		"wlani"
+#else
+#ifdef HE_BD_CFG80211_SUPPORT 
 #define INF_MAIN_DEV_NAME		"ra"
 #define INF_MBSSID_DEV_NAME		"ra"
-#define INF_WDS_DEV_NAME		"wds"
-#define INF_APCLI_DEV_NAME		"apcli"
-#define INF_MESH_DEV_NAME		"mesh"
-#define INF_P2P_DEV_NAME		"p2p"
-#define INF_MONITOR_DEV_NAME		"mon"
 #else
+#define INF_MAIN_DEV_NAME		"wlan"
+#define INF_MBSSID_DEV_NAME		"wlan"
+#endif /* HE_BD_CFG80211_SUPPORT */
+
+#endif
+
+#else // !ANDROID_SUPPORT || RT_CFG80211_SUPPORT
+#if CONFIG_RTPCI_AP_RF_OFFSET == 0x48000
 #define INF_MAIN_DEV_NAME		"rai"
 #define INF_MBSSID_DEV_NAME		"rai"
+#else
+#define INF_MAIN_DEV_NAME		"ra"
+#define INF_MBSSID_DEV_NAME		"ra"
+#endif
+#endif /* ANDROID_SUPPORT */
+
+
+#if CONFIG_RTPCI_AP_RF_OFFSET == 0x48000
 #define INF_WDS_DEV_NAME		"wdsi"
 #define INF_APCLI_DEV_NAME		"apclii"
 #define INF_MESH_DEV_NAME		"meshi"
 #define INF_P2P_DEV_NAME		"p2pi"
-#define INF_MONITOR_DEV_NAME		"moni"
+#define INF_MONITOR_DEV_NAME	"moni"
+#else
+#define INF_WDS_DEV_NAME		"wds"
+#define INF_APCLI_DEV_NAME		"apcli"
+#define INF_MESH_DEV_NAME		"mesh"
+#define INF_P2P_DEV_NAME		"p2p"
+#define INF_MONITOR_DEV_NAME	"mon"
 #endif
-
 
 /* WEP Key TYPE */
 #define WEP_HEXADECIMAL_TYPE    0
@@ -2031,6 +2217,23 @@ typedef struct _WIFI_NODE_TYPE {
 /* End - WIRELESS EVENTS definition */
 
 
+#ifdef WH_EZ_SETUP
+// For whole home coverage - easy setup wireless event - start
+#define	IW_WH_EZ_EVENT_FLAG_START                  	0x0700
+#define	IW_WH_EZ_PROVIDER_SEARCHING                 0x0700
+#define	IW_WH_EZ_PROVIDER_FOUND       				0x0701
+#define	IW_WH_EZ_PROVIDER_STOP_SEARCHING            0x0702
+#define	IW_WH_EZ_CONFIGURED_AP_SEARCHING            0x0703
+#define	IW_WH_EZ_CONFIGURED_AP_FOUND                0x0704
+#define	IW_WH_EZ_MY_APCLI_CONNECTED                 0x0705
+#define	IW_WH_EZ_MY_APCLI_DISCONNECTED              0x0706
+#define	IW_WH_EZ_MY_AP_HAS_APCLI                    0x0707
+#define	IW_WH_EZ_MY_AP_DOES_NOT_HAS_APCLI           0x0708
+#define	IW_WH_EZ_BECOME_CONFIGURED                  0x0709
+#define	IW_WH_EZ_EVENT_FLAG_END                     0x0709
+#define	IW_WH_EZ_EVENT_TYPE_NUM						(IW_WH_EZ_EVENT_FLAG_END - IW_WH_EZ_EVENT_FLAG_START + 1)
+/* For whole home coverage - easy setup wireless event - end */
+#endif /* WH_EZ_SETUP */
 #ifdef ALL_NET_EVENT
 #define	IW_ALL_NET_EVENT        				0x0800
 #endif /* ALL_NET_EVENT */
@@ -2135,8 +2338,15 @@ enum {
 
 enum {
 	SCS_STATUS_DEFAULT,
+	SCS_STATUS_MIDDLE,
 	SCS_STATUS_LOW,
 	SCS_STATUS_ULTRA_LOW,
+};
+
+enum {
+	Keep_Range,
+	Decrease_Range,
+	Increase_Range
 };
 #endif /* SMART_CARRIER_SENSE_SUPPORT */
 
@@ -2171,6 +2381,16 @@ do{									\
 		__p++;										\
 	}												\
 }while(0)
+
+
+#ifndef min
+#define min(_a, _b)     (((_a) < (_b)) ? (_a) : (_b))
+#endif
+
+#ifndef max
+#define max(_a, _b)     (((_a) > (_b)) ? (_a) : (_b))
+#endif
+
 
 /* ========================================================================== */
 /*
@@ -2223,5 +2443,5 @@ do{									\
 
 #define RTMP_OS_TASK_INIT(__pTask, __pTaskName, __pAd)		\
 	RtmpOSTaskInit(__pTask, __pTaskName, __pAd, &(__pAd)->RscTaskMemList, &(__pAd)->RscSemMemList);
-
+#define VALID_UCAST_ENTRY_WCID(_wcid)  (_wcid < MAX_LEN_OF_MAC_TABLE)
 #endif /* __RTMP_DEF_H__ */

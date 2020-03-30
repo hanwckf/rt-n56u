@@ -136,12 +136,13 @@ BOOLEAN RTMPCheckUcast(
 
 	pEntry->WepStatus = wdev->WepStatus;
     
+#ifndef CONFIG_SECURITY_IMPROVEMENT_SUPPORT
 	if (eid_ptr->Len < 16)
 	{
 		DBGPRINT(RT_DEBUG_ERROR, ("[ERROR]RTMPCheckUcast : the length is too short(%d) \n", eid_ptr->Len));
 	    return FALSE;
 	}	
-
+#endif
 	/* Store STA RSN_IE capability */
 	pStaTmp = (PUCHAR)&eid_ptr->Octet[0];
 	if(eid_ptr->Eid == IE_WPA2)
@@ -169,8 +170,11 @@ BOOLEAN RTMPCheckUcast(
 
 	/* pointer to unicast cipher */
     pStaTmp += sizeof(USHORT);	
-			
-    if (eid_ptr->Len >= 16)
+#ifdef CONFIG_SECURITY_IMPROVEMENT_SUPPORT
+	if (eid_ptr->Len >= 12)
+#else
+	if (eid_ptr->Len >= 16)
+#endif
     {
     	if (eid_ptr->Eid == IE_WPA)
     	{
@@ -301,7 +305,11 @@ BOOLEAN RTMPCheckUcast(
          FALSE otherwise
     ==========================================================================
 */
-BOOLEAN RTMPCheckAKM(PUCHAR sta_akm, PUCHAR ap_rsn_ie, INT iswpa2)
+BOOLEAN RTMPCheckAKM(PUCHAR sta_akm, PUCHAR ap_rsn_ie, INT iswpa2
+#if defined(DOT11_SAE_SUPPORT) || defined(CONFIG_OWE_SUPPORT)
+			, NDIS_802_11_AUTHENTICATION_MODE APAuthMode, MAC_TABLE_ENTRY * pEntry
+#endif
+			)
 {
 	PUCHAR pTmp;
 	USHORT Count;
@@ -332,17 +340,56 @@ BOOLEAN RTMPCheckAKM(PUCHAR sta_akm, PUCHAR ap_rsn_ie, INT iswpa2)
     Count = cpu2le16(Count);		
 
     pTmp   += sizeof(USHORT);/*pointer to AKM cipher */
-    while (Count > 0)
-    {
+
+#ifdef DOT11_SAE_SUPPORT
+	if (APAuthMode == Ndis802_11AuthModeWPA3PSK || APAuthMode == Ndis802_11AuthModeWPA2PSKWPA3PSK) {
+
+		if (!iswpa2)
+			return FALSE;
+
+		if (NdisEqualMemory(sta_akm, &OUI_WPA2_AKM_SAE_SHA256, 4)) {
+			pEntry->AuthMode = Ndis802_11AuthModeWPA3PSK;
+			pEntry->key_deri_alg = SEC_KEY_DERI_SHA256;
+			CLIENT_STATUS_SET_FLAG(pEntry, fCLIENT_STATUS_USE_SHA256);
+			return TRUE;
+		} else if (NdisEqualMemory(sta_akm, &OUI_WPA2_PSK_SHA256, 4)) {
+			pEntry->AuthMode = Ndis802_11AuthModeWPA2PSK;
+			pEntry->key_deri_alg = SEC_KEY_DERI_SHA256;
+			CLIENT_STATUS_SET_FLAG(pEntry, fCLIENT_STATUS_USE_SHA256);
+			return TRUE;
+		} else if (NdisEqualMemory(sta_akm, &OUI_WPA2_PSK_AKM, 4)) {
+			pEntry->AuthMode = Ndis802_11AuthModeWPA2PSK;
+			pEntry->key_deri_alg = SEC_KEY_DERI_SHA1;
+			CLIENT_STATUS_CLEAR_FLAG(pEntry, fCLIENT_STATUS_USE_SHA256);
+			return TRUE;
+		}
+
+	} else
+#endif
+#ifdef CONFIG_OWE_SUPPORT
+	if (APAuthMode == Ndis802_11AuthModeOWE) {
+		if (!iswpa2)
+			return FALSE;
+
+		if (NdisEqualMemory(sta_akm, &OUI_WPA2_AKM_OWE, 4)) {
+			pEntry->AuthMode = Ndis802_11AuthModeOWE;
+			pEntry->key_deri_alg = SEC_KEY_DERI_SHA256;
+			CLIENT_STATUS_SET_FLAG(pEntry, fCLIENT_STATUS_USE_SHA256);
+			return TRUE;
+		}
+	} else
+#endif
+	{
+		while (Count > 0) {
 		/*rtmp_hexdump(RT_DEBUG_TRACE,"MBSS WPA_IE AKM ",pTmp,4); */
-		if(RTMPEqualMemory(sta_akm,pTmp,4))
-		   return TRUE;
-    	else
-		{
+			if (RTMPEqualMemory(sta_akm, pTmp, 4))
+				return TRUE;
+
 			pTmp += 4;
 			Count--;
+
 		}
-    }
+	}
     return FALSE;/* do not match the AKM */
 
 }
@@ -371,12 +418,13 @@ BOOLEAN RTMPCheckAUTH(
 
 	apidx = pEntry->func_tb_idx;
 
+#ifndef CONFIG_SECURITY_IMPROVEMENT_SUPPORT
 	if (eid_ptr->Len < 16)
 	{
 		DBGPRINT(RT_DEBUG_ERROR, ("RTMPCheckAUTH ==> WPAIE len is too short(%d) \n", eid_ptr->Len));
-	    return FALSE;
-	}	
-
+		return FALSE;
+	}
+#endif
 	/* Store STA RSN_IE capability */
 	pStaTmp = (PUCHAR)&eid_ptr->Octet[0];
 	if(eid_ptr->Eid == IE_WPA2)
@@ -425,7 +473,11 @@ BOOLEAN RTMPCheckAUTH(
     	{
 			while (Count > 0)
 			{
-				if (RTMPCheckAKM(pStaTmp, &pAd->ApCfg.MBSSID[apidx].RSN_IE[0][0],0))
+				if (RTMPCheckAKM(pStaTmp, &pAd->ApCfg.MBSSID[apidx].RSN_IE[0][0], 0
+#if defined(DOT11_SAE_SUPPORT) || defined(CONFIG_OWE_SUPPORT)
+					, pAd->ApCfg.MBSSID[apidx].wdev.AuthMode, pEntry
+#endif
+					))
 					return TRUE;
 	
 				pStaTmp += 4;
@@ -441,11 +493,24 @@ BOOLEAN RTMPCheckAUTH(
 				(pAd->ApCfg.MBSSID[apidx].wdev.AuthMode == Ndis802_11AuthModeWPA1PSKWPA2PSK))
 				IE_Idx = 1;
 
-			while (Count > 0)
-			{			
-				if (RTMPCheckAKM(pStaTmp, &pAd->ApCfg.MBSSID[apidx].RSN_IE[IE_Idx][0],1))
+			while (Count > 0) {
+				if (RTMPCheckAKM(pStaTmp, &pAd->ApCfg.MBSSID[apidx].RSN_IE[IE_Idx][0], 1
+#if defined(DOT11_SAE_SUPPORT) || defined(CONFIG_OWE_SUPPORT)
+					, pAd->ApCfg.MBSSID[apidx].wdev.AuthMode, pEntry
+#endif
+					)) {
+#ifdef CONFIG_OWE_SUPPORT
+					if (pEntry->AuthMode == Ndis802_11AuthModeOWE) {
+						pEntry->key_deri_alg = SEC_KEY_DERI_SHA256;
+					/* OWE cannot derive key_deri_alg by OWE akm.
+					* it shall parse ECDH parameter to determine it.
+					* set a temporary alg here.
+					*/
+					}
+#endif
 					return TRUE;
-			
+				}
+
 				pStaTmp += 4;
 				Count--;
 			}
@@ -455,6 +520,223 @@ BOOLEAN RTMPCheckAUTH(
     return FALSE;
 }
 
+#if defined(CONFIG_SECURITY_IMPROVEMENT_SUPPORT) || defined(APCLI_SECURITY_IMPROVEMENT_SUPPORT)
+
+static BOOLEAN wpa_check_pmkid(
+	IN PUINT8 rsnie_ptr,
+	IN UINT rsnie_len,
+	IN NDIS_802_11_AUTHENTICATION_MODE StaAuthMode)
+{
+	UINT8 count = 0;
+	PUINT8 pBuf = NULL;
+
+	if (StaAuthMode == Ndis802_11AuthModeWPA2PSK) {
+		pBuf = WPA_ExtractSuiteFromRSNIE(rsnie_ptr, rsnie_len, PMKID_LIST, &count);
+
+		if (count > 0)
+			return FALSE;
+	}
+
+	return TRUE;
+}
+
+
+/* Ellis: not ready for WAPI */
+BOOLEAN wpa_rsne_sanity(
+	IN PUCHAR rsnie_ptr,
+	IN UCHAR rsnie_len,
+	OUT UCHAR *end_field)
+{
+	EID_STRUCT  *eid_ptr;
+	PUCHAR pStaTmp;
+	USHORT ver;
+	USHORT Count;
+	UCHAR len = 0;
+
+	eid_ptr = (EID_STRUCT *)rsnie_ptr;
+
+	if ((eid_ptr->Len + 2) != rsnie_len) {
+		MTWF_LOG(DBG_CAT_SEC, DBG_SUBCAT_ALL, DBG_LVL_ERROR,
+			("[ERROR]%s : the len is invalid !!!\n", __func__));
+		return FALSE;
+	}
+
+	if (eid_ptr->Len < MIN_LEN_OF_RSNIE) {
+		MTWF_LOG(DBG_CAT_SEC, DBG_SUBCAT_ALL, DBG_LVL_ERROR,
+			("[ERROR]%s : len is too short(len = %d) !!!\n", __func__, eid_ptr->Len));
+		return FALSE;
+	}
+
+	/* Store STA RSN_IE capability */
+	pStaTmp = (PUCHAR)&eid_ptr->Octet[0];
+
+	/* check Element ID */
+	if (eid_ptr->Eid == IE_WPA2)
+		;
+	else if (eid_ptr->Eid == IE_WPA) {
+		/* skip OUI(4) */
+		pStaTmp += 4;
+		len += 4;
+	} else if (eid_ptr->Eid == IE_WAPI)
+		return TRUE;
+	if (eid_ptr->Eid != IE_WPA2 && eid_ptr->Eid != IE_WPA && eid_ptr->Eid != IE_WAPI) {
+		MTWF_LOG(DBG_CAT_SEC, DBG_SUBCAT_ALL, DBG_LVL_ERROR,
+			("[ERROR]%s : invalid IE=%d\n", __func__, eid_ptr->Eid));
+		return FALSE;
+	}
+
+	/* check version */
+	len += 2;
+	if (eid_ptr->Len < len) {
+		MTWF_LOG(DBG_CAT_SEC, DBG_SUBCAT_ALL, DBG_LVL_ERROR,
+			("[ERROR]%s : no version(len = %d)\n", __func__, eid_ptr->Len));
+		return FALSE;
+	}
+	NdisMoveMemory(&ver, pStaTmp, sizeof(ver));
+	ver = cpu2le16(ver);
+
+	if (ver != 1) {
+		MTWF_LOG(DBG_CAT_SEC, DBG_SUBCAT_ALL, DBG_LVL_ERROR,
+			("[ERROR]%s : unknown version(%d)\n", __func__, ver));
+		return FALSE;
+	}
+
+	if (eid_ptr->Len == len) {
+		/* None of the optional fields are included in the RSNE */
+		*end_field = RSN_FIELD_NONE;
+		return TRUE;
+	}
+
+	pStaTmp += sizeof(USHORT);
+
+	/* check group cipher suite */
+	len += LEN_OUI_SUITE;
+	if (eid_ptr->Len < len) {
+		MTWF_LOG(DBG_CAT_SEC, DBG_SUBCAT_ALL, DBG_LVL_ERROR,
+			("[ERROR]%s : group cipher is truncated(len = %d)\n", __func__, eid_ptr->Len));
+		return FALSE;
+	} else if (eid_ptr->Len == len) {
+		/* Group Data Cipher Suite are included in the RSNE */
+		*end_field = RSN_FIELD_GROUP_CIPHER;
+		return TRUE;
+	}
+
+	pStaTmp += LEN_OUI_SUITE;
+
+	/* check pairwise cipher suite */
+	len += 2;
+	if (eid_ptr->Len < len) {
+		MTWF_LOG(DBG_CAT_SEC, DBG_SUBCAT_ALL, DBG_LVL_ERROR,
+			("[ERROR]%s :  pairwise cipher suite cnt is truncated(%d)\n", __func__, eid_ptr->Len));
+		return FALSE;
+	}
+
+	/* Store pairwise cipher count */
+	NdisMoveMemory(&Count, pStaTmp, sizeof(USHORT));
+	Count = cpu2le16(Count);
+
+	len += Count * LEN_OUI_SUITE;
+
+	if (eid_ptr->Len < len) {
+		MTWF_LOG(DBG_CAT_SEC, DBG_SUBCAT_ALL, DBG_LVL_ERROR,
+			("[ERROR]%s : Pairwise Cipher Suite is truncated(len %d)\n", __func__, eid_ptr->Len));
+		return FALSE;
+	} else if (eid_ptr->Len == len) {
+		/* Pairwise Cipher Suite are included in the RSNE */
+		*end_field = RSN_FIELD_PAIRWISE_CIPHER;
+		return TRUE;
+	}
+
+	pStaTmp += sizeof(USHORT) + Count * LEN_OUI_SUITE;
+
+	/* check akm suite */
+	len += 2;
+	if (eid_ptr->Len < len) {
+		MTWF_LOG(DBG_CAT_SEC, DBG_SUBCAT_ALL, DBG_LVL_ERROR,
+			("[ERROR]%s :  akm suite cnt is truncated(%d)\n", __func__, eid_ptr->Len));
+		return FALSE;
+	}
+
+	/* Store akm count */
+	NdisMoveMemory(&Count, pStaTmp, sizeof(USHORT));
+	Count = cpu2le16(Count);
+
+	len += Count * LEN_OUI_SUITE;
+	if (eid_ptr->Len < len) {
+		MTWF_LOG(DBG_CAT_SEC, DBG_SUBCAT_ALL, DBG_LVL_ERROR,
+			("[ERROR]%s : Akm Suite is truncated(len %d)\n", __func__, eid_ptr->Len));
+		return FALSE;
+	} else if (eid_ptr->Len == len) {
+		/* akm Suite are included in the RSNE */
+		*end_field = RSN_FIELD_AKM;
+		return TRUE;
+	}
+
+	pStaTmp += sizeof(USHORT) + Count * LEN_OUI_SUITE;
+
+	/* check rsn capabilities */
+	len += 2;
+	if (eid_ptr->Len < len) {
+		MTWF_LOG(DBG_CAT_SEC, DBG_SUBCAT_ALL, DBG_LVL_ERROR,
+			("[ERROR]%s : RSN capabilities is truncated(len %d)\n", __func__, eid_ptr->Len));
+		return FALSE;
+	} else if (eid_ptr->Len == len) {
+		/* rsn capabilities are included in the RSNE */
+		*end_field = RSN_FIELD_RSN_CAP;
+		return TRUE;
+	}
+
+	pStaTmp += 2;
+
+	/* check PMKID */
+	len += 2;
+	if (eid_ptr->Len < len) {
+		MTWF_LOG(DBG_CAT_SEC, DBG_SUBCAT_ALL, DBG_LVL_ERROR,
+			("[ERROR]%s :  pmkid cnt is truncated(%d)\n", __func__, eid_ptr->Len));
+		return FALSE;
+	}
+
+	/* Store pmkid count */
+	NdisMoveMemory(&Count, pStaTmp, sizeof(USHORT));
+	Count = cpu2le16(Count);
+
+	len += Count * 16;
+
+	if (eid_ptr->Len < len) {
+		MTWF_LOG(DBG_CAT_SEC, DBG_SUBCAT_ALL, DBG_LVL_ERROR,
+			("[ERROR]%s : PMKID is truncated(len %d)\n", __func__, eid_ptr->Len));
+		return FALSE;
+	} else if (eid_ptr->Len == len) {
+		/* PMKID are included in the RSNE */
+		*end_field = RSN_FIELD_PMKID;
+		return TRUE;
+	}
+
+	pStaTmp += 2 + Count * 16;
+
+
+#ifdef DOT11W_PMF_SUPPORT
+	/* check Group Management Cipher Suite*/
+	len += LEN_OUI_SUITE;
+	if (eid_ptr->Len < len) {
+		MTWF_LOG(DBG_CAT_SEC, DBG_SUBCAT_ALL, DBG_LVL_ERROR,
+			("[ERROR]%s : Group Management Cipher Suite is truncated(len %d)\n", __func__, eid_ptr->Len));
+		return FALSE;
+	} else if (eid_ptr->Len == len) {
+		/* PMKID are included in the RSNE */
+		*end_field = RSN_FIELD_GROUP_MGMT_CIPHER;
+		return TRUE;
+	}
+
+	pStaTmp += LEN_OUI_SUITE;
+#endif
+
+	MTWF_LOG(DBG_CAT_SEC, DBG_SUBCAT_ALL, DBG_LVL_TRACE,
+			("%s : extensible element len %d\n", __func__, eid_ptr->Len - len));
+	*end_field = RSN_FIELD_EXTENSIBLE_ELE;
+	return TRUE;
+}
+#endif
 /*
     ==========================================================================
     Description:
@@ -476,15 +758,25 @@ UINT	APValidateRSNIE(
 	INT	apidx;
 	BSS_STRUCT *pMbss;
 #endif /* DOT11W_PMF_SUPPORT */
+#ifdef CONFIG_SECURITY_IMPROVEMENT_SUPPORT
+	UCHAR end_field = 0;
+#endif
 	if (rsnie_len == 0)
 		return MLME_SUCCESS;
 
 	eid_ptr = (PEID_STRUCT)pRsnIe;
-	if ((eid_ptr->Len + 2) != rsnie_len)
-	{
+#ifndef CONFIG_SECURITY_IMPROVEMENT_SUPPORT
+	if ((eid_ptr->Len + 2) != rsnie_len) {
 		DBGPRINT(RT_DEBUG_ERROR, ("[ERROR]APValidateRSNIE : the len is invalid !!!\n"));
 		return MLME_UNSPECIFY_FAIL;
 	}
+#else
+	if (wpa_rsne_sanity(pRsnIe, rsnie_len, &end_field) == FALSE) {
+		MTWF_LOG(DBG_CAT_SEC, DBG_SUBCAT_ALL, DBG_LVL_ERROR,
+			("%s : wpa_rsne_sanity fail\n", __func__));
+		return MLME_UNSPECIFY_FAIL;
+	}
+#endif
 #ifdef DOT11W_PMF_SUPPORT
 	apidx = pEntry->func_tb_idx;
 	pMbss = &pAd->ApCfg.MBSSID[apidx];
@@ -495,6 +787,7 @@ UINT	APValidateRSNIE(
 		return MLME_SUCCESS;
 #endif /* WAPI_SUPPORT */
 
+#ifndef CONFIG_SECURITY_IMPROVEMENT_SUPPORT
 	/* check group cipher */
 	if (!RTMPCheckMcast(pAd, eid_ptr, pEntry))
 	{
@@ -514,14 +807,83 @@ UINT	APValidateRSNIE(
 	    StatusCode = MLME_INVALID_AKMP;
 	}                        
 #ifdef DOT11W_PMF_SUPPORT
-	else if (PMF_RsnCapableValidation(pAd, pRsnIe, rsnie_len, 
-                pMbss->PmfCfg.MFPC, pMbss->PmfCfg.MFPR, pEntry) != PMF_STATUS_SUCCESS)
+	else if (PMF_RsnCapableValidation(pAd, pRsnIe, rsnie_len,
+					pMbss->PmfCfg.MFPC, pMbss->PmfCfg.MFPR,
+#ifdef CONFIG_SECURITY_IMPROVEMENT_SUPPORT
+					end_field,
+#endif
+#ifdef CONFIG_OWE_SUPPORT
+					apidx,
+#endif
+					 pEntry) != PMF_STATUS_SUCCESS)
 	{
 		DBGPRINT(RT_DEBUG_ERROR, ("[PMF]%s : Invalid PMF Capability !!!\n", __FUNCTION__));
 	    StatusCode = MLME_ROBUST_MGMT_POLICY_VIOLATION;
 	}
 #endif /* DOT11W_PMF_SUPPORT */
 
+#else
+	/* check group cipher */
+	if (end_field >= RSN_FIELD_GROUP_CIPHER && !RTMPCheckMcast(pAd, eid_ptr, pEntry)) {
+		DBGPRINT(RT_DEBUG_ERROR, ("[ERROR]APValidateRSNIE : invalid group cipher !!!\n"));
+		StatusCode = MLME_INVALID_GROUP_CIPHER;
+	} else if (end_field < RSN_FIELD_GROUP_CIPHER
+		&& pMbss->wdev.GroupKeyWepStatus == Ndis802_11AESEnable)
+		pEntry->GroupKeyWepStatus = pMbss->wdev.GroupKeyWepStatus;
+	else if (end_field < RSN_FIELD_GROUP_CIPHER) {
+		MTWF_LOG(DBG_CAT_SEC, DBG_SUBCAT_ALL, DBG_LVL_ERROR,
+			("[ERROR]%s : invalid group cipher(peer use default cipher) !!!\n", __func__));
+		return MLME_INVALID_GROUP_CIPHER;
+	}
+
+	/* Check pairwise cipher */
+	if (end_field >= RSN_FIELD_PAIRWISE_CIPHER && !RTMPCheckUcast(pAd, eid_ptr, pEntry)) {
+		DBGPRINT(RT_DEBUG_ERROR, ("[ERROR]APValidateRSNIE : invalid pairwise cipher !!!\n"));
+		StatusCode = MLME_INVALID_PAIRWISE_CIPHER;
+	} else if (end_field < RSN_FIELD_PAIRWISE_CIPHER
+		&& pMbss->wdev.WepStatus == Ndis802_11AESEnable)
+		pEntry->WepStatus = pMbss->wdev.WepStatus;
+	else if (end_field < RSN_FIELD_PAIRWISE_CIPHER) {
+		MTWF_LOG(DBG_CAT_SEC, DBG_SUBCAT_ALL, DBG_LVL_ERROR,
+			("[ERROR]%s : invalid pairwise cipher(peer use default cipher) !!!\n", __func__));
+		return MLME_INVALID_PAIRWISE_CIPHER;
+	}
+
+	/* Check AKM */
+	if (end_field >= RSN_FIELD_AKM && !RTMPCheckAUTH(pAd, eid_ptr, pEntry)) {
+		DBGPRINT(RT_DEBUG_ERROR, ("[ERROR]APValidateRSNIE : invalid AKM !!!\n"));
+		StatusCode = MLME_INVALID_AKMP;
+	} else if (end_field < RSN_FIELD_AKM
+		&& pMbss->wdev.AuthMode == Ndis802_11AuthModeWPA2)
+		pEntry->AuthMode = pMbss->wdev.AuthMode;
+	else if (end_field < RSN_FIELD_AKM) {
+		MTWF_LOG(DBG_CAT_SEC, DBG_SUBCAT_ALL, DBG_LVL_ERROR,
+			("[ERROR]%s : invalid AKM(peer use default akm) !!!\n", __func__));
+		return MLME_INVALID_AKMP;
+	}
+	/* Check PMKID */
+	if (end_field >= RSN_FIELD_PMKID && !wpa_check_pmkid(pRsnIe, rsnie_len, pEntry->AuthMode)) {
+		MTWF_LOG(DBG_CAT_SEC, DBG_SUBCAT_ALL, DBG_LVL_ERROR, ("[ERROR]%s : invalid PMKID !!!\n", __func__));
+		return MLME_UNSPECIFY_FAIL;
+	}
+
+#ifdef DOT11W_PMF_SUPPORT
+	else if (PMF_RsnCapableValidation(pAd, pRsnIe, rsnie_len,
+					pMbss->PmfCfg.MFPC, pMbss->PmfCfg.MFPR,
+#ifdef CONFIG_SECURITY_IMPROVEMENT_SUPPORT
+					end_field,
+#endif
+#ifdef CONFIG_OWE_SUPPORT
+					apidx,
+#endif
+					pEntry) != PMF_STATUS_SUCCESS) {
+		DBGPRINT(RT_DEBUG_ERROR, ("[PMF]%s : Invalid PMF Capability !!!\n", __func__));
+		StatusCode = MLME_ROBUST_MGMT_POLICY_VIOLATION;
+	}
+#endif /* DOT11W_PMF_SUPPORT */
+
+
+#endif/* CONFIG_SECURITY_IMPROVEMENT_SUPPORT */
 	if (StatusCode != MLME_SUCCESS)
 	{
 		/* send wireless event - for RSN IE sanity check fail */
@@ -657,120 +1019,18 @@ VOID CMTimerExec(
 }
 
 
+
+
 VOID WPARetryExec(
-    IN PVOID SystemSpecific1, 
-    IN PVOID FunctionContext, 
-    IN PVOID SystemSpecific2, 
-    IN PVOID SystemSpecific3) 
+	IN PVOID SystemSpecific1,
+	IN PVOID FunctionContext,
+	IN PVOID SystemSpecific2,
+	IN PVOID SystemSpecific3)
 {
-    MAC_TABLE_ENTRY     *pEntry = (MAC_TABLE_ENTRY *)FunctionContext;
+	MAC_TABLE_ENTRY     *pEntry = NULL;
 
-    if ((pEntry) && IS_ENTRY_CLIENT(pEntry))
-    {
-        PRTMP_ADAPTER pAd = (PRTMP_ADAPTER)pEntry->pAd;
-        
-        pEntry->ReTryCounter++;
-        DBGPRINT(RT_DEBUG_TRACE, ("WPARetryExec---> ReTryCounter=%d, WpaState=%d \n", pEntry->ReTryCounter, pEntry->WpaState));
-
-        switch (pEntry->AuthMode)
-        {
-			case Ndis802_11AuthModeWPA:
-            case Ndis802_11AuthModeWPAPSK:
-			case Ndis802_11AuthModeWPA2:            
-            case Ndis802_11AuthModeWPA2PSK:
-				/* 1. GTK already retried, give up and disconnect client. */
-                if (pEntry->ReTryCounter > (GROUP_MSG1_RETRY_TIMER_CTR + 3))
-                {    
-                	/* send wireless event - for group key handshaking timeout */
-					RTMPSendWirelessEvent(pAd, IW_GROUP_HS_TIMEOUT_EVENT_FLAG, pEntry->Addr, pEntry->wdev->wdev_idx, 0); 
-					
-                    DBGPRINT(RT_DEBUG_TRACE, ("WPARetryExec::Group Key HS exceed retry count, Disassociate client, pEntry->ReTryCounter %d\n", pEntry->ReTryCounter));
-                    MlmeDeAuthAction(pAd, pEntry, REASON_GROUP_KEY_HS_TIMEOUT, FALSE);
-                }
-				/* 2. Retry GTK. */
-                else if (pEntry->ReTryCounter > GROUP_MSG1_RETRY_TIMER_CTR)
-                {
-                    DBGPRINT(RT_DEBUG_TRACE, ("WPARetryExec::ReTry 2-way group-key Handshake \n"));
-                    if (pEntry->GTKState == REKEY_NEGOTIATING)
-                    {
-                        WPAStart2WayGroupHS(pAd, pEntry);
-                    }
-                }
-                /* 3. 4-way message 3 retried more than three times. Disconnect client */
-                else if (pEntry->ReTryCounter > (PEER_MSG3_RETRY_TIMER_CTR + 3))
-                {             
-                	/* send wireless event - for pairwise key handshaking timeout */
-					RTMPSendWirelessEvent(pAd, IW_PAIRWISE_HS_TIMEOUT_EVENT_FLAG, pEntry->Addr, pEntry->wdev->wdev_idx, 0);
-					
-                    DBGPRINT(RT_DEBUG_TRACE, ("WPARetryExec::MSG3 timeout, pEntry->ReTryCounter = %d\n", pEntry->ReTryCounter));
-                    MlmeDeAuthAction(pAd, pEntry, REASON_4_WAY_TIMEOUT, FALSE);
-                    
-                }
-                /* 4. Retry 4 way message 3 */
-                else if (pEntry->ReTryCounter >= PEER_MSG3_RETRY_TIMER_CTR)
-                {             
-                	DBGPRINT(RT_DEBUG_TRACE, ("WPARetryExec::ReTry MSG3 of 4-way Handshake\n"));
-                	WPAPairMsg3Retry(pAd, pEntry, PEER_MSG1_RETRY_EXEC_INTV);                    
-                }
-				/* 5. 4-way message 1 retried more than three times. Disconnect client */
-                else if (pEntry->ReTryCounter > (PEER_MSG1_RETRY_TIMER_CTR + 3))
-                {
-					/* send wireless event - for pairwise key handshaking timeout */
-					RTMPSendWirelessEvent(pAd, IW_PAIRWISE_HS_TIMEOUT_EVENT_FLAG, pEntry->Addr, pEntry->wdev->wdev_idx, 0);
-
-                    DBGPRINT(RT_DEBUG_TRACE, ("WPARetryExec::MSG1 timeout, pEntry->ReTryCounter = %d\n", pEntry->ReTryCounter));
-                    MlmeDeAuthAction(pAd, pEntry, REASON_4_WAY_TIMEOUT, FALSE);
-                }
-				/* 6. Retry 4 way message 1, the last try, the timeout is 3 sec for EAPOL-Start */
-                else if (pEntry->ReTryCounter == (PEER_MSG1_RETRY_TIMER_CTR + 3))                
-                {
-                    DBGPRINT(RT_DEBUG_TRACE, ("WPARetryExec::Retry MSG1, the last try\n"));
-                    WPAStart4WayHS(pAd , pEntry, PEER_MSG3_RETRY_EXEC_INTV);
-                }
-				/* 7. Retry 4 way message 1 */
-                else if (pEntry->ReTryCounter < (PEER_MSG1_RETRY_TIMER_CTR + 3))
-                {
-                    if ((pEntry->WpaState == AS_PTKSTART) || (pEntry->WpaState == AS_INITPSK) || (pEntry->WpaState == AS_INITPMK))
-                    {
-                        DBGPRINT(RT_DEBUG_TRACE, ("WPARetryExec::ReTry MSG1 of 4-way Handshake\n"));
-                        WPAStart4WayHS(pAd, pEntry, PEER_MSG1_RETRY_EXEC_INTV);
-                    }
-                }
-                break;
-
-            default:
-                break;
-            
-        }
-    }
-#ifdef APCLI_SUPPORT	
-	else if ((pEntry) && IS_ENTRY_APCLI(pEntry))
-	{
-		if (pEntry->AuthMode == Ndis802_11AuthModeWPA || pEntry->AuthMode == Ndis802_11AuthModeWPAPSK)
-		{						
-			PRTMP_ADAPTER pAd = (PRTMP_ADAPTER)pEntry->pAd;
-
-			if (pEntry->func_tb_idx < MAX_APCLI_NUM)
-			{		
-				UCHAR ifIndex = pEntry->func_tb_idx;
-								
-				DBGPRINT(RT_DEBUG_TRACE, ("(%s) ApCli interface[%d] startdown.\n", __FUNCTION__, ifIndex));
-#ifdef MAC_REPEATER_SUPPORT
-				if ((pEntry->bReptCli) && (pAd->ApCfg.bMACRepeaterEn == TRUE))
-					ifIndex = (64 + ifIndex*MAX_EXT_MAC_ADDR_SIZE + pEntry->MatchReptCliIdx);
-#endif /* MAC_REPEATER_SUPPORT */
-				MlmeEnqueue(pAd, APCLI_CTRL_STATE_MACHINE, APCLI_CTRL_DISCONNECT_REQ, 0, NULL, ifIndex);
-#ifdef MAC_REPEATER_SUPPORT
-				if ( (pAd->ApCfg.bMACRepeaterEn == TRUE) && (pEntry->bReptCli))
-				{
-					RTMP_MLME_HANDLER(pAd);
-					//RTMPRemoveRepeaterEntry(pAd, pEntry->func_tb_idx, pEntry->MatchReptCliIdx);
-				}
-#endif /* MAC_REPEATER_SUPPORT */
-			}
-		}
-	}
-#endif /* APCLI_SUPPORT */	
+	pEntry = (MAC_TABLE_ENTRY *)FunctionContext;
+	MlmeEnqueue(pEntry->pAd, WPA_STATE_MACHINE, MT2_EAPOLTIMEOUT, 6, &pEntry->Addr, 0);
 }
 
 
@@ -850,11 +1110,17 @@ VOID GREKEYPeriodicExec(
 				if (IS_ENTRY_CLIENT(pEntry) && 
 					(pEntry->WpaState == AS_PTKINITDONE) &&
 						(pEntry->func_tb_idx == apidx))
-            			{
+                {
+#ifdef A4_CONN
+				if (IS_ENTRY_A4(pEntry))
+					continue;
+#endif /* A4_CONN */
 					pEntry->GTKState = REKEY_NEGOTIATING;
-                			WPAStart2WayGroupHS(pAd, pEntry);
+						
+                	WPAStart2WayGroupHS(pAd, pEntry);
+					/*set retry counter for GTK update*/
 					pEntry->ReTryCounter = GROUP_MSG1_RETRY_TIMER_CTR;
-					DBGPRINT(RT_DEBUG_TRACE, ("Rekey interval excess, Update Group Key for  %x %x %x  %x %x %x , DefaultKeyId= %x \n",\
+                    DBGPRINT(RT_DEBUG_TRACE, ("Rekey interval excess, Update Group Key for  %x %x %x  %x %x %x , DefaultKeyId= %x \n",\
 										PRINT_MAC(pEntry->Addr), wdev->DefaultKeyId));
 				}
 			}
@@ -887,7 +1153,7 @@ VOID GREKEYPeriodicExec(
 }
 
 
-#ifdef DOT1X_SUPPORT
+#if defined(DOT1X_SUPPORT) || defined(CONFIG_OWE_SUPPORT) || defined(DOT11_SAE_SUPPORT)
 /*
     ========================================================================
 
@@ -990,13 +1256,56 @@ VOID WpaSend(RTMP_ADAPTER *pAdapter, UCHAR *pPacket, ULONG Len)
     }
 }    
 
+#if defined(CONFIG_OWE_SUPPORT) || defined(DOT11_SAE_SUPPORT)
+VOID store_pmkid_cache_in_entry(
+	IN RTMP_ADAPTER * pAd,
+	IN MAC_TABLE_ENTRY * pEntry,
+	IN INT32 cache_idx)
+{
+	if (!pEntry) {
+		MTWF_LOG(DBG_CAT_SEC, DBG_SUBCAT_ALL, DBG_LVL_ERROR,
+			("%s(): pEntry is null\n", __func__));
+		return;
+	}
 
+	MTWF_LOG(DBG_CAT_SEC, DBG_SUBCAT_ALL, DBG_LVL_LOUD, ("EntryType = %d\n", pEntry->EntryType));
+
+	if (cache_idx == -1) {
+		pEntry->pmkid = NULL;
+		pEntry->pmk_cache = NULL;
+	} else {
+		if (IS_ENTRY_CLIENT(pEntry)) {
+#ifdef CONFIG_AP_SUPPORT
+			BSS_STRUCT *pBMbss;
+			pBMbss = &pAd->ApCfg.MBSSID[pEntry->func_tb_idx];
+			pEntry->pmkid = &pBMbss->PMKIDCache.BSSIDInfo[cache_idx].PMKID[0];
+			pEntry->pmk_cache = pBMbss->PMKIDCache.BSSIDInfo[cache_idx].PMK;
+#endif
+		}
+	}
+
+}
+
+
+UCHAR is_pmkid_cache_in_entry(
+	IN MAC_TABLE_ENTRY * pEntry)
+{
+	if (pEntry && pEntry->pmkid && pEntry->pmk_cache)
+		return TRUE;
+	else
+		return FALSE;
+}
+#endif
 VOID RTMPAddPMKIDCache(
 	IN  PRTMP_ADAPTER   		pAd,
 	IN	INT						apidx,
 	IN	PUCHAR				pAddr,
 	IN	UCHAR					*PMKID,
-	IN	UCHAR					*PMK)
+	IN	UCHAR					*PMK
+#ifdef CONFIG_OWE_SUPPORT
+	, IN UINT8  pmk_len
+#endif
+	)
 {
 	INT	i, CacheIdx;
 
@@ -1005,7 +1314,13 @@ VOID RTMPAddPMKIDCache(
 	{
 		NdisGetSystemUpTime(&(pAd->ApCfg.MBSSID[apidx].PMKIDCache.BSSIDInfo[CacheIdx].RefreshTime));
 		NdisMoveMemory(&pAd->ApCfg.MBSSID[apidx].PMKIDCache.BSSIDInfo[CacheIdx].PMKID, PMKID, LEN_PMKID);
-		NdisMoveMemory(&pAd->ApCfg.MBSSID[apidx].PMKIDCache.BSSIDInfo[CacheIdx].PMK, PMK, PMK_LEN);
+		NdisMoveMemory(&pAd->ApCfg.MBSSID[apidx].PMKIDCache.BSSIDInfo[CacheIdx].PMK, PMK,
+#ifndef CONFIG_OWE_SUPPORT
+				LEN_PMK
+#else
+				pmk_len
+#endif
+				);
 		DBGPRINT(RT_DEBUG_TRACE, 
 					("RTMPAddPMKIDCache update %02x:%02x:%02x:%02x:%02x:%02x cache(%d) from IF(ra%d)\n", 
 					PRINT_MAC(pAddr), CacheIdx, apidx));
@@ -1022,7 +1337,13 @@ VOID RTMPAddPMKIDCache(
 			NdisGetSystemUpTime(&(pAd->ApCfg.MBSSID[apidx].PMKIDCache.BSSIDInfo[i].RefreshTime));
 			COPY_MAC_ADDR(&pAd->ApCfg.MBSSID[apidx].PMKIDCache.BSSIDInfo[i].MAC, pAddr);
 			NdisMoveMemory(&pAd->ApCfg.MBSSID[apidx].PMKIDCache.BSSIDInfo[i].PMKID, PMKID, LEN_PMKID);
-			NdisMoveMemory(&pAd->ApCfg.MBSSID[apidx].PMKIDCache.BSSIDInfo[i].PMK, PMK, PMK_LEN);
+			NdisMoveMemory(&pAd->ApCfg.MBSSID[apidx].PMKIDCache.BSSIDInfo[i].PMK, PMK,
+#ifndef CONFIG_OWE_SUPPORT
+					LEN_PMK
+#else
+					pmk_len
+#endif
+					);
 			DBGPRINT(RT_DEBUG_TRACE, ("RTMPAddPMKIDCache add %02x:%02x:%02x:%02x:%02x:%02x cache(%d) from IF(ra%d)\n", 
             					PRINT_MAC(pAddr), i, apidx));
 			break;
@@ -1049,7 +1370,13 @@ VOID RTMPAddPMKIDCache(
 		NdisGetSystemUpTime(&(pAd->ApCfg.MBSSID[apidx].PMKIDCache.BSSIDInfo[idx].RefreshTime));
 		COPY_MAC_ADDR(&pAd->ApCfg.MBSSID[apidx].PMKIDCache.BSSIDInfo[idx].MAC, pAddr);
 		NdisMoveMemory(&pAd->ApCfg.MBSSID[apidx].PMKIDCache.BSSIDInfo[idx].PMKID, PMKID, LEN_PMKID);
-		NdisMoveMemory(&pAd->ApCfg.MBSSID[apidx].PMKIDCache.BSSIDInfo[idx].PMK, PMK, PMK_LEN);
+		NdisMoveMemory(&pAd->ApCfg.MBSSID[apidx].PMKIDCache.BSSIDInfo[idx].PMK, PMK,
+#ifndef CONFIG_OWE_SUPPORT
+				LEN_PMK
+#else
+				pmk_len
+#endif
+				);
 		DBGPRINT(RT_DEBUG_TRACE, ("RTMPAddPMKIDCache add %02x:%02x:%02x:%02x:%02x:%02x cache(%ld) from IF(ra%d)\n", 
            						PRINT_MAC(pAddr), idx, apidx));
 	}
@@ -1214,93 +1541,5 @@ const CHAR* ether_sprintf(const UINT8 *mac)
 
 
 #ifdef APCLI_SUPPORT
-
-VOID	ApCliRTMPReportMicError(
-	IN	PRTMP_ADAPTER	pAd, 
-	IN 	UCHAR unicastKey,
-	IN	INT			ifIndex)
-{
-	ULONG	Now;
-	PAPCLI_STRUCT pApCliEntry = NULL;
-	DBGPRINT(RT_DEBUG_TRACE,  (" ApCliRTMPReportMicError <---\n"));
-
-	pApCliEntry = &pAd->ApCfg.ApCliTab[ifIndex];
-	/* Record Last MIC error time and count */
-	NdisGetSystemUpTime(&Now);
-	if (pAd->ApCfg.ApCliTab[ifIndex].MicErrCnt == 0)
-	{
-		pAd->ApCfg.ApCliTab[ifIndex].MicErrCnt++;
-		pAd->ApCfg.ApCliTab[ifIndex].LastMicErrorTime = Now;
-		NdisZeroMemory(pAd->ApCfg.ApCliTab[ifIndex].ReplayCounter, 8);        
-	}
-	else if (pAd->ApCfg.ApCliTab[ifIndex].MicErrCnt == 1)
-	{
-		if ((pAd->ApCfg.ApCliTab[ifIndex].LastMicErrorTime + (60 * OS_HZ)) < Now)
-		{
-			/* Update Last MIC error time, this did not violate two MIC errors within 60 seconds */
-			pAd->ApCfg.ApCliTab[ifIndex].LastMicErrorTime = Now; 		
-		}
-		else
-		{
-
-			/* RTMPSendWirelessEvent(pAd, IW_COUNTER_MEASURES_EVENT_FLAG, pAd->MacTab.Content[BSSID_WCID].Addr, BSS0, 0); */
-
-			pAd->ApCfg.ApCliTab[ifIndex].LastMicErrorTime = Now; 		
-			/* Violate MIC error counts, MIC countermeasures kicks in */
-			pAd->ApCfg.ApCliTab[ifIndex].MicErrCnt++;
-			/*
-			 We shall block all reception
-			 We shall clean all Tx ring and disassoicate from AP after next EAPOL frame
-			 
-			 No necessary to clean all Tx ring, on RTMPHardTransmit will stop sending non-802.1X EAPOL packets
-			 if pAd->StaCfg.MicErrCnt greater than 2.
-			*/
-		}
-	}
-	else
-	{
-		/* MIC error count >= 2 */
-		/* This should not happen */
-		;
-	}
-	MlmeEnqueue(pAd, APCLI_CTRL_STATE_MACHINE, APCLI_MIC_FAILURE_REPORT_FRAME, 1, &unicastKey, ifIndex);
-
-	if (pAd->ApCfg.ApCliTab[ifIndex].MicErrCnt == 2)
-	{
-		DBGPRINT(RT_DEBUG_TRACE,  (" MIC Error count = 2 Trigger Block timer....\n"));
-		DBGPRINT(RT_DEBUG_TRACE, (" pAd->ApCfg.ApCliTab[%d].LastMicErrorTime = %ld\n",ifIndex,
-			pAd->ApCfg.ApCliTab[ifIndex].LastMicErrorTime));
-		
-		RTMPSetTimer(&pApCliEntry->MlmeAux.WpaDisassocAndBlockAssocTimer, 100);
-	}
-	DBGPRINT(RT_DEBUG_TRACE,  ("ApCliRTMPReportMicError --->\n"));
-
-}
-
-VOID ApCliWpaDisassocApAndBlockAssoc(
-    IN PVOID SystemSpecific1, 
-    IN PVOID FunctionContext, 
-    IN PVOID SystemSpecific2, 
-    IN PVOID SystemSpecific3) 
-{
-
-	RTMP_ADAPTER                *pAd = (PRTMP_ADAPTER)FunctionContext;
-	MLME_DISASSOC_REQ_STRUCT    DisassocReq;
-	
-	PAPCLI_STRUCT pApCliEntry;
-
-	pAd->ApCfg.ApCliTab[0].bBlockAssoc = TRUE;
-	DBGPRINT(RT_DEBUG_TRACE, ("(%s) disassociate with current AP after sending second continuous EAPOL frame.\n", __FUNCTION__));
-
-
-	pApCliEntry = &pAd->ApCfg.ApCliTab[0];
-
-	DisassocParmFill(pAd, &DisassocReq, pApCliEntry->MlmeAux.Bssid, REASON_MIC_FAILURE);
-	MlmeEnqueue(pAd, APCLI_ASSOC_STATE_MACHINE, APCLI_MT2_MLME_DISASSOC_REQ,
-		sizeof(MLME_DISASSOC_REQ_STRUCT), &DisassocReq, 0);
-
-	pApCliEntry->MicErrCnt = 0;
-}
-
 #endif/*APCLI_SUPPORT*/
 

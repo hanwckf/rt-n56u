@@ -28,7 +28,6 @@
 #include "rt_config.h"
 #include <stdarg.h>
 
-extern UCHAR  ZeroSsid[32];
 #ifdef BTCOEX_CONCURRENT
 extern void MT7662ReceCoexFromOtherCHip(
 	IN UCHAR channel,
@@ -36,12 +35,15 @@ extern void MT7662ReceCoexFromOtherCHip(
 	IN UCHAR channel_bw
 	);
 #endif
-
+#if defined(MAX_CONTINUOUS_TX_CNT) || defined(NEW_IXIA_METHOD)
+VOID rtmp_deqmode_detect(RTMP_ADAPTER *pAd);
+#endif
 #ifdef DOT11_N_SUPPORT
-#ifdef DOT11N_DRAFT3
 
 int DetectOverlappingPeriodicRound;
 
+
+#ifdef DOT11N_DRAFT3
 VOID Bss2040CoexistTimeOut(
 	IN PVOID SystemSpecific1, 
 	IN PVOID FunctionContext, 
@@ -69,6 +71,9 @@ VOID Bss2040CoexistTimeOut(
 		SendBSS2040CoexistMgmtAction(pAd, MCAST_WCID, apidx, 0);
 	
 }
+#endif /* DOT11N_DRAFT3 */
+
+#endif /* DOT11_N_SUPPORT */
 
 
 VOID APDetectOverlappingExec(
@@ -77,6 +82,7 @@ VOID APDetectOverlappingExec(
 	IN PVOID SystemSpecific2, 
 	IN PVOID SystemSpecific3) 
 {
+#ifdef DOT11_N_SUPPORT
 	PRTMP_ADAPTER	pAd = (RTMP_ADAPTER *)FunctionContext;
 
 	if (DetectOverlappingPeriodicRound == 0)
@@ -102,9 +108,8 @@ VOID APDetectOverlappingExec(
 		}
 		DetectOverlappingPeriodicRound--;
 	}
-}
-#endif /* DOT11N_DRAFT3 */
 #endif /* DOT11_N_SUPPORT */
+}
 
 
 /*
@@ -120,7 +125,9 @@ VOID APDetectOverlappingExec(
 VOID APMlmePeriodicExec(
     PRTMP_ADAPTER pAd)
 {
-	INT i;
+#ifdef A4_CONN
+		UCHAR mbss_idx;
+#endif
     /* 
 		Reqeust by David 2005/05/12
 		It make sense to disable Adjust Tx Power on AP mode, since we can't 
@@ -178,20 +185,30 @@ VOID APMlmePeriodicExec(
     /* MAC table maintenance */
 	if (pAd->Mlme.PeriodicRound % MLME_TASK_EXEC_MULTIPLE == 0)
 	{
+#if defined(BAND_STEERING) || defined(CUSTOMER_DCC_FEATURE) || defined(WIFI_DIAG)\
+	|| defined(WAPP_SUPPORT)
+		UINT32 msdr9;
+
+		/* NAV, CCA, or TX active timer in unit of TU, used for Measurement. (channel busy time) */
+		RTMP_IO_READ32(pAd, MIB_MSDR9, &msdr9);
+		msdr9 &= 0xFFFFFF;
+		pAd->OneSecChBusyTime = msdr9;
+#ifdef BAND_STEERING
+		if (pAd->ApCfg.BandSteering)
+			pAd->ApCfg.BndStrgOneSecChBusyTime = (pAd->ApCfg.BndStrgOneSecChBusyTime == 0)? \
+						msdr9 : ((msdr9 + pAd->ApCfg.BndStrgOneSecChBusyTime)>>1);
+#endif
+#endif
 		/* one second timer */
 	    MacTableMaintenance(pAd);
 
-	    /* increase block count every secons for time limit probe temp limit function */
-	    for (i = 0; i < pAd->ApCfg.BssidNum; i++) {
-		if (pAd->ApCfg.MBSSID[i].TmpBlockAfterKickTimes != 0 && pAd->ApCfg.MBSSID[i].TmpBlockAfterKickCount < pAd->ApCfg.MBSSID[i].TmpBlockAfterKickTimes) {
-		    if (!MAC_ADDR_EQUAL(pAd->ApCfg.MBSSID[i].TmpBlockAfterKickMac, ZERO_MAC_ADDR))
-			pAd->ApCfg.MBSSID[i].TmpBlockAfterKickCount++;
-		} else {
-		    /* cleanup blocked mac address */
-		    NdisZeroMemory(pAd->ApCfg.MBSSID[i].TmpBlockAfterKickMac, MAC_ADDR_LEN);
+#ifdef WH_EZ_SETUP
+#ifdef NEW_CONNECTION_ALGO
+		if(IS_ADPTR_EZ_SETUP_ENABLED(pAd)) {
+			EzMlmeEnqueue(pAd, EZ_STATE_MACHINE, EZ_PERIODIC_EXEC_REQ, 0, NULL, 0);
 		}
-	    }
-
+#endif
+#endif
 #ifdef CONFIG_FPGA_MODE
 	if (pAd->fpga_ctl.fpga_tr_stop)
 	{
@@ -229,6 +246,18 @@ VOID APMlmePeriodicExec(
 #ifdef CLIENT_WDS
 	CliWds_ProxyTabMaintain(pAd);
 #endif /* CLIENT_WDS */
+#ifdef A4_CONN
+		for(mbss_idx = 0; mbss_idx < pAd->ApCfg.BssidNum; mbss_idx++)
+			a4_proxy_maintain(pAd, mbss_idx);
+		pAd->a4_need_refresh = FALSE;
+#endif /* A4_CONN */
+#ifdef WH_EVENT_NOTIFIER
+		//WHCMlmePeriodicExec(pAd); // Arvind : Need to confirm that we have to support this event   
+#endif /* WH_EVENT_NOTIFIER */
+
+#ifdef WIFI_DIAG
+		DiagApMlmeOneSecProc(pAd);
+#endif
 	}
 	
 #ifdef AP_SCAN_SUPPORT
@@ -264,73 +293,12 @@ VOID APMlmePeriodicExec(
 		for (loop = 0; loop < MAX_APCLI_NUM; loop++)
 		{
 			PAPCLI_STRUCT pApCliEntry = &pAd->ApCfg.ApCliTab[loop];
-			if (pAd->ApCfg.ApCliTab[loop].bBlockAssoc == TRUE
-					&& pAd->ApCfg.ApCliTab[loop].bBlockAssoc
-					&& RTMP_TIME_AFTER(Now32, pAd->ApCfg.ApCliTab[loop].LastMicErrorTime + (60*OS_HZ)))
-				pAd->ApCfg.ApCliTab[loop].bBlockAssoc = FALSE;
-			
 			if ((pApCliEntry->Valid == TRUE)
 				&& (pApCliEntry->MacTabWCID < MAX_LEN_OF_MAC_TABLE))
 			{
 				/* update channel quality for Roaming and UI LinkQuality display */
 				MlmeCalculateChannelQuality(pAd,
 					&pAd->MacTab.Content[pApCliEntry->MacTabWCID], Now32);
-
-#ifdef APCLI_CERT_SUPPORT
-				if (pAd->bApCliCertTest == TRUE)
-				{
-#if defined(RTMP_MAC) || defined(RLT_MAC)	
-					BOOLEAN IsUseBA = TRUE;
-					PMAC_TABLE_ENTRY pEntry = &pAd->MacTab.Content[pApCliEntry->MacTabWCID];
-					
-					if (pEntry->RXBAbitmap == 0 && pEntry->TXBAbitmap == 0)
-						IsUseBA = FALSE;
-					
-					if((IS_RT5392(pAd) || IS_RT5592(pAd)) && 
-						pApCliEntry->DesiredHtPhyInfo.bHtEnable && 
-						IsUseBA == FALSE   )
-					{
-						EDCA_AC_CFG_STRUC   Ac2Cfg, Ac1Cfg;                                                            
-
-						RTMP_IO_READ32(pAd, EDCA_AC2_CFG, &Ac2Cfg.word);
-						RTMP_IO_READ32(pAd, EDCA_AC1_CFG, &Ac1Cfg.word);																			
-
-						if ((pAd->RalinkCounters.OneSecOsTxCount[QID_AC_VO] == 0) &&
-							(pAd->RalinkCounters.OneSecOsTxCount[QID_AC_BK] >= 1000) &&
-							(pAd->RalinkCounters.OneSecOsTxCount[QID_AC_VI] == 0))
-						{       
-							/*5.2.27 T7 */
-							if (Ac1Cfg.field.Aifsn!=0x1)
-							{
-									Ac1Cfg.field.Aifsn = 0x1;
-									RTMP_IO_WRITE32(pAd, EDCA_AC1_CFG, Ac1Cfg.word);
-									DBGPRINT(RT_DEBUG_TRACE,("Change EDCA_AC1_CFG to %x \n", Ac1Cfg.word));
-							}
-						}
-						else if ((pAd->RalinkCounters.OneSecOsTxCount[QID_AC_VO] == 0) &&
-							(pAd->RalinkCounters.OneSecOsTxCount[QID_AC_BK] == 0) &&
-							(pAd->RalinkCounters.OneSecOsTxCount[QID_AC_VI] == 0) &&
-							(pAd->RalinkCounters.OneSecOsTxCount[QID_AC_BE] < 10))
-						{
-							/* restore default parameter of BK*/
-							if (Ac1Cfg.field.Aifsn!=0x7)
-							{
-								Ac1Cfg.field.Aifsn = 0x7;
-								RTMP_IO_WRITE32(pAd, EDCA_AC1_CFG, Ac1Cfg.word);
-								DBGPRINT(RT_DEBUG_TRACE,("Restore EDCA_AC1_CFG to %x \n", Ac1Cfg.word));
-							}
-						}       
-
-						pAd->RalinkCounters.OneSecOsTxCount[QID_AC_BE] = 0;
-						pAd->RalinkCounters.OneSecOsTxCount[QID_AC_BK] = 0;
-						pAd->RalinkCounters.OneSecOsTxCount[QID_AC_VI] = 0;
-						pAd->RalinkCounters.OneSecOsTxCount[QID_AC_VO] = 0;
-
-					}
-#endif /* defined(RTMP_MAC) || defined(RLT_MAC) */	
-				}	
-#endif /* APCLI_CERT_SUPPORT */	
-				
 			}
 		}
 	}
@@ -365,76 +333,34 @@ VOID APMlmePeriodicExec(
 #endif /* !DFS_SUPPORT */
 		}
 #endif /* A_BAND_SUPPORT */
-
+#ifdef MBO_SUPPORT
+	MboCheckBssTermination(pAd);
+#endif/* MBO_SUPPORT */
 #ifdef DOT11R_FT_SUPPORT
 	FT_R1KHInfoMaintenance(pAd);
 #endif /* DOT11R_FT_SUPPORT */
-
-#ifdef APCLI_SUPPORT
-#ifdef DOT11_N_SUPPORT
-#ifdef DOT11N_DRAFT3
-#ifdef APCLI_CERT_SUPPORT
-	/* Perform 20/40 BSS COEX scan every Dot11BssWidthTriggerScanInt	*/
-	if (APCLI_IF_UP_CHECK(pAd, 0) && (pAd->bApCliCertTest == TRUE))
-	{
-		if ((OPSTATUS_TEST_FLAG(pAd, fOP_STATUS_SCAN_2040)) && 
-			(pAd->CommonCfg.Dot11BssWidthTriggerScanInt != 0) && 
-			((pAd->Mlme.OneSecPeriodicRound % pAd->CommonCfg.Dot11BssWidthTriggerScanInt) == (pAd->CommonCfg.Dot11BssWidthTriggerScanInt-1)))
-		{
-			DBGPRINT(RT_DEBUG_TRACE,("MMCHK - LastOneSecTotalTxCount/LastOneSecRxOkDataCnt  = %d/%d \n", 
-									pAd->RalinkCounters.LastOneSecTotalTxCount,
-									pAd->RalinkCounters.LastOneSecRxOkDataCnt));
-
-			/* Check last scan time at least 30 seconds from now. 		*/
-			/* Check traffic is less than about 1.5~2Mbps.*/
-			/* it might cause data lost if we enqueue scanning.*/
-			/* This criteria needs to be considered*/
-			if ((pAd->RalinkCounters.LastOneSecTotalTxCount < 70) && (pAd->RalinkCounters.LastOneSecRxOkDataCnt < 70)
-				/*&& ((pAd->StaCfg.LastScanTime + 10 * OS_HZ) < pAd->Mlme.Now32) */)		
-			{
-				MLME_SCAN_REQ_STRUCT            ScanReq;
-				/* Fill out stuff for scan request and kick to scan*/
-				ScanParmFill(pAd, &ScanReq, ZeroSsid, 0, BSS_ANY, SCAN_2040_BSS_COEXIST);
-				/* Before scan, reset trigger event table. */
-				TriEventInit(pAd);
-
-				MlmeEnqueue(pAd, AP_SYNC_STATE_MACHINE, APMT2_MLME_SCAN_REQ, sizeof(MLME_SCAN_REQ_STRUCT), &ScanReq, 0);
-
-				/* Set InfoReq = 1, So after scan , alwats sebd 20/40 Coexistence frame to AP*/
-				pAd->CommonCfg.BSSCoexist2040.field.InfoReq = 1;
-				RTMP_MLME_HANDLER(pAd);
-			}
-
-			DBGPRINT(RT_DEBUG_TRACE, (" LastOneSecTotalTxCount/LastOneSecRxOkDataCnt  = %d/%d \n", 
-					pAd->RalinkCounters.LastOneSecTotalTxCount, 
-					pAd->RalinkCounters.LastOneSecRxOkDataCnt));	
-		}
-	}	
-#endif /* APCLI_CERT_SUPPORT */
-#endif /* DOT11N_DRAFT3 */
-#endif /* DOT11_N_SUPPORT */
-#endif /* APCLI_SUPPORT */
-#ifdef DOT11K_RRM_SUPPORT
-	if (!ApScanRunning(pAd)) {
-	    /* after boot need force first scan at 15sec */
-	    if ((pAd->Mlme.OneSecPeriodicRound % 240 == 0) ||
-		    (pAd->Mlme.OneSecPeriodicRound % 15 == 0 && pAd->CommonCfg.RRMFirstScan == TRUE))
-	    {
-		    if (pAd->MacTab.Size == 0 || pAd->CommonCfg.RRMFirstScan == TRUE) {
-			INT needscan = 0;
-			for (i = 0; i < MAX_MBSSID_NUM(pAd); i++) {
-				if (pAd->OpMode == OPMODE_AP && IS_RRM_ENABLE(pAd, i))
-					needscan = 1;
-			}
-			if (needscan == 1) {
-				DBGPRINT(RT_DEBUG_TRACE, ("RRM: rescan every 240sec for update neighbour info\n"));
-				pAd->CommonCfg.RRMFirstScan = FALSE;
-				ApSiteSurvey(pAd, NULL, SCAN_ACTIVE, FALSE);
-			}
-		    }
-	    }
+#if defined(MAX_CONTINUOUS_TX_CNT) || defined(NEW_IXIA_METHOD)
+	if(pAd->MonitorFlag == TRUE)
+		rtmp_deqmode_detect(pAd); /* 1s detect*/
+#endif
+#ifdef BAND_STEERING
+	BndStrgHeartBeatMonitor(pAd);
+#endif
+#ifdef NEW_IXIA_METHOD
+	if (pAd->Mlme.OneSecPeriodicRound % pAd->chkTmr == 0) {
+		if ((txpktdetect2s < pAd->pktthld)
+			&& (rxpktdetect2s < pAd->pktthld)) {/*Threshold*/
+			pAd->tmrlogctrl++;
+			if (pAd->tmrlogctrl <= 1)
+				wifi_txrx_parmtrs_dump(pAd);
+			else
+				pAd->tmrlogctrl = 10;/*prevent pAd->tmrlogctrl overflow*/
+		} else
+			pAd->tmrlogctrl = 0;
+		txpktdetect2s = 0;
+		rxpktdetect2s = 0;
 	}
-#endif /* DOT11K_RRM_SUPPORT */
+#endif
 }
 
 
@@ -453,13 +379,21 @@ BOOLEAN APMsgTypeSubst(
     OUT INT *MsgType) 
 {
 	USHORT Seq;
+#ifdef DOT11_SAE_SUPPORT
+	USHORT Alg;
+#endif /* DOT11_SAE_SUPPORT */
 	UCHAR  EAPType;
 	BOOLEAN     Return = FALSE;
 #ifdef WSC_AP_SUPPORT
 	UCHAR EAPCode;
 	PMAC_TABLE_ENTRY pEntry;
 #endif /* WSC_AP_SUPPORT */
+	unsigned char hdr_len = LENGTH_802_11;
 
+#ifdef A4_CONN
+	if ((pFrame->Hdr.FC.FrDs == 1) && (pFrame->Hdr.FC.ToDs == 1))
+		hdr_len = LENGTH_802_11_WITH_ADDR4;
+#endif
 	/*
 		TODO:
 		only PROBE_REQ can be broadcast, all others must be unicast-to-me && is_mybssid; 
@@ -490,8 +424,8 @@ BOOLEAN APMsgTypeSubst(
 				(wsc_ctrl->WscConfMode != WSC_DISABLE))
 			{
 				*Machine = WSC_STATE_MACHINE;
-				EAPType = *((UCHAR*)pFrame + LENGTH_802_11 + LENGTH_802_1_H + 1);
-				EAPCode = *((UCHAR*)pFrame + LENGTH_802_11 + LENGTH_802_1_H + 4);
+				EAPType = *((UCHAR *)pFrame + hdr_len + LENGTH_802_1_H + 1);
+				EAPCode = *((UCHAR *)pFrame + hdr_len + LENGTH_802_1_H + 4);
 				Return = WscMsgTypeSubst(EAPType, EAPCode, MsgType);
 			}
 		}
@@ -499,7 +433,7 @@ BOOLEAN APMsgTypeSubst(
 		if (!Return)
 		{
 			*Machine = WPA_STATE_MACHINE;
-			EAPType = *((UCHAR*)pFrame + LENGTH_802_11 + LENGTH_802_1_H + 1);
+			EAPType = *((UCHAR *)pFrame + hdr_len + LENGTH_802_1_H + 1);
 			Return = WpaMsgTypeSubst(EAPType, (INT *) MsgType);
 		}
 		return Return;
@@ -557,10 +491,17 @@ BOOLEAN APMsgTypeSubst(
 			break;
 		case SUBTYPE_AUTH:
 			/* get the sequence number from payload 24 Mac Header + 2 bytes algorithm */
+#ifdef DOT11_SAE_SUPPORT
+			NdisMoveMemory(&Alg, &pFrame->Octet[0], sizeof(USHORT));
+#endif /* DOT11_SAE_SUPPORT */
 			NdisMoveMemory(&Seq, &pFrame->Octet[2], sizeof(USHORT));
 
 			*Machine = AP_AUTH_STATE_MACHINE;
-			if (Seq == 1)
+			if (Seq == 1
+#ifdef DOT11_SAE_SUPPORT
+				|| (Alg == AUTH_MODE_SAE && Seq == 2)
+#endif /* DOT11_SAE_SUPPORT */
+				)
 				*MsgType = APMT2_PEER_AUTH_REQ;
 			else if (Seq == 3)
 				*MsgType = APMT2_PEER_AUTH_CONFIRM;
@@ -674,7 +615,7 @@ VOID APAsicEvaluateRxAnt(
 */
 VOID APAsicRxAntEvalTimeout(RTMP_ADAPTER *pAd)
 {
-	CHAR rssi[3] = {0}, *target_rssi;
+	CHAR rssi[3], *target_rssi;
 
 #ifdef CONFIG_ATE
 	if (ATE_ON(pAd))
@@ -760,4 +701,69 @@ VOID	APAsicAntennaAvg(
 		    pAd->RxAnt.RcvPktNum[1] = 0;
 		    *RssiAvg = realavgrssi - 256;
 }
+#if defined(MAX_CONTINUOUS_TX_CNT) || defined(NEW_IXIA_METHOD)
+BOOLEAN Rtmp_Max_Continuous_Tx_OnOff(RTMP_ADAPTER *pAd)
+{
+	PMAC_TABLE_ENTRY pEntry = NULL;
+	INT i;
+	CHAR MaxRssi  = -127,MinRssi  = -127,myAvgRssi = -127; //for RSSI
+	ULONG DataRate=0; //for datarate.
+	for (i=0; i < MAX_LEN_OF_MAC_TABLE; i++)
+	{
+		pEntry = &pAd->MacTab.Content[i];
+		if (!(IS_ENTRY_CLIENT(pEntry) && (pEntry->Sst == SST_ASSOC)))
+			continue;
+		myAvgRssi = RTMPAvgRssi(pAd, &pEntry->RssiSample);// get my rssi average.
+		getRate(pEntry->HTPhyMode, &DataRate);
+		
+		if(DataRate < pAd->RateTh)
+		{
+			DBGPRINT(RT_DEBUG_WARN,("%s(%d)Some sta's rate is low. DataRate = %lu\n",__FUNCTION__,__LINE__,DataRate));
+			return FALSE;
+		}
+		if((MaxRssi == -127) && (MinRssi == -127))
+		{
+			MaxRssi= myAvgRssi;
+			MinRssi = myAvgRssi;
+		}
+		else
+		{
+			MaxRssi = RTMPMaxRssi(pAd,MaxRssi,myAvgRssi,0);// find the max rssi in mactable size.
+			MinRssi = RTMPMinRssi(pAd,MinRssi,myAvgRssi,0);// find the min rssi in mactable size.
+		}
+		
+	}
+		DBGPRINT(RT_DEBUG_WARN,("%s(%d)MaxRssi = %-3d,MinRssi = %-3d\n",__FUNCTION__,__LINE__,MaxRssi,MinRssi));
+		if((MaxRssi - MinRssi) < pAd->DeltaRssiTh) /*pAd->DeltaRssiTh default 10 dBm*/
+		{
+			DBGPRINT(RT_DEBUG_WARN,("%s(%d) in in in in in in \n",__FUNCTION__,__LINE__));
+			return TRUE;
+		}
+		else	
+			return FALSE;
+}
+
+VOID rtmp_deqmode_detect(RTMP_ADAPTER *pAd)
+{
+	if(pAd->MacTab.Size >=5)
+	{
+		DBGPRINT(RT_DEBUG_WARN,("%s(%d) MacTab.Size = %d\n",__FUNCTION__,__LINE__,pAd->MacTab.Size));
+		if(Rtmp_Max_Continuous_Tx_OnOff(pAd) == TRUE)
+		{
+			pAd->ContinousTxCnt = CONTINUOUS_TX_CNT;/*set tx 21 packets one time*/
+			DBGPRINT(RT_DEBUG_WARN,("%s(%d)Countinous to Tx %d Packets\n",__FUNCTION__,__LINE__,pAd->ContinousTxCnt));
+		}
+		else
+		{
+			pAd->ContinousTxCnt = 1; /*default tx 1 packet one time*/
+			DBGPRINT(RT_DEBUG_WARN,("%s(%d)tx 1 packet!\n",__FUNCTION__,__LINE__));
+		}
+	}
+	else
+	{
+		DBGPRINT(RT_DEBUG_WARN,("%s(%d)client num = %d\n",__FUNCTION__,__LINE__, pAd->MacTab.Size));
+		pAd->ContinousTxCnt = 1; /*default tx 1 packet one time*/
+	}
+}
+#endif
 

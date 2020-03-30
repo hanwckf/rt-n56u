@@ -40,6 +40,14 @@ UCHAR PMF_MMIE_BUFFER[18]= {0x4C, 0x10,
 #define SAQ_RETRY	1
 #define SAQ_SENDING	2
 
+#ifdef CONFIG_SECURITY_IMPROVEMENT_SUPPORT
+UCHAR OUI_PMF_BIP_CMAC_128_CIPHER[4] = {0x00, 0x0F, 0xAC, 0x06};
+UCHAR OUI_PMF_BIP_CMAC_256_CIPHER[4] = {0x00, 0x0F, 0xAC, 0x0d};
+UCHAR OUI_PMF_BIP_GMAC_128_CIPHER[4] = {0x00, 0x0F, 0xAC, 0x0b};
+UCHAR OUI_PMF_BIP_GMAC_256_CIPHER[4] = {0x00, 0x0F, 0xAC, 0x0c};
+#endif
+
+
 
 VOID PMF_PeerAction(
 	IN PRTMP_ADAPTER pAd, 
@@ -89,11 +97,13 @@ VOID PMF_MlmeSAQueryReq(
 #ifdef CONFIG_AP_SUPPORT
 	IF_DEV_CONFIG_OPMODE_ON_AP(pAd)
 	{									
+#ifdef APCLI_DOT11W_PMF_SUPPORT
 #ifdef APCLI_SUPPORT
 		if ((pEntry) && IS_ENTRY_APCLI(pEntry))
 			pPmfCfg = &pAd->ApCfg.ApCliTab[pEntry->func_tb_idx].PmfCfg;
 		else
 #endif /* APCLI_SUPPORT */
+#endif /* APCLI_DOT11W_PMF_SUPPORT */
                 pPmfCfg = &pAd->ApCfg.MBSSID[pEntry->func_tb_idx].PmfCfg;
         }
 #endif /* CONFIG_AP_SUPPORT */
@@ -108,23 +118,23 @@ VOID PMF_MlmeSAQueryReq(
 #ifdef CONFIG_AP_SUPPORT
 		IF_DEV_CONFIG_OPMODE_ON_AP(pAd)
 		{		
+#ifdef APCLI_DOT11W_PMF_SUPPORT
 #ifdef APCLI_SUPPORT
-			if ((pEntry) && IS_ENTRY_APCLI(pEntry))
-			{
+			if ((pEntry) && IS_ENTRY_APCLI(pEntry)) {
 				ApCliMgtMacHeaderInit(pAd,
 							&SAQReqHdr,
 							SUBTYPE_ACTION, 0,
 							pEntry->Addr,
 							pEntry->Addr,
 							pEntry->func_tb_idx);
-			}
-			else
+			} else
 #endif /* APCLI_SUPPORT */
+#endif /* APCLI_DOT11W_PMF_SUPPORT */
 			{
                 MgtMacHeaderInit(pAd, &SAQReqHdr, SUBTYPE_ACTION, 0, pEntry->Addr,
                                 pAd->ApCfg.MBSSID[pEntry->func_tb_idx].wdev.bssid,
                                 pAd->ApCfg.MBSSID[pEntry->func_tb_idx].wdev.bssid);
-		}
+			}
 		}
 #endif /* CONFIG_AP_SUPPORT */
 
@@ -202,22 +212,22 @@ VOID PMF_PeerSAQueryReqAction(
 #ifdef CONFIG_AP_SUPPORT
 		IF_DEV_CONFIG_OPMODE_ON_AP(pAd)
 		{		
+#ifdef APCLI_DOT11W_PMF_SUPPORT
 #ifdef APCLI_SUPPORT
-			if (pEntry && IS_ENTRY_APCLI(pEntry))
-			{
+			if (pEntry && IS_ENTRY_APCLI(pEntry)) {
 				ApCliMgtMacHeaderInit(pAd, &SAQRspHdr,
 										SUBTYPE_ACTION, 0,
 										pHeader->Hdr.Addr2,
 										pHeader->Hdr.Addr2,
 										pEntry->func_tb_idx);
-			}
-			else
-#endif /* APCLI_SUPPORT */		
+			} else
+#endif /* APCLI_SUPPORT */
+#endif /* APCLI_DOT11W_PMF_SUPPORT */
 			{
 			MgtMacHeaderInit(pAd, &SAQRspHdr, SUBTYPE_ACTION, 0, pHeader->Hdr.Addr2,
 							pAd->ApCfg.MBSSID[pEntry->func_tb_idx].wdev.bssid,
 						pAd->ApCfg.MBSSID[pEntry->func_tb_idx].wdev.bssid);
-		}
+			}
 		}
 #endif /* CONFIG_AP_SUPPORT */
 
@@ -295,7 +305,9 @@ VOID PMF_SAQueryTimeOut(
 {
         MAC_TABLE_ENTRY *pEntry = (MAC_TABLE_ENTRY *)FunctionContext;
 
+#ifdef APCLI_DOT11W_PMF_SUPPORT
 		USHORT ifIndex = 0;
+#endif /* APCLI_DOT11W_PMF_SUPPORT */
         if (pEntry)
         {
 		RTMP_ADAPTER *pAd = (RTMP_ADAPTER*)pEntry->pAd;
@@ -306,18 +318,18 @@ VOID PMF_SAQueryTimeOut(
 #ifdef CONFIG_AP_SUPPORT
 		IF_DEV_CONFIG_OPMODE_ON_AP(pAd)
 		{		
+#ifdef APCLI_DOT11W_PMF_SUPPORT
 #ifdef APCLI_SUPPORT
-			if (IS_ENTRY_APCLI(pEntry))
-			{
+			if (IS_ENTRY_APCLI(pEntry)) {
 				BOOLEAN Cancelled;
 				MLME_DISASSOC_REQ_STRUCT DisassocReq;
 				PULONG pCurrState = NULL;
-				
+
 				RTMPCancelTimer(&pEntry->SAQueryTimer, &Cancelled);
 				RTMPCancelTimer(&pEntry->SAQueryConfirmTimer, &Cancelled);
 				DisassocParmFill(pAd, &DisassocReq,
-									pAd->ApCfg.ApCliTab[pEntry->func_tb_idx].MlmeAux.Bssid,
-									REASON_DISASSOC_STA_LEAVING);
+						pAd->ApCfg.ApCliTab[pEntry->func_tb_idx].MlmeAux.Bssid,
+						REASON_DISASSOC_STA_LEAVING);
 
 				pCurrState = &pAd->ApCfg.ApCliTab[pEntry->func_tb_idx].CtrlCurrState;
 				ifIndex = pEntry->func_tb_idx;
@@ -326,12 +338,13 @@ VOID PMF_SAQueryTimeOut(
 
 				MlmeEnqueue(pAd, APCLI_ASSOC_STATE_MACHINE,
 								APCLI_MT2_MLME_DISASSOC_REQ,
-								sizeof(MLME_DISASSOC_REQ_STRUCT), &DisassocReq, ifIndex);
+								sizeof(MLME_DISASSOC_REQ_STRUCT),
+								&DisassocReq, ifIndex);
 
 				RTMP_MLME_HANDLER(pAd);
-			}
-			else
-#endif /* APCLI_SUPPORT */		
+			} else
+#endif /* APCLI_SUPPORT */
+#endif /* APCLI_DOT11W_PMF_SUPPORT */
 			MacTableDeleteEntry(pAd, pEntry->wcid, pEntry->Addr);
 		}
 #endif /* CONFIG_AP_SUPPORT */
@@ -587,11 +600,21 @@ VOID PMF_InsertIGTKKDE(
 		
 	========================================================================
 */
+#ifndef APCLI_DOT11W_PMF_SUPPORT
 BOOLEAN PMF_ExtractIGTKKDE(
 	IN PRTMP_ADAPTER pAd,
 	IN PUCHAR pBuf,
-	IN INT buf_len,
-	IN MAC_TABLE_ENTRY *pEntry)
+	IN INT buf_len)
+{
+	return FALSE;
+}
+#else
+BOOLEAN PMF_ExtractIGTKKDE(
+	IN PRTMP_ADAPTER pAd,
+	IN PUCHAR pBuf,
+	IN INT buf_len
+	, IN MAC_TABLE_ENTRY *pEntry
+	)
 {
 	PPMF_IGTK_KDE igtk_kde_ptr;
 	UINT8 idx = 0;
@@ -600,40 +623,36 @@ BOOLEAN PMF_ExtractIGTKKDE(
 #ifdef CONFIG_AP_SUPPORT
 #ifdef APCLI_SUPPORT
 	if (IS_ENTRY_APCLI(pEntry))
-	{
 		pPmfCfg = &pAd->ApCfg.ApCliTab[pEntry->func_tb_idx].PmfCfg;
-	}
 #endif /* APCLI_SUPPORT */
-#endif /* CONFIG_STA_SUPPORT */
+#endif /* CONFIG_AP_SUPPORT */
 
 
 	if (pPmfCfg == NULL)
 		return FALSE;
-	
+
 	igtk_kde_ptr = (PPMF_IGTK_KDE) pBuf;
 	pPmfCfg->IGTK_KeyIdx = igtk_kde_ptr->KeyID[0];
 	if (pPmfCfg->IGTK_KeyIdx == 5)
 		idx = 1;
 	offset += 2;
 
-	NdisMoveMemory(&pPmfCfg->IPN[idx][0], igtk_kde_ptr->IPN, LEN_WPA_TSC);	
+	NdisMoveMemory(&pPmfCfg->IPN[idx][0], igtk_kde_ptr->IPN, LEN_WPA_TSC);
 	offset += LEN_WPA_TSC;
 
-	if ((buf_len - offset) == LEN_AES_GTK)
-	{
+	if ((buf_len - offset) == LEN_AES_GTK) {
 		NdisMoveMemory(&pPmfCfg->IGTK[idx][0], igtk_kde_ptr->IGTK, LEN_AES_GTK);
-	}
-	else
-	{
-		DBGPRINT(RT_DEBUG_ERROR, ("%s : the IGTK length(%d) is invalid\n", 
-					 __FUNCTION__, (buf_len - offset)));	
+	} else {
+		DBGPRINT(RT_DEBUG_ERROR, ("%s : the IGTK length(%d) is invalid\n",
+					 __func__, (buf_len - offset)));
 		return FALSE;
 	}
-	
-	DBGPRINT(RT_DEBUG_TRACE, ("%s : IGTK_Key_ID=%d\n", 
-				__FUNCTION__, pPmfCfg->IGTK_KeyIdx));	
+
+	DBGPRINT(RT_DEBUG_TRACE, ("%s : IGTK_Key_ID=%d\n",
+				__func__, pPmfCfg->IGTK_KeyIdx));
 	return TRUE;
 }
+#endif /* APCLI_DOT11W_PMF_SUPPORT */
 
 
 /*
@@ -673,15 +692,15 @@ VOID PMF_MakeRsnIeGMgmtCipher(
 #ifdef CONFIG_AP_SUPPORT
 	IF_DEV_CONFIG_OPMODE_ON_AP(pAd)
 	{
+#ifdef APCLI_DOT11W_PMF_SUPPORT
 #ifdef APCLI_SUPPORT
-		if (apidx >= MIN_NET_DEVICE_FOR_APCLI)
-		{
+		if (apidx >= MIN_NET_DEVICE_FOR_APCLI) {
 			PAPCLI_STRUCT pApCliEntry = &pAd->ApCfg.ApCliTab[apidx - MIN_NET_DEVICE_FOR_APCLI];
 
 			MFP_Enabled = pApCliEntry->PmfCfg.MFPC;
-		}
-		else
-#endif /* APCLI_SUPPORT */	
+		} else
+#endif /* APCLI_SUPPORT */
+#endif /* APCLI_DOT11W_PMF_SUPPORT */
 		if (apidx < pAd->ApCfg.BssidNum)		
 		{
 			BSS_STRUCT *pMbss = &pAd->ApCfg.MBSSID[apidx];
@@ -720,7 +739,13 @@ NTSTATUS PMF_RsnCapableValidation(
         IN UINT rsnie_len,
         IN BOOLEAN self_MFPC,
 	IN BOOLEAN self_MFPR,
-        IN PMAC_TABLE_ENTRY pEntry)
+#ifdef CONFIG_SECURITY_IMPROVEMENT_SUPPORT
+	IN UCHAR end_field,
+#endif
+#ifdef CONFIG_OWE_SUPPORT
+	IN INT apidx,
+#endif
+	IN PMAC_TABLE_ENTRY pEntry)
 {
 	UINT8 count;
 	PUINT8 pBuf = NULL;
@@ -767,19 +792,44 @@ NTSTATUS PMF_RsnCapableValidation(
 		        DBGPRINT(RT_DEBUG_ERROR, ("[PMF]%s: PMF Connection \n", __FUNCTION__));
 			CLIENT_STATUS_SET_FLAG(pEntry, fCLIENT_STATUS_PMF_CAPABLE);
 		}
-	}
 
+#ifdef CONFIG_OWE_SUPPORT
+	if (pEntry->AuthMode == Ndis802_11AuthModeOWE) {
+		pAd->ApCfg.MBSSID[apidx].PmfCfg.MFPC = TRUE;
+		pAd->ApCfg.MBSSID[apidx].PmfCfg.MFPR = TRUE;
+	}
+#endif
+
+#ifdef DOT11_SAE_SUPPORT
+	if (pEntry->AuthMode == Ndis802_11AuthModeWPA3PSK && (peer_MFPC == FALSE)) {
+		MTWF_LOG(DBG_CAT_SEC, CATSEC_PMF, DBG_LVL_ERROR,
+			("[PMF]%s: SAE connection fail due to not PMF connection(peer MFPR = %d, MFPC = %d)\n",
+			__func__, peer_MFPR, peer_MFPC));
+		return PMF_POLICY_VIOLATION;
+	}
+#endif
+	}
         /* SHA1 or SHA256 */
         if ((self_MFPC == TRUE) 
                 && (pBuf = WPA_ExtractSuiteFromRSNIE(pRsnie, rsnie_len, AKM_SUITE, &count)) != NULL)
         {
                 UCHAR OUI_WPA2_1X_SHA256[4] = {0x00, 0x0F, 0xAC, 0x05};
                 UCHAR OUI_WPA2_PSK_SHA256[4] = {0x00, 0x0F, 0xAC, 0x06};
-            
+#ifdef DOT11_SAE_SUPPORT
+		UCHAR OUI_WPA2_SAE_SHA256[4] = {0x00, 0x0F, 0xAC, 0x08};
+#endif
                 while (count > 0)
                 {
-                        if(RTMPEqualMemory(pBuf,OUI_WPA2_1X_SHA256,4) || RTMPEqualMemory(pBuf,OUI_WPA2_PSK_SHA256,4) )
-                        {
+			if (RTMPEqualMemory(pBuf, OUI_WPA2_1X_SHA256, 4) ||
+				RTMPEqualMemory(pBuf, OUI_WPA2_PSK_SHA256, 4)
+#ifdef DOT11_SAE_SUPPORT
+				|| RTMPEqualMemory(pBuf, OUI_WPA2_SAE_SHA256, 4)
+
+#endif
+				) {
+#ifdef DOT11_SAE_SUPPORT
+				pEntry->key_deri_alg = SEC_KEY_DERI_SHA256;
+#endif
                                 CLIENT_STATUS_SET_FLAG(pEntry, fCLIENT_STATUS_USE_SHA256);
                                 DBGPRINT(RT_DEBUG_ERROR, ("[PMF]%s : SHA256 Support\n", __FUNCTION__));
 			}
@@ -787,6 +837,46 @@ NTSTATUS PMF_RsnCapableValidation(
                         count--;
 		}
 	}
+
+#ifdef CONFIG_SECURITY_IMPROVEMENT_SUPPORT
+	/* Group Management Cipher Suite */
+	if ((self_MFPC == TRUE) && (peer_MFPC == TRUE)) {
+		if (end_field < RSN_FIELD_GROUP_MGMT_CIPHER) {
+			MTWF_LOG(DBG_CAT_SEC, CATSEC_PMF, DBG_LVL_ERROR,
+				("[PMF]%s : Use default Group_mgmt_cipher_suite\n", __func__));
+			return PMF_STATUS_SUCCESS;
+		}
+
+		pBuf = WPA_ExtractSuiteFromRSNIE(pRsnie, rsnie_len, G_MGMT_SUITE, &count);
+
+		if (pBuf == NULL) {
+			MTWF_LOG(DBG_CAT_SEC, CATSEC_PMF, DBG_LVL_ERROR,
+				("[PMF]%s : The peer RSNIE doesn't include Group_mgmt_cipher_suite\n", __func__));
+			return PMF_POLICY_VIOLATION;
+		}
+
+		if (RTMPEqualMemory(pBuf, OUI_PMF_BIP_CMAC_128_CIPHER, LEN_OUI_SUITE)) {
+			return PMF_STATUS_SUCCESS;
+		} else if (RTMPEqualMemory(pBuf, OUI_PMF_BIP_CMAC_256_CIPHER, LEN_OUI_SUITE)) {
+			MTWF_LOG(DBG_CAT_SEC, CATSEC_PMF, DBG_LVL_ERROR,
+				("[PMF]%s : Not support BIP_CMAC_256\n", __func__));
+			return PMF_POLICY_VIOLATION;
+		} else if (RTMPEqualMemory(pBuf, OUI_PMF_BIP_GMAC_128_CIPHER, LEN_OUI_SUITE)) {
+			MTWF_LOG(DBG_CAT_SEC, CATSEC_PMF, DBG_LVL_ERROR,
+				("[PMF]%s : Not support BIP_GMAC_128\n", __func__));
+			return PMF_POLICY_VIOLATION;
+		} else if (RTMPEqualMemory(pBuf, OUI_PMF_BIP_GMAC_256_CIPHER, LEN_OUI_SUITE)) {
+			MTWF_LOG(DBG_CAT_SEC, CATSEC_PMF, DBG_LVL_ERROR,
+				("[PMF]%s : Not support BIP_GMAC_256\n", __func__));
+			return PMF_POLICY_VIOLATION;
+		}
+		MTWF_LOG(DBG_CAT_SEC, CATSEC_PMF, DBG_LVL_ERROR,
+				("[PMF]%s : unknown peer Group_mgmt_cipher_suite\n", __func__));
+		hex_dump("peer Group_mgmt_cipher_suite", pBuf, LEN_OUI_SUITE);
+		return PMF_POLICY_VIOLATION;
+	}
+
+#endif
 	
 	return PMF_STATUS_SUCCESS;
 }
@@ -848,6 +938,7 @@ INT PMF_RobustFrameClassify(
         				case CATEGORY_SA:
         				case CATEGORY_PD:
         				case CATEGORY_VSP:
+						case CATEGORY_WNM:
         					break;
         				default:
         					return NORMAL_FRAME;
@@ -1157,11 +1248,13 @@ INT PMF_ExtractBIPAction(
 #ifdef CONFIG_AP_SUPPORT
 	IF_DEV_CONFIG_OPMODE_ON_AP(pAd)
 	{		
+#ifdef APCLI_DOT11W_PMF_SUPPORT
 #ifdef APCLI_SUPPORT
 		if (IS_ENTRY_APCLI(pEntry))
 			pPmfCfg = &pAd->ApCfg.ApCliTab[pEntry->func_tb_idx].PmfCfg;
 		else
-#endif /* APCLI_SUPPORT */	
+#endif /* APCLI_SUPPORT */
+#endif /* APCLI_DOT11W_PMF_SUPPORT */
                 pPmfCfg = &pAd->ApCfg.MBSSID[pEntry->func_tb_idx].PmfCfg;
 	}
 #endif // CONFIG_AP_SUPPORT //
@@ -1261,11 +1354,12 @@ BOOLEAN	PMF_PerformTxFrameAction(
 				pPacket = OS_PKT_COPY_EXPAND(pPacket, headroom, (LEN_CCMP_HDR + LEN_CCMP_MIC));
 			}
 
-			OS_PKT_TAIL_BUF_EXTEND(pPacket, (LEN_CCMP_HDR + LEN_CCMP_MIC));
-
-                	RTMP_QueryPacketInfo(pPacket, &PacketInfo, &pSrcBufVA, &SrcBufLen);
-                	if (pSrcBufVA == NULL)
-                		return NORMAL_FRAME;
+			if (pPacket != NULL) {
+				OS_PKT_TAIL_BUF_EXTEND(pPacket, (LEN_CCMP_HDR + LEN_CCMP_MIC));
+				RTMP_QueryPacketInfo(pPacket, &PacketInfo, &pSrcBufVA, &SrcBufLen);
+			}
+			if (pSrcBufVA == NULL)
+			return NORMAL_FRAME;
 
 #if defined(MT7603) || defined(MT7628)
 			// TODO: shiang-7603
@@ -1311,6 +1405,7 @@ Note:
 
 ========================================================================
 */
+#ifndef APCLI_DOT11W_PMF_SUPPORT
 BOOLEAN	PMF_PerformRxFrameAction(RTMP_ADAPTER *pAd, RX_BLK *pRxBlk)
 {
 	INT FrameType;
@@ -1326,54 +1421,12 @@ BOOLEAN	PMF_PerformRxFrameAction(RTMP_ADAPTER *pAd, RX_BLK *pRxBlk)
 		pEntry = &pAd->MacTab.Content[pRxBlk->wcid];
 	else
 	{
-#if defined (CONFIG_STA_SUPPORT) || defined (APCLI_SUPPORT)
-			if ((pHeader->Addr1[0] & 0x01) &&
-					(pHeader->FC.Type == FC_TYPE_MGMT) &&
-					((pHeader->FC.SubType == SUBTYPE_DISASSOC) || (pHeader->FC.SubType == SUBTYPE_DEAUTH)))
-			{
-
-#ifdef APCLI_SUPPORT
-				pEntry = MacTableLookup(pAd, pHeader->Addr2);
-#endif /* APCLI_SUPPORT */
-
-
-				if (!pEntry)
-					return TRUE;
-				else
-				{
-					if (!CLIENT_STATUS_TEST_FLAG(pEntry, fCLIENT_STATUS_PMF_CAPABLE))
-						return TRUE;
-				}
-			}
-			else
-			{
 		return TRUE;
 	}
-#endif /* defined (CONFIG_STA_SUPPORT) || defined (APCLI_SUPPORT) */
-	}
-
-	if(pEntry == NULL)
-		return TRUE;
 
 	if (!CLIENT_STATUS_TEST_FLAG(pEntry, fCLIENT_STATUS_PMF_CAPABLE))
 	{
-#if defined (CONFIG_STA_SUPPORT) || defined (APCLI_SUPPORT)
-			if ((pHeader->Addr1[0] & 0x01) &&
-					(pHeader->FC.Type == FC_TYPE_MGMT) &&
-					((pHeader->FC.SubType == SUBTYPE_DISASSOC) || (pHeader->FC.SubType == SUBTYPE_DEAUTH)))
-			{
-
-#ifdef APCLI_SUPPORT
-				pEntry = MacTableLookup(pAd, pHeader->Addr2);
-#endif /* APCLI_SUPPORT */
-
-
-				if (!pEntry)
-					return TRUE;
-			}
-			else
 		return TRUE;
-#endif /* defined (CONFIG_STA_SUPPORT) || defined (APCLI_SUPPORT) */
 	}
 
 	FrameType = PMF_RobustFrameClassify(pHeader,
@@ -1392,28 +1445,8 @@ BOOLEAN	PMF_PerformRxFrameAction(RTMP_ADAPTER *pAd, RX_BLK *pRxBlk)
 			return FALSE;
 		case NORMAL_FRAME:
                 case NOT_ROBUST_GROUP_FRAME:   
-#ifdef APCLI_SUPPORT
-				if ((pEntry) && IS_ENTRY_APCLI(pEntry))
-				{
-					if (CLIENT_STATUS_TEST_FLAG(pEntry, fCLIENT_STATUS_PMF_CAPABLE))
-						return FALSE;
-				}
-#endif /* APCLI_SUPPORT */
-
 			break;
 		case NOT_ROBUST_UNICAST_FRAME:
-#ifdef APCLI_SUPPORT
-				if ((pEntry) && IS_ENTRY_APCLI(pEntry))
-				{
-					if (((pHeader->FC.SubType == SUBTYPE_DISASSOC) || (pHeader->FC.SubType == SUBTYPE_DEAUTH))
-						&& CLIENT_STATUS_TEST_FLAG(pEntry, fCLIENT_STATUS_PMF_CAPABLE))
-					{
-						PMF_MlmeSAQueryReq(pAd, pEntry);
-						return FALSE;
-					}
-				}
-#endif /* APCLI_SUPPORT */
-
 				DBGPRINT(RT_DEBUG_ERROR, ("[PMF]%s: ERROR FRAME\n", __FUNCTION__));
 				return FALSE;
 		case UNICAST_ROBUST_FRAME:
@@ -1431,7 +1464,7 @@ BOOLEAN	PMF_PerformRxFrameAction(RTMP_ADAPTER *pAd, RX_BLK *pRxBlk)
 		}
 		case GROUP_ROBUST_FRAME:
 		{
-			//if (pAd->chipCap.hif_type != HIF_MT) //MT7603 Mgmt pkt Bcast is S/W Procress.
+			if (pAd->chipCap.hif_type != HIF_MT)
 			{
 			if (PMF_ExtractBIPAction(pAd, 
 				pMgmtFrame, 
@@ -1449,6 +1482,139 @@ BOOLEAN	PMF_PerformRxFrameAction(RTMP_ADAPTER *pAd, RX_BLK *pRxBlk)
 												
 	return TRUE;
 }
+#else
+BOOLEAN	PMF_PerformRxFrameAction(RTMP_ADAPTER *pAd, RX_BLK *pRxBlk)
+{
+	INT FrameType;
+	PUCHAR pMgmtFrame;
+	UINT mgmt_len;
+	PHEADER_802_11 pHeader = pRxBlk->pHeader;
+	PMAC_TABLE_ENTRY pEntry = NULL;
+
+	pMgmtFrame = (PUCHAR)pHeader;
+	mgmt_len = pRxBlk->MPDUtotalByteCnt;
+
+	if (pRxBlk->wcid < MAX_LEN_OF_MAC_TABLE)
+		pEntry = &pAd->MacTab.Content[pRxBlk->wcid];
+	else {
+#if defined(CONFIG_STA_SUPPORT) || defined(APCLI_SUPPORT)
+			if ((pHeader->Addr1[0] & 0x01) &&
+				(pHeader->FC.Type == FC_TYPE_MGMT) &&
+				((pHeader->FC.SubType == SUBTYPE_DISASSOC)
+				|| (pHeader->FC.SubType == SUBTYPE_DEAUTH))) {
+
+#ifdef APCLI_SUPPORT
+				pEntry = MacTableLookup(pAd, pHeader->Addr2);
+#endif /* APCLI_SUPPORT */
+
+
+				if (!pEntry)
+					return TRUE;
+
+				if (!CLIENT_STATUS_TEST_FLAG(pEntry, fCLIENT_STATUS_PMF_CAPABLE))
+					return TRUE;
+
+			} else {
+				return TRUE;
+			}
+#endif /* defined (CONFIG_STA_SUPPORT) || defined (APCLI_SUPPORT) */
+	}
+
+	if (pEntry == NULL)
+		return TRUE;
+
+	if (!CLIENT_STATUS_TEST_FLAG(pEntry, fCLIENT_STATUS_PMF_CAPABLE)) {
+#if defined(CONFIG_STA_SUPPORT) || defined(APCLI_SUPPORT)
+		if ((pHeader->Addr1[0] & 0x01) &&
+				(pHeader->FC.Type == FC_TYPE_MGMT) &&
+				((pHeader->FC.SubType == SUBTYPE_DISASSOC)
+				|| (pHeader->FC.SubType == SUBTYPE_DEAUTH))) {
+
+#ifdef APCLI_SUPPORT
+			pEntry = MacTableLookup(pAd, pHeader->Addr2);
+#endif /* APCLI_SUPPORT */
+
+
+			if (!pEntry)
+				return TRUE;
+		} else
+			return TRUE;
+#endif /* defined (CONFIG_STA_SUPPORT) || defined (APCLI_SUPPORT) */
+	}
+
+	FrameType = PMF_RobustFrameClassify(pHeader,
+					(PUCHAR)(pMgmtFrame + LENGTH_802_11),
+										(mgmt_len - LENGTH_802_11),
+										(PUCHAR) pEntry,
+										TRUE);
+
+#ifdef CONFIG_AP_SUPPORT
+	IF_DEV_CONFIG_OPMODE_ON_AP(pAd)
+	{
+		switch (FrameType) {
+		case ERROR_FRAME:
+			DBGPRINT(RT_DEBUG_ERROR,
+				("[PMF]%s: ERROR FRAME\n", __func__));
+			return FALSE;
+		case NORMAL_FRAME:
+		case NOT_ROBUST_GROUP_FRAME:
+#ifdef APCLI_SUPPORT
+			if ((pEntry) && IS_ENTRY_APCLI(pEntry)) {
+				if (CLIENT_STATUS_TEST_FLAG(pEntry,
+					fCLIENT_STATUS_PMF_CAPABLE))
+					return FALSE;
+			}
+#endif /* APCLI_SUPPORT */
+			break;
+		case NOT_ROBUST_UNICAST_FRAME:
+#ifdef APCLI_SUPPORT
+			if ((pEntry) && IS_ENTRY_APCLI(pEntry)) {
+				if (((pHeader->FC.SubType == SUBTYPE_DISASSOC)
+					|| (pHeader->FC.SubType == SUBTYPE_DEAUTH))
+					&& CLIENT_STATUS_TEST_FLAG(pEntry,
+					fCLIENT_STATUS_PMF_CAPABLE)) {
+					PMF_MlmeSAQueryReq(pAd, pEntry);
+					return FALSE;
+				}
+			}
+#endif /* APCLI_SUPPORT */
+			DBGPRINT(RT_DEBUG_ERROR,
+				("[PMF]%s: ERROR FRAME\n", __func__));
+			return FALSE;
+		case UNICAST_ROBUST_FRAME:
+		{
+			if (pAd->chipCap.hif_type != HIF_MT) {
+				if (PMF_DecryptUniRobustFrameAction(pAd,
+					pMgmtFrame,
+					mgmt_len) != PMF_STATUS_SUCCESS)
+					return FALSE;
+
+				pRxBlk->MPDUtotalByteCnt -= (LEN_CCMP_HDR + LEN_CCMP_MIC);
+			}
+				break;
+		}
+		case GROUP_ROBUST_FRAME:
+		{
+			/*if (pAd->chipCap.hif_type != HIF_MT) */
+			/*//MT7603 Mgmt pkt Bcast is S/W Procress.*/
+			{
+			if (PMF_ExtractBIPAction(pAd,
+				pMgmtFrame,
+				mgmt_len) != PMF_STATUS_SUCCESS)
+				return FALSE;
+
+			pRxBlk->MPDUtotalByteCnt -= (2 + LEN_PMF_MMIE);
+			}
+			break;
+		}
+		}
+	}
+#endif /* CONFIG_AP_SUPPORT */
+
+
+	return TRUE;
+}
+#endif /* APCLI_DOT11W_PMF_SUPPORT */
 
 
 /*	

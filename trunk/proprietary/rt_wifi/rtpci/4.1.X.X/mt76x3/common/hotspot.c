@@ -307,7 +307,7 @@ VOID HSCtrlRemoveAllIE(PHOTSPOT_CTRL pHSCtrl)
 		os_free_mem(NULL, pHSCtrl->HSIndicationIE);
 	}
 
-	if (pHSCtrl->InterWorkingIELen)
+	/*if (pHSCtrl->InterWorkingIELen)
 	{
 		pHSCtrl->InterWorkingIELen = 0;
 		os_free_mem(NULL, pHSCtrl->InterWorkingIE);
@@ -318,10 +318,11 @@ VOID HSCtrlRemoveAllIE(PHOTSPOT_CTRL pHSCtrl)
 		pHSCtrl->AdvertisementProtoIELen = 0;
 		os_free_mem(NULL, pHSCtrl->AdvertisementProtoIE);
 	}
+	*/
 
 	if (pHSCtrl->QosMapSetIELen)
 	{
-		pHSCtrl->AdvertisementProtoIELen = 0;
+		/*pHSCtrl->AdvertisementProtoIELen = 0;*/
 		os_free_mem(NULL, pHSCtrl->QosMapSetIE);
 	}
 
@@ -332,6 +333,20 @@ VOID HSCtrlRemoveAllIE(PHOTSPOT_CTRL pHSCtrl)
 	}
 }
 
+VOID GASCtrlRemoveAllIE(PGAS_CTRL pGasCtrl)
+{
+	if (pGasCtrl->InterWorkingIELen && pGasCtrl->InterWorkingIE) {
+		os_free_mem(NULL, pGasCtrl->InterWorkingIE);
+		pGasCtrl->InterWorkingIE = NULL;
+		pGasCtrl->InterWorkingIELen = 0;
+	}
+
+	if (pGasCtrl->AdvertisementProtoIELen && pGasCtrl->AdvertisementProtoIE) {
+		os_free_mem(NULL, pGasCtrl->AdvertisementProtoIE);
+		pGasCtrl->AdvertisementProtoIE = NULL;
+		pGasCtrl->AdvertisementProtoIELen = 0;
+	}
+}
 
 #ifdef CONFIG_AP_SUPPORT
 VOID Clear_Hotspot_All_IE(
@@ -340,10 +355,12 @@ VOID Clear_Hotspot_All_IE(
 	POS_COOKIE pObj = (POS_COOKIE)pAd->OS_Cookie;
 	UCHAR APIndex = pObj->ioctl_if;
 	PHOTSPOT_CTRL pHSCtrl;
+	PGAS_CTRL pGasCtrl;
 
 	pHSCtrl = &pAd->ApCfg.MBSSID[APIndex].HotSpotCtrl;
-
+	pGasCtrl = &pAd->ApCfg.MBSSID[APIndex].GASCtrl;
 	HSCtrlRemoveAllIE(pHSCtrl);
+	GASCtrlRemoveAllIE(pGasCtrl);
 }
 #endif
 
@@ -450,10 +467,7 @@ static VOID HSCtrlOn(
 	pGASCtrl = &pAd->ApCfg.MBSSID[Event->ControlIndex].GASCtrl;
 #endif /* CONFIG_AP_SUPPORT */
 
-	RTMP_SEM_LOCK(&pGASCtrl->GASPeerListLock);
-	DlListInit(&pGASCtrl->GASPeerList);
-	RTMP_SEM_UNLOCK(&pGASCtrl->GASPeerListLock);
-
+	pGASCtrl->b11U_enable = 1;
 	pHSCtrl->HotSpotEnable = 1;
 	pHSCtrl->HSDaemonReady = 1;
 #ifdef CONFIG_AP_SUPPORT
@@ -516,7 +530,8 @@ VOID HSCtrlExit(
 		pHSCtrl = &pAd->ApCfg.MBSSID[APIndex].HotSpotCtrl;
 		
 		/* Remove all IE */
-		HSCtrlRemoveAllIE(pHSCtrl);		
+		HSCtrlRemoveAllIE(pHSCtrl);
+		GASCtrlRemoveAllIE(&pAd->ApCfg.MBSSID[APIndex].GASCtrl);
 	}
 #endif /* CONFIG_AP_SUPPORT */
 }

@@ -541,7 +541,7 @@ static NTSTATUS eFuseWriteRegisters(
 	IN	USHORT* pData)
 {
 	USHORT	i,Loop=0, StartBlock=0, EndBlock=0;
-	USHORT	eFuseData;
+	USHORT	eFuseData[2];
 	USHORT	LogicalAddress, BlkNum = 0xffff;
 	UCHAR	EFSROM_AOUT;
 
@@ -572,7 +572,7 @@ static NTSTATUS eFuseWriteRegisters(
 	/*The address of EEPROM is 2-bytes alignment.*/
 	/*The last bit is used for alignment, so it must be 0.*/
 	tmpOffset = Offset & 0xfffe;
-	EFSROM_AOUT = eFuseReadRegisters(pAd, tmpOffset, 2, &eFuseData);
+	EFSROM_AOUT = eFuseReadRegisters(pAd, tmpOffset, 2, &eFuseData[0]);
 	if (EFSROM_AOUT == 0x3f)
 	{	/*find available logical address pointer	*/
 		/*the logical address does not exist, find an empty one*/
@@ -983,7 +983,7 @@ INT	set_eFuseLoadFromBin_Proc(RTMP_ADAPTER *pAd, RTMP_STRING *arg)
  	if(strlen(arg)>0)
 		NdisMoveMemory(src, arg, strlen(arg));
 	else
-		NdisMoveMemory(src, EEPROM_DEFAULT_BIN_FILE, strlen(EEPROM_DEFAULT_BIN_FILE));
+		NdisMoveMemory(src, EEPROM_DEFULT_BIN_FILE, strlen(EEPROM_DEFULT_BIN_FILE));
 	DBGPRINT(RT_DEBUG_OFF, ("FileName=%s\n",src));
 
 	RtmpOSFSInfoChange(&osfsInfo, TRUE);
@@ -1309,7 +1309,7 @@ INT efuse_probe(RTMP_ADAPTER *pAd)
 
 	EFUSE_IO_READ32(pAd, ctrl_reg, &eFuseCtrl);
 
-	DBGPRINT(RT_DEBUG_OFF, ("%s: efuse = %x\n", __FUNCTION__, eFuseCtrl));
+	printk("%s: efuse = %x\n", __FUNCTION__, eFuseCtrl);
 
 	if (pAd->chipCap.hif_type == HIF_MT)
 	{

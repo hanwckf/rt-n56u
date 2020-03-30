@@ -624,6 +624,7 @@ int BuildMessageM1(
 #endif /* WSC_V2_SUPPORT */
 	UCHAR				CurOpMode = 0xFF;
 
+
 #ifdef CONFIG_AP_SUPPORT
 	IF_DEV_CONFIG_OPMODE_ON_AP(pAdapter)
 		CurOpMode = AP_MODE;
@@ -713,20 +714,11 @@ int BuildMessageM1(
 
 
 		if ((CurOpMode == AP_MODE) && ((pWscControl->WscConfMode & WSC_ENROLLEE) != 0)
-		     && (pWscControl->WscMode == WSC_PBC_MODE)
-#ifdef APCLI_SUPPORT                                 
-            		&& !(pWscControl->EntryIfIdx & MIN_NET_DEVICE_FOR_APCLI)
-#endif /* APCLI_SUPPORT  */
-		     )
+		     && (pWscControl->WscMode == WSC_PBC_MODE))
 		{
 		        ConfigMethods |= WSC_CONFMET_PBC;
 		        DBGPRINT(RT_DEBUG_TRACE, ("[NOTICE] BuildMessageM1 - Add PBC in ConfigMethods for AP_MODE & WSC_ENROLLEE & PBC\n"));
-		}else if ((CurOpMode == AP_MODE)
-#ifdef APCLI_SUPPORT                                 
-            && !(pWscControl->EntryIfIdx & MIN_NET_DEVICE_FOR_APCLI)
-#endif /* APCLI_SUPPORT  */
-			)
-		{
+		}else if( CurOpMode == AP_MODE ){
 			ConfigMethods = (pWscControl->WscConfigMethods & 0x210F);
 		}
 		}
@@ -837,6 +829,7 @@ int BuildMessageM1(
 
 
 
+
 #ifdef WSC_V2_SUPPORT
 	/* Extra attribute that is not defined in WSC Sepc. */
 	if (pWscControl->WscV2Info.bEnableWpsV2 && pWscTLV->pTlvData && pWscTLV->TlvLen)
@@ -928,28 +921,11 @@ int BuildMessageM2(
     }
 	
    	DH_Len = sizeof(pReg->SecretKey);
-	NdisZeroMemory(pReg->SecretKey, sizeof(pReg->SecretKey));
 	RT_DH_SecretKey_Generate (
 	    pReg->Pke, sizeof(pReg->Pke),
 	    WPS_DH_P_VALUE, sizeof(WPS_DH_P_VALUE),
 	    pReg->EnrolleeRandom,  sizeof(pReg->EnrolleeRandom),
 	    pReg->SecretKey, (UINT *) &DH_Len);
-
-	/* Need to prefix zero padding */
-	if((DH_Len != sizeof(pReg->SecretKey)) && 
-	    (DH_Len < sizeof(pReg->SecretKey)))
-	{
-	    UCHAR TempKey[192];
-	    INT DiffCnt;
-	    DiffCnt = sizeof(pReg->SecretKey) - DH_Len;
-
-	    NdisFillMemory(&TempKey, DiffCnt, 0);
-	    NdisCopyMemory(&TempKey[DiffCnt], pReg->SecretKey, DH_Len);
-	    NdisCopyMemory(pReg->SecretKey, TempKey, sizeof(TempKey));
-	    DH_Len += DiffCnt;
-	    DBGPRINT(RT_DEBUG_TRACE, ("%s: Do zero padding!\n", __func__));
-	}
-	
 	RT_SHA256(&pReg->SecretKey[0], 192, &DHKey[0]);
 
 	/* 1. Version */
@@ -2157,6 +2133,29 @@ int BuildMessageM7(
 	return Len;
 }
 
+unsigned char same_band_profile(
+	PWSC_CTRL pWscControl,
+	unsigned char profile_index,
+	struct wifi_dev *wdev)
+{
+	int i = 0;
+	struct wifi_dev *wdev_entry = NULL;
+	PRTMP_ADAPTER ad = wdev->sys_handle;
+
+	for (i = 0; i < HW_BEACON_MAX_NUM; i++) {
+		wdev_entry = ad->wdev_list[i];
+		if (wdev_entry == NULL)
+			continue;
+		if (MAC_ADDR_EQUAL(wdev_entry->bssid,
+			pWscControl->WscBhProfiles.Profile[profile_index].MacAddr)) {
+			if (wdev_entry->channel == wdev->channel)
+				return TRUE;
+			else
+				return FALSE;
+		}
+	}
+	return FALSE;
+}
 /*
 	========================================================================
 	
@@ -2245,14 +2244,20 @@ int BuildMessageM8(
 	Len   += templen;
 
 #ifdef CONFIG_AP_SUPPORT
-	if (CurOpMode == AP_MODE)
-	{
-		WscCreateProfileFromCfg(pAdapter, REGISTRAR_ACTION | AP_MODE, pWscControl, &pWscControl->WscProfile);
-		pCredential = &pAdapter->ApCfg.MBSSID[apidx].WscControl.WscProfile.Profile[0];
+
+	if (CurOpMode == AP_MODE) {
+
+		{
+			WscCreateProfileFromCfg(pAdapter,
+									REGISTRAR_ACTION | AP_MODE,
+									pWscControl,
+									&pWscControl->WscProfile);
+			pCredential = &pAdapter->ApCfg.MBSSID[apidx].WscControl.WscProfile.Profile[0];
+		}
 	}
 #endif /* CONFIG_AP_SUPPORT */
 
-
+	{
 	/* 4a. Encrypted R-S1 */
 	CerLen += AppendWSCTLV(WSC_ID_NW_INDEX, &TB[0], (PUCHAR)"1", 0);
 
@@ -2286,6 +2291,7 @@ int BuildMessageM8(
 	CerLen += AppendWSCTLV(WSC_ID_MAC_ADDR, &TB[CerLen], pCredential->MacAddr, 0);
 
 	/*    Prepare plain text */
+	}
 	 if ((CurOpMode == AP_MODE)
 	 	)
 	 {
@@ -2583,7 +2589,6 @@ int ProcessMessageM1(
 	PUCHAR				pData = NULL;
 	USHORT				WscType, WscLen, FieldCheck[7]={0,0,0,0,0,0,0};
 
-
 #ifdef CONFIG_AP_SUPPORT
     IF_DEV_CONFIG_OPMODE_ON_AP(pAdapter)
 		//CurOpMode = AP_MODE;
@@ -2602,7 +2607,6 @@ int ProcessMessageM1(
 	{
 
     DH_Len = sizeof(pReg->Pkr);
-	NdisZeroMemory(pReg->Pkr, sizeof(pReg->Pkr));
 	/* Enrollee 192 random bytes for DH key generation */
 	for (idx = 0; idx < 192; idx++)
 		pWscControl->RegData.EnrolleeRandom[idx] = RandomByte(pAdapter);
@@ -2612,21 +2616,6 @@ int ProcessMessageM1(
 	    WPS_DH_P_VALUE, sizeof(WPS_DH_P_VALUE),
 	    pWscControl->RegData.EnrolleeRandom, sizeof(pWscControl->RegData.EnrolleeRandom),
 	    pReg->Pkr, (UINT *) &DH_Len);
-
-        /* Need to prefix zero padding */
-        if((DH_Len != sizeof(pReg->Pkr)) &&
-            (DH_Len < sizeof(pReg->Pkr)))
-        {
-            UCHAR TempKey[192];
-            INT DiffCnt;
-            DiffCnt = sizeof(pReg->Pkr) - DH_Len;
-
-            NdisFillMemory(&TempKey, DiffCnt, 0);
-            NdisCopyMemory(&TempKey[DiffCnt], pReg->Pkr, DH_Len);
-            NdisCopyMemory(pReg->Pkr, TempKey, sizeof(TempKey));
-            DH_Len += DiffCnt;
-            DBGPRINT(RT_DEBUG_TRACE, ("%s: Do zero padding!\n", __func__));
-        }	
 #ifdef WSC_NFC_SUPPORT
 		if (pWscControl->bTriggerByNFC)
 		{
@@ -3152,28 +3141,12 @@ int ProcessMessageM2(
 
 
     DH_Len = sizeof(pReg->SecretKey);
-	NdisZeroMemory(pReg->SecretKey, sizeof(pReg->SecretKey));
    	RT_DH_SecretKey_Generate (
    	    pReg->Pkr, sizeof(pReg->Pkr),
    	    WPS_DH_P_VALUE, sizeof(WPS_DH_P_VALUE),
    	    pReg->EnrolleeRandom,  sizeof(pReg->EnrolleeRandom),
    	    pReg->SecretKey, (UINT *) &DH_Len);
 
-	/* Need to prefix zero padding */
-	if((DH_Len != sizeof(pReg->SecretKey)) &&
-	   (DH_Len < sizeof(pReg->SecretKey)))
-	{
-	    UCHAR TempKey[192];
-	    INT DiffCnt;
-	    DiffCnt = sizeof(pReg->SecretKey) - DH_Len;
-	    
-	    NdisFillMemory(&TempKey, DiffCnt, 0);
-	    NdisCopyMemory(&TempKey[DiffCnt], pReg->SecretKey, DH_Len);
-	    NdisCopyMemory(pReg->SecretKey, TempKey, sizeof(TempKey));
-	    DH_Len += DiffCnt;
-	    DBGPRINT(RT_DEBUG_TRACE, ("%s: Do zero padding!\n", __func__));
-	}
-	
 	/* Compute the DHKey based on the DH secret */
 	RT_SHA256(&pReg->SecretKey[0], 192, &DHKey[0]);
 

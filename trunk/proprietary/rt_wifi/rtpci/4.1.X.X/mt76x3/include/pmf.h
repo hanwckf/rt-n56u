@@ -60,9 +60,11 @@ VOID PMF_InsertIGTKKDE(
 BOOLEAN PMF_ExtractIGTKKDE(
 	IN PRTMP_ADAPTER pAd,
 	IN PUCHAR pBuf,
-	IN INT buf_len,
-	IN MAC_TABLE_ENTRY *pEntry);
-
+	IN INT buf_len
+#ifdef APCLI_DOT11W_PMF_SUPPORT
+	, IN MAC_TABLE_ENTRY *pEntry
+#endif /* APCLI_DOT11W_PMF_SUPPORT */
+	);
 
 VOID PMF_MakeRsnIeGMgmtCipher(	
 	IN PRTMP_ADAPTER pAd,	
@@ -72,12 +74,18 @@ VOID PMF_MakeRsnIeGMgmtCipher(
 	OUT UCHAR *rsn_len);
 
 NTSTATUS PMF_RsnCapableValidation(
-        IN PRTMP_ADAPTER pAd,
-        IN PUINT8 pRsnie,
-        IN UINT rsnie_len,
-        IN BOOLEAN self_MFPC,
+	IN PRTMP_ADAPTER pAd,
+	IN PUINT8 pRsnie,
+	IN UINT rsnie_len,
+	IN BOOLEAN self_MFPC,
 	IN BOOLEAN self_MFPR,
-        IN PMAC_TABLE_ENTRY	pEntry);
+#ifdef CONFIG_SECURITY_IMPROVEMENT_SUPPORT
+	IN UCHAR end_field,
+#endif
+#ifdef CONFIG_OWE_SUPPORT
+	IN INT apidx,
+#endif
+	IN PMAC_TABLE_ENTRY pEntry);
 
 BOOLEAN	PMF_PerformTxFrameAction(
 	IN PRTMP_ADAPTER pAd,

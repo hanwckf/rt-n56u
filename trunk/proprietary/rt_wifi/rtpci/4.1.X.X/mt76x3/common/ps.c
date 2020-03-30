@@ -49,7 +49,7 @@ NDIS_STATUS RtmpInsertPsQueue(
 #ifdef UAPSD_SUPPORT
 	UINT32 ac_id;
 #endif
-	STA_TR_ENTRY *tr_entry = &pAd->MacTab.tr_entry[pMacEntry->wcid];
+	STA_TR_ENTRY *tr_entry = &pAd->MacTab.tr_entry[pMacEntry->wcid];;
 #ifdef UAPSD_SUPPORT
 	/* put the U-APSD packet to its U-APSD queue by AC ID */
 	ac_id = QueIdx - QID_AC_BE; /* should be >= 0 */
@@ -115,11 +115,11 @@ VOID RtmpCleanupPsQueue(RTMP_ADAPTER *pAd, QUEUE_HEADER *pQueue)
 	QUEUE_ENTRY *pQEntry;
 	PNDIS_PACKET pPacket;
 
-	DBGPRINT(RT_DEBUG_INFO, ("RtmpCleanupPsQueue (0x%08lx)...\n", (ULONG)pQueue));
+	DBGPRINT(RT_DEBUG_TRACE, ("RtmpCleanupPsQueue (0x%08lx)...\n", (ULONG)pQueue));
 
 	while (pQueue->Head)
 	{
-		DBGPRINT(RT_DEBUG_INFO,
+		DBGPRINT(RT_DEBUG_TRACE,
 					("RtmpCleanupPsQueue %d...\n",pQueue->Number));
 
 		pQEntry = RemoveHeadQueue(pQueue);
@@ -127,7 +127,7 @@ VOID RtmpCleanupPsQueue(RTMP_ADAPTER *pAd, QUEUE_HEADER *pQueue)
 		pPacket = QUEUE_ENTRY_TO_PACKET(pQEntry);
 		RELEASE_NDIS_PACKET(pAd, pPacket, NDIS_STATUS_FAILURE);
 
-		DBGPRINT(RT_DEBUG_INFO, ("RtmpCleanupPsQueue pkt = %lx...\n", (ULONG)pPacket));
+		DBGPRINT(RT_DEBUG_TRACE, ("RtmpCleanupPsQueue pkt = %lx...\n", (ULONG)pPacket));
 	}
 }
 

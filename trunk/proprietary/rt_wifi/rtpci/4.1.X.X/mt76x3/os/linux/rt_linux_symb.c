@@ -64,7 +64,9 @@ EXPORT_SYMBOL(RtmpOsPktTailAdjust);
 EXPORT_SYMBOL(RtmpOsPktTailBufExtend);
 EXPORT_SYMBOL(RtmpOsPktHeadBufExtend);
 EXPORT_SYMBOL(RtmpOsPktReserve);
+EXPORT_SYMBOL(RtmpOsPktProtocolAssign);
 EXPORT_SYMBOL(RtmpThreadPidKill);
+EXPORT_SYMBOL(RtmpOsPktRcvHandle);
 #ifdef IAPP_SUPPORT
 EXPORT_SYMBOL(RtmpOsPktIappMakeUp);
 #endif /* IAPP_SUPPORT */

@@ -95,7 +95,15 @@ typedef struct GNU_PACKED _RT_SIGNAL_STRUC {
 	UINT16	Sequence;
 	UCHAR	MacAddr[ETH_ALEN];
 	UCHAR	CurrAPAddr[ETH_ALEN];
-
+	/* YF_FT */
+#ifdef R1KH_HARD_RETRY
+	/* sw retry counts */
+#define FT_R1KH_CACHE_MISS_THRESHOLD	 1
+	/* hard retry counts */
+#define FT_R1KH_CACHE_MISS_HARD_RETRY_THRESHOLD 1
+#else /* R1KH_HARD_RETRY */
+#define FT_R1KH_CACHE_MISS_THRESHOLD	 7
+#endif /* !R1KH_HARD_RETRY */
 #define FT_KDP_SIG_NOTHING				0x00 /* no signal */
 #define FT_KDP_SIG_IAPP_ASSOCIATION		0x01 /* a station has associated */
 #define FT_KDP_SIG_IAPP_REASSOCIATION	0x02 /* a station has re-associated */

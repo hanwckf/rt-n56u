@@ -15,78 +15,109 @@
 */
 
 #ifndef _BAND_STEERING_DEF_H_
-#define __BAND_STEERING_DEF_H__
+#define _BAND_STEERING_DEF_H_
 
 #ifdef BAND_STEERING
 #ifndef DOT11_N_SUPPORT
 #error: "DOT11_N_SUPPORT must be enabled when using band steering"
 #endif /* DOT11_N_SUPPORT */
 
-/* use daemon */
-#define BNDSTRG_DAEMON
+#define BND_STRG_MAX_TABLE_SIZE	64
+#define P_BND_STRG_TABLE(_x)	(&pAd->ApCfg.BndStrgTable[_x])
+#define SIZE_OF_VHT_CAP_IE 		12
+#define IS_2G_BAND(_p)			(((_p)&BAND_24G)==BAND_24G)
+#define IS_5G_BAND(_p)			(((_p)&BAND_5G)==BAND_5G)
 
-#define BND_STRG_MAX_TABLE_SIZE		512
-#define BND_HASH_TABLE_SIZE		BND_STRG_MAX_TABLE_SIZE*2
-#define BND_STRG_TIMER_PERIOD		1000
-#define BND_STRG_AGE_TIME		600000	/* orig 150000 */
-#define BND_STRG_HOLD_TIME		3000	/* orig 90000 */
-#define BND_STRG_CHECK_TIME_5G		6000	/* orig 30000 */
-#define BND_STRG_RSSI_DIFF		15
-#define BND_STRG_RSSI_LOW		-88
-
-#define BND_STRG_AUTO_ONOFF_THRD 	4000
-#define P_BND_STRG_TABLE	(&pAd->ApCfg.BndStrgTable)
 
 #define BND_STRG_DBG
 #define BND_STRG_QA
 
-struct _BNDSTRG_OPS;
-
-typedef struct _BND_STRG_ENTRY_STATISTICS{
-	CHAR Rssi;
-	UINT8 AuthReqCount;
-} BND_STRG_ENTRY_STAT, *PBND_STRG_ENTRY_STAT;
-
-typedef struct _BND_STRG_CLI_ENTRY{
+typedef struct _BND_STRG_CLI_ENTRY {
 	BOOLEAN bValid;
+	BOOLEAN bConnStatus;
+	UINT8	TableIndex;
 	UINT32 Control_Flags;
 	ULONG   jiffies;		/* timestamp when insert-entry */
 	UINT32  elapsed_time; /* ms */
 	UCHAR Addr[MAC_ADDR_LEN];
+	UCHAR BndStrg_Sta_State;
 	struct _BND_STRG_CLI_ENTRY *pNext;
 } BND_STRG_CLI_ENTRY, *PBND_STRG_CLI_ENTRY;
 
-/* for setting different band steering algorithms */
-typedef struct _BND_STRG_ALG_CONTROL {
-	UINT32 		FrameCheck;
-	UINT32		ConditionCheck;
-} BND_STRG_ALG_CONTROL, *PBND_STRG_ALG_CONTROL;
+/* WPS_BandSteering Support */
+typedef struct _WPS_WHITELIST_ENTRY {
+	struct _WPS_WHITELIST_ENTRY *pNext;
+	UCHAR addr[MAC_ADDR_LEN];
+	UCHAR state;
+} WPS_WHITELIST_ENTRY, *PWPS_WHITELIST_ENTRY;
 
-typedef struct _BND_STRG_CLI_TABLE{
+typedef struct _BS_LIST_ENTRY {
+	struct _BS_LIST_ENTRY *pNext;
+	UCHAR addr[MAC_ADDR_LEN];
+	UCHAR state;
+} BS_LIST_ENTRY, *PBS_LIST_ENTRY;
+
+#define NVRAM_TABLE_SIZE		128
+
+typedef struct _bndstrg_nvram_client {
+	UINT8 Addr[MAC_ADDR_LEN];
+	UINT8 Manipulable;
+	UINT8 PhyMode;
+	UINT8 Band;
+	UINT8 Nss;
+} BNDSTRG_NVRAM_CLIENT, *PBNDSTRG_NVRAM_CLIENT;
+
+typedef struct _bndstrg_nvram_list {
+	UINT8			Num;
+	BNDSTRG_NVRAM_CLIENT nvram_entry[NVRAM_TABLE_SIZE];
+} BNDSTRG_NVRAM_LIST, *PBNDSTRG_NVRAM_LIST;
+
+enum PhyMode {
+	fPhyMode_Legacy,
+	fPhyMode_HT,
+	fPhyMode_VHT,
+};
+
+#define OID_BNDSTRG_GET_NVRAM		0x0951
+#define OID_BNDSTRG_SET_NVRAM		0x0952
+#define BND_STRG_MAX_WHITELIST_ENTRY	16
+#define BND_STRG_MAX_BLACKLIST_ENTRY	4
+
+typedef struct _BND_STRG_CLI_TABLE {
 	BOOLEAN bInitialized;
 	BOOLEAN bEnabled;
 	UINT32 Size;
-	BND_STRG_ALG_CONTROL AlgCtrl;
 	BND_STRG_CLI_ENTRY Entry[BND_STRG_MAX_TABLE_SIZE];
-	PBND_STRG_CLI_ENTRY Hash[BND_HASH_TABLE_SIZE];
+	PBND_STRG_CLI_ENTRY Hash[HASH_TABLE_SIZE];
 	NDIS_SPIN_LOCK Lock;
-	struct _BNDSTRG_OPS *Ops;
 	VOID *priv;
-	BOOLEAN b2GInfReady;
-	BOOLEAN b5GInfReady;
-	CHAR	RssiDiff;	/* if Rssi2.4G > Rssi5G by RssiDiff, then allow client to connect 2.4G */
-	CHAR	RssiLow;	/* if Rssi5G < RssiLow, then this client cannot connect to 5G */
-	UINT32	AgeTime;			/* Entry Age Time (ms) */
-	UINT32	HoldTime;		/* Time for holding 2.4G connection rsp (ms) */
-	UINT32	CheckTime_5G;	/* Time for deciding if a client is 2.4G only (ms) */
-	RALINK_TIMER_STRUCT Timer;
+	BOOLEAN bInfReady;
+	CHAR	ucIfName[32];
+    UINT8	uIdx;
 #ifdef BND_STRG_DBG
 	UCHAR MonitorAddr[MAC_ADDR_LEN];
 #endif /* BND_STRG_DBG */
+#ifdef VENDOR_FEATURE5_SUPPORT
+	BNDSTRG_NVRAM_CLIENT nvram_entry[NVRAM_TABLE_SIZE];
+	UINT8 bndstrg_nvram_client_count;
+#endif /* VENDOR_FEATURE5_SUPPORT */
 	UINT8		Band;
-	UINT32 AutoOnOffThrd;   /* Threshold to auto turn bndstrg on/off by 2.4G false CCA */
-	UINT32          DaemonPid;
-	BOOLEAN bDaemonReady;
+    UINT8		Channel;
+    BOOLEAN     bVHTCapable;
+	UINT8		nss;
+	UINT8		ActiveCount;
+	UINT32		DaemonPid;
+#ifdef DOT11K_RRM_SUPPORT
+	RRM_NEIGHBOR_REP_INFO NeighborRepInfo;
+#endif
+	UINT8		BndStrgMode;
+	/* WPS_BandSteering Support */
+	LIST_HEADER WpsWhiteList;	/* WPS: init in bandstearing table init */
+	NDIS_SPIN_LOCK WpsWhiteListLock;
+	LIST_HEADER WhiteList;	/* init in bandstearing table init */
+	NDIS_SPIN_LOCK WhiteListLock;
+	LIST_HEADER BlackList;	/* init in bandstearing table init */
+	NDIS_SPIN_LOCK BlackListLock;
 } BND_STRG_CLI_TABLE, *PBND_STRG_CLI_TABLE;
 
 enum BND_STRG_RETURN_CODE {
@@ -102,167 +133,249 @@ enum BND_STRG_RETURN_CODE {
 	BND_STRG_UNEXP,
 };
 
-enum BND_STRG_CONTROL_FLAGS {
-	fBND_STRG_CLIENT_SUPPORT_2G			= (1 << 0),
-	fBND_STRG_CLIENT_SUPPORT_5G			= (1 << 1),
-	fBND_STRG_CLIENT_ALLOW_TO_CONNET_2G	= (1 << 2),
-	fBND_STRG_CLIENT_ALLOW_TO_CONNET_5G	= (1 << 3),
-	fBND_STRG_CLIENT_NOT_SUPPORT_HT_2G		= (1 << 4),	
-	fBND_STRG_CLIENT_NOT_SUPPORT_HT_5G		= (1 << 5),
-	fBND_STRG_CLIENT_LOW_RSSI_2G		= (1 << 6),
-	fBND_STRG_CLIENT_LOW_RSSI_5G		= (1 << 7),
-	fBND_STRG_CLIENT_IS_2G_ONLY			= (1 << 8),
-	fBND_STRG_CLIENT_IS_5G_ONLY			= (1 << 9),
-};
-
-enum BND_STRG_FRAME_CHECK_FLAGS {
-	fBND_STRG_FRM_CHK_PRB_REQ			= (1 << 0),
-	fBND_STRG_FRM_CHK_ATH_REQ			= (1 << 1),
-	fBND_STRG_FRM_CHK_ASS_REQ			= (1 << 2),
-};
-
-enum BND_STRG_CONDITION_CHECK_FLAGS {
-	fBND_STRG_CND_RSSI_DIFF			= (1 << 0),
-	fBND_STRG_CND_2G_PERSIST		= (1 << 1),
-	fBND_STRG_CND_HT_SUPPORT		= (1 << 2),
-	fBND_STRG_CND_5G_RSSI			= (1 << 3),
-	fBND_STRG_CND_NONE			= (1 << 4),
-};
-
 #define OID_BNDSTRG_MSG				0x0950
-/* Use for I/O between driver and daemon */
-/* Must make sure the structure is the same as the one in daemon */
-typedef struct _BNDSTRG_MSG{
-	UINT8	 Action;
-	UINT8	 ReturnCode;
-	UINT32	 TalbeIndex;
-	BOOLEAN OnOff;
-	UINT8	Band;
-	BOOLEAN b2GInfReady;
-	UINT8	uc2GIfName[32];
-	BOOLEAN b5GInfReady;
-	UINT8	uc5GIfName[32];
-	CHAR 	Rssi[4];
-	CHAR 	RssiDiff;
-	CHAR 	RssiLow;
-	UINT8	FrameType;
-	UINT32	Time;
-	UINT32	ConditionCheck;
-	UCHAR 	Addr[MAC_ADDR_LEN];
-	BOOLEAN bAllowStaConnectInHt;
-	UINT32  Control_Flags;
-	UINT32  elapsed_time; /* ms */
-} BNDSTRG_MSG, *PBNDSTRG_MSG;
-
-typedef struct _BNDSTRG_CLI_EVENT{
-	UCHAR		MacAddr[MAC_ADDR_LEN];
-	UINT8		Action; /* add or delete table entry */
-} BNDSTRG_CLI_EVENT, *PBNDSTRG_CLI_EVENT;
-
-typedef struct _BNDSTRG_PROBE_EVENT{
-	UCHAR		MacAddr[MAC_ADDR_LEN];
-	UINT8		Band;
-	UINT8		FrameType;
-	CHAR		Rssi[3];
-	BOOLEAN		bAuthCheck;
-} BNDSTRG_PROBE_EVENT, *PBNDSTRG_PROBE_EVENT;
-
-enum ACTION_CODE{
-	CONNECTION_REQ = 1,
+enum ACTION_CODE {
+	CLI_EVENT = 1,
 	CLI_ADD,
-	CLI_UPDATE,
 	CLI_DEL,
-	CLI_AGING_REQ,
-	CLI_AGING_RSP,
+	CLI_STATUS_REQ,
+	CLI_STATUS_RSP,
+	CHANLOAD_STATUS_REQ,
+	CHANLOAD_STATUS_RSP,
 	INF_STATUS_QUERY,
-	INF_STATUS_RSP_2G,
-	INF_STATUS_RSP_5G,
+	INF_STATUS_RSP,
 	TABLE_INFO,
 	ENTRY_LIST,
 	BNDSTRG_ONOFF,
-	SET_RSSI_DIFF,
-	SET_RSSI_LOW,
-	SET_AGE_TIME,
-	SET_HOLD_TIME,
-	SET_CHECK_TIME,
 	SET_MNT_ADDR,
-	SET_CHEK_CONDITIONS,
-	INF_STATUS_RSP_DBDC,
+	NVRAM_UPDATE,
+	REJECT_EVENT,
+	HEARTBEAT_MONITOR,
+	BNDSTRG_WNM_BTM,
+	BNDSTRG_PARAM,
+	BNDSTRG_NEIGHBOR_REPORT,
+	UPDATE_WHITE_BLACK_LIST,
 };
 
+enum BND_STRG_STA_STATE {
+	BNDSTRG_STA_INIT = 0,
+	BNDSTRG_STA_ASSOC,
+	BNDSTRG_STA_DISASSOC,
+};
 
+enum bndstrg_mode{
+	PRE_CONNECTION_STEERING	= 0x01,
+	POST_CONNECTION_STEERING = 0x02,
+};
 
-typedef struct _BNDSTRG_OPS {
-	VOID (*ShowTableInfo)(
-			PBND_STRG_CLI_TABLE table);
-	
-	VOID (*ShowTableEntries)(
-			PBND_STRG_CLI_TABLE table);
-	
-	INT (*TableEntryAdd)(
-			BND_STRG_CLI_TABLE *table,
-			PUCHAR pAddr,
-			PBND_STRG_CLI_ENTRY *entry_out);
-	
-	INT (*TableEntryDel)(
-			BND_STRG_CLI_TABLE *table,
-			PUCHAR pAddr,
-			UINT32 Index);
-	
-	PBND_STRG_CLI_ENTRY (*TableLookup)(
-			BND_STRG_CLI_TABLE *table,
-			PUCHAR pAddr);
-	
-	BOOLEAN (*CheckConnectionReq)(
-			struct _RTMP_ADAPTER *pAd,
-			PUCHAR pSrcAddr,
-			UINT8 FrameType,
-			PCHAR Rssi,
-			BOOLEAN bAllowStaConnectInHt);
+enum bndstrg_list_type {
+	bndstrg_whitelist	=	1,
+	bndstrg_blacklist	=	2,
+};
 
-	INT (*SetEnable)(
-			PBND_STRG_CLI_TABLE table,
-			BOOLEAN enable);
+/* HEARTBEAT_MONITOR */
+struct bnd_msg_heartbeat {
+    CHAR ucIfName[32];
+};
 
-	INT (*SetRssiDiff)(
-			PBND_STRG_CLI_TABLE table,
-			CHAR RssiDiff);
+struct bnd_msg_cli_probe {
+    BOOLEAN bAllowStaConnectInHt;
+	BOOLEAN bIosCapable;   /* For IOS immediately connect */
+	UINT8	bVHTCapable;
+	UINT8	Nss;
+	CHAR	Rssi[4];
+};
 
-	INT (*SetRssiLow)(
-			PBND_STRG_CLI_TABLE table,
-			CHAR RssiLow);
+struct bnd_msg_cli_auth {
+	CHAR	Rssi[4];
+};
 
-	INT (*SetAgeTime)(
-			PBND_STRG_CLI_TABLE table,
-			UINT32 Time);	
+struct bnd_msg_cli_assoc {
+    BOOLEAN bAllowStaConnectInHt;
+	UINT8	bVHTCapable;
+	UINT8	Nss;
+	UINT8	BTMSupport;
+	BOOLEAN bWpsAssoc;
+};
 
-	INT (*SetHoldTime)(
-			PBND_STRG_CLI_TABLE table,
-			UINT32 Time);
+struct bnd_msg_cli_delete {
+};
 
-	INT (*SetCheckTime)(
-			PBND_STRG_CLI_TABLE table,
-			UINT32 Time);
+/* CLI_EVENT */
+struct bnd_msg_cli_event {
+	UINT8	FrameType;
+	UINT8	Band;
+	UINT8   Channel;
+	UCHAR	Addr[MAC_ADDR_LEN];
+	union {
+		struct bnd_msg_cli_probe cli_probe;
+		struct bnd_msg_cli_auth cli_auth;
+		struct bnd_msg_cli_assoc cli_assoc;
+		struct bnd_msg_cli_delete cli_delete;
+	} data;
+};
 
-	INT (*SetFrmChkFlag)(
-			PBND_STRG_CLI_TABLE table,
-			UINT32 FrmChkFlag);
+/* CLI_ADD */
+struct bnd_msg_cli_add {
+    UINT8 TableIndex;
+    UCHAR Addr[MAC_ADDR_LEN];
+};
 
-	INT (*SetCndChkFlag)(
-			PBND_STRG_CLI_TABLE table,
-			UINT32 CndChkFlag);
+/* CLI_DEL */
+struct bnd_msg_cli_del {
+    UINT8 TableIndex;
+    UCHAR Addr[MAC_ADDR_LEN];
+};
 
-#ifdef BND_STRG_DBG
-	INT (*SetMntAddr)(
-			PBND_STRG_CLI_TABLE table,
-			PUCHAR Addr);
-#endif /* BND_STRG_DBG */
+/* CLI_STATUS_REQ */
+struct bnd_msg_cli_status_req {
+};
 
-	VOID (*MsgHandle)(
-			struct _RTMP_ADAPTER *pAd,
-			BNDSTRG_MSG *msg);
-} BNDSTRG_OPS;
+/* CLI_STATUS_RSP */
+struct bnd_msg_cli_status_rsp {
+    UINT8 TableIndex;
+	UINT8 ReturnCode;
+	UCHAR	Addr[MAC_ADDR_LEN];
+	char	data_Rssi;
+	UINT32	data_tx_Rate;
+	UINT32	data_rx_Rate;
+	UINT64	data_tx_Byte;
+	UINT64	data_rx_Byte;
+	UINT8	data_tx_Phymode;
+	UINT8	data_rx_Phymode;
+	UINT8	data_tx_mcs;
+	UINT8	data_rx_mcs;
+	UINT8	data_tx_bw;
+	UINT8	data_rx_bw;
+	UINT8	data_tx_sgi;
+	UINT8	data_rx_sgi;
+	UINT8	data_tx_stbc;
+	UINT8	data_rx_stbc;
+	UINT8	data_tx_ant;
+	UINT8	data_rx_ant;
+	UINT64	data_tx_packets;
+	UINT64	data_rx_packets;
+};
 
+/* CHANLOAD_STATUS_REQ */
+struct bnd_msg_chanload_status_req {
+    CHAR ucIfName[32];
+	/* u8 band; */
+	/* u8 Channel; */
+};
+/* CHANLOAD_STATUS_RSP */
+struct bnd_msg_chanload_status_rsp {
+	UINT8 ReturnCode;
+	UINT8 band;
+	UINT8 Channel;
+	/* TBD */
+	UINT8	chanload;
+	UINT8	chan_busy_load;
+	UINT8	obss_load;
+	UINT8	edcca_load;
+	UINT8	myair_load;
+	UINT8	mytxair_load;
+	UINT8	myrxair_load;
+};
+
+/* INF_STATUS_QUERY */
+struct bnd_msg_inf_status_req {
+    CHAR ucIfName[32];
+};
+
+struct bnd_msg_inf_status_rsp {
+    BOOLEAN bInfReady;
+    UINT8 Channel;
+    BOOLEAN bVHTCapable;
+    ULONG table_src_addr;
+    CHAR ucIfName[32];
+	UINT8 nvram_support;
+	UINT8 nss;
+	UINT8 band;
+	UINT32 table_size;
+};
+
+/* BNDSTRG_ONOFF */
+struct bnd_msg_onoff {
+    UINT8 Band;
+    UINT8 Channel;
+    BOOLEAN OnOff;
+	UINT8	BndStrgMode;
+    CHAR ucIfName[32];
+};
+
+/* set band steering paramater */
+struct bnd_msg_param {
+    UINT8 Band;
+	UINT8 Channel;
+	UINT8 len;
+	CHAR arg[64];
+};
+
+struct bnd_msg_neighbor_report {
+	UCHAR Addr[MAC_ADDR_LEN];
+	UINT8 Band;
+	UINT8 Channel;
+	CHAR  NeighborRepInfo[64];
+};
+
+/* SET_MNT_ADDR */
+struct bnd_msg_mnt_addr {
+    UCHAR Addr[MAC_ADDR_LEN];
+};
+
+/* NVRAM_UPDATE */
+struct bnd_msg_nvram_entry_update {
+    UCHAR Addr[MAC_ADDR_LEN];
+	BNDSTRG_NVRAM_CLIENT nvram_entry;
+};
+
+struct bnd_msg_reject_body {
+    UINT32 DaemonPid;
+};
+
+/*display type for list*/
+struct bnd_msg_display_entry_list {
+    UINT32 display_type;
+	UINT8 filer_band;
+	UINT8 channel;
+};
+
+struct bnd_msg_update_white_black_list {
+    CHAR ucIfName[32];
+	UINT8 list_type;
+	UCHAR Addr[MAC_ADDR_LEN];
+	BOOLEAN	deladd;
+};
+
+struct bnd_msg_wnm_command {
+    UINT8 wnm_data[64];
+};
+
+typedef struct _BNDSTRG_MSG {
+   UINT8   Action;
+   union {
+		struct bnd_msg_cli_event cli_event;
+        struct bnd_msg_cli_add cli_add;
+        struct bnd_msg_cli_del cli_del;
+        struct bnd_msg_cli_status_req cli_status_req;
+        struct bnd_msg_cli_status_rsp cli_status_rsp;
+		struct bnd_msg_chanload_status_req chanload_status_req;
+		struct bnd_msg_chanload_status_rsp chanload_status_rsp;
+        struct bnd_msg_inf_status_req inf_status_req;
+        struct bnd_msg_inf_status_rsp inf_status_rsp;
+        struct bnd_msg_onoff onoff;
+        struct bnd_msg_mnt_addr mnt_addr;
+        struct bnd_msg_nvram_entry_update entry_update;
+        struct bnd_msg_reject_body reject_body;
+        struct bnd_msg_display_entry_list display_type;
+		struct bnd_msg_heartbeat heartbeat;
+		struct bnd_msg_param bndstrg_param;
+		struct bnd_msg_update_white_black_list	update_white_black_list;
+		struct bnd_msg_wnm_command wnm_cmd_data;
+		struct bnd_msg_neighbor_report Neighbor_Report;
+   } data;
+} BNDSTRG_MSG, *PBNDSTRG_MSG;
 #endif /* BAND_STEERING */
 #endif /* _BAND_STEERING_DEF_H_ */
 

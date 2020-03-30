@@ -32,7 +32,27 @@
 #include "ft_cmm.h"
 #endif /* DOT11R_FT_SUPPORT */
 
+INT ap_security_init(RTMP_ADAPTER *pAd, struct wifi_dev *wdev, INT idx);
+INT ap_mlme_set_capability(RTMP_ADAPTER *pAd, BSS_STRUCT *pMbss);
+INT ap_key_tb_single_init(RTMP_ADAPTER *pAd, BSS_STRUCT *pDstMbss);
 
+#if defined(MAP_SUPPORT) && defined(WAPP_SUPPORT)
+#define VERIWAVE_2G_PKT_CNT_TH 100
+#define VERIWAVE_5G_PKT_CNT_TH 200
+#define BYTES_PER_SEC_TO_MBPS	17
+#define TX_MODE_RATIO_THRESHOLD	70
+#define RX_MODE_RATIO_THRESHOLD	70
+#define STA_TP_IDLE_THRESHOLD 10
+#define MULTI_CLIENT_NUMS_TH 16
+#define MULTI_CLIENT_2G_NUMS_TH 16
+#define INFRA_KEEP_STA_PKT_TH 1
+#define	TRAFFIC_0	0
+#define	TRAFFIC_DL_MODE	1
+#define	TRAFFIC_UL_MODE	2
+#define TRAFFIC_BIDIR_ACTIVE_MODE 3
+#define TRAFFIC_BIDIR_IDLE_MODE 4
+
+#endif
 
 /* ============================================================= */
 /*      Common definition */
@@ -70,6 +90,24 @@ typedef struct _AUTH_FRAME_INFO{
 #endif /* DOT11R_FT_SUPPORT */
 }AUTH_FRAME_INFO;
 
+#ifdef CONN_FAIL_EVENT
+#define OID_802_11_CONN_FAIL_MSG		(0x0958)
+
+struct CONN_FAIL_MSG {
+	CHAR Ssid[32];
+	UCHAR SsidLen;
+	UCHAR StaAddr[6];
+	USHORT ReasonCode;
+};
+
+void ApSendConnFailMsg(
+	PRTMP_ADAPTER pAd,
+	CHAR *Ssid,
+	UCHAR SsidLen,
+	UCHAR *StaAddr,
+	USHORT ReasonCode);
+
+#endif
 
 /* ============================================================= */
 /*      Function Prototypes */
@@ -147,6 +185,8 @@ void APAuthStateMachineInit(
     IN STATE_MACHINE *Sm, 
     OUT STATE_MACHINE_FUNC Trans[]);
 
+void ap_send_broadcast_deauth(void *ad_obj, struct wifi_dev *wdev);
+
 VOID APCls2errAction(RTMP_ADAPTER *pAd, ULONG wcid, HEADER_802_11 *hdr);
 
 /* ap_connect.c */
@@ -171,6 +211,34 @@ VOID APSyncStateMachineInit(
     IN STATE_MACHINE *Sm,
     OUT STATE_MACHINE_FUNC Trans[]);
 
+UCHAR get_regulatory_class(RTMP_ADAPTER *pAd, UCHAR Channel);
+
+INT ap_phy_rrm_init(RTMP_ADAPTER *pAd);
+
+#ifdef WH_EZ_SETUP
+#ifdef EZ_MOD_SUPPORT
+VOID EzStateMachineInit(
+	IN RTMP_ADAPTER *pAd,
+	IN STATE_MACHINE *Sm,
+	OUT STATE_MACHINE_FUNC Trans[]);
+#else
+VOID EzRoamStateMachineInit(
+	IN RTMP_ADAPTER *pAd,
+	IN STATE_MACHINE *Sm,
+	OUT STATE_MACHINE_FUNC Trans[]);
+
+VOID APTriBandStateMachineInit(
+	IN RTMP_ADAPTER *pAd,
+	IN STATE_MACHINE *Sm,
+	OUT STATE_MACHINE_FUNC Trans[]);
+#endif
+
+INT ap_security_init(RTMP_ADAPTER *pAd, struct wifi_dev *wdev, INT idx);
+
+INT ap_key_tb_init(RTMP_ADAPTER *pAd);
+
+#endif
+
 VOID APScanTimeout(
 	IN PVOID SystemSpecific1,
 	IN PVOID FunctionContext,
@@ -181,7 +249,9 @@ VOID ApSiteSurvey(
 	IN	PRTMP_ADAPTER  		pAd,
 	IN	PNDIS_802_11_SSID	pSsid,
 	IN	UCHAR				ScanType,
-	IN	BOOLEAN				ChannelSel);
+	IN	BOOLEAN				ChannelSel,
+	IN 	struct wifi_dev		*wdev
+);
 
 VOID SupportRate(
 	IN PUCHAR SupRate,
@@ -194,6 +264,11 @@ VOID SupportRate(
 
 
 BOOLEAN ApScanRunning(RTMP_ADAPTER *pAd);
+
+#ifdef AP_PARTIAL_SCAN_SUPPORT
+UCHAR FindPartialScanChannel(
+	IN PRTMP_ADAPTER pAd);
+#endif /* AP_PARTIAL_SCAN_SUPPORT */
 
 #ifdef DOT11_N_SUPPORT
 VOID APUpdateOperationMode(RTMP_ADAPTER *pAd);
@@ -236,6 +311,8 @@ INT ap_func_init(RTMP_ADAPTER *pAd);
 VOID APShutdown(RTMP_ADAPTER *pAd);
 VOID APStartUp(RTMP_ADAPTER *pAd);
 VOID APStop(RTMP_ADAPTER *pAd);
+VOID APStopBssOnly(RTMP_ADAPTER *pAd, BSS_STRUCT *pMbss);
+
 
 VOID APCleanupPsQueue(RTMP_ADAPTER *pAd, QUEUE_HEADER *pQueue);
 
@@ -265,7 +342,12 @@ VOID APUpdateCapabilityAndErpIe(RTMP_ADAPTER *pAd);
 
 BOOLEAN ApCheckAccessControlList(RTMP_ADAPTER *pAd, UCHAR *addr, UCHAR apidx);
 VOID ApUpdateAccessControlList(RTMP_ADAPTER *pAd, UCHAR apidx);
-
+#ifdef STA_FORCE_ROAM_SUPPORT
+BOOLEAN ApCheckFroamAccessControlList(
+	IN PRTMP_ADAPTER pAd,
+	IN PUCHAR        pAddr,
+	IN UCHAR         Apidx);
+#endif
 
 #ifdef AP_QLOAD_SUPPORT
 VOID QBSS_LoadInit(RTMP_ADAPTER *pAd);
@@ -306,11 +388,23 @@ VOID IAPP_L2_UpdatePostCtrl(RTMP_ADAPTER *pAd, UINT8 *mac, INT wdev_idx);
 #ifdef AIRPLAY_SUPPORT
 #define AIRPLAY_ON(_pAd)          ((_pAd)->bAirplayEnable == 1)
 #endif /* AIRPLAY_SUPPORT*/
+#ifdef STA_FORCE_ROAM_SUPPORT
 
-BOOLEAN IAPP_L2_Update_Frame_Send(
-	IN PRTMP_ADAPTER	pAd,
-    IN UINT8 *mac_p,
-    IN INT  bssid);
+
+#define FROAM_SUPP_DEF			FALSE // TRUE by default?
+#define STA_LOW_RSSI			65	// absolute
+#define STA_DETECT_RSSI			55	// absolute
+#define	STALIST_AGEOUT_TIME 	5	// sec
+#define	MNTRLIST_AGEOUT_TIME 	4	// sec
+#define	MNTR_MIN_PKT_COUNT 		5
+#define	MNTR_MIN_TIME 			1	// sec
+#define	AVG_RSSI_PKT_COUNT 		5
+#define	ACLLIST_AGEOUT_TIME 	4	// sec
+#define	ACLLIST_HOLD_TIME 		2	// sec
+
+void load_froam_defaults(RTMP_ADAPTER *pAd);
+void froam_notify_sta_disconnect(void *ad_obj, void *pEntry);
+#endif
 
 #endif  /* __AP_H__ */
 

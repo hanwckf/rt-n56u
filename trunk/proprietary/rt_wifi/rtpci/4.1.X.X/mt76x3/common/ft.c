@@ -168,7 +168,7 @@ VOID FT_EnqueueAuthReply(
 	}
 
 	/* Calculate MIC in authentication-ACK frame */	
-	if (pFtIeInfo && pFtIeInfo->MICCtr.field.IECnt)
+	if ((pFtIeInfo != NULL) && (pFtIeInfo->MICCtr.field.IECnt))
 	{
 		PMAC_TABLE_ENTRY pEntry;
 		
@@ -176,7 +176,8 @@ VOID FT_EnqueueAuthReply(
 		{
 			UINT8	ft_mic[16];
 			PFT_FTIE	pFtIe;
-				
+			
+			NdisZeroMemory(ft_mic, sizeof(ft_mic));	
 			FT_CalculateMIC(pHdr->Addr2, 
 							pHdr->Addr1, 
 							pEntry->PTK, 
@@ -248,8 +249,6 @@ static VOID FT_ReqActionParse(
 					pFtInfo->RicInfo.Len = ((UCHAR*)Ptr + Len)
 											- (UCHAR*)eid_ptr + 1;
 				}
-				break;
-
 			case IE_FT_RIC_DESCRIPTOR:
 				if ((pFtInfo->RicInfo.RicIEsLen + eid_ptr->Len + 2) < MAX_RICIES_LEN)
 				{
@@ -393,10 +392,17 @@ Note:
 	for (apidx = 0; apidx < MAX_MBSSID_NUM(pAd); apidx++)
 	{
 		pFtCfg = &pAd->ApCfg.MBSSID[apidx].FtCfg;
-		pFtCfg->FtCapFlag.Dot11rFtEnable = FALSE; /* Intel TGn STA cannot connect to AP if Beacon/Probe has 11R IE in security mode. */
+		pFtCfg->FtCapFlag.Dot11rFtEnable = TRUE;
+#if defined(WH_EZ_SETUP) || defined(MBO_SUPPORT)
+		// Keep false by default as applicable for MAN,
+		// if required for other project, can be enabled by command/dat file.
+		pFtCfg->FtCapFlag.FtOverDs = FALSE;
+		pFtCfg->FtCapFlag.RsrReqCap = FALSE;
+#else
+
 		pFtCfg->FtCapFlag.FtOverDs = TRUE;
 		pFtCfg->FtCapFlag.RsrReqCap = TRUE;
-
+#endif
 		FT_SET_MDID(pFtCfg->FtMdId, FT_DEFAULT_MDID);
 
 		snprintf(R0khIdBuf, sizeof(R0khIdBuf), "Ralink:%02x:%02x:%02x:%02x:%02x:%02x",
@@ -411,17 +417,29 @@ Note:
 VOID FT_Init(
 	IN PRTMP_ADAPTER pAd)
 {
+#ifdef FT_R1KH_KEEP
+	if (pAd->ApCfg.FtTab.FT_RadioOff != TRUE) {
+#endif/* FT_R1KH_KEEP */
 	FT_KDP_Init(pAd);
 	FT_RIC_Init(pAd);
 	FT_R1khEntryTabInit(pAd);
+#ifdef FT_R1KH_KEEP
+	}
+#endif/* FT_R1KH_KEEP */
 }
 
 VOID FT_Release(
 	IN PRTMP_ADAPTER pAd)
 {
+#ifdef FT_R1KH_KEEP
+	if (pAd->ApCfg.FtTab.FT_RadioOff != TRUE) {
+#endif /* FT_R1KH_KEEP */
 	FT_KDP_Release(pAd);
 	FT_RIC_Release(pAd);
 	FT_R1khEntryTabDestroy(pAd);
+#ifdef FT_R1KH_KEEP
+	}
+#endif/* FT_R1KH_KEEP */
 }
 
 /*
@@ -530,6 +548,7 @@ USHORT FT_AuthConfirmHandler(
 	PFT_CFG pFtCfg;
 	FT_CAP_AND_POLICY FtCapPlc;
 	struct wifi_dev *wdev;
+	ULONG temp_len = 0;
 
 	DBGPRINT(RT_DEBUG_TRACE, ("%s:\n", __FUNCTION__));
 
@@ -582,11 +601,13 @@ USHORT FT_AuthConfirmHandler(
 
 			pFtInfoBuf->RSNIE_Len = 0;
 			RTMPInsertRSNIE(pFtInfoBuf->RSN_IE, 
-							(PULONG)&pFtInfoBuf->RSNIE_Len,
+							&temp_len,
 							rsnie_ptr, 
 							rsnie_len, 
 							pEntry->FT_PMK_R1_NAME, 
 							LEN_PMK_NAME);
+
+			pFtInfoBuf->RSNIE_Len = (UCHAR)temp_len;
 
 			ft_len = sizeof(FT_FTIE);
 	
@@ -695,7 +716,7 @@ USHORT FT_AssocReqHandler(
 			if (!IS_FT_STA(pEntry))
 			{
 				NdisMoveMemory(&pEntry->MdIeInfo, &pPeer_FtInfo->MdIeInfo,
-						pPeer_FtInfo->MdIeInfo.Len);
+						sizeof(pPeer_FtInfo->MdIeInfo));
 			}
 					
 			if (pPeer_FtInfo->RSNIE_Len != 0)
@@ -1056,12 +1077,12 @@ VOID FT_FtAction(
 					pEntry = MacTableInsertEntry(pAd, pHdr->Addr2,
 									&pAd->ApCfg.MBSSID[apidx].wdev, ENTRY_CLIENT, OPMODE_AP, TRUE);
 
-				NdisZeroMemory(pFtInfoBuf, sizeof(FT_INFO));
 				/* Parse FT-Request action frame. */
 				FT_ReqActionParse(pAd, (FtActLen - sizeof(PFT_ACTION)),
 					pFtAction->Oct, pFtInfo);
 
 				/* FT-Request frame Handler. */
+				NdisZeroMemory(pFtInfoBuf, sizeof(FT_INFO));
 				result = FT_AuthReqHandler(pAd, pEntry, pFtInfo, pFtInfoBuf);
 
 				if (result == MLME_SUCCESS)
@@ -1340,20 +1361,20 @@ VOID FT_R1KHInfoMaintenance(
 
 		while (pEntry != NULL)
 		{
-			if((pEntry->AuthMode == Ndis802_11AuthModeWPA2)
-				&& ((pEntry->KeyLifeTime--) == 0))
+			if((pEntry->KeyLifeTime--) == 0)
 			{
 				PFT_R1HK_ENTRY pEntryTmp;
 				MLME_DISASSOC_REQ_STRUCT DisassocReq;
 
-				DBGPRINT(RT_DEBUG_OFF, ("%s: PMKCache timeout. Kick out the station and delete FT_R1khEntry!\n",
-					__FUNCTION__));
-				
 				/*
 					Kick out the station.
 					and Info KDP daemon to delete the key.
 				*/
 				pMacEntry = MacTableLookup(pAd, pEntry->StaMac);
+
+				DBGPRINT(RT_DEBUG_ERROR,
+					("%s:PMKCache timeout.Kick out wcid(%d),delete FT_R1khEntry!\n",
+							__func__, pMacEntry->wcid));
 
 				if (pMacEntry)
 				{
@@ -1368,7 +1389,7 @@ VOID FT_R1KHInfoMaintenance(
 					relative to the STA
 				*/
 				FT_KDP_EVENT_INFORM(pAd, 0, FT_KDP_SIG_KEY_TIMEOUT,
-										pEntry->StaMac, 6, NULL);
+										pEntry->StaMac, MAC_ADDR_LEN, NULL);
 
 				pEntryTmp = pEntry->pNext;
 				delEntryList(&pFtTab->FT_R1khEntryTab[HashIdx],
@@ -1589,7 +1610,11 @@ UINT16	FT_AuthReqRsnValidation(
     PUINT8  rsnie_ptr = NULL;
 	UINT16	result = MLME_SUCCESS;
 	struct wifi_dev *wdev;
-	
+	ULONG temp_len = 0;
+
+#ifdef R1KH_HARD_RETRY
+	MTWF_LOG(DBG_CAT_PROTO, CATPROTO_FT, DBG_LVL_OFF, ("%s: (%ld)=>\n", __func__, (jiffies * 1000) / OS_HZ));
+#endif/* R1KH_HARD_RETRY */
 	/* Check the validity of the received RSNIE */
 	if ((result = APValidateRSNIE(pAd, pEntry, pFtInfo_in->RSN_IE, pFtInfo_in->RSNIE_Len)) != MLME_SUCCESS)	
 	{				
@@ -1601,12 +1626,103 @@ UINT16	FT_AuthReqRsnValidation(
 	
 	/* Extract the PMK-R0-Name from the received RSNIE */
 	pPmkR0Name = WPA_ExtractSuiteFromRSNIE(pFtInfo_in->RSN_IE, pFtInfo_in->RSNIE_Len, PMKID_LIST, &count);
-	if (pPmkR0Name)
-	{	
+
+#ifdef WH_EZ_SETUP
+	if(!pPmkR0Name)
+	{
+		/* reject the Authentication Request with status code 53 ("Invalid PMKID") */
+		DBGPRINT_ERR(("%s : The peer PMKID is emtpy\n", __FUNCTION__));				
+		return FT_STATUS_CODE_INVALID_PMKID;
+	}
+#endif
+
 #ifdef FT_RSN_DEBUG
 		hex_dump("FT PMK-R0-NAME", pPmkR0Name, count * LEN_PMK_NAME);
 #endif /* FT_RSN_DEBUG */
 
+#ifdef WH_EZ_SETUP
+	if (IS_EZ_SETUP_ENABLED(&pAd->ApCfg.MBSSID[pEntry->func_tb_idx].wdev) || ez_is_triband()){
+
+		FT_DerivePMKR0(pAd->ApCfg.MBSSID[pEntry->func_tb_idx].PMK, LEN_PMK,
+										 (PUINT8)pAd->ApCfg.MBSSID[pEntry->func_tb_idx].Ssid,
+										 pAd->ApCfg.MBSSID[pEntry->func_tb_idx].SsidLen,
+										 pFtCfg->FtMdId,
+										 pFtInfo_in->FtIeInfo.R0khId,	// use rokhid passed by sta
+										 pFtInfo_in->FtIeInfo.R0khIdLen,
+										 pEntry->Addr,
+										 pEntry->FT_PMK_R0,
+										 pEntry->FT_PMK_R0_NAME);
+
+		FT_DerivePMKR1(pEntry->FT_PMK_R0,
+										pEntry->FT_PMK_R0_NAME,
+										wdev->bssid, /* R1KHID*/
+										pEntry->Addr,					/* S1KHID*/
+										pEntry->FT_PMK_R1,
+										pEntry->FT_PMK_R1_NAME);			
+
+
+		/* Extract the AKM suite from the received RSNIE */
+		pAkmSuite = WPA_ExtractSuiteFromRSNIE(pFtInfo_in->RSN_IE, 
+			pFtInfo_in->RSNIE_Len, AKM_SUITE, &count);
+		if(pAkmSuite == NULL){ // add check for expected value
+			/*	
+				It doesn't a negotiated AKM of Fast BSS Transition, 
+				the AP shall reject the Authentication Request with 
+				status code 43 ("Invalid AKMP"). 
+			*/
+			MTWF_LOG(DBG_CAT_PROTO, CATPROTO_FT, DBG_LVL_ERROR, 
+				("%s : The AKM is invalid\n", __FUNCTION__));
+			return MLME_INVALID_AKMP;
+		}
+		
+		/* Extract the pairwise cipher suite from the received RSNIE */
+		pCipher = WPA_ExtractSuiteFromRSNIE(pFtInfo_in->RSN_IE, 
+			pFtInfo_in->RSNIE_Len, PAIRWISE_SUITE, &count);
+		if(pCipher == NULL){ // add check for expected value
+			/*	
+			If the non-AP STA selects a pairwise cipher suite in the RSNIE
+			that is different than the ones used in the Initial Mobility 
+			Domain association, then the AP shall reject the Authentication 
+			Request with status code 19 ("Invalid Pair-wise Cipher"). 
+			*/
+			MTWF_LOG(DBG_CAT_PROTO, CATPROTO_FT, DBG_LVL_ERROR, 
+				("%s : The pairwise-cipher is invalid\n", __FUNCTION__));				
+			return MLME_INVALID_PAIRWISE_CIPHER;
+		}
+
+		/* Delete previous entry */
+		pR1hkEntry = FT_R1khEntryTabLookup(pAd, pEntry->FT_PMK_R1_NAME);
+		if (pR1hkEntry != NULL)
+		{
+			FT_R1khEntryDelete(pAd, pR1hkEntry);
+		}
+		/* Update R1KH table */
+		if (pCipher != NULL)
+			NdisMoveMemory(pEntry->FT_UCipher, pCipher, 4);
+
+		if (pAkmSuite != NULL)
+			NdisMoveMemory(pEntry->FT_Akm, pAkmSuite, 4);
+
+		FT_R1khEntryInsert(pAd,
+										pEntry->FT_PMK_R0_NAME,
+										pEntry->FT_PMK_R1_NAME,
+										pEntry->FT_PMK_R1,
+										pCipher,
+										pAkmSuite,
+										(pAd->ApCfg.MBSSID[pEntry->func_tb_idx].PMKCachePeriod/OS_HZ),
+										20,
+										pFtInfo_in->FtIeInfo.R0khId,
+										pFtInfo_in->FtIeInfo.R0khIdLen,
+										pEntry->Addr);
+
+
+		pR1hkEntry = FT_R1khEntryTabLookup(pAd, pEntry->FT_PMK_R1_NAME);
+
+	}
+	else
+#endif
+	if (pPmkR0Name){
+	
 		/*	The R1KH of the target AP uses the value of PMKR0Name and other 
 			information in the frame to calculate PMKR1Name. */	
 		FT_DerivePMKR1Name(pPmkR0Name, 
@@ -1618,6 +1734,9 @@ UINT16	FT_AuthReqRsnValidation(
 		hex_dump("pAd->ApCfg.MBSSID[pEntry->func_tb_idx].Bssid=", wdev->bssid, 6);
 		hex_dump("pEntry->Addr=", pEntry->Addr, 6);
 		hex_dump("pEntry->FT_PMK_R1_NAME=", pEntry->FT_PMK_R1_NAME, sizeof(pEntry->FT_PMK_R1_NAME));
+#ifdef R1KH_HARD_RETRY
+R1KH_QUERY:
+#endif/* R1KH_HARD_RETRY */
 
 		/* Look up the R1KH Table */
 		pR1hkEntry = FT_R1khEntryTabLookup(pAd, pEntry->FT_PMK_R1_NAME);
@@ -1627,10 +1746,53 @@ UINT16	FT_AuthReqRsnValidation(
 		if ((pR1hkEntry == NULL) ||
 			(RTMPEqualMemory(pEntry->FT_PMK_R1_NAME, pR1hkEntry->PmkR1Name, LEN_PMK_NAME) == FALSE))
 		{
+			if (pEntry->FT_R1kh_CacheMiss_Times <= FT_R1KH_CACHE_MISS_THRESHOLD) {
+			FT_KDP_EVT_KEY_ELM EvtKeyReq;
 
+			NdisZeroMemory(&EvtKeyReq, sizeof(FT_KDP_EVT_KEY_ELM));
+#ifndef R1KH_HARD_RETRY
+				/* sw retry */
+				pEntry->FT_R1kh_CacheMiss_Times++;
+#endif /* R1KH_HARD_RETRY */
+			/* make up request content */
+			EvtKeyReq.ElmId = FT_KDP_ELM_ID_PRI;
+			EvtKeyReq.ElmLen = FT_KDP_ELM_PRI_LEN;
+			EvtKeyReq.OUI[0] = FT_KDP_ELM_PRI_OUI_0;
+			EvtKeyReq.OUI[1] = FT_KDP_ELM_PRI_OUI_1;
+			EvtKeyReq.OUI[2] = FT_KDP_ELM_PRI_OUI_2;
+			NdisMoveMemory(EvtKeyReq.MacAddr, pEntry->Addr, ETH_ALEN);
+			NdisMoveMemory(EvtKeyReq.KeyInfo.S1KHID, pEntry->Addr, FT_KDP_S1KHID_MAX_SIZE);
+			NdisMoveMemory(EvtKeyReq.KeyInfo.R1KHID, wdev->bssid, FT_KDP_R1KHID_MAX_SIZE);
+
+			/* Issue an event to query PMKR1 information from R0KH */
+			FT_KDP_EVENT_INFORM(pAd, pEntry->func_tb_idx, FT_KDP_SIG_KEY_REQ_AUTO,
+								&EvtKeyReq, sizeof(FT_KDP_EVT_KEY_ELM), NULL);
+#ifdef R1KH_HARD_RETRY
+
+/*spec defines auth rsp should happen within 30 ms*/
+				MTWF_LOG(DBG_CAT_PROTO, CATPROTO_FT, DBG_LVL_OFF, ("@(%ld)snd iapp!\n",
+				(jiffies * 1000) / OS_HZ));
+				/* msleep(20); */
+				if (!RTMP_OS_WAIT_FOR_COMPLETION_TIMEOUT(&pEntry->ack_r1kh, RTMPMsecsToJiffies(30)))
+					MTWF_LOG(DBG_CAT_PROTO, CATPROTO_FT, DBG_LVL_OFF,
+					("@(%ld)snd timeout!\n", (jiffies * 1000) / OS_HZ));
+
+				/* only hard retry one time! */
+				if ((pEntry->FT_R1kh_CacheMiss_Hard++) < FT_R1KH_CACHE_MISS_HARD_RETRY_THRESHOLD)
+					goto R1KH_QUERY;
+				else {
+					pEntry->FT_R1kh_CacheMiss_Hard = 0;/* reset the hard retry */
+
+					/* sw retry++ */
+					pEntry->FT_R1kh_CacheMiss_Times++;
+					return MLME_FAIL_NO_RESOURCE;
+				}
+#endif /* R1KH_HARD_RETRY */
+			} else {								
+				MTWF_LOG(DBG_CAT_PROTO, CATPROTO_FT, DBG_LVL_ERROR,
+						("%s : R0KH unreachable!!! \n", __func__));
 			/*	If the requested R0KH is not reachable, the AP shall respond 
 				to the Authentication Request with status code 28 ("R0KH unreachable"). */
-			{											
 				return FT_STATUS_CODE_R0KH_UNREACHABLE;
 			}
 		}
@@ -1648,13 +1810,14 @@ UINT16	FT_AuthReqRsnValidation(
 			return FT_STATUS_CODE_INVALID_PMKID;
 		}																
 	}
+#ifndef WH_EZ_SETUP
 	else
 	{
 		/* reject the Authentication Request with status code 53 ("Invalid PMKID") */
 		DBGPRINT_ERR(("%s : The peer PMKID is emtpy\n", __FUNCTION__));				
 		return FT_STATUS_CODE_INVALID_PMKID;
 	}
-
+#endif
 	if (pR1hkEntry == NULL)
 	{
 		DBGPRINT_ERR(("%s : The R1KH table doesn't exist\n", __FUNCTION__));				
@@ -1764,14 +1927,17 @@ UINT16	FT_AuthReqRsnValidation(
 
 	pFtInfo_out->RSNIE_Len = 0;
 	RTMPInsertRSNIE(pFtInfo_out->RSN_IE, 
-					(PULONG)&pFtInfo_out->RSNIE_Len,
+					&temp_len,
 					rsnie_ptr, 
 					rsnie_len, 
 					pPmkR0Name, 
 					LEN_PMK_NAME);
 
+	pFtInfo_out->RSNIE_Len = (UCHAR)temp_len;
+#ifdef R1KH_HARD_RETRY
+	MTWF_LOG(DBG_CAT_PROTO, CATPROTO_FT, DBG_LVL_OFF, ("%s:<=(%ld)\n", __func__, (jiffies * 1000) / OS_HZ));
+#endif/* R1KH_HARD_RETRY */
 	return MLME_SUCCESS;
-
 }
 
 UINT16	FT_AuthConfirmRsnValidation(
@@ -1786,7 +1952,9 @@ UINT16	FT_AuthConfirmRsnValidation(
 	PFT_R1HK_ENTRY pR1hkEntry = NULL;
 	PUINT8 	pAkmSuite = NULL;
 	UINT8 	count = 0;
+
 	
+	NdisZeroMemory(ft_mic, sizeof(ft_mic));
 	/*	The R1KH of the target AP verifies the MIC in the FTIE in 
 		the Reassociation Request frame, and shall discard the 
 		request if the MIC is incorrect. */	 
@@ -1880,8 +2048,9 @@ UINT16	FT_AssocReqRsnValidation(
 	PFT_R1HK_ENTRY pR1hkEntry = NULL;
 	PUINT8 	pAkmSuite = NULL;
 	UINT8 	count = 0;
+	ULONG	temp_len = 0;
 
-
+	NdisZeroMemory(ft_mic, sizeof(ft_mic));
 	/*	The R1KH of the target AP verifies the MIC in the FTIE in 
 		the Reassociation Request frame, and shall discard the 
 		request if the MIC is incorrect. */
@@ -1971,12 +2140,14 @@ UINT16	FT_AssocReqRsnValidation(
 
 	pFtInfo_out->RSNIE_Len = 0;
 	RTMPInsertRSNIE(pFtInfo_out->RSN_IE, 
-					(PULONG)&pFtInfo_out->RSNIE_Len,
+					&temp_len,
 					rsnie_ptr, 
 					rsnie_len, 
 					pEntry->FT_PMK_R1_NAME, 
 					LEN_PMK_NAME);
-	
+
+	pFtInfo_out->RSNIE_Len = (UCHAR)temp_len;
+
 	/* Prepare MIC-control and MIC field of FTIE for outgoing frame. */										
 	pFtInfo_out->FtIeInfo.MICCtr.field.IECnt = 3;
 	NdisZeroMemory(pFtInfo_out->FtIeInfo.MIC, 16);
@@ -1986,7 +2157,7 @@ UINT16	FT_AssocReqRsnValidation(
 	NdisMoveMemory(pFtInfo_out->FtIeInfo.SNonce, pEntry->SNonce, LEN_NONCE);
 	
 	/* Prepare GTK related information of FTIE for outgoing frame */
-	FT_ConstructGTKSubIe(pAd, pEntry, &pFtInfo_out->FtIeInfo);															
+	FT_ConstructGTKSubIe(pAd, pEntry, &pFtInfo_out->FtIeInfo);
 	/*ft_len += (2 + pFtInfo_out->FtIeInfo.GtkLen); */
 				
 	/* Prepare RIC-Response */
@@ -2556,9 +2727,7 @@ VOID	FT_CalculateMIC(
 	UINT	mlen = AES_KEY128_LENGTH;
 
 	DBGPRINT(RT_DEBUG_TRACE, ("%s\n", __FUNCTION__));
-	
-	NdisZeroMemory(mic, sizeof(mic));
-	
+		
 	/* allocate memory for MIC calculation */
 	os_alloc_mem(NULL, (PUCHAR *)&OutBuffer, 512);
     if (OutBuffer == NULL)
@@ -2872,11 +3041,11 @@ INT	Show_FTConfig_Proc(RTMP_ADAPTER *pAd, RTMP_STRING *arg)
 
 	pFtCfg = &pAd->ApCfg.MBSSID[pObj->ioctl_if].FtCfg;
 
-	printk("MDID=%c%c\n", pFtCfg->FtMdId[0], pFtCfg->FtMdId[1]);
-	printk("R0KHID=%s, Len=%d\n", pFtCfg->FtR0khId, pFtCfg->FtR0khIdLen);
-	printk("FT Enable=%d\n", pFtCfg->FtCapFlag.Dot11rFtEnable);
-	printk("FT RIC=%d\n", pFtCfg->FtCapFlag.RsrReqCap);
-	printk("FT OTD=%d\n", pFtCfg->FtCapFlag.FtOverDs);
+	DBGPRINT(RT_DEBUG_OFF, ("MDID=%c%c\n", pFtCfg->FtMdId[0], pFtCfg->FtMdId[1]));
+	DBGPRINT(RT_DEBUG_OFF, ("R0KHID=%s, Len=%d\n", pFtCfg->FtR0khId, pFtCfg->FtR0khIdLen));
+	DBGPRINT(RT_DEBUG_OFF, ("FT Enable=%d\n", pFtCfg->FtCapFlag.Dot11rFtEnable));
+	DBGPRINT(RT_DEBUG_OFF, ("FT RIC=%d\n", pFtCfg->FtCapFlag.RsrReqCap));
+	DBGPRINT(RT_DEBUG_OFF, ("FT OTD=%d\n", pFtCfg->FtCapFlag.FtOverDs));
 
 	return TRUE;
 }

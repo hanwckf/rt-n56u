@@ -178,6 +178,8 @@
 #define RTMP_GET_PACKET_DISASSOC(_p)   \
 			(RTPKT_TO_OSPKT(_p)->cb[CB_OFF+11] & RTMP_PACKET_SPECIFIC_DISASSOC)
 
+#define RTMP_SET_PACKET_ICMP(_p, _flg)   (PACKET_CB(_p, 7) = _flg)
+#define RTMP_GET_PACKET_ICMP(_p)         (PACKET_CB(_p, 7))
 
 /* [CB_OFF + 7]  */
 
@@ -245,14 +247,6 @@
 
 /* [CB_OFF+21 ~ 22]  */
 
-#ifdef DATA_QUEUE_RESERVE
-// tmply use mesh part!
-#define RTMP_SET_PACKET_ICMP(_p, _flg)   (PACKET_CB(_p, 21) = _flg)
-#define RTMP_GET_PACKET_ICMP(_p)         (PACKET_CB(_p, 21))
-#else /* DATA_QUEUE_RESERVE */
-
-
-#endif /* !DATA_QUEUE_RESERVE */
 
 /* [CB_OFF + 23]  */
 /*
@@ -293,15 +287,16 @@
 #define RTMP_SET_PACKET_NOBULKOUT(_p, _morebit)			(PACKET_CB(_p, 24) = _morebit)
 #define RTMP_GET_PACKET_NOBULKOUT(_p)					(PACKET_CB(_p, 24))
 #else
-#ifdef FORCE_ANNOUNCE_CRITICAL_AMPDU
 #define RTMP_SET_PACKET_ETHTYPE(_p, _morebit)			(PACKET_CB(_p, 24) = _morebit)
 #define RTMP_GET_PACKET_ETHTYPE(_p)						(PACKET_CB(_p, 24))
-#endif
 #endif /* INF_AMAZON_SE */
 /* Max skb->cb = 48B = [CB_OFF+38] */
 
 
 /* [CB_OFF + 25]  */
+/* ATTENTION PLEASE:
+[CB_OFF + 25]  have been used for macro MAX_CONTINUOUS_TX_CNT,
+this is a feature for AP to continously transmit 21 packets!!!*/
 
 
 /* [CB_OFF + 26]  */
@@ -323,12 +318,35 @@
 #endif /* CONFIG_5VT_ENHANCE */
 
 /* [CB_OFF + 34]  */
-#if defined (CONFIG_WIFI_PKT_FWD)
+#if defined(CONFIG_WIFI_PKT_FWD) || defined(CONFIG_WIFI_PKT_FWD_MODULE)
 /* set link cover packet send by 5G or 2G */
+#if (MT7615_MT7603_COMBO_FORWARDING == 1)
+#define PACKET_BAND_CB	36
+#endif
 #define RTMP_PACKET_SPECIFIC_2G		0x1
 #define RTMP_PACKET_SPECIFIC_5G		0x2
 #define RTMP_PACKET_SPECIFIC_ETHER	0x4
+#if (MT7615_MT7603_COMBO_FORWARDING == 1)
+#define RTMP_PACKET_SPECIFIC_5G_H	0x10
 
+#define RTMP_CLEAN_PACKET_BAND(_p)   (RTPKT_TO_OSPKT(_p)->cb[CB_OFF+36] = 0)
+#endif
+
+#if (MT7615_MT7603_COMBO_FORWARDING == 1)
+#define RTMP_SET_PACKET_BAND(_p, _flg)   	\
+	do{										\
+		if (_flg)								\
+			PACKET_CB(_p, 36) |= (_flg);		\
+		else									\
+			PACKET_CB(_p, 36) &= (~_flg);		\
+	}while(0)
+
+#define RTMP_GET_PACKET_BAND(_p)	(PACKET_CB(_p, 33))
+/* [CB_OFF + 35]: tag the packet received from which net device */
+#define RECV_FROM_CB			37
+#define H_CHANNEL_BIGGER_THAN   100
+
+#else
 #define RTMP_SET_PACKET_BAND(_p, _flg)   	\
 	do{										\
 		if (_flg)								\
@@ -338,13 +356,38 @@
 	}while(0)
 
 #define RTMP_GET_PACKET_BAND(_p)	(PACKET_CB(_p, 34))
-
+#endif
 /* [CB_OFF + 35]: tag the packet received from which net device */
+#if (MT7615_MT7603_COMBO_FORWARDING == 1)
+
+#define RECV_FROM_CB			37
+#define H_CHANNEL_BIGGER_THAN   100
+#define RTMP_PACKET_RECV_FROM_5G_H_CLIENT   0x10
+#define RTMP_PACKET_RECV_FROM_5G_H_AP     	0x20
+
+#define RTMP_CLEAN_PACKET_RECV_FROM(_p)   (RTPKT_TO_OSPKT(_p)->cb[CB_OFF+37] = 0)
+#endif
 #define RTMP_PACKET_RECV_FROM_2G_CLIENT 	0x1
 #define RTMP_PACKET_RECV_FROM_5G_CLIENT 	0x2
 #define RTMP_PACKET_RECV_FROM_2G_AP			0x4
 #define RTMP_PACKET_RECV_FROM_5G_AP     		0x8
 
+#if (MT7615_MT7603_COMBO_FORWARDING == 1)
+#define RTMP_SET_PACKET_RECV_FROM(_p, _flg)	\
+	do{                 	                        				\
+		if (_flg)\
+		PACKET_CB(_p, 37) |= (_flg);\
+		else\
+		PACKET_CB(_p, 37) &= (~_flg);\
+	} while (0)
+
+#define RTMP_GET_PACKET_RECV_FROM(_p)        (PACKET_CB(_p, 37))
+#define RTMP_IS_PACKET_APCLI(_p)\
+		((RTPKT_TO_OSPKT(_p)->cb[CB_OFF+37]) &\
+		(RTMP_PACKET_RECV_FROM_2G_CLIENT | RTMP_PACKET_RECV_FROM_5G_CLIENT | RTMP_PACKET_RECV_FROM_5G_H_CLIENT))
+#define RTMP_IS_PACKET_AP_APCLI(_p)	((RTPKT_TO_OSPKT(_p)->cb[CB_OFF+37]) != 0)
+
+#else
 #define RTMP_SET_PACKET_RECV_FROM(_p, _flg)	\
 	do{                 	                        				\
           	if (_flg)                               				\
@@ -354,11 +397,17 @@
           }while(0)
 
 #define RTMP_GET_PACKET_RECV_FROM(_p)        (PACKET_CB(_p, 35))
+#endif
 
 #endif /* CONFIG_WIFI_PKT_FWD */
-
-/* [CB_OFF + 36]  */
-#ifdef DOT11V_WNM_SUPPORT
-#define RTMP_SET_WNM_DMS(_p, _flg)   (RTPKT_TO_OSPKT(_p)->cb[CB_OFF+36] = _flg)
-#define RTMP_GET_WNM_DMS(_p)         (RTPKT_TO_OSPKT(_p)->cb[CB_OFF+36])
-#endif /* DOT11V_WNM_SUPPORT */
+#ifdef MAX_CONTINUOUS_TX_CNT
+#define RTMP_SET_PACKET_SWQINDEX_LOW(_p, _flg)   (PACKET_CB(_p, 25) = _flg)
+#define RTMP_GET_PACKET_SWQINDEX_LOW(_p)         (PACKET_CB(_p, 25))
+#if (MT7615_MT7603_COMBO_FORWARDING == 1)
+#define RTMP_SET_PACKET_SWQINDEX_HIGH(_p, _flg)   (PACKET_CB(_p, 34) = _flg)
+#define RTMP_GET_PACKET_SWQINDEX_HIGH(_p)         (PACKET_CB(_p, 34))
+#else
+#define RTMP_SET_PACKET_SWQINDEX_HIGH(_p, _flg)   (PACKET_CB(_p, 37) = _flg)
+#define RTMP_GET_PACKET_SWQINDEX_HIGH(_p)         (PACKET_CB(_p, 37))
+#endif
+#endif

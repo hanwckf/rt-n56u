@@ -440,6 +440,7 @@ VOID TYPE_FUNC FT_KDP_EventInform(
 			if (pCB == NULL)
 			{
 				DBGPRINT(RT_DEBUG_ERROR, ("ap_ftkd> pCB == NULL!\n"));
+				FT_MEM_FREE(pAd, pFtKdp);
 				return;
 			}
 
@@ -549,7 +550,7 @@ VOID TYPE_FUNC FT_KDP_EventInform(
 	if (pPktComm != NULL)
 	{
 		/* make up 802.3 header */
-		NdisMoveMemory(pHdr8023->DA, pAd->ApCfg.MBSSID[ApIdx].wdev.bssid, 6);
+		NdisMoveMemory(pHdr8023->DA, pAd->ApCfg.MBSSID[ApIdx].wdev.bssid, MAC_ADDR_LEN);
 
 		/* can not send a packet with same SA & DA in 5VT board */
 /*		NdisMoveMemory(pHdr8023->SA, pAd->ApCfg.MBSSID[ApIdx].Bssid, 6); */
@@ -683,7 +684,6 @@ BOOLEAN TYPE_FUNC FT_KDP_KeyRequestToUs(
 {
 #ifndef FT_KDP_EMPTY
 	UINT32 IDR0KH;
-	MAC_TABLE_ENTRY *pEntry = NULL;
 	UINT32 ApIdx;
 
 
@@ -752,11 +752,6 @@ BOOLEAN TYPE_FUNC FT_KDP_KeyRequestToUs(
 				pEvtKeyReq->KeyInfo.R1KHID[4],
 				pEvtKeyReq->KeyInfo.R1KHID[5]));
 #endif /* FT_KDP_DEBUG */
-		pEntry = MacTableLookup(pAd, pEvtKeyReq->MacAddr);
-		if (!pEntry)
-			return FALSE;
-		else
-			ApIdx = pEntry->func_tb_idx;
 
 		/* calculate the PMK-R1 Key for the station vs. the AP */
 		if (FT_QueryKeyInfoForKDP(pAd, ApIdx, pEvtKeyReq) == FALSE)
@@ -888,6 +883,9 @@ VOID TYPE_FUNC FT_KDP_KeyResponseToUs(
 
 		if (bUpdateR1kh)
 		{
+			MAC_TABLE_ENTRY *pEntry = NULL;
+
+			pEntry = MacTableLookup(pAd, pEvtKeyRsp->MacAddr);
 			/* assign the PMK-R1 key to FT kernel */
 			FT_R1khEntryInsert(pAd,
 							pEvtKeyRsp->KeyInfo.PMKR0Name,
@@ -900,6 +898,21 @@ VOID TYPE_FUNC FT_KDP_KeyResponseToUs(
 							(PUINT8)pEvtKeyRsp->KeyInfo.R0KHID,
 							pEvtKeyRsp->KeyInfo.R0KHIDLen,
 							pEvtKeyRsp->MacAddr);
+			/* YF_FT */
+			if (pEntry && ((pEntry->FT_R1kh_CacheMiss_Times > 0)
+#ifdef R1KH_HARD_RETRY	/* yiwei no give up! */
+				|| (pEntry->FT_R1kh_CacheMiss_Hard > 0)
+#endif /*R1KH_HARD_RETRY */
+				)) {
+				MTWF_LOG(DBG_CAT_AP, DBG_SUBCAT_ALL, DBG_LVL_OFF,
+				("%s - Reset FT_R1kh_CacheMiss_Times to Zero (Wcid%d, value:%d), time=%ld\n",
+				__func__, pEntry->wcid, pEntry->FT_R1kh_CacheMiss_Times, (jiffies * 1000) / OS_HZ));
+				pEntry->FT_R1kh_CacheMiss_Times = 0;
+#ifdef R1KH_HARD_RETRY	/* yiwei no give up! */
+				pEntry->FT_R1kh_CacheMiss_Hard = 0;
+				RTMP_OS_COMPLETE(&pEntry->ack_r1kh);
+#endif /* R1KH_HARD_RETRY */
+				}
 		}
 
 #ifdef FT_KDP_FUNC_R0KH_IP_RECORD

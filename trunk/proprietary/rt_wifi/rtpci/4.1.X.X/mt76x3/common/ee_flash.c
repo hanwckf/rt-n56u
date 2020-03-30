@@ -28,11 +28,120 @@
 
 #ifdef RTMP_FLASH_SUPPORT
 
-#include "rt_config.h"
+#include	"rt_config.h"
+
+
+
+#ifdef  MT7603
+#define EEPROM_FILE_NAME                     "MT7603E1E2_EEPROM_layout_2014011_ePAeLNA.bin"
+#endif /* RT3090 */
+
+
+
+
+
+
+#define EEPROM_DFT_FILE_DIR	"/etc_ro/wlan/"
+#ifdef EEPROM_1ST_FILE_DIR
+#undef EEPROM_1ST_FILE_DIR
+#define EEPROM_1ST_FILE_DIR	"/etc_ro/Wireless/RT2860/"
+#endif
+#define EEPROM_2ND_FILE_DIR	"/etc_ro/Wireless/iNIC/"
+
+#if defined(RTMP_RBUS_SUPPORT) || defined(RTMP_FLASH_SUPPORT)
+/* The flag "CONFIG_RALINK_FLASH_API" is used for APSoC Linux SDK */
+#ifdef CONFIG_PROPRIETARY_DRIVER
+static void flash_bin_read(RTMP_ADAPTER *ad, UCHAR *p, ULONG a, ULONG b)
+{
+	UCHAR *buffer = NULL;
+	UINT32 len;
+	UCHAR *name = get_dev_eeprom_binary(ad);
+	/*load from request firmware*/
+	os_load_code_from_bin(ad, &buffer, name, &len);
+
+	if (len > 0 && buffer != NULL) {
+		os_move_mem(p, buffer + a, b);
+		os_free_mem(NULL, buffer);
+	}
+}
+static void flash_bin_write(UCHAR *p, ULONG a, ULONG b)
+{
+	DBGPRINT(RT_DEBUG_ERROR,
+		("proprietary driver not support flash write, will write on ated.\n"));
+}
+#define flash_read(_ad, _ptr, _offset, _len) flash_bin_read(_ad, _ptr, _offset, _len)
+#define flash_write(_ptr, _offset, _len) flash_bin_write(_ptr, _offset, _len)
+
+#else
+#ifdef CONFIG_RALINK_FLASH_API
+int32_t FlashRead(
+	uint32_t *dst,
+	uint32_t *src,
+	uint32_t count);
+
+int32_t FlashWrite(
+	uint16_t *source,
+	uint16_t *destination,
+	uint32_t numBytes);
+#define flash_read(_ad, _ptr, _offset, _len) FlashRead((uint16_t *)_ptr, (uint16_t *)_offset, (uint32_t)_len)
+#define flash_write(_ptr, _offset, _len) FlashWrite(_ptr, _offset, _len)
+
+#else /* CONFIG_RALINK_FLASH_API */
+
+#ifdef RA_MTD_RW_BY_NUM
+#if defined(CONFIG_RT2880_FLASH_32M)
+#define MTD_NUM_FACTORY 5
+#else
+#define MTD_NUM_FACTORY 2
+#endif
+extern int ra_mtd_write(int num, loff_t to, size_t len, const u_char *buf);
+extern int ra_mtd_read(int num, loff_t from, size_t len, u_char *buf);
+#define flash_read(_ad, _ptr, _offset, _len) ra_mtd_read(MTD_NUM_FACTORY, 0, (size_t)_len, _ptr)
+#define flash_write(_ptr, _offset, _len) ra_mtd_write(MTD_NUM_FACTORY, 0, (size_t)_len, _ptr)
+
+#else
+extern int ra_mtd_write_nm(char *name, loff_t to, size_t len, const u_char *buf);
+extern int ra_mtd_read_nm(char *name, loff_t from, size_t len, u_char *buf);
+#define flash_read(_ad, _ptr, _offset, _len) ra_mtd_read_nm("Factory", _offset&0xFFFF, (size_t)_len, _ptr)
+#define flash_write(_ptr, _offset, _len) ra_mtd_write_nm("Factory", _offset&0xFFFF, (size_t)_len, _ptr)
+
+#endif
+
+#endif /* CONFIG_RALINK_FLASH_API */
+#endif /*CONFIG_PROPRIETERY_DRIVER*/
+
+void RtmpFlashRead(
+	RTMP_ADAPTER *ad,
+	UCHAR *p,
+	ULONG a,
+	ULONG b)
+{
+	flash_read(ad, p, a, b);
+}
+
+void RtmpFlashWrite(
+	UCHAR *p,
+	ULONG a,
+	ULONG b)
+{
+	flash_write(p, a, b);
+}
+
+
+
+#endif /* defined(RTMP_RBUS_SUPPORT) || defined(RTMP_FLASH_SUPPORT) */
+
+
+static NDIS_STATUS rtmp_ee_flash_init(PRTMP_ADAPTER pAd, PUCHAR start);
 
 static USHORT EE_FLASH_ID_LIST[]={
+
+
+
+
+
 #ifdef MT7603
-	0x7603,
+    0x7603,
 #endif
 };
 
@@ -79,9 +188,9 @@ int rtmp_ee_flash_write(PRTMP_ADAPTER pAd, USHORT Offset, USHORT Data)
 		DBGPRINT(RT_DEBUG_TRACE, ("rtmp_ee_flash_write:pAd->MC_RowID = %d\n", pAd->MC_RowID));
 		DBGPRINT(RT_DEBUG_TRACE, ("E2P_OFFSET = 0x%08x\n", pAd->E2P_OFFSET_IN_FLASH[pAd->MC_RowID]));
 		if ((pAd->E2P_OFFSET_IN_FLASH[pAd->MC_RowID]==0x48000) || (pAd->E2P_OFFSET_IN_FLASH[pAd->MC_RowID]==0x40000))
-			RtmpFlashWrite(pAd->eebuf, pAd->E2P_OFFSET_IN_FLASH[pAd->MC_RowID], EEPROM_SIZE);
+			RtmpFlashWrite(pAd->eebuf, pAd->E2P_OFFSET_IN_FLASH[pAd->MC_RowID], get_dev_eeprom_size(pAd));
 #else
-		RtmpFlashWrite(pAd->eebuf, pAd->flash_offset, EEPROM_SIZE);
+		RtmpFlashWrite(pAd->eebuf, pAd->flash_offset, get_dev_eeprom_size(pAd));
 #endif /* MULTIPLE_CARD_SUPPORT */
 	}
 	return 0;
@@ -93,7 +202,7 @@ VOID rtmp_ee_flash_read_all(PRTMP_ADAPTER pAd, USHORT *Data)
 	if (!pAd->chipCap.ee_inited)
 		return;
 		
-	memcpy(Data, pAd->eebuf, EEPROM_SIZE);
+	memcpy(Data, pAd->eebuf, get_dev_eeprom_size(pAd));
 }
 
 
@@ -101,14 +210,14 @@ VOID rtmp_ee_flash_write_all(PRTMP_ADAPTER pAd, USHORT *Data)
 {
 	if (!pAd->chipCap.ee_inited)
 		return;
-	memcpy(pAd->eebuf, Data, EEPROM_SIZE);
+	memcpy(pAd->eebuf, Data, get_dev_eeprom_size(pAd));
 #ifdef MULTIPLE_CARD_SUPPORT
 	DBGPRINT(RT_DEBUG_TRACE, ("rtmp_ee_flash_write_all:pAd->MC_RowID = %d\n", pAd->MC_RowID));
 	DBGPRINT(RT_DEBUG_TRACE, ("E2P_OFFSET = 0x%08x\n", pAd->E2P_OFFSET_IN_FLASH[pAd->MC_RowID]));
 	if ((pAd->E2P_OFFSET_IN_FLASH[pAd->MC_RowID]==0x48000) || (pAd->E2P_OFFSET_IN_FLASH[pAd->MC_RowID]==0x40000))
-		RtmpFlashWrite(pAd->eebuf, pAd->E2P_OFFSET_IN_FLASH[pAd->MC_RowID], EEPROM_SIZE);
+		RtmpFlashWrite(pAd->eebuf, pAd->E2P_OFFSET_IN_FLASH[pAd->MC_RowID], get_dev_eeprom_size(pAd));
 #else
-	RtmpFlashWrite(pAd->eebuf, pAd->flash_offset, EEPROM_SIZE);
+	RtmpFlashWrite(pAd->eebuf, pAd->flash_offset, get_dev_eeprom_size(pAd));
 #endif /* MULTIPLE_CARD_SUPPORT */
 }
 
@@ -173,9 +282,9 @@ static NDIS_STATUS rtmp_ee_flash_reset(RTMP_ADAPTER *pAd, UCHAR *start)
 		else 
 		{
 			/* The object must have a read method*/
-			NdisZeroMemory(start, EEPROM_SIZE);
+			NdisZeroMemory(start, get_dev_eeprom_size(pAd));
 			
-			retval = RtmpOSFileRead(srcf, start, EEPROM_SIZE);
+			retval = RtmpOSFileRead(srcf, start, get_dev_eeprom_size(pAd));
 			if (retval < 0)
 			{
 				DBGPRINT(RT_DEBUG_TRACE, ("--> Read %s error %d\n", src, -retval));
@@ -214,7 +323,7 @@ int	Set_EECMD_Proc(
 		case 0:
 			{
 				USHORT value, k;
-				for (k = 0; k < EEPROM_SIZE; k+=2)
+				for (k = 0; k < get_dev_eeprom_size(pAd); k += 2)
 				{
 					RT28xx_EEPROM_READ16(pAd, k, value);
 					DBGPRINT(RT_DEBUG_OFF, ("%4.4x ", value));
@@ -329,7 +438,7 @@ static NDIS_STATUS rtmp_ee_flash_init(PRTMP_ADAPTER pAd, PUCHAR start)
 		RTMP_CAL_FREE_IC_CHECK(pAd,bCalFree);
 		if (bCalFree)
 		{
-			//DBGPRINT(RT_DEBUG_TRACE, ("Cal Free IC!!\n"));
+			//MTWF_LOG(DBG_CAT_ALL, DBG_SUBCAT_ALL, DBG_LVL_TRACE, ("Cal Free IC!!\n"));
 			DBGPRINT(RT_DEBUG_OFF, ("rtmp_ee_flash_init() Cal Free IC!!\n"));
 			RTMP_CAL_FREE_DATA_GET(pAd);
 		}
@@ -387,20 +496,20 @@ NDIS_STATUS rtmp_nv_init(RTMP_ADAPTER *pAd)
 	pAd->eebuf = pAd->EEPROMImage;
 #ifdef MULTIPLE_CARD_SUPPORT
 	DBGPRINT(RT_DEBUG_OFF, ("rtmp_nv_init:pAd->MC_RowID = %d\n", pAd->MC_RowID));
-	os_alloc_mem(pAd, &eepromBuf, EEPROM_SIZE);
+	os_alloc_mem(pAd, &eepromBuf, get_dev_eeprom_size(pAd));
 	if (eepromBuf)
 	{	
 		pAd->eebuf = eepromBuf;
-		NdisMoveMemory(pAd->eebuf, pAd->chipCap.EEPROM_DEFAULT_BIN, EEPROM_SIZE);
+		NdisMoveMemory(pAd->eebuf, pAd->chipCap.EEPROM_DEFAULT_BIN, get_dev_eeprom_size(pAd));
 		}
 	else
 	{
 		DBGPRINT(RT_DEBUG_ERROR,("rtmp_nv_init:Alloc memory for pAd->MC_RowID[%d] failed! used default one!\n", pAd->MC_RowID));
 	}
 	DBGPRINT(RT_DEBUG_OFF, ("E2P_OFFSET = 0x%08x\n", pAd->E2P_OFFSET_IN_FLASH[pAd->MC_RowID]));
-	RtmpFlashRead(pAd->eebuf, pAd->E2P_OFFSET_IN_FLASH[pAd->MC_RowID], EEPROM_SIZE);
+	RtmpFlashRead(pAd, pAd->eebuf, pAd->E2P_OFFSET_IN_FLASH[pAd->MC_RowID], get_dev_eeprom_size(pAd));
 #else
-	RtmpFlashRead(pAd->eebuf, pAd->flash_offset, EEPROM_SIZE);
+	RtmpFlashRead(pAd, pAd->eebuf, pAd->flash_offset, get_dev_eeprom_size(pAd));
 #endif /* MULTIPLE_CARD_SUPPORT */
 
 	return rtmp_ee_flash_init(pAd, pAd->eebuf);

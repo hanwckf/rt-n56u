@@ -96,6 +96,12 @@ typedef struct _GAS_CTRL {
 	NDIS_SPIN_LOCK GASPeerListLock;
 	UINT8 ExternalANQPServerTest;
 	UINT32 cb_delay; /* Come Back Delay */
+	UINT32 MMPDUSize;
+	BOOLEAN b11U_enable;
+	UINT32 InterWorkingIELen;
+	UINT32 AdvertisementProtoIELen;
+	PUCHAR InterWorkingIE;
+	PUCHAR AdvertisementProtoIE;
 } GAS_CTRL, *PGAS_CTRL; 
 
 /* 
@@ -181,9 +187,15 @@ VOID ReceiveGASCBReq(
 	IN MLME_QUEUE_ELEM *Elem);
 #endif /* CONFIG_AP_SUPPORT */
 
+#if defined(WAPP_SUPPORT) && defined(DOT11U_INTERWORKING)
 INT Send_ANQP_Rsp(
 	IN PRTMP_ADAPTER pAd,
 	IN RTMP_STRING *PeerMACAddr,
 	IN RTMP_STRING *ANQPRsp,
 	IN UINT32 ANQPRspLen);
+#endif
+
+BOOLEAN GasEnable(
+	IN PRTMP_ADAPTER pAd,
+	IN MLME_QUEUE_ELEM *Elem);
 #endif /* __GAS_H__ */

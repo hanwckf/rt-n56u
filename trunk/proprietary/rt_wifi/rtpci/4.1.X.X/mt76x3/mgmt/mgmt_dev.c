@@ -23,9 +23,45 @@
 	Who 		When			What
 	--------	----------		----------------------------------------------
 */
-
 #include "rt_config.h"
+/**
+ * @param pAd
+ * @param ioctl wifi device type
+ * @param func_index function device index
+ *
+ * Get wifi_dev according to ioctl wifi device type
+ *
+ * @return wifi_dev
+ */
+struct wifi_dev *get_wdev_by_idx(RTMP_ADAPTER *pAd, INT idx);
+struct wifi_dev *get_wdev_by_ioctl_idx_and_iftype(RTMP_ADAPTER *pAd, INT idx, INT if_type)
+{
+	INT net_device_offset = 0;
 
+	switch (if_type) {
+#ifdef CONFIG_AP_SUPPORT
+	case INT_MAIN:
+	case INT_MBSSID:
+		net_device_offset = MIN_NET_DEVICE_FOR_MBSSID;
+		break;
+#ifdef APCLI_SUPPORT
+	case INT_APCLI:
+		net_device_offset = MIN_NET_DEVICE_FOR_APCLI;
+		break;
+#endif /* APCLI_SUPPORT */
+#ifdef WDS_SUPPORT
+	case INT_WDS:
+		net_device_offset = MIN_NET_DEVICE_FOR_WDS;
+		break;
+#endif /* WDS_SUPPORT */
+#endif /* CONFIG_AP_SUPPORT */
+	default:
+		MTWF_LOG(DBG_CAT_TX, DBG_SUBCAT_ALL, DBG_LVL_ERROR, ("%s: can not find ioctl_if_type(%d), if_idx(%d)\n",
+				__func__, if_type, idx));
+		break;
+	}
+	return get_wdev_by_idx(pAd, (idx + net_device_offset));
+}
 
 struct wifi_dev *get_wdev_by_idx(RTMP_ADAPTER *pAd, INT idx)
 {

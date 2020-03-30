@@ -49,76 +49,19 @@ void send_radiotap_monitor_packets(
 			  			UINT32 timestamp) {
 	struct sk_buff *pOSPkt;
 	int rate_index = 0;
-	USHORT header_len = 0;
-	UCHAR temp_header[40] = {0};
 	struct mtk_radiotap_header *mtk_rt_hdr;
 	UINT32 varlen = 0, padding_len = 0;
 	UINT64 tmp64;
 	UINT32 tmp32;
 	UINT16 tmp16;
 	UCHAR *pos;
-	DOT_11_HDR *pHeader = (DOT_11_HDR *)dot11_hdr;
 
 	MEM_DBG_PKT_FREE_INC(pRxPacket);
 
 	pOSPkt = RTPKT_TO_OSPKT(pRxPacket);
 	pOSPkt->dev = pNetDev;
-	if (pHeader->FC.Type == 0x2 /* FC_TYPE_DATA */) {
-		DataSize -= LENGTH_802_11;
-		if ((pHeader->FC.ToDs == 1) && (pHeader->FC.FrDs == 1))
-			header_len = LENGTH_802_11_WITH_ADDR4;
-		else
-			header_len = LENGTH_802_11;
 
-		/* QOS */
-		if (pHeader->FC.SubType & 0x08) {
-			header_len += 2;
-			/* Data skip QOS contorl field */
-			DataSize -= 2;
-		}
-
-		/* Order bit: A-Ralink or HTC+ */
-		if (pHeader->FC.Order) {
-			header_len += 4;
-			/* Data skip HTC contorl field */
-			DataSize -= 4;
-		}
-
-		/* Copy Header */
-		if (header_len <= 40)
-			NdisMoveMemory(temp_header, pData, header_len);
-
-		/* skip HW padding */
-		if (L2PAD)
-			pData += (header_len + 2);
-		else
-			pData += header_len;
-	}
-
-	if (DataSize < pOSPkt->len) {
-		skb_trim(pOSPkt, DataSize);
-	} else {
-		skb_put(pOSPkt, (DataSize - pOSPkt->len));
-	}
-
-	if ((pData - pOSPkt->data) > 0) {
-		skb_put(pOSPkt, (pData - pOSPkt->data));
-		skb_pull(pOSPkt, (pData - pOSPkt->data));
-	}
-
-	if (skb_headroom(pOSPkt) < (sizeof(*mtk_rt_hdr) + header_len)) {
-		if (pskb_expand_head(pOSPkt, (sizeof(*mtk_rt_hdr) + header_len), 0, GFP_ATOMIC)) {
-			DBGPRINT(RT_DEBUG_ERROR,
-				 ("%s : Reallocate header size of sk_buff fail!\n",
-				  __FUNCTION__));
-			goto err_free_sk_buff;
-		}
-	}
-
-	if (header_len > 0)
-		NdisMoveMemory(skb_push(pOSPkt, header_len), temp_header, header_len);
-
-	/* tsf */
+/* tsf */
 	padding_len = ((varlen % 8) == 0) ? 0 : (8 - (varlen % 8));
 	varlen += (8 + padding_len);
 
@@ -126,8 +69,7 @@ void send_radiotap_monitor_packets(
 	varlen += 1;
 
 	/* rate */
-	if (PHYMODE < MODE_HTMIX)
-		varlen += 1;
+	varlen += 1;
 
 	/* dBm ANT Signal */
 	varlen += 1;
@@ -192,6 +134,16 @@ void send_radiotap_monitor_packets(
 		varlen += 2;
 	}
 
+	
+	if (skb_headroom(pOSPkt) < (sizeof(*mtk_rt_hdr) + varlen)) {
+		if (pskb_expand_head(pOSPkt, (sizeof(*mtk_rt_hdr) + varlen), 0, GFP_ATOMIC)) {
+			DBGPRINT(RT_DEBUG_ERROR,
+				 ("%s : Reallocate header size of sk_buff fail!\n",
+				  __FUNCTION__));
+			goto err_free_sk_buff;
+		}
+	}
+	
 	mtk_rt_hdr = (struct mtk_radiotap_header *)skb_push(pOSPkt, sizeof(*mtk_rt_hdr) + varlen);
 	NdisZeroMemory(mtk_rt_hdr, sizeof(*mtk_rt_hdr) + varlen);
 
@@ -229,7 +181,7 @@ void send_radiotap_monitor_packets(
 	varlen += padding_len;
 
 	/* tsf */
-	tmp64 = timestamp;
+	tmp64 = cpu2le64(timestamp);
 	NdisMoveMemory(pos, &tmp64, 8);
 	pos += 8;
 	varlen += 8;
@@ -440,7 +392,7 @@ void send_radiotap_monitor_packets(
 #endif /* DOT11_VHT_AC */
 
 	pOSPkt->dev = pOSPkt->dev;
-	pOSPkt->mac_header = pOSPkt->data;
+	SET_OS_PKT_MAC_HEADER(pOSPkt);
 	pOSPkt->pkt_type = PACKET_OTHERHOST;
 	pOSPkt->protocol = __constant_htons(ETH_P_80211_RAW);
 	pOSPkt->ip_summed = CHECKSUM_NONE;

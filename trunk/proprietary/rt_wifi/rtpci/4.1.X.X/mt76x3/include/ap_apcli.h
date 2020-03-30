@@ -38,12 +38,8 @@
 #define ASSOC_TIMEOUT	300         /* unit: msec */
 /*#define JOIN_TIMEOUT	2000        // unit: msec // not used in Ap-client mode, remove it */
 #define PROBE_TIMEOUT	1000        /* unit: msec */
-
-#ifdef APCLI_CONNECTION_TRIAL
-#define TRIAL_TIMEOUT	400	/* unit: msec */
-#endif /* APCLI_CONNECTION_TRIAL */
-
 #define OPENWEP_ERRPKT_MAX_COUNT  	  3
+#define APCLI_WAIT_TIMEOUT RTMPMsecsToJiffies(300)
   
 #define APCLI_ROOT_BSSID_GET(pAd, wcid) ((pAd)->MacTab.Content[(wcid)].Addr)
 
@@ -104,7 +100,11 @@ BOOLEAN ApCliValidateRSNIE(
 	IN RTMP_ADAPTER *pAd, 
 	IN PEID_STRUCT pEid_ptr,
 	IN USHORT eid_len,
-	IN USHORT idx);
+	IN USHORT idx
+#ifdef APCLI_OWE_SUPPORT
+	, IN UCHAR Privacy
+#endif
+);
 
 
 VOID ApCli_Remove(
@@ -113,9 +113,7 @@ VOID ApCli_Remove(
 VOID RT28xx_ApCli_Close(
 	IN PRTMP_ADAPTER 	pAd);
 
-BOOLEAN ApCli_StatsGet(
-	RTMP_ADAPTER *pAd,
-	RT_CMD_STATS64 *pStats);
+
 
 INT ApCliIfLookUp(
 	IN PRTMP_ADAPTER pAd,
@@ -236,20 +234,8 @@ BOOLEAN APCliInstallSharedKey(
 	IN	UCHAR			DefaultKeyIdx,
 	IN  MAC_TABLE_ENTRY *pEntry);
 
-#ifdef APCLI_SUPPORT
-VOID	ApCliRTMPReportMicError(
-	IN	PRTMP_ADAPTER	pAd, 
-	IN UCHAR unicastKey,
-	IN	INT		ifIndex);
-
-VOID   ApCliWpaDisassocApAndBlockAssoc(
-	IN  PVOID SystemSpecific1, 
-        IN  PVOID FunctionContext, 
-	IN  PVOID SystemSpecific2, 
-	IN  PVOID SystemSpecific3);
-#endif/*APCLI_SUPPORT*/
-
 VOID ApCliUpdateMlmeRate(RTMP_ADAPTER *pAd, USHORT ifIndex);
+
 
 VOID APCli_Init(
 	IN RTMP_ADAPTER *pAd,
@@ -266,19 +252,13 @@ INT AsicSetMacAddrExt(RTMP_ADAPTER *pAd, BOOLEAN enable);
 #endif /* MAC_REPEATER_SUPPORT */
 
 #ifdef APCLI_AUTO_CONNECT_SUPPORT
-BOOLEAN ApCliSetIfState(
-	IN PRTMP_ADAPTER pAd,
-	IN UCHAR ifIndex,
-	IN BOOLEAN state);
+extern INT Set_ApCli_Enable_Proc(
+    IN  PRTMP_ADAPTER pAd,
+    IN	RTMP_STRING *arg);
 
-BOOLEAN ApCliSetBssid(
-	IN PRTMP_ADAPTER pAd,
-	IN UCHAR ifIndex,
-	IN UCHAR *Bssid);
-
-BOOLEAN ApCliAutoConnectStart(
-	IN PRTMP_ADAPTER pAd,
-	IN UCHAR ifIndex);
+extern INT Set_ApCli_Bssid_Proc(
+    IN  PRTMP_ADAPTER pAd,
+    IN	RTMP_STRING *arg);
 
 BOOLEAN ApCliAutoConnectExec(
 	IN  PRTMP_ADAPTER   pAd);
@@ -291,26 +271,104 @@ BOOLEAN ApcliCompareAuthEncryp(
 	IN CIPHER_SUITE						WPA);
 
 VOID ApCliSwitchCandidateAP(
-	IN PRTMP_ADAPTER pAd,
-	IN UCHAR ifIndex);
+	IN PRTMP_ADAPTER pAd);
 #endif /* APCLI_AUTO_CONNECT_SUPPORT */
 VOID ApCliRxOpenWEPCheck(
 	IN RTMP_ADAPTER *pAd,
 	IN RX_BLK *pRxBlk,
 	IN BOOLEAN bSuccessPkt);
+#ifdef APCLI_DOT11W_PMF_SUPPORT
 #ifdef DOT11W_PMF_SUPPORT
 INT Set_ApCliPMFMFPC_Proc(
-	IN PRTMP_ADAPTER pAd, 
+	IN PRTMP_ADAPTER pAd,
 	IN	RTMP_STRING *arg);
 
 INT Set_ApCliPMFMFPR_Proc(
-	IN PRTMP_ADAPTER pAd, 
+	IN PRTMP_ADAPTER pAd,
 	IN	RTMP_STRING *arg);
 
 INT Set_ApCliPMFSHA256_Proc(
-	IN PRTMP_ADAPTER pAd, 
+	IN PRTMP_ADAPTER pAd,
 	IN	RTMP_STRING *arg);
 #endif /* DOT11W_PMF_SUPPORT */
+#endif /* APCLI_DOT11W_PMF_SUPPORT */
+#ifdef APCLI_SAE_SUPPORT
+INT set_apcli_sae_group_proc(
+	IN PRTMP_ADAPTER pAd,
+	IN RTMP_STRING *arg);
+#endif
+
+#ifdef APCLI_OWE_SUPPORT
+INT set_apcli_owe_group_proc(
+	IN PRTMP_ADAPTER pAd,
+	IN RTMP_STRING *arg);
+#endif
+
+#if defined(APCLI_SAE_SUPPORT) || defined(APCLI_OWE_SUPPORT)
+
+INT apcli_add_pmkid_cache(
+	IN	PRTMP_ADAPTER	pAd,
+	IN UCHAR *paddr,
+	IN UCHAR *pmkid,
+	IN UCHAR *pmk,
+	IN UINT8 pmk_len,
+	IN UINT8 if_index
+#ifdef MAC_REPEATER_SUPPORT
+	, IN UINT8 cli_idx
+#endif
+	);
+
+
+
+INT apcli_search_pmkid_cache(
+	IN	PRTMP_ADAPTER	pAd,
+	IN UCHAR *paddr,
+	IN UCHAR if_index
+#ifdef MAC_REPEATER_SUPPORT
+	, IN UINT8 cli_idx
+#endif
+	);
+
+
+
+VOID apcli_delete_pmkid_cache(
+	IN	PRTMP_ADAPTER	pAd,
+	IN UCHAR *paddr,
+	IN UCHAR if_index
+#ifdef MAC_REPEATER_SUPPORT
+	, IN UINT8 cli_idx
+#endif
+	);
+
+
+VOID apcli_delete_pmkid_cache_all(
+	IN	PRTMP_ADAPTER	pAd,
+	IN UCHAR if_index);
+
+INT set_apcli_del_pmkid_list(
+	IN PRTMP_ADAPTER pAd,
+	IN RTMP_STRING *arg);
+#endif
+
+#ifdef APCLI_OWE_SUPPORT
+
+VOID apcli_reset_owe_parameters(
+		IN	PRTMP_ADAPTER	pAd,
+		IN UCHAR if_index);
+
+#endif
+
+
 #endif /* APCLI_SUPPORT */
+
+#ifdef WH_EZ_SETUP
+void send_unicast_deauth_apcli(void *ad_obj, USHORT idx);
+
+VOID ApCliMlmeDeauthReqAction(
+	IN PRTMP_ADAPTER pAd,
+	IN MLME_QUEUE_ELEM *Elem); 
+
+#endif
+
 #endif /* _AP_APCLI_H_ */
 

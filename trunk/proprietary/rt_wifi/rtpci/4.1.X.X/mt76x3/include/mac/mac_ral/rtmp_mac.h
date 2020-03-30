@@ -38,6 +38,7 @@
 #include "mac/mac_ral/omac/ral_omac.h"
 #endif /* RTMP_MAC */
 
+#include "mac/mac_ral/rtmp_mac.h"
 #ifdef RTMP_MAC_PCI
 #include "mac/mac_ral/mac_pci.h"
 #endif /* RTMP_MAC_PCI */

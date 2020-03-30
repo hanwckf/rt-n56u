@@ -34,6 +34,7 @@
 
 #define AGG_ARCR			(WF_AGG_BASE + 0x010)	/* 0x21210 */
 #define INI_RATE1               (0x1 << 0)
+#define FB_SGI_DIS              (0x1 << 1)
 #define RTS_RATE_DOWN_TH_MASK	(0x1F << 8)
 #define RTS_RATE_DOWN_TH(p)		(((p) & 0x1F) << 8)
 #define RATE_DOWN_EXTRA_RATIO_MASK	(0x3 << 16)

@@ -34,7 +34,7 @@ VOID RalHandleRxPsPoll(RTMP_ADAPTER *pAd, UCHAR *pAddr, USHORT wcid, BOOLEAN isA
 { 
 	QUEUE_ENTRY *pQEntry;
 	MAC_TABLE_ENTRY *pMacEntry;
-	ULONG IrqFlags = 0;
+	unsigned long IrqFlags;
 	STA_TR_ENTRY *tr_entry;
 
 	/*
@@ -148,7 +148,7 @@ VOID RalHandleRxPsPoll(RTMP_ADAPTER *pAd, UCHAR *pAddr, USHORT wcid, BOOLEAN isA
 				in-used. We should consider "HardTransmt" this MPDU using MGMT 
 				queue or things like that.
 		*/
-		RTMPDeQueuePacket(pAd, FALSE, WMM_NUM_OF_AC, wcid, MAX_TX_PROCESS);
+		RTMPDeQueuePacket(pAd, FALSE, NUM_OF_TX_RING, wcid, MAX_TX_PROCESS);
 	}
 }
 

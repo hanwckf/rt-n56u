@@ -12,6 +12,7 @@ config MT_WIFI
 
 if MT_WIFI
 menu "WiFi Generic Feature Options"
+	
 config MULTI_INF_SUPPORT
 		bool
 		default y if !RT_FIRST_IF_NONE && !RT_SECOND_IF_NONE
@@ -49,6 +50,12 @@ config ICAP_SUPPORT
 	depends on MT_AP_SUPPORT
 	default y
 
+config SPECTRUM_SUPPORT
+	bool "Wifi Spectrum Support"
+	depends on WIFI_DRIVER
+	depends on MT_AP_SUPPORT
+	default y
+
 config BACKGROUND_SCAN_SUPPORT
 	bool "Background Scan Support"
 	depends on WIFI_DRIVER
@@ -63,7 +70,11 @@ config MT_DFS_SUPPORT
         bool "Dynamic Frequency Selection Support"	
         depends on WIFI_DRIVER
         default y
-
+config MTK_OFFCHANNEL_SCAN_FEATURE
+	bool "Channel Quality Monitor"
+	depends on MTK_WIFI_DRIVER
+	depends on MTK_MT_AP_SUPPORT
+	default n
 #config WFA_VHT_R2_PF
 #    bool "WFA VHT R2 Plugfest"
 #    depends on DOT11_VHT_AC
@@ -71,18 +82,19 @@ config MT_DFS_SUPPORT
 
 config HDR_TRANS_TX_SUPPORT
     bool "Tx Header Translation"
-    depends on CHIP_MT7615E
+    depends on CHIP_MT7615E || CHIP_MT7622 || CHIP_MT7663E
     default y
 
 config HDR_TRANS_RX_SUPPORT
     bool "Rx Header Translation"
-    depends on CHIP_MT7615E
+    depends on CHIP_MT7615E || CHIP_MT7622 || CHIP_MT7663E
     default y
 
 config DBDC_MODE
 	bool "dbdc mode support"
+	depends on CHIP_MT7615E
 	select MULTI_PROFILE_SUPPORT
-	select DEFAULT_5G_PROFILE
+#	select DEFAULT_5G_PROFILE
 	default y
 
 config MULTI_PROFILE_SUPPORT
@@ -93,7 +105,7 @@ config MULTI_PROFILE_SUPPORT
 config DEFAULT_5G_PROFILE
 	bool "5G default profile for DBDC"
 	depends on DBDC_MODE
-	default y
+	default n
 
 config WSC_INCLUDED
 	bool "WSC (WiFi Simple Config)"
@@ -118,6 +130,18 @@ config TXBF_SUPPORT
         depends on WIFI_DRIVER
         default y
 
+config FAST_NAT_SUPPORT
+       bool "Fast-NAT support"
+       depends on RA_HW_NAT_WIFI
+       default n
+
+config WHNAT_SUPPORT
+	tristate "Wifi Hardware NAT support"
+	depends on CHIP_MT7615E
+	depends on WLAN_HOOK
+	depends on FAST_NAT_SUPPORT
+	default n
+
 #config LLTD_SUPPORT
 #	bool "LLTD (Link Layer Topology Discovery Protocol)"
 #	depends on WIFI_DRIVER
@@ -135,11 +159,21 @@ config TXBF_SUPPORT
 #	depends on WIFI_DRIVER
 #	default n
 
-#config FTM_SUPPORT
-#	bool "FTM Support"
-#	depends on WIFI_DRIVER
-#	select PASSPOINT_R2
-#	default n
+config FTM_SUPPORT
+	bool "FTM Support"
+	depends on WIFI_DRIVER
+	select PASSPOINT_R2
+	default n
+
+config MBO_SUPPORT
+	bool "MBO Support"
+	depends on WIFI_DRIVER
+	select INTERWORKING
+	select WNM_SUPPORT
+	select DOT11K_RRM_SUPPORT
+	select DOT11R_FT_SUPPORT
+	select DOT11W_PMF_SUPPORT
+	default n
 
 #config CARRIER_DETECTION_SUPPORT
 #	bool "Carrier Detect"
@@ -204,10 +238,10 @@ config RTMP_FLASH_SUPPORT
 	depends on WIFI_DRIVER
 	default y
 
-#config PRE_CAL_TRX_SET1_SUPPORT
-#    bool "Pre-calibration TRX Set1 To Flash/BinFile Support"
-#    depends on WIFI_DRIVER
-#    default y
+config PRE_CAL_TRX_SET1_SUPPORT
+    bool "Calibration To Flash/BinFile Support"
+    depends on WIFI_DRIVER
+    default y
 
 config RLM_CAL_CACHE_SUPPORT
 	bool "RlmCalibrationCache Support"
@@ -215,15 +249,30 @@ config RLM_CAL_CACHE_SUPPORT
 	default y
 
 config PRE_CAL_TRX_SET2_SUPPORT
-	bool "Pre-calibration TRX Set2 Support"
+    bool "Pre-calibration to Flash Support"
+    depends on WIFI_DRIVER
+    default y
+
+config CAL_BIN_FILE_SUPPORT
+	bool "Calibration to BinFile Support"
 	depends on WIFI_DRIVER
-	default y	
-	
+	default y
+
 config RF_LOCKDOWN_SUPPORT
 	bool "RF Lockdown Support"
 	depends on WIFI_DRIVER
 	default n	
+
+config LINK_TEST_SUPPORT
+	bool "Link Test Support"
+	depends on WIFI_DRIVER
+	default y
 	
+config WIFI_EAP_FEATURE
+	bool "EAP Feature Support"
+	depends on WIFI_DRIVER
+	default y
+
 #config LED_CONTROL_SUPPORT
 #	bool "LED Support"
 #	depends on WIFI_DRIVER
@@ -258,10 +307,10 @@ config UAPSD
 	depends on MT_AP_SUPPORT || MT_STA_SUPPORT
 	default y
 
-#config TCP_RACK_SUPPORT
-#	bool "TCP Reduced ACK  support"
-#	depends on WIFI_DRIVER
-#	default n
+config TCP_RACK_SUPPORT
+	bool "TCP Reduced ACK  support"
+	depends on WIFI_DRIVER
+	default n
 
 #### PA_LNA_Type choice
 
@@ -381,9 +430,6 @@ menu "WiFi Operation Modes"
 		source "drivers/net/wireless/ralink/mt7615_ap/Kconfig"
     endif
 
-    #if WIFI_MODE_STA || WIFI_MODE_BOTH
-	#	source "drivers/net/wireless/mt_wifi_sta/Kconfig"
-    #endif
 endmenu	
 
 endif
@@ -410,6 +456,14 @@ if WIFI_MT_MAC
 		default n
 
 	config CHIP_MT7615E
+		bool
+		default n
+
+	config CHIP_MT7622
+		bool
+		default n
+
+	config CHIP_MT7663E
 		bool
 		default n
 endif

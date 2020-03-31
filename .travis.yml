@@ -5,6 +5,11 @@ language: c
 compiler:
     - gcc
 
+branches:
+    only:
+    - master
+    - /^v.*$/
+
 addons:
     apt:
       packages: [ fakeroot, p7zip-full, libtool-bin, gperf, texinfo, python-docutils, autopoint ]

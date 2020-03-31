@@ -1,7 +1,0 @@
-# Makefile for uClibc NPTL
-#
-# Copyright (C) 2009 Bernhard Reutner-Fischer <uclibc@uclibc.org>
-#
-# Licensed under the LGPL v2.1, see the file COPYING.LIB in this tarball.
-#
-

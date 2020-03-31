@@ -1,7 +1,0 @@
-# Copyright (C) 2016 Andes Technology, Inc.
-# Licensed under the LGPL v2.1, see the file COPYING.LIB in this tarball.
-
-CSRC-y := brk.c prctl.c mremap.c
-SSRC-y := setjmp.S __longjmp.S bsd-setjmp.S bsd-_setjmp.S clone.S vfork.S sysdep.S
-CSRC-$(UCLIBC_HAS_CONTEXT_FUNCS) += makecontext.c swapcontext.c
-SSRC-$(UCLIBC_HAS_CONTEXT_FUNCS) += getcontext.S setcontext.S

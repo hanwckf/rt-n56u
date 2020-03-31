@@ -1,5 +1,0 @@
-# Makefile for uClibc-ng
-# Licensed under the LGPL v2.1, see the file COPYING.LIB in this tarball.
-
-CSRC-y := __syscall_error.c
-SSRC-y := clone.S setjmp.S syscall.S __longjmp.S bsd-setjmp.S bsd-_setjmp.S vfork.S

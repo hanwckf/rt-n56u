@@ -1,8 +1,0 @@
-# Makefile for uClibc NPTL
-#
-# Copyright (C) 2005 Steven J. Hill <sjhill@uclibc.org>
-#
-# Licensed under the LGPL v2.1, see the file COPYING.LIB in this tarball.
-#
-
-CFLAGS-pthread_spin_lock.c += -D_GNU_SOURCE

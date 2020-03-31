@@ -1,7 +1,0 @@
-# Makefile for uClibc NPTL
-# Licensed under the LGPL v2.1, see the file COPYING.LIB in this tarball.
-
-libpthread_linux_arch_SSRC =
-libpthread_linux_arch_CSRC = pthread_once.c
-
-libc_linux_arch_CSRC = fork.c

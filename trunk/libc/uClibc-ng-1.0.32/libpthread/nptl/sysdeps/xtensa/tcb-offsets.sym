@@ -1,6 +1,0 @@
-#include <sysdep.h>
-#include <tls.h>
-
-TLS_PRE_TCB_SIZE	sizeof (struct pthread)
-MULTIPLE_THREADS_OFFSET	offsetof (struct pthread, header.multiple_threads)
-TID			offsetof (struct pthread, tid)

@@ -1,4 +1,0 @@
-# Makefile for uClibc-ng NPTL
-# Licensed under the LGPL v2.1, see the file COPYING.LIB in this tarball.
-
-libc_arch_a_CSRC = libc-tls.c

@@ -1,4 +1,0 @@
-libpthread_linux_arch_SSRC =
-libpthread_linux_arch_CSRC = pthread_once.c
-
-libc_linux_arch_CSRC = fork.c

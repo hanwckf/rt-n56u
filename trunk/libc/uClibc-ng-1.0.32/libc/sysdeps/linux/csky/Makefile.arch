@@ -1,6 +1,0 @@
-CSRC-y := clone.c __syscall_error.c cacheflush.c
-
-SSRC-y := __longjmp.S setjmp.S
-SSRC-y += libc-read_tp.S vfork.S csky_clone.S
-
-

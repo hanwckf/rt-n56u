@@ -13,13 +13,10 @@ include $(ARCH_CONFIG)
 
 DESTDIR=$(ROOTDIR)/stage
 
-LIBC_DIR = uClibc-ng-1.0.32
-
 all:
-	$(MAKE) -C $(LIBC_DIR) oldconfig || exit $$? ; \
-	if [ ! -f $(DESTDIR)/.installed_$(LIBC_DIR) ] ; then \
-		$(MAKE) -j$(HOST_NCPU) -C $(LIBC_DIR) PREFIX=$(DESTDIR) DEVEL_PREFIX=/ MULTILIB_DIR=lib install_runtime install_utils && \
-		touch $(DESTDIR)/.installed_$(LIBC_DIR) ; \
+	if [ ! -f $(DESTDIR)/.installed_uclibc ] ; then \
+		mkdir -p $(DESTDIR) ; \
+		touch $(DESTDIR)/.installed_uclibc ; \
 	fi
 
 %_only:
@@ -32,16 +29,13 @@ all:
 	$(MAKE) -C $(@:_clean=) clean
 
 romfs:
-	$(STRIP) $(DESTDIR)/bin/ldd ; \
-	$(STRIP) $(DESTDIR)/sbin/ldconfig ; \
-	cp -fP $(DESTDIR)/bin/ldd $(ROMFSDIR)/bin ; \
-	cp -fP $(DESTDIR)/lib/libuClibc*.so* $(ROMFSDIR)/lib ; \
-	cp -fP $(DESTDIR)/lib/libc.so.0 $(ROMFSDIR)/lib ; \
-	cp -fP $(DESTDIR)/lib/ld-uClibc*.so* $(ROMFSDIR)/lib ; \
+	$(ROMFSINST) -p +x $(CONFIG_CROSS_COMPILER_ROOT)/mipsel-linux-uclibc/sysroot/usr/bin/ldd /bin/ldd ; \
+	cp -fP $(CONFIG_CROSS_COMPILER_ROOT)/mipsel-linux-uclibc/sysroot/lib/libuClibc*.so* $(ROMFSDIR)/lib ; \
+	cp -fP $(CONFIG_CROSS_COMPILER_ROOT)/mipsel-linux-uclibc/sysroot/lib/libc.so.0 $(ROMFSDIR)/lib ; \
+	cp -fP $(CONFIG_CROSS_COMPILER_ROOT)/mipsel-linux-uclibc/sysroot/lib/ld-uClibc*.so* $(ROMFSDIR)/lib ; \
 	cp -fP $(CONFIG_CROSS_COMPILER_ROOT)/mipsel-linux-uclibc/sysroot/lib/libgcc_s.so.* $(ROMFSDIR)/lib ; \
-	cp -fP $(CONFIG_CROSS_COMPILER_ROOT)/mipsel-linux-uclibc/sysroot/lib/libthread_db*.so* $(ROMFSDIR)/lib ; \
-	chmod +x $(ROMFSDIR)/lib/libuClibc*.so
+	cp -fP $(CONFIG_CROSS_COMPILER_ROOT)/mipsel-linux-uclibc/sysroot/lib/libthread_db*.so* $(ROMFSDIR)/lib
 
 clean:
-	rm -f $(DESTDIR)/.installed_$(LIBC_DIR)
-	$(MAKE) -C $(LIBC_DIR) distclean
+	rm -f $(DESTDIR)/.installed_uclibc
+

@@ -1,1 +1,0 @@
-/* strrchr is in strchr.S */

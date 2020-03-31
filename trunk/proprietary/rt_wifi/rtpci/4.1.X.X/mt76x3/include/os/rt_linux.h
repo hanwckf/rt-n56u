@@ -165,7 +165,7 @@ typedef struct usb_ctrlrequest devctrlrequest;
 #endif
 
 
-#define AP_DRIVER_VERSION			"4.0.1.0rev2.P3"
+#define AP_DRIVER_VERSION			"4.1.2.0_20190222"
 #ifdef MULTIPLE_CARD_SUPPORT
 #define CARD_INFO_PATH			"/etc/Wireless/RT2860AP/RT2860APCard.dat"
 #endif /* MULTIPLE_CARD_SUPPORT */

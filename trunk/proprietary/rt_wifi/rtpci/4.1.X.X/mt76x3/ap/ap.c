@@ -2491,7 +2491,7 @@ VOID MacTableMaintenance(RTMP_ADAPTER *pAd)
 				}
 				else {
 #endif				
-					MacTableDeleteEntry(pAd, pEntry->Aid, pEntry->Addr);
+					MacTableDeleteEntry(pAd, pEntry->wcid, pEntry->Addr);
 #ifdef WH_EZ_SETUP
 				}
 #endif

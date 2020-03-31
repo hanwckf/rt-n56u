@@ -141,6 +141,7 @@ INT rt28xx_ap_ioctl(struct net_device *net_dev, struct ifreq *rq, int cmd)
 
 	wrq->u.data.pointer = wrqin->u.data.pointer;
 	wrq->u.data.length = wrqin->u.data.length;
+	wrq->u.data.flags = wrqin->u.data.flags;
 	org_len = wrq->u.data.length;
 
 	pIoctlConfig->Status = 0;

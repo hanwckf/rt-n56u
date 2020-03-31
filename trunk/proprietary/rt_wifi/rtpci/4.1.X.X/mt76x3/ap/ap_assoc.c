@@ -344,7 +344,7 @@ static USHORT update_associated_mac_entry(
 				pEntry->MaxHTPhyMode.field.MCS = 9;
 			} else if (ie_list->vht_cap.mcs_set.rx_mcs_map.mcs_ss1 == VHT_MCS_CAP_8) {
 				pEntry->MaxHTPhyMode.field.MCS = 8;
-			} else if (ie_list->vht_cap.mcs_set.rx_mcs_map.mcs_ss1 == VHT_MCS_CAP_8) {
+			} else if (ie_list->vht_cap.mcs_set.rx_mcs_map.mcs_ss1 == VHT_MCS_CAP_7) {
 				pEntry->MaxHTPhyMode.field.MCS = 7;
 			}
 			
@@ -2399,11 +2399,11 @@ SendAssocResponse:
 		PUCHAR pInfo;
 		UCHAR extInfoLen;
 		BOOLEAN bNeedAppendExtIE = FALSE;
-		EXT_CAP_INFO_ELEMENT extCapInfo;
+		EXT_CAP_INFO_ELEMENT extCapInfo = {0};
 
 		
 		extInfoLen = sizeof(EXT_CAP_INFO_ELEMENT);
-		NdisZeroMemory(&extCapInfo, extInfoLen);
+		//NdisZeroMemory(&extCapInfo, extInfoLen);
 
 #ifdef DOT11_N_SUPPORT
 #ifdef DOT11N_DRAFT3

@@ -170,7 +170,7 @@ VOID MlmeADDBAAction(RTMP_ADAPTER *pAd, MLME_QUEUE_ELEM *Elem)
 		Frame.Action = ADDBA_REQ;
 		Frame.BaParm.AMSDUSupported = 0;
 #ifdef WFA_VHT_PF
-		if (pAd->CommonCfg.DesiredHtPhy.AmsduEnable)
+		if (IS_VHT_STA(pEntry) && pAd->CommonCfg.DesiredHtPhy.AmsduEnable)
 			Frame.BaParm.AMSDUSupported = 1;
 #endif /* WFA_VHT_PF */
 		Frame.BaParm.BAPolicy = IMMED_BA;

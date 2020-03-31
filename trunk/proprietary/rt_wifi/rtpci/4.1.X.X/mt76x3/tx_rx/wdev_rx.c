@@ -495,6 +495,14 @@ if (1) {
 	else
 #endif /* HDR_TRANS_SUPPORT */
 
+	if (!data_len) {
+		/* release packet*/
+		/* avoid processing with null paiload packets - QCA61X4A bug */
+		RELEASE_NDIS_PACKET(pAd, pRxBlk->pRxPacket, NDIS_STATUS_FAILURE);
+		return;
+	}
+
+
 	RTMP_802_11_REMOVE_LLC_AND_CONVERT_TO_802_3(pRxBlk, Header802_3);
 	//hex_dump("802_3_hdr", (UCHAR *)Header802_3, LENGTH_802_3);
 

@@ -275,36 +275,6 @@ config MT7603E_UAPSD
 	depends on WIFI_DRIVER
 	default y
 
-#config MT7603E_EPA_ELNA
-#	bool "ePAeLNA"
-#	depends on WIFI_DRIVER
-#	default n
-
-choice
-        prompt "PA,LNA Type"
-        depends on MT7603E_RLT_WIFI
-
-        config MT7603E_IPA_ILNA
-        bool "iPAiLNA"
-
-        config MT7603E_IPA_ELNA
-        bool "iPAeLNA"
-
-        config MT7603E_EPA_ILNA
-        bool "ePAiLNA"
-
-        config MT7603E_EPA_ELNA
-        bool "ePAeLNA"
-endchoice
-
-config MT7603E_PA_LNA
-        string
-        depends on MT7603E_RLT_WIFI
-        default "iPAiLNA" if MT7603E_IPA_ILNA
-        default "iPAeLNA" if MT7603E_IPA_ELNA
-        default "ePAiLNA" if MT7603E_EPA_ILNA
-        default "ePAeLNA" if MT7603E_EPA_ELNA
-
 #
 # Section for chip architectures
 #

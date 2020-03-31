@@ -162,12 +162,12 @@ VOID UpdateChannelInfo(
 		pAd->pChannelInfo->suppChList[ch_index].BusyTime = (BusyTime * 100) / AUTO_CHANNEL_SEL_TIMEOUT;
 		pAd->pChannelInfo->ChannelScore[ch_index].Score = Score;
 		pAd->pChannelInfo->ChannelScore[ch_index].Channel = pAd->ChannelList[ch_index].Channel;
-		DBGPRINT(RT_DEBUG_ERROR, ("channel %d busytime %d\n",
+		DBGPRINT(RT_DEBUG_TRACE, ("channel %d busytime %d\n",
 			pAd->ChannelList[ch_index].Channel, pAd->pChannelInfo->chanbusytime[ch_index]));
 #endif
 	}
 	else
-		DBGPRINT(RT_DEBUG_ERROR, ("pAd->pChannelInfo equal NULL.\n"));
+		DBGPRINT(RT_DEBUG_TRACE, ("pAd->pChannelInfo equal NULL.\n"));
 
 	return;
 }
@@ -410,7 +410,7 @@ static inline UCHAR SelectClearChannelCCA(
 			}
 		}
 
-		DBGPRINT(RT_DEBUG_ERROR, (" ch%d bssid=%02x:%02x:%02x:%02x:%02x:%02x\n",
+		DBGPRINT(RT_DEBUG_TRACE, (" ch%d bssid=%02x:%02x:%02x:%02x:%02x:%02x\n",
 			pBss->Channel, pBss->Bssid[0], pBss->Bssid[1], pBss->Bssid[2], pBss->Bssid[3], pBss->Bssid[4], pBss->Bssid[5]));
 	}
 			
@@ -937,7 +937,7 @@ VOID BuildAcsScanChList(RTMP_ADAPTER *pAd)
 	}
 	pAd->pChannelInfo->ChannelListNum = ChListNum;
 	for (channel_idx = 0; channel_idx < pAd->pChannelInfo->ChannelListNum; channel_idx++) {
-		DBGPRINT(RT_DEBUG_ERROR, ("[%s] Support channel: PrimCh=%d, CentCh=%d, DFS=%d, skip %d\n",
+		DBGPRINT(RT_DEBUG_TRACE, ("[%s] Support channel: PrimCh=%d, CentCh=%d, DFS=%d, skip %d\n",
 			__FUNCTION__, pAd->pChannelInfo->suppChList[channel_idx].Channel, pAd->pChannelInfo->suppChList[channel_idx].CenChannel,
 			pAd->pChannelInfo->suppChList[channel_idx].DfsReq, pAd->pChannelInfo->suppChList[ChListNum].SkipChannel));
 	}

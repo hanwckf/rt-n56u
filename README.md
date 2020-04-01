@@ -86,6 +86,8 @@ Contributors of this project are not responsible for what happens next.
 >- XY-C1 (USB)
 >- WR1200JS (USB)
 >- NEWIFI3 (USB)
+>- B70 (USB)
+>- A3004NS (USB)
 >- K2P
 >- K2P-USB (USB)
 >- JCG-836PRO (USB)
@@ -93,6 +95,7 @@ Contributors of this project are not responsible for what happens next.
 >- DIR-882 (USB)
 >- DIR-878
 >- MR2600 (USB)
+>- WDR7300
 
 ***
 

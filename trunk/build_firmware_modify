@@ -140,6 +140,9 @@ rm -rf "$dir_wifi_dst/mt76x2"
 rm -rf "$dir_wifi_dst/mt76x3"
 rm -rf "$dir_wifi_dst/mt7628"
 rm -rf "$dir_wifi_dst/mt7615"
+
+mkdir -p "$dir_wifi_dst/mt76x3"
+cp -f "$dir_wifi_src/rtpci/4.1.X.X/mt76x3/Kconfig" "$dir_wifi_dst/mt76x3/Kconfig"
 mkdir -p "$dir_wifi_dst/mt7615/embedded"
 cp -f "$dir_wifi_src/rtpci/4.4.2.1/mt7615/embedded/Kconfig" "$dir_wifi_dst/mt7615/embedded/Kconfig"
 

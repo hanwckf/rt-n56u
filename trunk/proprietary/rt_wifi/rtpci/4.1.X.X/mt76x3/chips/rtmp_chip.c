@@ -470,7 +470,7 @@ int RtmpChipOpsHook(VOID *pCB)
 
 	// TODO: shiang-7603
 	if (IS_MT7603(pAd) || IS_MT7628(pAd)) {
-		DBGPRINT(RT_DEBUG_OFF, ("%s(%d): Not support for HIF_MT yet!\n",
+		DBGPRINT(RT_DEBUG_TRACE, ("%s(%d): Not support for HIF_MT yet!\n",
 							__FUNCTION__, __LINE__));
 	}
 	else

@@ -122,6 +122,9 @@ sh dl_toolchain.sh
 
 # 或者，也可以从源码编译工具链，这需要一些时间：
 # Manjaro/ArchLinux 用户请使用gcc-8
+# sudo pacman -S gcc8
+# sudo ln -sf /usr/bin/gcc-8 /usr/local/bin/gcc
+# sudo ln -sf /usr/bin/g++-8 /usr/local/bin/g++
 ./clean_toolchain
 ./build_toolchain
 

@@ -247,6 +247,7 @@ function show_banner(L3){
 		bc += '<table class="" style="margin-top: 0px; margin-bottom: 5px" width="100%" border="0">\n';
 		bc += '  <tr>\n';
 		bc += '    <td width="60%" style="text-align: left"><b><#General_x_SystemTime_itemname#>:</b><span class="alert alert-info" style="margin-left: 10px; padding-top: 4px; padding-bottom: 4px;" id="system_time_log_area"></span></td>\n';
+		bc += '    <td style="text-align: lift"><input type="hidden" id="scrATop" value=""></td>\n';
 		bc += '    <td style="text-align: right"><button type="button" id="clearlog_btn" class="btn btn-info" style="min-width: 170px;" onclick="clearlog();"><#CTL_clear#></button></td>\n';
 		bc += '  </tr>\n';
 		bc += '</table>\n';
@@ -1221,10 +1222,18 @@ function setLogData(){
         if($j("#log_area").val() == ''){
             $j("#log_area").text(data);
             $j("#log_area").prop('scrollTop', $j("#log_area").prop('scrollHeight'));
+            $j("#scrATop").val($j("#log_area").prop('scrollTop'));
         }else{
+            var scrMaxTop = $j("#log_area").prop('scrollHeight')
             var scrTop = $j("#log_area").prop('scrollTop');
             $j("#log_area").text(data);
-            $j("#log_area").prop('scrollTop', scrTop);
+            var scrITop = scrMaxTop - scrTop;
+            if($j("#scrATop").val() == scrTop || scrITop < 629){
+                $j("#log_area").prop('scrollTop', scrMaxTop);
+                $j("#scrATop").val($j("#log_area").prop('scrollTop'));
+            }else{
+                $j("#log_area").prop('scrollTop', scrTop);
+            }
         }
     });
 }

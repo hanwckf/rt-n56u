@@ -1,0 +1,55 @@
+#
+# For a description of the syntax of this configuration file,
+# see extra/config/Kconfig-language.txt
+#
+
+config TARGET_ARCH
+	string
+	default "mips"
+
+config FORCE_OPTIONS_FOR_ARCH
+	bool
+	default y
+	select ARCH_ANY_ENDIAN
+	select ARCH_HAS_UCONTEXT
+	select ARCH_HAS_DEPRECATED_SYSCALLS
+
+choice
+	prompt "Target ABI"
+	default CONFIG_MIPS_O32_ABI
+	help
+	  This is the ABI you wish to build use.  Choose either O32, N32
+	  or N64.
+
+config CONFIG_MIPS_O32_ABI
+	bool "O32 ABI"
+
+config CONFIG_MIPS_N32_ABI
+	bool "N32 ABI"
+
+config CONFIG_MIPS_N64_ABI
+	bool "N64 ABI"
+
+endchoice
+
+choice
+	prompt "Target NAN Encoding"
+	default CONFIG_MIPS_NAN_LEGACY
+	help
+	  This is the NAN Encoding you want to use.  Chose either Legacy
+	  or 2008.
+
+config CONFIG_MIPS_NAN_LEGACY
+	bool "LEGACY"
+
+config CONFIG_MIPS_NAN_2008
+	bool "2008"
+
+endchoice
+
+config UCLIBC_USE_MIPS_PREFETCH
+	bool "Use MIPS prefetch optimization for memcpy/memset"
+	default y
+	help
+	  You get better performance when you use Prefetch.
+	  https://gcc.gnu.org/projects/prefetch.html#mips

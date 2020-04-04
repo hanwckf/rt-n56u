@@ -1,0 +1,100 @@
+Feeble attempt to document the horde of #defines we deal with.
+Editors, please make your descriptions short but informative.
+
+
+
+__BEGIN_DECLS, __END_DECLS
+    Defined to either empty or 'extern "C" {' and '}' if included by C++.
+
+__USE_GNU, __USE_BSD, __USE_XOPEN[2K], __USE_SVID, __USE_POSIX...
+    If defined, user program which included us requests compat additions
+    from relevant standard or Unix flavor. See features.h for full list.
+
+_LARGEFILE_SOURCE
+   If defined, headers will provide functions fseeko and ftello.
+_LARGEFILE64_SOURCE
+    If defined, headers will in addition to data types, constants and
+    functions named xxx (e.g. off_t, struct stat, F_SETLK, ftruncate())
+    supply data types, constants and functions named xxx64 (e.g. off64_t,
+    struct stat64, F_SETLK64, ftruncate64()) known as an interface for
+    64-bit file offsets.
+__USE_LARGEFILE[64]
+    Defined to 1 and used internally when built with _LARGEFILE[64]_SOURCE.
+    Undefined otherwise.
+
+_FILE_OFFSET_BITS
+    Select default filesystem interface. When defined as 64 the data types,
+    constants and functions mentioned in _LARGEFILE64_SOURCE as xxx are
+    aliased to the corresponding xxx64 data types, constants and functions.
+    _FILE_OFFSET_BITS=64 enables both __USE_LARGEFILE and __USE_LARGEFILE64.
+    This flag does not affect the way libc itself is built, it only affects
+    what declarations are provided to library user.
+__USE_FILE_OFFSET64
+    Defined to 1 and used internally when built with _FILE_OFFSET_BITS=64.
+    Undefined otherwise.
+
+__THROW
+    Function annotation "I do not throw anything".
+__NTH(func(params))
+    Function annotation "I do not throw anything".
+    Needed for situatuons when it's unclear on what side of "func(params)"
+    the "throw()" or "attribute((nothrow))" should eventually appear.
+    Messy, eh?
+
+return_type __REDIRECT(name, (params), alias)
+    declare alias to "name(params)"
+return_type __REDIRECT_NTH(name, (params), alias)
+    declare alias to "name(params) __THROW"
+
+__BIG_ENDIAN    4321
+__LITTLE_ENDIAN 1234
+    Should be always as shown. __PDP_ENDIAN is historic, ignore?
+__BYTE_ORDER, __FLOAT_WORD_ORDER
+    Should be defined to __BIG_ENDIAN or __LITTLE_ENDIAN.
+    Usage: "#if __BYTE_ORDER == __LITTLE_ENDIAN ..."
+    __USE_BSD adds versions without leading "__" for above four defines.
+_BIG_ENDIAN, __BIG_ENDIAN__
+_LITTLE_ENDIAN, __LITTLE_ENDIAN__
+    Defined (to what?) by gcc for some architectures to indicate endianness.
+    Seems that the fact of defined-ness is an indicator, not the value.
+
+__USE_EXTERN_INLINES
+    If defined, headers will supply some function as inlines.
+    uclibc itself is built with this option off and provides
+    out-of-line version of every inlined function in case user program
+    calls it instead of using an inline.
+_EXTERN_INLINE
+    If not defined by user prior to #include, will be defined to
+    "extern inline" or equivalent. IOW, if user defines it prior
+    #include, it replaces "extern __inline" string in inline definitions
+    (those enabled by __USE_EXTERN_INLINES) with something else.
+    A few uclibc .c files use it to create non-inlined functions
+    by defining it to "".
+__extern_inline
+    Defined to "extern inline", modulo gcc/C standard deviations.
+    Can't be used by user to play tricks as with _EXTERN_INLINE.
+
+internal_function
+    Used to modify function's calling convention, if "standard" one
+    is suboptimal. Examples:
+	int func(params) internal_function;
+	int internal_function func(params) { body }
+
+_LIBC
+    Defined only at libc build time. It is physically deleted
+from the headers (using unifdef tool) in installed headers ("make install").
+
+__UCLIBC_XXX
+    uclibc-internal and uclibc-specific defines. In particular:
+__UCLIBC_HAS_XXX__, __UCLIBC_HAVE_XXX__
+    __UCLIBC_HAS_XXX__ are booleans (defined/undefined), defined in
+    uClibc_config.h and generated from uclibc .config file.
+    __UCLIBC_HAVE_XXX__ are booleans from bits/uClibc_arch_features.h
+    (there are more __UCLIBC_XXX defines there)
+
+__LDBL_COMPAT
+    Never defined, TODO: remove?
+
+__SSP_ALL__
+    All functions, even small ones, have stack smashing protection
+    prologue enabled.

@@ -1,0 +1,29 @@
+#
+# For a description of the syntax of this configuration file,
+# see extra/config/Kconfig-language.txt
+#
+
+config TARGET_ARCH
+	default "c6x"
+
+config FORCE_OPTIONS_FOR_ARCH
+	bool
+	default y
+	select ARCH_ANY_ENDIAN
+	select ARCH_HAS_NO_MMU
+
+choice
+	prompt "Target Processor Type"
+	default CONFIG_GENERIC_C6X
+
+config CONFIG_GENERIC_C6X
+	bool "Generic C6X DSP"
+
+config CONFIG_TMS320C64X
+	bool "TMS320C64X"
+
+config CONFIG_TMS320C64XPLUS
+	bool "TMS320C64X+"
+
+endchoice
+

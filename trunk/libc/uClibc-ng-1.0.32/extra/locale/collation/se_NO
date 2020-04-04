@@ -1,0 +1,149 @@
+copy "iso14651_t1"
+
+collating-symbol <aring>
+collating-symbol <atilde>
+collating-symbol <acircumflex>
+collating-symbol <agrave>
+collating-symbol <aacute>
+collating-symbol <noae>
+collating-symbol <svae>
+collating-symbol <ccedilla>
+collating-symbol <ccaron>
+collating-symbol <ezh>
+collating-symbol <ezhcaron>
+collating-symbol <dstroke>
+collating-symbol <eth>
+collating-symbol <fhook>
+collating-symbol <gcaron>
+collating-symbol <gstroke>
+collating-symbol <kcaron>
+collating-symbol <otilde>
+collating-symbol <oe>
+collating-symbol <ssharp>
+collating-symbol <scaron>
+collating-symbol <oumlaut>
+collating-symbol <oslash>
+
+% 
+reorder-after <CAP>
+<MIN>
+
+reorder-after <a>
+<agrave>
+<atilde>
+<aacute>
+<acircumflex>
+
+
+reorder-after <c>
+<ccaron>
+<ccedilla>
+<ezh>
+<ezhcaron>
+
+reorder-after <d>
+<dstroke>
+<eth>
+
+reorder-after <f>
+<fhook>
+
+reorder-after <g>
+<gcaron>
+<gstroke>
+
+reorder-after <k>
+<kcaron>
+
+reorder-after <s>
+<ssharp>
+<scaron>
+
+reorder-after <th>
+<noae>
+<oslash>
+<aring>
+<svae>
+<oumlaut>
+
+reorder-after <U0061>
+<U00E0> <agrave>;<GRA>;<MIN>;IGNORE % 201 à
+<U00E1> <aacute>;<ACA>;<MIN>;IGNORE % 200 á
+<U00E2> <acircumflex>;<CIR>;<MIN>;IGNORE % 202 â
+<U00E3> <atilde>;<TIL>;<MIN>;IGNORE % 203 ã
+
+reorder-after <U0041>
+<U00C0> <agrave>;<GRA>;<CAP>;IGNORE % 321 À
+<U00C1> <aacute>;<ACA>;<CAP>;IGNORE % 320 Á
+<U00C2> <acircumflex>;<CIR>;<CAP>;IGNORE % 322 Â
+<U00C3> <atilde>;<TIL>;<CAP>;IGNORE % 323 Ã
+
+reorder-after <U0063>
+<U00E7> <ccedilla>;<CDI>;<MIN>;IGNORE % 212 ç
+<U010D> <ccaron>;<CAR>;<MIN>;IGNORE % 215 <c<>
+
+reorder-after <U0043>
+<U00C7> <ccedilla>;<CDI>;<CAP>;IGNORE % 332 Ç
+<U010C> <ccaron>;<CAR>;<CAP>;IGNORE % 335 <C<>
+
+reorder-after <U010B>
+<U0292> <ezh>;<BAS>;<MIN>;IGNORE % ezh
+<U01EF> <ezhcaron>;<CAR>;<MIN>;IGNORE % ezh caron
+
+reorder-after <U010A>
+<U01B7> <ezh>;<BAS>;<MIN>;IGNORE % EZH
+<U01EE> <ezhcaron>;<CAR>;<CAP>;IGNORE % EZH caron
+
+reorder-after <U0064>
+<U00F0> <eth>;<PCL>;<MIN>;IGNORE % 218 ð
+<U0111> <dstroke>;<OBL>;<MIN>;IGNORE % 220 <d//>
+
+reorder-after <U0044>
+<U00D0> <eth>;<PCL>;<CAP>;IGNORE % 338 Ð
+<U0110> <dstroke>;<OBL>;<CAP>;IGNORE % 340 <D//>
+
+reorder-after <U0066>
+<U0192> <fhook>;<BAS>;<MIN>;IGNORE % f WITH HOOK
+
+reorder-after <U0123>
+<U01E7> <gcaron>;<CAR>;<MIN>;IGNORE % gcaron
+<U01E5> <gstroke>;<OBL>;<MIN>;IGNORE % gstroke
+
+reorder-after <U0122>
+<U01E6> <gcaron>;<CAR>;<MIN>;IGNORE % Gcaron
+<U01E4> <gstroke>;<OBL>;<MIN>;IGNORE % Gstroke
+
+reorder-after <U0137>
+<U01E9> <kcaron>;<CAR>;<MIN>;IGNORE % kcaron
+reorder-after <U0136>
+<U01E8> <kcaron>;<CAR>;<CAP>;IGNORE % Kcaron
+
+reorder-after <U0053>
+<U00DF> <ssharp>;"<LIG><LIG>";"<MIN><MIN>";IGNORE % ß
+<U0161> <scaron>;<CAR>;<MIN>;IGNORE % 288 <s<>
+<U0160> <scaron>;<CAR>;<CAP>;IGNORE % 405 <S<>
+
+
+reorder-after <U00E3>
+<U00E4> <svae>;<REU>;<MIN>;IGNORE % ä
+<U00E5> <aring>;<RNE>;<MIN>;IGNORE % å
+<U00E6> <noae>;<LIG>;<MIN>;IGNORE % æ
+reorder-after <U00F5>
+<U00F6> <oumlaut>;<REU>;<MIN>;IGNORE % ö
+<U00F8> <oslash>;<OBL>;<MIN>;IGNORE % ø
+
+reorder-after <U00C3>
+<U00C4> <svae>;<REU>;<CAP>;IGNORE % Ä
+<U00C5> <aring>;<RNE>;<CAP>;IGNORE % Å
+<U00C6> <noae>;<LIG>;<CAP>;IGNORE % Æ
+reorder-after <U00D5>
+<U00D6> <oumlaut>;<REU>;<CAP>;IGNORE % Ö
+<U00D8> <oslash>;<OBL>;<CAP>;IGNORE % Ø
+
+% ü/Ü is treated like y/Y but is sorted after the latter
+reorder-after <U00FB>
+<U00FC> <y>;<REU>;<MIN>;IGNORE % ü
+reorder-after <U00DB>
+<U00DC> <y>;<REU>;<CAP>;IGNORE % Ü
+reorder-end
+

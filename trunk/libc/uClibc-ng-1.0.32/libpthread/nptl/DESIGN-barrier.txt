@@ -1,0 +1,44 @@
+Barriers pseudocode
+===================
+
+    int pthread_barrier_wait(barrier_t *barrier);
+
+struct barrier_t {
+
+   unsigned int lock:
+         - internal mutex
+
+   unsigned int left;
+         - current barrier count, # of threads still needed.
+
+   unsigned int init_count;
+         - number of threads needed for the barrier to continue.
+
+   unsigned int curr_event;
+         - generation count
+}
+
+pthread_barrier_wait(barrier_t *barrier)
+{
+  unsigned int event;
+  result = 0;
+
+  lll_lock(barrier->lock);
+  if (!--barrier->left) {
+    barrier->curr_event++;
+    futex_wake(&barrier->curr_event, INT_MAX)
+
+    result = BARRIER_SERIAL_THREAD;
+  } else {
+    event = barrier->curr_event;
+    lll_unlock(barrier->lock);
+    do {
+      futex_wait(&barrier->curr_event, event)
+    } while (event == barrier->curr_event);
+  }
+
+  if (atomic_increment_val (barrier->left) == barrier->init_count)
+    lll_unlock(barrier->lock);
+
+  return result;
+}

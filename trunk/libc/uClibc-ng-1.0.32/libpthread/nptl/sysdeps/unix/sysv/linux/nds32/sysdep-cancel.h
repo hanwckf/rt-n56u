@@ -1,0 +1,44 @@
+/*
+ * Copyright (C) 2016-2017 Andes Technology, Inc.
+ * Licensed under the LGPL v2.1, see the file COPYING.LIB in this tarball.
+ */
+
+/* Copyright (C) 2003-2013 Free Software Foundation, Inc.
+
+   The GNU C Library is free software; you can redistribute it and/or
+   modify it under the terms of the GNU Lesser General Public
+   License as published by the Free Software Foundation; either
+   version 2.1 of the License, or (at your option) any later version.
+
+   The GNU C Library is distributed in the hope that it will be useful,
+   but WITHOUT ANY WARRANTY; without even the implied warranty of
+   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+   Lesser General Public License for more details.
+
+   You should have received a copy of the GNU Lesser General Public
+   License along with the GNU C Library.  If not, see
+   <http://www.gnu.org/licenses/>.  */
+
+#include <sysdep.h>
+#include <tls.h>
+#ifndef __ASSEMBLER__
+# include <pthreadP.h>
+#endif
+
+#if !defined NOT_IN_libc || defined IS_IN_libpthread || defined IS_IN_librt
+
+# define SINGLE_THREAD_P __builtin_expect (THREAD_GETMEM (THREAD_SELF,       \
+				           header.multiple_threads) == 0, 1)
+
+#else
+
+/* For rtld, et cetera.  */
+# define SINGLE_THREAD_P 1
+# define NO_CANCELLATION 1
+
+#endif
+
+#define RTLD_SINGLE_THREAD_P \
+  __builtin_expect (THREAD_GETMEM (THREAD_SELF, \
+				   header.multiple_threads) == 0, 1)
+

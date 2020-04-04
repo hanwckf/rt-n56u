@@ -1,0 +1,12 @@
+#include <stddef.h>
+#include <sched.h>
+#include <bits/pthreadtypes.h>
+#include "internaltypes.h"
+
+--
+
+CURR_EVENT		offsetof (struct pthread_barrier, curr_event)
+MUTEX			offsetof (struct pthread_barrier, lock)
+LEFT			offsetof (struct pthread_barrier, left)
+INIT_COUNT		offsetof (struct pthread_barrier, init_count)
+PRIVATE			offsetof (struct pthread_barrier, private)

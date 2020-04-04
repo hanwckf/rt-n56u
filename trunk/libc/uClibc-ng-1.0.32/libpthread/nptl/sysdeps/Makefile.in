@@ -1,0 +1,29 @@
+# Makefile for uClibc
+#
+# Copyright (C) 2000-2005 Erik Andersen <andersen@uclibc.org>
+#
+# Licensed under the LGPL v2.1, see the file COPYING.LIB in this tarball.
+#
+
+subdirs += libpthread/nptl/sysdeps
+
+define arch_and_subarch
+	$(addprefix $(1)/,$(notdir $(2))) $(if $(TARGET_SUBARCH),$(addprefix $(1)/$(TARGET_SUBARCH)/,$(notdir $(2))))
+endef
+define base_and_arch_and_subarch
+	$(addprefix $(1)/,$(notdir $(2))) $(addprefix $(1)/$(TARGET_ARCH)/,$(notdir $(2))) $(if $(TARGET_SUBARCH),$(addprefix $(1)/$(TARGET_ARCH)/$(TARGET_SUBARCH)/,$(notdir $(2))))
+endef
+
+include $(libpthread_DIR)/sysdeps/unix/sysv/linux/Makefile.commonarch
+include $(libpthread_DIR)/sysdeps/generic/Makefile.in
+include $(libpthread_DIR)/sysdeps/Makefile.commonarch
+libpthread_generic_libc_a_CSRC := $(filter-out $(notdir $(libc_arch_a_OBJS:.o=.c)),$(libpthread_generic_libc_a_CSRC))
+libpthread_arch_OBJS := $(filter-out $(call base_and_arch_and_subarch,$(libpthread_arch_OUT),$(libpthread_linux_OBJS)),$(libpthread_arch_OBJS))
+include $(libpthread_DIR)/sysdeps/pthread/Makefile.in
+libpthread_pthread_CSRC := $(filter-out $(notdir $(libpthread_linux_OBJS:.o=.c) $(libpthread_arch_OBJS:.o=.c)),$(libpthread_pthread_CSRC))
+libpthread-so-y := $(filter-out $(call base_and_arch_and_subarch,$(libpthread_pthread_OUT),$(libpthread_linux_OBJS) $(libpthread_arch_OBJS)),$(libpthread-so-y))
+
+libpthread_OBJS := $(libpthread_linux_OBJS) $(libpthread_arch_OBJS) $(libpthread_pthread_COBJ)
+libpthread_libc_OBJS = $(libc_linux_OBJS) $(libc_arch_OBJS)
+libpthread_libc_a_OBJS = $(libc_arch_a_OBJS) $(libpthread_generic_libc_a_OBJS)
+libpthread_librt_OBJS = $(librt_linux_OBJS) $(librt_arch_OBJS)

@@ -1,0 +1,32 @@
+#
+# For a description of the syntax of this configuration file,
+# see extra/config/Kconfig-language.txt
+#
+
+config TARGET_ARCH
+	string
+	default "nds32"
+
+config FORCE_OPTIONS_FOR_ARCH
+	bool
+	default y
+	select ARCH_ANY_ENDIAN
+	select ARCH_HAS_DEPRECATED_SYSCALLS
+	select ARCH_HAS_MMU
+	select ARCH_HAS_UCONTEXT
+
+choice
+	prompt "MMU Page Size"
+	default CONFIG_NDS32_PAGE_SIZE_4K
+
+config CONFIG_NDS32_PAGE_SIZE_4K
+	bool "4KB"
+	help
+	  Use 4k pagesize.
+
+config CONFIG_NDS32_PAGE_SIZE_8K
+	bool "8KB"
+	help
+	  Use 8k pagesize.
+
+endchoice

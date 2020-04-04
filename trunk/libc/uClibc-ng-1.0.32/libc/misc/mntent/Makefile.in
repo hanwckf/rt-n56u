@@ -1,0 +1,23 @@
+# Makefile for uClibc
+#
+# Copyright (C) 2000-2008 Erik Andersen <andersen@uclibc.org>
+#
+# Licensed under the LGPL v2.1, see the file COPYING.LIB in this tarball.
+#
+
+subdirs += libc/misc/mntent
+
+CSRC-y := mntent.c
+
+MISC_MNTENT_DIR := $(top_srcdir)libc/misc/mntent
+MISC_MNTENT_OUT := $(top_builddir)libc/misc/mntent
+
+MISC_MNTENT_SRC := $(patsubst %.c,$(MISC_MNTENT_DIR)/%.c,$(CSRC-y))
+MISC_MNTENT_OBJ := $(patsubst %.c,$(MISC_MNTENT_OUT)/%.o,$(CSRC-y))
+
+libc-y += $(MISC_MNTENT_OBJ)
+
+objclean-y += CLEAN_libc/misc/mntent
+
+CLEAN_libc/misc/mntent:
+	$(do_rm) $(addprefix $(MISC_MNTENT_OUT)/*., o os)

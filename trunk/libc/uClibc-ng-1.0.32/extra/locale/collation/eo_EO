@@ -1,0 +1,49 @@
+copy "iso14651_t1"
+
+collating-symbol <ccirc>
+collating-symbol <gcirc>
+collating-symbol <hcirc>
+collating-symbol <jcirc>
+collating-symbol <scirc>
+collating-symbol <ubreve>
+
+reorder-after <c>
+<ccirc>
+reorder-after <g>
+<gcirc>
+reorder-after <h>
+<hcirc>
+reorder-after <j>
+<jcirc>
+reorder-after <s>
+<scirc>
+reorder-after <u>
+<ubreve>
+
+reorder-after <U0043>
+<U0108> <ccirc>;<CIR>;<CAP>;IGNORE % Ĉ
+reorder-after <U0063>
+<U0109> <ccirc>;<CIR>;<MIN>;IGNORE % ĉ
+reorder-after <U0047>
+<U011C> <gcirc>;<CIR>;<CAP>;IGNORE % Ĝ
+reorder-after <U0067>
+<U011D> <gcirc>;<CIR>;<MIN>;IGNORE % ĝ
+reorder-after <U0048>
+<U0124> <hcirc>;<CIR>;<CAP>;IGNORE % Ĥ
+reorder-after <U0068>
+<U0125> <hcirc>;<CIR>;<MIN>;IGNORE % ĥ
+reorder-after <U004A>
+<U0134> <jcirc>;<CIR>;<CAP>;IGNORE % Ĵ
+reorder-after <U006A>
+<U0135> <jcirc>;<CIR>;<MIN>;IGNORE % ĵ
+reorder-after <U0053>
+<U015C> <scirc>;<CIR>;<CAP>;IGNORE % Ŝ
+reorder-after <U0073>
+<U015D> <scirc>;<CIR>;<MIN>;IGNORE % ŝ
+reorder-after <U0055>
+<U016C> <ubreve>;<BRE>;<CAP>;IGNORE % Ŭ
+reorder-after <U0075>
+<U016D> <ubreve>;<BRE>;<MIN>;IGNORE % ŭ
+
+reorder-end
+

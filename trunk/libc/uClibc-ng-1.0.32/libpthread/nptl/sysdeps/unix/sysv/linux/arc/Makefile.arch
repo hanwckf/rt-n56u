@@ -1,0 +1,11 @@
+# Makefile for uClibc NPTL
+#
+# Copyright (C) 2006 Steven J. Hill <sjhill@uclibc.org>
+#
+# Licensed under the LGPL v2.1 or later, see the file COPYING.LIB in this tarball.
+#
+
+libpthread_linux_arch_SSRC =
+libpthread_linux_arch_CSRC = pthread_once.c
+
+libc_linux_arch_CSRC = fork.c

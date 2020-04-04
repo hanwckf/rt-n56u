@@ -1,0 +1,71 @@
+Warning!!!   Warning!!!   Warning!!!   Warning!!!   Warning!!!   Warning!!!
+Warning!!!   Warning!!!   Warning!!!   Warning!!!   Warning!!!   Warning!!!
+
+The programs in this directory are strictly cut-and-paste hack jobs to
+extract the data I needed from glibc's locale database.  I'm ashamed to
+even let them into the light of day, and I consider them complete garbage.
+
+However, they are currently necessary to build the data needed for the
+locale support I've implemented, so I'm forced to include them here.
+
+NOTE: While its possible to use this stuff for native != target arch,
+you'll have to either write a converter to account for endianess and
+struct padding issues, or run the mmap file generator on your target
+arch.  But all these programs will be rewritten at some point.
+
+All that being said, LC_CTYPE support has been added and supports the
+ctype.h and wctype.h function.  Also, LC_TIME, LC_MONETARY, LC_NUMERIC,
+and LC_MESSAGES are supported wrt SUSv3.  localeconv() works in both
+real and stub locale modes.  nl_langinfo() currently only works with
+real locales enabled.  That will be fixed though.  wc->mb unsupported
+char replacement and basic translit support is on the way as well.
+Finally, some basic 8-bit codeset LC_COLLATE support should be in place
+in the next week or two (similar to what was in the previous locale
+implementation).
+
+Also, as one can probably guess, I'm working towards having the locale
+data accessed via a shared mmap.  That will allow non-mmu platforms
+to use this without the current bloat.
+
+Currently, the output of size for my locale_data.o file is
+  text    data     bss     dec     hex filename
+  59072       4       0   59076    e6c4 extra/locale/locale_data.o
+which is for the C locale (automatic of course) + all codesets in
+charmaps/ and all 268 locales in LOCALES.  I estimate that the
+translit support for those 8-bit codesets will add another 7-10k.
+
+One difference of note is that the special case upper/lower mappings
+in the turkish locale are currently not implemented.  That will be
+fixed.
+
+Manuel
+
+Warning!!!   Warning!!!   Warning!!!   Warning!!!   Warning!!!   Warning!!!
+Warning!!!   Warning!!!   Warning!!!   Warning!!!   Warning!!!   Warning!!!
+
+
+1) In the toplevel dir,  'make headers'.
+
+2) Create a codesets.txt file in this dir listing the codesets you want
+   to support.  The easiest way to do this is to edit the output of
+	'find ./charmaps -name "*.pairs" > codesets.txt'.
+   NOTE: UTF-8 support is always included if you build with wide chars enabled.
+   NOTE: The files in charmaps/ were created from glibc's charmap files
+         with the awk script at the end of this file.  You can add others
+	 but only single byte codesets are supported.
+
+3) Create a locales.txt file to select the locales you want to support.
+   You can copy and edit the LOCALES file for example.  Other locales could
+   added provided you've included the appropriate codesets in step 2.
+   NOTE: You have to have the approprite locales available for glibc!
+
+4) Run make here.
+
+5) Continue building uClibc from the toplevel dir.
+
+
+
+
+Script used to generate the charmaps/*.pairs files:
+
+cat $1 | awk 'BEGIN { i = 0 } ; { if ($1 == "CHARMAP") i=1 ; else if ($1 == "END") i=0 ; else if (i==1) { sub("/","0",$2) ; sub("<U","0x",$1) ; sub(">","",$1) ; print "{", $2, ",", $1, "}," } }'

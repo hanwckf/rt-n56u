@@ -1,0 +1,71 @@
+# Makefile.help for uClibc
+#
+# Copyright (C) 2008 Erik Andersen <andersen@uclibc.org>
+#
+# Licensed under the LGPL v2.1, see the file COPYING.LIB in this tarball.
+#
+
+help:
+	@echo 'Cleaning:'
+	@echo '  clean			- delete temporary object files'
+	@echo '  realclean		- delete temporary object files, including dependencies'
+	@echo '  distclean		- delete all non-source files (including .config)'
+	@echo
+	@echo 'Build:'
+	@echo '  all			- libraries and generated headers'
+	@echo '  pregen		- generate headers'
+	@echo '  startfiles		- build startfiles (crt)'
+	@echo '  utils			- build target utilities'
+	@echo '			  (ldd, ldconfig, locale, iconv)'
+	@echo '  hostutils		- build host utilities (see utils)'
+	@echo
+	@echo 'Configuration:'
+	@echo '  allnoconfig		- disable all symbols in .config'
+	@echo '  allyesconfig		- enable all symbols in .config (see defconfig)'
+	@echo '  config		- text based configurator (of last resort)'
+	@echo '  defconfig		- set .config to arch-specific defaults'
+	@echo '  menuconfig		- interactive curses-based configurator'
+	@echo '  oldconfig		- resolve any unresolved symbols in .config'
+	@echo '  silentoldconfig	- resolve any unresolved symbols in .config, silently'
+	@echo '  savedefconfig		- Save current config (minimal config)'
+	@echo '  randconfig		- generate a random .config'
+	@$(if $(arch-defconfigs), \
+		@echo ''; \
+		echo 'Architecture specific configs ($(ARCH))'; \
+		$(foreach c, $(arch-defconfigs), \
+			printf "  %-21s - Build for %s\\n" $(c) $(subst _defconfig,,$(c));) \
+	)
+	@echo
+	@echo 'Installation:'
+	@echo '  install		- install both the runtime and the headers'
+	@echo '  install_runtime	- install the libraries'
+	@echo '  install_dev		- install all headers and static libs'
+	@echo '  install_startfiles	- install startfiles (crt)'
+	@echo '  install_headers	- install headers excluding generated ones'
+	@echo '  install_utils		- install target utilities'
+	@echo '  install_hostutils	- install host utilities'
+	@echo
+	@echo 'Development:'
+	@echo '  release		- create a distribution tarball'
+	@echo
+	@echo 'Environment variables:'
+	@echo '  O=<abspath>		- Use <abspath> as object directory'
+	@echo '  V="" 			- Quiet build (default)'
+	@echo '  V=1			- Very verbose build (show full commands)'
+	@echo '  V=2			- Brief build (show defines, ld flags)'
+	@echo '  CROSS_COMPILE=		- Override CROSS_COMPILER_PREFIX from .config'
+	@echo '  ARCH= 		- Use given arch for config targets'
+	@echo '  SHELL=		- Shell to use for make'
+	@echo '  BUILD_CFLAGS=		- extra CFLAGS for compiling host binaries'
+	@echo '  BUILD_LDFLAGS=		- extra LDFLAGS for linking host binaries'
+	@echo '  CONFIG_SHELL=		- Shell to use for menuconfig'
+	@echo
+	@echo '  PREFIX=		- Prepended prefix'
+	@echo '  RUNTIME_PREFIX=	- Prefix for the libdir containing shared objects'
+	@echo '			  (usually "/")'
+	@echo '  DEVEL_PREFIX=		- Prefix for the libdir containing static objects'
+	@echo '			  and the include dir (usually "/usr")'
+	@echo '  MULTILIB_DIR=		- Directory component for libraries (default "lib").'
+	@echo '  UCLIBC_EXTRA_CFLAGS	- extra CFLAGS for compiling uClibc'
+	@echo '  UCLIBC_EXTRA_CPPFLAGS	- extra CPPFLAGS for compiling uClibc'
+

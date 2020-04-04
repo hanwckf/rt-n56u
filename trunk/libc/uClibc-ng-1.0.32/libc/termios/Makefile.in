@@ -1,0 +1,21 @@
+# Makefile for uClibc
+#
+# Copyright (C) 2000-2008 Erik Andersen <andersen@uclibc.org>
+#
+# Licensed under the LGPL v2.1, see the file COPYING.LIB in this tarball.
+#
+
+subdirs += libc/termios
+
+TERMIOS_DIR := $(top_srcdir)libc/termios
+TERMIOS_OUT := $(top_builddir)libc/termios
+
+TERMIOS_SRC := $(wildcard $(TERMIOS_DIR)/*.c)
+TERMIOS_OBJ := $(patsubst $(TERMIOS_DIR)/%.c,$(TERMIOS_OUT)/%.o,$(TERMIOS_SRC))
+
+libc-y += $(TERMIOS_OBJ)
+
+objclean-y += CLEAN_libc/termios
+
+CLEAN_libc/termios:
+	$(do_rm) $(addprefix $(TERMIOS_OUT)/*., o os)

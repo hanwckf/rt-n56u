@@ -1,0 +1,340 @@
+# Makefile for uClibc
+#
+# Copyright (C) 2000-2008 Erik Andersen <andersen@uclibc.org>
+#
+# Licensed under the LGPL v2.1, see the file COPYING.LIB in this tarball.
+#
+# The routines included in this math library are derived from the
+# math library for Apple's MacOS X/Darwin math library, which was
+# itself swiped from FreeBSD.  The original copyright information
+# is as follows:
+#
+#     Copyright (C) 1993 by Sun Microsystems, Inc. All rights reserved.
+#
+#     Developed at SunPro, a Sun Microsystems, Inc. business.
+#     Permission to use, copy, modify, and distribute this
+#     software is freely granted, provided that this notice
+#     is preserved.
+#
+# It has been ported to work with uClibc and generally behave
+# by Erik Andersen <andersen@codepoet.org>
+#
+
+subdirs += libm libm/$(TARGET_ARCH)
+
+CFLAGS-libm := -DNOT_IN_libc -DIS_IN_libm $(SSP_ALL_CFLAGS)
+
+libm_DIR:=$(top_srcdir)libm
+libm_OUT:=$(top_builddir)libm
+
+libm_ARCH_DIR:=$(libm_DIR)/$(TARGET_ARCH)
+libm_ARCH_OUT:=$(libm_OUT)/$(TARGET_ARCH)
+
+ifneq ($(TARGET_SUBARCH),)
+libm_SUBARCH_DIR:=$(libm_DIR)/$(TARGET_ARCH)/$(TARGET_SUBARCH)
+libm_SUBARCH_OUT:=$(libm_OUT)/$(TARGET_ARCH)/$(TARGET_SUBARCH)
+endif
+
+ifeq ($(UCLIBC_HAS_FPU),y)
+ifeq ($(DO_C99_MATH),y)
+-include $(libm_ARCH_DIR)/Makefile.arch
+-include $(libm_SUBARCH_DIR)/Makefile.arch
+endif
+endif
+
+FL_MSRC := float_wrappers.c
+LD_MSRC := ldouble_wrappers.c
+
+ifeq ($(DO_C99_MATH),y)
+libm_CSRC := \
+	e_acos.c e_acosh.c e_asin.c e_atan2.c e_atanh.c e_cosh.c \
+	e_exp.c e_exp10.c e_fmod.c e_hypot.c \
+	e_lgamma_r.c e_log.c e_log2.c e_log10.c \
+	e_pow.c e_remainder.c e_rem_pio2.c e_scalb.c e_sinh.c \
+	e_sqrt.c k_cos.c k_rem_pio2.c k_sin.c k_tan.c \
+	s_asinh.c s_atan.c s_cbrt.c s_ceil.c s_copysign.c s_cos.c \
+	s_erf.c s_expm1.c s_fabs.c s_finite.c s_floor.c s_frexp.c \
+	s_ilogb.c s_ldexp.c s_lib_version.c s_lrint.c s_lround.c s_llround.c \
+	s_log1p.c s_logb.c s_modf.c s_nextafter.c \
+	s_nextafterf.c s_round.c \
+	s_rint.c s_scalbn.c s_signgam.c s_significand.c s_sin.c s_tan.c \
+	s_tanh.c s_trunc.c \
+	w_cabs.c \
+	nan.c carg.c s_llrint.c \
+	s_fpclassify.c s_fpclassifyf.c s_signbit.c s_signbitf.c \
+	s_isnan.c s_isnanf.c s_isinf.c s_isinff.c s_finitef.c \
+	s_fdim.c s_fma.c s_fmax.c s_fmin.c \
+	s_remquo.c \
+	cexp.c sincos.c	\
+	w_acos.c w_acosf.c w_acosl.c \
+	w_asin.c w_asinf.c w_asinl.c \
+	w_atan2.c w_atan2f.c w_atan2l.c \
+	w_hypot.c w_hypotf.c w_hypotl.c \
+	w_cosh.c w_coshf.c w_coshl.c \
+	w_exp.c w_expf.c w_expl.c \
+	w_exp2.c w_exp2f.c w_exp2l.c \
+	w_exp10.c w_exp10f.c w_exp10l.c \
+	w_lgamma_r.c w_lgammaf_r.c w_lgammal_r.c \
+	w_lgamma.c w_lgammaf.c w_lgammal.c \
+	w_tgamma.c w_tgammaf.c w_tgammal.c \
+	w_log.c w_logf.c w_logl.c \
+	w_log2.c w_log2f.c w_log2l.c \
+	w_log10.c w_log10f.c w_log10l.c \
+	w_pow.c w_powf.c w_powl.c \
+	w_sinh.c w_sinhf.c w_sinhl.c \
+	w_fmod.c w_fmodf.c w_fmodl.c \
+	w_sqrt.c w_sqrtf.c w_sqrtl.c \
+	w_remainder.c w_remainderf.c w_remainderl.c \
+	w_acosh.c w_acoshf.c w_acoshl.c \
+	w_atanh.c w_atanhf.c w_atanhl.c \
+	w_scalb.c w_scalbf.c w_scalbl.c 
+
+ifeq ($(UCLIBC_HAS_FENV),y)
+	libm_CSRC += k_standard.c k_standardf.c k_standardl.c
+endif
+
+FL_MOBJ := \
+	acosf.o \
+	acoshf.o \
+	asinf.o \
+	asinhf.o \
+	atan2f.o \
+	atanf.o \
+	atanhf.o \
+	cargf.o \
+	cbrtf.o \
+	ceilf.o \
+	copysignf.o \
+	cosf.o \
+	coshf.o \
+	erfcf.o \
+	erff.o \
+	exp2f.o \
+	expf.o \
+	expm1f.o \
+	fabsf.o \
+	fdimf.o \
+	floorf.o \
+	fmaf.o \
+	fmaxf.o \
+	fminf.o \
+	fmodf.o \
+	frexpf.o \
+	gammaf.o \
+	hypotf.o \
+	ilogbf.o \
+	ldexpf.o \
+	lgammaf.o \
+	llrintf.o \
+	llroundf.o \
+	log10f.o \
+	log1pf.o \
+	log2f.o \
+	logbf.o \
+	logf.o \
+	lrintf.o \
+	lroundf.o \
+	modff.o \
+	nearbyintf.o \
+	nexttowardf.o \
+	powf.o \
+	remainderf.o \
+	remquof.o \
+	rintf.o \
+	roundf.o \
+	scalblnf.o \
+	scalbnf.o \
+	significandf.o \
+	sinf.o \
+	sinhf.o \
+	sqrtf.o \
+	tanf.o \
+	tanhf.o \
+	tgammaf.o \
+	truncf.o \
+
+ifeq ($(UCLIBC_SUSV3_LEGACY),y)
+FL_MOBJ += scalbf.o
+endif
+
+# Do not (yet?) implement the float variants of bessel functions
+ifeq (not-yet-implemented-$(DO_XSI_MATH),y)
+FL_MOBJ += \
+	j0f.o \
+	j1f.o \
+	jnf.o \
+	y0f.o \
+	y1f.o \
+	ynf.o
+endif
+
+LD_MOBJ := \
+	__finitel.o \
+	__fpclassifyl.o \
+	__isinfl.o \
+	__isnanl.o \
+	__signbitl.o \
+	acoshl.o \
+	acosl.o \
+	asinhl.o \
+	asinl.o \
+	atan2l.o \
+	atanhl.o \
+	atanl.o \
+	cargl.o \
+	cbrtl.o \
+	ceill.o \
+	copysignl.o \
+	coshl.o \
+	cosl.o \
+	erfcl.o \
+	erfl.o \
+	exp2l.o \
+	expl.o \
+	expm1l.o \
+	fabsl.o \
+	fdiml.o \
+	floorl.o \
+	fmal.o \
+	fmaxl.o \
+	fminl.o \
+	fmodl.o \
+	frexpl.o \
+	gammal.o \
+	hypotl.o \
+	ilogbl.o \
+	ldexpl.o \
+	lgammal.o \
+	llrintl.o \
+	llroundl.o \
+	log10l.o \
+	log1pl.o \
+	log2l.o \
+	logbl.o \
+	logl.o \
+	lrintl.o \
+	lroundl.o \
+	modfl.o \
+	nearbyintl.o \
+	nextafterl.o \
+	nexttowardl.o \
+	powl.o \
+	remainderl.o \
+	remquol.o \
+	rintl.o \
+	roundl.o \
+	scalblnl.o \
+	scalbnl.o \
+	significandl.o \
+	sinhl.o \
+	sinl.o \
+	sqrtl.o \
+	tanhl.o \
+	tanl.o \
+	tgammal.o \
+	truncl.o \
+
+# Do not (yet?) implement the long double variants of bessel functions
+ifeq (not-yet-implemented-$(DO_XSI_MATH),y)
+LD_MOBJ += \
+	j0l.o \
+	j1l.o \
+	jnl.o \
+	y0l.o \
+	y1l.o \
+	ynl.o
+endif
+
+else
+
+# This list of math functions was taken from POSIX/IEEE 1003.1b-1993
+libm_CSRC := \
+	s_atan.c s_ceil.c s_cos.c \
+	s_fabs.c s_floor.c s_frexp.c \
+	s_ldexp.c s_modf.c s_sin.c \
+	s_tan.c s_tanh.c \
+	s_expm1.c s_scalbn.c s_copysign.c e_acos.c e_asin.c e_atan2.c \
+	k_cos.c e_cosh.c e_exp.c e_fmod.c e_log.c e_log10.c e_pow.c \
+	k_sin.c e_sinh.c e_sqrt.c k_tan.c e_rem_pio2.c k_rem_pio2.c \
+	s_finite.c e_exp10.c 	\
+	matherr_wrapers.c k_standart.c 
+
+# We'll add sqrtf to avoid problems with libstdc++
+FL_MOBJ := sqrtf.o
+endif
+
+ifeq ($(DO_XSI_MATH),y)
+libm_CSRC += \
+	e_j0.c e_j1.c e_jn.c \
+	w_j0.c w_j0f.c w_j0l.c \
+	w_j1.c w_j1f.c w_j1l.c \
+	w_jn.c w_jnf.c w_jnl.c
+endif
+
+# assume that arch specific versions are provided as single sources/objects
+ifeq ($(UCLIBC_HAS_FPU),y)
+ifeq ($(DO_C99_MATH),y)
+ifneq ($(strip $(libm_ARCH_OBJS)),)
+
+# remove generic sources, if arch specific version is present
+ifneq ($(strip $(libm_ARCH_SRC)),)
+libm_CSRC := $(filter-out $(notdir $(libm_ARCH_SRC)),$(libm_CSRC))
+endif
+
+# remove generic objects built from multi-sources, if arch specific version is present
+FL_MOBJ := $(filter-out $(notdir $(libm_ARCH_OBJS)),$(FL_MOBJ))
+LD_MOBJ := $(filter-out $(notdir $(libm_ARCH_OBJS)),$(LD_MOBJ))
+
+# we also try to remove % if s_% is in arch specific subdir
+FL_MOBJ := $(filter-out $(patsubst s_%.o,%.o,$(notdir $(libm_ARCH_OBJS))),$(FL_MOBJ))
+LD_MOBJ := $(filter-out $(patsubst s_%.o,%.o,$(notdir $(libm_ARCH_OBJS))),$(LD_MOBJ))
+endif
+endif
+endif
+
+libm_SRC := $(patsubst %.c,$(libm_DIR)/%.c,$(libm_CSRC))
+libm_OBJ := $(patsubst $(libm_DIR)/%.c,$(libm_OUT)/%.o,$(libm_SRC))
+
+ifeq ($(strip $(UCLIBC_HAS_LONG_DOUBLE_MATH)),y)
+libm_MSRC_LD := $(libm_DIR)/$(LD_MSRC)
+libm_MOBJ_LD := $(patsubst %.o,$(libm_OUT)/%.o,$(LD_MOBJ))
+endif
+libm_MSRC_FL := $(libm_DIR)/$(FL_MSRC)
+libm_MOBJ_FL := $(patsubst %.o,$(libm_OUT)/%.o,$(FL_MOBJ))
+
+libm_OBJS := $(libm_OBJ) $(libm_MOBJ_FL) $(libm_MOBJ_LD)
+
+ifeq ($(DOPIC),y)
+libm-a-y += $(libm_OBJS:.o=.os)
+else
+libm-a-y += $(libm_OBJS)
+endif
+libm-so-y += $(libm_OBJS:.o=.os)
+
+objclean-y += CLEAN_libm
+
+$(libm_OUT)/libm.oS: $(libm_SRC) $(libm_MSRC_FL) $(libm_MSRC_LD) $(libm_ARCH_SRC)
+	$(Q)$(RM) $@
+	$(compile-m)
+
+$(libm_MOBJ_FL): $(libm_MSRC_FL)
+	$(compile.m)
+
+$(libm_MOBJ_LD): $(libm_MSRC_LD)
+	$(compile.m)
+
+$(libm_MOBJ_FL:.o=.os): $(libm_MSRC_FL)
+	$(compile.m)
+
+$(libm_MOBJ_LD:.o=.os): $(libm_MSRC_LD)
+	$(compile.m)
+
+# spare us from adding a gazillion dummy two-liner files
+$(libm_MOBJ_FL:.o=.i): $(libm_MSRC_FL)
+	$(compile.mi)
+
+$(libm_MOBJ_LD:.o=.i): $(libm_MSRC_LD)
+	$(compile.mi)
+
+CLEAN_libm:
+	$(do_rm) $(addprefix $(libm_OUT)/,$(foreach e, o os oS a,$(foreach d, *. */*. */*/*.,$(d)$(e))))

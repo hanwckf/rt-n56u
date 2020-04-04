@@ -1,0 +1,22 @@
+# Copyright (C) 2008 STMicroelectronics Ltd.
+# Author: Carmelo Amoroso <carmelo.amoroso@st.com>
+
+# Licensed under the LGPL v2.1, see the file COPYING.LIB in this tarball.
+#
+
+subdirs += libc/misc/elf
+
+libc_a_CSRC = dl-support.c dl-core.c dl-iterate-phdr.c
+CFLAGS-dl-iterate-phdr.c=-D_GNU_SOURCE -I$(top_srcdir)ldso/ldso/$(TARGET_ARCH) -I$(top_srcdir)ldso/include
+CFLAGS-dl-core.c=-I$(top_srcdir)ldso/ldso/$(TARGET_ARCH) -I$(top_srcdir)ldso/include
+
+MISC_ELF_OUT:=$(top_builddir)libc/misc/elf
+MISC_ELF_OBJ:=$(patsubst %.c,$(MISC_ELF_OUT)/%.o,$(libc_a_CSRC))
+
+libc-static-y += $(MISC_ELF_OBJ)
+libc-shared-y += $(MISC_ELF_OUT)/dl-iterate-phdr.oS
+
+objclean-y+= CLEAN_libc/misc/elf
+
+CLEAN_libc/misc/elf:
+	$(do_rm) $(addprefix $(MISC_ELF_OUT)/*., o os oS)

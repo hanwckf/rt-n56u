@@ -1,0 +1,30 @@
+# Makefile for uClibc-ng
+# Licensed under the LGPL v2.1, see the file COPYING.LIB in this tarball.
+
+subdirs += libintl
+
+CFLAGS-libintl := -DNOT_IN_libc -DIS_IN_libintl $(SSP_ALL_CFLAGS)
+
+libintl_DIR := $(top_srcdir)libintl
+libintl_OUT := $(top_builddir)libintl
+
+libintl_SRC-$(UCLIBC_HAS_LIBINTL) := libintl.c
+
+libintl_SRC := $(addprefix $(libintl_DIR)/,$(libintl_SRC-y))
+libintl_OBJ := $(patsubst $(libintl_DIR)/%.c,$(libintl_OUT)/%.o,$(libintl_SRC))
+
+ifeq ($(DOPIC),y)
+libintl-a-y := $(libintl_OBJ:.o=.os)
+else
+libintl-a-y := $(libintl_OBJ)
+endif
+libintl-so-y := $(libintl_OBJ:.o=.os)
+
+objclean-y += CLEAN_libintl
+
+$(libintl_OUT)/libintl.oS: $(libintl_SRC)
+	$(Q)$(RM) $@
+	$(compile-m)
+
+CLEAN_libintl:
+	$(do_rm) $(addprefix $(libintl_OUT)/*., o os oS a)

@@ -1,0 +1,12 @@
+# Makefile for uClibc
+#
+# Copyright (C) 2013 Imagination Technologies Ltd.
+#
+# Licensed under the LGPL v2.1 or later, see the file COPYING.LIB in this tarball.
+#
+
+CSRC-y := brk.c syscall.c metag.c __syscall_error.c
+
+SSRC-y := _longjmp.S clone.S setjmp.S vfork.S
+
+SSRC-$(UCLIBC_HAS_THREADS_NATIVE) += libc-metag_load_tp.S

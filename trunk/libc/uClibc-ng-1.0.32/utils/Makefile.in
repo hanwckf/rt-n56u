@@ -1,0 +1,158 @@
+# Makefile for uClibc
+#
+# Copyright (C) 2000-2009 Erik Andersen <andersen@uclibc.org>
+#
+# Licensed under the LGPL v2.1, see the file COPYING.LIB in this tarball.
+
+subdirs += utils
+
+# "make utils" flags
+
+CFLAGS-utils := \
+    $(SSP_ALL_CFLAGS) \
+    -I$(top_srcdir)ldso/ldso/$(TARGET_ARCH) \
+    -I$(top_srcdir)ldso/include \
+    -DUCLIBC_RUNTIME_PREFIX=\"$(RUNTIME_PREFIX)\" \
+    -DUCLIBC_LDSO=\"$(UCLIBC_LDSO)\" \
+    -I$(top_srcdir)/$(KERNEL_HEADERS) \
+    -DNOT_IN_libc \
+    -B$(top_builddir)lib \
+    -Wl,-rpath-link,$(top_builddir)lib
+
+ifeq ($(UCLIBC_BUILD_PIE),y)
+CFLAGS-utils-shared := $(PIEFLAG) $(LDPIEFLAG)
+else
+CFLAGS-utils-shared :=
+endif
+
+ifneq ($(HAVE_SHARED),y)
+CFLAGS-utils += -static
+endif
+
+CFLAGS-ldconfig := -DBUILDING_LINKAGE
+ifeq ($(UCLIBC_STATIC_LDCONFIG),y)
+CFLAGS-ldconfig += -static
+else
+CFLAGS-ldconfig += $(CFLAGS-utils-shared)
+endif
+
+CFLAGS-ldd := $(CFLAGS-utils-shared) -DBUILDING_LINKAGE
+
+# Need CFLAGS-utils explicitly, because the source file is not located in utils
+CFLAGS-iconv := $(CFLAGS-utils) \
+    $(CFLAGS-utils-shared) \
+    -I$(top_srcdir)libc/misc/wchar
+
+CFLAGS-locale := $(CFLAGS-utils)
+CFLAGS-getconf :=$(CFLAGS-utils) \
+	-DGETCONF_DIR='"$(CURDIR)"'
+
+# "make hostutils" flags
+
+UTILS_CONFIG_FLAGS-y :=
+UTILS_CONFIG_FLAGS-$(LDSO_CACHE_SUPPORT) += -D__LDSO_CACHE_SUPPORT__
+UTILS_CONFIG_FLAGS-$(LDSO_LDD_SUPPORT) += -D__LDSO_LDD_SUPPORT__
+UTILS_CONFIG_FLAGS-$(LDSO_STANDALONE_SUPPORT) += -D__LDSO_STANDALONE_SUPPORT__
+
+BUILD_CFLAGS-utils := \
+    -DUCLIBC_RUNTIME_PREFIX=\"$(RUNTIME_PREFIX)\" \
+    -DUCLIBC_LDSO=\"$(UCLIBC_LDSO)\" \
+    -DARCH_NATIVE_BIT=$(ARCH_NATIVE_BIT) \
+    $(UTILS_CONFIG_FLAGS-y)
+BUILD_CFLAGS-ldconfig.host := \
+				-DBUILDING_LINKAGE \
+				-I$(top_srcdir)ldso/ldso/$(TARGET_ARCH) \
+				-I$(top_srcdir)ldso/include
+BUILD_CFLAGS-ldd.host      := \
+				-DBUILDING_LINKAGE \
+				-I$(top_srcdir)ldso/ldso/$(TARGET_ARCH) \
+				-I$(top_srcdir)ldso/include \
+				-include $(top_srcdir)include/elf.h
+BUILD_CFLAGS-iconv.host    := \
+			-include $(top_builddir)extra/locale/c8tables.h \
+			-I$(top_srcdir)libc/misc/wchar -DL_iconv_main
+
+BUILD_CFLAGS-getconf.host  := \
+				-DGETCONF_DIR='"$(CURDIR)"'
+
+# Rules
+
+utils_DIR := $(top_srcdir)utils
+utils_OUT := $(top_builddir)utils
+
+DEPS-ldconfig := $(utils_DIR)/chroot_realpath.c
+DEPS-ldconfig.host := $(DEPS-ldconfig)
+DEPS-msgfmt := $(utils_DIR)/poparser.c $(utils_DIR)/StringEscape.c
+DEPS-msgfmt.host := $(DEPS-msgfmt)
+DEPS-msgmerge := $(utils_DIR)/poparser.c $(utils_DIR)/StringEscape.c
+DEPS-msgmerge.host := $(DEPS-msgmerge)
+
+utils_OBJ := getconf
+ifeq ($(HAVE_SHARED),y)
+utils_OBJ += ldconfig ldd
+endif
+
+utils_LOCALE_OBJ :=
+ifeq ($(UCLIBC_HAS_LOCALE),y)
+utils_OBJ += iconv
+utils_LOCALE_OBJ += $(utils_OUT)/locale
+endif
+
+ifeq ($(UCLIBC_HAS_LIBINTL)$(UCLIBC_HAS_LIBICONV),yy)
+utils_OBJ += msgfmt msgmerge
+endif
+
+utils_OBJ := $(patsubst %,$(utils_OUT)/%,$(utils_OBJ))
+
+hostutils_OBJ := $(patsubst %,%.host,$(utils_OBJ))
+
+utils: $(utils_OBJ) $(utils_LOCALE_OBJ)
+
+# NOTE: We build the utils AFTER we have a uClibc-targeted toolchain.
+
+$(utils_OBJ): $(utils_OUT)/% : $(utils_DIR)/%.c | $(libc)
+	$(compile.u)
+
+$(utils_OUT)/locale: $(top_srcdir)extra/locale/programs/locale.c | $(libc)
+	$(compile.u)
+
+hostutils: $(hostutils_OBJ)
+
+$(hostutils_OBJ): $(utils_OUT)/%.host : $(utils_DIR)/%.c
+	$(hcompile.u)
+
+
+install-y += utils_install
+
+# This installs both utils and hostutils, so doesn't depend on either.
+$(PREFIX)$(DEVEL_PREFIX)bin $(PREFIX)$(RUNTIME_PREFIX)sbin:
+	$(do_mkdir)
+
+utils_install: $(PREFIX)$(DEVEL_PREFIX)bin
+ifeq ($(HAVE_SHARED),y)
+utils_install: $(PREFIX)$(RUNTIME_PREFIX)sbin
+endif
+
+utils_install: $(addsuffix $(DOTHOST), $(utils_OBJ) $(utils_LOCALE_OBJ))
+	$(Q)$(INSTALL) -m 755 $(utils_OUT)/getconf$(DOTHOST) $(PREFIX)$(DEVEL_PREFIX)bin/getconf
+ifeq ($(HAVE_SHARED),y)
+	$(Q)$(INSTALL) -m 755 $(utils_OUT)/ldd$(DOTHOST) $(PREFIX)$(DEVEL_PREFIX)bin/ldd
+	$(Q)$(INSTALL) -m 755 $(utils_OUT)/ldconfig$(DOTHOST) $(PREFIX)$(RUNTIME_PREFIX)sbin/ldconfig
+endif
+ifeq ($(UCLIBC_HAS_LOCALE),y)
+	$(Q)$(INSTALL) -m 755 $(utils_OUT)/iconv$(DOTHOST) $(PREFIX)$(DEVEL_PREFIX)bin/iconv
+	$(Q)$(INSTALL) -m 755 $(utils_OUT)/locale$(DOTHOST) $(PREFIX)$(DEVEL_PREFIX)bin/locale
+endif
+ifeq ($(UCLIBC_HAS_LIBINTL)$(UCLIBC_HAS_LIBICONV),yy)
+	$(Q)$(INSTALL) -m 755 $(utils_OUT)/msgmerge$(DOTHOST) $(PREFIX)$(DEVEL_PREFIX)bin/msgmerge
+	$(Q)$(INSTALL) -m 755 $(utils_OUT)/msgfmt$(DOTHOST) $(PREFIX)$(DEVEL_PREFIX)bin/msgfmt
+	$(Q)$(INSTALL) -m 755 $(utils_OUT)/xgettext $(PREFIX)$(DEVEL_PREFIX)bin
+endif
+
+
+objclean-y += CLEAN_utils
+
+CLEAN_utils:
+	$(do_rm) $(addprefix $(utils_OUT)/, getconf iconv ldconfig ldd locale msgfmt msgmerge *.host)
+	$(Q)# This is a hack..
+	$(Q)$(RM) $(utils_OUT)/.*.dep

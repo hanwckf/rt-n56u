@@ -1,0 +1,63 @@
+# Makefile template to be included by sysdeps/linux/<ARCH>/Makefile.arch
+#
+# Copyright (C) 2000-2008 Erik Andersen <andersen@uclibc.org>
+#
+# Licensed under the LGPL v2.1, see the file COPYING.LIB in this tarball.
+#
+
+ARCH_DIR  := $(top_srcdir)libc/sysdeps/linux/$(TARGET_ARCH)
+ARCH_OUT  := $(top_builddir)libc/sysdeps/linux/$(TARGET_ARCH)
+
+ARCH_CSRC := $(addprefix $(ARCH_DIR)/,$(CSRC-y))
+ARCH_COBJ := $(addprefix $(ARCH_OUT)/,$(CSRC-y:.c=.o))
+ARCH_SSRC = $(addprefix $(ARCH_DIR)/,$(SSRC-y))
+ARCH_SOBJ = $(patsubst %.s,%.o,$(patsubst %.S,%.o,$(addprefix $(ARCH_OUT)/,$(SSRC-y))))
+
+ARCH_OBJS-y = $(ARCH_COBJ) $(ARCH_SOBJ)
+
+libc-y         += $(ARCH_OBJS-y)
+libc-nomulti-y += $(ARCH_SOBJ)
+objclean-y     += CLEAN_$(subst $(top_builddir),,$(ARCH_OUT))
+
+CFLAGS-OMIT-crt1.S := -D_LIBC_REENTRANT
+CFLAGS-OMIT-crti.S := -D_LIBC_REENTRANT
+CFLAGS-OMIT-crtn.S := -D_LIBC_REENTRANT
+CFLAGS-OMIT-crtreloc.c := -D_LIBC_REENTRANT
+CFLAGS-crti.S += $(PICFLAG)
+CFLAGS-crtn.S += $(PICFLAG)
+# Due to a "bug" in make these order_only prereqs inherit per-target flags.
+# Attempt to workaround this inconvenient behaviour:
+CFLAGS-OMIT-crt1.S += $(CFLAGS-rtld) -DIN_LIB=%
+CFLAGS-OMIT-crtreloc.c += $(CFLAGS-rtld) -DIN_LIB=%
+
+CLEAN_$(subst $(top_builddir),,$(ARCH_OUT)):
+	$(do_rm) $(addprefix $(ARCH_OUT)/*., o os oS) $(CTOR_TARGETS) $(CRTS)
+
+ifneq ($(ARCH_HEADERS),)
+
+ARCH_HEADERS_OUT := $(patsubst %,$(top_builddir)include/%,$(ARCH_HEADERS))
+
+$(ARCH_HEADERS_OUT):
+	$(do_ln) $(call rel_srcdir)libc/sysdeps/linux/$(TARGET_ARCH)/$(@F) $@
+
+headers-y += $(ARCH_HEADERS_OUT)
+headers_clean-y += HEADERCLEAN_$(subst $(top_builddir),,$(ARCH_OUT))
+HEADERCLEAN_$(subst $(top_builddir),,$(ARCH_OUT)):
+	$(do_rm) $(ARCH_HEADERS_OUT)
+endif
+
+$(ARCH_OUT)/ucontext_i.h: $(top_srcdir)extra/scripts/gen-as-const.awk
+$(ARCH_OUT)/ucontext_i.h: $(ARCH_DIR)/ucontext_i.sym
+	@$(disp_gen)
+	$(do_awk) $(top_srcdir)extra/scripts/gen-as-const.awk $< \
+	| $(CC) $(CFLAGS) -x c - -S -o - \
+	| $(SED) $(PTHREAD_GENERATE_MANGLE) > $@
+	@if test ! -s $@ ; then rm -f $@ ; false ; fi
+
+pregen-headers-$(UCLIBC_HAS_CONTEXT_FUNCS) += $(ARCH_OUT)/ucontext_i.h
+
+headers_clean-$(UCLIBC_HAS_CONTEXT_FUNCS) += \
+	HEADERCLEAN_$(subst $(top_builddir),,$(ARCH_OUT)/ucontext_i)
+
+HEADERCLEAN_$(subst $(top_builddir),,$(ARCH_OUT)/ucontext_i):
+	$(do_rm) $(addprefix $(ARCH_OUT)/ucontext_i., c h s)

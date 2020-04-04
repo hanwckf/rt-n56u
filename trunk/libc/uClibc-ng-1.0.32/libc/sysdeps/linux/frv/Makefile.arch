@@ -1,0 +1,11 @@
+# Makefile for uClibc
+#
+# Copyright (C) 2000-2006 Erik Andersen <andersen@uclibc.org>
+# ported to FR-V by Alexandre Oliva <aoliva@redhat.com>
+#
+# Licensed under the LGPL v2.1, see the file COPYING.LIB in this tarball.
+
+CSRC-y := sysdep.c syscall.c brk.c sbrk.c __init_brk.c dl-iterate-phdr.c
+
+SSRC-y := __longjmp.S setjmp.S clone.S vfork.S
+

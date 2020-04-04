@@ -1,0 +1,31 @@
+# Makefile for uClibc-ng
+# Licensed under the LGPL v2.1, see the file COPYING.LIB in this tarball.
+
+subdirs += libiconv
+
+CFLAGS-libiconv := -DNOT_IN_libc -DIS_IN_libiconv $(SSP_ALL_CFLAGS) \
+		-I$(top_srcdir)libiconv/include
+
+libiconv_DIR := $(top_srcdir)libiconv
+libiconv_OUT := $(top_builddir)libiconv
+
+libiconv_SRC-$(UCLIBC_HAS_LIBICONV) := iconv.c
+
+libiconv_SRC := $(addprefix $(libiconv_DIR)/,$(libiconv_SRC-y))
+libiconv_OBJ := $(patsubst $(libiconv_DIR)/%.c,$(libiconv_OUT)/%.o,$(libiconv_SRC))
+
+ifeq ($(DOPIC),y)
+libiconv-a-y := $(libiconv_OBJ:.o=.os)
+else
+libiconv-a-y := $(libiconv_OBJ)
+endif
+libiconv-so-y := $(libiconv_OBJ:.o=.os)
+
+objclean-y += CLEAN_libiconv
+
+$(libiconv_OUT)/libiconv.oS: $(libiconv_SRC)
+	$(Q)$(RM) $@
+	$(compile-m)
+
+CLEAN_libiconv:
+	$(do_rm) $(addprefix $(libiconv_OUT)/*., o os oS a)

@@ -25,7 +25,9 @@ helpcontent[0] = new Array("",
 				"<#WLANConfig11b_WEPKey_itemtype1#><br/><#WLANConfig11b_WEPKey_itemtype2#>",
 				"<#WLANConfig11b_x_RadioEnable_itemdesc#>",
 				"<#WLANConfig11b_x_RadioEnableDate_itemdesc#>",
-				"<#WLANConfig11b_x_RadioEnableTime_itemdesc#>");
+				"<#WLANConfig11b_x_RadioEnableTime_itemdesc#>",
+				"<#WLANConfig11b_KickStaRssiLow_itemdesc#>",
+				"<#WLANConfig11b_AssocReqRssiThres_itemdesc#>");
 helpcontent[1] = new Array("",
 				"<#WLANConfig11b_x_APMode_itemdesc#>",
 				"<#WLANConfig11b_Channel_itemdesc#>",

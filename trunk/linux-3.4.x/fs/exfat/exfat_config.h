@@ -47,7 +47,7 @@
 /*----------------------------------------------------------------------*/
 
 #ifndef CONFIG_EXFAT_DEFAULT_CODEPAGE
-#define CONFIG_EXFAT_DEFAULT_CODEPAGE	437
+#define CONFIG_EXFAT_DEFAULT_CODEPAGE	936
 #define CONFIG_EXFAT_DEFAULT_IOCHARSET	"utf8"
 #endif
 

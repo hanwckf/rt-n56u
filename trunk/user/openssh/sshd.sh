@@ -41,7 +41,8 @@ HostKey ${ed25519_key}
 # Logging
 # obsoletes QuietMode and FascistLogging
 #SyslogFacility AUTH
-#LogLevel INFO
+#LogLevel QUIET, FATAL, ERROR, INFO(default), VERBOSE, DEBUG, DEBUG1, DEBUG2, DEBUG3
+LogLevel ERROR
 
 # Authentication:
 

@@ -62,6 +62,7 @@ fmt2str( upxfmt_t fmt )
 {
     int ifmt = fmt;
 
+    (void) UPXDT_LEN;
     assert( (ifmt >= 0 ) && (ifmt < UPXDT_LEN) );
     return upxfmt_NAME[ ifmt ];
 }
@@ -747,9 +748,7 @@ write_data( const struct dstream_ctx* spc,
                 (void)tmfprintf( g_flog, "Write on fd=[%d] timed out\n", fd);
                 error = IO_BLK;
             }
-/*
             mperror( g_flog, errno, "%s: writev", __func__ );
-*/
             return error;
         }
     }

@@ -18,6 +18,11 @@
 #  along with udpxy.  If not, see <http://www.gnu.org/licenses/>.
 #
 
+Build 24 (22-Aug-2019):
+    (*) Merge pull request 9 from vozplus: Use relative links in status page so udpxy can be used with any location
+    (*) Merge pull request 8 from KiloFoxtrotPapa/misc-fixes: Miscellaneous fixes
+    (*) Minor changes to build with gcc9 and clang8
+
 Build 14 (2-Jan-2008):
     (*) shutdown command removed
 

@@ -48,7 +48,7 @@ extern const int   BUILDNUM;
 extern const char  BUILD_TYPE[];
 extern const int   PATCH;
 
-static char s_sysinfo [80] = "\0";
+static char s_sysinfo [1024] = "\0";
 
 extern struct udpxy_opt g_uopt;
 
@@ -1078,7 +1078,6 @@ get_sysinfo (int* perr)
     if (perr) *perr = errno;
 
     if (0 == rc) {
-        s_sysinfo [sizeof(s_sysinfo)-1] = '\0';
         (void) snprintf (s_sysinfo, sizeof(s_sysinfo)-1, "%s %s %s",
             uts.sysname, uts.release, uts.machine);
     }

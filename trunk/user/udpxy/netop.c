@@ -246,12 +246,28 @@ setup_mcast_listener( struct sockaddr_in*   sa,
             break;
     } while(0);
 
-    if( 0 == rc ) {
-        *mcastfd = sockfd;
-        TRACE( (void)tmfprintf( g_flog, "Mcast listener socket=[%d] set up\n",
-                                sockfd) );
+    if (rc)
+        goto done;
+
+    if (mifaddr && 0 != mifaddr->s_addr) {
+        struct in_addr ifc_addr;
+        memcpy(&ifc_addr, mifaddr, sizeof(struct in_addr));
+        rc = setsockopt(sockfd, IPPROTO_IP, IP_MULTICAST_IF, &ifc_addr, sizeof(ifc_addr));
+        if (rc) {
+            mperror(g_flog, errno, "%s: setsockopt(, IPPROTO_IP, IP_MULTICAST_IF, ...)",
+                __func__);
+            goto done;
+        }
+
+        TRACE( (void)tmfprintf( g_flog, "Ifc-bound mcast listener socket=[%d]\n",
+                            sockfd) );
     }
-    else {
+
+    *mcastfd = sockfd;
+    TRACE( (void)tmfprintf( g_flog, "Mcast listener socket=[%d] set up\n",
+                            sockfd) );
+done:
+    if (rc) {
         (void)close(sockfd);
     }
 

@@ -393,7 +393,7 @@ record()
 
         if( nrcv > 0 ) {
             if( g_recopt.max_fsize &&
-                ((size_t)(n_total + nrcv) >= g_recopt.max_fsize) ) {
+                ((int64_t)(n_total + nrcv) >= g_recopt.max_fsize) ) {
                 break;
             }
 

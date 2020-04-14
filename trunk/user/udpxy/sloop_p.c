@@ -77,6 +77,7 @@ srv_loop( const char* ipaddr, int port,
 
     if( 1 != inet_aton(mcast_addr, &mcast_inaddr) ) {
         mperror(g_flog, errno, "%s: inet_aton", __func__);
+        free (asock);
         return ERR_INTERNAL;
     }
 
@@ -90,6 +91,7 @@ srv_loop( const char* ipaddr, int port,
     /* NB: server socket is non-blocking! */
     if( 0 != (rc = setup_listener( ipaddr, port, &g_srv.lsockfd,
             g_uopt.lq_backlog )) ) {
+        free (asock);
         return rc;
     }
 

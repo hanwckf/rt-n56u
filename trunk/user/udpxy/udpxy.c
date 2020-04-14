@@ -18,9 +18,6 @@
  *  along with udpxy.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#define _XOPEN_SOURCE 600
-#define _BSD_SOURCE
-
 #include "osdef.h"  /* os-specific definitions */
 
 #include <sys/types.h>
@@ -98,34 +95,6 @@ static volatile sig_atomic_t g_childexit = 0;
 static const int PID_RESET = 1;
 
 /*********************************************************/
-
-#if defined(__UCLIBC_MAJOR__)
-# if __UCLIBC_MAJOR__ == 0 && \
-    (__UCLIBC_MINOR__ < 9 || (__UCLIBC_MINOR__ == 9 && __UCLIBC_SUBLEVEL__ < 29) )
-/* pselect stuff for old uclibc */
-int
-pselect(int nfds, fd_set *rset, fd_set *wset, fd_set *xset, const struct timespec *ts, const sigset_t *sigmask)
-{
-	int             n;
-	struct timeval  tv;
-	sigset_t        savemask;
-	
-	if (ts != NULL) {
-		tv.tv_sec = ts->tv_sec;
-		tv.tv_usec = ts->tv_nsec / 1000;    /* nanosec -> microsec */
-	}
-	
-	if (sigmask != NULL)
-		sigprocmask(SIG_SETMASK, sigmask, &savemask);   /* caller's mask */
-	n = select(nfds, rset, wset, xset, (ts == NULL) ? NULL : &tv);
-	if (sigmask != NULL)
-		sigprocmask(SIG_SETMASK, &savemask, NULL);      /* restore mask */
-	
-	return(n);
-}
-# endif
-#endif
-
 
 /* process client requests - implemented in sloop.c */
 extern int srv_loop (const char* ipaddr, int port,
@@ -705,10 +674,11 @@ udp_relay( int sockfd, struct server_ctx* ctx )
                 dfilefd = -1, srcfd = -1;
     char        dfile_name[ MAXPATHLEN ];
     size_t      rcvbuf_len = 0;
-
-    const struct in_addr *mifaddr = &(ctx->mcast_inaddr);
+    const struct in_addr *mifaddr;
 
     assert( (sockfd > 0) && ctx );
+    mifaddr = &(ctx->mcast_inaddr);
+
 
     TRACE( (void)tmfprintf( g_flog, "udp_relay : new_socket=[%d] param=[%s]\n",
                         sockfd, ctx->rq.param) );
@@ -1141,7 +1111,7 @@ process_requests (tmfd_t* asock, size_t *alen, fd_set* rset, struct server_ctx* 
 
         if (0 != rc) {
             TRACE( (void)tmfprintf (g_flog, "error [%d] processing "
-                "client socket [%d]\n", rc, asock[i]));
+                "client socket [%d]\n", rc, asock[i].fd));
         }
 
         TRACE( (void)tmfprintf (g_flog, "%s: %s accepted "

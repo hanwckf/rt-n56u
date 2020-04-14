@@ -26,6 +26,14 @@ to the requesting HTTP client.
 
 udpxy is released under GPL v.3
 
+Project status
+--------------
+
+udpxy has not been extended or supported for 4+ years, having been
+replaced by Gigapxy - a superior enterprise-oriented product.
+Please see more info at <http://gigapxy.com>, thank you.
+
+
 Building and installing
 --------------
 

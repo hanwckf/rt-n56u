@@ -47,7 +47,7 @@ read_http_footer (char* buf, size_t len)
         n = txtf_read (ev, buf, len, stderr);
     }
 
-    return (n<0) ? 1 : 0;
+    return (n<0) ? -1 : 0;
 }
 
 

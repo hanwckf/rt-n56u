@@ -118,7 +118,7 @@ static const char STAT_PAGE_FMT1[] =
     "    <td>%d</td>\n"
     "</tr>\n"
     "</table>\n"
-    "<form action=\"/restart/\" method=\"get\">\n"
+    "<form action=\"../restart/\" method=\"get\">\n"
     "<input type=\"submit\" value=\"Restart\">\n"
     "</form>\n"
     "\n"
@@ -174,7 +174,7 @@ static const char* ACLIENT_REC_FMT[] = {
 static const char REDIRECT_SCRIPT_FMT[] =
     "<script type=\"text/JavaScript\" language=\"Javascript\">"
     "function body_onload(){"
-    "  var t=setTimeout(\"window.location = '/status'\",%u)"
+    "  var t=setTimeout(\"window.location = '../status/'\",%u)"
     "}"
     "</script>";
 

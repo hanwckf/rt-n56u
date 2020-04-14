@@ -5,6 +5,9 @@
 function generic_updatefeed(feed,friendly_name)
 
     local feed_name=string.match(feed,'.+/(.+).m3u$')
+
+    if not feed_name then feed_name=string.gsub(friendly_name," ","_") end
+
     local feed_path=cfg.feeds_path..feed_name..'.m3u'
     local tmp_path=cfg.tmp_path..feed_name..'.m3u'
 

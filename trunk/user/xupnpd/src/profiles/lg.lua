@@ -2,8 +2,6 @@ lg_dlna_org_extras='DLNA.ORG_OP=01;DLNA.ORG_CI=0;DLNA.ORG_FLAGS=0170000000000000
 
 profiles['LG']=
 {
-    ['disabled']=false,
-
     ['desc']='LG TV',
 
     -- Linux/2.6.31-1.0 UPnP/1.0 DLNADOC/1.50 INTEL_NMPR/2.0 LGE_DLNA_SDK/1.5.0

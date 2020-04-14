@@ -1,27 +1,258 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
+
 <head>
-<title>${title}</title>
-<meta http-equiv="Content-type" content="text/html; charset=utf-8"/>
-<link rel="stylesheet" href="/ui/style">
+
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="description" content="">
+    <meta name="author" content="">
+
+    <title>xupnpd</title>
+
+    <!-- Bootstrap Core CSS -->
+    <link href="css/bootstrap.min.css" rel="stylesheet">
+
+    <!-- MetisMenu CSS -->
+    <link href="css/metisMenu.min.css" rel="stylesheet">
+
+    <!-- Custom CSS -->
+    <link href="css/sb-admin-2.css" rel="stylesheet">
+
+    <!-- Custom Fonts -->
+    <link href="css/font-awesome.min.css" rel="stylesheet" type="text/css">
+
+    <!-- HTML5 Shim and Respond.js IE8 support of HTML5 elements and media queries -->
+    <!-- WARNING: Respond.js doesn't work if you view the page via file:// -->
+    <!--[if lt IE 9]>
+        <script src="https://oss.maxcdn.com/libs/html5shiv/3.7.0/html5shiv.js"></script>
+        <script src="https://oss.maxcdn.com/libs/respond.js/1.4.2/respond.min.js"></script>
+    <![endif]-->
+
 </head>
 
-<body>    
+<body>
 
-<div class="container">
+    <div id="wrapper">
 
-${content}
+        <!-- Navigation -->
+        <nav class="navbar navbar-default navbar-static-top" role="navigation" style="margin-bottom: 0">
+            <div class="navbar-header">
+                <a class="navbar-brand" href="">Xupnpd</a>
+            </div>
+            <!-- /.navbar-header -->
+            <div class="nav navbar-top-links navbar-right">
+                <ul></ul>
+                <li>
+                    <form class="form-inline my-2 my-lg-0" method="post" action="/ui/login" style="display:${login}">
+                        <input class="form-control mr-sm-2" name="password" type="password" placeholder="Password" aria-label="Password">
+                        <button class="btn btn-success my-2 my-sm-0" type="submit">Login</button>
+                    </form>
+                    <form class="form-inline my-2 my-lg-0" method="post" action="/ui/logout" style="display:${logout}">
+                        <button class="btn btn-danger my-2 my-sm-0" type="submit">Logout</button>
+                    </form>
+                </li>
+            </div>
+            <!-- /.navbar-top-links -->
 
-<br/>
-<hr/>
-<p style='font-size: 8pt' align=left>
-Copyright (C) 2011-2015 Anton Burdinuk &lt;<a href='mailto:clark15b@gmail.com'>clark15b@gmail.com</a>&gt;<br/>
-License: <a href='http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt'>GPL-2.0</a><br/>
-www: <a href='http://xupnpd.org'>http://xupnpd.org</a><br/>
+            <div class="navbar-default sidebar" role="navigation">
+                <div class="sidebar-nav navbar-collapse">
+                    <ul class="nav" id="side-menu" style="display:${logout};">
+                        <!--<li class="sidebar-search">
+                            <div class="input-group custom-search-form">
+                                <input type="text" class="form-control" placeholder="Search...">
+                                <span class="input-group-btn">
+                                    <button class="btn btn-default" type="button">
+                                        <i class="fa fa-search"></i>
+                                    </button>
+                                </span>
+                            </div>
 
-</p>
+                        </li>-->
+                        <li>
+                            <a href="/ui/"><i class="fa fa-dashboard fa-fw"></i> Dashboard</a>
+                        </li>
+                        <!--<li>
+                            <a href="#"><i class="fa fa-bar-chart-o fa-fw"></i> Charts<span class="fa arrow"></span></a>
+                            <ul class="nav nav-second-level">
+                                <li>
+                                    <a href="flot.html">Flot Charts</a>
+                                </li>
+                                <li>
+                                    <a href="morris.html">Morris.js Charts</a>
+                                </li>
+                            </ul>
 
-</div>
+                        </li>-->
+                        <li>
+                            <a href="playlists"><i class="fa fa-table fa-fw"></i> PlayLists</a>
+                        </li>
+                        <li>
+                            <a href="feeds"><i class="fa fa-edit fa-fw"></i> Feeds</a>
+                        </li>
+						<li>
+                            <a href="downloads"><i class="fa "></i> Downloads</a>
+                        </li>
+						<li>
+                            <a href="config"><i class="fa fa-edit fa-fw"></i> Config</a>
+                        </li>
+						<li>
+                            <a href="status"><i class="fa"></i> Status</a>
+                        </li>
+						<li>
+                            <a href="/app"><i class="fa "></i> HTML5</a>
+                        </li>
+                        <li>
+                            <a href="set_password"><i class="fa fa-edit"></i> Set password</a>
+                        </li>
+                    </ul>
+                </div>
+                <!-- /.sidebar-collapse -->
+            </div>
+            <!-- /.navbar-static-side -->
+        </nav>
+
+        <!-- Page Content -->
+        <div id="page-wrapper">
+            <div class="container-fluid">
+                <div id="main-region" class="row ">
+                    <!--<div class="col-lg-12">
+                        <h1 class="page-header">Blank</h1>
+                    </div>-->
+					${content}
+                    <!-- /.col-lg-12 -->
+                </div>
+                <!-- /.row -->
+            </div>
+            <!-- /.container-fluid -->
+        </div>
+        <!-- /#page-wrapper -->
+
+    </div>
+    <!-- /#wrapper -->
+
+
+    <script type="text/template" id="status-main">
+        <div >
+            <h3>Status</h3>
+            UUID: <%- uuid %><br/>
+            Uptime: <%- uptime %> <a class="refresh-js" style='font-size: 8pt' href="#33">refresh</a> <br/>
+            SSDP Interface: <%- interface %><br/>
+            WWW Port: <%- port %><br/>
+            Model: <a href=<%- url %>><%- name %>-<%-version %></a><br/>
+            Manufacturer: <%= manufacturer %><br/>
+            <i><%- description %></i><br/><br/>
+        </div>
+    </script>
+
+    <script type="text/template" id="PlayList-item">
+      <tr>
+        <td class="detail-js" style="cursor:pointer;"><%- name %></td>
+        <td>
+          <button class="btn btn-danger remove-js" ><i class="fa fa-times-circle"></i> Delete</button>
+        </td>
+      </tr>
+    </script>
+
+    <script type="text/template" id="PlayList-main">
+      <div>
+        <h3>Playlists</h3>
+        <br>
+        <table class="table">
+          <tbody>
+            <tr>
+              <td>
+                <a href="/ui/show?fname=ag_videos%2Em3u&amp;">ag_videos.m3u</a> [<a href="/ui/remove?fname=ag_videos%2Em3u&amp;">x</a>]
+              </td>
+              <td><a class="btn btn-danger">dsfsdf</a> </td>
+            </tr>
+          </tbody>
+        </table>
+        <br>
+        <h3>Upload *.m3u file</h3>
+        <form method="post" action="/ui/upload" enctype="multipart/form-data">
+          <input name="m3ufile" type="file">
+          <br>
+          <br>
+          <input class="btn btn-primary" value="Send" type="submit">
+        </form>
+        <hr>
+        <br>
+        <a class="btn btn-primary" href="/ui/reload">Reload</a>
+        <a class="btn btn-primary" href="/ui/reload_feeds?return_url=/ui/#Playlists">Reload feeds</a>
+        <a class="btn btn-info" href="/ui">Back</a>
+      <div>
+    </script>
+
+    <script type="text/template" id="PlayList-main-detail">
+      <div>
+        <h3>Playlists</h3>
+        <br>
+        <table class="table">
+          <tbody>
+            <tr>
+              <td>
+                <a href="/ui/show?fname=ag_videos%2Em3u&amp;">ag_videos.m3u</a> [<a href="/ui/remove?fname=ag_videos%2Em3u&amp;">x</a>]
+              </td>
+              <td><a class="btn btn-danger">dsfsdf</a> </td>
+            </tr>
+          </tbody>
+        </table>
+        <br>
+        <h3>Upload *.m3u file</h3>
+        <form method="post" action="/ui/upload" enctype="multipart/form-data">
+          <input name="m3ufile" type="file">
+          <br>
+          <br>
+          <input class="btn btn-primary" value="Send" type="submit">
+        </form>
+        <hr>
+        <br>
+        <a class="btn btn-primary" href="/ui/reload">Reload</a>
+        <a class="btn btn-primary" href="/ui/reload_feeds?return_url=/ui/#Playlists">Reload feeds</a>
+        <a class="btn btn-info" href="/ui">Back</a>
+      <div>
+    </script>
+    <!-- jQuery -->
+    <script src="js/jquery.min.js"></script>
+
+    <!-- Bootstrap Core JavaScript -->
+    <script src="js/bootstrap.min.js"></script>
+
+    <!-- Metis Menu Plugin JavaScript -->
+    <script src="js/metisMenu.min.js"></script>
+
+    <!-- Custom Theme JavaScript -->
+    <script src="js/sb-admin-2.js"></script>
+
+	<!-- underscore -->
+    <script src="js/underscore.js"></script>
+	<!-- backbone -->
+    <script src="js/backbone.js"></script>
+	<!-- backbone.babysitter -->
+    <script src="js/backbone.babysitter.js"></script>
+
+	<!-- backbone.babysitter -->
+    <script src="js/backbone.marionette.min.js"></script>
+	<script src="js/backbone.wreqr.js"></script>
+
+    <script src="js/override/Backbone.Marionette.CompositeView.prototype.attachElContent.js"></script>
+    <script src="js/override/Backbone.Marionette.ItemView.prototype.attachElContent.js"></script>
+    <script src="js/override/Backbone.Marionette.View.prototype.tagName.js"></script>
+
+    <script src="js/app/app.js"></script>
+
+
+    <script src="js/app/Status/Status.route.js"></script>
+
+
+  <script src="js/app/PlayList/PlayList.model.js"></script>
+  <script src="js/app/PlayList/PlayList.collection.js"></script>
+  <script src="js/app/PlayList/PlayList.view.js"></script>
+    <script src="js/app/PlayList/PlayList.route.js"></script>
+
 
 </body>
+
 </html>

@@ -13,7 +13,7 @@ upnp_class=
 {
     ['video']     = 'object.item.videoItem',
     ['audio']     = 'object.item.audioItem.musicTrack'
-}                
+}
 
 
 upnp_proto=
@@ -32,6 +32,7 @@ upnp_proto=
     ['3gp']   = 'http-get:*:video/3gpp:',
     ['flv']   = 'http-get:*:video/x-flv:',
     ['aac']   = 'http-get:*:audio/x-aac:',
+    ['m4a']   = 'http-get:*:audio/x-aac:',
     ['ac3']   = 'http-get:*:audio/x-ac3:',
     ['mp3']   = 'http-get:*:audio/mpeg:',
     ['ogg']   = 'http-get:*:audio/x-ogg:',
@@ -99,6 +100,7 @@ mime=
     ['3gp']    = { upnp_type.video, upnp_class.video, 'video/3gpp',      upnp_proto['3gp'],dlna_org_extras.none },
     ['flv']    = { upnp_type.video, upnp_class.video, 'video/x-flv',     upnp_proto.flv,   dlna_org_extras.none },
     ['aac']    = { upnp_type.audio, upnp_class.audio, 'audio/x-aac',     upnp_proto.aac,   dlna_org_extras.none },
+    ['m4a']    = { upnp_type.audio, upnp_class.audio, 'audio/x-aac',     upnp_proto.aac,   dlna_org_extras.none },
     ['ac3']    = { upnp_type.audio, upnp_class.audio, 'audio/x-ac3',     upnp_proto.ac3,   dlna_org_extras.ac3 },
     ['mp3']    = { upnp_type.audio, upnp_class.audio, 'audio/mpeg',      upnp_proto.mp3,   dlna_org_extras.mp3 },
     ['ogg']    = { upnp_type.audio, upnp_class.audio, 'application/ogg', upnp_proto.ogg,   dlna_org_extras.none },

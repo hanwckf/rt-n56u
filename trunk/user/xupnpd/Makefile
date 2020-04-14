@@ -1,11 +1,11 @@
 SRC_NAME=src
 
 all:
-	make -C $(SRC_NAME) embedded
+	$(MAKE) -C $(SRC_NAME)
 
 clean:
-	make -C $(SRC_NAME) clean
-
+	$(MAKE) -C $(SRC_NAME) clean
+	
 romfs:
 	mkdir -p $(ROMFSDIR)/etc_ro/xupnpd
 	mkdir -p $(ROMFSDIR)/usr/share/xupnpd

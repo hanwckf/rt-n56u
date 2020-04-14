@@ -2,16 +2,17 @@
 -- clark15b@gmail.com
 -- https://tsdemuxer.googlecode.com/svn/trunk/xupnpd
 
+
 ui_args=nil
 ui_data=nil
-
+dofile(cfg.ui_path.."helper.lua")
 function ui_main()
     http.sendtfile(cfg.ui_path..'ui_main.html',http_vars)
 end
 
 function ui_error()
     http.send('<h2>Error occurred</h3>')
-    http.send('<br/><a class="btn btn-info" href="/ui">Back</a>')
+    http.send('<br/><a class="btn btn-info" href="/ui/">Back</a>')
 end
 
 function ui_downloads()
@@ -19,21 +20,21 @@ function ui_downloads()
     http.send('<br/><table class="table">')
     if playlist_data.elements[1] then
         for i,j in ipairs(playlist_data.elements[1].elements) do
-            http.send(string.format('<tr><td><a href="/ui/%s.m3u">%s</a></td></tr>',j.name,j.name))
+            http.send(string.format('<tr><td><a href="/ui/%s.m3u">%s</a></td></tr>',j.objid,j.name))
         end
     end
     http.send('</table>')
     http.send('<br/><a class="btn btn-info" href="/ui">Back</a>')
 end
 
+function ui_playlist_get_url(pls)
+        return string.format('%s/proxy/%s.%s',cfg.extern_url or www_location,pls.objid,pls.type)
+end
+
 function ui_download(name)
     name=util.urldecode(string.match(name,'(.+)%.m3u$'))
 
-    local pls=nil
-
-    for i,j in ipairs(playlist_data.elements[1].elements) do
-        if j.name==name then pls=j break end
-    end
+    local pls=find_playlist_object(name)
 
     if not pls then
         http.send(
@@ -47,12 +48,12 @@ function ui_download(name)
     http.send(
         string.format(
             'HTTP/1.1 200 Ok\r\nPragma: no-cache\r\nCache-control: no-cache\r\nDate: %s\r\nServer: %s\r\nAccept-Ranges: none\r\n'..
-            'Connection: close\r\nContent-Type: audio/x-mpegurl\r\n\r\n',os.date('!%a, %d %b %Y %H:%M:%S GMT'),ssdp_server)
+            'Connection: close\r\nContent-Type: audio/x-mpegurl\r\nContent-Disposition: attachment; filename=\"%s.m3u\"\r\n\r\n',os.date('!%a, %d %b %Y %H:%M:%S GMT'),ssdp_server,pls.name)
     )
 
     http.send('#EXTM3U\n')
     for i,j in ipairs(pls.elements) do
-        http.send('#EXTINF:0,'..j.name..'\n'..playlist_get_url(j)..'\n')
+        http.send('#EXTINF:0,'..j.name..'\n'..ui_playlist_get_url(j)..'\n')
     end
 end
 
@@ -175,7 +176,7 @@ function ui_plugins()
     for i,j in pairs(plugins) do
         if j.name then
             local status
-            
+
             if j.disabled==true then
                 status=string.format('<a href="/ui/plugins?n=%s&s=on">on</a> | <b>off</b>',util.urlencode(i))
             else
@@ -220,7 +221,7 @@ function ui_profiles()
 
     for i,j in pairs(profiles) do
         local status
-            
+
         if j.disabled==true then
             status=string.format('<a href="/ui/profiles?n=%s&s=on">on</a> | <b>off</b>',util.urlencode(i))
         else
@@ -278,7 +279,8 @@ function ui_remove()
             local path=cfg.playlists_path
             if ui_args.feed=='1' then path=cfg.feeds_path end
 
-            if os.remove(path..real_name) then
+--            if os.remove(path..real_name) then
+            if os.execute(string.format('rm -f %s%s',path,real_name)) then
                 core.sendevent('reload')
                 http.send('<h3>OK</h3>')
             else
@@ -368,7 +370,7 @@ function ui_config()
     http.send('    { var obj=document.getElementById(id); for(i=0;i<obj.length;i++) { if(obj.options[i].value==value) { obj.options[i].selected=true; break; } } }\n')
     http.send('function set_input_value(id,value)\n')
     http.send('    { var obj=document.getElementById(id); if(obj) { obj.value=value } }\n')
-                        
+
     for plugin_name,plugin in pairs(plugins) do
         if plugin.ui_config_vars then
             for i,var in ipairs(plugin.ui_config_vars) do
@@ -531,11 +533,70 @@ function ui_api_call(args)
 end
 
 function ui_restart()
-    if core.restart(cfg.pid_file,"/usr/bin/xupnpd") then http.send('<h3>Attempt to restart...</h3>') else http.send('<h3>Unable to restart.</h3>') end
+    if core.restart(cfg.pid_file,"./xupnpd") then http.send('<h3>Attempt to restart...</h3>') else http.send('<h3>Unable to restart.</h3>') end
 
     http.send('<br/><form method=get action="/ui"><input class="btn btn-primary" type=submit value=OK></form>')
 
     http.send('<script>setTimeout("document.forms[0].submit()",3000)</script>')
+end
+
+function ui_logout()
+    os.remove(cfg.ui_session_file)
+    http.send('<meta http-equiv="refresh" content="0;URL=/"ui//"" />')
+end
+
+function ui_login()
+    password_enc = util.md5_string_hash(ui_data)
+    if password_enc == auth then
+        compare_session_id = 'session_id=' .. generate_session_id(35)
+        write_file(cfg.ui_session_file, compare_session_id)
+        http_data=string.format('<script>document.cookie="%s"</script>', compare_session_id)
+	http.send(http_data)
+        http.send('<meta http-equiv="refresh" content="0;URL=/"ui//"" />')
+    else
+        http.send('<h2>Wrong password</h2>')
+    end
+end
+
+function ui_set_password()
+    if ui_data and ui_data ~= '' then
+        password_enc = util.md5_string_hash(ui_data)
+        write_file(cfg.ui_auth_file, password_enc)
+        os.remove(cfg.ui_session_file)
+        http.send('<meta http-equiv="refresh" content="3;URL=/"ui//"" />')
+        http.send('<h4>Password changed, you will be redirected in 3 secons, please login again.</h4>')
+    else
+        http.send('<h3>Set / change access password.</h3>')
+        http.send('<form class="form-inline my-2 my-lg-0" method="post" action="/ui/set_password">')
+        http.send('<input class="form-control mr-sm-2" name="password" type="password" placeholder="New Password"> ')
+        http.send('<button class="btn btn-success my-2 my-sm-0" type="submit">Change</button>')
+        http.send('</form>')
+    end
+end
+
+function generate_session_id(length)
+        local res = ""
+        for i = 1, length do
+                res = res .. string.char(math.random(97, 122))
+        end
+        return res
+end
+
+function read_file (file)
+    local content
+    local f = io.open(file, "r")
+    if f then
+        local fa = assert(f)
+        content = string.gsub(fa:read("*all"),'\n','')
+        f:close()
+    end
+    return content
+end
+
+function write_file (file, data)
+  local write_handle = io.open(file, "w")
+  write_handle:write(data)
+  write_handle:close()
 end
 
 ui_actions=
@@ -564,10 +625,13 @@ ui_actions=
     ['fhelp']           = { 'xupnpd - feeds help', ui_fhelp },
     ['mhelp']           = { 'xupnpd - mimes help', ui_mhelp },
     ['ehelp']           = { 'xupnpd - extras help', ui_ehelp },
-    ['restart']         = { 'xupnpd - restart', ui_restart }
+    ['restart']         = { 'xupnpd - restart', ui_restart },
+    ['login']           = { 'xupnpd - login', ui_login },
+    ['logout']          = { 'xupnpd - logout', ui_logout },
+    ['set_password']    = { 'xupnpd - set password', ui_set_password}
 }
 
-function ui_handler(args,data,ip,url)
+function ui_handler(args,data,ip,url,methtod,cookie)
     for plugin_name,plugin in pairs(plugins) do
         if plugin.ui_actons then
             for act_name,act in pairs(plugin.ui_actons) do
@@ -578,21 +642,33 @@ function ui_handler(args,data,ip,url)
 
     local action=string.match(url,'^/ui/(.+)$')
 
-    if action=='style' then
-        http_send_headers(200,'css')
-        http.sendfile(cfg.ui_path..'bootstrap.min.css')
-        return
-    elseif action=='api' then
-        ui_api_call(args)
-        return
-    end
+    if action then
+        local  path_file , file_format =string.match(action, "(.+%.(%w+))[%?]?.*$")
 
-    if action and string.find(action,'.+%.m3u$') then
-        ui_download(action)
-        return
-    end
+	if  file_format == 'm3u' then
+		ui_download(action)
+		return
+	elseif file_format then
+		http_send_headers(200,file_format)
+		http.sendfile(cfg.ui_path..path_file)
+		return
+	end
 
-    if not action then action='main' end
+	if action == "api" then
+	 	ui_api_call(args)
+		return
+	end
+
+	if string.find(action,"api_v2") then
+		dofile(cfg.ui_path.."api_v2.lua")
+
+		ui_api_v_2_call(args,data,ip, string.gsub(url, "/ui/api_v2/", ''),methtod)
+		return
+	end
+
+    else
+	action='main'
+    end
 
     http_send_headers(200,'html')
 
@@ -600,8 +676,31 @@ function ui_handler(args,data,ip,url)
 
     if not act then act=ui_actions['error'] end
 
+    auth=read_file(cfg.ui_auth_file)
+
+    if auth then
+        local compare_session_id=read_file(cfg.ui_session_file)
+        if cookie == compare_session_id and compare_session_id ~= nil then
+            is_logged_in = true
+        else
+            is_logged_in = false
+        end
+    else
+        -- if auth isn't there everybody is logged in
+        is_logged_in = true
+    end
+
+    if is_logged_in == false and action ~= 'login' then act=ui_actions['main'] end
+
     http_vars.title=act[1]
     http_vars.content=act[2]
+    if is_logged_in == true then
+        http_vars.login = 'none'
+        http_vars.logout = 'block'
+    else
+        http_vars.login = 'block'
+        http_vars.logout = 'none'
+    end
 
     ui_args=args
     ui_data=data

@@ -2,12 +2,11 @@ sec_dlna_org_extras_none='*;DLNA.ORG_OP=00;DLNA.ORG_CI=0;DLNA.ORG_FLAGS=01700000
 
 profiles['Samsung-AllShare']=
 {
-    ['disabled']=false,
-
     ['desc']='Samsung AllShare uPnP/DLNA',
 
     -- SEC_HHP_[TV]UE32ES6757/1.0 DLNADOC/1.50
-    ['match']=function(user_agent) if string.find(user_agent,'SEC_HHP_',1,true) then return true else return false end end,
+    ['match']=function(user_agent) if string.find(user_agent,'DLNADOC/1.50',1,true)  or string.find(user_agent,'SEC_HHP_',1,true) then
+    return true else return false end end,
 
     ['options']=
     {

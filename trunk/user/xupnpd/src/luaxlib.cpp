@@ -635,7 +635,7 @@ static int lua_m3u_parse(lua_State* L)
                         if(len!=(off64_t)-1)
                         {
                             lua_pushstring(L,"length");
-                            lua_pushnumber(L,len);
+                            lua_pushinteger(L,len);
                             lua_rawset(L,-3);
                         }
                         close(fd);
@@ -765,7 +765,7 @@ static int lua_m3u_scan(lua_State* L)
                             if(len!=(off64_t)-1)
                             {
                                 lua_pushstring(L,"length");
-                                lua_pushnumber(L,len);
+                                lua_pushinteger(L,len);
                                 lua_rawset(L,-3);
                             }
 
@@ -882,7 +882,7 @@ static int lua_util_geturlinfo(lua_State* L)
             if(len!=(off64_t)-1)
             {
                 lua_pushstring(L,"length");
-                lua_pushnumber(L,len);
+                lua_pushinteger(L,len);
                 lua_rawset(L,-3);
             }
             type="file";
@@ -985,7 +985,7 @@ static int lua_util_getflen(lua_State* L)
         {
             off64_t len=lseek64(fd,0,SEEK_END);
             if(len!=(off64_t)-1)
-                lua_pushnumber(L,len);
+                lua_pushinteger(L,len);
             close(fd);
         }else
             lua_pushnil(L);

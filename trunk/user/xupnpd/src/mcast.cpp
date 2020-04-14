@@ -95,7 +95,7 @@ int mcast::get_if_info(const char* if_name,if_info* ifi)
     {
         ifreq ifr;
 
-#ifdef __FreeBSD__
+#if defined(__FreeBSD__) || defined(__APPLE__)
         snprintf(ifr.ifr_name,IFNAMSIZ,"%s",if_name);
 #else
         snprintf(ifr.ifr_ifrn.ifrn_name,IFNAMSIZ,"%s",if_name);
@@ -159,7 +159,7 @@ int mcast::get_if_list(if_info* ifi,int nifi)
 
                 for(int i=0;i<n;i++)
                 {
-#ifdef __FreeBSD__
+#if defined(__FreeBSD__) || defined(__APPLE__)
                     get_if_info(ifr[i].ifr_name,ifi+i);
 #else
                     get_if_info(ifr[i].ifr_ifrn.ifrn_name,ifi+i);
@@ -235,14 +235,14 @@ int mcast::mcast_grp::init(const char* addr,const char* iface,int ttl,int loop)
     mcast_sin.sin_family=AF_INET;
     mcast_sin.sin_port=0;
     mcast_sin.sin_addr.s_addr=INADDR_ANY;
-#ifdef __FreeBSD__
+#if defined(__FreeBSD__) || defined(__APPLE__)
     mcast_sin.sin_len=sizeof(mcast_sin);
 #endif /* __FreeBSD__ */
 
     mcast_if_sin.sin_family=AF_INET;
     mcast_if_sin.sin_port=0;
     mcast_if_sin.sin_addr.s_addr=INADDR_ANY;
-#ifdef __FreeBSD__
+#if defined(__FreeBSD__) || defined(__APPLE__)
     mcast_if_sin.sin_len=sizeof(mcast_if_sin);
 #endif /* __FreeBSD__ */
 
@@ -311,7 +311,7 @@ int mcast::mcast_grp::join(void) const
         sin.sin_family=AF_INET;
         sin.sin_port=mcast_sin.sin_port;
         sin.sin_addr.s_addr=INADDR_ANY;
-#ifdef __FreeBSD__
+#if defined(__FreeBSD__) || defined(__APPLE__)
         sin.sin_len=sizeof(sin);
 #endif /* __FreeBSD__ */
 
@@ -392,7 +392,7 @@ int mcast::mcast_grp::upstream(void) const
         sin.sin_family=AF_INET;
         sin.sin_addr.s_addr=mcast_if_sin.sin_addr.s_addr;
         sin.sin_port=0;
-#ifdef __FreeBSD__
+#if defined(__FreeBSD__) || defined(__APPLE__)
         sin.sin_len=sizeof(sin);
 #endif /* __FreeBSD__ */
         bind(sock,(sockaddr*)&sin,sizeof(sin));
@@ -437,7 +437,7 @@ int mcast::mcast_grp::send(int sock,const char* buf,int len,const char* to) cons
         sin.sin_family=AF_INET;
         sin.sin_addr.s_addr=inet_addr(tmp);
         sin.sin_port=htons(atoi(p));
-#ifdef __FreeBSD__
+#if defined(__FreeBSD__) || defined(__APPLE__)
         sin.sin_len=sizeof(sin);
 #endif /* __FreeBSD__ */
     }
@@ -505,7 +505,7 @@ int mcast::create_tcp_listener(int port)
         sin.sin_family=AF_INET;
         sin.sin_addr.s_addr=INADDR_ANY;
         sin.sin_port=htons(port);
-#ifdef __FreeBSD__
+#if defined(__FreeBSD__) || defined(__APPLE__)
         sin.sin_len=sizeof(sin);
 #endif /* __FreeBSD__ */
 

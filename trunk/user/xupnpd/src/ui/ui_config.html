@@ -1,104 +1,120 @@
-<h4>Plugins</h4>
+<div class="col-lg-12">
+    <h1 class="page-header">Config</h1>
+</div>
+
+<div class="col-lg-12">
+<div class="panel-body">
+<div class="row">
+
 
 <form method=post action="/ui/apply">
 
 <div class="controls controls-row">
-	<div class="span4">VK.com:</div>
-	<div class="span4">${vk_auth_link}</div>
+    <div class="span4">VK.com:</div>
+    <div class="span4">${vk_auth_link}</div>
 </div>
 
 <div class="controls controls-row">
-	<div class="span4">VK.com private videos and groups workaround:</div>
-	<select class="span4" name=vk_private_workaround id=vk_private_workaround>
-		<option value="false">no</option>
-		<option selected value="true">yes</option>
-	</select>
+    <div class="span4">VK.com private videos and groups workaround:</div>
+    <select class="span4" name=vk_private_workaround id=vk_private_workaround>
+        <option value="false">no</option>
+        <option selected value="true">yes</option>
+    </select>
 </div>
 
 <div class="controls controls-row">
-	<div class="span4">VK.com maximum videos (max 200):</div>
-	<input class="span4" type=text name=vk_video_count id=vk_video_count>
+    <div class="span4">VK.com maximum videos (max 200):</div>
+    <input class="span4" type=text name=vk_video_count id=vk_video_count>
 </div>
 <br/>
 
 <div class="controls controls-row">
-<div class="span4">Maximum YouTube quality:</div>
-<select class="span4" class="span4" name=youtube_fmt id=youtube_fmt>
-<option value=18>360p</option>
-<option selected value=22>720p</option>
-<option value=37>1080p</option>
-<option value=84>720p 3D</option>
-<option value=85>1080p 3D</option>
-</select>
+    <div class="span4">Maximum YouTube quality:</div>
+    <select class="span4" class="span4" name=youtube_fmt id=youtube_fmt>
+        <option value=18>360p</option>
+        <option selected value=22>720p</option>
+        <option value=37>1080p</option>
+        <option value=84>720p 3D</option>
+        <option value=85>1080p 3D</option>
+    </select>
 </div>
 
 <div class="controls controls-row">
-<div class="span4">YouTube region:</div>
-<select class="span4" name=youtube_region id=youtube_region>
-<option selected value="*">*</option>
-<option value=AU>AU</option>
-<option value=BR>BR</option>
-<option value=CA>CA</option>
-<option value=FR>FR</option>
-<option value=DE>DE</option>
-<option value=GB>GB</option>
-<option value=NL>NL</option>
-<option value=HK>HK</option>
-<option value=IE>IE</option>
-<option value=IT>IT</option>
-<option value=JP>JP</option>
-<option value=MX>MX</option>
-<option value=NZ>NZ</option>
-<option value=PL>PL</option>
-<option value=RU>RU</option>
-<option value=KR>KR</option>
-<option value=ES>ES</option>
-<option value=TW>TW</option>
-<option value=US>US</option>
-</select>
+    <div class="span4">YouTube region:</div>
+    <select class="span4" name=youtube_region id=youtube_region>
+        <option selected value="*">*</option>
+        <option value=AU>AU</option>
+        <option value=BR>BR</option>
+        <option value=CA>CA</option>
+        <option value=FR>FR</option>
+        <option value=DE>DE</option>
+        <option value=GB>GB</option>
+        <option value=NL>NL</option>
+        <option value=HK>HK</option>
+        <option value=IE>IE</option>
+        <option value=IT>IT</option>
+        <option value=JP>JP</option>
+        <option value=MX>MX</option>
+        <option value=NZ>NZ</option>
+        <option value=PL>PL</option>
+        <option value=RU>RU</option>
+        <option value=KR>KR</option>
+        <option value=ES>ES</option>
+        <option value=TW>TW</option>
+        <option value=US>US</option>
+    </select>
 </div>
 
 <div class="controls controls-row">
-<div class="span4">YouTube maximum videos:</div><input type=text class="span4" name=youtube_video_count id=youtube_video_count>
+    <div class="span4">YouTube maximum videos:</div>
+    <input type=text class="span4" name=youtube_video_count id=youtube_video_count>
 </div>
 
 <div class="controls controls-row">
-<div class="span4">Vimeo quality:</div>
-<select class="span4" name=vimeo_fmt id=vimeo_fmt>
-<option value="sd">Low</option>
-<option selected value="hd">High</option>
-</select>
+    <div class="span4">Vimeo quality:</div>
+    <select class="span4" name=vimeo_fmt id=vimeo_fmt>
+        <option value="sd">Low</option>
+        <option selected value="hd">High</option>
+    </select>
 </div>
 
 <div class="controls controls-row">
-<div class="span4">Vimeo maximum videos:</div><input type=text class="span4" name=vimeo_video_count id=vimeo_video_count>
+    <div class="span4">Vimeo maximum videos:</div>
+    <input type=text class="span4" name=vimeo_video_count id=vimeo_video_count>
 </div>
 
 <div class="controls controls-row">
-<div class="span4">ivi.ru quality:</div>
-<select class="span4" name=ivi_fmt id=ivi_fmt>
-<option value="MP4-lo">Low</option>
-<option selected value="MP4-hi">High</option>
-</select>
+    <div class="span4">ivi.ru quality:</div>
+    <select class="span4" name=ivi_fmt id=ivi_fmt>
+        <option value="MP4-lo">Low</option>
+        <option selected value="MP4-hi">High</option>
+    </select>
 </div>
 
 <div class="controls controls-row">
-<div class="span4">ivi.ru maximum videos:</div><input type=text class="span4" name=ivi_video_count id=ivi_video_count>
+    <div class="span4">ivi.ru maximum videos:</div>
+    <input type=text class="span4" name=ivi_video_count id=ivi_video_count>
 </div>
 
 <div class="controls controls-row">
-<div class="span4">AG.ru quality:</div>
-<select class="span4" name=ag_fmt id=ag_fmt>
-<option selected value="200p">200p</option>
-<option value="400p">400p</option>
-<option value="400pd">400p 60fps</option>
-<option value="720p">720p</option>
-<option value="720pd">720p 60fps</option>
-</select>
+    <div class="span4">AG.ru quality:</div>
+    <select class="span4" name=ag_fmt id=ag_fmt>
+        <option selected value="200p">200p</option>
+        <option value="400p">400p</option>
+        <option value="400pd">400p 60fps</option>
+        <option value="720p">720p</option>
+        <option value="720pd">720p 60fps</option>
+    </select>
 </div>
 
 <div class="controls controls-row">
-<div class="span4">GameTrailers maximum videos:</div><input type=text class="span4" name=gametrailers_video_count id=gametrailers_video_count>
+    <div class="span4">GameTrailers maximum videos:</div>
+    <input type=text class="span4" name=gametrailers_video_count id=gametrailers_video_count>
+</div>
+
+<div class="controls controls-row">
+    <div class="span4">Profiles directory path:</div>
+    <input type=text class="span4" name=profiles id=profiles>
 </div>
 
 <hr/>
@@ -106,93 +122,106 @@
 <h4>Common (restart needed)</h4>
 
 <div class="controls controls-row">
-<div class="span4">Device name:</div><input class="span4" type=text name=name id=name>
+    <div class="span4">Device name:</div>
+    <input class="span4" type=text name=name id=name>
 </div>
 
 <div class="controls controls-row">
-<div class="span4">* Device UUID (empty for dynamic): </div><input class="span4" type=text name=uuid id=uuid>
+    <div class="span4">* Device UUID (empty for dynamic):</div>
+    <input class="span4" type=text name=uuid id=uuid>
 </div>
 
 <div class="controls controls-row">
-<div class="span4">Default mime type (<a href="/ui/mhelp">mpeg, mpeg_ts, ...</a>):</div>
-<input class="span4" type=text name=default_mime_type id=default_mime_type>
+    <div class="span4">Default mime type (<a href="/ui/mhelp">mpeg, mpeg_ts, ...</a>):</div>
+    <input class="span4" type=text name=default_mime_type id=default_mime_type>
 </div>
 
 <div class="controls controls-row">
-<div class="span4">SSDP announcement interface (LAN):</div><input class="span4" type=text name=ssdp_interface id=ssdp_interface>
+    <div class="span4">SSDP announcement interface (LAN):</div>
+    <input class="span4" type=text name=ssdp_interface id=ssdp_interface>
 </div>
 
 <div class="controls controls-row">
-<div class="span4">* SSDP announcement interval (sec):</div><input class="span4" type=text name=ssdp_notify_interval id=ssdp_notify_interval>
+    <div class="span4">* SSDP announcement interval (sec):</div>
+    <input class="span4" type=text name=ssdp_notify_interval id=ssdp_notify_interval>
 </div>
 
 <div class="controls controls-row">
-<div class="span4">* SSDP max age (sec):</div><input type=text class="span4" name=ssdp_max_age id=ssdp_max_age>
+    <div class="span4">* SSDP max age (sec):</div>
+    <input type=text class="span4" name=ssdp_max_age id=ssdp_max_age>
 </div>
 
 <div class="controls controls-row">
-<div class="span4">HTTP Port:</div><input type=text class="span4" name=http_port id=http_port>
+    <div class="span4">HTTP Port:</div>
+    <input type=text class="span4" name=http_port id=http_port>
 </div>
 
 <div class="controls controls-row">
-<div class="span4">* HTTP User-Agent:</div><input class="span4" type=text name=user_agent id=user_agent>
+    <div class="span4">* HTTP User-Agent:</div>
+    <input class="span4" type=text name=user_agent id=user_agent>
 </div>
 
 <div class="controls controls-row">
-<div class="span4">* HTTP Timeout (sec):</div><input class="span4" type=text name=http_timeout id=http_timeout>
+    <div class="span4">* HTTP Timeout (sec):</div>
+    <input class="span4" type=text name=http_timeout id=http_timeout>
 </div>
 
 <div class="controls controls-row">
-<div class="span4">IPTV multicast interface (WAN):</div><input class="span4" type=text name=mcast_interface id=mcast_interface>
+    <div class="span4">IPTV multicast interface (WAN):</div>
+    <input class="span4" type=text name=mcast_interface id=mcast_interface>
 </div>
 
 <div class="controls controls-row">
-<div class="span4">Proxy mode:</div>
-<select class="span4" name=proxy id=proxy>
-<option selected value="0">off</option>
-<option value="1">radio only</option>
-<option value="2">on</option>
-</select>
+    <div class="span4">Proxy mode:</div>
+    <select class="span4" name=proxy id=proxy>
+        <option selected value="0">off</option>
+        <option value="1">radio only</option>
+        <option value="2">on</option>
+    </select>
 </div>
 
 <div class="controls controls-row">
-<div class="span4">DLNA Notify:</div>
-<select class="span4" name=dlna_notify id=dlna_notify>
-<option selected value="false">no</option>
-<option value="true">yes</option>
-</select>
+    <div class="span4">DLNA Notify:</div>
+    <select class="span4" name=dlna_notify id=dlna_notify>
+        <option selected value="false">no</option>
+        <option value="true">yes</option>
+    </select>
 </div>
 
 <div class="controls controls-row">
-<div class="span4">DLNA Subscribe TTL:</div><input class="span4" type=text name=dlna_subscribe_ttl id=dlna_subscribe_ttl>
+    <div class="span4">DLNA Subscribe TTL:</div>
+    <input class="span4" type=text name=dlna_subscribe_ttl id=dlna_subscribe_ttl>
 </div>
 
 <div class="controls controls-row">
-<div class="span4">Groups:</div>
-<select class="span4" name=group id=group>
-<option selected value="false">no</option>
-<option value="true">yes</option>
-</select>
+    <div class="span4">Groups:</div>
+    <select class="span4" name=group id=group>
+        <option selected value="false">no</option>
+        <option value="true">yes</option>
+    </select>
 </div>
 
 <div class="controls controls-row">
-<div class="span4">Sort files:</div>
-<select class="span4" name=sort_files id=sort_files>
-<option selected value="false">no</option>
-<option value="true">yes</option>
-</select>
+    <div class="span4">Sort files:</div>
+    <select class="span4" name=sort_files id=sort_files>
+        <option selected value="false">no</option>
+        <option value="true">yes</option>
+    </select>
 </div>
 
 <div class="controls controls-row">
-<div class="span4">* Feeds reload interval (sec, 0 for manual):</div><input class="span4" type=text name=feeds_update_interval id=feeds_update_interval>
+    <div class="span4">* Feeds reload interval (sec, 0 for manual):</div>
+    <input class="span4" type=text name=feeds_update_interval id=feeds_update_interval>
 </div>
 
 <div class="controls controls-row">
-<div class="span4">* Playlists reload interval (sec, 0 for manual):</div><input class="span4" type=text name=playlists_update_interval id=playlists_update_interval>
+    <div class="span4">* Playlists reload interval (sec, 0 for manual):</div>
+    <input class="span4" type=text name=playlists_update_interval id=playlists_update_interval>
 </div>
 
 <div class="controls controls-row">
-<div class="span4">* Drive device name (/dev/sda, /dev/sdb, ...):</div><input class="span4" type=text name=drive id=drive>
+    <div class="span4">* Drive device name (/dev/sda, /dev/sdb, ...):</div>
+    <input class="span4" type=text name=drive id=drive>
 </div>
 
 <br/>
@@ -201,8 +230,13 @@
 <br/><br/><br/>
 
 <input class="btn btn-primary" type=submit value=Save>
-<a class='btn btn-primary' href='/ui/restart'>Restart</a>
-<a class='btn btn-info' href='/ui/plugins'>Plugins</a>
-<a class='btn btn-info' href='/ui/profiles'>Profiles</a>
-<a class='btn btn-info' href='/ui'>Back</a>
+<a class='btn btn-primary' href='restart'>Restart</a>
+<a class='btn btn-info' href='plugins'>Plugins</a>
+<a class='btn btn-info' href='profiles'>Profiles</a>
+<a class='btn btn-info' href='/'>Back</a>
 </form>
+
+
+</div>
+</div>
+</div>

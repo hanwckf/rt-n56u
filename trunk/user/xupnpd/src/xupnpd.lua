@@ -1,5 +1,9 @@
 cfg={}
 
+cfg.ui_auth_file='auth.txt'
+
+cfg.ui_session_file='/tmp/xupnpd.session'
+
 -- multicast interface for SSDP exchange, 'eth0', 'br0', 'br-lan' for example
 cfg.ssdp_interface='br0'
 
@@ -7,7 +11,7 @@ cfg.ssdp_interface='br0'
 cfg.ssdp_loop=0
 
 -- SSDP announcement interval
-cfg.ssdp_notify_interval=10
+cfg.ssdp_notify_interval=15
 
 -- SSDP announcement age
 cfg.ssdp_max_age=1800
@@ -54,10 +58,10 @@ cfg.dlna_subscribe_ttl=1800
 cfg.group=true
 
 -- sort files
-cfg.sort_files=true
+cfg.sort_files=false
 
 -- Device name
-cfg.name='xUPNP-IPTV'
+cfg.name='UPnP-IPTV'
 
 -- static device UUID, '60bd2fb3-dabe-cb14-c766-0e319b54c29a' for example or nil
 cfg.uuid='60bd2fb3-dabe-cb14-c766-0e319b54c29a'
@@ -75,33 +79,36 @@ cfg.default_mime_type='mpeg'
 cfg.feeds_update_interval=7200
 cfg.playlists_update_interval=0
 
+-- host for UI playlist download
+--cfg.extern_url='http://youhost.com'
+
 -- playlist (m3u file path or path with alias
 playlist=
 {
 --    { './playlists/mozhay.m3u', 'Mozhay.tv' },
---    { '/media', 'Local Media Files' }
---    { '/media', 'Private Media Files', '127.0.0.1;192.168.1.1' }  -- only for 127.0.0.1 and 192.168.1.1
+--    { './localmedia', 'Local Media Files' }
+--    { './private', 'Private Media Files', '127.0.0.1;192.168.1.1' }  -- only for 127.0.0.1 and 192.168.1.1
 }
 
 -- feeds list (plugin, feed name, feed type)
 feeds=
 {
-    { 'vimeo',          'channel/hd',           'Vimeo HD Channel' },
-    { 'vimeo',          'channel/hdxs',         'Vimeo Xtreme sports' },
-    { 'vimeo',          'channel/mtb',          'Vimeo MTB Channel' },
-    { 'youtube',        'channel/top_rated',    'YouTube Top Rated' },
-    { 'youtube',        'Drift0r',              'Drift0r' },
-    { 'youtube',        'XboxAhoy',             'XboxAhoy' },
-    { 'ag',             'videos',               'AG - New' },
-    { 'ivi',            'new',                  'IVI - New' },
-    { 'gametrailers',   'ps3',                  'GT - PS3' },
-    { 'giantbomb',      'all',                  'GiantBomb - All' },
+--    { 'vimeo',          'channel/hd',           'Vimeo HD Channel' },
+--    { 'vimeo',          'channel/hdxs',         'Vimeo Xtreme sports' },
+--    { 'vimeo',          'channel/mtb',          'Vimeo MTB Channel' },
+--    { 'youtube',        'channel/top_rated',    'YouTube Top Rated' },
+--    { 'youtube',        'Drift0r',              'Drift0r' },
+--    { 'youtube',        'XboxAhoy',             'XboxAhoy' },
+--    { 'ag',             'videos',               'AG - New' },
+--    { 'ivi',            'new',                  'IVI - New' },
+--    { 'gametrailers',   'ps3',                   'GT - PS3' },
+--    { 'giantbomb',      'all',                  'GiantBomb - All' },
 --    { 'dreambox',       'http://192.168.0.1:8001/','Dreambox1' },
 }
 
 -- log ident, pid file end www root
-cfg.version='1.033'
-cfg.log_ident='xupnpd'
+cfg.version='1.034'
+cfg.log_ident=arg[1] or 'xupnpd'
 cfg.pid_file='/var/run/'..cfg.log_ident..'.pid'
 cfg.www_root='/usr/share/xupnpd/www/'
 cfg.ui_path='/usr/share/xupnpd/ui/'

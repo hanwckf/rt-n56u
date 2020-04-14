@@ -1,7 +1,5 @@
 profiles['BRAVIA']=
 {
-    ['disabled']=false,
-
     ['desc']='Sony BRAVIA',
 
 --X-AV-Physical-Unit-Info: pa="BRAVIA KDL-22EX553";

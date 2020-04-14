@@ -33,15 +33,25 @@ function load_plugins(path,what)
     local d=util.dir(path)
 
     if d then
-        for i,j in ipairs(d) do
-            if string.find(j,'^[%w_-]+%.lua$') then
-                if cfg.debug>0 then print(what..' \''..j..'\'') end
-                dofile(path..j)
+        table.sort(d)   -- ensure stable loading order
+        for i,n in ipairs(d) do
+            if string.find(n,'^[%w_-]+%.lua$') then
+                if cfg.debug>0 then print(what..' \''..n..'\'') end
+                dofile(path..n)
             end
         end
     end
 end
 
+function fix_path(s)
+    if string.find(s,'/$') then
+        return s
+    else
+        return s..'/'
+    end
+end
+
+cfg.playlists_path=fix_path(cfg.playlists_path)         -- add trailing slash
 
 -- options for profiles
 cfg.dev_desc_xml='/dev.xml'             -- UPnP Device Description XML
@@ -70,13 +80,11 @@ if not cfg.feeds_path then cfg.feeds_path=cfg.playlists_path end
 -- create feeds directory
 if cfg.feeds_path~=cfg.playlists_path then os.execute('mkdir -p '..cfg.feeds_path) end
 
+dofile('xupnpd_mime.lua')
+
 -- load config, plugins and profiles
 load_plugins(cfg.plugin_path,'plugin')
 load_plugins(cfg.config_path,'config')
-
-dofile('xupnpd_mime.lua')
-
-if cfg.profiles then load_plugins(cfg.profiles,'profile') end
 
 dofile('xupnpd_m3u.lua')
 dofile('xupnpd_ssdp.lua')

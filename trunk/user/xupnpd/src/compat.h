@@ -7,7 +7,7 @@
 #ifndef __COMPAT_H
 #define __COMPAT_H
 
-#ifdef __FreeBSD__
+#if defined(__FreeBSD__) || defined(__APPLE__)
 #define O_LARGEFILE     0
 #define lseek64         lseek
 typedef off_t           off64_t;
@@ -15,9 +15,9 @@ typedef off_t           off64_t;
 
 #ifdef _UNDER_WIN
 #include <cygwin/types.h>
-#define O_LARGEFILE	0
-#define off64_t	_off64_t
-#define lseek64	lseek
+#define O_LARGEFILE     0
+#define off64_t         _off64_t
+#define lseek64         lseek
 #endif /*  _UNDER_WIN  */
 
 #endif /* __COMPAT_H */

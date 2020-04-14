@@ -23,6 +23,9 @@ http_mime['css']='text/css'
 http_mime['json']='application/json'
 http_mime['js']='application/javascript'
 http_mime['m3u']='audio/x-mpegurl'
+http_mime['svg']='image/svg+xml'
+http_mime['eot']='application/vnd.ms-fontobject'
+http_mime['woff']='application/font-woff'
 
 -- http http_error list
 http_err[100]='Continue'
@@ -57,7 +60,7 @@ http_err[413]='Request Entity Too Large'
 http_err[414]='Request-URL Too Large'
 http_err[415]='Unsupported Media Type'
 http_err[416]='Requested range not satisfiable'
-http_err[500]='Internal Server http_error'
+http_err[500]='Internal Server error'
 http_err[501]='Not Implemented'
 http_err[502]='Bad Gateway'
 http_err[503]='Out of Resources'
@@ -97,16 +100,58 @@ function compile_templates()
 end
 
 function http_send_headers(err,ext,len)
+
+	http_cache= {}
+	http_cache['jpg']='max-age=3600'
+	http_cache['png']='max-age=3600'
+	http_cache['ico']='max-age=3600'
+	http_cache['css']='max-age=3600'
+	http_cache['js']='max-age=3600'
+	http_cache['svg']='max-age=3600'
+	http_cache['eot']='max-age=3600'
+	http_cache['woff']='max-age=3600'
+
     http.send(
         string.format(
-            'HTTP/1.1 %i %s\r\nPragma: no-cache\r\nCache-control: no-cache\r\nDate: %s\r\nServer: %s\r\nAccept-Ranges: none\r\n'..
-            'Connection: close\r\nContent-Type: %s\r\nEXT:\r\n',
-            err,http_err[err] or 'Unknown',os.date('!%a, %d %b %Y %H:%M:%S GMT'),ssdp_server,http_mime[ext] or 'application/x-octet-stream')
+            'HTTP/1.1 %i %s\r\n'..
+            'Date: %s\r\n'..
+            'Server: %s\r\n'..
+            'Accept-Ranges: none\r\n'..
+            'Connection: close\r\n',
+			    err,
+				http_err[err] or 'Unknown',
+                os.date('!%a, %d %b %Y %H:%M:%S GMT'),
+			    ssdp_server
+		)
     )
-    if len then http.send(string.format("Content-Length: %s\r\n",len)) end
+	if err == 200 then
+		http.send(
+			string.format(
+				'Cache-control: %s\r\n'..
+				'Content-Type: %s\r\nEXT:\r\n',
+					http_cache[ext] or 'no-cache',
+					http_mime[ext] or 'application/x-octet-stream'
+			 )
+		)
+	end
+
+	if err >= 300  and err < 400 then
+		http.send( string.format("Location: %s\r\n", ext))
+	end
+
+    if len then
+		http.send(string.format("Content-Length: %s\r\n",len))
+	end
+
     http.send("\r\n")
 
-    if cfg.debug>0 and err~=200 then print('http error '..err) end
+    if cfg.debug>0 then
+		if err >= 300 and err < 400  then
+			print('http redirect '..err..' Location ' .. ext)
+		elseif err >= 400 then
+			print('http error '..err)
+		end
+	end
 
 end
 
@@ -233,15 +278,27 @@ function http_handler(what,from,port,msg)
     if not msg or not msg.reqline then return end
 
     local pr_name=nil
+    
+    for plugin_name,plugin in pairs(plugins) do
+        if plugin.http_handler and not plugin.disabled then
+            plugin.http_handler(what,from,port,msg)
+        end
+    end
 
-    if cfg.profiles then
-        pr_name=profile_change(msg['user-agent'],msg)
-
+    if plugins.profiles and not plugins.profiles.disabled then
+    	pr_name=plugins.profiles.current
+    	
         if msg.reqline[2]=='/dev.xml' then msg.reqline[2]=cfg.dev_desc_xml end
     end
 
     if msg.reqline[2]=='/' then
-        if http_ui_main then msg.reqline[2]='/ui' else msg.reqline[2]='/index.html' end
+        if http_ui_main then
+			http_send_headers(301,"ui/") --Делаем редерикт для админки, что бы не таскать везде магичскую строчку "ui" и не писать абсолютные пути в HTML админки
+			msg.reqline[2]='/ui'
+ 			return
+		else
+			msg.reqline[2]='/index.html'
+		end
     end
 
     local head=false
@@ -262,7 +319,7 @@ function http_handler(what,from,port,msg)
             http_send_headers(404)
         else
             dofile(http_ui_main)
-            ui_handler(f.args,msg.data or '',from_ip,f.url)
+            ui_handler(f.args,msg.data or '',from_ip,f.url,msg.reqline[1],msg['cookie'])
         end
         return
     elseif string.find(f.url,'^/app/?') then
@@ -469,11 +526,17 @@ function http_handler(what,from,port,msg)
     -- Subtitle
     elseif url=='sub' then
 
-        local pls=find_playlist_object(object)
+        local srt = string.format("%s.srt", object)
+        local pls=nil
+        object = string.format("%s_", object)
+        while object:len() > 0 and (not pls or not pls.path) do
+            object = object:gsub("_[^_]*$", "")
+            pls=find_playlist_object(object)
+        end
 
         if not pls or not pls.path then http_send_headers(404) return end
 
-        local path=string.gsub(pls.path,'.%w+$','.srt')
+        local path=string.gsub(pls.path,'.%w+$',srt:gsub(object, ""))
 
         local flen=util.getflen(path)
 
@@ -518,15 +581,28 @@ function http_handler(what,from,port,msg)
 
         local mtype,extras=playlist_item_type(pls)
 
+        local status_code=200
+
+        if msg.range then status_code=206 end
+
         http.send(string.format(
-            'HTTP/1.1 200 OK\r\nPragma: no-cache\r\nCache-control: no-cache\r\nDate: %s\r\nServer: %s\r\n'..
+            'HTTP/1.1 %d OK\r\nPragma: no-cache\r\nCache-control: no-cache\r\nDate: %s\r\nServer: %s\r\n'..
             'Connection: close\r\nContent-Type: %s\r\nEXT:\r\n',
-            os.date('!%a, %d %b %Y %H:%M:%S GMT'),ssdp_server,mtype[3]))
+            status_code,os.date('!%a, %d %b %Y %H:%M:%S GMT'),ssdp_server,mtype[3]))
 
         if flen then
             http.send(string.format('Accept-Ranges: bytes\r\nContent-Length: %s\r\n',flen))
         else
             http.send('Accept-Ranges: none\r\n')
+        end
+
+        if "1" == msg['getcaptioninfo.sec'] and pls.path then
+            for i, n in ipairs(util.dir(pls.path:sub(1, pls.path:len() - pls.url:len()))) do
+                if n:sub(n:len() - 4+1) == ".srt" then
+                    http.send(string.format('CaptionInfo.sec: %s/sub/%s.srt\r\n', www_location,pls.objid))
+                    break
+                end
+            end
         end
 
         if cfg.dlna_headers==true then http.send('TransferMode.DLNA.ORG: Streaming\r\nContentFeatures.DLNA.ORG: '..extras..'\r\n') end

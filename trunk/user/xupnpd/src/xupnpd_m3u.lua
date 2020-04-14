@@ -22,6 +22,9 @@ function add_playlists_from_dir(dir_path,playlist,plist)
                     table.insert(plist,fname)
                     if cfg.debug>0 then print('found unlisted playlist \''..fname..'\'') end
                 end
+            else
+                local subdir_path=dir_path..j..'/'
+                add_playlists_from_dir(subdir_path,playlist,plist)
             end
         end
     end

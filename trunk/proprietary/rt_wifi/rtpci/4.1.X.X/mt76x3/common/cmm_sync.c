@@ -111,10 +111,14 @@ VOID BuildChannelList(RTMP_ADAPTER *pAd)
 				{
 					if (pChannelList[i] == pAd->TxPower[j].Channel)
 						NdisMoveMemory(&pAd->ChannelList[index+i], &pAd->TxPower[j], sizeof(CHANNEL_TX_POWER));
-						pAd->ChannelList[index + i].Flags = pChannelListFlag[i];
-					// TODO: shiang-7603, NdisMoveMemory may replace the pAd->ChannelList[index+i].Channel as other values!
-					pAd->ChannelList[index+i].Channel = pChannelList[i];
 				}
+
+				pAd->ChannelList[index + i].Flags = pChannelListFlag[i];
+				/* TODO: shiang-7603, NdisMoveMemory may replace the
+				 * pAd->ChannelList[index+i].Channel as other values!
+				 */
+				pAd->ChannelList[index+i].Channel = pChannelList[i];
+				
 
 #ifdef DOT11_N_SUPPORT
 						if (N_ChannelGroupCheck(pAd, pAd->ChannelList[index + i].Channel))
@@ -124,8 +128,10 @@ VOID BuildChannelList(RTMP_ADAPTER *pAd)
 							pAd->ChannelList[index + i].Flags |= CHANNEL_80M_CAP;
 #endif /* DOT11_VHT_AC */
 #endif /* DOT11_N_SUPPORT */
-
-				pAd->ChannelList[index+i].MaxTxPwr = 30;
+				if (!strncmp((RTMP_STRING *) pAd->CommonCfg.CountryCode, "CN", 2))
+					pAd->ChannelList[index+i].MaxTxPwr = pAd->MaxTxPwr;/*for CN CountryCode*/
+				else
+					pAd->ChannelList[index+i].MaxTxPwr = 20;
 			}
 
 			index += num;
@@ -160,7 +166,7 @@ VOID BuildChannelList(RTMP_ADAPTER *pAd)
 
 		if (num > 0)
 		{
-			UCHAR RadarCh[16]={52, 56, 60, 64, 100, 104, 108, 112, 116, 120, 124, 128, 132, 136, 140, 144};
+			UCHAR RadarCh[15]={52, 56, 60, 64, 100, 104, 108, 112, 116, 120, 124, 128, 132, 136, 140};
 #ifdef CONFIG_AP_SUPPORT
 			UCHAR q=0;
 #endif /* CONFIG_AP_SUPPORT */
@@ -201,7 +207,7 @@ VOID BuildChannelList(RTMP_ADAPTER *pAd)
 						(pAd->CommonCfg.RDDurRegion == FCC) &&
 						(pAd->Dot11_H.bDFSIndoor == 1))
 				{
-					if((GetChannel_5GHZ(pChDesc, i) < 120) || (GetChannel_5GHZ(pChDesc, i) > 128))
+					if((GetChannel_5GHZ(pChDesc, i) < 116) || (GetChannel_5GHZ(pChDesc, i) > 128))
 					{
 						pChannelList[q] = GetChannel_5GHZ(pChDesc, i);
 						pChannelListFlag[q] = GetChannelFlag(pChDesc, i);
@@ -228,12 +234,15 @@ VOID BuildChannelList(RTMP_ADAPTER *pAd)
 			{
 				for (j=0; j<MAX_NUM_OF_CHANNELS; j++)
 				{
-					if (pChannelList[i] == pAd->TxPower[j].Channel)
+					if (pChannelList[i] == pAd->TxPower[j].Channel) 
 						NdisMoveMemory(&pAd->ChannelList[index+i], &pAd->TxPower[j], sizeof(CHANNEL_TX_POWER));
-						pAd->ChannelList[index + i].Flags = pChannelListFlag[i];
-					// TODO: shiang-7603, NdisMoveMemory may replace the pAd->ChannelList[index+i].Channel as other values!
-					pAd->ChannelList[index+i].Channel = pChannelList[i];
 				}
+				
+				pAd->ChannelList[index + i].Flags = pChannelListFlag[i];
+				/* TODO: shiang-7603, NdisMoveMemory may replace the
+				 * pAd->ChannelList[index+i].Channel as other values!
+				 */
+				pAd->ChannelList[index+i].Channel = pChannelList[i];
 
 #ifdef DOT11_N_SUPPORT
 				if (N_ChannelGroupCheck(pAd, pAd->ChannelList[index + i].Channel))
@@ -249,7 +258,7 @@ VOID BuildChannelList(RTMP_ADAPTER *pAd)
 					if (pChannelList[i] == RadarCh[j])
 						pAd->ChannelList[index+i].DfsReq = TRUE;
 				}
-				pAd->ChannelList[index+i].MaxTxPwr = 30;
+				pAd->ChannelList[index+i].MaxTxPwr = 20;
 			}
 			index += num;
 
@@ -444,6 +453,41 @@ UCHAR NextChannel(RTMP_ADAPTER *pAd, UCHAR channel)
 	return next_channel;
 }
 
+/* 
+	==========================================================================
+	Description:
+
+	Return:
+		scan_channel - channel to scan.
+	Note:
+		return 0 if no more next channel
+	==========================================================================
+ */
+UCHAR RTMPFindScanChannel(
+	IN PRTMP_ADAPTER pAd, 
+	UINT8			  LastScanChannel)
+{
+	UCHAR scan_channel = 0;
+#ifdef CONFIG_AP_SUPPORT
+#ifdef AP_PARTIAL_SCAN_SUPPORT
+	IF_DEV_CONFIG_OPMODE_ON_AP(pAd)
+	{
+		if (pAd->ApCfg.bPartialScanning == TRUE)
+		{
+			scan_channel = FindPartialScanChannel(pAd);
+			return scan_channel;
+		}
+	}
+#endif /* AP_PARTIAL_SCAN_SUPPORT */
+#endif /* CONFIG_AP_SUPPORT */
+
+	if (LastScanChannel == 0)
+		scan_channel = FirstChannel(pAd);
+	else
+		scan_channel = NextChannel(pAd, LastScanChannel);
+
+	return scan_channel;
+}
 
 /*
 	==========================================================================
@@ -542,15 +586,18 @@ CHAR ConvertToSnr(RTMP_ADAPTER *pAd, UCHAR Snr)
 
 #ifdef CONFIG_AP_SUPPORT
 #ifdef DOT11_N_SUPPORT
-#ifdef DOT11N_DRAFT3
 extern int DetectOverlappingPeriodicRound;
 
 VOID Handle_BSS_Width_Trigger_Events(RTMP_ADAPTER *pAd)
 {
 	ULONG Now32;
-
+#ifdef	WH_EZ_SETUP
+	UCHAR i;
+#endif
+#ifdef DOT11N_DRAFT3
 	if (pAd->CommonCfg.bBssCoexEnable == FALSE)
 		return;
+#endif /* DOT11N_DRAFT3 */
 
 	if ((pAd->CommonCfg.HtCapability.HtCapInfo.ChannelWidth == BW_40) &&
 		(pAd->CommonCfg.Channel <=14))
@@ -561,153 +608,28 @@ VOID Handle_BSS_Width_Trigger_Events(RTMP_ADAPTER *pAd)
 		pAd->CommonCfg.bRcvBSSWidthTriggerEvents = TRUE;
 		pAd->CommonCfg.AddHTInfo.AddHtInfo.RecomWidth = 0;
 		pAd->CommonCfg.AddHTInfo.AddHtInfo.ExtChanOffset = 0;
+#ifdef WH_EZ_SETUP
+		for(i=0;i<WDEV_NUM_MAX;i++)
+		{
+			struct wifi_dev *wdev;
+
+			wdev = pAd->wdev_list[i];
+			if(!wdev /*|| (wdev->channel != pAd->CommonCfg.Channel)*/) // Arvind : assume only one wdev
+				continue;
+			
+#if  defined(EZ_NETWORK_MERGE_SUPPORT)
+			if (IS_EZ_SETUP_ENABLED(wdev) && (wdev->wdev_type == WDEV_TYPE_AP)){
+				EZ_DEBUG(DBG_CAT_MLME, DBG_SUBCAT_ALL, DBG_LVL_ERROR,("\nHandle_BSS_Width_Trigger_Events: do fallback ****\n"));
+				ez_set_ap_fallback_context(wdev,TRUE, pAd->CommonCfg.Channel);
+			}
+#endif /* WH_EZ_SETUP */
+
+		}
+#endif /* WH_EZ_SETUP */
+		
         DetectOverlappingPeriodicRound = 31;
 	}
 }
-#endif /* DOT11N_DRAFT3 */
 #endif /* DOT11_N_SUPPORT */
 #endif /* CONFIG_AP_SUPPORT */
-
-#if defined(CONFIG_STA_SUPPORT) || defined(APCLI_SUPPORT)
-
-#ifdef DOT11_N_SUPPORT
-#ifdef DOT11N_DRAFT3
-VOID BuildEffectedChannelList(
-	IN PRTMP_ADAPTER pAd)
-{
-	UCHAR		EChannel[11];
-	UCHAR		i, j, k;
-	UCHAR		UpperChannel = 0, LowerChannel = 0;
-	
-	RTMPZeroMemory(EChannel, 11);
-	DBGPRINT(RT_DEBUG_TRACE, ("BuildEffectedChannelList:CtrlCh=%d,CentCh=%d\n", 
-								pAd->CommonCfg.Channel, pAd->CommonCfg.CentralChannel));
-
-	/* 802.11n D4 11.14.3.3: If no secondary channel has been selected, all channels in the frequency band shall be scanned. */
-	{
-		for (k = 0;k < pAd->ChannelListNum;k++)
-		{
-			if (pAd->ChannelList[k].Channel <=14 )
-			pAd->ChannelList[k].bEffectedChannel = TRUE;
-		}
-		return;
-	}	
-	
-	i = 0;
-	/* Find upper and lower channel according to 40MHz current operation. */
-	if (pAd->CommonCfg.CentralChannel < pAd->CommonCfg.Channel)
-	{
-		UpperChannel = pAd->CommonCfg.Channel;
-		LowerChannel = pAd->CommonCfg.CentralChannel-2;
-	}
-	else if (pAd->CommonCfg.CentralChannel > pAd->CommonCfg.Channel)
-	{
-		UpperChannel = pAd->CommonCfg.CentralChannel+2;
-		LowerChannel = pAd->CommonCfg.Channel;
-	}
-	else
-	{
-		DBGPRINT(RT_DEBUG_TRACE, ("LinkUP 20MHz . No Effected Channel \n"));
-		/* Now operating in 20MHz, doesn't find 40MHz effected channels */
-		return;
-	}
-
-	DeleteEffectedChannelList(pAd);	
-
-	DBGPRINT(RT_DEBUG_TRACE, ("BuildEffectedChannelList!LowerChannel ~ UpperChannel; %d ~ %d \n", LowerChannel, UpperChannel));
-
-	/* Find all channels that are below lower channel.. */
-	if (LowerChannel > 1)
-	{
-		EChannel[0] = LowerChannel - 1;
-		i = 1;
-		if (LowerChannel > 2)
-		{
-			EChannel[1] = LowerChannel - 2;
-			i = 2;
-			if (LowerChannel > 3)
-			{
-				EChannel[2] = LowerChannel - 3;
-				i = 3;
-			}
-		}
-	}
-	/* Find all channels that are between  lower channel and upper channel. */
-	for (k = LowerChannel;k <= UpperChannel;k++)
-	{
-		EChannel[i] = k;
-		i++;
-	}
-	/* Find all channels that are above upper channel.. */
-	if (UpperChannel < 14)
-	{
-		EChannel[i] = UpperChannel + 1;
-		i++;
-		if (UpperChannel < 13)
-		{
-			EChannel[i] = UpperChannel + 2;
-			i++;
-			if (UpperChannel < 12)
-			{
-				EChannel[i] = UpperChannel + 3;
-				i++;
-			}
-		}
-	}
-	/* 
-	    Total i channels are effected channels. 
-	    Now find corresponding channel in ChannelList array.  Then set its bEffectedChannel= TRUE
-	*/
-	for (j = 0;j < i;j++)
-	{
-		for (k = 0;k < pAd->ChannelListNum;k++)
-		{
-			if (pAd->ChannelList[k].Channel == EChannel[j])
-			{
-				pAd->ChannelList[k].bEffectedChannel = TRUE;
-				DBGPRINT(RT_DEBUG_TRACE,(" EffectedChannel[%d]( =%d)\n", k, EChannel[j]));
-				break;
-			}
-		}
-	}
-}
-
-
-VOID DeleteEffectedChannelList(
-	IN PRTMP_ADAPTER pAd)
-{
-	UCHAR		i;
-	/*Clear all bEffectedChannel in ChannelList array. */
- 	for (i = 0; i < pAd->ChannelListNum; i++)		
-	{
-		pAd->ChannelList[i].bEffectedChannel = FALSE;
-	}	
-}
-#endif /* DOT11N_DRAFT3 */
-#endif /* DOT11_N_SUPPORT */
-
-/*
-	==========================================================================
-	Description:
-
-	IRQL = DISPATCH_LEVEL
-	
-	==========================================================================
-*/
-VOID ScanParmFill(
-	IN PRTMP_ADAPTER pAd,
-	IN OUT MLME_SCAN_REQ_STRUCT *ScanReq,
-	IN RTMP_STRING Ssid[],
-	IN UCHAR SsidLen,
-	IN UCHAR BssType,
-	IN UCHAR ScanType)
-{
-	NdisZeroMemory(ScanReq->Ssid, MAX_LEN_OF_SSID);
-	ScanReq->SsidLen = SsidLen;
-	NdisMoveMemory(ScanReq->Ssid, Ssid, SsidLen);
-	ScanReq->BssType = BssType;
-	ScanReq->ScanType = ScanType;
-}
-
-#endif /* defined(CONFIG_STA_SUPPORT) || defined(APCLI_SUPPORT) */
 

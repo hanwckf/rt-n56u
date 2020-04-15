@@ -29,6 +29,7 @@ struct cmd_msg *AndesAllocCmdMsg(RTMP_ADAPTER *ad, unsigned int length)
 #endif
 
 	net_pkt = RTMP_AllocateFragPacketBuffer(ad, AllocateSize);
+
 	if (!net_pkt) {
 		DBGPRINT(RT_DEBUG_ERROR, ("can not allocate net_pkt\n"));
 		goto error0;
@@ -46,6 +47,7 @@ struct cmd_msg *AndesAllocCmdMsg(RTMP_ADAPTER *ad, unsigned int length)
 	CMD_MSG_CB(net_pkt)->msg = msg;
 
 	memset(msg, 0x00, sizeof(*msg));
+
 
 	msg->priv = (void *)ad;
 	msg->net_pkt = net_pkt;
@@ -222,6 +224,7 @@ static inline UCHAR AndesGetCmdMsgSeq(RTMP_ADAPTER *ad)
 	struct MCU_CTRL *ctl = &ad->MCUCtrl;
 	struct cmd_msg *msg;
 	unsigned long flags;
+	UINT8 msg_seq;
 
 	RTMP_SPIN_LOCK_IRQSAVE(&ctl->ackq_lock, &flags);
 get_seq:
@@ -233,9 +236,10 @@ get_seq:
 			goto get_seq;
 		}
 	}
+	msg_seq = ctl->cmd_seq;
 	RTMP_SPIN_UNLOCK_IRQRESTORE(&ctl->ackq_lock, &flags);
 
-	return ctl->cmd_seq;
+	return msg_seq;
 }
 
 
@@ -422,7 +426,7 @@ VOID PciKickOutCmdMsgComplete(PNDIS_PACKET net_pkt)
 VOID AndesRxProcessCmdMsg(RTMP_ADAPTER *ad, struct cmd_msg *rx_msg)
 {
     RX_BLK RxBlk;
-
+NdisZeroMemory(&RxBlk, sizeof(RxBlk));
 #ifdef MT_MAC
 	if (ad->chipCap.hif_type == HIF_MT)
 	{
@@ -450,14 +454,16 @@ VOID AndesCmdMsgBh(unsigned long param)
 		switch (msg->state) {
 			case rx_done:
 				AndesRxProcessCmdMsg(ad, msg);
+				AndesFreeCmdMsg(msg);
 				break;
 			case rx_receive_fail:
+				AndesFreeCmdMsg(msg);
 				break;
-			default:
+			default:				
 				DBGPRINT(RT_DEBUG_ERROR, ("unknow msg state(%d)\n", msg->state));
+				AndesFreeCmdMsg(msg);
 				break;
 		}
-		AndesFreeCmdMsg(msg);
 	}
 
 	while ((msg = AndesDequeueCmdMsg(ctl, &ctl->tx_doneq))) {
@@ -465,12 +471,13 @@ VOID AndesCmdMsgBh(unsigned long param)
 			case tx_done:
 			case tx_kickout_fail:
 			case tx_timeout_fail:
+				AndesFreeCmdMsg(msg);
 				break;
-			default:
+			default:				
 				DBGPRINT(RT_DEBUG_ERROR, ("unknow msg state(%d)\n", msg->state));
+				AndesFreeCmdMsg(msg);
 				break;
 		}
-		AndesFreeCmdMsg(msg);
 	}
 
 	if (OS_TEST_BIT(MCU_INIT, &ctl->flags)) {
@@ -737,7 +744,9 @@ static INT32 AndesDequeueAndKickOutCmdMsgs(RTMP_ADAPTER *ad)
 #endif
 
 		if (ret) {
-			DBGPRINT(RT_DEBUG_ERROR, ("kick out msg fail\n"));
+			DBGPRINT(RT_DEBUG_ERROR, ("[03] kick out msg fail\n"));
+			if (ret == NDIS_STATUS_FAILURE)
+				AndesForceFreeCmdMsg(msg);
 			break;
 		}
 	}

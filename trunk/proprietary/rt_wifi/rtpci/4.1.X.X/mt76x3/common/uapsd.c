@@ -1523,13 +1523,8 @@ VOID UAPSD_SP_CloseInRVDone(RTMP_ADAPTER *pAd)
 	/* check for all CLIENT's UAPSD Service Period */
 	for(IdEntry = FirstWcid; IdEntry < MAX_LEN_OF_MAC_TABLE; IdEntry++)
 	{
-		MAC_TABLE_ENTRY *pEntry = NULL;
+		MAC_TABLE_ENTRY *pEntry = &pAd->MacTab.Content[IdEntry];
 		ULONG flags = 0;
-
-    		if (IdEntry >= MAX_LEN_OF_MAC_TABLE)
-			break;
-
-		pEntry = &pAd->MacTab.Content[IdEntry];
 
 		UAPSD_SEM_LOCK(&pAd->UAPSDEOSPLock, flags);
 
@@ -1872,7 +1867,7 @@ BOOLEAN UAPSD_PsPollHandle(RTMP_ADAPTER *pAd, MAC_TABLE_ENTRY *pEntry)
 
 	UAPSD_SEM_UNLOCK(&pAd->UAPSDEOSPLock, flags);
 
-	RTMPDeQueuePacket(pAd, FALSE, WMM_NUM_OF_AC, WCID_ALL, MAX_TX_PROCESS);
+	RTMPDeQueuePacket(pAd, FALSE, NUM_OF_TX_RING, WCID_ALL, MAX_TX_PROCESS);
 	return TRUE;
 }
 
@@ -2317,13 +2312,14 @@ VOID UAPSD_TriggerFrameHandle(RTMP_ADAPTER *pAd, MAC_TABLE_ENTRY *pEntry, UCHAR 
 	{
 		/* if no data needs to tx, respond with QosNull for the trigger frame */
 		pEntry->pUAPSDEOSPFrame = NULL;
-		pEntry->UAPSDTxNum = 0;
+		pEntry->UAPSDTxNum = TxPktNum;
 #ifdef MT_PS
 		tr_entry->bEospNullSnd = FALSE;
 #endif /* MT_PS */
 
 		if (TxPktNum == 0)
 		{
+			pEntry->UAPSDTxNum = 0;
 #ifdef MT_PS
 			if ((pAd->chipCap.hif_type == HIF_MT) &&
 				(tr_entry->ps_state != APPS_RETRIEVE_IDLE) &&
@@ -2342,7 +2338,7 @@ VOID UAPSD_TriggerFrameHandle(RTMP_ADAPTER *pAd, MAC_TABLE_ENTRY *pEntry, UCHAR 
 			DBGPRINT(RT_DEBUG_TRACE,
 					 ("uapsd> No data, send a Qos-Null frame with ESOP bit on and "
 					  "UP=%d to end USP\n", UpOfFrame));
-#endif /* UAPSD_DEBUG */
+#endif /* RELEASE_EXCLUDE */
 		}
 		else
 		{
@@ -2366,7 +2362,7 @@ VOID UAPSD_TriggerFrameHandle(RTMP_ADAPTER *pAd, MAC_TABLE_ENTRY *pEntry, UCHAR 
 			DBGPRINT(RT_DEBUG_TRACE,
 					("uapsd> Only one packet with UP = %d\n",
 					RTMP_GET_PACKET_UP(pQuedPkt)));
-#endif /* UAPSD_DEBUG */
+#endif /* RELEASE_EXCLUDE */
 		}
 
 		/*
@@ -2507,7 +2503,7 @@ VOID UAPSD_TriggerFrameHandle(RTMP_ADAPTER *pAd, MAC_TABLE_ENTRY *pEntry, UCHAR 
 #endif /* MT_PS */
 	{
 		/* need to use pEntry->UAPSDTxNum to make sure all packets are Dequeued in USB Throughtput case */
-		RTMPDeQueuePacket(pAd, FALSE, WMM_NUM_OF_AC, pEntry->wcid, pEntry->UAPSDTxNum);
+		RTMPDeQueuePacket(pAd, FALSE, NUM_OF_TX_RING, pEntry->wcid, pEntry->UAPSDTxNum);
 	}
 }
 

@@ -130,7 +130,7 @@ INT AsicAutoFallbackInit(RTMP_ADAPTER *pAd)
 {
 #ifdef RANGE_EXTEND
 	RTMP_IO_WRITE32(pAd, HT_FBK_CFG1, 0xedcba980);
-#endif /* RANGE_EXTEND */
+#endif // RANGE_EXTEND //
 #ifdef DOT11N_SS3_SUPPORT
 	if (pAd->CommonCfg.TxStream >= 3)
 	{
@@ -672,28 +672,26 @@ VOID AsicSetMbssMode(RTMP_ADAPTER *pAd, UCHAR NumOfBcns)
 	}	
 	else if (NumOfMacs <= 2)
 	{
-#ifndef NEW_MBSSID_MODE
-		if ((pAd->CurrentAddress[5] % 2 != 0))
+		if ((pAd->CurrentAddress[5] % 2 != 0)
+		)
 			DBGPRINT(RT_DEBUG_ERROR, ("The 2-BSSID mode is enabled, the BSSID byte5 MUST be the multiple of 2\n"));
-#endif
+		
 		regValue |= (1<<16);
 		pAd->ApCfg.MacMask = ~(2-1);
 	}
 	else if (NumOfMacs <= 4)
 	{
-#ifndef NEW_MBSSID_MODE
 		if (pAd->CurrentAddress[5] % 4 != 0)
 			DBGPRINT(RT_DEBUG_ERROR, ("The 4-BSSID mode is enabled, the BSSID byte5 MUST be the multiple of 4\n"));
-#endif
+
 		regValue |= (2<<16);
 		pAd->ApCfg.MacMask = ~(4-1);
 	}
 	else if (NumOfMacs <= 8)
 	{
-#ifndef NEW_MBSSID_MODE
 		if (pAd->CurrentAddress[5] % 8 != 0)
 			DBGPRINT(RT_DEBUG_ERROR, ("The 8-BSSID mode is enabled, the BSSID byte5 MUST be the multiple of 8\n"));
-#endif
+	
 		regValue |= (3<<16);
 		pAd->ApCfg.MacMask = ~(8-1);
 	}
@@ -812,7 +810,7 @@ INT AsicSetRxFilter(RTMP_ADAPTER *pAd)
 	)
 	{
 		rx_filter_flag = APNORMAL;
-#if 0  /* BBP allways must filter not me packets, this more safe and speed */
+
 #ifdef CONFIG_AP_SUPPORT
 #ifdef IDS_SUPPORT
 		IF_DEV_CONFIG_OPMODE_ON_AP(pAd)
@@ -822,7 +820,6 @@ INT AsicSetRxFilter(RTMP_ADAPTER *pAd)
 		}
 #endif /* IDS_SUPPORT */			
 #endif /* CONFIG_AP_SUPPORT */
-#endif
 	}
 
 	RTMP_IO_WRITE32(pAd, RX_FILTR_CFG, rx_filter_flag);
@@ -1357,125 +1354,97 @@ VOID AsicSetEdcaParm(RTMP_ADAPTER *pAd, PEDCA_PARM pEdcaParm)
 	To pass WMM, AC0 TXOP must be zero.
 	It is necessary to turn AC0 TX_OP dynamically.
 */
-
 VOID dynamic_tune_be_tx_op(RTMP_ADAPTER *pAd, ULONG nonBEpackets)
 {
 	UINT32 RegValue;
 	AC_TXOP_CSR0_STRUC csr0;
 
-	if (
-#ifdef DOT11_N_SUPPORT
-		(pAd->WIFItestbed.bGreenField && pAd->MacTab.fAnyStationNonGF == TRUE) ||
-		pAd->OneSecondnonBEpackets > nonBEpackets || (pAd->MacTab.fAnyStationMIMOPSDynamic && pAd->MacTab.fAnyStationInPsm) ||
-#endif /* DOT11_N_SUPPORT */
-		pAd->MacTab.fAnyTxOPForceDisable || pAd->MacTab.Size == 0)
-	{
-		if (RTMP_TEST_FLAG(pAd, fRTMP_ADAPTER_DYNAMIC_BE_TXOP_ACTIVE))
-		{
-			DBGPRINT(RT_DEBUG_INFO, ("%s:: Tx burst disable.\n", __FUNCTION__));
-			RTMP_IO_READ32(pAd, EDCA_AC0_CFG, &RegValue);
-
-			if (RTMP_TEST_FLAG(pAd, fRTMP_ADAPTER_RALINK_BURST_MODE))
-			{
-				RegValue = pAd->CommonCfg.RestoreBurstMode;
-				RTMP_CLEAR_FLAG(pAd, fRTMP_ADAPTER_RALINK_BURST_MODE);
-			}
-
-			if (RTMP_TEST_FLAG(pAd, fRTMP_ADAPTER_RDG_ACTIVE))
-			{
-				TX_LINK_CFG_STRUC   TxLinkCfg;
-
-				RTMP_IO_READ32(pAd, TX_LINK_CFG, &TxLinkCfg.word);
-				TxLinkCfg.field.TxRDGEn = 0;
-				RTMP_IO_WRITE32(pAd, TX_LINK_CFG, TxLinkCfg.word);
-
-				RTMP_CLEAR_FLAG(pAd, fRTMP_ADAPTER_RDG_ACTIVE);
-			}
-
-			/* disable AC0(BE) TX_OP */
-			RegValue  &= 0xFFFFFF00; /* for WMM test */
-			/*if ((RegValue & 0x0000FF00) == 0x00004300) */
-			/*	RegValue += 0x00001100; */
-			RTMP_IO_WRITE32(pAd, EDCA_AC0_CFG, RegValue);
-			if (pAd->CommonCfg.APEdcaParm.Txop[QID_AC_VO] != 102)
-			{
-				csr0.field.Ac0Txop = 0;		/* QID_AC_BE */
-			}
-			else
-			{
-				/* for legacy b mode STA */
-				csr0.field.Ac0Txop = 10;		/* QID_AC_BE */
-			}
-			csr0.field.Ac1Txop = 0;		/* QID_AC_BK */
-			RTMP_IO_WRITE32(pAd, WMM_TXOP0_CFG, csr0.word);
-			RTMP_CLEAR_FLAG(pAd, fRTMP_ADAPTER_DYNAMIC_BE_TXOP_ACTIVE);
-		}
-	} else if (pAd->CommonCfg.bEnableTxBurst
+	if (pAd->CommonCfg.bEnableTxBurst 
 #ifdef DOT11_N_SUPPORT
 		|| pAd->CommonCfg.bRdg
 		|| pAd->CommonCfg.bRalinkBurstMode
 #endif /* DOT11_N_SUPPORT */
 	)
 	{
-		if (RTMP_TEST_FLAG(pAd, fRTMP_ADAPTER_DYNAMIC_BE_TXOP_ACTIVE) == 0 || pAd->MacTab.fTxBurstRetune)
+		if (
+#ifdef DOT11_N_SUPPORT
+			(pAd->WIFItestbed.bGreenField && pAd->MacTab.fAnyStationNonGF == TRUE) ||
+			((pAd->OneSecondnonBEpackets > nonBEpackets) || pAd->MacTab.fAnyStationMIMOPSDynamic) || 
+#endif /* DOT11_N_SUPPORT */
+			(pAd->MacTab.fAnyTxOPForceDisable))
 		{
-			/* enable AC0(BE) TX_OP */
-			UCHAR	txop_value = 0x20;	/* default txop for Tx-Burst */
+			if (RTMP_TEST_FLAG(pAd, fRTMP_ADAPTER_DYNAMIC_BE_TXOP_ACTIVE))
+			{
+				RTMP_IO_READ32(pAd, EDCA_AC0_CFG, &RegValue);
 
-			if (RTMP_TEST_FLAG(pAd, fRTMP_ADAPTER_RALINK_BURST_MODE))
-				txop_value = 0x80;
-			else if (RTMP_TEST_FLAG(pAd, fRTMP_ADAPTER_RDG_ACTIVE))
-				txop_value = 0x80;
-#ifndef CONFIG_RAETH_ESW
-			else if ((pAd->MacTab.Size == 1) && (pAd->CommonCfg.bEnableTxBurst)) {
-				MAC_TABLE_ENTRY *pEntry = NULL;
-				UINT32 i = 0;
-
-	                	for (i = 1; i< MAX_LEN_OF_MAC_TABLE; i++) {
-					pEntry = &pAd->MacTab.Content[i];
-					if (IS_ENTRY_CLIENT(pEntry) && (pEntry->Sst == SST_ASSOC))
-						break;
-	                	}
-				if (pEntry && i < MAX_LEN_OF_MAC_TABLE) {
-					if (((pEntry->HTPhyMode.field.MODE == MODE_HTMIX || pEntry->HTPhyMode.field.MODE == MODE_HTGREENFIELD) &&
-						(((pAd->CommonCfg.TxStream == 2) && (pEntry->HTPhyMode.field.MCS >= MCS_14)) ||
-						((pAd->CommonCfg.TxStream == 1) && (pEntry->HTPhyMode.field.MCS >= MCS_6))))
-#ifdef DOT11_VHT_AC
-						/* do not use 0x60 burst at VHT mode for 100Mbit models, client tx speed issue*/
-						|| ((pEntry->HTPhyMode.field.MODE == MODE_VHT) &&
-						(((pAd->CommonCfg.TxStream == 2) && (pEntry->HTPhyMode.field.MCS >= 23)) ||
-						((pAd->CommonCfg.TxStream == 1) && (pEntry->HTPhyMode.field.MCS >= 7))))
-#endif /* CONFIG_RAETH_ESW */
-						) {
-						txop_value = 0x60;
-						DBGPRINT(RT_DEBUG_INFO, ("%s::enable Tx burst to 0x60 under HT/VHT mode\n", __FUNCTION__));
-					} else {
-						DBGPRINT(RT_DEBUG_INFO, ("%s:: mcs is low for 0x60 mode - enable Tx burst to 0x20\n", __FUNCTION__));
-					}
+				if (RTMP_TEST_FLAG(pAd, fRTMP_ADAPTER_RALINK_BURST_MODE))
+				{
+					RegValue = pAd->CommonCfg.RestoreBurstMode;
+					RTMP_CLEAR_FLAG(pAd, fRTMP_ADAPTER_RALINK_BURST_MODE);
 				}
-			} else {
-				DBGPRINT(RT_DEBUG_INFO, ("%s:: more then one client connected - enable Tx burst to 0x20 under HT/VHT mode\n", __FUNCTION__));
+
+				if (RTMP_TEST_FLAG(pAd, fRTMP_ADAPTER_RDG_ACTIVE))
+				{
+					TX_LINK_CFG_STRUC   TxLinkCfg;
+
+					RTMP_IO_READ32(pAd, TX_LINK_CFG, &TxLinkCfg.word);
+					TxLinkCfg.field.TxRDGEn = 0;
+					RTMP_IO_WRITE32(pAd, TX_LINK_CFG, TxLinkCfg.word);
+
+					RTMP_CLEAR_FLAG(pAd, fRTMP_ADAPTER_RDG_ACTIVE);
+				}
+				/* disable AC0(BE) TX_OP */
+				RegValue  &= 0xFFFFFF00; /* for WMM test */
+				/*if ((RegValue & 0x0000FF00) == 0x00004300) */
+				/*	RegValue += 0x00001100; */
+				RTMP_IO_WRITE32(pAd, EDCA_AC0_CFG, RegValue);
+				if (pAd->CommonCfg.APEdcaParm.Txop[QID_AC_VO] != 102)
+				{
+					csr0.field.Ac0Txop = 0;		/* QID_AC_BE */
+				}
+				else
+				{
+					/* for legacy b mode STA */
+					csr0.field.Ac0Txop = 10;		/* QID_AC_BE */
+				}
+				csr0.field.Ac1Txop = 0;		/* QID_AC_BK */
+				RTMP_IO_WRITE32(pAd, WMM_TXOP0_CFG, csr0.word);
+				RTMP_CLEAR_FLAG(pAd, fRTMP_ADAPTER_DYNAMIC_BE_TXOP_ACTIVE);				
 			}
-#endif /* DOT11_VHT_AC */
+		}
+		else
+		{
+			if (RTMP_TEST_FLAG(pAd, fRTMP_ADAPTER_DYNAMIC_BE_TXOP_ACTIVE)==0)
+			{
+				/* enable AC0(BE) TX_OP */
+				UCHAR	txop_value_burst = 0x20;	/* default txop for Tx-Burst */
+				UCHAR   txop_value;
 
-			if (!pAd->CommonCfg.bEnableTxBurst)
-				txop_value = 0;
+#ifdef LINUX
+#endif /* LINUX */
 
-#ifdef MULTI_CLIENT_SUPPORT
-			if(pAd->MacTab.Size > 3) /* for Multi-Clients */
-				txop_value = 0;
-#endif /* MULTI_CLIENT_SUPPORT */
+				RTMP_IO_READ32(pAd, EDCA_AC0_CFG, &RegValue);
+				
+				if (RTMP_TEST_FLAG(pAd, fRTMP_ADAPTER_RALINK_BURST_MODE))
+					txop_value = 0x80;				
+				else if (RTMP_TEST_FLAG(pAd, fRTMP_ADAPTER_RDG_ACTIVE))
+					txop_value = 0x80;
+				else if (pAd->CommonCfg.bEnableTxBurst)
+					txop_value = txop_value_burst;
+				else
+					txop_value = 0;
 
-			RTMP_IO_READ32(pAd, EDCA_AC0_CFG, &RegValue);
-			RegValue  &= 0xFFFFFF00;
-			RegValue  |= txop_value;  /* for performance, set the TXOP to non-zero */
-			RTMP_IO_WRITE32(pAd, EDCA_AC0_CFG, RegValue);
-			csr0.field.Ac0Txop = txop_value;	/* QID_AC_BE */
-			csr0.field.Ac1Txop = 0;				/* QID_AC_BK */
-			RTMP_IO_WRITE32(pAd, WMM_TXOP0_CFG, csr0.word);
-			RTMP_SET_FLAG(pAd, fRTMP_ADAPTER_DYNAMIC_BE_TXOP_ACTIVE);
-			/* only once */
-			pAd->MacTab.fTxBurstRetune = FALSE;
+				RegValue  &= 0xFFFFFF00;
+				/*if ((RegValue & 0x0000FF00) == 0x00005400)
+					RegValue -= 0x00001100; */
+				/*txop_value = 0; */
+				RegValue  |= txop_value;  /* for performance, set the TXOP to non-zero */
+				RTMP_IO_WRITE32(pAd, EDCA_AC0_CFG, RegValue);
+				csr0.field.Ac0Txop = txop_value;	/* QID_AC_BE */
+				csr0.field.Ac1Txop = 0;				/* QID_AC_BK */
+				RTMP_IO_WRITE32(pAd, WMM_TXOP0_CFG, csr0.word);
+				RTMP_SET_FLAG(pAd, fRTMP_ADAPTER_DYNAMIC_BE_TXOP_ACTIVE);				
+			}
 		}
 	}
 	pAd->OneSecondnonBEpackets = 0;

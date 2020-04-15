@@ -884,9 +884,7 @@ static const RTMP_CHIP_CAP MT7628_ChipCap = {
 	.WPDMABurstSIZE = 3,
 #endif
 	.SnrFormula = SNR_FORMULA4,
-#ifdef WAPI_SUPPORT
 	.FlgIsHwWapiSup = TRUE,
-#endif /* WAPI_SUPPORT */
 	.FlgIsHwAntennaDiversitySup = FALSE,
 #ifdef STREAM_MODE_SUPPORT
 	.FlgHwStreamMode = FALSE,
@@ -950,7 +948,6 @@ static const RTMP_CHIP_CAP MT7628_ChipCap = {
 #endif /* CONFIG_WIFI_TEST */
 	.hif_type = HIF_MT,
 	.rf_type = RF_MT,
-	.TxAggLimit = 21;
 	.RxBAWinSize = 21,
 	.AMPDUFactor = 2,
 };

@@ -73,7 +73,11 @@ RTMP_DECLARE_DRV_OPS_FUNCTION(pci);
 #else
 
 #ifdef MT_MAC
+#if defined(CONFIG_SECOND_IF_MT7615E) || defined(CONFIG_FIRST_IF_MT7615E) || defined(CONFIG_SECOND_IF_MT7663E)
+#define RTMP_DRV_NAME   "rlt_drv"
+#else
 #define RTMP_DRV_NAME   "mt7603_drv"
+#endif /* CONFIG_SECOND_IF_MT7615E */
 #else
 #define RTMP_DRV_NAME	"rt2860"
 #endif /* RTMP_MAC_USB */
@@ -277,7 +281,6 @@ RTMP_DECLARE_DRV_OPS_FUNCTION(pci);
 #define RTMP_IRQ_LOCK(__lock, __irqflags)			\
 {													\
 	__irqflags = 0;									\
-	typecheck(unsigned long, __irqflags);           \
 	spin_lock_irqsave((spinlock_t *)(__lock), __irqflags);			\
 }
 
@@ -289,7 +292,6 @@ RTMP_DECLARE_DRV_OPS_FUNCTION(pci);
 #define RTMP_IRQ_LOCK(__lock, __irqflags)		\
 {												\
 	__irqflags = 0;								\
-	typecheck(unsigned long, __irqflags);           \
 	RtmpOsSpinLockBh(__lock);					\
 }
 
@@ -442,15 +444,33 @@ extern RTMP_USB_CONFIG *pRtmpUsbConfig;
 #define APCLI_IF_UP_CHECK(pAd, ifidx) (RtmpOSNetDevIsUp((pAd)->ApCfg.ApCliTab[(ifidx)].wdev.if_dev) == TRUE)
 
 #ifdef RTMP_MAC_PCI
-#define TX_RING_SIZE            128 // mt7603 not support long agg sizes
-/* for MT_MAC RX ring size must me = Tx ring size */
-#ifdef MT_MAC
-#define RX_RING_SIZE            TX_RING_SIZE
+#ifdef MEMORY_OPTIMIZATION
+#define TX_RING_SIZE            64
+#define MGMT_RING_SIZE          32
+#define RX_RING_SIZE            64
 #else
-#define RX_RING_SIZE            128
+#ifdef DOT11_VHT_AC
+#define TX_RING_SIZE            256 /* 64 */ /*64 */
+#define RX_RING_SIZE            256 /*64 */
+#else
+#ifdef MEMORY_SLIM_SUPPORT
+#define TX_RING_SIZE            64 /*64 */
+#else
+#define TX_RING_SIZE            220 /*220,default */
+#endif
+#ifdef BB_SOC
+#define RX_RING_SIZE            64 
+#else
+#define RX_RING_SIZE            128 /*64 */
+#endif
+#endif /* DOT11_VHT_AC */
+#ifdef BB_SOC
+#define MGMT_RING_SIZE          64
+#else
+#define MGMT_RING_SIZE          128
+#endif
 #endif
 
-#define MGMT_RING_SIZE          128
 #ifdef DATA_QUEUE_RESERVE
 // TX_RING_SIZE_RSV must small than TX_RING_SIZE
 #define TX_RING_SIZE_RSV    16
@@ -461,9 +481,10 @@ extern RTMP_USB_CONFIG *pRtmpUsbConfig;
 #define BCN_RING_SIZE		20
 #endif /* MT_MAC */
 
-#define MAX_TX_PROCESS          TX_RING_SIZE
+#define MAX_TX_PROCESS          TX_RING_SIZE /*8 */
 #define MAX_DMA_DONE_PROCESS    TX_RING_SIZE
-#define MAX_TX_DONE_PROCESS     TX_RING_SIZE
+#define MAX_TX_DONE_PROCESS     TX_RING_SIZE /*8 */
+#define LOCAL_TXBUF_SIZE        2
 #endif /* RTMP_MAC_PCI */
 
 #define RTMP_OS_NETDEV_SET_PRIV		RtmpOsSetNetDevPriv

@@ -7,7 +7,7 @@ compiler:
 
 env:
     global:
-      - targets="K2P K2P_nano K2P_nano-5.0 JCG-836PRO-5.0 JCG-AC860M-5.0 DIR-878-5.0 DIR-882-5.0 WR1200JS MI-R3G NEWIFI3"
+      - targets="K2P_nano K2P_nano-5.0 K2P-5.0 JCG-836PRO-5.0 JCG-AC860M-5.0 DIR-878-5.0 DIR-882-5.0 WDR7300 A3004NS WR1200JS MI-R3G NEWIFI3 B70"
       - toolchain_url="https://github.com/hanwckf/padavan-toolchain/releases/download/v1.1/mipsel-linux-uclibc.tar.xz"
 
 addons:

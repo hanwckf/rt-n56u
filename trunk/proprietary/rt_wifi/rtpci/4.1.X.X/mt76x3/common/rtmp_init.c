@@ -27,6 +27,10 @@
 */
 #include	"rt_config.h"
 
+#if defined(DOT11_SAE_SUPPORT) || defined(CONFIG_OWE_SUPPORT)
+#include "ecc.h"
+#endif
+
 #ifdef OS_ABL_FUNC_SUPPORT
 /* Os utility link: printk, scanf */
 RTMP_OS_ABL_OPS RaOsOps, *pRaOsOps = &RaOsOps;
@@ -112,7 +116,7 @@ NDIS_STATUS RTMPAllocAdapterBlock(VOID *handle, VOID **ppAdapter)
 		}
 		DBGPRINT(RT_DEBUG_OFF, ("\n\n=== pAd = %p, size = %d ===\n\n", pAd, sizeof(RTMP_ADAPTER)));
 
-		if (RtmpOsStatsAlloc(&pAd->iw_stats) == FALSE)
+		if (RtmpOsStatsAlloc(&pAd->stats, &pAd->iw_stats) == FALSE)
 		{
 			Status = NDIS_STATUS_FAILURE;
 			break;
@@ -179,6 +183,11 @@ NDIS_STATUS RTMPAllocAdapterBlock(VOID *handle, VOID **ppAdapter)
 	{
 		if (pAd)
 		{
+			if (pAd->stats) {
+				os_free_mem(NULL, pAd->stats);
+				pAd->stats = NULL;
+			}
+
 			if (pAd->iw_stats) {
 				os_free_mem(NULL, pAd->iw_stats);
 				pAd->iw_stats = NULL;
@@ -527,7 +536,7 @@ INT rtmp_hif_cyc_init(RTMP_ADAPTER *pAd, UINT8 val)
 
 	// TODO: shiang-7603
 	if (pAd->chipCap.hif_type == HIF_MT) {
-		DBGPRINT(RT_DEBUG_TRACE, ("%s(%d): Not support for HIF_MT yet!\n",
+		DBGPRINT(RT_DEBUG_OFF, ("%s(%d): Not support for HIF_MT yet!\n",
 							__FUNCTION__, __LINE__));
 		return FALSE;
 	}
@@ -575,7 +584,7 @@ NDIS_STATUS NICInitializeAsic(RTMP_ADAPTER *pAd, BOOLEAN bHardReset)
 
 		// TODO: shiang-7603
 	if (pAd->chipCap.hif_type == HIF_MT) {
-		DBGPRINT(RT_DEBUG_TRACE, ("%s(%d): Not support rtmp_mac_sys_reset () for HIF_MT yet!\n",
+		DBGPRINT(RT_DEBUG_OFF, ("%s(%d): Not support rtmp_mac_sys_reset () for HIF_MT yet!\n",
 							__FUNCTION__, __LINE__));
 	} else {
 #if defined(RTMP_MAC) || defined(RLT_MAC)
@@ -907,8 +916,7 @@ VOID RTMPMoveMemory(VOID *pDest, VOID *pSrc, ULONG Length)
 
 	for (Index = 0; Index < Length; Index++)
 	{
-		if (pMem1 && pMem2)
-		    pMem1[Index] = pMem2[Index];
+		pMem1[Index] = pMem2[Index];
 	}
 }
 
@@ -931,15 +939,23 @@ VOID UserCfgExit(RTMP_ADAPTER *pAd)
 #ifdef MAC_REPEATER_SUPPORT
 	NdisFreeSpinLock(&pAd->ApCfg.ReptCliEntryLock);
 #endif /* MAC_REPEATER_SUPPORT */
-
-#ifdef CONFIG_AP_SUPPORT
-	IF_DEV_CONFIG_OPMODE_ON_AP(pAd)
-	{
 #ifdef BAND_STEERING
+	if (pAd->ApCfg.BandSteering) {
 		BndStrg_Release(pAd);
-#endif /* BAND_STEERING */
 	}
-#endif /* CONFIG_AP_SUPPORT */
+#endif /* BAND_STEERING */
+
+#ifdef MT_PS
+	NdisFreeSpinLock(&pAd->PSRetrieveLock);
+#endif
+
+#ifdef DOT11_SAE_SUPPORT
+	sae_cfg_deinit(pAd, &pAd->SaeCfg);
+#endif /* DOT11_SAE_SUPPORT */
+#if defined(DOT11_SAE_SUPPORT) || defined(CONFIG_OWE_SUPPORT)
+	group_info_bi_deinit();
+#endif
+
 }
 
 
@@ -1032,7 +1048,6 @@ VOID UserCfgInit(RTMP_ADAPTER *pAd)
 	pAd->CommonCfg.TxPowerDefault = 0xffffffff; /* AUTO*/
 	pAd->CommonCfg.TxPreamble = Rt802_11PreambleAuto; /* use Long preamble on TX by defaut*/
 	pAd->CommonCfg.bUseZeroToDisableFragment = FALSE;
-	pAd->bDisableRtsProtect = FALSE;
 	pAd->CommonCfg.RtsThreshold = 2347;
 	pAd->CommonCfg.FragmentThreshold = 2346;
 	pAd->CommonCfg.UseBGProtection = 0;    /* 0: AUTO*/
@@ -1089,6 +1104,7 @@ VOID UserCfgInit(RTMP_ADAPTER *pAd)
 #endif /* UAPSD_SUPPORT */
 	pAd->CommonCfg.bNeedSendTriggerFrame = FALSE;
 	pAd->CommonCfg.TriggerTimerCount = 0;
+	pAd->CommonCfg.bAPSDForcePowerSave = FALSE;
 	/*pAd->CommonCfg.bCountryFlag = FALSE;*/
 	pAd->CommonCfg.TxStream = 0;
 	pAd->CommonCfg.RxStream = 0;
@@ -1114,7 +1130,6 @@ VOID UserCfgInit(RTMP_ADAPTER *pAd)
 #endif  /* DOT11N_DRAFT3 */
 
 	pAd->CommonCfg.bRcvBSSWidthTriggerEvents = FALSE;
-	pAd->CommonCfg.DisableOLBCDetect = 1;
 
 	NdisZeroMemory(&pAd->CommonCfg.AddHTInfo, sizeof(pAd->CommonCfg.AddHTInfo));
 	pAd->CommonCfg.BACapability.field.MMPSmode = MMPS_DISABLE;
@@ -1241,17 +1256,6 @@ VOID UserCfgInit(RTMP_ADAPTER *pAd)
 			BSS_STRUCT *mbss = &pAd->ApCfg.MBSSID[j];
 			struct wifi_dev *wdev = &pAd->ApCfg.MBSSID[j].wdev;
 
-			mbss->AssocReqFailRssiThreshold = 0;
-			mbss->AssocReqNoRspRssiThreshold = 0;
-			mbss->AuthFailRssiThreshold = 0;
-			mbss->AuthNoRspRssiThreshold = 0;
-			mbss->RssiLowForStaKickOut = 0;
-			mbss->RssiLowForStaKickOutPSM = 0;
-			mbss->RssiLowForStaKickOutFT = 0;
-			mbss->RssiLowForStaKickOutDelay = 10;
-			mbss->ProbeRspRssiThreshold = 0;
-			mbss->ProbeRspTimes = 3;
-
 			wdev->AuthMode = Ndis802_11AuthModeOpen;
 			wdev->WepStatus = Ndis802_11EncryptionDisabled;
 			wdev->GroupKeyWepStatus = Ndis802_11EncryptionDisabled;
@@ -1262,6 +1266,7 @@ VOID UserCfgInit(RTMP_ADAPTER *pAd)
 			/* init the default 60 seconds*/
 			mbss->StationKeepAliveTime = 60;
 
+			mbss->ProbeRspTimes = 3;
 #ifdef SPECIFIC_TX_POWER_SUPPORT
 			if (IS_RT6352(pAd))
 				mbss->TxPwrAdj = -1;
@@ -1272,7 +1277,12 @@ VOID UserCfgInit(RTMP_ADAPTER *pAd)
 			mbss->PreAuth = FALSE;
 
 			/* PMK cache setting*/
-			mbss->PMKCachePeriod = (480 * 60 * OS_HZ); /* unit : tick(default: 8hour ~ one work day) */
+#ifdef R1KH_HARD_RETRY/* yiwei no give up! */
+			/* profile already set to 120to prevent PMK is delete on DUT */
+			mbss->PMKCachePeriod = (120 * 60 * OS_HZ);/* unit : tick(default: 120 minute)*/
+#else/* R1KH_HARD_RETRY */
+			mbss->PMKCachePeriod = (10 * 60 * OS_HZ);/* unit : tick(default: 10 minute)*/
+#endif/* !R1KH_HARD_RETRY */
 			NdisZeroMemory(&mbss->PMKIDCache, sizeof(NDIS_AP_802_11_PMKID));
 
 			/* dot1x related per BSS */
@@ -1400,8 +1410,6 @@ VOID UserCfgInit(RTMP_ADAPTER *pAd)
 
 		pAd->ApCfg.StaIdleTimeout = MAC_TABLE_AGEOUT_TIME;
 
-		pAd->ApCfg.BANClass3Data = FALSE;
-
 #ifdef IDS_SUPPORT
 		/* Default disable IDS threshold and reset all IDS counters*/
 		pAd->ApCfg.IdsEnable = FALSE;
@@ -1429,33 +1437,23 @@ VOID UserCfgInit(RTMP_ADAPTER *pAd)
 
 #ifdef APCLI_SUPPORT
 		pAd->ApCfg.FlgApCliIsUapsdInfoUpdated = FALSE;
-
-#ifdef APCLI_CERT_SUPPORT
-		pAd->bApCliCertTest = TRUE;
-		pAd->bApCliCertForceRTS = FALSE;
-		pAd->bApCliCertForceTxOP = 0x0;
-#endif /* APCLI_CERT_SUPPORT */
-
 		pAd->ApCfg.ApCliNum = MAX_APCLI_NUM;
 		for(j = 0; j < MAX_APCLI_NUM; j++)
 		{
 			APCLI_STRUCT *apcli_entry = &pAd->ApCfg.ApCliTab[j];
 			struct wifi_dev *wdev = &apcli_entry->wdev;
-
+#ifdef APCLI_AUTO_CONNECT_SUPPORT
+			apcli_entry->AutoConnectFlag = FALSE;
+#endif
 			wdev->AuthMode = Ndis802_11AuthModeOpen;
 			wdev->WepStatus = Ndis802_11WEPDisabled;
 			wdev->bAutoTxRateSwitch = TRUE;
 			wdev->DesiredTransmitSetting.field.MCS = MCS_AUTO;
 			apcli_entry->wdev.UapsdInfo.bAPSDCapable = FALSE;
 
-			apcli_entry->bBlockAssoc=FALSE;
-			apcli_entry->MicErrCnt=0;
-
-			apcli_entry->Valid = FALSE;
-			apcli_entry->CfgSsidLen = 0;
-			NdisZeroMemory(&(apcli_entry->CfgSsid), MAX_LEN_OF_SSID);
-			NdisZeroMemory(apcli_entry->CfgApCliBssid, MAC_ADDR_LEN);
-			NdisZeroMemory(apcli_entry->MlmeAux.Bssid, MAC_ADDR_LEN);
+#ifdef WSC_AP_SUPPORT
+			apcli_entry->WscControl.WscApCliScanMode = TRIGGER_FULL_SCAN;
+#endif /* WSC_AP_SUPPORT */
 		}
 #endif /* APCLI_SUPPORT */
 		pAd->ApCfg.EntryClientCount = 0;
@@ -1463,11 +1461,16 @@ VOID UserCfgInit(RTMP_ADAPTER *pAd)
 
 #ifdef DYNAMIC_VGA_SUPPORT
 	if (IS_MT76x2(pAd)) {
-		pAd->CommonCfg.lna_vga_ctl.bDyncVgaEnable = TRUE;
+		pAd->CommonCfg.lna_vga_ctl.bDyncVgaEnable = FALSE;
 		pAd->CommonCfg.lna_vga_ctl.nFalseCCATh = 800;
 		pAd->CommonCfg.lna_vga_ctl.nLowFalseCCATh = 10;
 	}
 #endif /* DYNAMIC_VGA_SUPPORT */
+#ifdef APCLI_SUPPORT
+#ifdef ROAMING_ENHANCE_SUPPORT
+    pAd->ApCfg.bRoamingEnhance= FALSE;
+#endif /* ROAMING_ENHANCE_SUPPORT */
+#endif /* APCLI_SUPPORT */
 #endif /* CONFIG_AP_SUPPORT */
 
 
@@ -1514,9 +1517,13 @@ VOID UserCfgInit(RTMP_ADAPTER *pAd)
 #endif /* DOT11R_FT_SUPPORT */
 #endif /* CONFIG_AP_SUPPORT */
 
+#ifdef DOT11_SAE_SUPPORT
+	sae_cfg_init(pAd, &pAd->SaeCfg);
+#endif /* DOT11_SAE_SUPPORT */
 
 	pAd->RxAnt.Pair1PrimaryRxAnt = 0;
 	pAd->RxAnt.Pair1SecondaryRxAnt = 1;
+	pAd->MaxTxPwr = 27;
 
 		pAd->RxAnt.EvaluatePeriod = 0;
 		pAd->RxAnt.RcvPktNumWhenEvaluate = 0;
@@ -1548,7 +1555,12 @@ VOID UserCfgInit(RTMP_ADAPTER *pAd)
 	NdisZeroMemory(&pAd->CommonCfg.WscStaPbcProbeInfo, sizeof(WSC_STA_PBC_PROBE_INFO));
 	pAd->CommonCfg.WscPBCOverlap = FALSE;
 #endif /* WSC_INCLUDED */
-
+#if (MT7615_MT7603_COMBO_FORWARDING == 1)
+#if defined(CONFIG_WIFI_PKT_FWD) || defined(CONFIG_WIFI_PKT_FWD_MODULE)
+	if (wf_fwd_set_cb_num != NULL)
+		wf_fwd_set_cb_num(PACKET_BAND_CB, RECV_FROM_CB);
+#endif /* CONFIG_WIFI_PKT_FWD */
+#endif
 
 #ifdef RMTP_RBUS_SUPPORT
 #ifdef VIDEO_TURBINE_SUPPORT
@@ -1578,11 +1590,7 @@ VOID UserCfgInit(RTMP_ADAPTER *pAd)
 
 #ifdef CONFIG_AP_SUPPORT
 	IF_DEV_CONFIG_OPMODE_ON_AP(pAd)
-#ifdef DFS_SUPPORT
 		pAd->Dot11_H.RDMode = RD_SILENCE_MODE;
-#else
-		pAd->Dot11_H.RDMode = RD_NORMAL_MODE;
-#endif /* DFS_SUPPORT */
 #endif
 
 	pAd->Dot11_H.ChMovingTime = 65;
@@ -1601,12 +1609,22 @@ VOID UserCfgInit(RTMP_ADAPTER *pAd)
 			pAd->ApCfg.ApCliTab[i].RepeaterCli[j].CliValid= FALSE;
 			pAd->ApCfg.ApCliTab[i].RepeaterCli[j].bEthCli = FALSE;
 		}
+		NdisZeroMemory(pAd->ApCfg.ReptMapHash,sizeof(pAd->ApCfg.ReptMapHash));
+		NdisZeroMemory(pAd->ApCfg.ReptCliHash,sizeof(pAd->ApCfg.ReptCliHash));
 	}
 	NdisAllocateSpinLock(pAd, &pAd->ApCfg.ReptCliEntryLock);
 	pAd->ApCfg.RepeaterCliSize = 0;
 
 	NdisZeroMemory(&pAd->ApCfg.ReptControl, sizeof(REPEATER_CTRL_STRUCT));
 #endif /* MAC_REPEATER_SUPPORT */
+
+#ifdef AP_PARTIAL_SCAN_SUPPORT
+	pAd->ApCfg.bPartialScanEnable = TRUE;
+	pAd->ApCfg.bPartialScanning = FALSE;
+	pAd->ApCfg.PartialScanChannelNum = DEFLAUT_PARTIAL_SCAN_CH_NUM;
+	pAd->ApCfg.LastPartialScanChannel = 0;
+	pAd->ApCfg.PartialScanBreakTime = 0;
+#endif /* AP_PARTIAL_SCAN_SUPPORT */
 
 
 #ifdef APCLI_SUPPORT
@@ -1734,8 +1752,14 @@ VOID UserCfgInit(RTMP_ADAPTER *pAd)
 
     pAd->bPS_Retrieve =1;
 
-	pAd->CommonCfg.bTXRX_RXV_ON = 0;
+	pAd->CommonCfg.bTXRX_RXV_ON = 1/*0*/;/*default on*/
 
+#ifdef DYNAMIC_WMM
+    pAd->CommonCfg.DynamicWmm = 0;	
+#endif 
+#ifdef INTERFERENCE_RA_SUPPORT
+    pAd->CommonCfg.Interfra = 0;	
+#endif
     pAd->CommonCfg.ManualTxop = 0;
 
     pAd->CommonCfg.ManualTxopThreshold = 10; // Mbps
@@ -1751,23 +1775,59 @@ VOID UserCfgInit(RTMP_ADAPTER *pAd)
 	pAd->SCSCtrl.SCSEnable = SCS_ENABLE;
 	pAd->SCSCtrl.SCSMinRssi=0;
 	pAd->SCSCtrl.SCSStatus=SCS_STATUS_DEFAULT;
-	pAd->SCSCtrl.SCSThreshold = 250000; /* 2 Mbps */
+	pAd->SCSCtrl.SCSTrafficThreshold = 62500; /* 500Kbps */
+	pAd->SCSCtrl.CurrSensitivity=-102;
+	pAd->SCSCtrl.AdjustSensitivity=-102;
+	pAd->SCSCtrl.FixedRssiBond=-72;
+	pAd->SCSCtrl.FalseCcaUpBond=600;
+	pAd->SCSCtrl.FalseCcaLowBond=60;
+	pAd->SCSCtrl.SCSMinRssiTolerance =10;
+	pAd->SCSCtrl.ForceMode=0;
 #endif
 
-#ifdef ED_MONITOR
+#ifdef ANTI_INTERFERENCE_SUPPORT
+	pAd->bDynamicRaInterval = FALSE;
+#endif
+
 	pAd->ed_chk = FALSE; //let country region to turn on
+	pAd->ed_th = 52;
+	pAd->ed_on = FALSE;
 	pAd->ed_debug = FALSE;
-	
+	pAd->ed_th = 0xff;
 	pAd->ed_chk_period = 100;
 	pAd->ed_threshold = 90;
 	pAd->ed_false_cca_threshold = 150;		
 	pAd->ed_block_tx_threshold = 10;
 	pAd->ed_big_rssi_count = 0;
-#endif /* ED_MONITOR */
+		
+	pAd->Cts2SelfTh	= 1500;
+	pAd->Cts2SelfMonitorCnt = 0;
+	pAd->RtsMonitorCnt = 0;
 #ifdef DATA_QUEUE_RESERVE
 	pAd->bQueueRsv = TRUE;
 #endif /* DATA_QUEUE_RESERVE */
-
+#if defined(MAX_CONTINUOUS_TX_CNT) || defined(NEW_IXIA_METHOD)
+	pAd->DeltaRssiTh = 10;/* initial as 10dBm*/
+	pAd->ContinousTxCnt = 1;
+	pAd->MonitorFlag = TRUE;/*Default monitor*/
+	pAd->RateTh = 104;
+	pAd->chkTmr = 2;
+	pAd->pktthld = 0;/*50.*/
+	pAd->protectpara = 0;
+#endif
+#ifdef STA_FORCE_ROAM_SUPPORT
+		load_froam_defaults(pAd);
+#endif
+#if defined(MBO_SUPPORT) || defined(MAP_SUPPORT)
+	pAd->reg_domain = REG_GLOBAL;
+#endif/* MBO_SUPPORT */
+#ifdef WAPP_SUPPORT
+	pAd->bss_load_info.high_thrd = MAX_BSSLOAD_THRD;
+	pAd->bss_load_info.low_thrd = 0;
+#endif /* WAPP_SUPPORT */
+#ifdef MT_PS
+	NdisAllocateSpinLock(pAd, &pAd->PSRetrieveLock);
+#endif
 	DBGPRINT(RT_DEBUG_TRACE, ("<-- UserCfgInit\n"));
 }
 
@@ -2079,7 +2139,7 @@ VOID RTMPModTimer(RALINK_TIMER_STRUCT *pTimer, ULONG Value)
 			RTMP_OS_Mod_Timer(&pTimer->TimerObj, Value);
 			RTMP_SEM_UNLOCK(&TimerSemLock);
 		}
-		//DBGPRINT(RT_DEBUG_LOUD, ("%s: %lx\n",__FUNCTION__, (ULONG)pTimer));
+		DBGPRINT(RT_DEBUG_INFO, ("%s: %lx\n",__FUNCTION__, (ULONG)pTimer));
 	}
 	else
 	{
@@ -2238,7 +2298,6 @@ VOID RTMPDisableRxTx(RTMP_ADAPTER *pAd)
 	DBGPRINT(RT_DEBUG_TRACE, ("<== RTMPDisableRxTx\n"));
 }
 
-
 void CfgInitHook(RTMP_ADAPTER *pAd)
 {
 	/*pAd->bBroadComHT = TRUE;*/
@@ -2293,13 +2352,13 @@ INT RtmpRaDevCtrlInit(VOID *pAdSrc, RTMP_INF_TYPE infType)
 
 #ifdef CONFIG_AP_SUPPORT
 	pAd->OpMode = OPMODE_AP;
-	printk("%s AP Driver version: %s\n", "MT7603", AP_DRIVER_VERSION);
+	DBGPRINT(RT_DEBUG_OFF, ("MT7603 AP Driver version %s\n", AP_DRIVER_VERSION));
 #endif /* CONFIG_AP_SUPPORT */
 
 	DBGPRINT(RT_DEBUG_TRACE, ("pAd->infType=%d\n", pAd->infType));
 
 
-	RTMP_SEM_EVENT_INIT(&(pAd->AutoRateLock), &pAd->RscSemMemList);
+    RTMP_SEM_EVENT_INIT(&(pAd->AutoRateLock), &pAd->RscSemMemList);
 	RTMP_SEM_EVENT_INIT(&(pAd->e2p_read_lock), &pAd->RscSemMemList);
 
 #ifdef MULTIPLE_CARD_SUPPORT
@@ -2337,7 +2396,7 @@ INT RtmpRaDevCtrlInit(VOID *pAdSrc, RTMP_INF_TYPE infType)
 
 #ifdef MCS_LUT_SUPPORT
 	if (pAd->chipCap.asic_caps & fASIC_CAP_MCS_LUT) {
-		if (MAX_LEN_OF_MAC_TABLE <= 128) {
+		if (MAX_LEN_OF_MAC_TABLE < 128) {
 			RTMP_SET_MORE_FLAG(pAd, fASIC_CAP_MCS_LUT);
 		} else {
 			DBGPRINT(RT_DEBUG_WARN, ("%s(): MCS_LUT not used becasue MacTb size(%d) > 128!\n",
@@ -2440,6 +2499,10 @@ VOID CMDHandler(RTMP_ADAPTER *pAd)
 {
 	PCmdQElmt cmdqelmt;
 	UCHAR *pData;
+#ifdef WH_EZ_SETUP
+	//PAPCLI_STRUCT pApCliTab;
+	struct wifi_dev *wdev = NULL;
+#endif	
 	//NDIS_STATUS NdisStatus = NDIS_STATUS_SUCCESS;
 
 	while (pAd && pAd->CmdQ.size > 0)
@@ -2452,7 +2515,9 @@ VOID CMDHandler(RTMP_ADAPTER *pAd)
 
 		if (cmdqelmt == NULL)
 			break;
-
+#ifdef WH_EZ_SETUP
+	//	pApCliTab = (PAPCLI_STRUCT)cmdqelmt->buffer;
+#endif
 		pData = cmdqelmt->buffer;
 
 		if(!(RTMP_TEST_FLAG(pAd, fRTMP_ADAPTER_NIC_NOT_EXIST) || RTMP_TEST_FLAG(pAd, fRTMP_ADAPTER_HALT_IN_PROGRESS)))
@@ -2530,7 +2595,25 @@ VOID CMDHandler(RTMP_ADAPTER *pAd)
 						NdisMoveMemory(&channel , pData, sizeof(UCHAR));
 						DBGPRINT(RT_DEBUG_TRACE | DBG_FUNC_PS, ("channel=%d CMDTHREAD_APCLI_PBC_TIMEOUT\n", channel));
 						snprintf(ChStr, sizeof(ChStr), "%d", channel);
-						Set_Channel_Proc(pAd, ChStr);
+#ifdef WH_EZ_SETUP
+						wdev = &pAd->ApCfg.ApCliTab[BSS0].wdev;
+						if(IS_EZ_SETUP_ENABLED(wdev))
+						{
+							wdev->ez_driver_params.do_not_restart_interfaces = TRUE;
+						}
+#endif						
+#ifdef WH_EZ_SETUP
+						if(IS_EZ_SETUP_ENABLED(wdev))
+							rtmp_set_channel(pAd, wdev, channel);
+						else
+#endif							
+							Set_Channel_Proc(pAd, ChStr);
+#ifdef WH_EZ_SETUP
+						if(IS_EZ_SETUP_ENABLED(wdev))
+						{
+							wdev->ez_driver_params.do_not_restart_interfaces = FALSE;
+						}
+#endif
 					}
 					break;
 #endif /* MT_MAC */
@@ -2602,7 +2685,7 @@ VOID AntCfgInit(RTMP_ADAPTER *pAd)
 {
 	// TODO: shiang-7603
 	if (pAd->chipCap.hif_type == HIF_MT) {
-		DBGPRINT(RT_DEBUG_TRACE, ("%s(%d): Not support for HIF_MT yet!\n",
+		DBGPRINT(RT_DEBUG_OFF, ("%s(%d): Not support for HIF_MT yet!\n",
 							__FUNCTION__, __LINE__));
 		return;
 	}

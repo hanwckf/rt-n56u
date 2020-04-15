@@ -92,6 +92,7 @@ VOID FT_FTIE_InsertKhIdSubIE(
 	IN UINT8 KhIdLen)
 {
 	ULONG TempLen;
+	UCHAR TempSubID;
 
 	if (SubId != FT_R0KH_ID && SubId != FT_R1KH_ID)
 	{
@@ -115,8 +116,10 @@ VOID FT_FTIE_InsertKhIdSubIE(
 			__FUNCTION__, KhIdLen));
 	}		
 
+	TempSubID = (UCHAR)SubId;
+
 	MakeOutgoingFrame(	pFrameBuf,		&TempLen,
-						1,				&SubId,
+						1,				&TempSubID,
 						1,				&KhIdLen,
 						KhIdLen,		(PUCHAR)pKhId,
 						END_OF_ARGS);
@@ -147,6 +150,27 @@ VOID FT_FTIE_InsertGTKSubIE(
 	*pFrameLen = *pFrameLen + TempLen;	
 }
 
+VOID FT_FTIE_InsertIGTKSubIE(
+	IN PRTMP_ADAPTER pAd,
+	IN	PUCHAR	pFrameBuf,
+	OUT PULONG pFrameLen,
+	IN	PUINT8	pGtkSubIe,
+	IN	UINT8	GtkSubIe_len)
+{
+	ULONG TempLen;
+	UINT8 Length;
+	UINT8 SubId;
+
+	SubId = FT_IGTK_ID;
+	Length = GtkSubIe_len;
+
+	MakeOutgoingFrame(pFrameBuf,		&TempLen,
+						1,				&SubId,
+						1,				&Length,
+						Length,			pGtkSubIe,
+						END_OF_ARGS);
+	*pFrameLen = *pFrameLen + TempLen;
+}
 
 VOID FT_InsertTimeoutIntervalIE(
 	IN PRTMP_ADAPTER pAd,

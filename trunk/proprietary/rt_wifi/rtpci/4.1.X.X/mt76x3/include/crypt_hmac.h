@@ -29,6 +29,19 @@
 #define __CRYPT_HMAC_H__
 
 #include "rt_config.h"
+#if defined(DOT11_SAE_SUPPORT) || defined(CONFIG_OWE_SUPPORT)
+#include "rtmp_type.h"
+#ifndef IN
+#define IN
+#endif
+#ifndef OUT
+#define OUT
+#endif
+#ifndef INOUT
+#define INOUT
+#endif
+
+#endif /* defined(DOT11_SAE_SUPPORT) || defined(CONFIG_OWE_SUPPORT) */
 
 
 #ifdef SHA1_SUPPORT
@@ -51,7 +64,37 @@ VOID RT_HMAC_SHA256(
 	IN UINT MessageLen,
 	OUT UINT8 MAC[],
 	IN UINT MACLen);
+#if defined(DOT11_SAE_SUPPORT) || defined(CONFIG_OWE_SUPPORT)
+VOID RT_HMAC_SHA256_VECTOR(
+	IN const UINT8 key[],
+	IN UINT key_len,
+	IN UCHAR element_num,
+	IN const UINT8 *message[],
+	IN UINT *message_len,
+	OUT UINT8 mac[],
+	IN UINT mac_len);
+#endif /* defined(DOT11_SAE_SUPPORT) || defined(CONFIG_OWE_SUPPORT) */
 #endif /* SHA256_SUPPORT */
+#if defined(DOT11_SAE_SUPPORT) || defined(CONFIG_OWE_SUPPORT)
+#ifdef SHA384_SUPPORT
+VOID RT_HMAC_SHA384(
+	IN const UINT8 Key[],
+	IN UINT KeyLen,
+	IN const UINT8 Message[],
+	IN UINT MessageLen,
+	OUT UINT8 MAC[],
+	IN UINT MACLen);
+
+VOID RT_HMAC_SHA384_VECTOR(
+	IN const UINT8 key[],
+	IN UINT key_len,
+	IN UCHAR element_num,
+	IN const UINT8 *message[],
+	IN UINT *message_len,
+	OUT UINT8 mac[],
+	IN UINT mac_len);
+#endif /* SHA384_SUPPORT */
+#endif /* defined(DOT11_SAE_SUPPORT) || defined(CONFIG_OWE_SUPPORT) */
 
 #ifdef MD5_SUPPORT
 #define HMAC_MD5_SUPPORT

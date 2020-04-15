@@ -32,32 +32,14 @@
 #include "eeprom/mt_e2p_def.h"
 #endif
 
-#if (CONFIG_RT_FIRST_CARD == 7603)
-#if defined (CONFIG_RT_FIRST_IF_RF_OFFSET)
-#define DEFAULT_RF_OFFSET		CONFIG_RT_FIRST_IF_RF_OFFSET
-#else
-#define DEFAULT_RF_OFFSET		0x40000
-#endif
-#elif (CONFIG_RT_SECOND_CARD == 7603)
-#if defined (CONFIG_RT_SECOND_IF_RF_OFFSET)
-#define DEFAULT_RF_OFFSET		CONFIG_RT_SECOND_IF_RF_OFFSET
-#else
-#define DEFAULT_RF_OFFSET		0x48000
-#endif
-#endif
-
-#if (CONFIG_RT_FIRST_CARD == 7603 || CONFIG_RT_SECOND_CARD == 7603)
-#define EEPROM_DEFAULT_FILE_PATH	"/etc/Wireless/MT7603E_EEPROM.bin"
-#endif
-
 /* For ioctl check usage */
 #define EEPROM_IS_PROGRAMMED		0x80
 
-#define E2P_NONE			0x00
-#define E2P_EFUSE_MODE			0x01
-#define E2P_FLASH_MODE			0x02
+#define E2P_NONE					0x00
+#define E2P_EFUSE_MODE				0x01
+#define E2P_FLASH_MODE				0x02
 #define E2P_EEPROM_MODE			0x03
-#define E2P_BIN_MODE			0x04
+#define E2P_BIN_MODE				0x04
 #define NUM_OF_E2P_MODE			0x05
 
 #ifdef RTMP_MAC_PCI
@@ -66,13 +48,45 @@
 #define MAX_EEPROM_BIN_FILE_SIZE	1024
 #endif /* !RTMP_MAC_PCI */
 
-#define EEPROM_SIZE			0x200
+#define EEPROM_SIZE					0x200
 
-#define EEPROM_DEFAULT_BIN_FILE		"RT30xxEEPROM.bin"
-#define BIN_FILE_PATH			"/etc/Wireless/RT30xxEEPROM.bin"
+#define EEPROM_DEFULT_BIN_FILE	"RT30xxEEPROM.bin"
+#ifdef BB_SOC
+#define BIN_FILE_PATH				"/etc/RT30xxEEPROM.bin"
+#else
+//#define BIN_FILE_PATH				"/tmp/RT30xxEEPROM.bin"
+#define BIN_FILE_PATH				"/etc/RT30xxEEPROM.bin"
+#endif /* BB_SOC */
 
-#define EEPROM_1ST_FILE_DIR		"/etc/Wireless/iNIC/"
-#define EEPROM_2ND_FILE_DIR		"/etc/Wireless/iNIC/"
+#define EEPROM_1ST_FILE_DIR		"/etc_ro/Wireless/iNIC/"
+#define EEPROM_2ND_FILE_DIR		"/etc_ro/Wireless/iNIC/"
+
+#ifndef EEPROM_DEFAULT_FILE_PATH
+/* RFIC 2820 */
+#define EEPROM_DEFAULT_FILE_PATH                     "/etc_ro/wlan/RT2880_RT2820_AP_2T3R_V1_6.bin"
+#endif /* EEPROM_DEFAULT_FILE_PATH */
+
+
+
+#ifdef RTMP_FLASH_SUPPORT
+#define NVRAM_OFFSET				0x30000
+
+#if defined (CONFIG_RT2880_FLASH_32M)
+#define DEFAULT_RF_OFFSET					0x1FE0000
+#else
+#define DEFAULT_RF_OFFSET					0x40000
+#endif
+
+#define SECOND_RF_OFFSET					0x48000
+#endif /* RTMP_FLASH_SUPPORT */
+
+typedef struct eeprom_flash_info_t {
+	UINT32	offset;
+	UINT32	size;
+
+	RTMP_STRING	bin_name[L1PROFILE_ATTRNAME_LEN];
+
+} eeprom_flash_info;
 
 
 #ifdef RT_BIG_ENDIAN
@@ -689,6 +703,9 @@ int rtmp_ee_prom_write16(struct _RTMP_ADAPTER *pAd, USHORT Offset, USHORT val);
   *	Public function declarations for flash-based chipset
   ************************************************************************/
 NDIS_STATUS rtmp_nv_init(struct _RTMP_ADAPTER *pAd);
+RTMP_STRING *get_dev_eeprom_binary(VOID *pvAd);
+UINT get_dev_eeprom_offset(VOID *pvAd);
+UINT32 get_dev_eeprom_size(VOID *pvAd);
 BOOLEAN rtmp_ee_flash_read(struct _RTMP_ADAPTER *pAd, USHORT Offset, USHORT *pVal);
 int rtmp_ee_flash_write(struct _RTMP_ADAPTER *pAd, USHORT Offset, USHORT data);
 VOID rtmp_ee_flash_read_all(struct _RTMP_ADAPTER *pAd, USHORT *Data);

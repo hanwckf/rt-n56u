@@ -3,6 +3,13 @@
 
 
 #include "rt_config.h"
+#ifdef STA_FORCE_ROAM_SUPPORT
+#define IS_MEDIATEK_CLI_ENTRY(B0)            ((B0)&0x10)
+#endif
+#ifdef STA_FORCE_ROAM_SUPPORT
+int froam_add_acl_entry(void *ad_obj, RTMP_IOCTL_INPUT_STRUCT *wrq);
+int froam_del_acl_entry(void *ad_obj, RTMP_IOCTL_INPUT_STRUCT *wrq);
+#endif
 
 INT RTMPAPPrivIoctlSet(
 	IN RTMP_ADAPTER *pAd, 
@@ -54,6 +61,9 @@ VOID RTMPIoctlGetMacTable(
 	IN PRTMP_ADAPTER pAd, 
 	IN RTMP_IOCTL_INPUT_STRUCT *wrq);
 
+VOID RTMPIoctlGetDriverInfo(
+	IN  PRTMP_ADAPTER pAd,
+	IN  RTMP_IOCTL_INPUT_STRUCT * wrq);
 
 VOID RTMPAPIoctlE2PROM(
     IN  PRTMP_ADAPTER   pAdapter,
@@ -156,18 +166,11 @@ INT Set_AP_Daemon_Status(
 	IN UINT8 WorkSpaceID,
 	IN BOOLEAN Status);
 
-INT Set_AP_IE(
-	IN PRTMP_ADAPTER pAd,
-	IN RTMP_STRING *IE,
-	IN UINT32 IELen);
-
-#ifdef CONFIG_HOTSPOT
 INT Send_ANQP_Rsp(
 	IN PRTMP_ADAPTER pAd,
 	IN RTMP_STRING *PeerMACAddr,
 	IN RTMP_STRING *ANQPReq,
 	IN UINT32 ANQPReqLen);
-#endif
 
 INT	ApCfg_Set_AuthMode_Proc(
 	IN	PRTMP_ADAPTER	pAd, 
@@ -181,10 +184,74 @@ INT	ApCfg_Set_MaxStaNum_Proc(
 
 INT	ApCfg_Set_IdleTimeout_Proc(RTMP_ADAPTER *pAd, RTMP_STRING *arg);
 
-INT Set_AP_IE(
+struct apcfg_parameters {
+	LONG cfg_mode[2]; /*WirelessMode*/
+	ULONG tx_power_percentage; /*TxPower*/
+	ULONG tx_preamble; /*TxPreamble*/
+	UINT32 conf_len_thld; /*RTSThreshold*/
+	UINT32 oper_len_thld;
+	UINT32 conf_frag_thld; /*FragThreshold*/
+	UINT32 oper_frag_thld;
+	BOOLEAN bEnableTxBurst; /*TxBurst*/
+	BOOLEAN bUseShortSlotTime; /*ShortSlot*/	
+#ifdef DOT11_N_SUPPORT	
+	UCHAR conf_ht_bw; /*HT_BW*/
+	UCHAR oper_ht_bw;
+#ifdef DOT11N_DRAFT3
+	BOOLEAN bBssCoexEnable; /*HT_BSSCoexistence*/
+#endif	
+	UCHAR ht_tx_streams; /*HT_TxStream*/
+	UCHAR ht_rx_streams; /*HT_RxStream*/
+	BOOLEAN bBADecline; /*HT_BADecline*/
+	UINT32 AutoBA; /*HT_AutoBA*/
+	UINT32 AmsduEnable; /*HT_AMSDU*/
+	UINT32 RxBAWinLimit; /*HT_BAWinSize*/
+	UCHAR ht_gi; /*HT_GI*/
+	UCHAR ht_stbc; /*HT_STBC*/
+	UCHAR ht_ldpc; /*HT_LDPC*/
+	BOOLEAN bRdg; /*HT_RDG*/
+#endif
+
+	BOOLEAN HT_DisallowTKIP; /*HT_DisallowTKIP*/
+
+#ifdef DOT11_VHT_AC	
+	UCHAR conf_vht_bw; /*VHT_BW*/	
+	UCHAR oper_vht_bw;
+	UCHAR vht_sgi; /*VHT_SGI*/
+	UCHAR vht_stbc; /*VHT_STBC*/
+	UCHAR vht_bw_signal; /*VHT_BW_SIGNAL*/
+	UCHAR vht_ldpc; /*VHT_LDPC*/
+	BOOLEAN g_band_256_qam; /*G_BAND_256QAM*/	
+#endif
+
+	BOOLEAN bIEEE80211H; /*IEEE80211H*/
+
+#ifdef MT_DFS_SUPPORT
+	BOOLEAN bDfsEnable; /*DfsEnable*/	 
+#endif	 
+
+#ifdef BACKGROUND_SCAN_SUPPORT
+	BOOLEAN DfsZeroWaitSupport; /*DfsZeroWait*/
+#endif
+	 
+#ifdef DOT11_N_SUPPORT
+#endif
+
+	UINT32 ITxBfEn; /*ITxBfEn*/
+
+#ifdef DOT11_N_SUPPORT
+#endif
+	UCHAR channel;
+	UCHAR CentralChannel;
+	UCHAR ext_channel;	
+};
+
+INT _Set_AP_VENDOR_SPECIFIC_IE(
 	IN PRTMP_ADAPTER pAd,
+	IN UINT8 OUIType,
 	IN RTMP_STRING *IE,
 	IN UINT32 IELen);
+
 
 #ifdef APCLI_SUPPORT
 #endif /* APCLI_SUPPORT */

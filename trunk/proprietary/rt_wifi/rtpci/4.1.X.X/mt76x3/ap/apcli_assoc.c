@@ -139,9 +139,6 @@ VOID ApCliAssocStateMachineInit(
 		RTMPInitTimer(pAd, &pAd->ApCfg.ApCliTab[i].MlmeAux.ApCliAssocTimer,
 						GET_TIMER_FUNCTION(ApCliAssocTimeout), pAd, FALSE);
 
-		RTMPInitTimer(pAd, &pAd->ApCfg.ApCliTab[i].MlmeAux.WpaDisassocAndBlockAssocTimer, 
-						GET_TIMER_FUNCTION(ApCliWpaDisassocApAndBlockAssoc), pAd, FALSE);
-		
 #ifdef MAC_REPEATER_SUPPORT
 		for (j = 0; j < MAX_EXT_MAC_ADDR_SIZE; j++)
 		{
@@ -264,8 +261,23 @@ static VOID ApCliMlmeAssocReqAction(
 	struct wifi_dev *wdev;
 #ifdef MAC_REPEATER_SUPPORT
 	UCHAR CliIdx = 0xFF;
+#if defined(APCLI_SAE_SUPPORT) || defined(APCLI_OWE_SUPPORT)
+	REPEATER_CLIENT_ENTRY *pReptEntry = NULL;
+#endif
 #endif /* MAC_REPEATER_SUPPORT */
+#if defined(APCLI_SAE_SUPPORT) || defined(APCLI_OWE_SUPPORT)
+	MAC_TABLE_ENTRY *pentry = (MAC_TABLE_ENTRY *)NULL;
+#endif
+#ifdef APCLI_OWE_SUPPORT
+	OWE_INFO *owe = NULL;
+	UCHAR *curr_group = NULL;
+#endif
 
+
+#ifdef WH_EZ_SETUP
+		if(IS_ADPTR_EZ_SETUP_ENABLED(pAd))
+			EZ_DEBUG(DBG_CAT_CLIENT, DBG_SUBCAT_ALL, DBG_LVL_OFF, ("ApCliMlmeAssocReqAction()\n"));
+#endif
 	if ((ifIndex >= MAX_APCLI_NUM)
 #ifdef MAC_REPEATER_SUPPORT
 		&& (ifIndex < 64)
@@ -286,7 +298,10 @@ static VOID ApCliMlmeAssocReqAction(
 
 	apcli_entry = &pAd->ApCfg.ApCliTab[ifIndex];
 	wdev = &apcli_entry->wdev;
-		
+
+#if defined(APCLI_SAE_SUPPORT) || defined(APCLI_OWE_SUPPORT)
+	pentry = &apcli_entry->pre_mac_entry;
+#endif
 	/* Block all authentication request durning WPA block period */
 	if (apcli_entry->bBlockAssoc == TRUE)
 	{
@@ -398,45 +413,36 @@ static VOID ApCliMlmeAssocReqAction(
 				(apcli_entry->MlmeAux.vht_cap_len))
 			{
 				FrameLen += build_vht_ies(pAd, (UCHAR *)(pOutBuffer + FrameLen), SUBTYPE_ASSOC_REQ);
-
-            			/* For VHT40 ApClient, Add the OP Noitfy IE to notify rootAP the STA current BW */
-            			if ((apcli_entry->MlmeAux.HtCapability.HtCapInfo.ChannelWidth == BW_40) &&
-                			(pAd->CommonCfg.vht_bw == VHT_BW_2040)) 
-                		    FrameLen += build_vht_op_mode_ies(pAd, (UCHAR *)(pOutBuffer + FrameLen));
 			}
 #endif /* DOT11_VHT_AC */
 		}
-
-#ifdef DOT11N_DRAFT3
-#ifdef APCLI_CERT_SUPPORT
-		if (pAd->bApCliCertTest == TRUE)
-		{
-			ULONG TmpLen;
-			EXT_CAP_INFO_ELEMENT extCapInfo;
-			UCHAR extInfoLen;
-
-			extInfoLen = sizeof (EXT_CAP_INFO_ELEMENT);
-			NdisZeroMemory(&extCapInfo, extInfoLen);
-
-			if ((pAd->CommonCfg.bBssCoexEnable == TRUE) &&
-			    WMODE_CAP_N(pAd->CommonCfg.PhyMode)
-			    && (pAd->CommonCfg.Channel <= 14)) 
-			{
-				extCapInfo.BssCoexistMgmtSupport = 1;
-				DBGPRINT(RT_DEBUG_TRACE, ("%s: BssCoexistMgmtSupport = 1\n", __FUNCTION__));
-			}
-			MakeOutgoingFrame(pOutBuffer + FrameLen, &TmpLen,
-					1, &ExtCapIe,
-  					1, &extInfoLen,
-					extInfoLen,	&extCapInfo,
-					END_OF_ARGS);
-			FrameLen += TmpLen;
-		}
-#endif /* APCLI_CERT_SUPPORT */
-#endif /* DOT11N_DRAFT3 */
-
-
 #endif /* DOT11_N_SUPPORT */
+
+#ifdef WH_EZ_SETUP
+		/*
+			To prevent old device has trouble to parse MTK vendor IE,
+			insert easy setup IE first.
+		*/
+		if (IS_EZ_SETUP_ENABLED(wdev)
+#ifdef MAC_REPEATER_SUPPORT
+			&& (CliIdx == 0xFF)
+#endif /* MAC_REPEATER_SUPPORT */
+			&& apcli_entry->MlmeAux.support_easy_setup) {
+			FrameLen += ez_build_assoc_request_ie(pAd,wdev, ApAddr, pOutBuffer+FrameLen, FrameLen);
+		}
+		//Arvind : Required to aad some info in beacon
+        //FrameLen += build_vendor_ie(pAd, wdev, pOutBuffer+FrameLen, SUBTYPE_ASSOC_REQ);		
+#endif /* WH_EZ_SETUP */
+#if defined(MWDS) || defined(WH_EZ_SETUP) || defined(STA_FORCE_ROAM_SUPPORT)
+		FrameLen += build_vendor_ie(pAd, wdev, pOutBuffer+FrameLen
+#ifdef CONFIG_OWE_SUPPORT
+		, VIE_ASSOC_REQ
+#endif
+#ifdef WH_EZ_SETUP
+		, SUBTYPE_ASSOC_REQ
+#endif
+		);
+#else
 
 #ifdef AGGREGATION_SUPPORT
 		/*
@@ -482,7 +488,7 @@ static VOID ApCliMlmeAssocReqAction(
 			FrameLen += TmpLen;
 		}
 #endif  /* AGGREGATION_SUPPORT */
-
+#endif
 		if (apcli_entry->MlmeAux.APEdcaParm.bValid)
 		{
 			if (apcli_entry->wdev.UapsdInfo.bAPSDCapable &&
@@ -512,7 +518,15 @@ static VOID ApCliMlmeAssocReqAction(
 
 		/* Append RSN_IE when WPAPSK OR WPA2PSK, */
 		if (((wdev->AuthMode == Ndis802_11AuthModeWPAPSK) || 
-            		(wdev->AuthMode == Ndis802_11AuthModeWPA2PSK))
+			(wdev->AuthMode == Ndis802_11AuthModeWPA2PSK)
+#ifdef APCLI_SAE_SUPPORT
+			|| (pentry->AuthMode == Ndis802_11AuthModeWPA3PSK)
+			|| (pentry->AuthMode == Ndis802_11AuthModeWPA2PSK)
+#endif
+#ifdef APCLI_OWE_SUPPORT
+			|| (pentry->AuthMode == Ndis802_11AuthModeOWE)
+#endif
+			)
 #ifdef WSC_AP_SUPPORT
 			&& ((apcli_entry->WscControl.WscConfMode == WSC_DISABLE)
 			|| ((apcli_entry->WscControl.WscConfMode != WSC_DISABLE) 
@@ -523,10 +537,68 @@ static VOID ApCliMlmeAssocReqAction(
 			RSNIe = IE_WPA;
 			
 			if ((wdev->AuthMode == Ndis802_11AuthModeWPA2PSK)
+#ifdef APCLI_SAE_SUPPORT
+				|| (pentry->AuthMode == Ndis802_11AuthModeWPA3PSK)
+				|| (pentry->AuthMode == Ndis802_11AuthModeWPA2PSK)
+#endif
+#ifdef APCLI_OWE_SUPPORT
+				|| (pentry->AuthMode == Ndis802_11AuthModeOWE)
+#endif
 				)
 				RSNIe = IE_WPA2;
 
 
+#if defined(APCLI_SAE_SUPPORT) || defined(APCLI_OWE_SUPPORT)
+
+			if ((pentry->AuthMode == Ndis802_11AuthModeWPA3PSK)
+				|| (pentry->AuthMode == Ndis802_11AuthModeOWE)
+				|| (pentry->AuthMode == Ndis802_11AuthModeWPA2PSK
+				&& wdev->AuthMode == Ndis802_11AuthModeWPA3PSK)
+				) {
+				INT idx;
+				PBSSID_INFO psaved_pmk = NULL;
+				VOID *psaved_pmk_lock = NULL;
+
+#ifdef MAC_REPEATER_SUPPORT
+				pReptEntry = &pAd->ApCfg.ApCliTab[ifIndex].RepeaterCli[CliIdx];
+
+				if ((pAd->ApCfg.bMACRepeaterEn) &&
+					(CliIdx != 0xFF)) {
+
+					psaved_pmk = &pReptEntry->SavedPMK[0];
+					psaved_pmk_lock = (void *)&pReptEntry->SavedPMK_lock;
+				} else
+#endif /* MAC_REPEATER_SUPPORT */
+				{
+
+					psaved_pmk = &apcli_entry->SavedPMK[0];
+					psaved_pmk_lock = (VOID *)&apcli_entry->SavedPMK_lock;
+
+				}
+				pentry = &apcli_entry->pre_mac_entry; /* similar to MlmeAux*/
+
+				idx = apcli_search_pmkid_cache(pAd, ApAddr, ifIndex
+#ifdef MAC_REPEATER_SUPPORT
+					, CliIdx
+#endif
+					);
+
+				if (idx != INVALID_PMKID_IDX) {
+
+					if (psaved_pmk_lock)
+						NdisAcquireSpinLock(psaved_pmk_lock);
+
+				/*Update the pentry->pmkcache from the Saved PMK cache */
+					pentry->pmkid = psaved_pmk[idx].PMKID;
+					pentry->pmk_cache = psaved_pmk[idx].PMK;
+
+
+					if (psaved_pmk_lock)
+						NdisReleaseSpinLock(psaved_pmk_lock);
+				}
+				WPAMakeEntryRSNIE(pAd, pentry->AuthMode, pentry->WepStatus, pentry);
+			}
+#endif /* defined(APCLI_SAE_SUPPORT) || defined(APCLI_OWE_SUPPORT) */
 
 			MakeOutgoingFrame(pOutBuffer + FrameLen,    				&tmp,
 			              	1,                                      	&RSNIe,
@@ -534,7 +606,7 @@ static VOID ApCliMlmeAssocReqAction(
 	                        apcli_entry->RSNIE_Len,		apcli_entry->RSN_IE,
 	                        END_OF_ARGS);
 			
-			FrameLen += tmp;	
+			FrameLen += tmp;
 		}	
 
 #ifdef WSC_AP_SUPPORT
@@ -564,6 +636,47 @@ static VOID ApCliMlmeAssocReqAction(
 					  __FUNCTION__));
 		}
 #endif /* WSC_AP_SUPPORT */
+
+#ifdef APCLI_OWE_SUPPORT
+
+#ifdef MAC_REPEATER_SUPPORT
+
+			if ((pAd->ApCfg.bMACRepeaterEn) &&
+					(CliIdx != 0xFF))
+				curr_group = &pReptEntry->curr_owe_group;
+			else
+#endif /* MAC_REPEATER_SUPPORT */
+				curr_group = &apcli_entry->curr_owe_group;
+
+			pentry = &apcli_entry->pre_mac_entry;
+
+			owe = &pentry->owe;
+
+			if (pentry->AuthMode == Ndis802_11AuthModeOWE) {
+
+				/* OWE use initialize group and add owe dh key ie to assoc request */
+				if (init_owe_group(owe, *curr_group) == 0) {
+					MTWF_LOG(DBG_CAT_SEC, CATSEC_OWE, DBG_LVL_ERROR,
+						("==> %s(), init_owe_group failed. shall not happen!\n", __func__));
+					*pCurrState = APCLI_ASSOC_IDLE;
+					ApCliCtrlMsg.Status = MLME_UNSPECIFY_FAIL;
+					MlmeEnqueue(pAd, APCLI_CTRL_STATE_MACHINE, APCLI_CTRL_ASSOC_RSP,
+						sizeof(APCLI_CTRL_MSG_STRUCT), &ApCliCtrlMsg, ifIndex);
+
+					return;
+				}
+
+				if (*curr_group == ECDH_GROUP_384)
+					pentry->key_deri_alg = SEC_KEY_DERI_SHA384;
+				else
+					pentry->key_deri_alg = SEC_KEY_DERI_SHA256;
+
+				FrameLen += build_owe_dh_ie(pAd, pentry, (UCHAR *)(pOutBuffer + FrameLen), *curr_group);
+
+			}
+
+#endif /*APCLI_OWE_SUPPORT*/
+
 
 		MiniportMMRequest(pAd, QID_AC_BE, pOutBuffer, FrameLen);
 		MlmeFreeMemory(pAd, pOutBuffer);
@@ -612,6 +725,11 @@ static VOID ApCliMlmeDisassocReqAction(
 #ifdef MAC_REPEATER_SUPPORT
 	UCHAR CliIdx = 0xFF;
 #endif /* MAC_REPEATER_SUPPORT */
+
+#ifdef WH_EZ_SETUP
+		if(IS_ADPTR_EZ_SETUP_ENABLED(pAd))
+			EZ_DEBUG(DBG_CAT_CLIENT, DBG_SUBCAT_ALL, DBG_LVL_OFF, ("ApCliMlmeDisassocReqAction() \n"));
+#endif
 
 	if ((ifIndex >= MAX_APCLI_NUM)
 #ifdef MAC_REPEATER_SUPPORT
@@ -715,14 +833,21 @@ static VOID ApCliPeerAssocRspAction(
 	UCHAR				NewExtChannelOffset = 0xff;
 	USHORT ifIndex = (USHORT)(Elem->Priv);
 	ULONG *pCurrState = NULL;
-#ifdef DOT11_VHT_AC 
+#if defined(DOT11_VHT_AC) || defined(WH_EZ_SETUP) || defined(MAP_SUPPORT)
 	PAPCLI_STRUCT pApCliEntry = NULL;
 #endif /* DOT11_VHT_AC */
-
+#ifdef APCLI_OWE_SUPPORT
+	PMAC_TABLE_ENTRY pEntry = NULL;
+#endif
 #ifdef MAC_REPEATER_SUPPORT
 	UCHAR CliIdx = 0xFF;
 #endif /* MAC_REPEATER_SUPPORT */
 	IE_LISTS *ie_list = NULL;
+
+#ifdef WH_EZ_SETUP
+		if(IS_ADPTR_EZ_SETUP_ENABLED(pAd))
+			EZ_DEBUG(DBG_CAT_CLIENT, DBG_SUBCAT_ALL, DBG_LVL_OFF, ("%s()\n", __FUNCTION__));
+#endif
 
 	if ((ifIndex >= MAX_APCLI_NUM)
 #ifdef MAC_REPEATER_SUPPORT
@@ -742,7 +867,7 @@ static VOID ApCliPeerAssocRspAction(
 #endif /* MAC_REPEATER_SUPPORT */
 		pCurrState = &pAd->ApCfg.ApCliTab[ifIndex].AssocCurrState;
 
-#ifdef DOT11_VHT_AC 
+#if defined(DOT11_VHT_AC) || defined(WH_EZ_SETUP) || defined(MAP_SUPPORT)
 	pApCliEntry = &pAd->ApCfg.ApCliTab[ifIndex];
 #endif /* DOT11_VHT_AC */
 	os_alloc_mem(pAd, (UCHAR **)&ie_list, sizeof(IE_LISTS));
@@ -767,6 +892,20 @@ static VOID ApCliPeerAssocRspAction(
 			else
 #endif /* MAC_REPEATER_SUPPORT */
 			RTMPCancelTimer(&pAd->ApCfg.ApCliTab[ifIndex].MlmeAux.ApCliAssocTimer, &Cancelled);
+
+#ifdef WH_EZ_SETUP
+			if ((Status == MLME_SUCCESS)
+				&& IS_EZ_SETUP_ENABLED(&pApCliEntry->wdev)
+#ifdef MAC_REPEATER_SUPPORT
+				&& (CliIdx == 0xFF)
+#endif /* MAC_REPEATER_SUPPORT */
+				&& pApCliEntry->MlmeAux.support_easy_setup) {
+				Status = ez_process_assoc_response(&pApCliEntry->wdev, Addr2, Elem->Msg, Elem->MsgLen);
+			} else if (Status == MLME_EZ_CONNECTION_LOOP)
+			{
+			}
+#endif /* WH_EZ_SETUP */
+
 			if(Status == MLME_SUCCESS) 
 			{
 				/* go to procedure listed on page 376 */
@@ -792,6 +931,69 @@ static VOID ApCliPeerAssocRspAction(
 #endif /* DOT11_VHT_AC */						
 				}
 
+#ifdef APCLI_OWE_SUPPORT
+				pEntry = &pAd->ApCfg.ApCliTab[ifIndex].pre_mac_entry;
+
+				if (pEntry->AuthMode == Ndis802_11AuthModeOWE) {
+					UINT8 *pmkid = NULL;
+					UINT8 pmkid_count = 0;
+					INT idx = 0;
+
+					pmkid = WPA_ExtractSuiteFromRSNIE(ie_list->RSN_IE,
+								ie_list->RSNIE_Len,
+								PMKID_LIST,
+								&pmkid_count);
+
+					if (pmkid != NULL) {
+						idx = apcli_search_pmkid_cache(pAd, Addr2, ifIndex
+#ifdef MAC_REPEATER_SUPPORT
+							, CliIdx
+#endif
+							);
+
+						if ((idx == INVALID_PMKID_IDX) ||
+							((pEntry->pmkid) &&
+							((RTMPEqualMemory(pmkid,
+								pEntry->pmkid,
+								LEN_PMKID)) == 0))) {
+							MTWF_LOG(DBG_CAT_AP, DBG_SUBCAT_ALL, DBG_LVL_ERROR,
+								("%s: no OWE PMKID, do normal ECDH procedure\n",
+								__func__));
+							ApCliCtrlMsg.Status = MLME_UNSPECIFY_FAIL;
+							MlmeEnqueue(pAd, APCLI_CTRL_STATE_MACHINE, APCLI_CTRL_ASSOC_RSP,
+								sizeof(APCLI_CTRL_MSG_STRUCT),
+								&ApCliCtrlMsg, ifIndex);
+							RTMP_MLME_HANDLER(pAd);
+						}
+					} else {
+						pEntry->need_process_ecdh_ie = TRUE;
+						/*Process ECDH IE as no pmkid in assoc rsp rsnie,*/
+						/*PMK id  sent might have been invalid at AP,*/
+						/*need to clear seconfig pmk cache*/
+						idx = apcli_search_pmkid_cache(pAd, Addr2, ifIndex
+#ifdef MAC_REPEATER_SUPPORT
+							, CliIdx
+#endif
+							);
+						if ((idx != INVALID_PMKID_IDX) &&
+							(is_pmkid_cache_in_entry(pEntry))) {
+							apcli_delete_pmkid_cache(pAd, Addr2, ifIndex
+#ifdef MAC_REPEATER_SUPPORT
+								, CliIdx
+#endif
+								);
+							pEntry->pmkid = NULL;
+							pEntry->pmk_cache = NULL;
+						}
+					}
+					if ((pEntry->need_process_ecdh_ie == TRUE) && (ie_list->ecdh_ie.length > 0))
+						NdisMoveMemory(&pEntry->ecdh_ie,
+							&ie_list->ecdh_ie,
+							sizeof(EXT_ECDH_PARAMETER_IE));
+				}
+#endif /*CONFIG_OWE_SUPPORT*/
+
+
 				ApCliCtrlMsg.Status = MLME_SUCCESS;
 #ifdef MAC_REPEATER_SUPPORT
 				ApCliCtrlMsg.BssIdx = ifIndex;
@@ -804,9 +1006,6 @@ static VOID ApCliPeerAssocRspAction(
 			}
 			else
 			{
-				if(Status == MLME_ASSOC_REJ_DATA_RATE)
-					printk("APCLI_ASSOC - receive ASSOC_RSP reject - AP not support reqested rates or modes\n");
-
 				ApCliCtrlMsg.Status = Status;
 				MlmeEnqueue(pAd, APCLI_CTRL_STATE_MACHINE, APCLI_CTRL_ASSOC_RSP,
 							sizeof(APCLI_CTRL_MSG_STRUCT), &ApCliCtrlMsg, ifIndex);
@@ -845,6 +1044,11 @@ static VOID ApCliPeerDisassocAction(
 #ifdef MAC_REPEATER_SUPPORT
 	UCHAR CliIdx = 0xFF;
 #endif /* MAC_REPEATER_SUPPORT */
+
+#ifdef WH_EZ_SETUP
+	if(IS_ADPTR_EZ_SETUP_ENABLED(pAd))
+		EZ_DEBUG(DBG_CAT_CLIENT, DBG_SUBCAT_ALL, DBG_LVL_OFF, ("ApCliPeerDisassocAction()\n"));
+#endif
 
 	if ((ifIndex >= MAX_APCLI_NUM)
 #ifdef MAC_REPEATER_SUPPORT
@@ -1061,11 +1265,6 @@ static VOID ApCliAssocPostProc(
 	pApCliEntry->MlmeAux.CapabilityInfo = CapabilityInfo & SUPPORTED_CAPABILITY_INFO;
 	NdisMoveMemory(&pApCliEntry->MlmeAux.APEdcaParm, pEdcaParm, sizeof(EDCA_PARM));
 
-	if(pEdcaParm->bValid == TRUE)
-		pApCliEntry->wdev.bWmmCapable = TRUE;
-	else
-		pApCliEntry->wdev.bWmmCapable = FALSE;
-	
 	/* filter out un-supported rates */
 	pApCliEntry->MlmeAux.SupRateLen = SupRateLen;
 	NdisMoveMemory(pApCliEntry->MlmeAux.SupRate, SupRate, SupRateLen);

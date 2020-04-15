@@ -220,7 +220,7 @@ VOID mt_bcn_buf_init(RTMP_ADAPTER *pAd)
 
 	// TODO: shiang-7603
 	if (pAd->chipCap.hif_type == HIF_MT) {
-		DBGPRINT(RT_DEBUG_TRACE, ("%s(%d): Not support for HIF_MT yet!\n",
+		DBGPRINT(RT_DEBUG_OFF, ("%s(%d): Not support for HIF_MT yet!\n",
 							__FUNCTION__, __LINE__));
 	}
 
@@ -402,41 +402,8 @@ UINT8 NICGetBandSupported(RTMP_ADAPTER *pAd)
 
 INT WaitForAsicReady(RTMP_ADAPTER *pAd)
 {
-#if defined(RTMP_MAC) || defined(RLT_MAC)
-	UINT32 mac_val = 0;
-	UINT32 reg;
-	int idx = 0;
-#endif
-
 	// TODO: shiang-7603
 	return TRUE;
-	if (pAd->chipCap.hif_type == HIF_MT) {
-		DBGPRINT(RT_DEBUG_OFF, ("%s(%d): Not support for HIF_MT yet!\n",
-							__FUNCTION__, __LINE__));
-		return TRUE;
-	}
-
-#if defined(RTMP_MAC) || defined(RLT_MAC)
-	reg = MAC_CSR0;
-	do
-	{
-		if (RTMP_TEST_FLAG(pAd, fRTMP_ADAPTER_NIC_NOT_EXIST))
-			return FALSE;
-		
-		RTMP_IO_READ32(pAd, reg, &mac_val);
-		if ((mac_val != 0x00) && (mac_val != 0xFFFFFFFF))
-			return TRUE;
-
-		RtmpOsMsDelay(5);
-	} while (idx++ < 500);
-
-	DBGPRINT(RT_DEBUG_ERROR,
-				("%s(0x%x):AsicNotReady!\n",
-				__FUNCTION__, mac_val));
-#endif /* defined(RTMP_MAC) || defined(RLT_MAC) */
-
-	
-	return FALSE;
 }
 
 
@@ -488,9 +455,7 @@ Note:
 int RtmpChipOpsHook(VOID *pCB)
 {
 	RTMP_ADAPTER *pAd = (RTMP_ADAPTER *)pCB;
-#ifdef DBG
 	RTMP_CHIP_CAP *pChipCap = &pAd->chipCap;
-#endif
 #if defined(RTMP_MAC) || defined(RLT_MAC) || defined(RT65xx)
 	UINT32 MacValue;
 #endif /* defined(RTMP_MAC) || defined(RLT_MAC) || defined(RT65xx) */

@@ -32,12 +32,15 @@
 #endif /* DOT11R_FT_SUPPORT */
 
 extern UCHAR	CISCO_OUI[];
-
+extern UCHAR	APPLE_OUI[]; /* For IOS immediately connect */
 extern UCHAR	WPA_OUI[];
 extern UCHAR	RSN_OUI[];
 extern UCHAR	WME_INFO_ELEM[];
 extern UCHAR	WME_PARM_ELEM[];
 extern UCHAR	RALINK_OUI[];
+#if (defined(WH_EZ_SETUP) || defined(MWDS))
+extern UCHAR	MTK_OUI[];
+#endif
 extern UCHAR	BROADCOM_OUI[];
 extern UCHAR    WPS_OUI[];
 
@@ -118,9 +121,6 @@ BOOLEAN MlmeDelBAReqSanity(
 {
 	MLME_DELBA_REQ_STRUCT *pInfo;
 	pInfo = (MLME_DELBA_REQ_STRUCT *)Msg;
-
-    if (pInfo->Wcid >= MAX_LEN_OF_MAC_TABLE)
-        return FALSE;
 
     if ((MsgLen != sizeof(MLME_DELBA_REQ_STRUCT)))
     {
@@ -448,6 +448,11 @@ BOOLEAN PeerBeaconAndProbeRspSanity_Old(
 #else
 				*(USHORT *)(&pHtCapability->ExtHtCapInfo) = cpu2le16(*(USHORT *)(&pHtCapability->ExtHtCapInfo));
 #endif /* UNALIGNMENT_SUPPORT */
+#ifdef RT_BIG_ENDIAN
+				*(UINT32 *)(&pHtCapability.TxBFCap) =
+							le2cpu32(*(UINT32 *)(&pHtCapability.TxBFCap));
+#endif
+
 
 			}
 			else
@@ -762,14 +767,22 @@ BOOLEAN PeerBeaconAndProbeRspSanity_Old(
 #endif /* DOT11R_FT_SUPPORT */
 
 			case IE_EXT_CAPABILITY:
-			    if (pEid->Len >= 1)
-			    {
-				UCHAR cp_len, buf_space = sizeof(EXT_CAP_INFO_ELEMENT);
+				if (pEid->Len >= 1)
+				{
+					UCHAR MaxSize;
+					UCHAR MySize = sizeof(EXT_CAP_INFO_ELEMENT);
 
-				cp_len = min(pEid->Len, buf_space);
-				NdisMoveMemory(pExtCapInfo,&pEid->Octet[0], cp_len);
-			    }
-			    break;
+					MaxSize = min(pEid->Len, MySize);
+
+					NdisMoveMemory(pExtCapInfo,&pEid->Octet[0], MaxSize);
+#ifdef RT_BIG_ENDIAN
+				(*(UINT32 *)(&(pExtCapInfo))) =
+								le2cpu32(*(UINT32 *)(&(pExtCapInfo)));
+				(*(UINT32 *)(&(pExtCapInfo)+4)) =
+								le2cpu32(*(UINT32 *)(&(pExtCapInfo)+4));
+#endif
+				}
+				break;
             default:
                 break;
         }
@@ -837,7 +850,8 @@ BOOLEAN PeerBeaconAndProbeRspSanity(
 	OUT BCN_IE_LIST *ie_list,
 	OUT USHORT *LengthVIE,	
 	OUT PNDIS_802_11_VARIABLE_IEs pVIE,
-	IN BOOLEAN bGetDtim)
+	IN BOOLEAN bGetDtim,
+	IN BOOLEAN bFromBeaconReport)
 {
 	UCHAR *Ptr;
 	PFRAME_802_11 pFrame;
@@ -865,17 +879,23 @@ BOOLEAN PeerBeaconAndProbeRspSanity(
 	ie_list->AironetCellPowerLimit = 0xFF;  /* Default of AironetCellPowerLimit is 0xFF*/
 	ie_list->NewExtChannelOffset = 0xff;	/*Default 0xff means no such IE*/
 	*LengthVIE = 0; /* Set the length of VIE to init value 0*/
-	
-	pFrame = (PFRAME_802_11)Msg;
+
+	if (bFromBeaconReport == FALSE) {
+		pFrame = (PFRAME_802_11)Msg;
 
 
-    /* get Addr2 and BSSID from header*/
-    COPY_MAC_ADDR(&ie_list->Addr2[0], pFrame->Hdr.Addr2);
-    COPY_MAC_ADDR(&ie_list->Bssid[0], pFrame->Hdr.Addr3);
+		/* get Addr2 and BSSID from header*/
+		COPY_MAC_ADDR(&ie_list->Addr2[0], pFrame->Hdr.Addr2);
+		COPY_MAC_ADDR(&ie_list->Bssid[0], pFrame->Hdr.Addr3);
 
-    Ptr = pFrame->Octet;
-    Length += LENGTH_802_11;
-    
+		Ptr = pFrame->Octet;
+		Length += LENGTH_802_11;
+	} else {
+		/*  beacon report response's body have no 802.11 header part! */
+		Ptr = (UINT8 *)Msg;
+		pFrame = NULL; /* init. */
+	}
+
     /* get timestamp from payload and advance the pointer*/
     NdisMoveMemory(&ie_list->TimeStamp, Ptr, TIMESTAMP_LEN);
 
@@ -955,6 +975,14 @@ BOOLEAN PeerBeaconAndProbeRspSanity(
 			}
 			break;
 
+#ifdef NEIGHBORING_AP_STAT
+		case IE_TIM:
+			if (pEid->Len == 4) {
+				ie_list->DtimPeriod = pEid->Octet[1];
+			}
+			break;
+#endif
+
 		case IE_HT_CAP:
 			if (pEid->Len >= SIZE_HT_CAP_IE)  /*Note: allow extension.!!*/
 			{
@@ -970,8 +998,13 @@ BOOLEAN PeerBeaconAndProbeRspSanity(
 					NdisMoveMemory((PUCHAR)(&ie_list->HtCapability.ExtHtCapInfo), (PUCHAR)(&extHtCapInfo), sizeof(EXT_HT_CAP_INFO));
 				}
 #else
-				*(USHORT *)(&ie_list->HtCapability.ExtHtCapInfo) = cpu2le16(*(USHORT *)(&ie_list->HtCapability.ExtHtCapInfo));
+				*(USHORT *)(&ie_list->HtCapability.ExtHtCapInfo) =
+							cpu2le16(*(USHORT *)(&ie_list->HtCapability.ExtHtCapInfo));
 #endif /* UNALIGNMENT_SUPPORT */
+#ifdef RT_BIG_ENDIAN
+				*(USHORT *)(&ie_list->HtCapability.TxBFCap) =
+							le2cpu32(*(USHORT *)(&ie_list->HtCapability.TxBFCap));
+#endif
 
 			}
 			else
@@ -995,7 +1028,6 @@ BOOLEAN PeerBeaconAndProbeRspSanity(
 				*(USHORT *)(&ie_list->AddHtInfo.AddHtInfo2) = cpu2le16(*(USHORT *)(&ie_list->AddHtInfo.AddHtInfo2));
 				*(USHORT *)(&ie_list->AddHtInfo.AddHtInfo3) = cpu2le16(*(USHORT *)(&ie_list->AddHtInfo.AddHtInfo3));
 
-				ie_list->NewExtChannelOffset = ie_list->AddHtInfo.AddHtInfo.ExtChanOffset;
 			}
 			else
 			{
@@ -1073,6 +1105,10 @@ BOOLEAN PeerBeaconAndProbeRspSanity(
 			*/
 		/* case IE_WPA:*/
 		case IE_VENDOR_SPECIFIC:
+#if defined(MWDS) || defined(MAP_SUPPORT)
+			/* Check the OUI version, filter out non-standard usage*/
+		        check_vendor_ie(pAd, (UCHAR *)pEid, &(ie_list->vendor_ie));
+#endif
 			/* Check the OUI version, filter out non-standard usage*/
 			if (NdisEqualMemory(pEid->Octet, RALINK_OUI, 3) && (pEid->Len == 7))
 			{
@@ -1081,6 +1117,40 @@ BOOLEAN PeerBeaconAndProbeRspSanity(
 				else
 					ie_list->RalinkIe = 0xf0000000; /* Set to non-zero value (can't set bit0-2) to represent this is Ralink Chip. So at linkup, we will set ralinkchip flag.*/
 			}
+
+#ifdef APCLI_OWE_SUPPORT
+			else if (NdisEqualMemory(pEid->Octet, OWE_TRANS_OUI, 4)) {
+				UCHAR pair_ch = 0;
+				UCHAR pair_bssid[MAC_ADDR_LEN] = {0};
+				UCHAR pair_ssid[MAX_LEN_OF_SSID] = {0};
+				UCHAR pair_band = 0;
+				UCHAR pair_ssid_len = 0;
+				UCHAR ch = 0;
+				/* Copy to pVIE which will report to bssid list.*/
+				Ptr = (PUCHAR) pVIE;
+				NdisMoveMemory(Ptr + *LengthVIE, (UCHAR *)pEid, pEid->Len + 2);
+				*LengthVIE += (pEid->Len + 2);
+				extract_pair_owe_bss_info(pEid->Octet + 4,
+							pEid->Len - 4,
+							pair_bssid,
+							pair_ssid,
+							&pair_ssid_len,
+							&pair_band,
+							&pair_ch);
+				if (pair_ch != 0)
+					ch = pair_ch;
+				else
+					ch = ie_list->Channel;
+
+				if (ChannelSanity(pAd, ch) == FALSE) {
+					if (pPeerWscIe)
+						os_free_mem(NULL, pPeerWscIe);
+					return FALSE;
+				}
+
+			}
+#endif /*APCLI_OWE_SUPPORT*/
+
 			else if (NdisEqualMemory(pEid->Octet, WPA_OUI, 4))
 			{
 				/* Copy to pVIE which will report to bssid list.*/
@@ -1235,7 +1305,7 @@ BOOLEAN PeerBeaconAndProbeRspSanity(
 		/* WPA2 & 802.11i RSN*/
 		case IE_RSN:
 			/* There is no OUI for version anymore, check the group cipher OUI before copying*/
-			if (RTMPEqualMemory(pEid->Octet + 2, RSN_OUI, 3))
+			if (RTMPEqualMemory(pEid->Octet + 2, RSN_OUI, 3) || pEid->Len != 0)
 			{
 				/* Copy to pVIE which will report to microsoft bssid list.*/
 				Ptr = (PUCHAR) pVIE;
@@ -1289,24 +1359,50 @@ BOOLEAN PeerBeaconAndProbeRspSanity(
 
 				cp_len = min(pEid->Len, buf_space);
 				NdisMoveMemory(&ie_list->ExtCapInfo,&pEid->Octet[0], cp_len);
+#ifdef RT_BIG_ENDIAN
+				(*(UINT32 *)(&(ie_list->ExtCapInfo))) = le2cpu32(*(UINT32 *)(&(ie_list->ExtCapInfo)));
+				(*(UINT32 *)(&(ie_list->ExtCapInfo)+4)) =
+								le2cpu32(*(UINT32 *)(&(ie_list->ExtCapInfo)+4));
+#endif
 			}
 			break;
 
 #ifdef DOT11_VHT_AC
 		case IE_VHT_CAP:
 			if (pEid->Len == sizeof(VHT_CAP_IE)) {
+#ifdef RT_BIG_ENDIAN
+				UINT32 tmp_1;
+				UINT64 tmp_2;
+#endif
 				NdisMoveMemory(&ie_list->vht_cap_ie, &pEid->Octet[0], sizeof(VHT_CAP_IE));
 				ie_list->vht_cap_len = pEid->Len;
+#ifdef RT_BIG_ENDIAN
+				NdisCopyMemory(&tmp_1, &ie_list->vht_cap_ie.vht_cap, 4);
+				tmp_1 = le2cpu32(tmp_1);
+				NdisCopyMemory(&ie_list->vht_cap_ie.vht_cap, &tmp_1, 4);
+
+				NdisCopyMemory(&tmp_2, &(ie_list->vht_cap_ie.mcs_set), 8);
+				tmp_2 = le2cpu64(tmp_2);
+				NdisCopyMemory(&(ie_list->vht_cap_ie.mcs_set), &tmp_2, 8);
+#endif
 			}
 			break;
 		case IE_VHT_OP:
 			if (pEid->Len == sizeof(VHT_OP_IE)) {
+#ifdef RT_BIG_ENDIAN
+				UINT16 tmp;
+#endif
 				NdisMoveMemory(&ie_list->vht_op_ie, &pEid->Octet[0], sizeof(VHT_OP_IE));
 				ie_list->vht_op_len = pEid->Len;
+#ifdef RT_BIG_ENDIAN
+				NdisCopyMemory(&tmp, &ie_list->vht_op_ie.basic_mcs_set, sizeof(VHT_MCS_MAP));
+				tmp = le2cpu16(tmp);
+				NdisCopyMemory(&ie_list->vht_op_ie.basic_mcs_set, &tmp, sizeof(VHT_MCS_MAP));
+#endif
 			}
 			break;
 		case IE_OPERATING_MODE_NOTIFY:
-			if (pEid->Len == sizeof(OPERATING_MODE)) {
+			if (pEid->Len == sizeof(OPERATING_MODE) && (bFromBeaconReport == FALSE)) {
 				MAC_TABLE_ENTRY *pEntry = &pAd->MacTab.Content[BSSID_WCID];
 				OPERATING_MODE op_mode;
 				
@@ -1328,9 +1424,7 @@ BOOLEAN PeerBeaconAndProbeRspSanity(
     }
 
 	LatchRfChannel = MsgChannel;
-
-	/* wide channels supported in all 2.4/5GHz bands */
-	if ( /* (pAd->LatchRfRegs.Channel > 14) && */ ((Sanity & 0x4) == 0))
+	if ((pAd->LatchRfRegs.Channel > 14) && ((Sanity & 0x4) == 0))
 	{
 		if (CtrlChannel != 0)
 			ie_list->Channel = CtrlChannel;
@@ -1340,7 +1434,7 @@ BOOLEAN PeerBeaconAndProbeRspSanity(
 				|| pAd->CommonCfg.RegTransmitSetting.field.BW == BW_80
 #endif /* DOT11_VHT_AC */
 			) {
-					ie_list->Channel = LatchRfChannel;
+					ie_list->Channel = pAd->CommonCfg.Channel;
 			}
 			else
 				ie_list->Channel = LatchRfChannel;
@@ -1365,13 +1459,16 @@ SanityCheck:
 
 	if ((Sanity != 0x7) || ( bWscCheck == FALSE))
 	{
-		DBGPRINT(RT_DEBUG_LOUD, ("%s() - missing field, Sanity=0x%02x\n", __FUNCTION__, Sanity));
-		return FALSE;
+		if (((bFromBeaconReport == FALSE) && (Sanity != 0x7)) ||
+			((bFromBeaconReport == TRUE) && (!(Sanity & 0x1))) || (bWscCheck == FALSE)) {
+			DBGPRINT(RT_DEBUG_LOUD, ("%s() - missing field, Sanity=0x%02x\n", __func__, Sanity));
+			return FALSE;
+		}
 	}
 	else
 	{
-		return TRUE;
 	}
+	return TRUE;
 }
 
 
@@ -1570,6 +1667,12 @@ BOOLEAN PeerDeauthSanity(
     COPY_MAC_ADDR(pAddr2, pFrame->Hdr.Addr2);
 	COPY_MAC_ADDR(pAddr3, pFrame->Hdr.Addr3);
     NdisMoveMemory(pReason, &pFrame->Octet[0], 2);
+#ifdef WH_EZ_SETUP
+	if (IS_ADPTR_EZ_SETUP_ENABLED(pAd) && (*pReason == MLME_EZ_DISCONNECT_NON_EZ))
+	{
+		return FALSE;
+	}
+#endif
 
     return TRUE;
 }
@@ -1637,6 +1740,12 @@ BOOLEAN PeerAuthSanity(
 		return TRUE;
 	}
 #endif /* DOT11R_FT_SUPPORT */
+#ifdef WH_EZ_SETUP
+	else if (IS_ADPTR_EZ_SETUP_ENABLED(pAd) && (*pAlg == AUTH_MODE_EZ))
+	{
+		return TRUE;
+	}
+#endif /* WH_EZ_SETUP */
     else 
     {
         DBGPRINT(RT_DEBUG_TRACE, ("PeerAuthSanity fail - wrong algorithm\n"));
@@ -1671,6 +1780,9 @@ BOOLEAN MlmeAuthReqSanity(
 #ifdef DOT11R_FT_SUPPORT
 		|| (*pAlg == AUTH_MODE_FT)
 #endif /* DOT11R_FT_SUPPORT */
+#ifdef WH_EZ_SETUP
+		|| (IS_ADPTR_EZ_SETUP_ENABLED(pAd) && (*pAlg == AUTH_MODE_EZ))
+#endif /* WH_EZ_SETUP */
      	) && 
         ((*pAddr & 0x01) == 0)) 
     {
@@ -1842,7 +1954,7 @@ BOOLEAN PeerProbeReqSanity(
     UCHAR		*Ptr;
     UCHAR		eid =0, eid_len = 0, *eid_data;
 #ifdef CONFIG_AP_SUPPORT
-#if defined(WSC_INCLUDED) || defined(EASY_CONFIG_SETUP)
+#if defined(WSC_INCLUDED) || defined(EASY_CONFIG_SETUP) || defined(WAPP_SUPPORT)
     UCHAR       apidx = MAIN_MBSSID;
 #endif 
 	UCHAR       Addr1[MAC_ADDR_LEN];
@@ -1853,11 +1965,11 @@ BOOLEAN PeerProbeReqSanity(
 #endif /* WSC_INCLUDED */
 #endif /* CONFIG_AP_SUPPORT */
 	UINT		total_ie_len = 0;
+#ifdef WH_EVENT_NOTIFIER
+	IE_LISTS *ie_lists = &ProbeReqParam->ie_list;
+#endif /* WH_EVENT_NOTIFIER */
 
-    if (Fr == NULL)
-	return FALSE;
-
-    NdisZeroMemory(ProbeReqParam, sizeof(*ProbeReqParam));
+	NdisZeroMemory(ProbeReqParam, sizeof(*ProbeReqParam));
     COPY_MAC_ADDR(ProbeReqParam->Addr2, &Fr->Hdr.Addr2);
 
     if (Fr->Octet[0] != IE_SSID || Fr->Octet[1] > MAX_LEN_OF_SSID) 
@@ -1865,7 +1977,16 @@ BOOLEAN PeerProbeReqSanity(
         DBGPRINT(RT_DEBUG_TRACE, ("%s(): sanity fail - wrong SSID IE\n", __FUNCTION__));
         return FALSE;
     } 
-    
+	/*
+	 * MAP-R1 4.8.5 workaround
+	 * Test case expect auth/assoc reject after probe response therefore
+	 * dropping it here will cause test case to fail.
+	 * Impact on band steering: Client will be able to see blocked bss as
+	 * well, however connection will be rejected in auth phase.
+	 * TODO: Define a separate ioctl for probe withholding and do not
+	 * call that in certification case. Correct apidex passed in below API.
+	 */
+
     ProbeReqParam->SsidLen = Fr->Octet[1];
     NdisMoveMemory(ProbeReqParam->Ssid, &Fr->Octet[2], ProbeReqParam->SsidLen);
 	
@@ -1890,14 +2011,32 @@ BOOLEAN PeerProbeReqSanity(
 	        case IE_VENDOR_SPECIFIC:
 				if (eid_len <= 4)
 					break;
+
+			/* For IOS immediately connect */
+			if (!ProbeReqParam->IsFromIos && NdisEqualMemory(eid_data, APPLE_OUI, 3)) {
+				ProbeReqParam->IsFromIos = TRUE;
+			}
+
 #ifdef RSSI_FEEDBACK
-		if (NdisEqualMemory(eid_data, RALINK_OUI, 3) && (eid_len == 7))
-		{
-			if (*(eid_data + 3/* skip RALINK_OUI */) & 0x8)
-				ProbeReqParam->bRequestRssi = TRUE;
-			break;
-		}
+                if (ProbeReqParam->bRssiRequested &&  
+					 NdisEqualMemory(eid_data, RALINK_OUI, 3) && (eid_len == 7))
+                {
+					if (*(eid_data + 3/* skip RALINK_OUI */) & 0x8)
+                    	ProbeReqParam->bRssiRequested = TRUE;
+                    break;
+                }
 #endif /* RSSI_FEEDBACK */
+
+#ifdef WH_EVENT_NOTIFIER
+				if(pAd->ApCfg.EventNotifyCfg.CustomOUILen && 
+					(eid_len >= pAd->ApCfg.EventNotifyCfg.CustomOUILen) &&
+					NdisEqualMemory(eid_data, pAd->ApCfg.EventNotifyCfg.CustomOUI, pAd->ApCfg.EventNotifyCfg.CustomOUILen))
+				{
+					ie_lists->vendor_ie.custom_ie_len = eid_len;
+					NdisMoveMemory(ie_lists->vendor_ie.custom_ie, eid_data, eid_len);
+					break;
+				}
+#endif /* WH_EVENT_NOTIFIER */
 
                 if (NdisEqualMemory(eid_data, WPS_OUI, 4)
  					)
@@ -1970,6 +2109,48 @@ BOOLEAN PeerProbeReqSanity(
 				}
 #endif
 				break;
+
+
+#if (defined(BAND_STEERING) || defined(WH_EVENT_NOTIFIER))
+			case IE_HT_CAP:
+#ifdef BAND_STEERING				
+				if (pAd->ApCfg.BandSteering != TRUE)
+					break;
+#endif				
+				if (eid_len >= SIZE_HT_CAP_IE)
+				{
+#ifdef BAND_STEERING				
+					ProbeReqParam->IsHtSupport = TRUE;
+					ProbeReqParam->RxMCSBitmask = *(UINT32 *)(eid_data + 3);
+#endif					
+#ifdef WH_EVENT_NOTIFIER
+					NdisMoveMemory(&ie_lists->HTCapability, eid_data, SIZE_HT_CAP_IE);
+					*(USHORT *)(&ie_lists->HTCapability.HtCapInfo) = cpu2le16(*(USHORT *)(&ie_lists->HTCapability.HtCapInfo));			
+					*(USHORT *)(&ie_lists->HTCapability.ExtHtCapInfo) = cpu2le16(*(USHORT *)(&ie_lists->HTCapability.ExtHtCapInfo));
+					ie_lists->ht_cap_len = SIZE_HT_CAP_IE;
+#endif /* WH_EVENT_NOTIFIER */
+
+				}
+				else
+					MTWF_LOG(DBG_CAT_MLME, DBG_SUBCAT_ALL, DBG_LVL_WARN, ("%s() - wrong IE_HT_CAP. eid_len = %d\n", __FUNCTION__, eid_len));
+				break;		
+				
+#ifdef DOT11_VHT_AC
+			case IE_VHT_CAP:
+				if (pAd->ApCfg.BandSteering != TRUE)
+					break;
+				if (eid_len >= SIZE_OF_VHT_CAP_IE) {
+					ProbeReqParam->IsVhtSupport = TRUE;
+#ifdef WH_EVENT_NOTIFIER
+					NdisMoveMemory(&ie_lists->vht_cap, eid_data, eid_len);
+					ie_lists->vht_cap_len = eid_len;
+#endif /* WH_EVENT_NOTIFIER */
+				}
+				else
+					MTWF_LOG(DBG_CAT_MLME, DBG_SUBCAT_ALL, DBG_LVL_WARN, ("%s() - wrong IE_VHT_CAP. eid_len = %d\n", __FUNCTION__, eid_len));
+				break;
+#endif /* DOT11_VHT_AC */
+#endif
             default:
                 break;
         }
@@ -1983,6 +2164,11 @@ BOOLEAN PeerProbeReqSanity(
 #ifdef WSC_INCLUDED
 	if (pPeerWscIe && (PeerWscIeLen > 0) && (bWscCheck == TRUE))
 	{
+		/* WPS_BandSteering Support */
+#ifdef BAND_STEERING
+		ProbeReqParam->bWpsCapable = TRUE;
+#endif
+
 		for (apidx = 0; apidx < pAd->ApCfg.BssidNum; apidx++)
 		{
 			if (NdisEqualMemory(Addr1, pAd->ApCfg.MBSSID[apidx].wdev.bssid, MAC_ADDR_LEN))
@@ -2036,5 +2222,41 @@ BOOLEAN PeerProbeReqSanity(
 #endif /* CONFIG_AP_SUPPORT */
 
     return TRUE;
+}
+
+/* ===========================================================
+Routine Description:
+	Check a packet is Action frame or not
+
+Arguments:
+	pAd			- WLAN control block pointer
+	pbuf			- packet buffer
+
+Return Value:
+	TRUE		- yes
+	FALSE		- no
+
+============================================================*/
+BOOLEAN
+IsPublicActionFrame(
+	IN PRTMP_ADAPTER	pAd,
+	IN VOID *pbuf
+)
+{
+	HEADER_802_11 *pHeader = pbuf;
+	UINT8 *ptr = pbuf;
+
+	if (pHeader->FC.Type != FC_TYPE_MGMT)
+		return FALSE;
+
+	if (pHeader->FC.SubType != SUBTYPE_ACTION)
+		return FALSE;
+
+	ptr += sizeof(HEADER_802_11);
+
+	if (*ptr == CATEGORY_PUBLIC)
+		return TRUE;
+	else
+		return FALSE;
 }
 

@@ -85,7 +85,7 @@ VOID dump_tmac_info(RTMP_ADAPTER *pAd, UCHAR *tmac_info)
 
 	DBGPRINT(RT_DEBUG_OFF, ("\tTMAC_TXD_0:\n"));
 	DBGPRINT(RT_DEBUG_OFF, ("\t\tPortID=%d(%s)\n", txd_0->p_idx,
-				txd_0->p_idx < 2 ? p_idx_str[txd_0->p_idx] : "Invalid"));
+				p_idx_str[txd_0->p_idx]));
 	if (txd_0->p_idx == P_IDX_LMAC)
 		q_idx = txd_0->q_idx % 0xf;
 	else
@@ -100,7 +100,7 @@ VOID dump_tmac_info(RTMP_ADAPTER *pAd, UCHAR *tmac_info)
 	DBGPRINT(RT_DEBUG_OFF, ("\t\tHdrInfo=0x%x\n", txd_1->hdr_info));
 	DBGPRINT(RT_DEBUG_OFF, ("\t\tHdrFmt=%d(%s)\n",
 				txd_1->hdr_format,
-				txd_1->hdr_format < 4 ? hdr_fmt_str[txd_1->hdr_format] : "N/A"));
+				hdr_fmt_str[txd_1->hdr_format] ));
 	switch (txd_1->hdr_format) {
 		case TMI_HDR_FT_NON_80211:
 			DBGPRINT(RT_DEBUG_OFF, ("\t\t\tMRD=%d, EOSP=%d, RMVL=%d, VLAN=%d, ETYP=%d\n",
@@ -215,9 +215,9 @@ static inline char *rxd_pkt_type_str(INT pkt_type)
 
 VOID dump_rmac_info_normal(RTMP_ADAPTER *pAd, UCHAR *rmac_info)
 {
-	RXD_BASE_STRUCT *rxd_base = (RXD_BASE_STRUCT *)rmac_info;
+	struct rxd_base_struct *rxd_base = (struct rxd_base_struct *)rmac_info;
 
-	hex_dump("RMAC_Info Raw Data: ", rmac_info, sizeof(RXD_BASE_STRUCT));
+	hex_dump("RMAC_Info Raw Data: ", rmac_info, sizeof(struct rxd_base_struct));
 
 	DBGPRINT(RT_DEBUG_TRACE, ("\tRxData_BASE:\n"));
 	DBGPRINT(RT_DEBUG_TRACE, ("\t\tPktType=%d(%s)\n",
@@ -301,7 +301,7 @@ VOID dump_rmac_info(RTMP_ADAPTER *pAd, UCHAR *rmac_info)
 
 	rxd_0 = (union rmac_rxd_0 *)rmac_info;
 	pkt_type = RMAC_RX_PKT_TYPE(rxd_0->word);
-	DBGPRINT(RT_DEBUG_TRACE, ("RMAC_RXD Header Format :%s\n",
+	DBGPRINT(RT_DEBUG_OFF, ("RMAC_RXD Header Format :%s\n",
 				rxd_pkt_type_str(pkt_type)));
 	switch (pkt_type)
 	{
@@ -361,7 +361,7 @@ VOID dump_mt_mac_cr(RTMP_ADAPTER *pAd)
 INT mt_mac_fifo_stat_update(RTMP_ADAPTER *pAd)
 {
 	if (pAd->chipCap.hif_type == HIF_MT) {
-		DBGPRINT(RT_DEBUG_TRACE, ("%s(%d): Not support for HIF_MT yet!\n",
+		DBGPRINT(RT_DEBUG_OFF, ("%s(%d): Not support for HIF_MT yet!\n",
 							__FUNCTION__, __LINE__));
 	}
 
@@ -410,6 +410,11 @@ NTSTATUS MtCmdNICUpdateRawCounters(RTMP_ADAPTER *pAd, PCmdQElmt CMDQelmt)
 	UINT32 AmpduTxCount = 0;
 	UINT32 AmpduTxSuccessCount = 0;
 
+	UINT32  OFDM_PD_CNT, CCK_PD_CNT,OFDM_MDRDY_CNT, CCK_MDRDY_CNT;
+	UINT32  PDCnt = 0;
+       UINT32  MDRDYCnt = 0;
+	UINT32  value, CCAcount = 0;
+
 #ifdef DBG_DIAGNOSE
 	UINT32 bss_tx_cnt = 0;
 	UINT32 TxFailCount = 0;
@@ -450,6 +455,12 @@ NTSTATUS MtCmdNICUpdateRawCounters(RTMP_ADAPTER *pAd, PCmdQElmt CMDQelmt)
 	RTMP_IO_READ32(pAd, WTBL_BTCRn, &bss_tx_cnt);
 	bss_tx_cnt = (bss_tx_cnt >> 16) & 0xffff;
 #endif /* DBG_DIAGNOSE */
+
+#ifdef ANTI_INTERFERENCE_SUPPORT
+	RTMP_IO_READ32(pAd, MIB_MSDR12, &mac_val);
+	pRalinkCounters->OneSecTxAMpduCnt = mac_val & 0xFFFF;
+	pRalinkCounters->OneSecTxBACnt = (mac_val >> 16) & 0xFFFF;
+#endif /* ANTI_INTERFERENCE_SUPPORT */
 
 #ifdef STATS_COUNT_SUPPORT
 	pAd->WlanCounters.AmpduSuccessCount.u.LowPart += AmpduTxSuccessCount;
@@ -544,6 +555,38 @@ NTSTATUS MtCmdNICUpdateRawCounters(RTMP_ADAPTER *pAd, PCmdQElmt CMDQelmt)
 	}
 #endif /* DBG_DIAGNOSE */
 
+
+	/* update one sec falseCCA (PD CNT - MDRDY CNT) */
+	RTMP_IO_READ32(pAd,RO_PHYCTRL_STS0,&PDCnt);
+	OFDM_PD_CNT = (PDCnt >> 16);
+	CCK_PD_CNT = (PDCnt & 0xFFFF);
+	RTMP_IO_READ32(pAd,RO_PHYCTRL_STS5,&MDRDYCnt);
+	OFDM_MDRDY_CNT = (MDRDYCnt >> 16);
+	CCK_MDRDY_CNT = (MDRDYCnt & 0xFFFF);
+	CCAcount = ((OFDM_PD_CNT - OFDM_MDRDY_CNT) + (CCK_PD_CNT - CCK_MDRDY_CNT));
+	RTMP_IO_READ32(pAd,CR_PHYCTRL_2,&value);
+	value |= (1<<6); /* BIT6: CR_STSCNT_RST */
+	RTMP_IO_WRITE32(pAd,CR_PHYCTRL_2,value);
+	value &= (~(1<<6));
+	RTMP_IO_WRITE32(pAd,CR_PHYCTRL_2,value);
+	value |= (1<<7); /* BIT7: CR_STSCNT_EN */
+	RTMP_IO_WRITE32(pAd,CR_PHYCTRL_2,value);
+	
+	//DBGPRINT(RT_DEBUG_WARN, ("one-sec FalseCCACnt %d (CCK %d + OFDM %d)\n"
+		//,CCAcount,(CCK_PD_CNT - CCK_MDRDY_CNT),(OFDM_PD_CNT - OFDM_MDRDY_CNT)));
+
+	pAd->RalinkCounters.OneSecFalseCCACnt = CCAcount;
+	pAd->RalinkCounters.OneSecCCKFalseCCACnt = (CCK_PD_CNT - CCK_MDRDY_CNT);
+	pAd->RalinkCounters.OneSecOFDMFalseCCACnt = (OFDM_PD_CNT - OFDM_MDRDY_CNT);
+	pAd->RalinkCounters.FalseCCACnt = CCAcount;
+		
+#ifdef SMART_CARRIER_SENSE_SUPPORT
+        pAd->SCSCtrl.PdCount = PDCnt;
+        pAd->SCSCtrl.MdrdyCount = MDRDYCnt;
+	DBGPRINT(RT_DEBUG_TRACE,("False CCA (one second) = %ld (CCK %d + OFDM %d)\n" , (ULONG)pAd->RalinkCounters.OneSecFalseCCACnt,pAd->RalinkCounters.OneSecCCKFalseCCACnt,pAd->RalinkCounters.OneSecOFDMFalseCCACnt));
+        pAd->SCSCtrl.FalseCCA = pAd->RalinkCounters.FalseCCACnt;
+#endif /* SMART_CARRIER_SENSE_SUPPORT */
+
 	return NDIS_STATUS_SUCCESS;
 }
 
@@ -619,15 +662,17 @@ USHORT tx_rate_to_tmi_rate(UCHAR mode, UCHAR mcs, UCHAR nss, BOOLEAN stbc, UCHAR
 	stbc = (stbc== TRUE) ? 1 : 0;
 	switch (mode) {
 		case MODE_CCK:
-			if (preamble)
+			if (preamble && mcs < ARRAY_SIZE(tmi_rate_map_cck_lp))
 				mcs_id = tmi_rate_map_cck_lp[mcs];
-			else
+			else if (mcs < ARRAY_SIZE(tmi_rate_map_cck_sp))
 				mcs_id = tmi_rate_map_cck_sp[mcs];
 			tmi_rate = (TMI_TX_RATE_MODE_CCK << TMI_TX_RATE_BIT_MODE) | (mcs_id);
 			break;
 		case MODE_OFDM:
-			mcs_id = tmi_rate_map_ofdm[mcs];
-			tmi_rate = (TMI_TX_RATE_MODE_OFDM << TMI_TX_RATE_BIT_MODE) | (mcs_id);
+			if (mcs < ARRAY_SIZE(tmi_rate_map_ofdm)) {
+				mcs_id = tmi_rate_map_ofdm[mcs];
+				tmi_rate = (TMI_TX_RATE_MODE_OFDM << TMI_TX_RATE_BIT_MODE) | (mcs_id);
+			}
 			break;
 		case MODE_HTMIX:
 		case MODE_HTGREENFIELD:
@@ -812,7 +857,7 @@ VOID write_tmac_info(
 
 	if (mac_entry && IS_ENTRY_APCLI(mac_entry))
 	{
-#if defined(MULTI_APCLI_SUPPORT) || defined(APCLI_CONNECTION_TRIAL)
+#ifdef MULTI_APCLI_SUPPORT
 		txd_1->own_mac = (0x1 + mac_entry->func_tb_idx);
 #else /* MULTI_APCLI_SUPPORT */
 		txd_1->own_mac = 0x1; //Carter, refine this
@@ -896,18 +941,31 @@ VOID write_tmac_info(
 		}
 
 		/* DWORD 5 */
-		txd_5->pid = 0;
-		
-		if (info->PID)
+#ifdef WH_EZ_SETUP	
+		if (0)//mac_entry && IS_EZ_SETUP_ENABLED(mac_entry->wdev) && info->PID == PID_EZ_ACTION)
 		{
-			if (TxSCtl->TxSFormatPerPkt & (1 << info->PID))
-				txd_5->tx_status_fmt = TXS_FORMAT1;
-			else
-				txd_5->tx_status_fmt = TXS_FORMAT0;
+			EZ_DEBUG(DBG_CAT_ALL, DBG_SUBCAT_ALL, DBG_LVL_OFF, ("Action Frame TXD initialized\n"));
 		
-			if (TxSCtl->TxS2McUStatusPerPkt & (1 << info->PID))
-				txd_5->tx_status_2_mcu = 1;
-			else
+			txd_5->pid = info->PID;
+			txd_5->tx_status_fmt = TXS_FORMAT0;
+			txd_5->tx_status_2_mcu = 0;
+			txd_5->tx_status_2_host = 1;
+		}
+		else
+#endif
+		{
+			txd_5->pid = 0;
+			
+			if (info->PID)
+			{
+				if (TxSCtl->TxSFormatPerPkt & (1 << info->PID))
+					txd_5->tx_status_fmt = TXS_FORMAT1;
+				else
+					txd_5->tx_status_fmt = TXS_FORMAT0;
+			
+				if (TxSCtl->TxS2McUStatusPerPkt & (1 << info->PID))
+					txd_5->tx_status_2_mcu = 1;
+				else
 				txd_5->tx_status_2_mcu = 0;
 	
 			if (TxSCtl->TxS2HostStatusPerPkt & (1 << info->PID))
@@ -958,7 +1016,7 @@ VOID write_tmac_info(
 				}
 			}
 		}
-
+}
 #ifdef HDR_TRANS_SUPPORT
 		//txd_5->da_select = TMI_DAS_FROM_MPDU;
 #endif /* HDR_TRANS_SUPPORT */
@@ -1010,6 +1068,10 @@ VOID write_tmac_info_Data(RTMP_ADAPTER *pAd, UCHAR *buf, TX_BLK *pTxBlk)
 	TMAC_TXD_1 *txd_1 = &txd_s->txd_1;
 	UCHAR txd_size;
 	BOOLEAN txd_long = FALSE;
+	struct rtmp_mac_ctrl *wtbl_ctrl = &pAd->mac_ctrl;
+	//STA_TR_ENTRY *tr_entry;
+	struct wtbl_entry tb_entry;
+	union WTBL_1_DW0 *dw0 = (union WTBL_1_DW0 *)&tb_entry.wtbl_1.wtbl_1_d0.word;
 	TXS_CTL *TxSCtl = &pAd->TxSCtl;
 
 		wcid = pTxBlk->Wcid;
@@ -1069,11 +1131,12 @@ VOID write_tmac_info_Data(RTMP_ADAPTER *pAd, UCHAR *buf, TX_BLK *pTxBlk)
 	else
 	txd_1->protect_frm = 0;
 	if (pMacEntry && IS_ENTRY_APCLI(pMacEntry)) {
-#ifdef MULTI_APCLI_SUPPORT
-		txd_1->own_mac = (0x1 + pMacEntry->func_tb_idx);
-#else /* MULTI_APCLI_SUPPORT */
-		txd_1->own_mac = 0x1;
-#endif /* !MULTI_APCLI_SUPPORT */
+		//tr_entry = &pAd->MacTab.tr_entry[pMacEntry->wcid];
+		tb_entry.wtbl_addr[0] = wtbl_ctrl->wtbl_base_addr[0] +
+							pMacEntry->wcid * wtbl_ctrl->wtbl_entry_size[0];
+		RTMP_IO_READ32(pAd, tb_entry.wtbl_addr[0], &tb_entry.wtbl_1.wtbl_1_d0.word);
+		txd_1->own_mac = dw0->field.muar_idx; //Carter, refine this
+		//printk("txd_1->own_mac = %x\n", txd_1->own_mac);
 	}
 	else if (pMacEntry && IS_ENTRY_CLIENT(pMacEntry)) {
 		if (pMacEntry->func_tb_idx == 0)
@@ -1144,6 +1207,25 @@ VOID write_tmac_info_Data(RTMP_ADAPTER *pAd, UCHAR *buf, TX_BLK *pTxBlk)
 		txd_2->sub_type = (*((UINT16 *)(pTxBlk->wifi_hdr)) & (0xf << 4)) >> 4;
 		txd_2->frm_type = (*((UINT16 *)(pTxBlk->wifi_hdr)) & (0x3 << 2)) >> 2;
 		
+		/*start: fix ping rate*/
+		if ((pMacEntry) && (RTMP_GET_PACKET_ICMP(pTxBlk->pPacket)) && PingFixRate)
+        	{
+			/*solve ping tx hang when HT40, by dragon, 16.01.29 */
+			//txd_l->txd_2.fix_rate = 1;
+			/*if((pMacEntry->RssiSample.AvgRssi[0] >= -60) || (pMacEntry->RssiSample.AvgRssi[1] >= -60))
+			{
+				mcs = 6;
+				phy_mode = MODE_OFDM;
+				MTWF_LOG(DBG_CAT_ALL, DBG_SUBCAT_ALL, DBG_LVL_WARN | DBG_FUNC_UAPSD, ("write_tmac_info_Data,%-3d/%-3d,phy_mode=%d,mcs=%d\n", pMacEntry->RssiSample.AvgRssi[0],pMacEntry->RssiSample.AvgRssi[1],phy_mode,mcs));
+			}
+			else*/
+			{
+				mcs = 2;
+				phy_mode = MODE_CCK;
+			}
+		}
+		/*end: fix ping rate*/
+
 		if (pMacEntry)
 		{
 			if (pAd->shortretry != 0)
@@ -1304,7 +1386,7 @@ INT rtmp_mac_set_band(RTMP_ADAPTER *pAd, int  band)
 {
 	// TODO: shiang-7603
 	if (pAd->chipCap.hif_type == HIF_MT) {
-		DBGPRINT(RT_DEBUG_TRACE, ("%s(%d): Not support for HIF_MT yet!\n",
+		DBGPRINT(RT_DEBUG_OFF, ("%s(%d): Not support for HIF_MT yet!\n",
 							__FUNCTION__, __LINE__));
 		return FALSE;
 	}
@@ -1327,7 +1409,7 @@ INT rtmp_mac_set_mmps(RTMP_ADAPTER *pAd, INT ReduceCorePower)
 {
 	// TODO: shiang-7603
 	if (pAd->chipCap.hif_type == HIF_MT) {
-		DBGPRINT(RT_DEBUG_TRACE, ("%s(%d): Not support for HIF_MT yet!\n",
+		DBGPRINT(RT_DEBUG_OFF, ("%s(%d): Not support for HIF_MT yet!\n",
 							__FUNCTION__, __LINE__));
 		return FALSE;
 	}
@@ -1340,7 +1422,7 @@ VOID ReSyncBeaconTime(RTMP_ADAPTER *pAd)
 {
 	// TODO: shiang-7603
 	if (pAd->chipCap.hif_type == HIF_MT) {
-		DBGPRINT(RT_DEBUG_TRACE, ("%s(%d): Not support for HIF_MT yet!\n",
+		DBGPRINT(RT_DEBUG_OFF, ("%s(%d): Not support for HIF_MT yet!\n",
 							__FUNCTION__, __LINE__));
 	}
 }
@@ -1470,23 +1552,19 @@ VOID mt_asic_init_txrx_ring(RTMP_ADAPTER *pAd)
 
 	/* Init RX Ring0 Base/Size/Index pointer CSR */
 	for (i = 0; i < NUM_OF_RX_RING; i++) {
-		RTMP_RX_RING *rx_ring;
-		UINT16 RxRingSize = RX_RING_SIZE;
-
-		rx_ring = &pAd->RxRing[i];
 		offset = i * 0x10;
-		phy_addr = RTMP_GetPhysicalAddressLow(rx_ring->Cell[0].AllocPa);
-		rx_ring->RxSwReadIdx = 0;
-		rx_ring->RxCpuIdx = RxRingSize - 1;
-		rx_ring->hw_desc_base = MT_RX_RING_BASE + offset;
-		rx_ring->hw_cidx_addr = MT_RX_RING_CIDX + offset;
-		rx_ring->hw_didx_addr = MT_RX_RING_DIDX + offset;
-		rx_ring->hw_cnt_addr = MT_RX_RING_CNT + offset;
-		RTMP_IO_WRITE32(pAd, rx_ring->hw_desc_base, phy_addr);
-		RTMP_IO_WRITE32(pAd, rx_ring->hw_cidx_addr, rx_ring->RxCpuIdx);
-		RTMP_IO_WRITE32(pAd, rx_ring->hw_cnt_addr, RxRingSize);
+		phy_addr = RTMP_GetPhysicalAddressLow(pAd->RxRing[i].Cell[0].AllocPa);
+		pAd->RxRing[i].RxSwReadIdx = 0;
+		pAd->RxRing[i].RxCpuIdx = RX_RING_SIZE - 1;
+		pAd->RxRing[i].hw_desc_base = MT_RX_RING_BASE + offset;
+		pAd->RxRing[i].hw_cidx_addr = MT_RX_RING_CIDX + offset;
+		pAd->RxRing[i].hw_didx_addr = MT_RX_RING_DIDX + offset;
+		pAd->RxRing[i].hw_cnt_addr = MT_RX_RING_CNT + offset;
+		RTMP_IO_WRITE32(pAd, pAd->RxRing[i].hw_desc_base, phy_addr);
+		RTMP_IO_WRITE32(pAd, pAd->RxRing[i].hw_cidx_addr, pAd->RxRing[i].RxCpuIdx);
+		RTMP_IO_WRITE32(pAd, pAd->RxRing[i].hw_cnt_addr, RX_RING_SIZE);
 		DBGPRINT(RT_DEBUG_TRACE, ("-->RX_RING%d[0x%x]: Base=0x%x, Cnt=%d\n",
-					i, rx_ring->hw_desc_base, phy_addr, RxRingSize));
+					i, pAd->RxRing[i].hw_desc_base, phy_addr, RX_RING_SIZE));
 	}
 
 	/* Set DMA global configuration except TX_DMA_EN and RX_DMA_EN bits */
@@ -1521,7 +1599,7 @@ VOID mt_mac_bcn_buf_init(IN RTMP_ADAPTER *pAd, BOOLEAN bHardReset)
 
 	// TODO: shiang-7603
 	if (pAd->chipCap.hif_type == HIF_MT) {
-		DBGPRINT(RT_DEBUG_TRACE, ("%s(%d): Not support for HIF_MT yet!\n",
+		DBGPRINT(RT_DEBUG_OFF, ("%s(%d): Not support for HIF_MT yet!\n",
 							__FUNCTION__, __LINE__));
 		return;
 	}
@@ -1631,7 +1709,7 @@ VOID dump_wtbl_1_info(RTMP_ADAPTER *pAd, struct wtbl_1_struc *tb)
 }
 
 
-static UCHAR ba_range[] = {4, 5, 8, 10, 16, 20, 21, 45};
+static UCHAR ba_range[] = {4, 5, 8, 10, 16, 20, 21, 42};
 static UCHAR *bw_str[] = {"20", "40", "80", "160"};
 VOID dump_wtbl_2_info(RTMP_ADAPTER *pAd, struct wtbl_2_struc *tb)
 {

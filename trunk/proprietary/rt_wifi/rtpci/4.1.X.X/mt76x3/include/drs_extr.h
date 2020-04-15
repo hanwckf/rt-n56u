@@ -23,6 +23,9 @@
 #ifndef __DRS_EXTR_H__
 #define __DRS_EXTR_H__
 
+#define SWIFT_TRAIN_UP 1
+#define CCK_TRAIN_UP 1
+
 struct _RTMP_ADAPTER;
 struct _MAC_TABLE_ENTRY;
 
@@ -33,6 +36,9 @@ struct _MAC_TABLE_ENTRY;
 #define TX_RATE_INDEX_5	4
 #define TX_RATE_INDEX_678	5
 #define TX_COUNTER_OVERFLOW	0xFF
+
+#define RA_PROBING_ABORT_TX_CNT             15
+#define RA_PROBING_ABORT_CCK_TX_CNT         3
 
 typedef struct _RTMP_TX_RATE {
 	UCHAR mode;
@@ -171,6 +177,14 @@ extern UCHAR RateSwitchTableAdapt11G[];
 extern UCHAR RateSwitchTableAdapt11BG[];
 extern UCHAR RateSwitchTableAdapt11N1S[];
 extern UCHAR RateSwitchTableAdapt11N2S[];
+#ifdef MULTI_CLIENT_SUPPORT
+extern UCHAR RateSwitchTableAdapt11N1SForMultiClients[];
+extern UCHAR RateSwitchTableAdapt11N2SForMultiClients[];
+#endif
+#ifdef INTERFERENCE_RA_SUPPORT
+extern UCHAR RateSwitchTableAdapt11N1SForInterference[];
+extern UCHAR RateSwitchTableAdapt11N2SForInterference[];
+#endif
 extern UCHAR RateSwitchTableAdapt11N3S[];
 
 #define PER_THRD_ADJ			1
@@ -197,12 +211,43 @@ extern UCHAR RateTableVht2S_BW40[];
 									(pTable)==RateTableVht2S_BW20 ||\
 									(pTable)==RateTableVht2S_BW40)
 #else
+#if defined(INTERFERENCE_RA_SUPPORT) && defined(MULTI_CLIENT_SUPPORT)
+#define ADAPT_RATE_TABLE(pTable)	((pTable)==RateSwitchTableAdapt11B || \
+									(pTable)==RateSwitchTableAdapt11G || \
+									(pTable)==RateSwitchTableAdapt11BG || \
+									(pTable)==RateSwitchTableAdapt11N1S || \
+									(pTable)==RateSwitchTableAdapt11N2S || \
+									(pTable)==RateSwitchTableAdapt11N1SForMultiClients ||\
+									(pTable)==RateSwitchTableAdapt11N2SForMultiClients ||\
+									(pTable)==RateSwitchTableAdapt11N1SForInterference ||\
+									(pTable)==RateSwitchTableAdapt11N2SForInterference ||\
+									(pTable)==RateSwitchTableAdapt11N3S)
+#elif defined(MULTI_CLIENT_SUPPORT)
+#define ADAPT_RATE_TABLE(pTable)	((pTable)==RateSwitchTableAdapt11B || \
+									(pTable)==RateSwitchTableAdapt11G || \
+									(pTable)==RateSwitchTableAdapt11BG || \
+									(pTable)==RateSwitchTableAdapt11N1S || \
+									(pTable)==RateSwitchTableAdapt11N2S || \
+									(pTable)==RateSwitchTableAdapt11N1SForMultiClients ||\
+									(pTable)==RateSwitchTableAdapt11N2SForMultiClients ||\
+									(pTable)==RateSwitchTableAdapt11N3S)
+#elif defined(INTERFERENCE_RA_SUPPORT)
+#define ADAPT_RATE_TABLE(pTable)	((pTable)==RateSwitchTableAdapt11B || \
+									(pTable)==RateSwitchTableAdapt11G || \
+									(pTable)==RateSwitchTableAdapt11BG || \
+									(pTable)==RateSwitchTableAdapt11N1S || \
+									(pTable)==RateSwitchTableAdapt11N2S || \
+									(pTable)==RateSwitchTableAdapt11N1SForInterference ||\
+									(pTable)==RateSwitchTableAdapt11N2SForInterference ||\
+									(pTable)==RateSwitchTableAdapt11N3S)
+#else
 #define ADAPT_RATE_TABLE(pTable)	((pTable)==RateSwitchTableAdapt11B || \
 									(pTable)==RateSwitchTableAdapt11G || \
 									(pTable)==RateSwitchTableAdapt11BG || \
 									(pTable)==RateSwitchTableAdapt11N1S || \
 									(pTable)==RateSwitchTableAdapt11N2S || \
 									(pTable)==RateSwitchTableAdapt11N3S)
+#endif 
 #endif /* DOT11_VHT_AC */
 #endif /* NEW_RATE_ADAPT_SUPPORT */
 #endif /* DOT11_N_SUPPORT */
@@ -349,7 +394,8 @@ VOID ApQuickResponeForRateUpExecAGS(
 
 #ifdef MT_MAC
 VOID DynamicTxRateSwitchingAdaptMT(struct _RTMP_ADAPTER *pAd, UINT idx);
-VOID QuickResponeForRateUpExecAdaptMT(struct _RTMP_ADAPTER *pAd, UINT idx); 
+VOID QuickResponeForRateUpExecAdaptMT(struct _RTMP_ADAPTER *pAd, UINT idx);
+VOID DynamicRaInterval(struct _RTMP_ADAPTER *pAd);
 #endif /* MT_MAC */
 
 #ifdef CONFIG_AP_SUPPORT
@@ -393,12 +439,14 @@ VOID MlmeSelectTxRateTable(
 	IN UCHAR *pTableSize,
 	IN UCHAR *pInitTxRateIdx);
 
+void ra_swift_train_up_table_reset(struct _MAC_TABLE_ENTRY *pEntry);
+
 /* normal rate switch */
 #define RTMP_DRS_ALG_INIT(__pAd, __Alg)										\
 	(__pAd)->rateAlg = __Alg;
 
 #ifdef NEW_RATE_ADAPT_SUPPORT
-UCHAR ra_get_lowest_rate(struct _RTMP_ADAPTER *pAd, UCHAR *pTable);
+UCHAR ra_get_lowest_rate(struct _RTMP_ADAPTER *pAd, struct _MAC_TABLE_ENTRY *pEntry);
 #endif /* NEW_RATE_ADAPT_SUPPORT */
 
 #endif /* __DRS_EXTR_H__ */

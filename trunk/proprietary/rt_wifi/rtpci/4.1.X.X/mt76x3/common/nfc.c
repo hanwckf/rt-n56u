@@ -258,7 +258,7 @@ INT NfcBuildOOBDevPasswdTLV(
 	OUT	UCHAR *pbuf,
 	OUT USHORT *pBufLen)
 {
-	UCHAR *TB = NULL;
+	UCHAR *TB = NULL;;
 	PUCHAR pData = NULL;
 	PUCHAR pSrcData = NULL;
 	USHORT PasswdID = 0, len;
@@ -295,27 +295,11 @@ INT NfcBuildOOBDevPasswdTLV(
 	for (idx = 0; idx < 192; idx++)
 		pWscCtrl->RegData.EnrolleeRandom[idx] = RandomByte(pAd);
 
-    NdisZeroMemory(pWscCtrl->RegData.Pke, sizeof(pWscCtrl->RegData.Pke));
 	RT_DH_PublicKey_Generate (
         WPS_DH_G_VALUE, sizeof(WPS_DH_G_VALUE),
 	    WPS_DH_P_VALUE, sizeof(WPS_DH_P_VALUE),
 	    pWscCtrl->RegData.EnrolleeRandom, sizeof(pWscCtrl->RegData.EnrolleeRandom),
 	    pWscCtrl->RegData.Pke, (UINT *) &DH_Len);
-
-    /* Need to prefix zero padding */
-    if((DH_Len != sizeof(pWscCtrl->RegData.Pke)) &&
-        (DH_Len < sizeof(pWscCtrl->RegData.Pke)))
-    {
-        UCHAR TempKey[192];
-        INT DiffCnt;
-        DiffCnt = sizeof(pWscCtrl->RegData.Pke) - DH_Len;
-
-        NdisFillMemory(&TempKey, DiffCnt, 0);
-        NdisCopyMemory(&TempKey[DiffCnt], pWscCtrl->RegData.Pke, DH_Len);
-        NdisCopyMemory(pWscCtrl->RegData.Pke, TempKey, sizeof(TempKey));
-        DH_Len += DiffCnt;
-        DBGPRINT(RT_DEBUG_TRACE, ("%s: Do zero padding!\n", __func__));
-    }
 
 	/* For Handover case, We may as Registrar 
 		So keep the same public key for Registrar */
@@ -552,27 +536,11 @@ static BOOLEAN	NfcProcessPasswdTV(
 		for (idx = 0; idx < 192; idx++)
 			pWscCtrl->RegData.EnrolleeRandom[idx] = RandomByte(pAdapter);
 
-        NdisZeroMemory(pWscCtrl->RegData.Pkr, sizeof(pWscCtrl->RegData.Pkr));
 		RT_DH_PublicKey_Generate (
 			WPS_DH_G_VALUE, sizeof(WPS_DH_G_VALUE),
 			WPS_DH_P_VALUE, sizeof(WPS_DH_P_VALUE),
 			pWscCtrl->RegData.EnrolleeRandom, sizeof(pWscCtrl->RegData.EnrolleeRandom),
 			pWscCtrl->RegData.Pkr, (UINT *) &DH_Len);
-
-        /* Need to prefix zero padding */
-        if((DH_Len != sizeof(pWscCtrl->RegData.Pkr)) &&
-            (DH_Len < sizeof(pWscCtrl->RegData.Pkr)))
-        {
-            UCHAR TempKey[192];
-            INT DiffCnt;
-            DiffCnt = sizeof(pWscCtrl->RegData.Pkr) - DH_Len;
-
-            NdisFillMemory(&TempKey, DiffCnt, 0);
-            NdisCopyMemory(&TempKey[DiffCnt], pWscCtrl->RegData.Pkr, DH_Len);
-            NdisCopyMemory(pWscCtrl->RegData.Pkr, TempKey, sizeof(TempKey));
-            DH_Len += DiffCnt;
-            DBGPRINT(RT_DEBUG_TRACE, ("%s: Do zero padding!\n", __func__));
-        }
 
 		hex_dump("Pkr", pWscCtrl->RegData.Pkr, 192);
 	}
@@ -870,8 +838,8 @@ INT Set_NfcConfigurationToken_Proc(RTMP_ADAPTER *pAd, RTMP_STRING *arg)
 
 INT Get_NfcStatus_Proc(RTMP_ADAPTER *pAd, RTMP_STRING *arg)
 {
-	POS_COOKIE      pObj = (POS_COOKIE) pAd->OS_Cookie;
-	PWSC_CTRL       pWscCtrl = &pAd->ApCfg.MBSSID[pObj->ioctl_if].WscControl;
+        POS_COOKIE      pObj = (POS_COOKIE) pAd->OS_Cookie;
+        PWSC_CTRL       pWscCtrl = &pAd->ApCfg.MBSSID[pObj->ioctl_if].WscControl;
 	/*
 		Action: b¡¦<7:6>: 0x0 ¡V To NFC, 0x1 ¡V From NFC
         		b¡¦<5:0>: 0x0 ¡V Get, 0x01 - Set

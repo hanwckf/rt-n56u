@@ -338,8 +338,13 @@ BOOLEAN MATPktRxNeedConvert(
 		{
 			/*BSSID match the ApCliBssid ?(from a valid AP) */
 			if ((pAd->ApCfg.ApCliTab[i].Valid == TRUE) 
-				&& (net_dev == pAd->ApCfg.ApCliTab[i].wdev.if_dev))
+				&& (net_dev == pAd->ApCfg.ApCliTab[i].wdev.if_dev)
+#ifdef A4_CONN
+				&& (IS_APCLI_A4(&pAd->ApCfg.ApCliTab[i]) == FALSE)
+#endif /* A4_CONN */
+			){
 				return TRUE;
+			}
 			i++;
 		}
 #endif /* APCLI_SUPPORT */

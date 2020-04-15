@@ -257,15 +257,11 @@ UCHAR vht_cent_ch_freq(RTMP_ADAPTER *pAd, UCHAR prim_ch)
 
 INT vht_mode_adjust(RTMP_ADAPTER *pAd, MAC_TABLE_ENTRY *pEntry, VHT_CAP_IE *cap, VHT_OP_IE *op)
 {
-	MULTISSID_STRUCT *wdev;
-
-	wdev = &pAd->ApCfg.MBSSID[pEntry->apidx];
 	pEntry->MaxHTPhyMode.field.MODE = MODE_VHT;
 	pAd->CommonCfg.AddHTInfo.AddHtInfo2.NonGfPresent = 1;
 	pAd->MacTab.fAnyStationNonGF = TRUE;
 
-	if (op != NULL && op->vht_op_info.ch_width >= 1 && pEntry->MaxHTPhyMode.field.BW == BW_40 &&
-		wdev->DesiredHtPhyInfo.vht_bw == VHT_BW_80)
+	if (op->vht_op_info.ch_width >= 1 && pEntry->MaxHTPhyMode.field.BW == BW_40)
 	{
 		pEntry->MaxHTPhyMode.field.BW= BW_80;
 		pEntry->MaxHTPhyMode.field.ShortGI = (cap->vht_cap.sgi_80M);
@@ -355,7 +351,7 @@ INT build_vht_txpwr_envelope(RTMP_ADAPTER *pAd, UCHAR *buf)
 
 // TODO: fixme, we need the real tx_pwr value for each port.
 	for (len = 0; len < pwr_cnt; len++)
-		txpwr_env.tx_pwr_bw[len] = (RTMP_GetTxPwr(pAd, pAd->CommonCfg.MlmeTransmit) * 2 - 2); /* current tx pwr -1dB */
+		txpwr_env.tx_pwr_bw[len] = 15;
 
 	len = 2 + pwr_cnt;
 	NdisMoveMemory(buf, &txpwr_env, len);
@@ -381,13 +377,11 @@ INT build_vht_op_ie(RTMP_ADAPTER *pAd, UCHAR *buf)
 	vht_op.vht_op_info.ch_width = (pAd->CommonCfg.vht_bw == VHT_BW_80 ? 1: 0);
 
 #ifdef CONFIG_AP_SUPPORT
-#ifdef DFS_SUPPORT
 	if (pAd->CommonCfg.Channel > 14 && 
 		(pAd->CommonCfg.bIEEE80211H == 1) && 
 		(pAd->Dot11_H.RDMode == RD_SWITCHING_MODE))
 		cent_ch = vht_cent_ch_freq(pAd, pAd->Dot11_H.org_ch);
 	else
-#endif /* DFS_SUPPORT */
 #endif /* CONFIG_AP_SUPPORT */
 		cent_ch = vht_cent_ch_freq(pAd, pAd->CommonCfg.Channel);
 
@@ -460,7 +454,7 @@ INT build_vht_cap_ie(RTMP_ADAPTER *pAd, UCHAR *buf)
 	else
 		vht_cap_ie.vht_cap.rx_ldpc = 0;
 
-	vht_cap_ie.vht_cap.sgi_80M = pAd->CommonCfg.vht_sgi_80 && (pAd->CommonCfg.BBPCurrentBW == BW_80);
+	vht_cap_ie.vht_cap.sgi_80M = pAd->CommonCfg.vht_sgi_80;
 	vht_cap_ie.vht_cap.htc_vht_cap = 1;
 	vht_cap_ie.vht_cap.max_ampdu_exp = 3; // TODO: Ask Jerry about the hardware limitation, currently set as 64K
 
@@ -586,46 +580,12 @@ INT build_vht_cap_ie(RTMP_ADAPTER *pAd, UCHAR *buf)
 	return sizeof(VHT_CAP_IE);
 }
 
-INT build_vht_op_mode_ies(RTMP_ADAPTER *pAd, UCHAR *buf)
-{
-	INT len = 0;
-	EID_STRUCT eid_hdr;
-	OPERATING_MODE operating_mode_ie;   
-    
-	NdisZeroMemory((UCHAR *)&operating_mode_ie,  sizeof(OPERATING_MODE));
-    
-	eid_hdr.Eid = IE_OPERATING_MODE_NOTIFY;
-	eid_hdr.Len = sizeof(OPERATING_MODE);
-	NdisMoveMemory(buf, (UCHAR *)&eid_hdr, 2);
-	len = 2;
-
-	operating_mode_ie.rx_nss_type = 0;
-	operating_mode_ie.rx_nss = (pAd->CommonCfg.RxStream - 1);
-
-	if (pAd->CommonCfg.vht_bw == VHT_BW_2040)
-		operating_mode_ie.ch_width = 1;
-	else if (pAd->CommonCfg.vht_bw == VHT_BW_80)
-		operating_mode_ie.ch_width = 2;
-	else if ((pAd->CommonCfg.vht_bw == VHT_BW_160) ||
-		(pAd->CommonCfg.vht_bw == VHT_BW_8080))
-		operating_mode_ie.ch_width = 3;
-	else
-		operating_mode_ie.ch_width = 0;
-
-	buf += len;
-	NdisMoveMemory(buf, (UCHAR *)&operating_mode_ie, sizeof(OPERATING_MODE));
-	len += eid_hdr.Len;
-    
-	return len;
-    
-}
 
 INT build_vht_ies(RTMP_ADAPTER *pAd, UCHAR *buf, UCHAR frm)
 {
 	INT len = 0;
 	EID_STRUCT eid_hdr;
 
-	NdisZeroMemory(&eid_hdr, sizeof(EID_STRUCT));
 
 	eid_hdr.Eid = IE_VHT_CAP;
 	eid_hdr.Len = sizeof(VHT_CAP_IE);

@@ -73,10 +73,10 @@ typedef struct GNU_PACKED _ELM_QBSS_LOAD{
 #define QBSS_LOAD_ALARM_DURATION				100 /* unit: TBTT */
 
 
-#ifdef QLOAD_FUNC_BUSY_TIME_ALARM
 static VOID QBSS_LoadAlarmSuspend(
  	IN		RTMP_ADAPTER	*pAd);
 
+#ifdef QLOAD_FUNC_BUSY_TIME_ALARM
 /* handle a alarm */
 static VOID QBSS_LoadAlarm(
  	IN		RTMP_ADAPTER	*pAd);
@@ -324,7 +324,9 @@ VOID QBSS_LoadAlarmReset(
 	pAd->phy_ctrl.FlgQloadAlarm = FALSE;
 	pAd->phy_ctrl.QloadAlarmDuration = 0;
 	pAd->phy_ctrl.QloadAlarmNumber = 0;
+
 	pAd->phy_ctrl.FlgQloadAlarmIsSuspended = FALSE;
+
 	QBSS_LoadAlarmBusyTimeThresholdReset(pAd, pAd->CommonCfg.BeaconPeriod);
 #endif /* QLOAD_FUNC_BUSY_TIME_ALARM */
 }
@@ -367,13 +369,13 @@ Return Value:
 Note:
 ========================================================================
 */
-#ifdef QLOAD_FUNC_BUSY_TIME_ALARM
 static VOID QBSS_LoadAlarmSuspend(
  	IN		RTMP_ADAPTER	*pAd)
 {
+#ifdef QLOAD_FUNC_BUSY_TIME_ALARM
 	pAd->phy_ctrl.FlgQloadAlarmIsSuspended = TRUE;
-}
 #endif /* QLOAD_FUNC_BUSY_TIME_ALARM */
+}
 
 
 /*
@@ -580,11 +582,8 @@ VOID QBSS_LoadUpdate(
 
 
 	/* check whether channel busy time calculation is enabled */
-	if ((pAd->phy_ctrl.FlgQloadEnable == 0)
-#ifdef QLOAD_FUNC_BUSY_TIME_ALARM
-	    || (pAd->phy_ctrl.FlgQloadAlarmIsSuspended == TRUE)
-#endif
-	    )
+	if ((pAd->phy_ctrl.FlgQloadEnable == 0) ||
+		(pAd->phy_ctrl.FlgQloadAlarmIsSuspended == TRUE))
 		return;
 
 	/* calculate new time period if needed */
@@ -697,8 +696,6 @@ VOID QBSS_LoadUpdate(
 		ChanUtilDe <<= 10; /* ms to us */
 
 		pAd->phy_ctrl.QloadChanUtil = (UINT8)(ChanUtilNu/ChanUtilDe);
-		if((ChanUtilNu/ChanUtilDe) >= 255)
-			pAd->phy_ctrl.QloadChanUtil = 255;
 
 		/* re-accumulate channel busy time */
 		pAd->phy_ctrl.QloadChanUtilBeaconCnt = 0;

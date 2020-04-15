@@ -513,6 +513,7 @@ void msgf __V((const char *fmt, ...))
 	syslog(LOG_INFO, "%s", line);
     if (to_stderr)
 	fprintf(stderr, "%s\n", line);
+    va_end(args);
 }
 
 /*
@@ -539,6 +540,7 @@ void fatal __V((int code, const char *fmt, ...))
     if (to_stderr)
 	fprintf(stderr, "%s\n", line);
     terminate(code);
+    va_end(args);
 }
 
 int alarmed = 0;

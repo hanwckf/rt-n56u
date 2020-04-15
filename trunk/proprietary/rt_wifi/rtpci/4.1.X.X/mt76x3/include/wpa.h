@@ -76,7 +76,7 @@
 	}                                                   \
 }
 
-#define IS_WPA_CAPABILITY(a)       (((a) >= Ndis802_11AuthModeWPA) && ((a) <= Ndis802_11AuthModeWPA1PSKWPA2PSK))
+#define IS_WPA_CAPABILITY(a)       (((a) >= Ndis802_11AuthModeWPA) && ((a) <= Ndis802_11AuthModeOWE))
 
 /* 	
 	WFA recommend to restrict the encryption type in 11n-HT mode.
@@ -145,6 +145,7 @@
 
 #if defined(CONFIG_AP_SUPPORT) && defined(CONFIG_STA_SUPPORT)
 #define WPA_GET_BSS_NUM(_pAd)		(((_pAd)->OpMode == OPMODE_AP) ? (_pAd)->ApCfg.BssidNum : 1)
+#ifdef APCLI_SUPPORT
 #define WPA_GET_GROUP_CIPHER(_pAd, _pEntry, _cipher)					\
 	{																	\
 	_cipher = Ndis802_11WEPDisabled;								\
@@ -159,22 +160,42 @@
 		else															\
 			_cipher = (_pAd)->StaCfg.GroupCipher;						\
 	}
+#else
+#define WPA_GET_GROUP_CIPHER(_pAd, _pEntry, _cipher)					\
+	{												\
+	_cipher = Ndis802_11WEPDisabled;								\
+		if ((_pAd)->OpMode == OPMODE_AP) {							\
+			if ((_pEntry)->func_tb_idx < (_pAd)->ApCfg.BssidNum)			\
+				_cipher = (_pAd)->ApCfg.MBSSID[_pEntry->func_tb_idx].wdev.GroupKeyWepStatus;\
+		}											\
+		else											\
+			_cipher = (_pAd)->StaCfg.GroupCipher;						\
+	}
+#endif
 
 #define WPA_BSSID(_pAd, _apidx) 	(((_pAd)->OpMode == OPMODE_AP) ?\
 									(_pAd)->ApCfg.MBSSID[_apidx].Bssid :\
 									(_pAd)->CommonCfg.Bssid)
 #elif defined(CONFIG_AP_SUPPORT)
 #define WPA_GET_BSS_NUM(_pAd)		(_pAd)->ApCfg.BssidNum
+#ifdef APCLI_SUPPORT
 #define WPA_GET_GROUP_CIPHER(_pAd, _pEntry, _cipher)				\
 	{																\
-	_cipher = Ndis802_11WEPDisabled;							\
-	if (IS_ENTRY_APCLI(_pEntry) && 								\
+		_cipher = Ndis802_11WEPDisabled;							\
+		if (IS_ENTRY_APCLI(_pEntry) &&								\
 			((_pEntry)->func_tb_idx < MAX_APCLI_NUM))			\
 			_cipher = (_pAd)->ApCfg.ApCliTab[(_pEntry)->func_tb_idx].GroupCipher;	\
 		else if ((_pEntry)->func_tb_idx < (_pAd)->ApCfg.BssidNum)			\
 			_cipher = (_pAd)->ApCfg.MBSSID[_pEntry->func_tb_idx].wdev.GroupKeyWepStatus;\
 	}
-
+#else
+#define WPA_GET_GROUP_CIPHER(_pAd, _pEntry, _cipher)				\
+	{												\
+		_cipher = Ndis802_11WEPDisabled;							\
+		if ((_pEntry)->func_tb_idx < (_pAd)->ApCfg.BssidNum)			\
+			_cipher = (_pAd)->ApCfg.MBSSID[_pEntry->func_tb_idx].wdev.GroupKeyWepStatus;\
+	}
+#endif
 #define WPA_BSSID(_pAd, _apidx) 	(_pAd)->ApCfg.MBSSID[_apidx].Bssid
 
 #elif defined(CONFIG_STA_SUPPORT)
@@ -377,6 +398,21 @@ VOID RTMPMakeRSNIE(
 	IN UINT WepStatus,
 	IN UCHAR apidx);
 
+#if defined(CONFIG_SECURITY_IMPROVEMENT_SUPPORT) || defined(APCLI_SECURITY_IMPROVEMENT_SUPPORT)
+BOOLEAN wpa_rsne_sanity(
+	IN PUCHAR rsnie_ptr,
+	IN UCHAR rsnie_len,
+	OUT UCHAR *end_field);
+#endif
+
+#if defined(CONFIG_OWE_SUPPORT) || defined(APCLI_SAE_SUPPORT) || defined(APCLI_OWE_SUPPORT)
+VOID WPAMakeEntryRSNIE(
+	IN PRTMP_ADAPTER pAd,
+	IN UINT AuthMode,
+	IN UINT WepStatus,
+	IN MAC_TABLE_ENTRY * pEntry);
+#endif
+
 VOID WPAInstallPairwiseKey(
 	PRTMP_ADAPTER pAd,
 	UINT8 BssIdx,
@@ -404,6 +440,10 @@ VOID RTMPSetWcidSecurityInfo(
 VOID CalculateMIC(
 	IN UCHAR KeyDescVer,
 	IN UCHAR *PTK,
+#ifdef CONFIG_OWE_SUPPORT
+	IN NDIS_802_11_AUTHENTICATION_MODE StaAuthMode,
+	IN UINT8 key_deri_alg,
+#endif
 	OUT PEAPOL_PACKET pMsg);
 
 BOOLEAN rtmp_chk_tkip_mic(RTMP_ADAPTER *pAd, MAC_TABLE_ENTRY *pEntry, RX_BLK *pRxBlk);
@@ -503,6 +543,24 @@ VOID CCMP_test_vector(
 	IN PRTMP_ADAPTER pAd,
 	IN INT input);
 
-void inc_byte_array(UCHAR *counter, int len);
+
+#ifdef CONFIG_OWE_SUPPORT
+
+VOID HKDF_expand_sha384(IN UCHAR *secret,
+			IN INT secret_len,
+			IN UCHAR *info,
+			IN INT info_len,
+			OUT UCHAR *output,
+			INT output_Len);
+
+VOID HKDF_expand_sha256(IN UCHAR *secret,
+			IN INT secret_len,
+			IN UCHAR *info,
+			IN INT info_len,
+			OUT UCHAR *output,
+			INT output_Len);
+#define LEN_PMK_SHA512					64
+#define LEN_PMK_SHA384					48
+#endif
 
 #endif

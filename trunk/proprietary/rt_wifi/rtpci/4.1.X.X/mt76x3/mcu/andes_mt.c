@@ -458,37 +458,39 @@ static VOID CmdPsRetrieveStartRspFromCR(RTMP_ADAPTER *pAd, char *Data, UINT16 Le
 	unsigned char q_idx;
 	struct tx_swq_fifo *ps_fifo_swq;
 	UINT deq_qid;
-	//ULONG IrqFlags = 0;
+	//unsigned long IrqFlags;
 
-	EvtPsRetrieveStart = (P_EXT_EVENT_AP_PS_RETRIEVE_T)Data;
-	WlanIdx = le2cpu32(EvtPsRetrieveStart->u4Param1);
+   EvtPsRetrieveStart = (P_EXT_EVENT_AP_PS_RETRIEVE_T)Data;
+   WlanIdx = le2cpu32(EvtPsRetrieveStart->u4Param1);
 
-	if (!(VALID_WCID(WlanIdx))) {
-		DBGPRINT(RT_DEBUG_ERROR | DBG_FUNC_PS, ("---->%s INVALID_MAC_WCID(%d)\n", __FUNCTION__, WlanIdx));
+   if (!(VALID_TR_WCID(WlanIdx))) {
+		DBGPRINT(RT_DEBUG_ERROR | DBG_FUNC_PS, ("---->%s INVALID_TR_WCID(WlanIndex)\n", __FUNCTION__));
 		goto NEXT;
+   }
+
+	if (WlanIdx >= MAX_LEN_OF_MAC_TABLE) {
+		DBGPRINT(RT_DEBUG_ERROR, ("Invalid value of WlanIdx"));
+		return;
 	}
 
-	pEntry = &pAd->MacTab.Content[WlanIdx];
+
+   pEntry = &pAd->MacTab.Content[WlanIdx];
+	tr_entry = &pAd->MacTab.tr_entry[WlanIdx];	
 	if (IS_ENTRY_NONE(pEntry))
 	{
-		MtPsRedirectDisableCheck(pAd, WlanIdx);
-		DBGPRINT(RT_DEBUG_ERROR | DBG_FUNC_PS, ("---->%s Entry(wcid=%d) left.\n", __FUNCTION__, WlanIdx));
+		tr_entry->ps_state = APPS_RETRIEVE_WAIT_EVENT;
+		RTEnqueueInternalCmd(pAd, CMDTHREAD_PS_CLEAR, (VOID *)&WlanIdx, sizeof(UINT32));
+		DBGPRINT(RT_DEBUG_TRACE | DBG_FUNC_PS,("---->%s Entry(wcid=%d) left.\n", __func__, WlanIdx));
 		goto NEXT;
 	}
+   
+	DBGPRINT(RT_DEBUG_INFO | DBG_FUNC_PS, ("---->%s: Start to send TOKEN frames, WlanIdx=%d\n", __FUNCTION__, WlanIdx));
 
-	if (!(VALID_TR_WCID(WlanIdx))) {
-		DBGPRINT(RT_DEBUG_ERROR | DBG_FUNC_PS, ("---->%s INVALID_TR_WCID(%d)\n", __FUNCTION__, WlanIdx));
-		goto NEXT;
-	}
-
-	tr_entry = &pAd->MacTab.tr_entry[WlanIdx];
 	if (tr_entry->ps_state != APPS_RETRIEVE_START_PS)
 	{
 		DBGPRINT(RT_DEBUG_ERROR | DBG_FUNC_PS, ("---->%s Entry(wcid=%d) ps state(%d) is not APPS_RETRIEVE_START_PS\n", __FUNCTION__, WlanIdx, tr_entry->ps_state));
 		goto NEXT;
 	}
-
-	DBGPRINT(RT_DEBUG_INFO | DBG_FUNC_PS, ("---->%s: Start to send TOKEN frames, WlanIdx=%d\n", __FUNCTION__, WlanIdx));
 
 	tr_entry->ps_state = APPS_RETRIEVE_GOING;
 	CheckSkipTX(pAd, pEntry);
@@ -537,7 +539,7 @@ NEXT:
 	while (ps_fifo_swq->swq[deq_qid] != 0) {
 		WlanIdx = ps_fifo_swq->swq[deq_qid];
 		pEntry = &pAd->MacTab.Content[WlanIdx];
-		tr_entry = &pAd->MacTab.tr_entry[WlanIdx];
+   tr_entry = &pAd->MacTab.tr_entry[WlanIdx];
 
 		if (pEntry->PsMode == PWR_ACTIVE) {
 			ps_fifo_swq->swq[deq_qid]  = 0;
@@ -550,6 +552,7 @@ NEXT:
 				ps_fifo_swq->swq[deq_qid]  = 0;
 				INC_RING_INDEX(ps_fifo_swq->deqIdx, TX_SWQ_FIFO_LEN);	
 				tr_entry->ps_state = APPS_RETRIEVE_START_PS;
+				tr_entry->ps_start_time = jiffies;
 			}
 			break;
 		}
@@ -558,7 +561,7 @@ NEXT:
 #endif /* MT7603 && RTMP_PCI_SUPPORT  */
 
 VOID AndesPsRetrieveStartRsp(RTMP_ADAPTER *pAd, char *Data, UINT16 Len)
-{
+	{
 	MAC_TABLE_ENTRY *pEntry;
 	P_EXT_EVENT_AP_PS_RETRIEVE_T EvtPsRetrieveStart;
 	UINT32 WlanIdx;
@@ -569,28 +572,28 @@ VOID AndesPsRetrieveStartRsp(RTMP_ADAPTER *pAd, char *Data, UINT16 Len)
 	EvtPsRetrieveStart = (P_EXT_EVENT_AP_PS_RETRIEVE_T)Data;
 	WlanIdx = le2cpu32(EvtPsRetrieveStart->u4Param1);
 
-	if (!(VALID_WCID(WlanIdx))) {
-		DBGPRINT(RT_DEBUG_ERROR | DBG_FUNC_PS, ("---->%s INVALID_MAC_WCID(%d)\n", __FUNCTION__, WlanIdx));
+	if (!(VALID_TR_WCID(WlanIdx))) {
+		DBGPRINT(RT_DEBUG_ERROR | DBG_FUNC_PS, ("---->%s INVALID_TR_WCID(WlanIndex)\n", __FUNCTION__));
+      return;
+   }
+
+	if (WlanIdx >= MAX_LEN_OF_MAC_TABLE) {
+		DBGPRINT(RT_DEBUG_ERROR, ("Invalid value of WlanIdx"));
 		return;
 	}
 
 	pEntry = &pAd->MacTab.Content[WlanIdx];
+	tr_entry = &pAd->MacTab.tr_entry[WlanIdx];
 	if (IS_ENTRY_NONE(pEntry))
 	{
 		MtPsRedirectDisableCheck(pAd, WlanIdx);
-		DBGPRINT(RT_DEBUG_ERROR | DBG_FUNC_PS, ("---->%s Entry(wcid=%d) left.\n", __FUNCTION__, WlanIdx));
-		return;
-	}
-
-	if (!(VALID_TR_WCID(WlanIdx))) {
-		DBGPRINT(RT_DEBUG_ERROR | DBG_FUNC_PS, ("---->%s INVALID_TR_WCID(%d)\n", __FUNCTION__, WlanIdx));
+		DBGPRINT(RT_DEBUG_TRACE | DBG_FUNC_PS, ("---->%s Entry(wcid=%d) left.\n", __FUNCTION__, WlanIdx));
 		return;
 	}
 
 	DBGPRINT(RT_DEBUG_INFO | DBG_FUNC_PS, ("---->%s: Start to send TOKEN frames, WlanIdx=%d\n", __FUNCTION__, WlanIdx));
 
-	tr_entry = &pAd->MacTab.tr_entry[WlanIdx];
-	tr_entry->ps_state = APPS_RETRIEVE_GOING;
+   tr_entry->ps_state = APPS_RETRIEVE_GOING;
 	tr_entry->ps_qbitmap = 0;
 
 	for (q_idx = 0; q_idx < NUM_OF_TX_RING; q_idx++)
@@ -666,11 +669,11 @@ static VOID CmdPsClearRsp(struct cmd_msg *msg, char *Data, UINT16 Len)
 	P_CMD_AP_PS_CLEAR_STRUC_T EvtPsClear;
 	RTMP_ADAPTER *ad = (RTMP_ADAPTER *)msg->priv;
 	STA_TR_ENTRY *tr_entry;
-	//ULONG IrqFlags = 0;
+	//unsigned long IrqFlags;
 	//struct wtbl_entry tb_entry;
 	UINT32 WlanIndex;
 	//union WTBL_1_DW3 *dw3 = (union WTBL_1_DW3 *)&tb_entry.wtbl_1.wtbl_1_d3.word;
-	unsigned char q_idx = QID_AC_BE;
+	unsigned char q_idx = 0;
 
 	EvtPsClear = (struct _CMD_AP_PS_CLEAR_STRUC_T *)Data;
 	WlanIndex = le2cpu32(EvtPsClear->u4WlanIdx);
@@ -699,6 +702,10 @@ static VOID CmdPsClearRsp(struct cmd_msg *msg, char *Data, UINT16 Len)
 			else
 				break;
 		}
+	}
+	if(IS_ENTRY_NONE(pEntry)) {
+		DBGPRINT(RT_DEBUG_TRACE | DBG_FUNC_PS, ("wcid=%d, pEntry none when CmdPsClearRsp\n", WlanIndex));
+		return;
 	}
 
 #ifdef RTMP_MAC_PCI
@@ -747,7 +754,7 @@ static VOID CmdPsClearRsp(struct cmd_msg *msg, char *Data, UINT16 Len)
 		}
 		else if (pEntry->UAPSDTxNum != 0)
 		{
-			RTMPDeQueuePacket(ad, FALSE, NUM_OF_TX_RING, pEntry->wcid, pEntry->UAPSDTxNum);
+			RTMPDeQueuePacket(ad, TRUE, NUM_OF_TX_RING, pEntry->wcid, pEntry->UAPSDTxNum);
 		}
 	}
 #endif /* UAPSD_SUPPORT */
@@ -1690,7 +1697,7 @@ INT32 CmdIcapOverLap(RTMP_ADAPTER *pAd, UINT32 IcapLen)
 
     TestCtrl.ucIcapLen = IcapLen;
     
-	TestCtrl.u.u4OpMode = OPERATION_ICAP_OVERLAP;
+	TestCtrl.u.u4OpMode =cpu2le32( OPERATION_ICAP_OVERLAP);
 
     AndesAppendCmdMsg(msg, (char *)&TestCtrl, sizeof(TestCtrl));
 
@@ -1723,12 +1730,12 @@ INT32 CmdRfTest(RTMP_ADAPTER *pAd, UINT8 Action, UINT8 Mode, UINT8 CalItem)
     memset(&TestCtrl, 0x00, sizeof(TestCtrl));
 
     TestCtrl.ucAction = Action;
-    TestCtrl.u.u4OpMode = (UINT32)Mode;
+    TestCtrl.u.u4OpMode = cpu2le32((UINT32)Mode);
 
     if (Action == ACTION_IN_RFTEST) {
         /* set Cal Items */
-        TestCtrl.u.rRfATInfo.u4FuncIndex = 1;
-        TestCtrl.u.rRfATInfo.u4FuncData = (UINT32)CalItem;
+        TestCtrl.u.rRfATInfo.u4FuncIndex = cpu2le32(1);
+        TestCtrl.u.rRfATInfo.u4FuncData = cpu2le32((UINT32)CalItem);
     }
 
     AndesAppendCmdMsg(msg, (char *)&TestCtrl, sizeof(TestCtrl));
@@ -1839,8 +1846,8 @@ INT32 CmdP2pNoaOffloadCtrl(RTMP_ADAPTER *ad, UINT8 enable)
 
       NdisZeroMemory(&extCmdNoaCtrl, sizeof(extCmdNoaCtrl));
 
-      extCmdNoaCtrl.ucMode1 = cpu2le32(enable);
-      //extCmdNoaCtrl.ucMode0 = cpu2le32(enable);
+      extCmdNoaCtrl.ucMode1 = enable;
+      //extCmdNoaCtrl.ucMode0 = enable;
 
       AndesAppendCmdMsg(msg, (char *)&extCmdNoaCtrl, sizeof(extCmdNoaCtrl));
       ret = AndesSendCmdMsg(ad, msg);
@@ -1936,11 +1943,18 @@ INT32 CmdChannelSwitch(RTMP_ADAPTER *pAd, UINT8 control_chl, UINT8 central_chl,
 		return -1;
 	}
 
-
-	DBGPRINT(RT_DEBUG_INFO, ("%s: control_chl = %d, central_chl = %d, BW = %d,	\
-								TXStream = %d, RXStream = %d\n", __FUNCTION__,	\
-							control_chl, central_chl, BW, TXStream, RXStream));
-
+#ifdef WH_EZ_SETUP
+		if(IS_ADPTR_EZ_SETUP_ENABLED(pAd)){
+			EZ_DEBUG(DBG_CAT_FW, DBG_SUBCAT_ALL, DBG_LVL_ERROR,
+				("control_chl = %d\n", control_chl));
+		}
+		else
+#endif
+		{
+			DBGPRINT(RT_DEBUG_INFO, ("%s: control_chl = %d, central_chl = %d, BW = %d,	\
+									TXStream = %d, RXStream = %d\n", __FUNCTION__,	\
+										control_chl, central_chl, BW, TXStream, RXStream));
+		}
 	msg = AndesAllocCmdMsg(pAd, sizeof(CmdChanSwitch));
 
 	if (!msg)
@@ -1980,11 +1994,38 @@ error:
 }
 
 
+INT32 CmdFlushFrameByWlanIdx(RTMP_ADAPTER *pAd, UINT8 WlanIdx)
+{
+	struct cmd_msg *msg;
+	EXT_CMD_FLUSH_FRAME_BY_WCID_INFO_T CmdFlushFrameByWcid;
+	INT32 ret=0;
+
+	msg = AndesAllocCmdMsg(pAd, sizeof(CmdFlushFrameByWcid));
+
+	if (!msg)
+	{
+		ret = NDIS_STATUS_RESOURCES;
+		goto error;
+	}
+
+    	AndesInitCmdMsg(msg, P1_Q0, EXT_CID, CMD_QUERY, EXT_CMD_FLUSH_FRAME_WCID,
+			FALSE, 0, FALSE, FALSE, 0, NULL, NULL);
+
+	memset(&CmdFlushFrameByWcid, 0x00, sizeof(CmdFlushFrameByWcid));
+	CmdFlushFrameByWcid.ucWlanIdx = WlanIdx;
+	
+    	AndesAppendCmdMsg(msg, (char *)&CmdFlushFrameByWcid, sizeof(CmdFlushFrameByWcid));
+
+    	ret = AndesSendCmdMsg(pAd, msg);
+
+error:
+	DBGPRINT(RT_DEBUG_OFF, ("%s:(ret = %d)\n", __FUNCTION__, ret));
+	return ret;
+}
+
 static VOID EventExtNicCapability(struct cmd_msg *msg, char *Data, UINT16 Len)
 {
-#ifdef DBG
 	struct _EXT_EVENT_NIC_CAPABILITY_T *ExtEventNicCapability = (EXT_EVENT_NIC_CAPABILITY *)Data;
-#endif
 	UINT32 Loop;
 
 	DBGPRINT(RT_DEBUG_OFF, ("The data code of firmware:"));
@@ -2212,6 +2253,25 @@ static NDIS_STATUS AndesMTLoadFwMethod1(RTMP_ADAPTER *ad)
 
 	Ctl->Stage = FW_DOWNLOAD;
 
+	DBGPRINT(RT_DEBUG_OFF, ("FW Version:"));
+	for (loop = 0; loop < 10; loop++)
+		DBGPRINT(RT_DEBUG_OFF, ("%c", *(cap->FWImageName + cap->fw_len - 29 + loop)));
+	DBGPRINT(RT_DEBUG_OFF, ("\n"));
+
+	DBGPRINT(RT_DEBUG_OFF, ("FW Build Date:"));
+	for (loop = 0; loop < 15; loop++)
+		DBGPRINT(RT_DEBUG_OFF, ("%c", *(cap->FWImageName + cap->fw_len - 19 + loop)));
+	DBGPRINT(RT_DEBUG_OFF, ("\n"));
+
+	dl_len = (*(cap->FWImageName + cap->fw_len - 1) << 24) |
+				(*(cap->FWImageName + cap->fw_len - 2) << 16) |
+				(*(cap->FWImageName + cap->fw_len -3) << 8) |
+				*(cap->FWImageName + cap->fw_len - 4);
+
+	dl_len += 4; /* including crc value */
+
+	DBGPRINT(RT_DEBUG_INFO, ("\ndownload len = %d\n", dl_len));
+
 #ifdef RTMP_PCI_SUPPORT
 	if (IS_MT7603(ad))
 	{
@@ -2279,25 +2339,6 @@ static NDIS_STATUS AndesMTLoadFwMethod1(RTMP_ADAPTER *ad)
 		goto done;
 	}
 
-	printk("%s Andes FW Version: ", "MT7603");
-	for (loop = 0; loop < 10; loop++)
-		printk("%c", *(cap->FWImageName + cap->fw_len - 29 + loop));
-	printk("\n");
-
-	printk("%s Andes FW Build Date: ", "MT7603");
-	for (loop = 0; loop < 15; loop++)
-		printk("%c", *(cap->FWImageName + cap->fw_len - 19 + loop));
-	printk("\n");
-
-	dl_len = (*(cap->FWImageName + cap->fw_len - 1) << 24) |
-		 (*(cap->FWImageName + cap->fw_len - 2) << 16) |
-		 (*(cap->FWImageName + cap->fw_len - 3) << 8) |
-		  *(cap->FWImageName + cap->fw_len - 4);
-
-	dl_len += 4; /* including crc value */
-
-	DBGPRINT(RT_DEBUG_INFO, ("\ndownload len = %d\n", dl_len));
-
 	/* standard CMD procedure */
 	/* 1. Config PDA phase */
 	ret = CmdAddressLenReq(ad, FW_CODE_START_ADDRESS1, dl_len, TARGET_ADDR_LEN_NEED_RSP);
@@ -2328,7 +2369,7 @@ static NDIS_STATUS AndesMTLoadFwMethod1(RTMP_ADAPTER *ad)
 	if (loop == 500)
 	{
 		ret = NDIS_STATUS_FAILURE;
-		printk("%s Andes FW loading failure!\n", "MT7603");
+		DBGPRINT(RT_DEBUG_OFF, ("firmware loading failure\n"));
 		Ctl->Stage = FW_NO_INIT;
 	}
 	else
@@ -2750,9 +2791,10 @@ INT32 AndesMTEraseFw(RTMP_ADAPTER *pAd)
 
 	if (cap->load_code_method == BIN_FILE_METHOD) {
 
-		if (cap->FWImageName)
+		if (cap->FWImageName) {
 			os_free_mem(NULL, cap->FWImageName);
 			cap->FWImageName = NULL;
+		}
 	}
 
 	return 0;
@@ -2887,7 +2929,7 @@ static VOID AndesMTRxProcessEvent(RTMP_ADAPTER *pAd, struct cmd_msg *rx_msg)
 		DlListForEachSafe(msg, msg_tmp, &ctl->ackq, struct cmd_msg, list) {
 			if (msg->seq == event_rxd->fw_rxd_1.field.seq_num)
 			{
-#if defined(RTMP_USB_SUPPORT) || defined(RTMP_SDIO_SUPPORT)
+			#if defined(RTMP_USB_SUPPORT) || defined(RTMP_SDIO_SUPPORT)
 				RTMP_SPIN_UNLOCK_IRQ(&ctl->ackq_lock);
 #endif
 
@@ -2965,7 +3007,7 @@ VOID AndesMTRxEventHandler(RTMP_ADAPTER *pAd, UCHAR *data)
 
 	msg = AndesAllocCmdMsg(pAd, event_rxd->fw_rxd_0.field.length);
 
-	if (!msg)
+	if (!msg || !msg->net_pkt)
 		return;
 
 	AndesAppendCmdMsg(msg, (char *)data, event_rxd->fw_rxd_0.field.length);
@@ -3359,6 +3401,7 @@ VOID CmdSetTxPowerCtrl(RTMP_ADAPTER *pAd, UINT8 central_chl)
 	int i, j;
 	UINT8 PwrPercentageDelta = 0;
 	USHORT Value;
+	struct MT_TX_PWR_CAP *cap = &pAd->chipCap.MTTxPwrCap;
 
 	msg = AndesAllocCmdMsg(pAd, sizeof(EXT_CMD_TX_POWER_CTRL_T));
 
@@ -3464,6 +3507,9 @@ VOID CmdSetTxPowerCtrl(RTMP_ADAPTER *pAd, UINT8 central_chl)
 		NdisCopyMemory(&CmdTxPwrCtrl.aucTempCompPower[0], &(pAd->EEPROMImage[STEP_NUM_NEG_7]), sizeof(CmdTxPwrCtrl.aucTempCompPower));
 	}
 
+	DBGPRINT(RT_DEBUG_INFO, ("PA type = %d\n", cap->pa_type));
+
+//	if (!(cap->pa_type & (1 << 1)))
 	if (1)
 	{
 
@@ -3498,6 +3544,16 @@ VOID CmdSetTxPowerCtrl(RTMP_ADAPTER *pAd, UINT8 central_chl)
 		DBGPRINT(RT_DEBUG_INFO, ("Percentage = 0x%x\n", PwrPercentageDelta));
 
 		CmdTxPwrCtrl.ucReserved = PwrPercentageDelta;
+	}
+	else
+	{
+#ifdef CONFIG_ATE
+		if (!ATE_ON(pAd))
+#endif
+		{
+			DBGPRINT(RT_DEBUG_TRACE, ("EPA, do not need to apply tx power percentage\n"));
+			goto error;
+		}
 	}
 
 	DBGPRINT(RT_DEBUG_INFO, ("CmdTxPwrCtrl.ucCenterChannel=%x\n", CmdTxPwrCtrl.ucCenterChannel));
@@ -3765,8 +3821,8 @@ INT32 CmdExtPwrMgtBitWifi(RTMP_ADAPTER *pAd, UINT8 ucWlanIdx, UINT8 ucPwrMgtBit,
 			goto error;
 		}
 
-		PwrMgtBitWifi.ucWlanIdx = cpu2le32(ucWlanIdx);
-		PwrMgtBitWifi.ucPwrMgtBit = cpu2le32(ucPwrMgtBit);
+		PwrMgtBitWifi.ucWlanIdx = ucWlanIdx;
+		PwrMgtBitWifi.ucPwrMgtBit = ucPwrMgtBit;
 
 		DBGPRINT(RT_DEBUG_OFF, ("%s:ucWlanIdx(%d), ucPwrMgtBit(%d)\n", __FUNCTION__, ucWlanIdx, ucPwrMgtBit));
 
@@ -3798,9 +3854,9 @@ INT32 CmdExtPmStateCtrl(RTMP_ADAPTER *pAd, UINT8 ucWlanIdx, UINT8 ucPmNumber, UI
 	}
 
 	/* Fill parameter here*/
-	CmdPmStateCtrl.ucWlanIdx = cpu2le32(ucWlanIdx);
-	CmdPmStateCtrl.ucPmNumber = cpu2le32(ucPmNumber);
-	CmdPmStateCtrl.ucPmState = cpu2le32(ucPmState);
+	CmdPmStateCtrl.ucWlanIdx = ucWlanIdx;
+	CmdPmStateCtrl.ucPmNumber = ucPmNumber;
+	CmdPmStateCtrl.ucPmState = ucPmState;
 
 
 	AndesInitCmdMsg(msg, P1_Q0, EXT_CID, CMD_SET, EXT_CMD_PM_STATE_CTRL, TRUE, 0,TRUE, TRUE, 8, NULL, CmdExtPmStateCtrlRsp);
@@ -3863,7 +3919,7 @@ INT32 CmdSlotTimeSet(RTMP_ADAPTER *pAd, UINT8 SlotTime,UINT8 SifsTime,UINT8 Rifs
 
 	AndesInitCmdMsg(msg, P1_Q0, EXT_CID, CMD_SET, EXT_CMD_ID_SLOT_TIME_SET, FALSE, 0, FALSE, FALSE, 0, NULL, NULL);
 
-	cmdSlotTime.u2Eifs = EifsTime;
+	cmdSlotTime.u2Eifs = cpu2le16(EifsTime);
 	cmdSlotTime.ucRifs = RifsTime;
 	cmdSlotTime.ucSifs = SifsTime;
 	cmdSlotTime.ucSlotTime = SlotTime;
@@ -4253,7 +4309,7 @@ INT32 CmdACQueue_Control
     	NdisZeroMemory(&ac_queue_control, sizeof(EXT_CMD_AC_QUEUE_CONTROL_T));
 	ac_queue_control.ucAction = ucation;
 	ac_queue_control.ucBssidIdx =BssidIdx;
-	ac_queue_control.u4AcQueueMap =u4AcQueueMap;
+	ac_queue_control.u4AcQueueMap =cpu2le32(u4AcQueueMap);
 
 	AndesAppendCmdMsg(msg, (char *)&ac_queue_control, sizeof(EXT_CMD_AC_QUEUE_CONTROL_T));
 	ret = AndesSendCmdMsg(ad, msg);

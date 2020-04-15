@@ -34,6 +34,12 @@ INT rtmp_wdev_idx_unreg(RTMP_ADAPTER *pAd, struct wifi_dev *wdev)
 
 	if (!wdev)
 		return -1;
+#ifdef WH_EZ_SETUP
+	if ((wdev->wdev_type == WDEV_TYPE_AP) || (wdev->wdev_type == WDEV_TYPE_STA)) {
+		if(IS_CONF_EZ_SETUP_ENABLED(wdev))
+			ez_exit(wdev);
+	}
+#endif /* WH_EZ_SETUP */
 
 	RTMP_INT_LOCK(&pAd->irq_lock, flags);
 	for (idx = 0; idx < WDEV_NUM_MAX; idx++) {
@@ -92,7 +98,7 @@ INT rtmp_wdev_idx_reg(RTMP_ADAPTER *pAd, struct wifi_dev *wdev)
 	}
 	RTMP_INT_UNLOCK(&pAd->irq_lock, flags);
 #ifdef MAC_REPEATER_SUPPORT
-	RxTrackingInit(wdev);
+            RxTrackingInit(wdev);
 #endif /* MAC_REPEATER_SUPPORT */
 	return ((idx < WDEV_NUM_MAX) ? idx : -1);
 }
@@ -164,13 +170,101 @@ INT wdev_init(RTMP_ADAPTER *pAd, struct wifi_dev *wdev, UINT wdev_type)
 		wdev->rx_pkt_foward = ap_rx_foward_handle;
 
 		//pMbss = (BSS_STRUCT *)wdev->func_dev;
+#ifdef WH_EZ_SETUP
+		if (IS_CONF_EZ_SETUP_ENABLED(wdev))
+			ez_init(pAd, wdev, TRUE);
+#endif /* WH_EZ_SETUP */
 
 		return TRUE;
 	}
 #endif /* CONFIG_AP_SUPPORT */
 
 
-
 	return FALSE;
+}
+
+#ifdef WH_EZ_SETUP
+/**
+ * @param pAd
+ * @param Address input address
+ *
+ * Search wifi_dev according to Address
+ *
+ * @return wifi_dev
+ */
+struct wifi_dev *WdevSearchByAddress(RTMP_ADAPTER *pAd, UCHAR *Address)
+{
+	UINT16 Index;
+	struct wifi_dev *wdev;
+
+	NdisAcquireSpinLock(&pAd->WdevListLock);
+	for (Index = 0; Index < WDEV_NUM_MAX; Index++)
+	{
+		wdev = pAd->wdev_list[Index];
+
+		if (wdev)
+		{
+			if (MAC_ADDR_EQUAL(Address, wdev->if_addr))
+			{
+				NdisReleaseSpinLock(&pAd->WdevListLock);
+				return wdev;
+			}
+		}
+	}
+	NdisReleaseSpinLock(&pAd->WdevListLock);
+
+	MTWF_LOG(DBG_CAT_TX, DBG_SUBCAT_ALL, DBG_LVL_INFO, ("%s: can not find registered wdev\n",
+								__FUNCTION__));
+
+	return NULL;
+}
+
+#endif
+/**
+ * @param pAd
+ * @param Address input address
+ *
+ * Search wifi_dev according to Address
+ *
+ * @return wifi_dev
+ */
+struct wifi_dev *wdev_search_by_address(RTMP_ADAPTER *pAd, UCHAR *address)
+{
+	UINT16 Index;
+	struct wifi_dev *wdev;
+#ifdef MAC_REPEATER_SUPPORT
+	REPEATER_CLIENT_ENTRY *rept_entry = NULL;
+#endif
+	/*NdisAcquireSpinLock(&pAd->WdevListLock);*/
+
+	for (Index = 0; Index < WDEV_NUM_MAX; Index++) {
+		wdev = pAd->wdev_list[Index];
+
+		if (wdev) {
+			if (MAC_ADDR_EQUAL(address, wdev->if_addr)) {
+				/*NdisReleaseSpinLock(&pAd->WdevListLock);*/
+				return wdev;
+			}
+		}
+	}
+
+	/*NdisReleaseSpinLock(&pAd->WdevListLock);*/
+#ifdef MAC_REPEATER_SUPPORT
+
+	/* if we cannot found wdev from A2, it might comes from Rept entry.
+	 * cause rept must bind the bssid of apcli_link,
+	 * search A3(Bssid) to find the corresponding wdev.
+	 */
+	if (pAd->ApCfg.bMACRepeaterEn) {
+		rept_entry = lookup_rept_entry(pAd, address);
+
+		if (rept_entry)
+			return rept_entry->wdev;
+	}
+
+#endif
+	MTWF_LOG(DBG_CAT_TX, DBG_SUBCAT_ALL, DBG_LVL_INFO, ("%s: can not find registered wdev\n",
+			 __func__));
+	return NULL;
 }
 

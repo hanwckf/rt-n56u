@@ -42,3 +42,5 @@ testing/docker/*/xtools
 toolchain-3.4.x/
 dl/
 
+mipsel-linux-uclibc.tar.xz
+

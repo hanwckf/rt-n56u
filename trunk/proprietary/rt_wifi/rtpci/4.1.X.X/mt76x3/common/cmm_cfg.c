@@ -219,10 +219,10 @@ RT_802_11_PHY_MODE wmode_2_cfgmode(UCHAR wmode)
 {
 	INT i, mode_cnt = sizeof(CFG_WMODE_MAP) / (sizeof(UCHAR) * 2);
 
-	for (i = 1; i < mode_cnt; i+=2)
-	{	
-		if (CFG_WMODE_MAP[i] == wmode)
-			return CFG_WMODE_MAP[i - 1];
+	for (i = 0; i < mode_cnt; i++)
+	{
+		if (CFG_WMODE_MAP[i*2+1] == wmode)
+			return CFG_WMODE_MAP[i*2];
 	}
 
 	DBGPRINT(RT_DEBUG_ERROR, ("%s(): Cannot get cfgmode by wmode(%x)\n", 
@@ -651,6 +651,7 @@ INT	RT_CfgSetFixedTxPhyMode(RTMP_STRING *arg)
 				break;
 			default:
 				fix_tx_mode = FIXED_TXMODE_HT;
+				break;
 		}
 	}
 
@@ -1041,7 +1042,7 @@ INT RTMP_COM_IoctlHandle(
 				ULONG start, end, diff_ms;
 				/* Get the current time for calculating startup time */
 				NdisGetSystemUpTime(&start);
-#endif /* DBG */
+#endif /* DBG */				
 				VIRTUAL_IF_INC(pAd);
 				if (pInfConf->rt28xx_open(pAd->net_dev) != 0)
 				{
@@ -1050,7 +1051,7 @@ INT RTMP_COM_IoctlHandle(
 					return NDIS_STATUS_FAILURE;
 				}
 
-#ifdef DBG
+#ifdef DBG				
 				/* Get the current time for calculating startup time */
 				NdisGetSystemUpTime(&end); diff_ms = (end-start)*1000/OS_HZ;
 				DBGPRINT(RT_DEBUG_ERROR, ("WiFi Startup Cost (%s): %lu.%03lus\n",
@@ -1066,9 +1067,6 @@ INT RTMP_COM_IoctlHandle(
 					extern VOID  APUpdateAllBeaconFrame(IN PRTMP_ADAPTER pAd);
 					APMakeAllBssBeacon(pAd);
 					APUpdateAllBeaconFrame(pAd);
-
-					if (pAd->Dot11_H.RDMode == RD_NORMAL_MODE)
-						AsicEnableBssSync(pAd, pAd->CommonCfg.BeaconPeriod);
 				}
 #endif /* CONFIG_AP_SUPPORT */
 			}
@@ -1098,48 +1096,9 @@ INT RTMP_COM_IoctlHandle(
 
 		case CMD_RTPRIV_IOCTL_INF_STATS_GET:
 			/* get statistics */
-			{
-				RT_CMD_STATS64 *pStats = (RT_CMD_STATS64 *)pData;
-#ifdef CONFIG_AP_SUPPORT
-				if(pAd->OpMode == OPMODE_AP)
-				{
-					INT index;
-					BSS_STRUCT *pMBSSID;
-					
-					for(index = 0; index < MAX_MBSSID_NUM(pAd); index++)
-					{
-						if (pAd->ApCfg.MBSSID[index].wdev.if_dev == (PNET_DEV)(pStats->pNetDev))
-						{
-							break;
-						}
-					}
-					
-					if(index >= MAX_MBSSID_NUM(pAd))
-					{
-						//reset counters
-						NdisZeroMemory(pStats, sizeof(RT_CMD_STATS64));
-						
-						DBGPRINT(RT_DEBUG_ERROR, ("CMD_RTPRIV_IOCTL_INF_STATS_GET: can not find mbss I/F\n"));
-						return NDIS_STATUS_FAILURE;
-					}
-					
-					pMBSSID = &pAd->ApCfg.MBSSID[index];
-					
-					pStats->rx_bytes = pMBSSID->ReceivedByteCount.QuadPart;
-					pStats->tx_bytes = pMBSSID->TransmittedByteCount.QuadPart;
-					pStats->rx_packets = pMBSSID->RxCount;
-					pStats->tx_packets = pMBSSID->TxCount;
-					pStats->rx_errors = pMBSSID->RxErrorCount;
-					pStats->tx_errors = 0;
-					pStats->multicast = pMBSSID->mcPktsRx; /* multicast packets received */
-					pStats->collisions = 0;
-					pStats->rx_over_errors = 0;
-					pStats->rx_crc_errors = 0;
-					pStats->rx_frame_errors = 0;
-					pStats->rx_fifo_errors = 0;
-				}
-#endif
-#ifdef CONFIG_STA_SUPPORT
+			{			
+				RT_CMD_STATS *pStats = (RT_CMD_STATS *)pData;
+				pStats->pStats = pAd->stats;
 				if(pAd->OpMode == OPMODE_STA)
 				{
 					pStats->rx_packets = pAd->WlanCounters.ReceivedFragmentCount.QuadPart;
@@ -1154,6 +1113,51 @@ INT RTMP_COM_IoctlHandle(
 					pStats->rx_crc_errors = 0;/*pAd->WlanCounters.FCSErrorCount;      recved pkt with crc error*/
 					pStats->rx_frame_errors = 0; /* recv'd frame alignment error*/
 					pStats->rx_fifo_errors = pAd->Counters8023.RxNoBuffer;                   /* recv'r fifo overrun*/
+				}
+#ifdef CONFIG_AP_SUPPORT
+				else if(pAd->OpMode == OPMODE_AP)
+				{
+					INT index;
+					for(index = 0; index < MAX_MBSSID_NUM(pAd); index++)
+					{
+						if (pAd->ApCfg.MBSSID[index].wdev.if_dev == (PNET_DEV)(pStats->pNetDev))
+						{
+							break;
+						}
+					}
+						
+					if(index >= MAX_MBSSID_NUM(pAd))
+					{
+						//reset counters
+						pStats->rx_packets = 0;
+						pStats->tx_packets = 0;
+						pStats->rx_bytes = 0;
+						pStats->tx_bytes = 0;
+						pStats->rx_errors = 0;
+						pStats->tx_errors = 0;
+						pStats->multicast = 0;   /* multicast packets received*/
+						pStats->collisions = 0;  /* Collision packets*/
+						pStats->rx_over_errors = 0; /* receiver ring buff overflow*/
+						pStats->rx_crc_errors = 0; /* recved pkt with crc error*/
+						pStats->rx_frame_errors = 0; /* recv'd frame alignment error*/
+						pStats->rx_fifo_errors = 0; /* recv'r fifo overrun*/
+						   
+						DBGPRINT(RT_DEBUG_ERROR, ("CMD_RTPRIV_IOCTL_INF_STATS_GET: can not find mbss I/F\n"));
+						return NDIS_STATUS_FAILURE;
+					}
+					
+					pStats->rx_packets = pAd->ApCfg.MBSSID[index].RxCount;
+					pStats->tx_packets = pAd->ApCfg.MBSSID[index].TxCount;
+					pStats->rx_bytes = pAd->ApCfg.MBSSID[index].ReceivedByteCount;
+					pStats->tx_bytes = pAd->ApCfg.MBSSID[index].TransmittedByteCount;
+					pStats->rx_errors = pAd->ApCfg.MBSSID[index].RxErrorCount;
+					pStats->tx_errors = pAd->ApCfg.MBSSID[index].TxErrorCount;
+					pStats->multicast = pAd->ApCfg.MBSSID[index].mcPktsRx; /* multicast packets received */
+					pStats->collisions = 0;  /* Collision packets*/
+					pStats->rx_over_errors = 0;                   /* receiver ring buff overflow*/
+					pStats->rx_crc_errors = 0;/* recved pkt with crc error*/
+					pStats->rx_frame_errors = 0;          /* recv'd frame alignment error*/
+					pStats->rx_fifo_errors = 0;                   /* recv'r fifo overrun*/
 				}
 #endif
 			}
@@ -1222,6 +1226,10 @@ INT RTMP_COM_IoctlHandle(
 						RTMPMaxRssi(pAd, pMacEntry->RssiSample.AvgRssi[0],
 										pMacEntry->RssiSample.AvgRssi[1],
 										pMacEntry->RssiSample.AvgRssi[2]);
+				else
+					pStats->level = RTMPMaxRssi(pAd, pAd->ApCfg.RssiSample.AvgRssi[0],
+                                                 pAd->ApCfg.RssiSample.AvgRssi[1],
+                                                 pAd->ApCfg.RssiSample.AvgRssi[2]);	
 			}
 #endif /* CONFIG_AP_SUPPORT */
 
@@ -1272,18 +1280,6 @@ INT RTMP_COM_IoctlHandle(
 				return NDIS_STATUS_FAILURE;
 			break;
 #endif /* WDS_SUPPORT */
-
-#ifdef APCLI_SUPPORT
-		case CMD_RTPRIV_IOCTL_APCLI_STATS_GET:
-			if (Data == INT_APCLI)
-			{
-				if (ApCli_StatsGet(pAd, pData) != TRUE)
-					return NDIS_STATUS_FAILURE;
-			}
-			else
-				return NDIS_STATUS_FAILURE;
-			break;
-#endif /* APCLI_SUPPORT */
 
 #ifdef CONFIG_ATE
 #ifdef CONFIG_QA
@@ -1377,6 +1373,25 @@ INT Set_SiteSurvey_Proc(RTMP_ADAPTER *pAd, RTMP_STRING *arg)
 #endif /* AP_SCAN_SUPPORT */
 #endif /* CONFIG_AP_SUPPORT */
 
+#ifdef CONFIG_AP_SUPPORT
+	struct wifi_dev *wdev = NULL;	
+	UCHAR ifIndex;
+	POS_COOKIE pObjt = (POS_COOKIE) pAd->OS_Cookie;
+#endif
+
+#ifdef CONFIG_AP_SUPPORT
+	ifIndex = pObjt->ioctl_if;
+#ifdef APCLI_SUPPORT
+		if (pObjt->ioctl_if_type == INT_APCLI)
+			wdev = &pAd->ApCfg.ApCliTab[pObjt->ioctl_if].wdev;
+		else 
+#endif
+		if (pObjt->ioctl_if_type == INT_MBSSID)
+			wdev = &pAd->ApCfg.MBSSID[pObjt->ioctl_if].wdev;
+		else
+			wdev = &pAd->ApCfg.MBSSID[0].wdev;
+#endif
+
 	//check if the interface is down
 	if (!RTMP_TEST_FLAG(pAd, fRTMP_ADAPTER_INTERRUPT_IN_USE))
 	{
@@ -1398,9 +1413,9 @@ INT Set_SiteSurvey_Proc(RTMP_ADAPTER *pAd, RTMP_STRING *arg)
 		}
 
 		if (Ssid.SsidLength == 0)
-			ApSiteSurvey(pAd, &Ssid, SCAN_PASSIVE, FALSE);
+			ApSiteSurvey(pAd, &Ssid, SCAN_PASSIVE, FALSE, wdev);
 		else
-			ApSiteSurvey(pAd, &Ssid, SCAN_ACTIVE, FALSE);
+			ApSiteSurvey(pAd, &Ssid, SCAN_ACTIVE, FALSE, wdev);
 
 		return TRUE;
 	}
@@ -1571,7 +1586,7 @@ INT set_pbf_loopback(RTMP_ADAPTER *pAd, RTMP_STRING *arg)
 
 	// TODO: shiang-7603
 	if (pAd->chipCap.hif_type == HIF_MT) {
-		DBGPRINT(RT_DEBUG_TRACE, ("%s(): Not support for HIF_MT yet!\n",
+		DBGPRINT(RT_DEBUG_OFF, ("%s(): Not support for HIF_MT yet!\n",
 					__FUNCTION__));
 		return FALSE;
 	}
@@ -1604,7 +1619,7 @@ INT set_pbf_rx_drop(RTMP_ADAPTER *pAd, RTMP_STRING *arg)
 
 	// TODO: shiang-7603
 	if (pAd->chipCap.hif_type == HIF_MT) {
-		DBGPRINT(RT_DEBUG_TRACE, ("%s(): Not support for HIF_MT yet!\n",
+		DBGPRINT(RT_DEBUG_OFF, ("%s(): Not support for HIF_MT yet!\n",
 					__FUNCTION__));
 		return FALSE;
 	}
@@ -2137,7 +2152,7 @@ INT Set_themal_sensor(RTMP_ADAPTER *pAd, RTMP_STRING *arg)
 	if ((value == 0) || (value == 1)) {
 #if defined(MT7603) || defined(MT7628)
 #ifdef DBG
-		UINT32 temperature=0;
+		UINT32 temperature=0; 
 		temperature = MtAsicGetThemalSensor(pAd, value);
 		DBGPRINT(RT_DEBUG_OFF, ("%s: ThemalSensor = 0x%x\n", __FUNCTION__, temperature));
 #endif /* DBG */
@@ -2170,38 +2185,144 @@ INT SetSCSEnable_Proc(RTMP_ADAPTER *pAd, RTMP_STRING *arg)
 	
 	value = simple_strtol(arg, 0, 10);
 	
-	if (value > 500)
+
+	if (value == 1)
 	{
-		pAd->SCSCtrl.SCSThreshold= value;
-		DBGPRINT(RT_DEBUG_OFF, ("==>%s (Traffic Threshold=%d)\n", __FUNCTION__, value));
+		pAd->SCSCtrl.SCSEnable= SCS_ENABLE;
+		DBGPRINT(RT_DEBUG_OFF, ("==>%s (ON)\n", __FUNCTION__));
+	}
+	else if (value == 0)
+	{
+		pAd->SCSCtrl.SCSEnable= SCS_DISABLE;
+		DBGPRINT(RT_DEBUG_OFF, ("==>%s (OFF)\n", __FUNCTION__));
+		/* Restore to default */
+		RTMP_IO_WRITE32(pAd, CR_AGC_0, pAd->SCSCtrl.CR_AGC_0_default);
+		RTMP_IO_WRITE32(pAd, CR_AGC_0_RX1, pAd->SCSCtrl.CR_AGC_0_default);
+		RTMP_IO_WRITE32(pAd, CR_AGC_3, pAd->SCSCtrl.CR_AGC_3_default);
+		RTMP_IO_WRITE32(pAd, CR_AGC_3_RX1, pAd->SCSCtrl.CR_AGC_3_default);
+		pAd->SCSCtrl.SCSStatus = SCS_STATUS_DEFAULT;
 	}
 	else
-	{
-		if (value == 1)
-		{
-			pAd->SCSCtrl.SCSEnable= SCS_ENABLE;
-			DBGPRINT(RT_DEBUG_OFF, ("==>%s (ON)\n", __FUNCTION__));
-		}
-		else if (value == 0)
-		{
-			pAd->SCSCtrl.SCSEnable= SCS_DISABLE;
-			DBGPRINT(RT_DEBUG_OFF, ("==>%s (OFF)\n", __FUNCTION__));
-			/* Restore to default */
-			RTMP_IO_WRITE32(pAd, CR_AGC_0, pAd->SCSCtrl.CR_AGC_0_default);
-			RTMP_IO_WRITE32(pAd, CR_AGC_0_RX1, pAd->SCSCtrl.CR_AGC_0_default);
-			RTMP_IO_WRITE32(pAd, CR_AGC_3, pAd->SCSCtrl.CR_AGC_3_default);
-			RTMP_IO_WRITE32(pAd, CR_AGC_3_RX1, pAd->SCSCtrl.CR_AGC_3_default);
-			pAd->SCSCtrl.SCSStatus = SCS_STATUS_DEFAULT;
-		}
-		else
-			DBGPRINT(RT_DEBUG_OFF, ("==>%s (Unknow value = %d)\n", __FUNCTION__, value));
+		DBGPRINT(RT_DEBUG_OFF, ("==>%s (Unknow value = %d)\n", __FUNCTION__, value));
+
+	return TRUE;
+}
+
+INT SetSCSCfg_Proc(RTMP_ADAPTER *pAd, RTMP_STRING *arg)
+{
+	INT32   Recv=0;
+	INT	SCSMinRssiTolerance = 0, SCSTrafficThreshold = 0, FalseCcaUpBond = 0, FalseCcaLowBond = 0, FixedBond = 0, ForceMode = 0;
+
+	Recv = sscanf(arg, "%d-%d-%d-%d-%d-%d", &(SCSMinRssiTolerance), &(SCSTrafficThreshold), &(FalseCcaUpBond), &(FalseCcaLowBond), &(FixedBond), &(ForceMode));
+	if (Recv != 6){
+		DBGPRINT(RT_DEBUG_OFF, ("Format Error!\n"));
+		DBGPRINT(RT_DEBUG_OFF, ("iwpriv ra0 set SCSCfg=[MinRssiTolerance]-[TrafficThreshold]-[FalseCcaUpBoundary]-[FalseCcaLowBoundary]-[FixedBoundary]-[ForceMode]\n"));
+		DBGPRINT(RT_DEBUG_OFF, ("PS: FiexedBond is Negative number. Ex:70 means -70dBm"));
+	} else {
+		pAd->SCSCtrl.SCSMinRssiTolerance = (UINT8)SCSMinRssiTolerance;	
+		pAd->SCSCtrl.SCSTrafficThreshold = SCSTrafficThreshold;
+		pAd->SCSCtrl.FalseCcaUpBond = (UINT16)FalseCcaUpBond;
+		pAd->SCSCtrl.FalseCcaLowBond = (UINT16)FalseCcaLowBond;
+		pAd->SCSCtrl.FixedRssiBond = (0 -(CHAR)FixedBond);	
+		pAd->SCSCtrl.ForceMode = (BOOLEAN)ForceMode;
 	}
-	
 	return TRUE;
 }
 #endif /* SMART_CARRIER_SENSE_SUPPORT */
 
 #endif /* MT_MAC */
+#ifdef SW_ATF_SUPPORT
+/*Set badNodeEntry max and min enq threshold. Default set enq_badNodeMaxThr = 4,enq_badNodeMinThr = 3*/
+INT SetBadNodePara_Proc(RTMP_ADAPTER *pAd, RTMP_STRING *arg)
+{
+	INT32 Recv = 0;
+	INT	minEnqThr, maxEnqThr;
+
+	Recv = sscanf(arg, "%d-%d", &(minEnqThr), &(maxEnqThr));
+	if (Recv != 2) {
+		DBGPRINT(RT_DEBUG_OFF, ("Format Error!\n"));
+		DBGPRINT(RT_DEBUG_OFF, ("iwpriv ra0 set badNodePara=[minEnqThr]-[maxEnqThr]\n"));
+	} else {
+		pAd->AtfParaSet.enq_badNodeMaxThr = maxEnqThr;
+		pAd->AtfParaSet.enq_badNodeMinThr = minEnqThr;
+		DBGPRINT(RT_DEBUG_OFF, ("minEnqThr = %d,maxEnqThr = %d\n",
+			pAd->AtfParaSet.enq_badNodeMinThr, pAd->AtfParaSet.enq_badNodeMaxThr));
+	}
+	return TRUE;
+}
+/*Set goodNodeEntry max and min deq threshold. Default set deq_goodNodeMaxThr = 468,deq_goodNodeMinThr = 390*/
+INT SetGoodNodePara_Proc(RTMP_ADAPTER *pAd, RTMP_STRING *arg)
+{
+	INT32 Recv = 0;
+
+	INT	minDeqThr, maxDeqThr;
+
+	Recv = sscanf(arg, "%d-%d", &(minDeqThr), &(maxDeqThr));
+	if (Recv != 2) {
+		DBGPRINT(RT_DEBUG_OFF, ("Format Error!\n"));
+		DBGPRINT(RT_DEBUG_OFF, ("iwpriv ra0 set goodNodePara=[minDeqThr]-[maxDeqThr]\n"));
+	} else {
+		pAd->AtfParaSet.deq_goodNodeMaxThr = maxDeqThr;
+		pAd->AtfParaSet.deq_goodNodeMinThr = minDeqThr;
+		DBGPRINT(RT_DEBUG_OFF, ("minDeqThr = %d,maxDeqThr = %d\n",
+			pAd->AtfParaSet.deq_goodNodeMinThr, pAd->AtfParaSet.deq_goodNodeMaxThr));
+	}
+	return TRUE;
+}
+INT SetFixAtfPara_Proc(RTMP_ADAPTER *pAd, RTMP_STRING *arg)
+{
+	INT32 value;
+
+	value = simple_strtol(arg, 0, 10);
+	pAd->AtfParaSet.flagOnce = value;
+	pAd->AtfParaSet.enq_badNodeCurrent = 4;
+	DBGPRINT(RT_DEBUG_OFF, ("fixAtfPara:%d\n", pAd->AtfParaSet.flagOnce));
+	return TRUE;
+}
+/*Set txThreshold,Default set wcidTxThr = 43*/
+INT SetTxThr_Proc(RTMP_ADAPTER *pAd, RTMP_STRING *arg)
+{
+	INT32 value;
+
+	value = simple_strtol(arg, 0, 10);
+	pAd->AtfParaSet.wcidTxThr = value;
+	DBGPRINT(RT_DEBUG_OFF, ("wcidTxThr:%d\n", pAd->AtfParaSet.wcidTxThr));
+	return TRUE;
+
+}
+/*Set badNodeEntry min deq Threshold. Default set deq_badNodeMinThr = 43*/
+INT SetBadNodeMinDeq_Proc(RTMP_ADAPTER *pAd, RTMP_STRING *arg)
+{
+	INT32 value;
+
+	value = simple_strtol(arg, 0, 10);
+	pAd->AtfParaSet.deq_badNodeMinThr = value;
+	DBGPRINT(RT_DEBUG_OFF, ("badNodeMinDeqCnt:%d\n", pAd->AtfParaSet.deq_badNodeMinThr));
+	return TRUE;
+}
+/*Set enq period time. Default set dropDelta = 2,periodTimer = 75um(75um = (1+2)*25um)*/
+INT SetAtfDropDelta_Proc(RTMP_ADAPTER *pAd, RTMP_STRING *arg)
+{
+	INT32 value;
+
+	value = simple_strtol(arg, 0, 10);
+	pAd->AtfParaSet.dropDelta = value;
+	DBGPRINT(RT_DEBUG_OFF, ("dropDelta:%d\n", pAd->AtfParaSet.dropDelta));
+	return TRUE;
+
+}
+/*set atf false cca*/
+INT SetAtfFalseCCAThr_Proc(RTMP_ADAPTER *pAd, RTMP_STRING *arg)
+{
+	INT32 value;
+
+	value = simple_strtol(arg, 0, 10);
+	pAd->AtfParaSet.atfFalseCCAThr = value;
+	DBGPRINT(RT_DEBUG_OFF, ("atfFalseCCAThr:%d\n", pAd->AtfParaSet.atfFalseCCAThr));
+	return TRUE;
+
+}
+#endif
 
 #ifdef SINGLE_SKU_V2
 INT SetSKUEnable_Proc(RTMP_ADAPTER *pAd, RTMP_STRING *arg)
@@ -2227,7 +2348,6 @@ INT SetSKUEnable_Proc(RTMP_ADAPTER *pAd, RTMP_STRING *arg)
 }
 #endif /* SINGLE_SKU_V2 */
 
-#ifdef ED_MONITOR
 /* run-time turn EDCCA on/off */
 INT Set_ed_chk_proc(RTMP_ADAPTER *pAd, RTMP_STRING *arg)
 {
@@ -2244,12 +2364,13 @@ INT Set_ed_chk_proc(RTMP_ADAPTER *pAd, RTMP_STRING *arg)
 	
 	return TRUE;
 }
-
 INT ed_status_read(RTMP_ADAPTER *pAd)
 {
 	UINT32 period_us = pAd->ed_chk_period * 1000;
 	ULONG irqflag=0;
 	INT percent;
+	BOOLEAN bIsCERegion = FALSE;
+	UINT32 ed_th = 0;
 
 	UINT32 ch_idle_stat=0, ch_busy_stat=0, ed_stat=0, rssi_stat=0;
 	INT32 WBRssi0, WBRssi1, RefWBRssi;
@@ -2311,17 +2432,11 @@ INT ed_status_read(RTMP_ADAPTER *pAd)
 	pAd->ed_trigger_stat[pAd->ed_stat_lidx] = pAd->ed_trigger_cnt;
 	pAd->ed_silent_stat[pAd->ed_stat_lidx] = pAd->ed_silent_cnt;
 
-	
-	INC_RING_INDEX(pAd->ed_stat_lidx, ED_STAT_CNT);
-	//pAd->false_cca_stat[pAd->ed_stat_lidx] = 0;
-	if (pAd->ed_stat_sidx == pAd->ed_stat_lidx) {
-		INC_RING_INDEX(pAd->ed_stat_sidx, ED_STAT_CNT);
-	}	
-	RTMP_IRQ_UNLOCK(&pAd->irq_lock, irqflag);
-
 	if(pAd->ed_chk != FALSE)
 	{
 		UINT32 macVal = 0, macVal2 = 0;
+		bIsCERegion = GetEDCCASupport(pAd);
+		ed_th = pAd->ed_th;
 
 		RTMP_IO_READ32(pAd, WF_PHY_BASE + 0x0634, &macVal2);
 		if (pAd->ed_trigger_cnt > pAd->ed_block_tx_threshold || pAd->ed_big_rssi_stat[pAd->ed_stat_lidx] < 50) {
@@ -2330,6 +2445,10 @@ INT ed_status_read(RTMP_ADAPTER *pAd)
 			{
 				pAd->ed_threshold_strict = TRUE;
 				macVal = 0xD7C87D10;  		
+				if((!bIsCERegion) && (ed_th < NON_CE_REGION_MAX_ED_TH)) {
+					macVal = macVal & (~(0x7F << 8));
+					macVal = macVal | (ed_th << 8);
+				}
 				RTMP_IO_WRITE32(pAd, WF_PHY_BASE + 0x0618, macVal);
 
 				macVal2 &= 0xFFFFFFFE;
@@ -2347,6 +2466,10 @@ INT ed_status_read(RTMP_ADAPTER *pAd)
 			{
 				pAd->ed_threshold_strict = FALSE;
 				macVal = 0xD7C87D0F;  
+				if((!bIsCERegion) && (ed_th < NON_CE_REGION_MAX_ED_TH)) {
+					macVal = macVal & (~(0x7F << 8));
+					macVal = macVal | (ed_th << 8);
+				}
 				RTMP_IO_WRITE32(pAd, WF_PHY_BASE + 0x0618, macVal);
 
 				macVal2 |= 0x1;
@@ -2359,19 +2482,27 @@ INT ed_status_read(RTMP_ADAPTER *pAd)
 		}
 	}
 
-	if (pAd->ed_trigger_cnt > pAd->ed_block_tx_threshold) {
-		if (pAd->ed_tx_stoped == FALSE) {
-			pAd->ed_tx_stoped = TRUE;
-			DBGPRINT(RT_DEBUG_WARN, ("\n====\n### %s: EDCCA ed_tx_stoped is set to TRUE\n====\n", __FUNCTION__));
-		}
-	}
+        INC_RING_INDEX(pAd->ed_stat_lidx, ED_STAT_CNT);
+        //pAd->false_cca_stat[pAd->ed_stat_lidx] = 0;
+        if (pAd->ed_stat_sidx == pAd->ed_stat_lidx) {
+                INC_RING_INDEX(pAd->ed_stat_sidx, ED_STAT_CNT);
+        }
 
-	if (pAd->ed_silent_cnt > pAd->ed_block_tx_threshold) {
-		if (pAd->ed_tx_stoped == TRUE) {
-			pAd->ed_tx_stoped = FALSE;
-			DBGPRINT(RT_DEBUG_WARN, ("\n====\n### %s: EDCCA ed_tx_stoped is set to FALSE\n====\n", __FUNCTION__));
-		}
-	}
+        RTMP_IRQ_UNLOCK(&pAd->irq_lock, irqflag);
+
+       if (pAd->ed_trigger_cnt > pAd->ed_block_tx_threshold) {
+               if (pAd->ed_tx_stoped == FALSE) {
+                       pAd->ed_tx_stoped = TRUE;
+                       DBGPRINT(RT_DEBUG_WARN, ("\n====\n### %s: EDCCA ed_tx_stoped is set to TRUE\n====\n", __FUNCTION__));
+               }
+       }
+
+       if (pAd->ed_silent_cnt > pAd->ed_block_tx_threshold) {
+               if (pAd->ed_tx_stoped == TRUE) {
+                       pAd->ed_tx_stoped = FALSE;
+                       DBGPRINT(RT_DEBUG_WARN, ("\n====\n### %s: EDCCA ed_tx_stoped is set to FALSE\n====\n", __FUNCTION__));
+               }
+       }
 
 	return TRUE;
 }
@@ -2586,7 +2717,6 @@ rssi_stat));
 	return TRUE;
 }
 #endif /* DBG */
-#endif /* ED_MONITOR */
 
 INT	Set_RadioOn_Proc(
 	IN	PRTMP_ADAPTER	pAd,
@@ -2606,14 +2736,36 @@ INT	Set_RadioOn_Proc(
 	if (radio)
 	{
 		MlmeRadioOn(pAd);
+#ifdef FT_R1KH_KEEP
+		pAd->ApCfg.FtTab.FT_RadioOff = FALSE;
+#endif/* FT_R1KH_KEEP */
 		DBGPRINT(RT_DEBUG_OFF, ("==>Set_RadioOn_Proc (ON)\n"));
 	}
 	else
 	{
 		MlmeRadioOff(pAd);
+#ifdef FT_R1KH_KEEP
+		pAd->ApCfg.FtTab.FT_RadioOff = TRUE;
+#endif/* FT_R1KH_KEEP */
 		DBGPRINT(RT_DEBUG_OFF, ("==>Set_RadioOn_Proc (OFF)\n"));
 	}
 
 	return TRUE;
 }
 
+#if defined(CUSTOMER_DCC_FEATURE) || defined(BAND_STEERING)
+VOID EnableRadioChstats( 
+		IN	PRTMP_ADAPTER 	pAd)
+{
+	UINT32   mac_val;
+	
+	/* Clear previous status */
+	RTMP_IO_READ32(pAd, MIB_MSCR, &mac_val);
+	DBGPRINT(RT_DEBUG_OFF, ("MIB Status Control=0x%x\n", mac_val));
+	/*mt7603_set_ed_cca(pAd, 1);*/
+	RTMP_IO_READ32(pAd, MIB_MSDR9, &mac_val); //	Ch Busy Time
+	RTMP_IO_READ32(pAd, MIB_MSDR18, &mac_val); // 	p_ED Time
+	AsicGetRxStat(pAd, HQA_RX_RESET_PHY_COUNT);
+	
+}
+#endif

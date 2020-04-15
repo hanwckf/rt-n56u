@@ -106,6 +106,24 @@ char const *pWirelessWscEventText[IW_WSC_EVENT_TYPE_NUM] = {
 #endif /* WSC_INCLUDED */
 
 
+#ifdef WH_EZ_SETUP
+// For whole home coverage - easy setup wireless event - start
+char const *pWirelessEasySetupEventText[IW_WH_EZ_EVENT_TYPE_NUM] = {
+	"WH_EZ - Provider searching",                              /* IW_WH_EZ_PROVIDER_SEARCHING */
+	"WH_EZ - Provider found",                                  /* IW_WH_EZ_PROVIDER_FOUND */
+	"WH_EZ - Stop provider searching",                         /* IW_WH_EZ_PROVIDER_STOP_SEARCHING */
+	"WH_EZ - Configured AP searching",                         /* IW_WH_EZ_CONFIGURED_AP_SEARCHING */
+	"WH_EZ - Configured AP found",                             /* IW_WH_EZ_CONFIGURED_AP_FOUND */
+	"WH_EZ - My APCLI connects",                               /* IW_WH_EZ_MY_APCLI_CONNECTED */
+	"WH_EZ - My APCLI disconnects",                            /* IW_WH_EZ_MY_APCLI_DISCONNECTED */
+	"WH_EZ - This client is APCLI",                            /* IW_WH_EZ_MY_AP_HAS_APCLI */
+	"WH_EZ - My AP doesn't has APCLI",                         /* IW_WH_EZ_MY_AP_DOES_NOT_HAS_APCLI */
+	"WH_EZ - Become configured",                               /* IW_WH_EZ_BECOME_CONFIGURED */
+	
+	};
+/* For whole home coverage - easy setup wireless event - end */
+#endif /* CONFIG_STA_SUPPORT */
+
 
 /*
 	========================================================================
@@ -173,6 +191,15 @@ VOID RtmpDrvSendWirelessEvent(
 			event_table_len = IW_WSC_EVENT_TYPE_NUM;
 			break;
 #endif /* WSC_INCLUDED */
+#ifdef WH_EZ_SETUP
+		case IW_WH_EZ_EVENT_FLAG_START:
+			if (IS_EZ_SETUP_ENABLED(wdev))
+			{
+				event_table_len = IW_WH_EZ_EVENT_TYPE_NUM;
+			}
+			break;
+#endif /* WH_EZ_SETUP */
+
 	}
 	
 	if (event_table_len == 0)
@@ -200,6 +227,10 @@ VOID RtmpDrvSendWirelessEvent(
 			pBufPtr += sprintf(pBufPtr, "(RT2860) STA(%02x:%02x:%02x:%02x:%02x:%02x) ", PRINT_MAC(pAddr));				
 		else if ((wdev->wdev_type == WDEV_TYPE_AP) && (wdev->func_idx < MAX_MBSSID_NUM(pAd)))
 			pBufPtr += sprintf(pBufPtr, "(RT2860) BSS(ra%d) ", wdev->func_idx);
+#ifdef WH_EZ_SETUP
+		else if(wdev->wdev_type == WDEV_TYPE_STA) //Rakesh: easy enabled need not be checked
+			pBufPtr += sprintf(pBufPtr, "BSS(apcli%d) ", wdev->func_idx);
+#endif	
 		else
 			pBufPtr += sprintf(pBufPtr, "(RT2860) ");
 
@@ -222,12 +253,21 @@ VOID RtmpDrvSendWirelessEvent(
 		else if (type == IW_WSC_EVENT_FLAG_START)
 			pBufPtr += sprintf(pBufPtr, "%s", pWirelessWscEventText[event]);
 #endif /* WSC_INCLUDED */
+#ifdef WH_EZ_SETUP
+		else if( (type == IW_WH_EZ_EVENT_FLAG_START) && IS_EZ_SETUP_ENABLED(wdev) )
+			pBufPtr += sprintf(pBufPtr, "%s", pWirelessEasySetupEventText[event]);
+#endif /* WH_EZ_SETUP */
 		else
 			pBufPtr += sprintf(pBufPtr, "%s", "unknown event");
 		
 		pBufPtr[pBufPtr - pBuf] = '\0';
 		BufLen = pBufPtr - pBuf;
-		
+#ifdef WH_EZ_SETUP
+		if (IS_EZ_SETUP_ENABLED(wdev)){
+			RtmpOSWrielessEventSend(wdev->if_dev, RT_WLAN_EVENT_CUSTOM, Event_flag, NULL, (PUCHAR)pBuf, BufLen);
+		}
+		else
+#endif		
 		RtmpOSWrielessEventSend(pAd->net_dev, RT_WLAN_EVENT_CUSTOM, Event_flag, NULL, (PUCHAR)pBuf, BufLen);
 		/*DBGPRINT(RT_DEBUG_TRACE, ("%s : %s\n", __FUNCTION__, pBuf)); */
 	

@@ -42,6 +42,8 @@
 #include "phy/mt_rf.h"
 #endif
 
+#define ANTI_INTERFERENCE_SUPPORT
+
 /* value domain of pAd->RfIcType */
 #define RFIC_2820                   1       /* 2.4G 2T3R */
 #define RFIC_2850                   2       /* 2.4G/5G 2T3R */
@@ -173,6 +175,9 @@ typedef struct _RSSI_SAMPLE {
 	CHAR LastSnr[3];
 	CHAR AvgSnr[3];
 	SHORT AvgSnrX8[3];
+#ifdef ANDLINK_FEATURE_SUPPORT
+	CHAR LastNoiseLevel[3];
+#endif
 	//CHAR LastNoiseLevel[3];
 } RSSI_SAMPLE;
 

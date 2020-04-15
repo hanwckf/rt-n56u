@@ -34,7 +34,7 @@ void RtmpAllocDescBuf(
 {
 	dma_addr_t DmaAddr = (dma_addr_t)(*phy_addr);
 
-	*VirtualAddress = (PVOID)PCI_ALLOC_CONSISTENT(pPciDev,sizeof(char)*Length, &DmaAddr);
+	*VirtualAddress = (PVOID)pci_alloc_consistent(pPciDev,sizeof(char)*Length, &DmaAddr);
 	*phy_addr = (NDIS_PHYSICAL_ADDRESS)DmaAddr;
 }
 
@@ -48,7 +48,7 @@ void RtmpFreeDescBuf(
 {
 	dma_addr_t DmaAddr = (dma_addr_t)(phy_addr);
 
-	PCI_FREE_CONSISTENT(pPciDev, Length, VirtualAddress, DmaAddr);
+	pci_free_consistent(pPciDev, Length, VirtualAddress, DmaAddr);
 }
 
 
@@ -63,7 +63,7 @@ void RTMP_AllocateFirstTxBuffer(
 {
 	dma_addr_t DmaAddr = (dma_addr_t)(*phy_addr);
 
-	*VirtualAddress = (PVOID)PCI_ALLOC_CONSISTENT(pPciDev,sizeof(char)*Length, &DmaAddr);
+	*VirtualAddress = (PVOID)pci_alloc_consistent(pPciDev,sizeof(char)*Length, &DmaAddr);
 	*phy_addr = (NDIS_PHYSICAL_ADDRESS)DmaAddr;
 }
 
@@ -76,7 +76,7 @@ void RTMP_FreeFirstTxBuffer(
 	IN NDIS_PHYSICAL_ADDRESS phy_addr)
 {
 	dma_addr_t DmaAddr = (dma_addr_t)(phy_addr);
-	PCI_FREE_CONSISTENT(pPciDev, Length, VirtualAddress, DmaAddr);
+	pci_free_consistent(pPciDev, Length, VirtualAddress, DmaAddr);
 }
 
 
@@ -136,7 +136,7 @@ PNDIS_PACKET RTMP_AllocateRxPacketBuffer(
  * invaild or writeback cache 
  * and convert virtual address to physical address 
  */
-inline ra_dma_addr_t linux_pci_map_single(struct pci_dev *pPciDev, void *ptr, size_t size, int sd_idx, int direction)
+ra_dma_addr_t linux_pci_map_single(void *pPciDev, void *ptr, size_t size, int sd_idx, int direction)
 {
 	if (direction == RTMP_PCI_DMA_TODEVICE)
 		direction = PCI_DMA_TODEVICE;
@@ -164,12 +164,12 @@ inline ra_dma_addr_t linux_pci_map_single(struct pci_dev *pPciDev, void *ptr, si
 /*	pObj = (POS_COOKIE)pAd->OS_Cookie; */
 	
 	{
-		return (ra_dma_addr_t)dma_map_single(pPciDev == NULL ? NULL : &pPciDev->dev, ptr, size, direction);
+		return (ra_dma_addr_t)pci_map_single(pPciDev, ptr, size, direction);
 	}
 
 }
 
-inline void linux_pci_unmap_single(struct pci_dev *pPciDev, ra_dma_addr_t radma_addr, size_t size, int direction)
+void linux_pci_unmap_single(void *pPciDev, ra_dma_addr_t radma_addr, size_t size, int direction)
 {
 	dma_addr_t DmaAddr = (dma_addr_t)radma_addr;
 
@@ -181,7 +181,7 @@ inline void linux_pci_unmap_single(struct pci_dev *pPciDev, ra_dma_addr_t radma_
 		direction = PCI_DMA_FROMDEVICE;
 	
 	if (size > 0)
-		dma_unmap_single(pPciDev == NULL ? NULL : &pPciDev->dev, DmaAddr, size, direction);
+		pci_unmap_single(pPciDev, DmaAddr, size, direction);
 	
 }
 

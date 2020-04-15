@@ -139,24 +139,48 @@ typedef struct usb_ctrlrequest devctrlrequest;
 /***********************************************************************************
  *	Profile related sections
  ***********************************************************************************/
+
+#define L1_PROFILE_PATH	"/etc_ro/Wireless/l1profile.dat"
+
+#define L1PROFILE_INDEX_LEN		10
+#define	L1PROFILE_ATTRNAME_LEN	30
+#define	L2PROFILE_PATH_LEN		50
+
 #ifdef CONFIG_AP_SUPPORT
 #ifdef RTMP_MAC_PCI
-
-#if (CONFIG_RT_FIRST_CARD == 7603)
- #define AP_RTMP_FIRMWARE_FILE_NAME	"/etc/Wireless/RT2860AP.bin"
- #define AP_PROFILE_PATH		"/etc/Wireless/RT2860/RT2860AP.dat"
- #define SINGLE_SKU_TABLE_FILE_NAME	"/etc/Wireless/RT2860/SingleSKU.dat"
- #define CARD_INFO_PATH			"/etc/Wireless/RT2860/RT2860APCard.dat"
+#if CONFIG_RTPCI_AP_RF_OFFSET == 0x48000
+#define AP_PROFILE_PATH			"/etc/Wireless/iNIC/iNIC_ap.dat"
+#define AP_RTMP_FIRMWARE_FILE_NAME "/etc_ro/Wireless/iNIC/RT2860AP.bin"
 #else
- #define AP_RTMP_FIRMWARE_FILE_NAME	"/etc/Wireless/iNIC_ap.bin"
- #define AP_PROFILE_PATH		"/etc/Wireless/iNIC/iNIC_ap.dat"
- #define SINGLE_SKU_TABLE_FILE_NAME	"/etc/Wireless/iNIC/SingleSKU.dat"
- #define CARD_INFO_PATH			"/etc/Wireless/iNIC/RT2860APCard.dat"
+
+#if defined(CONFIG_RT_FIRST_IF_MT7603E) || defined(CONFIG_RT_SECOND_IF_MT7603E)
+//for SDK's PATH
+#define AP_PROFILE_PATH			"/etc/Wireless/RT2860/RT2860AP.dat"
+#else
+//for PC's PATH
+#define AP_PROFILE_PATH			"/etc/Wireless/RT2860AP/RT2860AP.dat"
+#endif
+#define AP_RTMP_FIRMWARE_FILE_NAME "/etc/Wireless/RT2860AP/RT2860AP.bin"
+
 #endif
 
-#define AP_DRIVER_VERSION		"4.1.0.0.P48"
+
+#define AP_DRIVER_VERSION			"4.1.2.0_20190222"
+#ifdef MULTIPLE_CARD_SUPPORT
+#define CARD_INFO_PATH			"/etc/Wireless/RT2860AP/RT2860APCard.dat"
+#endif /* MULTIPLE_CARD_SUPPORT */
+#ifdef WAPP_SUPPORT
+#define WAPP_SUPPORT_VERSION		"2.0"
+#endif/* WAPP_SUPPORT */
 
 #endif /* RTMP_MAC_PCI */
+
+
+
+#ifdef SINGLE_SKU_V2
+#define SINGLE_SKU_TABLE_FILE_NAME	"/etc/Wireless/RT2860AP/SingleSKU.dat"
+#endif /* SINGLE_SKU_V2 */
+
 #endif /* CONFIG_AP_SUPPORT */
 
 
@@ -283,7 +307,20 @@ struct iw_statistics *rt28xx_get_wireless_stats(
 /***********************************************************************************
  *	Ralink Specific network related constant definitions
  ***********************************************************************************/
+
+#ifdef LIMIT_GLOBAL_SW_QUEUE
 #define MAX_PACKETS_IN_QUEUE				1024
+#else /* LIMIT_GLOBAL_SW_QUEUE */
+#ifdef DOT11_VHT_AC
+#define MAX_PACKETS_IN_QUEUE				1024 /*(512)*/
+#else
+#ifdef MULTI_CLIENT_SUPPORT
+#define MAX_PACKETS_IN_QUEUE				(8192) //MC
+#else
+#define MAX_PACKETS_IN_QUEUE				(512)
+#endif
+#endif /* DOT11_VHT_AC */
+#endif /* !LIMIT_GLOBAL_SW_QUEUE */
 
 /***********************************************************************************
  *	OS signaling related constant definitions
@@ -297,8 +334,8 @@ typedef struct file* RTMP_OS_FD;
 
 typedef struct _OS_FS_INFO_
 {
-	uid_t		fsuid;
-	gid_t		fsgid;
+	int				fsuid;
+	int				fsgid;
 	mm_segment_t	fs;
 } OS_FS_INFO;
 
@@ -344,8 +381,7 @@ typedef spinlock_t			OS_NDIS_SPIN_LOCK;
 #define OS_IRQ_LOCK(__lock, __irqflags)			\
 {													\
     if (__irqflags);                            \
-	__irqflags = 0;				\
-	typecheck(unsigned long, __irqflags);	\
+	__irqflags = 0;									\
 	spin_lock_irqsave((spinlock_t *)(__lock), __irqflags);			\
 }
 
@@ -358,7 +394,6 @@ typedef spinlock_t			OS_NDIS_SPIN_LOCK;
 {												\
     if (__irqflags);                            \
 	__irqflags = 0;								\
-	typecheck(unsigned long, __irqflags);           \
 	spin_lock_bh((spinlock_t *)(__lock));		\
 }
 
@@ -724,7 +759,7 @@ do{                                   \
 
 #else
 #define DBGPRINT_RAW(Level, Fmt)    \
-do{                                    \
+do{                                   \
 	ULONG __gLevel = (Level) & 0xff;\
 	ULONG __fLevel = ((Level) & 0xffffff00);\
     if (__gLevel <= RTDebugLevel)      \
@@ -750,11 +785,66 @@ do{                                    \
 	printk Fmt;					\
 }
 #else
-#define DBGPRINT(Level, Fmt)		do{}while(0)
-#define DBGPRINT_RAW(Level, Fmt)	do{}while(0)
-#define DBGPRINT_S(Fmt)			do{}while(0)
-#define DBGPRINT_ERR(Fmt)		do{}while(0)
+#define DBGPRINT(Level, Fmt)
+#define DBGPRINT_RAW(Level, Fmt)
+#define DBGPRINT_S(Fmt)
+#define DBGPRINT_ERR(Fmt)
 #endif
+/* Debug Level */
+#define DBG_LVL_OFF		0
+#define DBG_LVL_ERROR	1
+#define DBG_LVL_WARN	2
+#define DBG_LVL_TRACE	3
+#define DBG_LVL_INFO	4
+#define DBG_LVL_LOUD	5
+#define DBG_LVL_NOISY	6
+#define DBG_LVL_MAX		DBG_LVL_NOISY
+
+/* Debug Category */
+#define DBG_CAT_INIT    0x00000001u /* initialization/shutdown */
+#define DBG_CAT_HW      0x00000002u /* MAC/BBP/RF/Chip */
+#define DBG_CAT_FW      0x00000004u /* FW related command, response, CR that FW care about */
+#define DBG_CAT_HIF     0x00000008u /* Host interface: usb/sdio/pcie/rbus */
+#define DBG_CAT_FPGA    0x00000010u /* FPGA Chip verify, DVT */
+#define DBG_CAT_TEST    0x00000020u /* ATE, QA, UT, FPGA?, TDT, SLT, WHQL, and other TEST */
+#define DBG_CAT_RA      0x00000040u /* Rate Adaption/Throughput related */
+#define DBG_CAT_AP      0x00000080u /* AP, MBSS, WDS */
+#define DBG_CAT_CLIENT  0x00000100u /* STA, ApClient, AdHoc, Mesh */
+#define DBG_CAT_TX      0x00000200u /* Tx data path */
+#define DBG_CAT_RX      0x00000400u /* Rx data path */
+#define DBG_CAT_CFG     0x00000800u /* ioctl/oid/profile/cfg80211/Registry */
+#define DBG_CAT_MLME    0x00001000u /* 802.11 fundamental connection flow, auth, assoc, disconnect, etc */
+#define DBG_CAT_PROTO   0x00002000u /* protocol, ex. TDLS */
+#define DBG_CAT_SEC     0x00004000u /* security/key/WPS/WAPI/PMF/11i related*/
+#define DBG_CAT_PS      0x00008000u /* power saving/UAPSD */
+#define DBG_CAT_POWER   0x00010000u /* power Setting, Single Sku, Temperature comp, etc */
+#define DBG_CAT_COEX    0x00020000u /* BT, BT WiFi Coex, LTE, TVWS*/
+#define DBG_CAT_P2P     0x00040000u /* P2P, Miracast */
+#define DBG_CAT_TOKEN	0x00080000u
+#define DBG_CAT_CMW     0x00100000u /* CMW Link Test */
+#define DBG_CAT_RSV1    0x40000000u /* reserved index for code development */
+#define DBG_CAT_RSV2    0x80000000u /* reserved index for code development */
+#define DBG_CAT_ALL     0xFFFFFFFFu
+
+/* Debug SubCategory */
+#define DBG_SUBCAT_ALL	0xFFFFFFFFu
+#if defined(DOT11_SAE_SUPPORT) || defined(CONFIG_OWE_SUPPORT)
+#define CATSEC_SAE	    0x00000020u
+#define CATSEC_SUITEB	    0x00000040u
+#define CATSEC_OWE	    0x00000080u
+#define CATSEC_ECC	    0x00000100u
+#endif
+
+#define MTWF_PRINT	printk
+
+#define MTWF_LOG(Category, SubCategory, Level, Fmt)	\
+do{	\
+				if ((Level) <= RTDebugLevel)	\
+					MTWF_PRINT Fmt;	\
+				else {	\
+				}	\
+}while(0)
+
 
 #undef  ASSERT
 #ifdef DBG
@@ -762,7 +852,7 @@ do{                                    \
 {                                                                               \
     if (!(x))                                                                   \
     {                                                                           \
-        printk(KERN_WARNING __FILE__ ":%d assert " #x " failed\n", __LINE__);    \
+        printk(KERN_WARNING __FILE__ ":%d assert " #x "failed\n", __LINE__);    \
     }                                                                           \
 }
 #else
@@ -771,6 +861,13 @@ do{                                    \
 
 void hex_dump(char *str, unsigned char *pSrcBufVA, unsigned int SrcBufLen);
 
+#if defined(DOT11_SAE_SUPPORT) || defined(CONFIG_OWE_SUPPORT)
+
+void hex_dump_with_lvl(char *str, UCHAR *pSrcBufVA, UINT SrcBufLen, INT dbglvl);
+
+extern int DebugLevel;
+
+#endif
 
 /*********************************************************************************************************
 	The following code are not revised, temporary put it here.
@@ -780,23 +877,23 @@ void hex_dump(char *str, unsigned char *pSrcBufVA, unsigned int SrcBufLen);
 /***********************************************************************************
  * Device DMA Access related definitions and data structures.
  **********************************************************************************/
-ra_dma_addr_t linux_pci_map_single(struct pci_dev *pPciDev, void *ptr, size_t size, int sd_idx, int direction);
-void linux_pci_unmap_single(struct pci_dev *pPciDev, ra_dma_addr_t radma_addr, size_t size, int direction);
+ra_dma_addr_t linux_pci_map_single(void *handle, void *ptr, size_t size, int sd_idx, int direction);
+void linux_pci_unmap_single(void *handle, ra_dma_addr_t dma_addr, size_t size, int direction);
 
-#define PCI_MAP_SINGLE_DEV(_pci_dev, _ptr, _size, _sd_idx, _dir)				\
-	linux_pci_map_single((struct pci_dev *)_pci_dev, _ptr, _size, _sd_idx, _dir)
+#define PCI_MAP_SINGLE_DEV(_handle, _ptr, _size, _sd_idx, _dir)				\
+	linux_pci_map_single(_handle, _ptr, _size, _sd_idx, _dir)
 
-#define DMA_MAPPING_ERROR(_pci_dev, _ptr)	\
-	dma_mapping_error(&((struct pci_dev *)(_pci_dev))->dev, _ptr)
-	
+#define DMA_MAPPING_ERROR(_handle, _ptr)	\
+	dma_mapping_error(&((struct pci_dev *)(_handle))->dev, _ptr)
+
 #define PCI_UNMAP_SINGLE(_pAd, _ptr, _size, _dir)						\
 	linux_pci_unmap_single(((POS_COOKIE)(_pAd->OS_Cookie))->pci_dev, _ptr, _size, _dir)
 
-#define PCI_ALLOC_CONSISTENT(_pci_dev, _size, _ptr)							\
-	dma_zalloc_coherent(_pci_dev == NULL ? NULL : &_pci_dev->dev, _size, _ptr, GFP_ATOMIC)
+#define PCI_ALLOC_CONSISTENT(_pci_dev, _size, _ptr) \
+	pci_alloc_consistent(_pci_dev, _size, _ptr)
 
-#define PCI_FREE_CONSISTENT(_pci_dev, _size, _virtual_addr, _physical_addr)	\
-	dma_free_coherent(_pci_dev == NULL ? NULL : &_pci_dev->dev, _size, _virtual_addr, _physical_addr)
+#define PCI_FREE_CONSISTENT(_pci_dev, _size, _virtual_addr, _physical_addr) \
+	pci_free_consistent(_pci_dev, _size, _virtual_addr, _physical_addr)
 
 #ifdef VENDOR_FEATURE2_SUPPORT
 #define DEV_ALLOC_SKB(_pAd, _Pkt, _length)	\
@@ -1040,6 +1137,7 @@ do {	\
 #define RTMP_OS_NETDEV_STOP_QUEUE(_pNetDev)	netif_stop_queue((_pNetDev))
 #define RTMP_OS_NETDEV_WAKE_QUEUE(_pNetDev)	netif_wake_queue((_pNetDev))
 #define RTMP_OS_NETDEV_CARRIER_OFF(_pNetDev)	netif_carrier_off((_pNetDev))
+#define RTMP_OS_NETDEV_CARRIER_ON(_pNetDev)	netif_carrier_on((_pNetDev))
 
 #define QUEUE_ENTRY_TO_PACKET(pEntry) \
 	(PNDIS_PACKET)(pEntry)
@@ -1078,17 +1176,26 @@ do {	\
 #define SET_OS_PKT_LEN(_pkt, _len)	\
 		(RTPKT_TO_OSPKT(_pkt)->len) = (_len)
 
+#if (KERNEL_VERSION(2, 6, 22) >= LINUX_VERSION_CODE)
 #define GET_OS_PKT_DATATAIL(_pkt) \
-		skb_tail_pointer(RTPKT_TO_OSPKT(_pkt))
-#define SET_OS_PKT_DATATAIL(_pkt, _start, _len)	\
-		(skb_set_tail_pointer(RTPKT_TO_OSPKT(_pkt), \
-		(_len)-(int)(GET_OS_PKT_DATAPTR(_pkt)-(_start))))
+			skb_tail_pointer(RTPKT_TO_OSPKT(_pkt))
+#define SET_OS_PKT_DATATAIL(_pkt, _len)	\
+			skb_set_tail_pointer(RTPKT_TO_OSPKT(_pkt), _len)
+#else
+#define GET_OS_PKT_DATATAIL(_pkt) \
+		(RTPKT_TO_OSPKT(_pkt)->tail)
+#define SET_OS_PKT_DATATAIL(_pkt, _len)	\
+		((RTPKT_TO_OSPKT(_pkt)->tail) = (PUCHAR)((RTPKT_TO_OSPKT(_pkt)->data) + (_len)))
+#endif
 
 #define GET_OS_PKT_HEAD(_pkt) \
 		(RTPKT_TO_OSPKT(_pkt)->head)
 
 #define GET_OS_PKT_END(_pkt) \
-		skb_end_pointer(RTPKT_TO_OSPKT(_pkt))
+		(RTPKT_TO_OSPKT(_pkt)->end)
+
+#define SET_OS_PKT_MAC_HEADER(_pkt) \
+		(skb_reset_mac_header(RTPKT_TO_OSPKT(_pkt)))
 
 #define GET_OS_PKT_NETDEV(_pkt) \
 		(RTPKT_TO_OSPKT(_pkt)->dev)
@@ -1106,8 +1213,7 @@ do {	\
 #define OS_PKT_COPY(_pkt)		skb_copy(RTPKT_TO_OSPKT(_pkt), GFP_ATOMIC)
 
 #define OS_PKT_TAIL_ADJUST(_pkt, _removedTagLen)								\
-	SET_OS_PKT_DATATAIL(_pkt, GET_OS_PKT_DATATAIL(_pkt), (-_removedTagLen));	\
-	GET_OS_PKT_LEN(_pkt) -= _removedTagLen;
+	skb_trim(RTPKT_TO_OSPKT(_pkt), GET_OS_PKT_LEN(_pkt) - _removedTagLen)
 
 #define OS_PKT_HEAD_BUF_EXTEND(_pkt, _offset)								\
 	skb_push(RTPKT_TO_OSPKT(_pkt), _offset)
@@ -1128,7 +1234,7 @@ do {	\
 	SET_OS_PKT_NETDEV(__pRxPkt, __pNetDev);									\
 	SET_OS_PKT_DATAPTR(__pRxPkt, __pData);									\
 	SET_OS_PKT_LEN(__pRxPkt, __DataSize);									\
-	SET_OS_PKT_DATATAIL(__pRxPkt, __pData, __DataSize);						\
+	SET_OS_PKT_DATATAIL(__pRxPkt, __DataSize);						\
 }
 
 #ifdef VENDOR_FEATURE2_SUPPORT
@@ -1154,8 +1260,11 @@ do {	\
 		(htonl((_Val)))
 
 #define CB_OFF  10
+#if (MT7615_MT7603_COMBO_FORWARDING == 1)
+#define CB_LEN  35
+#endif
 #define GET_OS_PKT_CB(_p)		(RTPKT_TO_OSPKT(_p)->cb)
-#define PACKET_CB(_p, _offset)		((RTPKT_TO_OSPKT(_p)->cb[CB_OFF + (_offset)]))
+#define PACKET_CB(_p, _offset)	((RTPKT_TO_OSPKT(_p)->cb[CB_OFF + (_offset)]))
 
 
 
@@ -1164,14 +1273,32 @@ do {	\
  *	Other function prototypes definitions
  ***********************************************************************************/
 
-#if defined (CONFIG_RA_HW_NAT) || defined (CONFIG_RA_HW_NAT_MODULE)
-#if !defined(CONFIG_RA_NAT_NONE)
-extern int (*ra_sw_nat_hook_rx)(VOID *skb);
-extern int (*ra_sw_nat_hook_tx)(VOID *skb, int gmac_no);
-#endif
+#ifdef CONFIG_RA_HW_NAT_WIFI_NEW_ARCH
+#define RT_MOD_HNAT_DEREG(_net_dev) \
+do { \
+	if (ppe_dev_unregister_hook != NULL) \
+		ppe_dev_unregister_hook(_net_dev); \
+} while (0)
+
+#define RT_MOD_HNAT_REG(_net_dev) \
+do { \
+	if (ppe_dev_register_hook != NULL) \
+		ppe_dev_register_hook(_net_dev); \
+} while (0)
 #endif
 
-#if defined (CONFIG_WIFI_PKT_FWD)
+#ifdef CONFIG_RAETH
+#if !defined(CONFIG_RA_NAT_NONE)
+extern int (*ra_sw_nat_hook_tx)(VOID *skb, int gmac_no);
+extern int (*ra_sw_nat_hook_rx)(VOID *skb);
+#ifdef CONFIG_RA_HW_NAT_WIFI_NEW_ARCH
+extern void (*ppe_dev_register_hook)(VOID  *dev);
+extern void (*ppe_dev_unregister_hook)(VOID  *dev);
+#endif
+#endif
+#endif /* CONFIG_RAETH */
+
+#if defined(CONFIG_WIFI_PKT_FWD) || defined(CONFIG_WIFI_PKT_FWD_MODULE)
 struct APCLI_BRIDGE_LEARNING_MAPPING_STRUCT {
 	struct net_device *rcvd_net_dev;
 	unsigned char	src_addr[ETH_ALEN];
@@ -1190,6 +1317,19 @@ extern int (*wf_fwd_tx_hook) (struct sk_buff *skb);
 extern int (*wf_fwd_rx_hook) (struct sk_buff *skb);
 extern unsigned char (*wf_fwd_entry_insert_hook) (struct net_device *src, struct net_device *dest, void *adapter);
 extern unsigned char (*wf_fwd_entry_delete_hook) (struct net_device *src, struct net_device *dest, unsigned char link_down);
+#if (MT7615_MT7603_COMBO_FORWARDING == 1)
+extern void (*wf_fwd_check_device_hook) ( struct net_device *net_dev, signed int type, signed int mbss_idx, unsigned char channel, unsigned char link);
+extern void (*wf_fwd_set_cb_num) (unsigned int band_cb_num, unsigned int receive_cb_num);
+extern bool (*wf_fwd_check_active_hook) (void);
+extern void (*wf_fwd_pro_enabled_hook) (void);
+extern void (*wf_fwd_pro_disabled_hook) (void);
+extern void (*wf_fwd_bpdu_active_hook) (void);
+extern void (*wf_fwd_bpdu_halt_hook) (void);
+extern void (*wf_fwd_feedback_map_table) (void *adapter, void *peer, void *opp_peer, void *oth_peer);
+extern void (*wf_fwd_probe_apcli_device_hook) (void *device);
+extern void (*wf_fwd_add_entry_inform_hook) (unsigned char *addr);
+extern void (*wf_fwd_probe_dev_hook) (struct net_device *net_dev_p );
+#endif
 extern void (*wf_fwd_get_rep_hook) (unsigned char idx);
 extern void (*wf_fwd_pro_active_hook) (void);
 extern void (*wf_fwd_pro_halt_hook) (void);
@@ -1201,13 +1341,27 @@ extern void (*wf_fwd_show_entry_hook) (void);
 extern void (*wf_fwd_delete_entry_hook) (unsigned char idx);
 extern void (*packet_source_show_entry_hook) (void);
 extern void (*packet_source_delete_entry_hook) (unsigned char idx);
+#if (MT7615_MT7603_COMBO_FORWARDING == 1)
+extern void (*wf_fwd_feedback_map_table) (void *adapter, void *peer, void *opp_peer, void *oth_peer);
+#else
 extern void (*wf_fwd_feedback_map_table) (void *adapter, void *peer, void *opp_peer);
+#endif
 extern void (*wf_fwd_probe_adapter) (void *adapter);
+extern void (*wf_fwd_remove_adapter)(void *adapter);
 extern void (*wf_fwd_insert_bridge_mapping_hook) (struct sk_buff *skb);
+#if (MT7615_MT7603_COMBO_FORWARDING == 1)
+extern void (*wf_fwd_insert_repeater_mapping_hook) (void *apcli_device, void *lock, void *cli_mapping, void *map_mapping, void *ifAddr_mapping);
+#else
 extern void (*wf_fwd_insert_repeater_mapping_hook) (void *adapter, void *lock, void *cli_mapping, void *map_mapping, void *ifAddr_mapping);
+#endif
+extern void (*wf_fwd_delete_repeater_mapping)(void *apcli_device);
 extern int (*wf_fwd_search_mapping_table_hook) (struct sk_buff *skb, struct APCLI_BRIDGE_LEARNING_MAPPING_STRUCT **tbl_entry);
 extern void (*wf_fwd_delete_entry_inform_hook) (unsigned char *addr);
-extern void (*wf_fwd_add_entry_inform_hook) (unsigned char *addr);
+extern BOOLEAN (*wf_fwd_needed_hook) (void);
+#ifdef WH_EZ_SETUP
+extern void (*wf_fwd_set_easy_setup_mode) (unsigned int easy_setup_mode);
+#endif
+
 
 #endif /* CONFIG_WIFI_PKT_FWD */
 
@@ -1602,7 +1756,7 @@ extern int rausb_control_msg(VOID *dev,
 #define ATEDBGPRINT DBGPRINT
 #ifdef RTMP_MAC_PCI
 #ifdef CONFIG_AP_SUPPORT
-#define EEPROM_BIN_FILE_NAME  "/etc/Wireless/RT2860/e2p.bin"
+#define EEPROM_BIN_FILE_NAME  "/etc/Wireless/RT2860AP/e2p.bin"
 #endif /* CONFIG_AP_SUPPORT */
 #endif /* RTMP_MAC_PCI */
 
@@ -1631,15 +1785,16 @@ void __exit rt_pci_cleanup_module(void);
 
 #endif /* MULTI_INF_SUPPORT */
 
+VOID os_load_code_from_bin(void *pAd, unsigned char **image, char *bin_name, UINT32 *code_len);
+struct device *rtmp_get_dev(void *ad);
 
-
-#ifdef MT7603_WLAN_HOOK_SUPPORT
+#ifdef RTMP_WLAN_HOOK_SUPPORT
 /*define os layer hook function implementation*/
 #include <os/rt_linux_txrx_hook.h>
 #define RTMP_OS_TXRXHOOK_CALL(hook,packet,queIdx,priv) RtmpOsTxRxHookCall(hook,packet,queIdx,priv)
 #define RTMP_OS_TXRXHOOK_INIT() RtmpOsTxRxHookInit()
 #else
-#define RTMP_OS_TXRXHOOK_CALL(hook,packet,queIdx,priv) if(priv!=NULL) {}
+#define RTMP_OS_TXRXHOOK_CALL(hook,packet,queIdx,priv) if (priv == NULL) ;
 #define RTMP_OS_TXRXHOOK_INIT()
 #endif
 

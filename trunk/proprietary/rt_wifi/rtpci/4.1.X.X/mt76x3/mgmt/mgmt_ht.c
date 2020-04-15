@@ -38,7 +38,7 @@ INT ht_mode_adjust(RTMP_ADAPTER *pAd, MAC_TABLE_ENTRY *pEntry, HT_CAPABILITY_IE 
 		pEntry->MaxHTPhyMode.field.MODE = MODE_HTGREENFIELD;
 	}
 	else
-	{
+	{	
 		pEntry->MaxHTPhyMode.field.MODE = MODE_HTMIX;
 		pAd->CommonCfg.AddHTInfo.AddHtInfo2.NonGfPresent = 1;
 		pAd->MacTab.fAnyStationNonGF = TRUE;
@@ -49,14 +49,12 @@ INT ht_mode_adjust(RTMP_ADAPTER *pAd, MAC_TABLE_ENTRY *pEntry, HT_CAPABILITY_IE 
 		pEntry->MaxHTPhyMode.field.ShortGI = ((my->ShortGIfor40) & (peer->HtCapInfo.ShortGIfor40));
 	}
 	else
-	{
+	{	
 		pEntry->MaxHTPhyMode.field.BW = BW_20;
 		pEntry->MaxHTPhyMode.field.ShortGI = ((my->ShortGIfor20) & (peer->HtCapInfo.ShortGIfor20));
 		pAd->MacTab.fAnyStation20Only = TRUE;
 	}
-
-	pEntry->MaxHTPhyMode.field.STBC = (peer->HtCapInfo.RxSTBC & (pAd->CommonCfg.DesiredHtPhy.TxSTBC));
-
+				
 	return TRUE;
 }
 
@@ -236,7 +234,12 @@ VOID RTMPSetHT(
 		}
 	}
 #endif /* CONFIG_AP_SUPPORT */
-
+	//
+	// Added to provide sync between Bandwidth and Extended channel settings
+	//
+	if(pHTPhyMode->BW && pHTPhyMode->ExtOffset == EXTCHA_NONE)
+			pHTPhyMode->BW = 0;
+		
 	DBGPRINT(RT_DEBUG_TRACE, ("RTMPSetHT : HT_mode(%d), ExtOffset(%d), MCS(%d), BW(%d), STBC(%d), SHORTGI(%d)\n",
 										pHTPhyMode->HtMode, pHTPhyMode->ExtOffset, 
 										pHTPhyMode->MCS, pHTPhyMode->BW,
@@ -307,13 +310,11 @@ VOID RTMPSetHT(
 			break;
 	}
 
-#ifdef DOT11N_DRAFT3
 	if (pAd->CommonCfg.bForty_Mhz_Intolerant && (pHTPhyMode->BW == BW_40))
 	{
 		pHTPhyMode->BW = BW_20;
 		ht_cap->HtCapInfo.Forty_Mhz_Intolerant = 1;
 	}
-#endif /* DOT11N_DRAFT3 */
 
 	// TODO: shiang-6590, how about the "bw" when channel 14 for JP region???
 	//CFG_TODO
@@ -666,8 +667,6 @@ VOID RTMPSetIndividualHT(RTMP_ADAPTER *pAd, UCHAR apidx)
 	else
 		MlmeUpdateHtTxRates(pAd, apidx);
 
-	N_ChannelCheck(pAd);
-
 #ifdef DOT11_VHT_AC
 	if (WMODE_CAP_AC(pAd->CommonCfg.PhyMode)) {
 		pDesired_ht_phy->bVhtEnable = TRUE;
@@ -728,8 +727,6 @@ INT	SetCommonHT(RTMP_ADAPTER *pAd)
 		RTMPDisableDesiredHtInfo(pAd);
 		return FALSE;
 	}
-
-	N_ChannelCheck(pAd); 
 
 #ifdef DOT11_VHT_AC
 	SetCommonVHT(pAd);

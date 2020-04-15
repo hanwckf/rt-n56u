@@ -186,7 +186,9 @@ typedef union _RMAC_MORE_STRUC {
 #define RMAC_DROP_MAX_LEN_MASK  (0xfffff)
 #define RMAC_PHY_DELAY	(WF_RMAC_BASE + 0x0a8)
 #define RMAC_TMR_PA     (WF_RMAC_BASE + 0x0e0)
-
+#ifdef AIR_MONITOR
+#define RMAC_SMESH		(WF_RMAC_BASE + 0x114)
+#endif
 #endif /* __WF_RMAC_H__*/
 
 

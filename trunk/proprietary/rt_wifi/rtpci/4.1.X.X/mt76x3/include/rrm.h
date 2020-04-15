@@ -39,6 +39,10 @@
 
 #define IS_RRM_BEACON_MEASURE(_P) \
 	((_P)->RrmEnCap.field.BeaconActiveMeasureCap == 1)
+#define IS_RRM_BEACON_PASSIVE_MEASURE(_P) \
+		((_P)->RrmEnCap.field.BeaconPassiveMeasureCap == 1)
+#define IS_RRM_BEACON_TABLE_MEASURE(_P) \
+((_P)->RrmEnCap.field.BeaconTabMeasureCap == 1)
 
 #define IS_RRM_QUIET(_P, _I) \
 	((_P)->ApCfg.MBSSID[(_I)].RrmCfg.QuietCB.QuietState == RRM_QUIET_SILENT)
@@ -78,7 +82,7 @@ INT Set_Dot11kRRM_Enable_Proc(RTMP_ADAPTER *pAd, RTMP_STRING *arg);
 	==========================================================================
  */
 INT Set_BeaconReq_Proc(RTMP_ADAPTER *pAd, RTMP_STRING *arg);
-
+INT Set_BeaconReq_RandInt_Proc(RTMP_ADAPTER *pAd, RTMP_STRING *arg);
 /*
 	==========================================================================
 	Description:
@@ -238,6 +242,13 @@ VOID RRM_InsertNeighborRepIE(
 	IN UINT8 Channel,
 	IN UINT8 PhyType);
 
+VOID RRM_InsertNeighborRepIE_New(
+	IN PRTMP_ADAPTER pAd,
+	OUT PUCHAR pFrameBuf,
+	OUT PULONG pFrameLen,
+	IN UINT8 Len,
+	IN RRM_PNEIGHBOR_REP_INFO pNeighborRepInfo);
+
 /*
 	==========================================================================
 	Description:
@@ -312,7 +323,16 @@ VOID RRM_InsertBssAvailableACIE(
 VOID RRM_InsertRequestIE(
 	IN PRTMP_ADAPTER pAd,
 	OUT PUCHAR pFrameBuf,
-	OUT PULONG pFrameLen);
+	OUT PULONG pFrameLen,
+	IN UINT8 ie_num,
+	IN PUINT8 ie_list);
+
+VOID RRM_InsertRequestIE_NEW(
+	IN PRTMP_ADAPTER pAd,
+	OUT PUCHAR pFrameBuf,
+	OUT PULONG pFrameLen,
+	IN PUCHAR pRequest,
+	IN UINT8 RequestLen);
 
 /*
 	==========================================================================
@@ -396,17 +416,6 @@ VOID RRM_EnqueueTxStreamMeasureReq(
 	Return	: None.
 	==========================================================================
  */
-VOID RRM_ScanResultFix(BSS_ENTRY *pBssEntry);
-
-/*
-	==========================================================================
-	Description:
-		
-	Parametrs:
-	
-	Return	: None.
-	==========================================================================
- */
 BOOLEAN RRM_PeerNeighborReqSanity(
 	IN PRTMP_ADAPTER pAd,
 	IN VOID *pMsg,
@@ -448,6 +457,119 @@ VOID RRM_PeerNeighborReqAction(
 VOID RRM_PeerMeasureRepAction(
 	IN PRTMP_ADAPTER pAd, 
 	IN MLME_QUEUE_ELEM *Elem);
+
+INT rrm_send_beacon_req_param(
+	IN PRTMP_ADAPTER pAd,
+	IN p_bcn_req_info pBcnReq,
+	IN UINT32 BcnReqLen);
+
+int check_rrm_BcnReq_custom_params(
+	IN RTMP_ADAPTER * pAd,
+	IN p_bcn_req_info pBcnReq);
+
+VOID set_rrm_BcnReq_optional_params(
+	IN RTMP_ADAPTER * pAd,
+	IN p_bcn_req_info p_beacon_req);
+
+void compose_rrm_BcnReq_ie(
+	IN RTMP_ADAPTER * pAd,
+	OUT PUCHAR beacon_req_ie,
+	OUT PUINT32 beacon_req_ie_len,
+	IN p_bcn_req_info p_beacon_req,
+	IN UINT8 measure_req_token,
+	IN UCHAR ifidx);
+
+void wext_send_bcn_rsp_event(PNET_DEV net_dev,
+	PUCHAR peer_mac_addr,
+	PUCHAR bcn_rsp,
+	UINT32 bcn_rsp_len,
+	UINT8 dia_token);
+
+
+void init_rrm_capabilities(PRRM_CONFIG pRrmCfg, BSS_STRUCT *pMBss);
+
+int set_rrm_capabilities(RTMP_ADAPTER *pAd, UINT8 *rrm_capabilities);
+
+int rrm_MsgHandle(PRTMP_ADAPTER pAd, RTMP_IOCTL_INPUT_STRUCT *wrq);
+
+int RRM_EnqueueBcnReqAction(
+	IN PRTMP_ADAPTER pAd,
+	IN UINT8 IfIdx,
+	IN p_bcn_req_data_t p_bcn_req_data);
+
+int Set_Dot11kRRM_Enable(RTMP_ADAPTER *pAd, UINT8 enable);
+
+int rrm_send_beacon_req(RTMP_ADAPTER *pAd,
+	p_bcn_req_data_t p_bcn_req_data, UINT32 bcn_req_len);
+
+void RRM_measurement_report_to_host(RTMP_ADAPTER *pAd, MLME_QUEUE_ELEM *Elem);
+
+int rrm_send_nr_rsp_param(RTMP_ADAPTER *pAd,
+	p_rrm_nrrsp_info_custom_t p_nr_rsp_data,
+	UINT32 nr_rsp_data_len);
+
+int rrm_send_nr_rsp_ie(RTMP_ADAPTER *pAd,
+	p_nr_rsp_data_t p_nr_rsp_data,
+	UINT32 nr_rsp_data_len);
+
+
+int check_rrm_nrrsp_custom_params(RTMP_ADAPTER *pAd,
+	p_rrm_nrrsp_info_custom_t p_nr_rsp_data,
+	UINT32 nr_rsp_data_len);
+
+void compose_rrm_nrrsp_ie(RTMP_ADAPTER *pAd, PUCHAR nr_rsp_ie, PUINT32 p_ie_len,
+	struct nr_info *p_candidate_info, UINT8 cnt);
+
+VOID send_nr_rsp_param_toair(
+	IN PRTMP_ADAPTER    pAd,
+	IN MLME_QUEUE_ELEM  *Elem);
+
+VOID send_nr_resp_toair(
+	IN PRTMP_ADAPTER    pAd,
+	IN MLME_QUEUE_ELEM  *Elem);
+
+void wext_send_nr_req_event(
+	IN PNET_DEV net_dev,
+	IN const char *peer_mac_addr,
+	IN const char *nr_req,
+	IN UINT16 nr_req_len);
+
+
+int rrm_send_nr_rsp(
+	IN RTMP_ADAPTER *pAd,
+	IN p_nr_rsp_data_t p_nr_rsp_data);
+
+
+int rrm_set_handle_nr_req_flag(
+	IN RTMP_ADAPTER *pAd,
+	IN UINT8 by_daemon);
+
+VOID  NRRspTimeout(
+	IN PRTMP_ADAPTER    pAd,
+	IN MLME_QUEUE_ELEM  *Elem);
+
+
+enum NR_STATE NRPeerCurrentState(
+	IN PRTMP_ADAPTER pAd,
+	IN MLME_QUEUE_ELEM * Elem);
+
+
+VOID NRStateMachineInit(
+	IN	PRTMP_ADAPTER pAd,
+	IN	STATE_MACHINE *S,
+	OUT STATE_MACHINE_FUNC	Trans[]);
+
+VOID RRMBcnReqStateMachineInit(
+	IN	PRTMP_ADAPTER pAd,
+	IN	STATE_MACHINE *S,
+	OUT STATE_MACHINE_FUNC	Trans[]
+	);
+
+enum BCN_STATE BCNPeerCurrentState(
+	IN PRTMP_ADAPTER pAd,
+	IN MLME_QUEUE_ELEM * Elem);
+
+
 #endif /* DOT11K_RRM_SUPPORT */
 
 #endif /* __RRM_H */

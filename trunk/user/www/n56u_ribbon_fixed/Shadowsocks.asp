@@ -254,6 +254,8 @@ if (b=="socks5"){
 	showhide_div('row_ss_plugin', 0);
 	showhide_div('row_ss_plugin_opts', 0);
 	showhide_div('row_ssp_insecure', 0);
+	showhide_div('row_v2_http_host', v);
+	showhide_div('row_v2_http_path', v);
 }
 }
 function switch_v2_type(){
@@ -262,6 +264,8 @@ if (b=="tcp"){
 	var v=0;
 	showhide_div('v2_tcp_guise', 1);
 	showhide_div('row_v2_type', 1);
+	showhide_div('row_v2_http_host', 1);
+	showhide_div('row_v2_http_path', 1);
 	showhide_div('v2_kcp_guise', v);
 	showhide_div('row_v2_mkcp_mtu', v);
 	showhide_div('row_v2_mkcp_tti', v);
@@ -297,6 +301,8 @@ if (b=="kcp"){
 	showhide_div('row_v2_http2_path', v);
 	showhide_div('row_quic_security', v);
 	showhide_div('row_quic_key', v);
+	showhide_div('row_v2_http_host', v);
+	showhide_div('row_v2_http_path', v);
 	showhide_div('row_quic_header', v)
 }
 if (b=="ws"){
@@ -317,6 +323,8 @@ if (b=="ws"){
 	showhide_div('row_v2_http2_path', v);
 	showhide_div('row_quic_security', v);
 	showhide_div('row_quic_key', v);
+	showhide_div('row_v2_http_host', v);
+	showhide_div('row_v2_http_path', v);
 	showhide_div('row_quic_header', v)
 }
 if (b=="h2"){
@@ -337,6 +345,8 @@ if (b=="h2"){
 	showhide_div('row_v2_http2_path', k);
 	showhide_div('row_quic_security', v);
 	showhide_div('row_quic_key', v);
+	showhide_div('row_v2_http_host', v);
+	showhide_div('row_v2_http_path', v);
 	showhide_div('row_quic_header', v)
 }
 if (b=="quic"){
@@ -357,6 +367,8 @@ if (b=="quic"){
 	showhide_div('row_v2_http2_path', v);
 	showhide_div('row_quic_security', k);
 	showhide_div('row_quic_key', k);
+	showhide_div('row_v2_http_host', v);
+	showhide_div('row_v2_http_path', v);
 	showhide_div('row_quic_header', k);
 }
 }
@@ -470,7 +482,7 @@ var nodeList = document.getElementById("nodeList"); // 获取节点
 var unodeList = document.getElementById("u_nodeList"); // 获取节点
 for(var key  in  db_ss){ // 遍历对象
 var optionObj = JSON.parse(db_ss[key] ); // 字符串转为对象
-if(optionObj.ping != "failed"){   //过滤ping不通的节点
+//if(optionObj.ping != "failed"){   //过滤ping不通的节点
 var text = '[ '+ (optionObj.type ? optionObj.type:"类型获取失败") +' ] ' + (optionObj.alias?optionObj.alias:"名字获取失败"); // 判断下怕获取失败 ，括号是运算的问题
  // 添加 
 nodeList.options.add(new Option(text, key.replace(keyStr,''))); // 通过 replacce把不要的字符去掉
@@ -497,7 +509,7 @@ $j('#u_nodeList>option').eq(0).attr("selected", "selected");
 //$j('#u_nodeList').selectpicker('val', '<% nvram_get_x("","udp_relay_server"); %>'); //UDP服务器列表默认
 document.form.global_server.value = '<% nvram_get_x("","global_server"); %>';
 document.form.udp_relay_server.value = '<% nvram_get_x("","udp_relay_server"); %>';
-}
+//}
 } 
 
 //订阅节点表格
@@ -902,8 +914,10 @@ if (ssu[0] == "ssr") {
 	document.getElementById('ssp_prot').value = ssm.port;
 	document.getElementById('v2_alter_id').value = ssm.aid;
 	document.getElementById('v2_vmess_id').value = ssm.id;
-	if (ssm.type == "tcp" ) {
+	if (ssm.net == "tcp" ) {
 		document.getElementById('v2_tcp_guise').value = ssm.type;
+		document.getElementById('v2_http_host').value = ssm.host;
+		document.getElementById('v2_http_path').value = ssm.path;
 	}else{
 		document.getElementById('v2_kcp_guise').value = ssm.type;
 	}
@@ -1071,8 +1085,8 @@ function showNodeData(idName,obj){
 	  alter_id: document.getElementById("v2_alter_id").value,
 	  transport: document.getElementById("v2_transport").value,
 	  tcp_guise: document.getElementById("v2_tcp_guise").value,
-	//http_host: document.getElementById("v2_http_host").value,
-	//http_path: document.getElementById("v2_http_path").value,
+	  http_host: document.getElementById("v2_http_host").value,
+	  http_path: document.getElementById("v2_http_path").value,
 	  tls: document.getElementById("v2_tls").value,
 	  tls_host: document.getElementById("ssp_tls_host").value, 
 	  coustom: "1", 
@@ -1593,6 +1607,16 @@ function showsudlinkList() {
 						<option value="dtls" >DTLS 1.2</option>
 						<option value="wireguard" >WireGuard</option>
 					</select>
+				</td>
+			</tr>
+			<tr id="row_v2_http_host" style="display:none;"> <th width="50%">HTTP Host</th>
+				<td>
+					<input type="text" class="input" size="15" name="v2_http_host" id="v2_http_host" style="width: 200px" value="" />
+				</td>
+			</tr>
+			<tr id="row_v2_http_path" style="display:none;"> <th width="50%">HTTP Path</th>
+				<td>
+					<input type="text" class="input" size="15" name="v2_http_path" id="v2_http_path" style="width: 200px" value="" />
 				</td>
 			</tr>
 			<tr id="row_v2_mkcp_mtu" style="display:none;"> <th width="50%">MTU</th>

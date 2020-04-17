@@ -1305,6 +1305,12 @@ handle_notifications(void)
 			restart_vlmcsd();
 		}
 #endif
+#if defined(APP_WYY)
+		else if (strcmp(entry->d_name, RCN_RESTART_WYY) == 0)
+		{
+			restart_wyy();
+		}
+#endif
 #if defined(APP_KOOLPROXY)
 		else if (strcmp(entry->d_name, RCN_RESTART_KOOLPROXY) == 0)
 		{

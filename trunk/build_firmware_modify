@@ -1,7 +1,7 @@
 #!/bin/sh
 
 [ -z "$1" ] && echo "Please run '$0 PRODUCT_NAME' to start build (see 'configs/templates/') " && exit 1 
-
+if [ -z "$2" ];then
 if [ ! -f configs/templates/$1.config ] ; then
 	echo "configs/templates/$1.config not found "
 	exit 1
@@ -29,6 +29,7 @@ if [ "$1" = "PSG1208" ] || [ "$1" = "PSG1218" ] || [ "$1" = "PSG712" ]; then
 echo "CONFIG_FIRMWARE_INCLUDE_SMARTDNSBIN=n" >> .config #smartdns二进制文件
 else
 echo "CONFIG_FIRMWARE_INCLUDE_SMARTDNSBIN=y" >> .config #smartdns二进制文件
+fi
 fi
 
 ROOTDIR=`pwd`

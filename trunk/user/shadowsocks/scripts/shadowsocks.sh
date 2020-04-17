@@ -113,6 +113,14 @@ gen_config_file() {
 		fi
 }
 
+get_arg_out() {
+	router_proxy="1"
+	case "$router_proxy" in
+	1) echo "-o" ;;
+	2) echo "-O" ;;
+	esac
+}
+
 start_rules() {
     logger -t "SS" "正在添加防火墙规则..."
 	lua /etc_ro/ss/getconfig.lua $GLOBAL_SERVER > /tmp/server.txt
@@ -135,7 +143,6 @@ start_rules() {
 	local_port="1080"
 	lan_ac_ips=$lan_ac_ips
 	lan_ac_mode="b"
-	router_proxy="1"
 	#if [ "$GLOBAL_SERVER" == "$UDP_RELAY_SERVER" ]; then
 	#	ARG_UDP="-u"
 	if [ "$UDP_RELAY_SERVER" != "nil" ]; then
@@ -153,10 +160,8 @@ start_rules() {
 	gfwmode=""
 	if [ "$run_mode" = "gfw" ]; then
 		gfwmode="-g"
-		socks="-o"
 	elif [ "$run_mode" = "router" ]; then
 		gfwmode="-r"
-		socks="-o"
 	elif [ "$run_mode" = "oversea" ]; then
 		gfwmode="-c"
 	elif [ "$run_mode" = "all" ]; then
@@ -193,7 +198,7 @@ start_rules() {
 	-G "$lan_gm_ips" \
 	-D "$proxyport" \
 	-k "$lancon" \
-	$socks $gfwmode $ARG_UDP
+	$(get_arg_out) $gfwmode $ARG_UDP
 	return $?
 }
 

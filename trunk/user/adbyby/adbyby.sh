@@ -153,7 +153,7 @@ EOF
 
 del_cron()
 {
-	sed -i '/adbchk/d' /etc/storage/cron/crontabs/$http_username
+	sed -i '/adbyby/d' /etc/storage/cron/crontabs/$http_username
 }
 
 ip_rule()

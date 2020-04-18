@@ -326,7 +326,7 @@ anti_ad=`nvram get anti_ad`
 anti_ad_link=`nvram get anti_ad_link`
 nvram set anti_ad_count=0
 if [ "$anti_ad" = "1" ]; then
-wget --no-check-certificate -O /etc/storage/dnsmasq-adbyby.d/anti-ad-for-dnsmasq.conf $anti_ad_link
+curl -k -s -o /etc/storage/dnsmasq-adbyby.d/anti-ad-for-dnsmasq.conf --connect-timeout 5 --retry 3 $anti_ad_link
 if [ ! -f "/etc/storage/dnsmasq-adbyby.d/anti-ad-for-dnsmasq.conf" ]; then
 	logger -t "adbyby" "anti_AD下载失败！"
 else
@@ -345,7 +345,7 @@ grep -v '^#' /etc/storage/adbyby_host.sh | grep -v "^$" > $PROG_PATH/hostlist.tx
 for ip in `cat $PROG_PATH/hostlist.txt`
 do
 logger -t "adbyby" "正在下载: $ip"
-wget --no-check-certificate -O /tmp/host.txt $ip
+curl -k -s -o /tmp/host.txt --connect-timeout 5 --retry 3 $ip
 if [ ! -f "/tmp/host.txt" ]; then
 	logger -t "adbyby" "$ip 下载失败！"
 else

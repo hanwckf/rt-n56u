@@ -88,11 +88,11 @@ if (b=="go"){
 	showhide_div('row_wyy_musicapptype', 1);
 	showhide_div('row_wyy_coustom_music', 0);
 	showhide_div('row_wyy_coustom_server', 0);
-	var c = document.form.wyy_musicapptype.value;
-if (c=="coustom"){
-	showhide_div('row_wyy_coustom_music', 1);
-	showhide_div('row_wyy_coustom_server', 0);
-}
+//	var c = document.form.wyy_musicapptype.value;
+//if (c=="coustom"){
+//	showhide_div('row_wyy_coustom_music', 1);
+//	showhide_div('row_wyy_coustom_server', 0);
+//}
 }
 if (b=="cloud"){
 	showhide_div('row_wyy_cloudserver', 1);
@@ -116,6 +116,7 @@ if (b=="coustom"){
 	showhide_div('row_wyy_coustom_music', 0);
 }
 }
+/*
 function switch_wyy_mus(){
 var b = document.form.wyy_musicapptype.value;
 if (b=="coustom"){
@@ -126,7 +127,7 @@ if (b=="coustom"){
 	showhide_div('row_wyy_coustom_music', 0);
 }
 }
-
+*/
 function done_validating(action){
 	refreshpage();
 }
@@ -392,7 +393,7 @@ function markGroupMDHCP(o, c, b) {
 											</td>
 
 										</tr>
-										<tr id="row_wyy_musicapptype" style="display:none;">
+										<!--<tr id="row_wyy_musicapptype" style="display:none;">
 											<th>音源选择</th>
 											<td>
 											<select name="wyy_musicapptype" class="input" style="width: 250px" onchange="switch_wyy_mus()">
@@ -408,17 +409,18 @@ function markGroupMDHCP(o, c, b) {
 											<option value="coustom">-- 自定义 --</option>
 										</select>
 											</td>
-										</tr>
+										</tr>-->
 <tr id="row_wyy_coustom_server" style="display:none;"><th>自定义服务器</th>
 				<td>
 					<input type="text" class="input" size="15" name="wyy_coustom_server" id="wyy_coustom_server" style="width: 200px" value="" />
 				</td>
 			</tr>
+			<!--
 <tr id="row_wyy_coustom_music" style="display:none;"> <th>自定义音源</th>
 				<td>
 					<input type="text" class="input" size="15" name="wyy_coustom_music" id="wyy_coustom_music" style="width: 200px" value="" />
 				</td>
-			</tr>
+			</tr>-->
 										<tr>
 											<th>HTTPS 证书</th>
 											<td>

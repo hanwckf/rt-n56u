@@ -48,6 +48,9 @@ APPTYPE=$(nvram get wyy_apptype)
 #FLAC=$(uci_get_by_type unblockmusic flac_enabled 0)
 
 CLOUD=$(nvram get wyy_cloudserver)
+if [ "$CLOUD" = "coustom" ];then
+CLOUD=$(nvram get wyy_coustom_server)
+fi
 cloudadd=$(echo "$CLOUD" | awk -F ':' '{print $1}')
 cloudhttp=$(echo "$CLOUD" | awk -F ':' '{print $2}')
 cloudhttps=$(echo "$CLOUD" | awk -F ':' '{print $3}')

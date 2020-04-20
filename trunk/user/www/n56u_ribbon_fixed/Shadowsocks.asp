@@ -164,6 +164,8 @@ if (b=="ss"){
 	showhide_div('row_ss_plugin', 1);
 	showhide_div('row_ss_plugin_opts', 1);
 	showhide_div('row_ssp_insecure', 0);
+	showhide_div('row_v2_http_host', 0);
+	showhide_div('row_v2_http_path', 0);
 }
 if (b=="ssr"){
 	var v=1;
@@ -186,6 +188,8 @@ if (b=="ssr"){
 	showhide_div('row_ss_plugin', 0);
 	showhide_div('row_ss_plugin_opts', 0);
 	showhide_div('row_ssp_insecure', 0);
+	showhide_div('row_v2_http_host', 0);
+	showhide_div('row_v2_http_path', 0);
 }
 if (b=="trojan"){
 	var v=1;
@@ -208,6 +212,8 @@ if (b=="trojan"){
 	showhide_div('row_ss_plugin', 0);
 	showhide_div('row_ss_plugin_opts', 0);
 	showhide_div('row_ssp_insecure', 1);
+	showhide_div('row_v2_http_host', 0);
+	showhide_div('row_v2_http_path', 0);
 }
 if (b=="v2ray"){
 	switch_v2_type();
@@ -233,8 +239,6 @@ if (b=="v2ray"){
 	showhide_div('row_ssp_insecure', 1);
 }
 if (b=="socks5"){
-	var v=0;
-	var v=1;
 	showhide_div('row_ss_protocol', 0);
 	showhide_div('row_ss_protocol_para', 0);
 	showhide_div('row_ss_obfs', 0);
@@ -254,8 +258,8 @@ if (b=="socks5"){
 	showhide_div('row_ss_plugin', 0);
 	showhide_div('row_ss_plugin_opts', 0);
 	showhide_div('row_ssp_insecure', 0);
-	showhide_div('row_v2_http_host', v);
-	showhide_div('row_v2_http_path', v);
+	showhide_div('row_v2_http_host', 0);
+	showhide_div('row_v2_http_path', 0);
 }
 }
 function switch_v2_type(){

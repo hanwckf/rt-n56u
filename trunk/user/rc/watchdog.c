@@ -541,17 +541,7 @@ svc_timecheck(void)
 				if (timecheck_reboot(reboot_schedule))
 				{
 					logmessage("reboot scheduler", "[%s] The system is going down for reboot\n", __FUNCTION__);
-					//kill(1, SIGTERM);
-					int reboot_mode = nvram_get_int("reboot_mode");
-	                if ( reboot_mode == 0)
-	                {
 	                sys_exit();
-	                }
-	                else if ( reboot_mode == 1)
-	                {
-		            doSystem("/sbin/mtd_storage.sh %s", "save");
-		            system("mtd_write -r unlock mtd1");
-	                }
 				}
 			}
 		}

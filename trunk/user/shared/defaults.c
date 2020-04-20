@@ -762,8 +762,6 @@ struct nvram_pair router_defaults[] = {
 	{ "sdnse_cache", "0" },
 	{ "ss_white", "0" },
 	{ "ss_black", "0" },
-	
-	{ "reboot_mode", "0" },
 
 	/*UnblockNeteaseMusic*/
 	{ "wyy_enable", "0" },

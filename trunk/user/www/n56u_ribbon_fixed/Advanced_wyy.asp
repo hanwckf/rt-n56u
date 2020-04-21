@@ -52,20 +52,20 @@ function initial(){
 	show_menu(5,20,0);
 
 	show_footer();
-	switch_wyy_type();
 	showMDHCPList();
 	showLANIPList();
 	var o1 = document.form.wyy_apptype;
 	var o2 = document.form.wyy_cloudserver;
-	var o3 = document.form.wyy_musicapptype;
+	//var o3 = document.form.wyy_musicapptype;
 	var o4 = document.form.wyy_coustom_server;
-	var o5 = document.form.wyy_coustom_music;
+	//var o5 = document.form.wyy_coustom_music;
 
 	o1.value = '<% nvram_get_x("","wyy_apptype"); %>';
 	o2.value = '<% nvram_get_x("","wyy_cloudserver"); %>';
-	o3.value = '<% nvram_get_x("","wyy_musicapptype"); %>';
+	//o3.value = '<% nvram_get_x("","wyy_musicapptype"); %>';
 	o4.value = '<% nvram_get_x("","wyy_coustom_server"); %>';
-	o5.value = '<% nvram_get_x("","wyy_coustom_music"); %>';
+	//o5.value = '<% nvram_get_x("","wyy_coustom_music"); %>';
+	switch_wyy_type();
 
 }
 
@@ -83,6 +83,7 @@ function applyRule(){
 
 function switch_wyy_type(){
 var b = document.form.wyy_apptype.value;
+var c = document.form.wyy_cloudserver.value;
 if (b=="go"){
 	showhide_div('row_wyy_cloudserver', 0);
 	showhide_div('row_wyy_musicapptype', 1);
@@ -97,9 +98,8 @@ if (b=="go"){
 if (b=="cloud"){
 	showhide_div('row_wyy_cloudserver', 1);
 	showhide_div('row_wyy_musicapptype', 0);
-	showhide_div('row_wyy_coustom_music', 0);
+	//showhide_div('row_wyy_coustom_music', 0);
 	showhide_div('row_wyy_coustom_server', 0);
-	var c = document.form.wyy_cloudserver.value;
 if (c=="coustom"){
 	showhide_div('row_wyy_coustom_music', 0);
 	showhide_div('row_wyy_coustom_server', 1);
@@ -412,7 +412,7 @@ function markGroupMDHCP(o, c, b) {
 										</tr>-->
 <tr id="row_wyy_coustom_server" style="display:none;"><th>自定义服务器</th>
 				<td>
-					<input type="text" class="input" size="15" name="wyy_coustom_server" id="wyy_coustom_server" style="width: 200px" value="" />
+					<input type="text" class="input" name="wyy_coustom_server" id="wyy_coustom_server" style="width: 200px" value="" />
 				</td>
 			</tr>
 			<!--

@@ -103,10 +103,37 @@ Contributors of this project are not responsible for what happens next.
 
 * 安装依赖包
 ```shell
+# Debian/Ubuntu
 sudo apt update
 sudo apt install unzip libtool-bin curl cmake gperf gawk flex bison nano xxd \
 cpio git python-docutils gettext automake autopoint texinfo build-essential help2man \
-pkg-config zlib1g-dev libgmp3-dev libmpc-dev libmpfr-dev libncurses5-dev libltdl-dev
+pkg-config zlib1g-dev libgmp3-dev libmpc-dev libmpfr-dev libncurses5-dev libltdl-dev wget
+
+# CentOS 7
+sudo yum update
+sudo yum install ncurses-* flex byacc bison zlib-* texinfo gmp-* mpfr-* gettext \
+libtool* libmpc-* gettext-* python-docutils nano help2man
+sudo yum groupinstall "Development Tools"
+
+# CentOS 8
+sudo yum update
+sudo yum install ncurses-* flex byacc bison zlib-* gmp-* mpfr-* gettext \
+libtool* libmpc-* gettext-* nano
+sudo yum groupinstall "Development Tools"
+# CentOS 8不能直接通过yum安装texinfo，help2man，python-docutils。请去官网下载发行的安装包编译安装
+# 以texinfo为例
+# cd /usr/local/src
+# sudo wget http://ftp.gnu.org/gnu/texinfo/texinfo-6.7.tar.gz
+# sudo tar zxvf texinfo-6.7.tar.gz
+# cd texinfo-6.7
+# sudo ./configure
+# sudo make
+# sudo make install
+
+# Archlinux/Manjaro
+sudo pacman -Syu --needed git base-devel cmake gperf ncurses libmpc gmp python-docutils \
+vim rpcsvc-proto
+
 ```
 * 克隆源码
 ```shell

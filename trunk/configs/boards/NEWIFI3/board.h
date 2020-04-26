@@ -1,6 +1,6 @@
 /* NEWIFI3(d2) */
 
-#define BOARD_PID		"NEWIFI3"
+#define BOARD_PID		"ZTE-E8820"
 #define BOARD_NAME		"ZTE-E8820"
 #define BOARD_DESC		"ZTE-E8820 Wireless Router"
 #define BOARD_VENDOR_NAME	"Diting Technology"

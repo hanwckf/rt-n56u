@@ -1,4 +1,4 @@
-/* NEWIFI3(d2) */
+/* ZTE-E8820V2 */
 
 #define BOARD_PID		"ZTE-E8820"
 #define BOARD_NAME		"ZTE-E8820"

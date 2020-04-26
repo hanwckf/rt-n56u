@@ -4,5 +4,5 @@
 # NEWIFI3   # NEWIFI3          # MT7621  #
 ##################################################################
 
-CFLAGS += -DBOARD_NEWIFI3
+CFLAGS += -DBOARD_ZTE-E8820
 BOARD_NUM_USB_PORTS=1

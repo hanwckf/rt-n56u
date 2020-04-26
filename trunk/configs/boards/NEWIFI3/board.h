@@ -3,9 +3,9 @@
 #define BOARD_PID		"ZTE-E8820"
 #define BOARD_NAME		"ZTE-E8820"
 #define BOARD_DESC		"ZTE-E8820 Wireless Router"
-#define BOARD_VENDOR_NAME	"Diting Technology"
-#define BOARD_VENDOR_URL	"http://www.newifi.com/"
-#define BOARD_MODEL_URL		"http://www.newifi.com/"
+#define BOARD_VENDOR_NAME	"ZTE Technology"
+#define BOARD_VENDOR_URL	"http://www.ztehome.com.cn/"
+#define BOARD_MODEL_URL		"http://www.ztehome.com.cn/"
 #define BOARD_BOOT_TIME		30
 #define BOARD_FLASH_TIME	120
 #undef BOARD_GPIO_BTN_FN1

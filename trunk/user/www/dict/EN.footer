@@ -573,6 +573,7 @@ WLANConfig11n_txbf=Enable Transmit Beamforming?
 WLANConfig11n_nmode_limition_hint=ZVMODELVZ will change WEP or TKIP encryption to AES in [n Only] mode to ensure that clients to get the proper connection.
 WLANConfig11n_automode_limition_hint=Under [Mixed] mode with WEP or TKIP encryption, ZVMODELVZ supports the maximum transmission rate of 54 Mbps.
 BM_desc_upload=EZQoS automatically detects your uplink speed to help you adjust your network bandwidth. If you can get the exact uplink speed through another way such as an online speed test, we recommend that you enter the speed value in <a href='Advanced_QOSUserSpec_Content.asp'>advanced settings page</a>
+WLANConfig11n_amsdu=Enable AMSDU?
 WhiteList=White List
 BlackList=Black List
 MSSID_profile=SSID Profile

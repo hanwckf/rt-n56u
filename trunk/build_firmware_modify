@@ -25,6 +25,7 @@ echo "CONFIG_FIRMWARE_INCLUDE_KUMASOCKS=n" >> .config
 echo "CONFIG_FIRMWARE_INCLUDE_ADGUARDHOME=y" >> .config
 echo "CONFIG_FIRMWARE_INCLUDE_WYY=y" >> .config #网易云解锁
 echo "CONFIG_FIRMWARE_INCLUDE_WYYBIN=n" >> .config #网易云解锁GO版本执行文件（2M多）注意固件超大小
+echo "CONFIG_FIRMWARE_INCLUDE_ZEROTIER=n" >> .config #zerotier ~1.3M
 if [ "$1" = "PSG1208" ] || [ "$1" = "PSG1218" ] || [ "$1" = "PSG712" ]; then
 echo "CONFIG_FIRMWARE_INCLUDE_SMARTDNSBIN=n" >> .config #smartdns二进制文件
 else

@@ -771,8 +771,13 @@ struct nvram_pair router_defaults[] = {
 	{ "wyy_coustom_server", "" },
 	{ "wyy_coustom_music", "" },
 	{ "wyy_staticnum_x", "0" },
-
-
+	
+	/*Zerotier*/
+	{ "zerotier_enable", "0" },
+	{ "zerotier_id", "" },
+	{ "zerotier_nat", "0" },
+	{ "zerotier_secret", "" },
+	{ "zero_staticnum_x", "0" },
 
 	/* DHCP server parameters */
 	{ "dhcp_start", DEF_LAN_DHCP_BEG },	/* First assignable DHCP address */
@@ -1090,8 +1095,8 @@ struct nvram_pair tables_defaults[] = {
 	{ "ssp_prot_x", "" },
 	{ "switch_enable_x", "1" },
 	{ "ss_key_x", "" },
-	{"s5_username_x", "" },
-	{"s5_password_x", "" },
+	{ "s5_username_x", "" },
+	{ "s5_password_x", "" },
 	{ "ss_method_x", "" },
 	{ "ss_protocol_x", "" },
 	{ "ss_proto_param_x", "" },

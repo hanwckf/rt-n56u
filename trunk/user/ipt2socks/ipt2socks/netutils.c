@@ -13,6 +13,10 @@
 #include <grp.h>
 #undef _GNU_SOURCE
 
+#ifndef SO_REUSEPORT
+#define SO_REUSEPORT 15
+#endif
+
 #ifndef SO_ORIGINAL_DST
 #define SO_ORIGINAL_DST 80
 #endif
@@ -187,32 +191,32 @@ int new_udp6_socket(void) {
 }
 
 /* create tcp socket use to listen (ipv4) */
-int new_tcp4_bindsock(void) {
+int new_tcp4_bindsock(bool is_reuse_port) {
     int sockfd = new_tcp4_socket();
     set_reuse_addr(sockfd);
-    set_reuse_port(sockfd);
+    if (is_reuse_port) set_reuse_port(sockfd);
     return sockfd;
 }
 
 /* create tcp socket use to listen (ipv6) */
-int new_tcp6_bindsock(void) {
+int new_tcp6_bindsock(bool is_reuse_port) {
     int sockfd = new_tcp6_socket();
     set_ipv6_only(sockfd);
     set_reuse_addr(sockfd);
-    set_reuse_port(sockfd);
+    if (is_reuse_port) set_reuse_port(sockfd);
     return sockfd;
 }
 
 /* create tcp socket use to tproxy-listen (ipv4) */
-int new_tcp4_bindsock_tproxy(void) {
-    int sockfd = new_tcp4_bindsock();
+int new_tcp4_bindsock_tproxy(bool is_reuse_port) {
+    int sockfd = new_tcp4_bindsock(is_reuse_port);
     set_transparent(sockfd);
     return sockfd;
 }
 
 /* create tcp socket use to tproxy-listen (ipv6) */
-int new_tcp6_bindsock_tproxy(void) {
-    int sockfd = new_tcp6_bindsock();
+int new_tcp6_bindsock_tproxy(bool is_reuse_port) {
+    int sockfd = new_tcp6_bindsock(is_reuse_port);
     set_transparent(sockfd);
     return sockfd;
 }

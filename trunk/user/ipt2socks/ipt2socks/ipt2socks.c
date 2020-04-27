@@ -31,7 +31,7 @@ enum {
 #define THREAD_NUMBERS_DEFAULT 1
 
 /* udp idle timeout(sec) */
-#define UDP_IDLE_TIMEO_DEFAULT 300
+#define UDP_IDLE_TIMEO_DEFAULT (5 * 1000)
 
 /* tcp socket buffer size */
 #define TCP_SKBUFSIZE_MINIMUM 1024
@@ -88,7 +88,7 @@ static bool        g_verbose                                = false;
 static uint8_t     g_options                                = OPTION_DEFAULT;
 static uint8_t     g_nthreads                               = THREAD_NUMBERS_DEFAULT;
 static uint32_t    g_tcpbufsiz                              = TCP_SKBUFSIZE_DEFAULT;
-static uint16_t    g_udpidletmo                             = UDP_IDLE_TIMEO_DEFAULT;
+static uint32_t    g_udpidletmo                             = UDP_IDLE_TIMEO_DEFAULT;
 
 static char        g_bind_ipstr4[IP4STRLEN]                 = BIND_IPV4_DEFAULT;
 static char        g_bind_ipstr6[IP6STRLEN]                 = BIND_IPV6_DEFAULT;
@@ -283,7 +283,7 @@ static void parse_command_args(int argc, char* argv[]) {
                 set_nofile_limit(strtol(optarg, NULL, 10));
                 break;
             case 'o':
-                g_udpidletmo = strtol(optarg, NULL, 10);
+                g_udpidletmo = strtol(optarg, NULL, 10) * 1000;
                 if (g_udpidletmo == 0) {
                     printf("[parse_command_args] invalid udp socket idle timeout: %s\n", optarg);
                     goto PRINT_HELP_AND_EXIT;
@@ -432,7 +432,7 @@ int main(int argc, char* argv[]) {
     if (g_options & OPTION_IPV4) LOGINF("[main] listen address: %s#%hu", g_bind_ipstr4, g_bind_portno);
     if (g_options & OPTION_IPV6) LOGINF("[main] listen address: %s#%hu", g_bind_ipstr6, g_bind_portno);
     LOGINF("[main] number of worker threads: %hhu", g_nthreads);
-    LOGINF("[main] udp socket idle timeout: %hu", g_udpidletmo);
+    LOGINF("[main] udp socket idle timeout: %hu", g_udpidletmo / 1000);
     LOGINF("[main] udp cache maximum size: %hu", lrucache_get_maxsize());
     LOGINF("[main] tcp socket buffer size: %u", g_tcpbufsiz);
     if (g_options & OPTION_TCP) LOGINF("[main] enable tcp transparent proxy");
@@ -454,6 +454,7 @@ int main(int argc, char* argv[]) {
 
 /* event loop */
 static void* run_event_loop(void *is_main_thread) {
+    const bool is_reuse_port = true; //g_nthreads >= 2;
     uv_loop_t *evloop = &(uv_loop_t){0};
     uv_loop_init(evloop);
 
@@ -463,7 +464,7 @@ static void* run_event_loop(void *is_main_thread) {
             tcplistener->data = (void *)1; /* is_ipv4 */
 
             uv_tcp_init(evloop, tcplistener);
-            uv_tcp_open(tcplistener, (g_options & OPTION_DNAT) ? new_tcp4_bindsock() : new_tcp4_bindsock_tproxy());
+            uv_tcp_open(tcplistener, (g_options & OPTION_DNAT) ? new_tcp4_bindsock(is_reuse_port) : new_tcp4_bindsock_tproxy(is_reuse_port));
 
             int retval = uv_tcp_bind(tcplistener, (void *)&g_bind_skaddr4, 0);
             if (retval < 0) {
@@ -482,7 +483,7 @@ static void* run_event_loop(void *is_main_thread) {
             tcplistener->data = NULL; /* is_ipv4 */
 
             uv_tcp_init(evloop, tcplistener);
-            uv_tcp_open(tcplistener, (g_options & OPTION_DNAT) ? new_tcp6_bindsock() : new_tcp6_bindsock_tproxy());
+            uv_tcp_open(tcplistener, (g_options & OPTION_DNAT) ? new_tcp6_bindsock(is_reuse_port) : new_tcp6_bindsock_tproxy(is_reuse_port));
 
             int retval = uv_tcp_bind(tcplistener, (void *)&g_bind_skaddr6, 0);
             if (retval < 0) {
@@ -1013,7 +1014,7 @@ static void udp_socket_listen_cb(uv_poll_t *listener, int status, int events) {
         IF_VERBOSE LOGINF("[udp_socket_listen_cb] connection is in progress, udp packet is ignored");
         return;
     }
-    uv_timer_start(client_entry->free_timer, udp_cltentry_timer_cb, g_udpidletmo * 1000, 0);
+    uv_timer_start(client_entry->free_timer, udp_cltentry_timer_cb, g_udpidletmo, 0);
 
     uv_buf_t uvbufs[] = {{.base = packetbuf, .len = udpmsghdrlen + nread}};
     status = uv_udp_try_send(client_entry->udp_handle, uvbufs, 1, NULL);
@@ -1246,7 +1247,7 @@ static void udp_socks5_resp_read_cb(uv_stream_t *tcp_handle, ssize_t nread, cons
     cltcache_use(&g_udp_cltcache, client_entry);
     uv_read_start(tcp_handle, udp_socks5_tcp_alloc_cb, udp_socks5_tcp_read_cb);
     uv_udp_recv_start(udp_handle, udp_client_alloc_cb, udp_client_recv_cb);
-    uv_timer_start(free_timer, udp_cltentry_timer_cb, g_udpidletmo * 1000, 0);
+    uv_timer_start(free_timer, udp_cltentry_timer_cb, g_udpidletmo, 0);
 
     IF_VERBOSE LOGINF("[udp_socks5_resp_read_cb] udp tunnel is open, try to send packet via socks5");
     uv_buf_t uvbufs[] = {{.base = udpmsgbuf + 2, .len = *(uint16_t *)udpmsgbuf}};
@@ -1341,7 +1342,7 @@ static void udp_client_recv_cb(uv_udp_t *udp_handle, ssize_t nread, const uv_buf
     }
 
     cltcache_use(&g_udp_cltcache, client_entry);
-    uv_timer_start(client_entry->free_timer, udp_cltentry_timer_cb, g_udpidletmo * 1000, 0);
+    uv_timer_start(client_entry->free_timer, udp_cltentry_timer_cb, g_udpidletmo, 0);
 
     ip_port_t server_key = {{0}, 0};
     if (isipv4) {
@@ -1394,7 +1395,7 @@ static void udp_client_recv_cb(uv_udp_t *udp_handle, ssize_t nread, const uv_buf
         svrentry_t *deleted_entry = svrcache_put(&g_udp_svrcache, server_entry);
         if (deleted_entry) udp_svrentry_release(deleted_entry);
     }
-    uv_timer_start(server_entry->free_timer, udp_svrentry_timer_cb, g_udpidletmo * 1000, 0);
+    uv_timer_start(server_entry->free_timer, udp_svrentry_timer_cb, g_udpidletmo, 0);
 
     ip_port_t *client_keyptr = &client_entry->clt_ipport;
     skaddr6_t client_skaddr = {0};
@@ -1443,6 +1444,7 @@ static void udp_svrentry_timer_cb(uv_timer_t *timer) {
 
 /* release udp client related resources */
 static void udp_cltentry_release(cltentry_t *entry) {
+    cltcache_del(&g_udp_cltcache, entry);
     uv_close((void *)entry->tcp_handle, (void *)free);
     if (entry->free_timer) {
         uv_close((void *)entry->udp_handle, (void *)free);
@@ -1455,6 +1457,7 @@ static void udp_cltentry_release(cltentry_t *entry) {
 
 /* release udp server related resources */
 static void udp_svrentry_release(svrentry_t *entry) {
+    svrcache_del(&g_udp_svrcache, entry);
     uv_close((void *)entry->free_timer, (void *)free);
     close(entry->svr_sockfd);
     free(entry);

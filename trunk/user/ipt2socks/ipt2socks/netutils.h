@@ -101,16 +101,16 @@ int new_udp4_socket(void);
 int new_udp6_socket(void);
 
 /* create tcp socket use to listen (ipv4) */
-int new_tcp4_bindsock(void);
+int new_tcp4_bindsock(bool is_reuse_port);
 
 /* create tcp socket use to listen (ipv6) */
-int new_tcp6_bindsock(void);
+int new_tcp6_bindsock(bool is_reuse_port);
 
 /* create tcp socket use to tproxy-listen (ipv4) */
-int new_tcp4_bindsock_tproxy(void);
+int new_tcp4_bindsock_tproxy(bool is_reuse_port);
 
 /* create tcp socket use to tproxy-listen (ipv6) */
-int new_tcp6_bindsock_tproxy(void);
+int new_tcp6_bindsock_tproxy(bool is_reuse_port);
 
 /* create udp socket use to tproxy-reply (ipv4) */
 int new_udp4_respsock_tproxy(void);

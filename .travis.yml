@@ -21,7 +21,7 @@ before_script:
 - "./trunk/tools/shellcheck.sh"
 - mkdir -p /opt/rt-n56u/toolchain-mipsel/toolchain-3.4.x && mkdir -p /opt/images/
 - rm -rf toolchain-mipsel/ && mv -f * .[^.]* /opt/rt-n56u
-- wget $toolchain_url && tar -xf mipsel-linux-uclibc.tar.xz -C /opt/rt-n56u/toolchain-mipsel/toolchain-3.4.x
+- curl -LO $toolchain_url && tar -xf mipsel-linux-uclibc.tar.xz -C /opt/rt-n56u/toolchain-mipsel/toolchain-3.4.x
 - ls -Alh /opt/rt-n56u && cd /opt/rt-n56u/trunk/
 script:
 - for m in $targets; do fakeroot ./build_firmware_nohup $m && cp -f images/*.trx /opt/images/$m.trx;

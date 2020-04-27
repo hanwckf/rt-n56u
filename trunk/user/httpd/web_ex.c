@@ -95,7 +95,12 @@ nvram_commit_safe(void)
 void
 sys_reboot(void)
 {
+#ifdef MTD_FLASH_32M_REBOOT_BUG
+	doSystem("/sbin/mtd_storage.sh %s", "save");
+	system("/bin/mtd_write -r unlock mtd1");
+#else
 	kill(1, SIGTERM);
+#endif
 }
 
 char *

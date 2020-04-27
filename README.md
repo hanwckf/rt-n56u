@@ -96,6 +96,7 @@ Contributors of this project are not responsible for what happens next.
 >- DIR-878
 >- MR2600 (USB)
 >- WDR7300
+>- RM2100
 
 ***
 

@@ -377,8 +377,8 @@ function done_validating(action){
                                             <th><#WLANConfig11n_mumimo#></th>
                                             <td>
                                                 <select name="wl_mumimo" class="input">
-                                                    <option value="0" <% nvram_match_x("","wl_mumimo", "0","selected"); %>><#btn_Disable#></option>
-                                                    <option value="1" <% nvram_match_x("","wl_mumimo", "1","selected"); %>><#btn_Enable#> (*)</option>
+                                                    <option value="0" <% nvram_match_x("","wl_mumimo", "0","selected"); %>><#btn_Disable#> (*)</option>
+                                                    <option value="1" <% nvram_match_x("","wl_mumimo", "1","selected"); %>><#btn_Enable#></option>
                                                 </select>
                                             </td>
                                         </tr>

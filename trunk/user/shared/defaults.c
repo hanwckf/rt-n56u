@@ -249,7 +249,7 @@ struct nvram_pair router_defaults[] = {
 	{ "wl_guest_mcs_mode", "0" },
 
 #if defined (USE_WID_5G) && USE_WID_5G==7615
-	{ "wl_mumimo", "1" },
+	{ "wl_mumimo", "0" },
 #endif
 
 	// ApCli 5Ghz

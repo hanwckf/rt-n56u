@@ -55,11 +55,12 @@ rules() {
 	iptables -A FORWARD -i $zt0 -o $zt0 -j ACCEPT
 	iptables -A FORWARD -i $zt0 -j ACCEPT
 	if [ $nat_enable -eq 1 ]; then
+		iptables -t nat -A POSTROUTING -o $zt0 -j MASQUERADE
 		while [ "$(ip route | grep "dev $zt0  proto" | awk '{print $1}')" = "" ]; do
 		sleep 1
 	    done
 		ip_segment=`ip route | grep "dev $zt0  proto" | awk '{print $1}'`
-		iptables -t nat -A POSTROUTING -s $ip_segment -o $zt0 -j MASQUERADE
+		iptables -t nat -A POSTROUTING -s $ip_segment -j MASQUERADE
 		zero_route "add"
 	fi
 
@@ -72,7 +73,8 @@ del_rules() {
 	iptables -D FORWARD -o $zt0 -j ACCEPT 2>/dev/null
 	iptables -D FORWARD -i $zt0 -o $zt0 -j ACCEPT
 	iptables -D INPUT -i $zt0 -j ACCEPT 2>/dev/null
-	iptables -t nat -D POSTROUTING -s $ip_segment -o $zt0 -j MASQUERADE 2>/dev/null
+	iptables -t nat -D POSTROUTING -o $zt0 -j MASQUERADE 2>/dev/null
+	iptables -t nat -D POSTROUTING -s $ip_segment -j MASQUERADE 2>/dev/null
 }
 
 zero_route(){

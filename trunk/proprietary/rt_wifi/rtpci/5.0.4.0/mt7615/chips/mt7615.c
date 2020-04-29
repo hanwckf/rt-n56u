@@ -42,7 +42,7 @@
 #ifdef INTELP6_SUPPORT
 #define DEFAULT_BIN_FILE "/nvram/MT7615_EEPROM_2G.bin"
 #else
-#define DEFAULT_BIN_FILE "/etc_ro/wlan/MT7615E_EEPROM1.bin"
+#define DEFAULT_BIN_FILE "/etc_ro/Wireless/MT7615E_EEPROM1.bin"
 #endif
 #else
 #define DEFAULT_BIN_FILE "/etc/MT7615E_EEPROM1.bin"
@@ -52,11 +52,11 @@
 #ifdef INTELP6_SUPPORT
 #define SECOND_BIN_FILE "/nvram/MT7615_EEPROM_5G.bin"
 #else
-#define SECOND_BIN_FILE "/etc_ro/wlan/MT7615E_EEPROM2.bin"
+#define SECOND_BIN_FILE "/etc_ro/Wireless/MT7615E_EEPROM2.bin"
 #endif
 #endif /* CONFIG_RT_SECOND_CARD */
 #ifdef CONFIG_RT_THIRD_CARD
-#define THIRD_BIN_FILE "/etc_ro/wlan/MT7615E_EEPROM3.bin"
+#define THIRD_BIN_FILE "/etc_ro/Wireless/MT7615E_EEPROM3.bin"
 #endif /* CONFIG_RT_THIRD_CARD */
 
 #ifdef WIFI_SPECTRUM_SUPPORT

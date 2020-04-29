@@ -1,6 +1,8 @@
-#!/bin/sh
+#!/bin/bash
 
-[ -z "$1" ] && echo "Please run '$0 PRODUCT_NAME' to start build (see 'configs/templates/') " && exit 1 
+if [ -z "$1" ] || [ "$EUID" != 0 ]; then
+	echo "Please run 'fakeroot $0 PRODUCT_NAME' to start build (see 'configs/templates/') " && exit 1
+fi
 
 if [ ! -f configs/templates/$1.config ] ; then
 	echo "configs/templates/$1.config not found "

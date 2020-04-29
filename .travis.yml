@@ -24,7 +24,8 @@ before_script:
 - curl -LO $toolchain_url && tar -xf mipsel-linux-uclibc.tar.xz -C /opt/rt-n56u/toolchain-mipsel/toolchain-3.4.x
 - ls -Alh /opt/rt-n56u && cd /opt/rt-n56u/trunk/
 script:
-- for m in $targets; do fakeroot ./build_firmware_nohup $m && cp -f images/*.trx /opt/images/$m.trx;
+- for m in $targets; do fakeroot ./build_firmware_ci $m;
+  if [ $? = 0 ]; then cp -f images/*.trx /opt/images/$m.trx; else exit 1; fi;
   ./clear_tree_simple >/dev/null 2>&1; done
 after_script:
 - GIT_VERSION=`git rev-parse --short=7 HEAD 2>/dev/null` && [ -n "$GIT_VERSION" ]

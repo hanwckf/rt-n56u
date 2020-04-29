@@ -1,30 +1,30 @@
 --- a/source3/modules/vfs_default.c	2015-02-22 22:11:32.000000000 +0800
-+++ b/source3/modules/vfs_default.c	2020-04-30 00:02:07.863394000 +0800
++++ b/source3/modules/vfs_default.c	2020-04-30 10:45:13.184214000 +0800
 @@ -933,6 +933,44 @@ static int vfswrap_ftruncate(vfs_handle_
  		return result;
  	}
  
 +#if 1 // AVM patch - don't growth the file  (too much time and RAM for copy of large files to USB1.1 FAT filesystem)
 +	{ 
-+	SMB_BIG_UINT big_len = len;
++	uint64_t big_len = len;
 +
-+	result = SMB_VFS_FSTAT(fsp,fsp->fh->fd,&st);
++	result = SMB_VFS_FSTAT(fsp, pst);
 +	if (result == -1) {
 +		goto done;
 +	}
 +
-+	if (big_len == (SMB_BIG_UINT)st.st_size) {
++	if (big_len == (uint64_t)pst->st_ex_size) {
 +		result = 0;
 +		goto done;
 +	}
 +
-+	if (big_len > (SMB_BIG_UINT)st.st_size) {
-+		SMB_BIG_UINT space_avail;
-+		SMB_BIG_UINT bsize,dfree,dsize;
-+		big_len -= st.st_size;
++	if (big_len > (uint64_t)pst->st_ex_size) {
++		uint64_t space_avail;
++		uint64_t bsize,dfree,dsize;
++		big_len -= pst->st_ex_size;
 +		big_len /= 1024; /* Len is now number of 1k blocks needed. */
-+		space_avail = SMB_VFS_DISK_FREE(fsp->conn ,fsp->fsp_name,False,&bsize,&dfree,&dsize);
-+		if (space_avail == (SMB_BIG_UINT)-1) {
++		space_avail = SMB_VFS_DISK_FREE(fsp->conn, fsp->fsp_name->base_name, False, &bsize, &dfree, &dsize);
++		if (space_avail == (uint64_t)-1) {
 +			result = -1;
 +			goto done;
 +		}

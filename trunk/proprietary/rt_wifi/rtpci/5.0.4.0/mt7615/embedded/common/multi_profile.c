@@ -942,7 +942,12 @@ static INT multi_profile_merge_country_region(
 	INT Status = FALSE;
 	CHAR value[TEMP_STR_SIZE] = "";
 	CHAR tmpbuf[TEMP_STR_SIZE] = "";
+
+#ifdef DEFAULT_5G_PROFILE
+	Status = RTMPGetKeyParameter(parm, tmpbuf, TEMP_STR_SIZE, buf1, TRUE);
+#else
 	Status = RTMPGetKeyParameter(parm, tmpbuf, TEMP_STR_SIZE, buf2, TRUE);
+#endif
 
 	if (Status == TRUE) {
 		snprintf(value, sizeof(value), "%s", tmpbuf);
@@ -1617,21 +1622,25 @@ static INT multi_profile_merge_5g_only(
 	if (RTMPGetKeyParameter("MUTxRxEnable", tmpbuf, len, buf_mu, TRUE) == TRUE)
 		RTMPSetKeyParameter("MUTxRxEnable", tmpbuf, len, final, TRUE);
 
+#ifdef DEFAULT_5G_PROFILE
+	buf_mu = buf1;
+#endif
+
 	/*IEEE80211H*/
-	if (RTMPGetKeyParameter("IEEE80211H", tmpbuf, len, buf2, TRUE) == TRUE)
+	if (RTMPGetKeyParameter("IEEE80211H", tmpbuf, len, buf_mu, TRUE) == TRUE)
 		RTMPSetKeyParameter("IEEE80211H", tmpbuf, len, final, TRUE);
 
 	/*DFS related params is 5G only, use profile 2*/
 #ifdef MT_DFS_SUPPORT
 
 	/*DfsEnable*/
-	if (RTMPGetKeyParameter("DfsEnable", tmpbuf, len, buf2, TRUE) == TRUE)
+	if (RTMPGetKeyParameter("DfsEnable", tmpbuf, len, buf_mu, TRUE) == TRUE)
 		RTMPSetKeyParameter("DfsEnable", tmpbuf, len, final, TRUE);
 
 #endif
 
 	/*RDRegion*/
-	if (RTMPGetKeyParameter("RDRegion", tmpbuf, len, buf2, TRUE) == TRUE)
+	if (RTMPGetKeyParameter("RDRegion", tmpbuf, len, buf_mu, TRUE) == TRUE)
 		RTMPSetKeyParameter("RDRegion", tmpbuf, len, final, TRUE);
 
 	return NDIS_STATUS_SUCCESS;

@@ -163,7 +163,7 @@ nano /opt/rt-n56u/trunk/configs/templates/PSG1218.config
 * 清理代码树并开始编译
 ```shell
 cd /opt/rt-n56u/trunk
-fakeroot ./clear_tree
+./clear_tree
 fakeroot ./build_firmware_modify PSG1218
 # 脚本第一个参数为路由型号，在trunk/configs/templates/中
 # 编译好的固件在trunk/images里

@@ -1,7 +1,7 @@
 /* Xiaomi-AC2100 */
 
-#define BOARD_PID		"Xiaomi-AC2100"
-#define BOARD_NAME		"Xiaomi-AC2100"
+#define BOARD_PID		"R2100"
+#define BOARD_NAME		"R2100"
 #define BOARD_DESC		"Xiaomi-AC2100 Wireless Router"
 #define BOARD_VENDOR_NAME	"Beijing Xiaomi Technology Co., Ltd."
 #define BOARD_VENDOR_URL	"http://www.mi.com/"

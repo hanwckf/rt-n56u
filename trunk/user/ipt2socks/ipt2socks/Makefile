@@ -1,13 +1,13 @@
-#CC = mipsel-linux-uclibc-gcc
+#CC = gcc
 CFLAGS = -std=c99 -Wall -Wextra -O3 -pthread
 INCLUDES =
 LDFLAGS =
-#LIBS = -luv
-LIBS = -l:libuv.a
+LIBS = -luv
+#LIBS = -l:libuv.a
 SRCS = ipt2socks.c lrucache.c netutils.c
 OBJS = $(SRCS:.c=.o)
 MAIN = ipt2socks
-DESTDIR = /usr
+DESTDIR = /usr/local/bin
 
 .PHONY: all install clean
 

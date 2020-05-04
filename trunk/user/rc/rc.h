@@ -581,6 +581,16 @@ void stop_caddy(void);
 void start_caddy(void);
 void restart_caddy(void);
 #endif
+#if defined(APP_WYY)
+void stop_wyy(void);
+void start_wyy(void);
+void restart_wyy(void);
+#endif
+#if defined(APP_ZEROTIER)
+void stop_zerotier(void);
+void start_zerotier(void);
+void restart_zerotier(void);
+#endif
 #if defined(APP_DNSFORWARDER)
 void stop_dnsforwarder(void);
 void start_dnsforwarder(void);

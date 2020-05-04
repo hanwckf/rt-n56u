@@ -1,0 +1,12 @@
+diff -Naur boost_1_72_0/tools/build/src/engine/build.sh boost_1_72_0/tools/build/src/engine/build.sh
+--- boost_1_72_0/tools/build/src/engine/build.sh	2019-12-10 00:20:16.000000000 +0000
++++ boost_1_72_0/tools/build/src/engine/build.sh	2020-04-26 08:56:47.000000000 +0000
+@@ -155,7 +155,7 @@
+ case $B2_TOOLSET in
+ 
+     gcc)
+-        CXX=${CXX:=g++}
++        CXX=g++
+         CXX_VERSION_OPT=${CXX_VERSION_OPT:=--version}
+         # Check whether it's MinGW GCC, which has Windows headers and none of POSIX ones.
+         machine=$(${CXX} -dumpmachine 2>/dev/null)

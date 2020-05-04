@@ -36,13 +36,18 @@ $j(document).ready(function() {
 
 function initial(){
 	show_banner(2);
-	show_menu(5,17);
+	show_menu(5,17,0);
 	show_footer();
+	showmenu();
 
 	change_aliddns_enable_bridge(1);
 
 	if (!login_safe())
 		textarea_scripts_enabled(0);
+}
+
+function showmenu(){
+showhide_div('zelink', found_app_zerotier());
 }
 
 function textarea_scripts_enabled(v){
@@ -133,6 +138,16 @@ function change_aliddns_enable_bridge(mflag){
 						<div class="box well grad_colour_dark_blue">
 							<h2 class="box_head round_top"><#menu5_23#> - <#menu5_30#></h2>
 							<div class="round_bottom">
+							<div>
+                            <ul class="nav nav-tabs" style="margin-bottom: 10px;">
+								<li class="active">
+                                    <a href="Advanced_aliddns.asp"><#menu5_23_1#></a>
+                                </li>
+								<li id="zelink" style="display:none">
+                                    <a href="Advanced_zerotier.asp"><#menu5_32_1#></a>
+                                </li>
+                            </ul>
+                        </div>
 								<div class="row-fluid">
 									<div id="tabMenu" class="submenuBlock"></div>
 									<div class="alert alert-info" style="margin: 10px;">使用 Aliddns 实现顶级个人域名的 ddns 服务。 <a href="https://www.aliyun.com" target="blank"><i><u>Aliddns 主页</u></i></a>

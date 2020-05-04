@@ -220,7 +220,11 @@ struct nvram_pair router_defaults[] = {
 	{ "wl_greenap", "0" },
 	{ "wl_ldpc", "2" },
 	{ "wl_HT_RDG", "0" },
+	#if defined (USE_WID_5G) && USE_WID_5G==7615
+	{ "wl_HT_AMSDU", "1" },
+#else
 	{ "wl_HT_AMSDU", "0" },
+#endif
 	{ "wl_HT_MpduDensity", "5" },
 	{ "wl_HT_BAWinSize", "64" },
 	{ "wl_HT_AutoBA", "1" },
@@ -245,8 +249,7 @@ struct nvram_pair router_defaults[] = {
 	{ "wl_guest_mcs_mode", "0" },
 
 #if defined (USE_WID_5G) && USE_WID_5G==7615
-	{ "wl_band_steering", "0" },
-	{ "wl_mumimo", "1" },
+	{ "wl_mumimo", "0" },
 #endif
 
 	// ApCli 5Ghz
@@ -771,8 +774,13 @@ struct nvram_pair router_defaults[] = {
 	{ "wyy_coustom_server", "" },
 	{ "wyy_coustom_music", "" },
 	{ "wyy_staticnum_x", "0" },
-
-
+	
+	/*Zerotier*/
+	{ "zerotier_enable", "0" },
+	{ "zerotier_id", "" },
+	{ "zerotier_nat", "0" },
+	{ "zerotier_secret", "" },
+	{ "zero_staticnum_x", "0" },
 
 	/* DHCP server parameters */
 	{ "dhcp_start", DEF_LAN_DHCP_BEG },	/* First assignable DHCP address */
@@ -1090,8 +1098,8 @@ struct nvram_pair tables_defaults[] = {
 	{ "ssp_prot_x", "" },
 	{ "switch_enable_x", "1" },
 	{ "ss_key_x", "" },
-	{"s5_username_x", "" },
-	{"s5_password_x", "" },
+	{ "s5_username_x", "" },
+	{ "s5_password_x", "" },
 	{ "ss_method_x", "" },
 	{ "ss_protocol_x", "" },
 	{ "ss_proto_param_x", "" },

@@ -253,8 +253,8 @@ if (b=="socks5"){
 	showhide_div('row_v2_tls', 0);
 	showhide_div('row_v2_mux', 0);
 	showhide_div('row_tj_tls_host', 0);
-	showhide_div('row_s5_username', 0);
-	showhide_div('row_s5_password', 0);
+	showhide_div('row_s5_username', 1);
+	showhide_div('row_s5_password', 1);
 	showhide_div('row_ss_plugin', 0);
 	showhide_div('row_ss_plugin_opts', 0);
 	showhide_div('row_ssp_insecure', 0);
@@ -1760,6 +1760,11 @@ function showsudlinkList() {
 		</tr>
 	</table>
 	<table width="100%" cellpadding="4" cellspacing="0" class="table">
+	<tr><th>关键字过滤（请以/为分隔符）</th>
+				<td>
+				<input type="input" name="ss_keyword" id="ss_keyword" value="<% nvram_get_x("", "ss_keyword"); %>" >
+				</td>
+			</tr>
 
 		<tr id="ss_schedule_enable_tr" width="50%">
 

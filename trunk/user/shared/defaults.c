@@ -711,6 +711,7 @@ struct nvram_pair router_defaults[] = {
 	{ "d_keyword_n", "" },
 	{ "d_keyword_y", "" },
 	{ "d_update_link", "" },
+	{ "ss_keyword", "过期时间/剩余流量" },
 
 	
 	/* AdguargHome */

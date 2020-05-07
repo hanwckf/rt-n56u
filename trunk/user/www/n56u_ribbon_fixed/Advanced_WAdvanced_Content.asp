@@ -328,7 +328,7 @@ function done_validating(action){
                                                 </select>
                                             </td>
                                         </tr>
-										<tr>
+                                        <tr>
                                             <th><#WLANConfig11n_amsdu#></th>
                                             <td>
                                                 <select name="wl_HT_AMSDU" class="input">

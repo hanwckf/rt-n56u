@@ -556,6 +556,7 @@ static int startCall(char **pppaddrs, struct in_addr *inetaddrs)
 static void launch_pppd(char **pppaddrs, struct in_addr *inetaddrs)
 {
 	char *pppd_argv[25];
+	char pppInterfaceIPs[33];
 	int an = 0;
 	sigset_t sigs;
 	char tmp[128];
@@ -659,7 +660,6 @@ static void launch_pppd(char **pppaddrs, struct in_addr *inetaddrs)
 	}
 
 	if (*pppaddrs[0] || *pppaddrs[1]) {
-		char pppInterfaceIPs[33];
 		sprintf(pppInterfaceIPs, "%s:%s", pppaddrs[0], pppaddrs[1]);
 		pppd_argv[an++] = pppInterfaceIPs;
 	}

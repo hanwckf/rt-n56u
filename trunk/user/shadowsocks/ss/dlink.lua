@@ -18,6 +18,9 @@ local uciType = 'servers'
 local subscribe_url = {}
 local i = 1
 
+local tfilter_words = io.popen("echo -n `nvram get ss_keyword`")
+local filter_words = tfilter_words:read("*all")
+
 for line in io.lines("/tmp/dlist.txt") do
 print(line)
 subscribe_url[i] = line
@@ -98,131 +101,6 @@ local function md5(content)
 	--print(stdout)
 	--return stdout
 end
--- 添加数据到数据库
-local function saved(result)
-	if ssrindex == "" then
-	ssrindex = 0
-	end
-	ssrindex = tonumber(ssrindex)
---[[
-	for i=0,ssrindex do
-	io.popen("dbus remove ssconf_basic_name_" .. i)
-	i = i+1
-	end
---]]
-	ssrindex = ssrindex + 1
-	
-	local jresult = cjson.encode(result)
-	print(jresult)
-	io.popen("dbus set ssconf_basic_json_" .. ssrindex .. "='" .. jresult .. "'")
---[[
-	if result.type == 'ssr' then
-	io.popen("dbus set ssconf_basic_name_" .. ssrindex .. "='" .. result.alias .. "'")
-	io.popen("dbus set ssconf_basic_server_" .. ssrindex .. "=" .. result.server)
-	io.popen("dbus set ssconf_basic_port_" .. ssrindex .. "=" .. result.server_port)
-	io.popen("dbus set ssconf_basic_rss_protocol_" .. ssrindex .. "=" .. result.protocol)
-	io.popen("dbus set ssconf_basic_rss_protocol_param_" .. ssrindex .. "=" .. result.protocol_param)
-	io.popen("dbus set ssconf_basic_method_" .. ssrindex .. "=" .. result.encrypt_method)
-	io.popen("dbus set ssconf_basic_rss_obfs_" .. ssrindex .. "=" .. result.obfs)
-	io.popen("dbus set ssconf_basic_type_" .. ssrindex .. "=" .. result.type)
-	io.popen("dbus set ssconf_basic_rss_obfs_param_" .. ssrindex .. "=" .. result.obfs_param)
-	io.popen("dbus set ssconf_basic_password_" .. ssrindex .. "=" .. result.password)
-	elseif result.type == 'v2ray' then
-	io.popen("dbus set ssconf_basic_type_" .. ssrindex .. "=" .. result.type)
-	--io.popen("dbus set ssconf_basic_v2ray_mux_enable_" .. ssrindex .. "=" .. result.mux)
-	if result.security == nil then
-	result.security = "auto"
-	end
-	io.popen("dbus set ssconf_basic_v2ray_security_" .. ssrindex .. "=" .. result.security)
-	io.popen("dbus set ssconf_basic_name_" .. ssrindex .. "='" .. result.alias .. "'")
-	io.popen("dbus set ssconf_basic_port_" .. ssrindex .. "=" .. result.server_port)
-	io.popen("dbus set ssconf_basic_server_" .. ssrindex .. "=" .. result.server)
-	io.popen("dbus set ssconf_basic_v2ray_uuid_" .. ssrindex .. "=" .. result.vmess_id)
-	io.popen("dbus set ssconf_basic_v2ray_alterid_" .. ssrindex .. "=" .. result.alter_id)
-	io.popen("dbus set ssconf_basic_v2ray_network_" .. ssrindex .. "=" .. result.network)
-	io.popen("dbus set ssconf_basic_v2ray_tls_" .. ssrindex .. "=" .. result.tls)
-	if result.tls_host ~= nil then
-	io.popen("dbus set ssconf_basic_v2ray_tls_host_" .. ssrindex .. "=" .. result.tls_host)
-	end
-	
-	if result.network == 'ws' then
-	if result.ws_host ~= nil then
-			io.popen("dbus set ssconf_basic_v2ray_network_host_" .. ssrindex .. "=" .. result.ws_host)
-			end
-			if result.ws_path ~= nil then
-			io.popen("dbus set ssconf_basic_v2ray_network_path_" .. ssrindex .. "=" .. result.ws_path)
-			end
-		end
-		if result.network == 'h2' then
-		if result.h2_host ~= nil then
-			io.popen("dbus set ssconf_basic_v2ray_network_host_" .. ssrindex .. "=" .. result.h2_host)
-			end
-			if result.h2_path ~= nil then
-			io.popen("dbus set ssconf_basic_v2ray_network_path_" .. ssrindex .. "=" .. result.h2_path)
-			end
-		end
-		if result.network == 'tcp' then
-			io.popen("dbus set ssconf_basic_v2ray_headtype_tcp_" .. ssrindex .. "=" .. result.tcp_guise)
-			if result.http_host ~= nil then
-			io.popen("dbus set ssconf_basic_v2ray_network_host_" .. ssrindex .. "=" .. result.http_host)
-			end
-			if result.http_path ~= nil then
-			io.popen("dbus set ssconf_basic_v2ray_network_path_" .. ssrindex .. "=" .. result.http_path)
-			end
-		end
-		if result.network == 'kcp' then
-			io.popen("dbus set ssconf_basic_v2ray_headtype_tcp_" .. ssrindex .. "=" .. result.kcp_guise)
-			result.mtu = 1350
-			result.tti = 50
-			result.uplink_capacity = 5
-			result.downlink_capacity = 20
-			result.read_buffer_size = 2
-			result.write_buffer_size = 2
-		end
-		if result.network == 'quic' then
-			io.popen("dbus set ssconf_basic_v2ray_headtype_tcp_" .. ssrindex .. "=" .. result.quic_guise)
-			--result.quic_key = info.key
-			--result.quic_security = info.securty
-		end
-	
-	
-	elseif result.type == "ss" then
-	io.popen("dbus set ssconf_basic_name_" .. ssrindex .. "='" .. result.alias .. "'")
-	io.popen("dbus set ssconf_basic_server_" .. ssrindex .. "=" .. result.server)
-	io.popen("dbus set ssconf_basic_port_" .. ssrindex .. "=" .. result.server_port)
-	io.popen("dbus set ssconf_basic_method_" .. ssrindex .. "=" .. result.encrypt_method_ss)
-	io.popen("dbus set ssconf_basic_password_" .. ssrindex .. "=" .. result.password)
-	io.popen("dbus set ssconf_basic_type_" .. ssrindex .. "=" .. result.type)
-	io.popen("dbus set ssconf_basic_plugin_" .. ssrindex .. "=" .. result.plugin)
-	io.popen("dbus set ssconf_basic_plugin_opts_" .. ssrindex .. "=" .. result.plugin_opts)
-	
-	
-	elseif result.type == "ssd" then
-	io.popen("dbus set ssconf_basic_name_" .. ssrindex .. "='" .. result.alias .. "'")
-	io.popen("dbus set ssconf_basic_server_" .. ssrindex .. "=" .. result.server)
-	io.popen("dbus set ssconf_basic_port_" .. ssrindex .. "=" .. result.server_port)
-	io.popen("dbus set ssconf_basic_method_" .. ssrindex .. "=" .. result.encrypt_method_ss)
-	io.popen("dbus set ssconf_basic_password_" .. ssrindex .. "=" .. result.password)
-	io.popen("dbus set ssconf_basic_type_" .. ssrindex .. "=" .. result.type)
-	io.popen("dbus set ssconf_basic_plugin_" .. ssrindex .. "=" .. result.plugin)
-	io.popen("dbus set ssconf_basic_plugin_opts_" .. ssrindex .. "=" .. result.plugin_opts)
-	
-	
-	elseif result.type == "trojan" then
-	io.popen("dbus set ssconf_basic_trojan_name_" .. ssrindex .. "='" .. result.alias .. "'")
-	io.popen("dbus set ssconf_basic_trojan_server_" .. ssrindex .. "=" .. result.server)
-	io.popen("dbus set ssconf_basic_trojan_port_" .. ssrindex .. "=" .. result.server_port)
-	io.popen("dbus set ssconf_basic_trojan_insecure_" .. ssrindex .. "=" .. result.insecure)
-	io.popen("dbus set ssconf_basic_trojan_password_" .. ssrindex .. "=" .. result.password)
-	io.popen("dbus set ssconf_basic_trojan_type_" .. ssrindex .. "=" .. result.type)
-	io.popen("dbus set ssconf_basic_trojan_tls_" .. ssrindex .. "=" .. result.tls)
-	io.popen("dbus set ssconf_basic_trojan_tls_host_" .. ssrindex .. "=" .. result.tls_host)
-	
-	
-	end
-	io.popen("dbus set ssconf_basic_group_" .. ssrindex .. "=online")
---]]
-end
 -- 处理数据
 local function processData(szType, content)
 
@@ -262,7 +140,6 @@ local function processData(szType, content)
 		result.alter_id = info.aid
 		result.vmess_id = info.id
 		result.alias = info.ps
-		result.insecure = 1
 		result.network = info.net
 		-- result.mux = 1
 		-- result.concurrency = 8
@@ -275,6 +152,9 @@ local function processData(szType, content)
 			result.h2_path = info.path
 		end
 		if info.net == 'tcp' then
+			if info.type and info.type ~= "http" then
+				info.type = "none"
+			end
 			result.tcp_guise = info.type
 			result.http_host = info.host
 			result.http_path = info.path
@@ -299,6 +179,7 @@ local function processData(szType, content)
 		if info.tls == "tls" or info.tls == "1" then
 			result.tls = "1"
 			result.tls_host = info.host
+			result.insecure = 1
 		else
 			result.tls = "0"
 		end
@@ -414,6 +295,19 @@ local function wget(url)
     return trim(sresult)
 end
 
+local function check_filer(result)
+	do
+		local filter_word = split(filter_words, "/")
+		print(cjson.encode(filter_word))
+		for i, v in pairs(filter_word) do
+			if result.alias:find(v) then
+				log('订阅节点关键字过滤:“' .. v ..'” ，该节点被丢弃')
+				return true
+			end
+		end
+	end
+end
+
 --local execute = function()
 	-- exec
 	local add, del = 0, 0
@@ -427,9 +321,7 @@ end
 				cache[groupHash] = {}
 				tinsert(nodeResult, {})
 				local index = #nodeResult
-                -- SSD 似乎是这种格式 ssd:// 开头的
-				local tee = raw:find('vmess://')
-				print(tee)
+				-- SSD 似乎是这种格式 ssd:// 开头的
 				if raw:find('ssd://') then
 					szType = 'ssd'
 					local nEnd = select(2, raw:find('ssd://'))
@@ -449,7 +341,7 @@ end
 					nodes = servers
 				else
 					-- ssd 外的格式
-					nodes = split(base64Decode(raw):gsub(" ", "\n"), "\n")
+					nodes = split(base64Decode(raw):gsub(" ", "_"), "\n")
 				end
 				for _, v in ipairs(nodes) do
 					if v then
@@ -460,8 +352,12 @@ end
 							local node = trim(v)
 							local dat = split(node, "://")
 							if dat and dat[1] and dat[2] then
+								local dat3 = ""
+								if dat[3] then
+									dat3 = "://" .. dat[3]
+								end
 								if dat[1] == 'ss' or dat[1] == 'trojan' then
-									result = processData(dat[1], dat[2])
+									result = processData(dat[1], dat[2] .. dat3)
 								else
 									result = processData(dat[1], base64Decode(dat[2]))
 								end
@@ -470,14 +366,10 @@ end
 							log('跳过未知类型: ' .. szType)
 						end
 						if result then
-							if result.alias:find("过期时间") or
-								result.alias:find("剩余流量") or
-								result.alias:find("QQ群") or
-								result.alias:find("官网") or
-								result.alias:find("公告") or
-								result.alias:find("收藏") or
-								result.alias:find("防失联地址") or
+							if
 								not result.server or
+								not result.server_port or
+								check_filer(result) or
 								result.server:match("[^0-9a-zA-Z%-%.%s]") -- 中文做地址的 也没有人拿中文域名搞，就算中文域也有Puny Code SB 机场
 							then
 								log('丢弃无效节点: ' .. result.type ..' 节点, ' .. result.alias)
@@ -539,10 +431,7 @@ end
 
 		for k, v in ipairs(nodeResult) do
 			for kk, vv in ipairs(v) do
-				if not vv._ignore then
-					--local section = ucic:add(name, uciType)
-					--ucic:tset(name, section, vv)
-					--ucic:set(name, section, "switch_enable", switch)					
+				if not vv._ignore then				
 					io.popen("dbus set ssconf_basic_json_" .. ssrindex .. "='" .. cjson.encode(vv) .. "'")
 					ssrindex = ssrindex + 1
 					add = add + 1
@@ -553,44 +442,3 @@ end
 		log('新增节点数量: ' .. add, '删除节点数量: ' .. del)
 		log('订阅更新成功')
 		end
-		--[[
-		ucic:commit(name)
-		-- 如果原有服务器节点已经不见了就尝试换为第一个节点
-		local globalServer = ucic:get_first(name, 'global', 'global_server', '')
-		local firstServer = ucic:get_first(name, uciType)
-		if firstServer then
-			if not ucic:get(name, globalServer) then
-				luci.sys.call("/etc/init.d/" .. name .. " stop > /dev/null 2>&1 &")
-				ucic:commit(name)
-				ucic:set(name, ucic:get_first(name, 'global'), 'global_server', ucic:get_first(name, uciType))
-				ucic:commit(name)
-				log('当前主服务器节点已被删除，正在自动更换为第一个节点。')
-				luci.sys.call("/etc/init.d/" .. name .. " start > /dev/null 2>&1 &")
-			else
-				log('维持当前主服务器节点。')
-				luci.sys.call("/etc/init.d/" .. name .." restart > /dev/null 2>&1 &")
-			end
-		else
-			log('没有服务器节点了，停止服务')
-			luci.sys.call("/etc/init.d/" .. name .. " stop > /dev/null 2>&1 &")
-		end
-		log('新增节点数量: ' ..add, '删除节点数量: ' .. del)
-		log('订阅更新成功')
-end
-
-if subscribe_url and #subscribe_url > 0 then
-	xpcall(execute, function(e)
-		log(e)
-		log(debug.traceback())
-		log('发生错误, 正在恢复服务')
-		local firstServer = ucic:get_first(name, uciType)
-		if firstServer then
-			luci.sys.call("/etc/init.d/" .. name .." restart > /dev/null 2>&1 &") -- 不加&的话日志会出现的更早
-			log('重启服务成功')
-		else
-			luci.sys.call("/etc/init.d/" .. name .." stop > /dev/null 2>&1 &") -- 不加&的话日志会出现的更早
-			log('停止服务成功')
-		end
-	end)
-end
---]]

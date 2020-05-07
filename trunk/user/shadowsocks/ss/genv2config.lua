@@ -47,22 +47,16 @@ log = {
 			network = server.transport,
 			security = (server.tls == '1') and "tls" or "none",
 			tlsSettings = {allowInsecure = (server.insecure ~= "0") and true or false,serverName=server.tls_host,},
-			tcpSettings = (server.transport == "tcp") and {
-          connectionReuse = true,
-          header = {
-            type = server.tcp_guise,
-            request = {
-              path = {
-                server.http_path
-              },
-              headers = {
-                Host = {
-                  server.http_host
-                },
-              }
-            },
-            response = null
-          }
+		tcpSettings = (server.transport == "tcp") and {
+			header = {
+				type = server.tcp_guise,
+				request = {
+					path = server.http_path or {"/"},
+					headers = {
+						Host = server.http_host or {}
+					}
+				} or {}
+			}
         } or nil,
 			kcpSettings = (server.transport == "kcp") and {
 				mtu = tonumber(server.mtu),

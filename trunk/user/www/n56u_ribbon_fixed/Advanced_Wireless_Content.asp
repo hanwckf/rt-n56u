@@ -543,15 +543,14 @@ function validate_wlphrase(s, v, obj){
                                             </td>
                                         </tr>
                                         <tr>
-                                        	<tr>
-                                            <th>剔除已连接的弱信号设备:</th>
+                                            <th><a class="help_tooltip" href="javascript:void(0);" onmouseover="openTooltip(this, 0, 25);"><#WLANConfig11b_KickStaRssiLow_itemname#></a></th>
                                             <td>
                                                 <input type="text" maxlength="4" size="4" name="wl_KickStaRssiLow" class="input" value="<% nvram_get_x("", "wl_KickStaRssiLow"); %>" />
                                                 &nbsp;<span style="color:#888;">[-100..0]</span>
                                             </td>
                                         </tr>
                                         <tr>
-                                            <th>限制弱信号设备接入:</th>
+                                            <th><a class="help_tooltip" href="javascript:void(0);" onmouseover="openTooltip(this, 0, 26);"><#WLANConfig11b_AssocReqRssiThres_itemname#></a></th>
                                             <td>
                                                 <input type="text" maxlength="4" size="4" name="wl_AssocReqRssiThres" class="input" value="<% nvram_get_x("", "wl_AssocReqRssiThres"); %>" />
                                                 &nbsp;<span style="color:#888;">[-100..0]</span>

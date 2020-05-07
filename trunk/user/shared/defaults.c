@@ -220,8 +220,12 @@ struct nvram_pair router_defaults[] = {
 	{ "wl_greenap", "0" },
 	{ "wl_ldpc", "2" },
 	{ "wl_HT_RDG", "0" },
-	#if defined (USE_WID_5G) && USE_WID_5G==7615
+#if defined (USE_WID_5G) && USE_WID_5G==7615
+#if defined (BOARD_MT7615_DBDC)
+	{ "wl_HT_AMSDU", "0" },
+#else
 	{ "wl_HT_AMSDU", "1" },
+#endif
 #else
 	{ "wl_HT_AMSDU", "0" },
 #endif
@@ -711,6 +715,7 @@ struct nvram_pair router_defaults[] = {
 	{ "d_keyword_n", "" },
 	{ "d_keyword_y", "" },
 	{ "d_update_link", "" },
+	{ "ss_keyword", "过期时间/剩余流量" },
 
 	
 	/* AdguargHome */

@@ -1,0 +1,14 @@
+--- a/source3/modules/vfs_default.c	2015-02-22 22:11:32.000000000 +0800
++++ b/source3/modules/vfs_default.c	2020-05-01 00:31:41.659641000 +0800
+@@ -939,8 +939,11 @@ static int vfswrap_ftruncate(vfs_handle_
+ 	   expansion and some that don't! On Linux fat can't do
+ 	   ftruncate extend but ext2 can. */
+ 
++	/*
+ 	result = sys_ftruncate(fsp->fh->fd, len);
+ 	if (result == 0)
++	*/
++		result = 0;
+ 		goto done;
+ 
+ 	/* According to W. R. Stevens advanced UNIX prog. Pure 4.3 BSD cannot

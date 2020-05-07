@@ -338,6 +338,15 @@ function done_validating(action){
                                                 </select>
                                             </td>
                                         </tr>
+                                        <tr>
+                                            <th><#WLANConfig11n_amsdu#></th>
+                                            <td>
+                                                <select name="rt_HT_AMSDU" class="input">
+                                                    <option value="0" <% nvram_match_x("", "rt_HT_AMSDU", "0", "selected"); %>><#btn_Disable#> (*)</option>
+                                                    <option value="1" <% nvram_match_x("", "rt_HT_AMSDU", "1", "selected"); %>><#btn_Enable#></option>
+                                                </select>
+                                            </td>
+                                        </tr>
                                         <tr id="row_greenfield">
                                             <th><a class="help_tooltip" href="javascript:void(0);" onmouseover="openTooltip(this, 3, 19);"><#WLANConfig11b_x_HT_OpMode_itemname#></a></th>
                                             <td>

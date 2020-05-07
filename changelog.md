@@ -1,13 +1,14 @@
-##2020.04.19##
-* 修复自动编译wget下载问题
-* 修复adbyby自动更新不能关闭问题
-* 调整了音乐解锁go文件的大小
-* 还有一些小问题的修复，具体看源码的commit
-##2020.04.17##
-* 增加网易云解锁2合1（修改自雕大的源码），包含go版本和云解锁
-* 修改SSP的gfw模式
-* 修复SSP的v2 tcp模式
-* 同步最新源码
+##2020.05.07##
+* 增加zerotier 1.4.6内网穿透
+* openssl更新1.1.1g
+* 取消32M FLASH的重启选项,默认使用MTD UNLOCK方式重启
+* trojan升级到1.15.1,集成到源码动态编译
+* MT7615增加5.0.4.0驱动
+* SSP增加关键字过滤,修复V2 HTTP
+* SSP界面增加节点编辑,复制功能
+* smartdns升级到最新源码
+* 同步hanwckf的最新源码
+* 自动编译增加红米2100和小米2100固件
 
 ##往期更新日志##
 *https://github.com/chongshengB/rt-n56u/blob/master/changelog-old.md

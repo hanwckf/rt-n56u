@@ -1,10 +1,13 @@
-SRC_NAME = smartdns
+SRC_NAME = smartdns-Release31
 THISDIR = $(shell pwd)
 
-all: config_test
-ifeq ($(CONFIG_FIRMWARE_INCLUDE_SMARTDNSBIN),y)
-	$(MAKE) -C $(SRC_NAME) CC=$(CONFIG_CROSS_COMPILER_ROOT)/bin/mipsel-linux-uclibc-gcc
-endif
+all: extract_test config_test
+	$(MAKE) -C $(SRC_NAME)
+
+extract_test:
+	( if [ ! -d $(SRC_NAME) ]; then \
+		tar zxf $(SRC_NAME).tar.gz ; \
+	fi )
 
 config_test:
 	( if [ -f ./config_done ]; then \
@@ -20,9 +23,7 @@ clean:
 	rm -f config_done
 
 romfs:
-ifeq ($(CONFIG_FIRMWARE_INCLUDE_SMARTDNSBIN),y)
-	$(ROMFSINST) -p +x $(THISDIR)/$(SRC_NAME)/smartdns /usr/bin/smartdns
-endif
+	$(ROMFSINST) -p +x $(THISDIR)/$(SRC_NAME)/src/smartdns /usr/bin/smartdns
 	$(ROMFSINST) -p +x $(THISDIR)/smartdns.sh /usr/bin/smartdns.sh
 	$(ROMFSINST) /etc_ro/smartdns_address.conf
 	$(ROMFSINST) /etc_ro/smartdns_blacklist-ip.conf

@@ -280,25 +280,8 @@ clear_iptable()
 	
 }
 
-dl_smartdns(){
-smartdns_file="/tmp/smartdns"
-curl -k -s -o $smartdns_file --connect-timeout 10 --retry 3 https://dev.tencent.com/u/dtid_39de1afb676d0d78/p/kp/git/raw/master/smartdns
-if [ ! -f "$smartdns_file" ]; then
-logger -t "SmartDNS" "SmartDNS二进制文件下载失败，可能是地址失效或者网络异常！"
-nvram set sdns_enable=0
-stop_smartdns
-exit 0
-else
-logger -t "SmartDNS" "SmartDNS二进制文件下载成功"
-chmod -R 777 $smartdns_file
-fi
-}
 start_smartdns(){
 rm -f /tmp/sdnsipset.conf
-
-if [ ! -f "$smartdns_file" ];then
-dl_smartdns
-fi
 args=""
 logger -t "SmartDNS" "创建配置文件."
 ipset -N smartdns hash:net 2>/dev/null

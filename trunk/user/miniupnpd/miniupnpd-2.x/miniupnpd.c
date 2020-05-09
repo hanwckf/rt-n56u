@@ -1931,6 +1931,7 @@ main(int argc, char * * argv)
 #endif /* ENABLE_HTTPS */
 #ifdef ENABLE_IPV6
 		if(!GETFLAG(IPV6DISABLEDMASK)) {
+			sleep(40);
 			if(find_ipv6_addr(lan_addrs.lh_first ? lan_addrs.lh_first->ifname : NULL,
 			                  ipv6_addr_for_http_with_brackets, sizeof(ipv6_addr_for_http_with_brackets)) > 0) {
 				syslog(LOG_NOTICE, "HTTP IPv6 address given to control points : %s",

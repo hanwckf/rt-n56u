@@ -1,10 +1,23 @@
-SRC_NAME=util-linux-2.33.1
-SRC_URL=https://www.kernel.org/pub/linux/utils/util-linux/v2.33/util-linux-2.33.1.tar.xz
+SRC_NAME=util-linux-2.35.1
+#SRC_URL=https://www.kernel.org/pub/linux/utils/util-linux/v2.33/util-linux-2.33.1.tar.xz
+SRC_URL=https://www.kernel.org/pub/linux/utils/util-linux/v2.35/util-linux-2.35.1.tar.xz
 
 THISDIR = $(shell pwd)
 
 CFLAGS += -ffunction-sections -fdata-sections
 LDFLAGS += -Wl,--gc-sections
+
+BLKID_ENABLED=n
+
+ifdef CONFIG_MMC_BLOCK
+BLKID_ENABLED=y
+endif
+ifdef CONFIG_BLK_DEV_SD
+BLKID_ENABLED=y
+endif
+ifdef CONFIG_MTD_UBI
+BLKID_ENABLED=y
+endif
 
 all: download_test extract_test config_test
 	$(MAKE) -j$(HOST_NCPU) -C $(SRC_NAME) && \
@@ -18,7 +31,7 @@ download_test:
 extract_test:
 	( if [ ! -d $(SRC_NAME) ]; then \
 		tar xJf $(SRC_NAME).tar.xz; \
-		patch -d $(SRC_NAME) -p1 -i ../libblkid.patch; \
+		#patch -d $(SRC_NAME) -p1 -i ../libblkid.patch; \
 	fi )
 
 config_test:
@@ -116,6 +129,8 @@ clean:
 	rm -f config_done
 
 romfs:
+	$(ROMFSINST) $(STAGEDIR)/bin/hexdump /usr/bin/hexdump
+ifeq ($(BLKID_ENABLED),y)
 	$(ROMFSINST) $(STAGEDIR)/sbin/blkid /sbin/blkid
 	$(ROMFSINST) $(STAGEDIR)/lib/libblkid.so.1.1.0 /lib/libblkid.so.1.1.0
 	$(ROMFSINST) $(STAGEDIR)/lib/libuuid.so.1.3.0 /lib/libuuid.so.1.3.0
@@ -123,3 +138,4 @@ romfs:
 	$(ROMFSINST) -s libblkid.so.1.1.0 /lib/libblkid.so.1
 	$(ROMFSINST) -s libuuid.so.1.3.0 /lib/libuuid.so
 	$(ROMFSINST) -s libuuid.so.1.3.0 /lib/libuuid.so.1
+endif

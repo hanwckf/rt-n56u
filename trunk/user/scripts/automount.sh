@@ -1,5 +1,5 @@
 #!/bin/sh
-logger -t "automount" "/sbin/automount.sh $1    $2"
+
 func_load_module()
 {
 	module_name=$1
@@ -63,8 +63,6 @@ if mountpoint -q "$dev_mount" ; then
 	fi
 fi
 
-logger -t "automount" "mount  device $dev_full ($ID_FS_TYPE) to $dev_mount @@@@@ $mnt_legacy"
-
 if ! mkdir -p "$dev_mount" ; then
 	logger -t "automount" "Unable to create mountpoint $dev_mount!"
 	exit 1
@@ -72,14 +70,17 @@ fi
 
 achk_enable=`nvram get achk_enable`
 
+#logger "FS_TYPE:$ID_FS_TYPE dev_full:$dev_full dev_mount:$dev_mount"
+
 if [ "$ID_FS_TYPE" == "msdos" -o "$ID_FS_TYPE" == "vfat" ] ; then
-	if [ "$achk_enable" != "0" ] && [ -x /sbin/fsck.fat ] ; then
-		/sbin/fsck.fat -a -v "$dev_full" > "/tmp/fsck.fat_result_$1" 2>&1
+	if [ "$achk_enable" != "0" ] && [ -x /sbin/dosfsck ] ; then
+		/sbin/dosfsck -a -v "$dev_full" > "/tmp/dosfsck_result_$1" 2>&1
 	fi
 	kernel_vfat=`modprobe -l | grep vfat`
 	if [ -n "$kernel_vfat" ] ; then
 		func_load_module vfat
-		mount -t vfat "$dev_full" "$dev_mount" -o noatime,umask=0,iocharset=utf8,codepage=936,shortname=winnt
+		#mount -t vfat "$dev_full" "$dev_mount" -o noatime,umask=0,iocharset=utf8,codepage=866,shortname=winnt
+		mount -t vfat "$dev_full" "$dev_mount" -o noatime,umask=0,iocharset=utf8,shortname=winnt
 	else
 		func_load_module exfat
 		mount -t exfat "$dev_full" "$dev_mount" -o noatime,umask=0,iocharset=utf8
@@ -138,6 +139,12 @@ elif [ "$ID_FS_TYPE" == "ext4" -o "$ID_FS_TYPE" == "ext3" -o "$ID_FS_TYPE" == "e
 	mount -t $ID_FS_TYPE -o noatime "$dev_full" "$dev_mount"
 elif [ "$ID_FS_TYPE" == "xfs" ] ; then
 	func_load_module xfs
+	mount -t $ID_FS_TYPE -o noatime "$dev_full" "$dev_mount"
+elif [ "$ID_FS_TYPE" == "reiserfs" ] ; then
+	func_load_module reiserfs
+	mount -t $ID_FS_TYPE -o noatime "$dev_full" "$dev_mount"
+elif [ "$ID_FS_TYPE" != "" ] ; then
+	func_load_module $ID_FS_TYPE
 	mount -t $ID_FS_TYPE -o noatime "$dev_full" "$dev_mount"
 fi
 

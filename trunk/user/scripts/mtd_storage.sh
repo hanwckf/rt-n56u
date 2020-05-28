@@ -217,7 +217,7 @@ func_fill()
 	user_sswan_conf="$dir_sswan/strongswan.conf"
 	user_sswan_ipsec_conf="$dir_sswan/ipsec.conf"
 	user_sswan_secrets="$dir_sswan/ipsec.secrets"
-	
+
 	chnroute_file="/etc_ro/chnroute.bz2"
 	gfwlist_conf_file="/etc_ro/gfwlist.bz2"
 
@@ -236,7 +236,7 @@ func_fill()
 
 	# create gfwlist
 	if [ ! -d "$dir_gfwlist" ] ; then
-		if [ -f "$gfwlist_conf_file" ]; then	
+		if [ -f "$gfwlist_conf_file" ]; then
 			mkdir -p "$dir_gfwlist" && tar jxf "$gfwlist_conf_file" -C "$dir_gfwlist"
 		fi
 	fi
@@ -496,8 +496,7 @@ EOF
 
 EOF
 	fi
-		chmod 644 "$user_dnsmasq_conf"
-	fi
+	chmod 644 "$user_dnsmasq_conf"
 
 	# create user dns servers
 	if [ ! -f "$user_dnsmasq_serv" ] ; then

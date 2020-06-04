@@ -22,7 +22,7 @@ sed -i 's/CONFIG_FIRMWARE_INCLUDE_SHADOWSOCKS=y/CONFIG_FIRMWARE_INCLUDE_SHADOWSO
 echo "CONFIG_FIRMWARE_INCLUDE_SHADOWSOCKS=n" >> .config #科学上网插件，选择n后全部有关插件都不集成
 echo "CONFIG_FIRMWARE_INCLUDE_V2RAY=n" >> .config #集成v2ray执行文件，如果不集成，会从网上下载下来执行，不影响正常使用
 echo "CONFIG_FIRMWARE_INCLUDE_TROJAN=n" >> .config #集成trojan执行文件，如果不集成，会从网上下载下来执行，不影响正常使用
-echo "CONFIG_FIRMWARE_INCLUDE_KUMASOCKS=n" >> .config #socks5服务端
+echo "CONFIG_FIRMWARE_INCLUDE_SSOBFS=n" >> .config #simple-obfs混淆插件
 ##科学上网##
 
 ##广告管理##
@@ -33,6 +33,7 @@ echo "CONFIG_FIRMWARE_INCLUDE_KOOLPROXY=n" >> .config #KP广告过滤
 ##DNS服务##
 echo "CONFIG_FIRMWARE_INCLUDE_SMARTDNS=n" >> .config #smartdns
 echo "CONFIG_FIRMWARE_INCLUDE_ADGUARDHOME=n" >> .config #adg DNS去AD
+
 ##DNS服务##
 
 ##文件管理##
@@ -248,6 +249,9 @@ if [ -n "$CONFIG_MT76X2_AP" ] ; then
 fi
 if [ -n "$CONFIG_MT76X3_AP" ] ; then
 	dir_wifi_ver="4.1.X.X"
+	if [ "$CONFIG_FIRMWARE_WIFI2_DRIVER" = "4.1.0.0" ]; then
+		dir_wifi_ver="4.1.0.0"
+	fi
 	cp -rfL "$dir_wifi_src/rtpci/$dir_wifi_ver/mt76x3" "$dir_wifi_dst/"
 	cp -rfL "$dir_wifi_src/rtpci/$dir_wifi_ver/mt76x3_ap" "$dir_wifi_dst/"
 fi

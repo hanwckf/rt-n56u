@@ -2037,6 +2037,8 @@ applydb_cgi(webs_t wp, char *urlPrefix, char *webDir, int arg,
 	char userm[] = "deleting";
 	char useping[] = "ping";
 	char useaping[] = "allping";
+	char usedlink[] = "dlink";
+	char useddlink[] = "ddlink";
 	
 	dbclient client;
 	dbclient_start(&client);
@@ -2072,9 +2074,13 @@ applydb_cgi(webs_t wp, char *urlPrefix, char *webDir, int arg,
 			if(strcmp(dbval,userm) == 0)
 				doSystem("dbus remove %s", dbvar);
 			else if(strcmp(dbval,useping) == 0)
-				doSystem("/etc_ro/ss/ping.sh %s >/dev/null 2>&1 &", dbvar);
+				doSystem("/etc_ro/ss/ping.sh %s", dbvar);
 			else if(strcmp(dbval,useaping) == 0)
-				doSystem("/etc_ro/ss/allping.sh >/dev/null 2>&1 &");
+				doSystem("/etc_ro/ss/allping.sh");
+			else if(strcmp(dbval,usedlink) == 0)
+				doSystem("/usr/bin/update_dlink.sh %s", "start");
+			else if(strcmp(dbval,useddlink) == 0)
+				doSystem("/usr/bin/update_dlink.sh %s", "reset");
 			else
 				doSystem("dbus set %s='%s'", dbvar, dbval);
 		}
@@ -2108,9 +2114,13 @@ applydb_cgi(webs_t wp, char *urlPrefix, char *webDir, int arg,
 			if(strcmp(dbval,userm) == 0)
 				doSystem("dbus remove %s", dbvar);
 			else if(strcmp(dbval,useping) == 0)
-				doSystem("/etc_ro/ss/ping.sh %s >/dev/null 2>&1 &", dbvar);
+				doSystem("/etc_ro/ss/ping.sh %s", dbvar);
 			else if(strcmp(dbval,useaping) == 0)
-				doSystem("/etc_ro/ss/allping.sh >/dev/null 2>&1 &");
+				doSystem("/etc_ro/ss/allping.sh");
+			else if(strcmp(dbval,usedlink) == 0)
+				doSystem("/usr/bin/update_dlink.sh %s", "start");
+			else if(strcmp(dbval,useddlink) == 0)
+				doSystem("/usr/bin/update_dlink.sh %s", "reset");
 			else
 				doSystem("dbus set %s='%s'", dbvar, dbval);
 		}
@@ -4499,7 +4509,7 @@ struct ej_handler ej_handlers[] =
 	{ "hardware_pins", ej_hardware_pins_hook},
 	{ "detect_internet", ej_detect_internet_hook},
 	{ "dump_syslog", ej_dump_syslog_hook},
-	{ "dump_eth_mib", ej_dump_eth_mib_hook},
+	//{ "dump_eth_mib", ej_dump_eth_mib_hook},
 	{ "get_usb_ports_info", ej_get_usb_ports_info},
 	{ "get_ext_ports_info", ej_get_ext_ports_info},
 	{ "disk_pool_mapping_info", ej_disk_pool_mapping_info},

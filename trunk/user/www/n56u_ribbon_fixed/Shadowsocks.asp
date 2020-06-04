@@ -42,7 +42,6 @@
 			init_itoggle('ss_update_chnroute');
 			init_itoggle('ss_update_gfwlist');
 			init_itoggle('ss_turn');
-			init_itoggle('socks5_enable');
 			init_itoggle('socks5_aenable');
 			init_itoggle('ss_schedule_enable', change_on);
 			$j("#tab_ss_cfg, #tab_ss_add, #tab_ss_dlink, #tab_ss_ssl, #tab_ss_cli, #tab_ss_log, #tab_ss_help").click(
@@ -69,7 +68,53 @@
 			$j("#btn_aping_link").click(function () {
 				aping_dlink();
 			});
+			$j("#s5_aut").change(function() { 
+			if($j("#s5_aut").is(':checked')){
+			document.getElementById('s5_aut').value=1;
+			}else{
+			document.getElementById('s5_aut').value=0;
+			}
+			}); 
+			$j("#v2_tls").change(function() { 
+			if($j("#v2_tls").is(':checked')){
+			document.getElementById('v2_tls').value=1;
+			showhide_div('row_tj_tls_host', 1);
+			}else{
+			document.getElementById('v2_tls').value=0;
+			showhide_div('row_tj_tls_host', 0);
+			}
+			});
+			$j("#v2_mux").change(function() { 
+			if($j("#v2_mux").is(':checked')){
+			document.getElementById('v2_mux').value=1;
+			}else{
+			document.getElementById('v2_mux').value=0;
+			}
+			});
+			$j("#ssp_insecure").change(function() { 
+			if($j("#ssp_insecure").is(':checked')){
+			document.getElementById('ssp_insecure').value=1;
+			}else{
+			document.getElementById('ssp_insecure').value=0;
+			}
+			});
 		});
+function ctime() {
+var t=0;
+c=null;
+document.getElementById('btn_ctime').value='正在运行脚本:0s';
+document.getElementById('btn_ctime').style.display="inline";
+		c=setInterval(function(){
+		t=t+1
+        //document.getElementById("ctime").value=t + "秒";
+		document.getElementById('btn_ctime').value='正在运行脚本:' + t +"s";
+    },1000);
+}
+function dtime() {
+clearInterval(c);
+document.getElementById('btn_ctime').value='脚本运行完成!';
+setTimeout('document.getElementById("btn_ctime").style.display="none";',1000);
+}
 		function initial() {
 			show_banner(2);
 			show_menu(13, 13, 0);
@@ -85,13 +130,13 @@
 			var o3 = document.form.ss_threads;
 			var o4 = document.form.china_dns;
 			var o5 = document.form.pdnsd_enable;
-			var o6 = document.form.socks5_enable;
+			//var o6 = document.form.socks5_enable;
 			var o7 = document.form.tunnel_forward;
 			o2.value = '<% nvram_get_x("","lan_con"); %>';
 			o3.value = '<% nvram_get_x("","ss_threads"); %>';
 			o4.value = '<% nvram_get_x("","china_dns"); %>';
 			o5.value = '<% nvram_get_x("","pdnsd_enable"); %>';
-			o6.value = '<% nvram_get_x("","socks5_enable"); %>';
+			//o6.value = '<% nvram_get_x("","socks5_enable"); %>';
 			o7.value = '<% nvram_get_x("","tunnel_forward"); %>';
 			switch_dns();
 			if (ss_schedule_support) {
@@ -173,6 +218,9 @@
 			showhide_div('row_v2_vid', 0);
 			showhide_div('row_v2_webs_host', 0);
 			showhide_div('row_v2_webs_path', 0);
+			showhide_div('row_s5_enable', 0);
+			showhide_div('row_s5_username', 0);
+			showhide_div('row_s5_password', 0);
 			
 			var b = document.form.ssp_type.value;
 			if (b == "ss") {
@@ -190,7 +238,7 @@
 			} else if (b == "trojan") {
 				showhide_div('row_ss_password', 1);
 				showhide_div('row_v2_tls', 1);
-				showhide_div('row_tj_tls_host', 1);
+				//showhide_div('row_tj_tls_host', 1);
 				showhide_div('row_ssp_insecure', 1);
 			} else if (b == "v2ray") {
 				switch_v2_type();
@@ -201,10 +249,12 @@
 				showhide_div('row_v2_type', 1);
 				showhide_div('row_v2_tls', 1);
 				showhide_div('row_v2_mux', 1);
-				showhide_div('row_tj_tls_host', 1);
+				//showhide_div('row_tj_tls_host', 1);
 				showhide_div('row_ssp_insecure', 1);
 			} else if (b == "socks5") {
-				//
+				showhide_div('row_s5_enable', 1);
+				showhide_div('row_s5_username', 1);
+				showhide_div('row_s5_password', 1);
 			}
 		}
 		function switch_v2_type() {
@@ -317,7 +367,7 @@
 			$("ss_status").innerHTML = '<span class="label label-' + (status_code != 0 ? 'success' : 'warning') + '">' +
 				stext + '</span>';
 		}
-		var arrHashes = ["cfg", "add", "dlink", "ssl", "cli", "log", "help"];
+		var arrHashes = ["cfg", "add", "ssl", "cli", "log", "help"];
 		function showTab(curHash) {
 			var obj = $('tab_ss_' + curHash.slice(1));
 			if (obj == null || obj.style.display == 'none')
@@ -354,16 +404,73 @@
 			document.form.current_page.value = "Shadowsocks.asp#add";
 			return true;
 		}
-		function showMRULESList() {
+		//订阅节点
+		function dlink() {
+		ctime();
+			var ns = {};
+			ns[1] = "dlink";
+			document.getElementById("btn_update_link").value="正在更新订阅节点";
 			$j.ajax({
-				url: '/dbconf?p=ss&v=<% uptime(); %>',
-				type: 'get',
-				success: function (res) {
-					//显示节点下拉列表 by 花妆男
+				url: "/applydb.cgi?usedlink=1&p=ss",
+				type: 'POST',
+				contentType: "application/x-www-form-urlencoded",
+				dataType: 'text',
+				data: $j.param(ns),
+				error: function (xhr) {
+					alert("脚本执行失败！！！")
+				},
+				success: function (response) {
+					setTimeout("dtime();$j('#table99').bootstrapTable('refresh');document.getElementById('btn_update_link').value='更新所有订阅服务器节点';",1000);
+				}
+			});
+		}
+		//清空节点
+		function ddlink() {
+		ctime();
+			var ns = {};
+			ns[1] = "ddlink";
+			document.getElementById("btn_rest_link").value="正在清空节点";
+			$j.ajax({
+				url: "/applydb.cgi?useddlink=1&p=ss",
+				type: 'POST',
+				contentType: "application/x-www-form-urlencoded",
+				dataType: 'text',
+				data: $j.param(ns),
+				error: function (xhr) {
+					alert("脚本执行失败！！！")
+				},
+				success: function (response) {
+					setTimeout("dtime();$j('#table99').bootstrapTable('refresh');document.getElementById('btn_rest_link').value='清空所有节点';",1000);
+				}
+			});
+		}
+		function showMRULESList() {
+					$j('#table99').bootstrapTable({
+						//data: myss,
+						striped: true,
+						pageNumber: 1,
+						pagination: true,
+						sortable: true,
+						sortName: 'ids',
+						sortOrder: "desc",
+						sidePagination: 'client',
+						pageSize: 15,
+						pageList: [15, 25, 35, 50], // 分页显示记录数
+						uniqueId: "ids",
+						ajax:function(request) {
+						$j.ajax({
+						  url:"/dbconf?p=ss&v=<% uptime(); %>",
+						  type:"get",
+						  success:function(data){
+							request.success({
+							  row : data
+							});
+							//显示节点下拉列表 by 花妆男
 					// 渲染父节点  obj 需要渲染的数据 keyStr key需要去除的字符串
 					var keyStr = "ssconf_basic_json_";
 					var nodeList = document.getElementById("nodeList"); // 获取节点
 					var unodeList = document.getElementById("u_nodeList"); // 获取节点
+					var s5nodeList = document.getElementById("s5_nodeList"); // 获取节点
 					for (var key in db_ss) { // 遍历对象
 						var optionObj = JSON.parse(db_ss[key]); // 字符串转为对象
 						//if(optionObj.ping != "failed"){   //过滤ping不通的节点
@@ -372,6 +479,7 @@
 						// 添加 
 						nodeList.options.add(new Option(text, key.replace(keyStr, ''))); // 通过 replacce把不要的字符去掉
 						unodeList.options.add(new Option(text, key.replace(keyStr, ''))); // 通过 replacce把不要的字符去掉
+						s5nodeList.options.add(new Option(text, key.replace(keyStr, ''))); // 通过 replacce把不要的字符去掉
 						$j('#nodeList>option').sort(function (a, b) {
 							var aText = $j(a).val() * 1;
 							var bText = $j(b).val() * 1;
@@ -389,10 +497,20 @@
 							return 0;
 						}).appendTo('#u_nodeList');
 						$j('#u_nodeList>option').eq(0).attr("selected", "selected");
+						//s5列表
+						$j('#s5_nodeList>option').sort(function (a, b) {
+							var aText = $j(a).val() * 1;
+							var bText = $j(b).val() * 1;
+							if (aText > bText) return -1;
+							if (aText < bText) return 1;
+							return 0;
+						}).appendTo('#s5_nodeList');
+						$j('#s5_nodeList>option').eq(0).attr("selected", "selected");
 						//$j('#nodeList').selectpicker('val', '<% nvram_get_x("","global_server"); %>'); //主服务器列表默认
 						//$j('#u_nodeList').selectpicker('val', '<% nvram_get_x("","udp_relay_server"); %>'); //UDP服务器列表默认
 						document.form.global_server.value = '<% nvram_get_x("","global_server"); %>';
 						document.form.udp_relay_server.value = '<% nvram_get_x("","udp_relay_server"); %>';
+						document.form.socks5_enable.value = '<% nvram_get_x("","socks5_enable"); %>';
 						//}
 					}
 					//订阅节点表格
@@ -410,18 +528,13 @@
 							}
 						}
 					}
-					$j('#table99').bootstrapTable({
-						data: myss,
-						striped: true,
-						pageNumber: 1,
-						pagination: true,
-						sortable: true,
-						sortName: 'ids',
-						sortOrder: "desc",
-						sidePagination: 'client',
-						pageSize: 15,
-						pageList: [15, 25, 35, 50], // 分页显示记录数
-						uniqueId: "ids",
+							$j('#table99').bootstrapTable('load', myss);
+						  },
+						  error:function(error){
+							console.log(error);
+						  }
+						})
+					  },
 						columns: [{
 							field: 'delete',
 							title: '删除',
@@ -481,8 +594,9 @@
 							formatter: actionFormatter
 						}]
 					});
-				}
-			})
+
+				
+				
 		}
 		function cellStylesales(value, row, index) {
 			var ping = row.ping
@@ -575,8 +689,8 @@
 			document.getElementById("v2_tcp_guise").value = 'none';
 			document.getElementById("v2_http_host").value = '';
 			document.getElementById("v2_http_path").value = '';
-			document.getElementById("v2_tls").value = 1;
-			document.getElementById("v2_tls").checked = true;
+			document.getElementById("v2_tls").value = 0;
+			document.getElementById("v2_tls").checked = false;
 			document.getElementById("ssp_tls_host").value = '';
 			//"v2 tcp"
 			document.getElementById("v2_kcp_guise").value = 'none';
@@ -674,10 +788,10 @@
 		}
 		//单项删除
 		function del(id) {
+		ctime();
 			var p = "ssconf_basic";
 			var ns = {};
 			ns[p + "_json_" + id] = "deleting";
-			showLoading();
 			$j.ajax({
 				url: "/applydb.cgi?userm1=del&p=ss",
 				type: 'POST',
@@ -685,15 +799,17 @@
 				dataType: 'text',
 				data: $j.param(ns),
 				error: function (xhr) {
-					console.log("error in posting config of table");
+					alert("删除失败,请重试！")
 				},
 				success: function (response) {
-					location.reload();
+				dtime();
+					$j('#table99').bootstrapTable('refresh');
 				}
 			});
 		}
 		//批量删除
 		function del_dlink() {
+		ctime();
 			var row = $j("#table99").bootstrapTable('getSelections');
 			var p = "ssconf_basic";
 			var ns = {};
@@ -701,7 +817,7 @@
 				ns[p + "_json_" + row[key].ids] = "deleting";
 			}
 			//console.log(ns)
-			showLoading();
+			document.getElementById("btn_del_link").value="正在删除节点";
 			$j.ajax({
 				url: "/applydb.cgi?userm1=del&p=ss",
 				type: 'POST',
@@ -709,22 +825,24 @@
 				dataType: 'text',
 				data: $j.param(ns),
 				error: function (xhr) {
-					console.log("error in posting config of table");
+					alert("删除失败,请重试！")
 				},
 				success: function (response) {
-					location.reload();
+					setTimeout("dtime();$j('#table99').bootstrapTable('refresh');document.getElementById('btn_del_link').value='批量删除节点';",1000);
 				}
 			});
 		}
 		//ping节点
 		function ping_dlink() {
+		ctime();
 			var row = $j("#table99").bootstrapTable('getSelections');
 			var p = "ssconf_basic";
 			var ns = {};
 			for (var key in row) {
 				ns[row[key].ids] = "ping";
 			}
-			showLoading();
+			//showLoading();
+			document.getElementById("btn_ping_link").value="正在ping节点";
 			$j.ajax({
 				url: "/applydb.cgi?useping=1&p=ss",
 				type: 'POST',
@@ -732,22 +850,20 @@
 				dataType: 'text',
 				data: $j.param(ns),
 				error: function (xhr) {
-					console.log("error in posting config of table");
+					alert("脚本执行失败！！！")
 				},
 				success: function (response) {
-					//location.reload();
-					alert("执行脚本成功")
-				},
-				complete: function(xhr, ts) {
-					hideLoading();
+					setTimeout("dtime();$j('#table99').bootstrapTable('refresh');document.getElementById('btn_ping_link').value='ping节点';",2000);
+					
 				}
 			});
 		}
 		//ping全部节点
 		function aping_dlink() {
+		ctime();
 			var ns = {};
 			ns[1] = "allping";
-			showLoading();
+			document.getElementById("btn_aping_link").value="正在ping全部节点";
 			$j.ajax({
 				url: "/applydb.cgi?useping=1&p=ss",
 				type: 'POST',
@@ -755,14 +871,10 @@
 				dataType: 'text',
 				data: $j.param(ns),
 				error: function (xhr) {
-					console.log("error in posting config of table");
+					alert("脚本执行失败！！！")
 				},
 				success: function (response) {
-					//location.reload();
-					alert("执行脚本成功")
-				},
-				complete: function(xhr, ts) {
-					hideLoading();
+					setTimeout("dtime();$j('#table99').bootstrapTable('refresh');document.getElementById('btn_aping_link').value='ping全部节点';",2000);
 				}
 			});
 		}
@@ -973,32 +1085,7 @@
 			}
 		}
 		//-----------导入链接结束
-		//-----------TLS开关
-		function ctls() {
-			document.getElementById('v2_tls').value = 1;
-			if (document.getElementById('v2_tls').checked) {
-				document.getElementById('v2_tls').value = 1;
-			} else {
-				document.getElementById('v2_tls').value = 0;
-			}
-		}
-		function cmux() {
-			document.getElementById('v2_mux').value = 1;
-			if (document.getElementById('v2_mux').checked) {
-				document.getElementById('v2_mux').value = 1;
-			} else {
-				document.getElementById('v2_mux').value = 0;
-			}
-		}
-		function cais() {
-			document.getElementById('ssp_insecure').value = 1;
-			if (document.getElementById('ssp_insecure').checked) {
-				document.getElementById('ssp_insecure').value = 1;
-			} else {
-				document.getElementById('ssp_insecure').value = 0;
-			}
-		}
-		//-----------TLS开关
+
 		function check_Timefield_checkbox() {
 			if (document.form.ss_date_x_Sun.checked == true ||
 				document.form.ss_date_x_Mon.checked == true ||
@@ -1147,6 +1234,8 @@
 					alias: document.getElementById("ssp_name").value,
 					server: document.getElementById("ssp_server").value,
 					server_port: document.getElementById("ssp_prot").value,
+					server_user: document.getElementById("s5_username").value,
+					server_pwd: document.getElementById("s5_password").value,
 					coustom: "1",
 				}
 			}
@@ -1165,7 +1254,7 @@
 		}
 		//post数据到后台处理
 		function push_data(obj) {
-			showLoading();
+			ctime();
 			$j.ajax({
 				type: "POST",
 				url: '/applydb.cgi?p=ss',
@@ -1173,8 +1262,10 @@
 				dataType: 'text',
 				data: $j.param(obj),
 				success: function (response) {
+				//hideLoading();
 					$j("#vpnc_settings").fadeOut(200);
-					location.reload();
+					dtime();
+					$j('#table99').bootstrapTable('refresh');
 				}
 			});
 		}
@@ -1187,6 +1278,11 @@
 			var key = "ssconf_basic_json_" + document.getElementById("u_nodeList").value;
 			var result = JSON.parse(db_ss[key]);
 			document.getElementById("ud_type").value = result.type;
+		}
+		function shows5dlinkList() {
+			var key = "ssconf_basic_json_" + document.getElementById("s5_nodeList").value;
+			var result = JSON.parse(db_ss[key]);
+			document.getElementById("s5_type").value = result.type;
 		}
 	</script>
 	<style>
@@ -1239,6 +1335,7 @@
 				readonly="1" />
 			<input type="hidden" id="d_type" name="d_type" value="<% nvram_get_x("","d_type"); %>">
 			<input type="hidden" id="ud_type" name="ud_type" value="<% nvram_get_x("","ud_type"); %>">
+			<input type="hidden" id="s5_type" name="s5_type" value="<% nvram_get_x("","s5_type"); %>">
 			<input type="hidden" name="ss_schedule" value="<% nvram_get_x("", "ss_schedule"); %>" disabled>
 			<input type="hidden" name="ss_schedule_enable" value="<% nvram_get_x("", "ss_schedule_enable"); %>">
 			<div class="container-fluid">
@@ -1271,9 +1368,6 @@
 												</li>
 												<li>
 													<a id="tab_ss_add" href="#add">节点管理</a>
-												</li>
-												<li>
-													<a id="tab_ss_dlink" href="#dlink">订阅节点</a>
 												</li>
 												<li>
 													<a id="tab_ss_ssl" href="#ssl">高级设置</a>
@@ -1530,7 +1624,108 @@
 											</div>
 											<!--节点列表-->
 											<div id="wnd_ss_add">
+											<table width="100%" cellpadding="4" cellspacing="0" class="table">
+													<tr>
+														<th colspan="2" style="background-color: #E3E3E3;">
+															订阅节点:添加完地址请先点击一下保存设置按钮,再点击更新订阅按钮。</th>
+													</tr>
+													<tr>
+														<td colspan="3">
+															<i class="icon-hand-right"></i> <a
+																href="javascript:spoiler_toggle('script19')"><span>订阅地址(一行一个地址):</span></a>
+															<div id="script19">
+																<textarea rows="8" wrap="off" spellcheck="false"
+																	maxlength="314571" class="span12"
+																	name="scripts.ss_dlink.sh"
+																	style="font-family:'Courier New'; font-size:12px;"><% nvram_dump("scripts.ss_dlink.sh",""); %></textarea>
+															</div>
+														</td>
+													</tr>
+												</table>
 												<table width="100%" cellpadding="4" cellspacing="0" class="table">
+	                                                                                       <tr><th>关键字过滤（请以/为分隔符）</th>
+				<td>
+				<input type="input" name="ss_keyword" id="ss_keyword" value="<% nvram_get_x("", "ss_keyword"); %>" >
+				<br> 命中关键字的节点将被丢弃。多个关键字用 / 分隔
+				</td>
+			</tr>
+
+													<tr id="ss_schedule_enable_tr" width="50%">
+
+														<th width="50%">启用定时更新订阅</th>
+														<td>
+															<div class="main_itoggle">
+																<div id="ss_schedule_enable_on_of">
+																	<input type="checkbox" id="ss_schedule_enable_fake"
+																		<% nvram_match_x("", "ss_schedule_enable", "1", "value=1 checked"); %><% nvram_match_x("", "ss_schedule_enable", "0", "value=0"); %>>
+																</div>
+															</div>
+
+															<div style="position: absolute; margin-left: -10000px;">
+																<input type="radio" name="ss_schedule_enable_x"
+																	id="ss_schedule_enable_1" class="input" value="1"
+																	<% nvram_match_x("", "ss_schedule_enable", "1", "checked"); %> />
+																<#checkbox_Yes#>
+																	<input type="radio" name="ss_schedule_enable_x"
+																		id="ss_schedule_enable_0" class="input"
+																		value="0"
+																		<% nvram_match_x("", "ss_schedule_enable", "0", "checked"); %> />
+																	<#checkbox_No#>
+															</div>
+														</td>
+													</tr>
+													<tr id="ss_schedule_date_tr">
+														<th>自动更新星期</th>
+														<td>
+															<input type="checkbox" name="ss_date_x_Sun" class="input"
+																onclick="check_Timefield_checkbox();">日
+															<input type="checkbox" name="ss_date_x_Mon" class="input"
+																onclick="check_Timefield_checkbox();">一
+															<input type="checkbox" name="ss_date_x_Tue" class="input"
+																onclick="check_Timefield_checkbox();">二
+															<input type="checkbox" name="ss_date_x_Wed" class="input"
+																onclick="check_Timefield_checkbox();">三
+															<input type="checkbox" name="ss_date_x_Thu" class="input"
+																onclick="check_Timefield_checkbox();">四
+															<input type="checkbox" name="ss_date_x_Fri" class="input"
+																onclick="check_Timefield_checkbox();">五
+															<input type="checkbox" name="ss_date_x_Sat" class="input"
+																onclick="check_Timefield_checkbox();">六
+														</td>
+													</tr>
+													<tr id="ss_schedule_time_tr">
+														<th>自动更新时间</th>
+														<td>
+															<input type="text" maxlength="2" class="input_3_table"
+																style="width: 30px" name="ss_time_x_hour"
+																onKeyPress="return validator.isNumber(this,event);"
+																onblur="validator.timeRange(this, 0);" autocorrect="off"
+																autocapitalize="off">时:
+															<input type="text" maxlength="2" class="input_3_table"
+																style="width: 30px" name="ss_time_x_min"
+																onKeyPress="return validator.isNumber(this,event);"
+																onblur="validator.timeRange(this, 1);" autocorrect="off"
+																autocapitalize="off">分
+														</td>
+													</tr>
+													 <tr><th>保存订阅URL列表</th>
+				<td>
+				<input name="button" type="button" class="btn btn-primary" onclick="applyRule();" value="保存订阅URL列表" />
+				<br>修改订阅URL和节点关键字后，请先点击更新
+				</td>
+			</tr>
+			<tr><th>更新所有订阅服务器节点</th>
+				<td>
+				<input type="button" id="btn_update_link" class="btn btn-info" value="更新所有订阅服务器节点" onclick="dlink();">
+				</td>
+			</tr>
+			<tr><th>删除所有订阅服务器节点</th>
+				<td>
+				<input type="button" id="btn_rest_link" class="btn btn-danger" value="删除所有订阅服务器节点" onclick="ddlink();">
+				</td>
+			</tr>
+												
+										
 													<tr>
 														<th colspan="2" style="background-color: #E3E3E3;">
 															<select name="ss_list_mode" style="display: none"
@@ -1547,9 +1742,9 @@
 																class="btn btn-info" value="ping全部节点">
 															<input type="button" id="btn_del_link"
 																class="btn btn-danger" value="批量删除节点">
-															<input type="button" id="btn_connect_1"
-																class="btn btn-danger" value="清空所有节点"
-																onclick="submitInternet('Reset_dlink');">
+															<input type="button" id="btn_ctime" style="display:none;"
+																class="btn btn-good" value="正在运行脚本:0s"
+																onclick="">
 														</th>
 													</tr>
 
@@ -1725,21 +1920,28 @@
 														</tr>
 														<!--SSR参数结束-->
 														</tbody>
+														<tr id="row_s5_enable" style="display:none;">
+															<th>启用用户名/密码认证</th>
+															<td>
+																<input type="checkbox" name="s5_aut" id="s5_aut" value="0" >
+
+															</td>
+														</tr>
 														<tr id="row_s5_username" style="display:none;">
-															<th width="50%">socks5用户名</th>
+															<th width="50%">用户名</th>
 															<td>
 																<input type="password" class="input" size="32"
-																	name="s5_username_x_0" value="" />
+																	name="s5_username" id="s5_username" value="" />
 															</td>
 														</tr>
 														<tr id="row_s5_password" style="display:none;">
-															<th width="50%">socks5密码</th>
+															<th width="50%">密码</th>
 															<td>
 																<input type="password" class="input" size="32"
-																	name="s5_password_x_0" id="s5_key" value="" />
+																	name="s5_password" id="s5_password" value="" />
 																<button style="margin-left: -5px;" class="btn"
 																	type="button"
-																	onclick="passwordShowHide('s5_key')"><i
+																	onclick="passwordShowHide('s5_password')"><i
 																		class="icon-eye-close"></i></button>
 															</td>
 														</tr>
@@ -1944,16 +2146,14 @@
 														<tr id="row_ssp_insecure" style="display:none;">
 															<th>allowInsecure</th>
 															<td>
-																<input type="checkbox" name="ssp_insecure"
-																	id="ssp_insecure" onclick="cais();">
+																<input type="checkbox" name="ssp_insecure" id="ssp_insecure" >
 
 															</td>
 														</tr>
 														<tr id="row_v2_tls" style="display:none;">
 															<th>TLS</th>
 															<td>
-																<input type="checkbox" name="v2_tls" id="v2_tls"
-																	onclick="ctls();">
+																<input type="checkbox" name="v2_tls" id="v2_tls" >
 
 															</td>
 														</tr>
@@ -1968,8 +2168,7 @@
 														<tr id="row_v2_mux" style="display:none;">
 															<th>MUX</th>
 															<td>
-																<input type="checkbox" name="v2_mux" id="v2_mux"
-																	onclick="cmux();">
+																<input type="checkbox" name="v2_mux" id="v2_mux" >
 															</td>
 														</tr>
 														<!--<tr> <th>自动切换</th>
@@ -2000,107 +2199,6 @@
 														</tr>
 													</table>
 												</div>
-											</div>
-											<!--添加订阅节点-->
-											<div id="wnd_ss_dlink" style="display:none">
-												<table width="100%" cellpadding="4" cellspacing="0" class="table">
-													<tr>
-														<th colspan="2" style="background-color: #E3E3E3;">
-															订阅节点:添加完地址请先点击一下保存设置按钮,再点击更新订阅按钮。</th>
-													</tr>
-													<tr>
-														<td colspan="3">
-															<i class="icon-hand-right"></i> <a
-																href="javascript:spoiler_toggle('script19')"><span>订阅地址(一行一个地址):</span></a>
-															<div id="script19">
-																<textarea rows="8" wrap="off" spellcheck="false"
-																	maxlength="314571" class="span12"
-																	name="scripts.ss_dlink.sh"
-																	style="font-family:'Courier New'; font-size:12px;"><% nvram_dump("scripts.ss_dlink.sh",""); %></textarea>
-															</div>
-														</td>
-													</tr>
-												</table>
-												<table width="100%" cellpadding="4" cellspacing="0" class="table">
-	                                                                                       <tr><th>关键字过滤（请以/为分隔符）</th>
-				<td>
-				<input type="input" name="ss_keyword" id="ss_keyword" value="<% nvram_get_x("", "ss_keyword"); %>" >
-				</td>
-			</tr>
-
-													<tr id="ss_schedule_enable_tr" width="50%">
-
-														<th width="50%">启用定时更新订阅</th>
-														<td>
-															<div class="main_itoggle">
-																<div id="ss_schedule_enable_on_of">
-																	<input type="checkbox" id="ss_schedule_enable_fake"
-																		<% nvram_match_x("", "ss_schedule_enable", "1", "value=1 checked"); %><% nvram_match_x("", "ss_schedule_enable", "0", "value=0"); %>>
-																</div>
-															</div>
-
-															<div style="position: absolute; margin-left: -10000px;">
-																<input type="radio" name="ss_schedule_enable_x"
-																	id="ss_schedule_enable_1" class="input" value="1"
-																	<% nvram_match_x("", "ss_schedule_enable", "1", "checked"); %> />
-																<#checkbox_Yes#>
-																	<input type="radio" name="ss_schedule_enable_x"
-																		id="ss_schedule_enable_0" class="input"
-																		value="0"
-																		<% nvram_match_x("", "ss_schedule_enable", "0", "checked"); %> />
-																	<#checkbox_No#>
-															</div>
-														</td>
-													</tr>
-													<tr id="ss_schedule_date_tr">
-														<th>自动更新星期</th>
-														<td>
-															<input type="checkbox" name="ss_date_x_Sun" class="input"
-																onclick="check_Timefield_checkbox();">日
-															<input type="checkbox" name="ss_date_x_Mon" class="input"
-																onclick="check_Timefield_checkbox();">一
-															<input type="checkbox" name="ss_date_x_Tue" class="input"
-																onclick="check_Timefield_checkbox();">二
-															<input type="checkbox" name="ss_date_x_Wed" class="input"
-																onclick="check_Timefield_checkbox();">三
-															<input type="checkbox" name="ss_date_x_Thu" class="input"
-																onclick="check_Timefield_checkbox();">四
-															<input type="checkbox" name="ss_date_x_Fri" class="input"
-																onclick="check_Timefield_checkbox();">五
-															<input type="checkbox" name="ss_date_x_Sat" class="input"
-																onclick="check_Timefield_checkbox();">六
-														</td>
-													</tr>
-													<tr id="ss_schedule_time_tr">
-														<th>自动更新时间</th>
-														<td>
-															<input type="text" maxlength="2" class="input_3_table"
-																style="width: 30px" name="ss_time_x_hour"
-																onKeyPress="return validator.isNumber(this,event);"
-																onblur="validator.timeRange(this, 0);" autocorrect="off"
-																autocapitalize="off">时:
-															<input type="text" maxlength="2" class="input_3_table"
-																style="width: 30px" name="ss_time_x_min"
-																onKeyPress="return validator.isNumber(this,event);"
-																onblur="validator.timeRange(this, 1);" autocorrect="off"
-																autocapitalize="off">分
-														</td>
-													</tr>
-												</table>
-												<table width="100%" cellpadding="4" cellspacing="0" class="table">
-													<tr>
-														<td style="border: 0 none; padding: 0px;">
-															<center>
-																<input name="button" type="button"
-																	class="btn btn-primary" style="width: 100px"
-																	onclick="applyRule();" value="保存设置" />
-																<input type="button" id="btn_connect_2"
-																	class="btn btn-info" value="更新订阅"
-																	onclick="submitInternet('Update_dlink');">
-															</center>
-														</td>
-													</tr>
-												</table>
 											</div>
 											<div id="wnd_ss_ssl" style="display:none">
 												<table width="100%" cellpadding="4" cellspacing="0" class="table">
@@ -2175,89 +2273,22 @@
 														<th colspan="2" style="background-color: #E3E3E3;">SOCKS5代理</th>
 													</tr>
 													<tr>
-														<th>启用SOCKS5代理服务</th>
+														<th>服务器:
+														</th>
 														<td>
-															<div class="main_itoggle">
-																<div id="socks5_enable_on_of">
-																	<input type="checkbox" id="socks5_enable_fake"
-																		<% nvram_match_x("", "socks5_enable", "1", "value=1 checked"); %><% nvram_match_x("", "socks5_enable", "0", "value=0"); %>>
-																</div>
-															</div>
-															<div style="position: absolute; margin-left: -10000px;">
-																<input type="radio" value="1" name="socks5_enable"
-																	id="socks5_enable_1"
-																	<% nvram_match_x("", "socks5_enable", "1", "checked"); %>>
-																<#checkbox_Yes#>
-																	<input type="radio" value="0" name="socks5_enable"
-																		id="socks5_enable_0"
-																		<% nvram_match_x("", "socks5_enable", "0", "checked"); %>>
-																	<#checkbox_No#>
-															</div>
-														</td>
-													</tr>
-													<tr>
-														<th width="50%">代理端口:</th>
-														<td>
-															<input type="text" class="input" size="15"
-																name="socks5_port" style="width: 200px"
-																value="<% nvram_get_x("", "socks5_port"); %>">
-														</td>
-													</tr>
-													<tr id="row_socks5">
-														<th width="50%">外网访问设置</th>
-														<td>
-															<select name="socks5_wenable" class="input"
-																style="width: 200px;">
-																<option value="0"
-																	<% nvram_match_x("","socks5_wenable", "0","selected"); %>>
-																	禁用</option>
-																<option value="1"
-																	<% nvram_match_x("","socks5_wenable", "1","selected"); %>>
-																	WAN IPV4</option>
-																<option value="2"
-																	<% nvram_match_x("","socks5_wenable", "2","selected"); %>>
-																	WAN IPV6</option>
-																<option value="3"
-																	<% nvram_match_x("","socks5_wenable", "3","selected"); %>>
-																	IPV4+IPV6</option>
+															<select name="socks5_enable" id="s5_nodeList"
+																style="width: 200px;" onchange="shows5dlinkList()">
+																<option value="nil">停用</option>
+																<option value="same">与主服务相同</option>
 															</select>
 														</td>
 													</tr>
 													<tr>
-														<th>启用 用户名/密码 认证</th>
-														<td>
-															<div class="main_itoggle">
-																<div id="socks5_aenable_on_of">
-																	<input type="checkbox" id="socks5_aenable_fake"
-																		<% nvram_match_x("", "socks5_aenable", "1", "value=1 checked"); %><% nvram_match_x("", "socks5_aenable", "0", "value=0"); %>>
-																</div>
-															</div>
-															<div style="position: absolute; margin-left: -10000px;">
-																<input type="radio" value="1" name="socks5_aenable"
-																	id="socks5_aenable_1"
-																	<% nvram_match_x("", "socks5_aenable", "1", "checked"); %>>
-																<#checkbox_Yes#>
-																	<input type="radio" value="0" name="socks5_aenable"
-																		id="socks5_aenable_0"
-																		<% nvram_match_x("", "socks5_aenable", "0", "checked"); %>>
-																	<#checkbox_No#>
-															</div>
-														</td>
-													</tr>
-													<tr>
-														<th width="50%">用户名:</th>
+														<th width="50%">本地端口:</th>
 														<td>
 															<input type="text" class="input" size="15"
-																name="socks5_s_username" style="width: 200px"
-																value="<% nvram_get_x("", "socks5_s_username"); %>">
-														</td>
-													</tr>
-													<tr>
-														<th width="50%">密码:</th>
-														<td>
-															<input type="text" class="input" size="15"
-																name="socks5_s_password" style="width: 200px"
-																value="<% nvram_get_x("", "socks5_s_password"); %>">
+																name="socks5_port" style="width: 200px"
+																value="<% nvram_get_x("", "socks5_port"); %>">
 														</td>
 													</tr>
 												</table>
@@ -2480,19 +2511,6 @@
 													</tr>
 													<tr>
 														<th width="100%">此模式会占用一部分内存资源,内存少的机器请谨慎开启。</th>
-													</tr>
-													<tr>
-														<th colspan="2" style="background-color: #E3E3E3;">Socks5代理说明:
-														</th>
-													</tr>
-													<tr>
-														<th width="100%">WAN IPV4:允许外网IPV4访问socks5</th>
-													</tr>
-													<tr>
-														<th width="100%">WAN IPV6:允许外网IPV6访问socks5</th>
-													</tr>
-													<tr>
-														<th width="100%">IPV4+IPV6:运行外网IPV4+IPV6访问socks5</th>
 													</tr>
 												</table>
 											</div>

@@ -29,6 +29,8 @@ $j(document).ready(function() {
 	init_itoggle('adbyby_enable');
 	init_itoggle('hosts_ad');
 	init_itoggle('anti_ad');
+	init_itoggle('block_ios');
+	init_itoggle('block_douyin');
 	init_itoggle('tv_hosts');
 	init_itoggle('adbyby_adb_update');
 	init_itoggle('adbyby_ip_x', change_adbyby_ip_enabled);
@@ -512,6 +514,36 @@ function changeBgColorrl(obj, num){
 												<select name="adbyby_update_min" id="adbyby_update_min" class="input" style="width: 50px">
 
                                                 </select>分
+											</td>
+										</tr>
+										<tr>
+											<th width="50%">
+											拦截 Apple iOS 的OTA更新:</th>
+											<td>
+													<div class="main_itoggle">
+													<div id="block_ios_on_of">
+														<input type="checkbox" id="block_ios_fake" <% nvram_match_x("", "block_ios", "1", "value=1 checked"); %><% nvram_match_x("", "block_ios", "0", "value=0"); %>  />
+													</div>
+												</div>
+												<div style="position: absolute; margin-left: -10000px;">
+													<input type="radio" value="1" name="block_ios" id="block_ios_1" class="input" value="1" <% nvram_match_x("", "block_ios", "1", "checked"); %> /><#checkbox_Yes#>
+													<input type="radio" value="0" name="block_ios" id="block_ios_0" class="input" value="0" <% nvram_match_x("", "block_ios", "0", "checked"); %> /><#checkbox_No#>
+												</div>
+											</td>
+										</tr>
+										<tr>
+											<th width="50%">
+											拦截 抖音 APP 和网站:</th>
+											<td>
+													<div class="main_itoggle">
+													<div id="block_douyin_on_of">
+														<input type="checkbox" id="block_douyin_fake" <% nvram_match_x("", "block_douyin", "1", "value=1 checked"); %><% nvram_match_x("", "block_douyin", "0", "value=0"); %>  />
+													</div>
+												</div>
+												<div style="position: absolute; margin-left: -10000px;">
+													<input type="radio" value="1" name="block_douyin" id="block_douyin_1" class="input" value="1" <% nvram_match_x("", "block_douyin", "1", "checked"); %> /><#checkbox_Yes#>
+													<input type="radio" value="0" name="block_douyin" id="block_douyin_0" class="input" value="0" <% nvram_match_x("", "block_douyin", "0", "checked"); %> /><#checkbox_No#>
+												</div>
 											</td>
 										</tr>
 										<tr>

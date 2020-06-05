@@ -32,30 +32,39 @@ lan_con=`nvram get lan_con`
 GLOBAL_SERVER=`nvram get global_server`
 socks=""
 
-gen_config_file() {
-	if [ "$2" = "0" ]; then
-	config_file=$CONFIG_FILE
-	else
-	config_file=$CONFIG_UDP_FILE
-	fi
-	fastopen="false"
-	if [ "$2" = "0" ]; then
-	stype=$(nvram get d_type)
-	else
-	if [ "$UDP_RELAY_SERVER" == "$GLOBAL_SERVER" ]; then
-	stype=$(nvram get d_type)
-	else
-	stype=$(nvram get ud_type)
-	fi
-	fi
+find_bin() {
+	case "$1" in
+	ss) ret="/usr/bin/ss-redir" ;;
+	ss-local) ret="/usr/bin/ss-local" ;;
+	ssr) ret="/usr/bin/ssr-redir" ;;
+	ssr-local) ret="/usr/bin/ssr-local" ;;
+	ssr-server) ret="/usr/bin/ssr-server" ;;
+	v2ray) ret="/usr/bin/v2ray" ;;
+	trojan) ret="/usr/bin/trojan" ;;
+	socks5) ret="/usr/bin/ipt2socks" ;;
+	esac
+	echo $ret
+}
 
-	if [ "$stype" == "ss" ]; then
-		lua /etc_ro/ss/genssconfig.lua $1 1080 >$config_file
+gen_config_file() {
+
+	fastopen="false"
+	case "$2" in
+	0) config_file=$CONFIG_FILE && local stype=$(nvram get d_type) ;;
+	1) config_file=$CONFIG_UDP_FILE && local stype=$(nvram get ud_type) ;;
+	*) config_file=$CONFIG_SOCK5_FILE && local stype=$(nvram get s5_type) ;;
+	esac
+local type=$stype
+	case "$type" in
+	ss)
+		lua /etc_ro/ss/genssconfig.lua $1 $3 >$config_file
 		sed -i 's/\\//g' $config_file
-	elif [ "$stype" == "ssr" ]; then
-		lua /etc_ro/ss/genssrconfig.lua $1 1080 >$config_file
+		;;
+	ssr)
+		lua /etc_ro/ss/genssrconfig.lua $1 $3 >$config_file
 		sed -i 's/\\//g' $config_file
-	elif [ "$stype" == "trojan" ]; then
+		;;
+	trojan)
 		tj_bin="/usr/bin/trojan"
 		if [ ! -f "$tj_bin" ]; then
 		if [ ! -f "/tmp/trojan" ];then
@@ -81,7 +90,8 @@ gen_config_file() {
 		lua /etc_ro/ss/gentrojanconfig.lua $1 client 10801 >/tmp/trojan-ssr-reudp.json
 		sed -i 's/\\//g' /tmp/trojan-ssr-reudp.json
 		fi
-	elif [ "$stype" == "v2ray" ]; then
+		;;
+	v2ray)
 		v2_bin="/usr/bin/v2ray"
 		if [ ! -f "$v2_bin" ]; then
 		if [ ! -f "/tmp/v2ray" ];then
@@ -107,10 +117,8 @@ gen_config_file() {
 		lua /etc_ro/ss/genv2config.lua $1 tcp 1080 >$v2_json_file
 		sed -i 's/\\//g' $v2_json_file
 		fi
-		elif [ "$stype" == "socks5" ]; then
-		kumasocks_bin="/usr/bin/kumasocks"
-		lua /etc_ro/ss/gensocks.lua $1 1080 > $CONFIG_KUMASOCKS_FILE
-		fi
+		;;
+	esac
 }
 
 get_arg_out() {
@@ -202,80 +210,81 @@ start_rules() {
 	return $?
 }
 
-start_redir() {
+start_redir_tcp() {
 	ARG_OTA=""
-	gen_config_file $GLOBAL_SERVER 0
+	gen_config_file $GLOBAL_SERVER 0 1080
 	stype=$(nvram get d_type)
-	if [ "$stype" == "ss" ]; then
-		sscmd="ss-redir"
-	elif [ "$stype" == "ssr" ]; then
-		sscmd="ssr-redir"
-	elif [ "$stype" == "trojan" ]; then
-		sscmd="$tj_bin"
-	elif [ "$stype" == "v2ray" ]; then
-		sscmd="$v2_bin"
-	elif [ "$stype" == "socks5" ]; then
-		sscmd="$kumasocks_bin"
-	fi
-	if [ "$UDP_RELAY_SERVER" = "$GLOBAL_SERVER" ]; then
-	utype=$(nvram get d_type)
-	else
-	utype=$(nvram get ud_type)
-	fi
-	if [ "$utype" == "ss" ]; then
-		ucmd="ss-redir"
-	elif [ "$utype" == "ssr" ]; then
-		ucmd="ssr-redir"
-	elif [ "$utype" == "v2ray" ]; then
-		ucmd="$v2_bin"
-	elif [ "$utype" == "trojan" ]; then
-		ucmd="$tj_bin"
-	fi
+	local bin=$(find_bin $stype)
+	[ ! -f "$bin" ] && echo "$(date "+%Y-%m-%d %H:%M:%S") Main node:Can't find $bin program, can't start!" >>/tmp/ssrplus.log && return 1
 	if [ "$(nvram get ss_threads)" = "0" ]; then
 		threads=$(cat /proc/cpuinfo | grep 'processor' | wc -l)
 	else
 		threads=$(nvram get ss_threads)
 	fi
 	logger -t "SS" "启动$stype主服务器..."
-	if [ "$stype" == "ss" -o "$stype" == "ssr" ]; then
+	case "$stype" in
+	ss | ssr)
 		last_config_file=$CONFIG_FILE
 		pid_file="/tmp/ssr-retcp.pid"
 		for i in $(seq 1 $threads); do
-			$sscmd -c $CONFIG_FILE $ARG_OTA -f /tmp/ssr-retcp_$i.pid >/dev/null 2>&1
+			$bin -c $CONFIG_FILE $ARG_OTA -f /tmp/ssr-retcp_$i.pid >/dev/null 2>&1
 			usleep 500000
 		done
 		redir_tcp=1
 		echo "$(date "+%Y-%m-%d %H:%M:%S") Shadowsocks/ShadowsocksR $threads 线程启动成功!" >>/tmp/ssrplus.log
-	elif [ "$stype" == "trojan" ]; then
+		;;
+	trojan)
 		for i in $(seq 1 $threads); do
-			$sscmd --config $trojan_json_file >>/tmp/ssrplus.log 2>&1 &
+			$bin --config $trojan_json_file >>/tmp/ssrplus.log 2>&1 &
 			usleep 500000
 		done
-		echo "$(date "+%Y-%m-%d %H:%M:%S") $($sscmd --version 2>&1 | head -1) Started!" >>/tmp/ssrplus.log
-	elif [ "$stype" == "v2ray" ]; then
-		$sscmd -config $v2_json_file >/dev/null 2>&1 &
-		echo "$(date "+%Y-%m-%d %H:%M:%S") $($sscmd -version | head -1) 启动成功!" >>/tmp/ssrplus.log
-	elif [ "$stype" == "socks5" ]; then
-		$sscmd -c $CONFIG_KUMASOCKS_FILE &
-	fi
+		echo "$(date "+%Y-%m-%d %H:%M:%S") $($bin --version 2>&1 | head -1) Started!" >>/tmp/ssrplus.log
+		;;
+	v2ray)
+		$bin -config $v2_json_file >/dev/null 2>&1 &
+		echo "$(date "+%Y-%m-%d %H:%M:%S") $($bin -version | head -1) 启动成功!" >>/tmp/ssrplus.log
+		;;
+	socks5)
+		for i in $(seq 1 $threads); do
+		lua /etc_ro/ss/gensocks.lua $GLOBAL_SERVER 1080 >/dev/null 2>&1 &
+		usleep 500000
+		done
+	    ;;
+	esac
+	return 0
+	}
+	
+start_redir_udp() {
 	if [ "$UDP_RELAY_SERVER" != "nil" ]; then
 		redir_udp=1
 		logger -t "SS" "启动$utype游戏UDP中继服务器"
-		if [ "$utype" == "ss" -o "$utype" == "ssr" ]; then
+		utype=$(nvram get ud_type)
+		local bin=$(find_bin $utype)
+		[ ! -f "$bin" ] && echo "$(date "+%Y-%m-%d %H:%M:%S") UDP TPROXY Relay:Can't find $bin program, can't start!" >>/tmp/ssrplus.log && return 1
+		case "$utype" in
+		ss | ssr)
 			ARG_OTA=""
-			gen_config_file $UDP_RELAY_SERVER 1
+			gen_config_file $UDP_RELAY_SERVER 1 1080
 			last_config_file=$CONFIG_UDP_FILE
 			pid_file="/var/run/ssr-reudp.pid"
-			$ucmd -c $last_config_file $ARG_OTA -U -f /var/run/ssr-reudp.pid >/dev/null 2>&1
-		elif [ "$utype" == "v2ray" ]; then
+			$bin -c $last_config_file $ARG_OTA -U -f /var/run/ssr-reudp.pid >/dev/null 2>&1
+			;;
+		v2ray)
 			gen_config_file $UDP_RELAY_SERVER 1
-			$v2_bin -config /tmp/v2-ssr-reudp.json >/dev/null 2>&1 &
-		elif [ "$utype" == "trojan" ]; then
+			$bin -config /tmp/v2-ssr-reudp.json >/dev/null 2>&1 &
+			;;
+		trojan)
 			gen_config_file $UDP_RELAY_SERVER 1
-			$tj_bin --config /tmp/trojan-ssr-reudp.json >/dev/null 2>&1 &
+			$bin --config /tmp/trojan-ssr-reudp.json >/dev/null 2>&1 &
 			ipt2socks -U -b 0.0.0.0 -4 -s 127.0.0.1 -p 10801 -l 1080 >/dev/null 2>&1 &
-		fi
+			;;
+		socks5)
+		echo "1"
+		    ;;
+		esac
 	fi
+	return 0
+	}
 	ss_switch=$(nvram get backup_server)
 	if [ $ss_switch != "nil" ]; then
 		switch_time=$(nvram get ss_turn_s)
@@ -283,12 +292,13 @@ start_redir() {
 		#/usr/bin/ssr-switch start $switch_time $switch_timeout &
 		socks="-o"
 	fi
-	return $?
-}
+	#return $?
+
 
 
 start_dns() {
-	if [ "$run_mode" = "router" ]; then
+case "$run_mode" in
+	router)
 		echo "create china hash:net family inet hashsize 1024 maxelem 65536" >/tmp/china.ipset
 		awk '!/^$/&&!/^#/{printf("add china %s'" "'\n",$0)}' /etc/storage/chinadns/chnroute.txt >>/tmp/china.ipset
 		ipset -! flush china
@@ -312,7 +322,8 @@ no-resolv
 server=127.0.0.1#65353
 EOF
     fi
-	elif [ "$run_mode" = "gfw" ]; then
+	;;
+	gfw)
 		if [ $(nvram get pdnsd_enable) = 0 ]; then
 			dnsstr="$(nvram get tunnel_forward)"
 			dnsserver=$(echo "$dnsstr" | awk -F '#' '{print $1}')
@@ -322,9 +333,9 @@ EOF
 			dns2tcp -L"127.0.0.1#5353" -R"$dnsstr" >/dev/null 2>&1 &
 			pdnsd_enable_flag=0	
 			logger -st "SS" "开始处理gfwlist..."
-		    mkdir -p /etc/storage/gfwlist/
 		fi
-	elif [ "$run_mode" = "oversea" ]; then
+		;;
+	oversea)
 		ipset add gfwlist $dnsserver 2>/dev/null
 		mkdir -p /etc/storage/dnsmasq.oversea
 		sed -i '/dnsmasq-ss/d' /etc/storage/dnsmasq/dnsmasq.conf
@@ -332,10 +343,12 @@ EOF
 		cat >>/etc/storage/dnsmasq/dnsmasq.conf <<EOF
 conf-dir=/etc/storage/dnsmasq.oversea
 EOF
-	else
+;;
+	*)
 		ipset -N ss_spec_wan_ac hash:net 2>/dev/null
 		ipset add ss_spec_wan_ac $dnsserver 2>/dev/null
-	fi
+	;;
+	esac
 	/sbin/restart_dhcpd
 }
 
@@ -361,33 +374,43 @@ rm -f /tmp/adnew.conf
 
 # ================================= 启动 Socks5代理 ===============================
 start_local() {
-	s5_enable=$(nvram get socks5_enable)
-	s5_wenable=$(nvram get socks5_wenable)
-	s5_aenable=$(nvram get socks5_aenable)
-	s5_s_username=$(nvram get socks5_s_username)
-	s5_s_password=$(nvram get socks5_s_password)
-	s5_port=$(nvram get socks5_port)
-	if [ "$s5_enable" = "1" ]; then
-	if [ "$s5_aenable" = "1" ]; then
-    microsocks -i 0.0.0.0 -p $s5_port -1 -u $s5_s_username -P $s5_s_password >/dev/null 2>&1 &
-	else
-    microsocks -i 0.0.0.0 -p $s5_port >/dev/null 2>&1 &
-	fi
-	if [ $s5_wenable = 1 ] || [ $s5_wenable = 3 ]; then
-		fport=$(iptables -t filter -L INPUT -v -n --line-numbers | grep dpt:$s5_port | cut -d " " -f 1 | sort -nr | wc -l)
-		if [ "$fport" = 0 ]; then
-			iptables -t filter -I INPUT -p tcp --dport $s5_port -j ACCEPT
-		fi
-		logger -t "SS" "WAN IPV4放行 socks5 $s5_port tcp端口"
-	fi
-	if [ $s5_wenable = 2 ] || [ $s5_wenable = 3 ]; then
-		f6port=$(ip6tables -t filter -L INPUT -v -n --line-numbers | grep dpt:$s5_port | cut -d " " -f 1 | sort -nr | wc -l)
-		if [ "$f6port" = 0 ]; then
-			ip6tables -t filter -I INPUT -p tcp --dport $s5_port -j ACCEPT
-		fi
-		logger -t "SS" "WAN IPV6放行 socks5 $s5_port tcp端口"
-	fi
-	fi
+	local s5_port=$(nvram get socks5_port)
+	local local_server=$(nvram get socks5_enable)
+	[ "$local_server" == "nil" ] && return 1
+	[ "$local_server" == "same" ] && local_server=$GLOBAL_SERVER
+	local type=$(nvram get s5_type)
+	local bin=$(find_bin $type)
+	[ ! -f "$bin" ] && echo "$(date "+%Y-%m-%d %H:%M:%S") Global_Socks5:Can't find $bin program, can't start!" >>/tmp/ssrplus.log && return 1
+	case "$type" in
+	ss | ssr)
+		local name="Shadowsocks"
+		local bin=$(find_bin ss-local)
+		[ ! -f "$bin" ] && echo "$(date "+%Y-%m-%d %H:%M:%S") Global_Socks5:Can't find $bin program, can't start!" >>/tmp/ssrplus.log && return 1
+		[ "$type" == "ssr" ] && name="ShadowsocksR"
+		gen_config_file $local_server 3 $s5_port
+		$bin -c $CONFIG_SOCK5_FILE -u -f /var/run/ssr-local.pid >/dev/null 2>&1
+		echo "$(date "+%Y-%m-%d %H:%M:%S") Global_Socks5:$name Started!" >>/tmp/ssrplus.log
+		;;
+	v2ray)
+		lua /etc_ro/ss/genv2config.lua $local_server tcp 0 $s5_port >/tmp/v2-ssr-local.json
+		sed -i 's/\\//g' /tmp/v2-ssr-local.json
+		$bin -config /tmp/v2-ssr-local.json >/dev/null 2>&1 &
+		echo "$(date "+%Y-%m-%d %H:%M:%S") Global_Socks5:$($bin -version | head -1) Started!" >>/tmp/ssrplus.log
+		;;
+	trojan)
+		lua /etc_ro/ss/gentrojanconfig.lua $local_server client $s5_port >/tmp/trojan-ssr-local.json
+		sed -i 's/\\//g' /tmp/trojan-ssr-local.json
+		$bin --config /tmp/trojan-ssr-local.json >/dev/null 2>&1 &
+		echo "$(date "+%Y-%m-%d %H:%M:%S") Global_Socks5:$($bin --version 2>&1 | head -1) Started!" >>/tmp/ssrplus.log
+		;;
+	*)
+		[ -e /proc/sys/net/ipv6 ] && local listenip='-i ::'
+		microsocks $listenip -p $s5_port ssr-local >/dev/null 2>&1 &
+		echo "$(date "+%Y-%m-%d %H:%M:%S") Global_Socks5:$type Started!" >>/tmp/ssrplus.log
+		;;
+	esac
+	local_enable=1
+	return 0
 }
 
 rules() {
@@ -432,15 +455,14 @@ EOF
 # ================================= 启动 SS ===============================
 ssp_start() { 
     ss_enable=`nvram get ss_enable`
-	[ "$GLOBAL_SERVER" = "nil" ] && return 1
-	UDP_RELAY_SERVER=$(nvram get udp_relay_server)
-	if [ "$UDP_RELAY_SERVER" = "same" ]; then
-	UDP_RELAY_SERVER=$GLOBAL_SERVER
-	fi
-        start_redir
-        start_rules
+if rules; then
+		if start_redir_tcp; then
+		start_redir_udp
+        #start_rules
 		#start_AD
         start_dns
+		fi
+		fi
         start_local
         start_watchcat
         auto_update
@@ -502,6 +524,13 @@ kill_process() {
 		logger -t "SS" "关闭ssr-redir进程..."
 		killall ssr-redir >/dev/null 2>&1
 		kill -9 "$rssredir" >/dev/null 2>&1
+	fi
+	
+	sslocal_process=$(pidof ss-local)
+	if [ -n "$sslocal_process" ]; then
+		logger -t "SS" "关闭ss-local进程..."
+		killall ss-local >/dev/null 2>&1
+		kill -9 "$sslocal_process" >/dev/null 2>&1
 	fi
 
 	trojandir=$(pidof trojan)

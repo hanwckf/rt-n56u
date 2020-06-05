@@ -1,8 +1,13 @@
-SRC_NAME = ipt2socks
+SRC_NAME = ipt2socks-1.1.2
 THISDIR = $(shell pwd)
 
-all: 
-	$(MAKE) -j$(HOST_NCPU) -C $(SRC_NAME) INCLUDES="-I$(STAGEDIR)/include" LDFLAGS="-L$(STAGEDIR)/lib"
+all: extract_test
+	$(MAKE) -j$(HOST_NCPU) -C $(SRC_NAME) CC="$(CC)"
+	
+extract_test:
+	( if [ ! -d $(SRC_NAME) ]; then \
+		tar zxf $(SRC_NAME).tar.gz ; \
+	fi )
 
 config_test:
 	( if [ -f ./config_done ]; then \
@@ -12,9 +17,7 @@ config_test:
 	fi )
 
 clean:
-	if [ -f $(SRC_NAME)/Makefile ] ; then \
-		$(MAKE) -C $(SRC_NAME) clean ; \
-	fi ; \
+	rm -rf $(SRC_NAME)
 	rm -f config_done
 
 romfs:

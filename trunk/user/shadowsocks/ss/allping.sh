@@ -12,4 +12,4 @@ num=1
 fi
 num=`expr $num + 1`
 done < /tmp/dlinkping.txt
-logger -t "SS" "已ping完所有节点,延迟和丢包率仅供参考,实际以连接速度为准！请手动刷新页面..."
+logger -t "SS" "已ping完所有节点,延迟和丢包率仅供参考,实际以连接速度为准！"

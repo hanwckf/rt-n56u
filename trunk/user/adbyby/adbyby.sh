@@ -215,8 +215,18 @@ add_dns()
 	mkdir -p /etc/storage/dnsmasq-adbyby.d
 	mkdir -p /tmp/dnsmasq.d
 	anti_ad
+	block_ios=`nvram get block_ios`
+	block_douyin=`nvram get block_douyin`
 	awk '!/^$/&&!/^#/{printf("ipset=/%s/'"adbyby_esc"'\n",$0)}' $PROG_PATH/adesc.conf > /etc/storage/dnsmasq-adbyby.d/06-dnsmasq.esc
 	awk '!/^$/&&!/^#/{printf("address=/%s/'"0.0.0.0"'\n",$0)}' $PROG_PATH/adblack.conf > /etc/storage/dnsmasq-adbyby.d/07-dnsmasq.black
+	[ $block_ios -eq 1 ] && echo 'address=/mesu.apple.com/0.0.0.0' >> /etc/storage/dnsmasq-adbyby.d/07-dnsmasq.black
+	if [ $block_douyin -eq 1 ]; then
+  cat <<-EOF >/etc/storage/dnsmasq-adbyby.d/08-dnsmasq.douyin
+address=/api.amemv.com/0.0.0.0
+address=/.snssdk.com/0.0.0.0
+address=/.douyin.com/0.0.0.0
+		EOF
+	fi
 	sed -i '/dnsmasq-adbyby/d' /etc/storage/dnsmasq/dnsmasq.conf
 	cat >> /etc/storage/dnsmasq/dnsmasq.conf << EOF
 conf-dir=/etc/storage/dnsmasq-adbyby.d

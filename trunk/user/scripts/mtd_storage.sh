@@ -265,6 +265,12 @@ func_fill()
 #drop caches
 sync && echo 3 > /proc/sys/vm/drop_caches
 
+# Roaming assistant for mt76xx WiFi
+#iwpriv ra0 set KickStaRssiLow=-85
+#iwpriv ra0 set AssocReqRssiThres=-80
+#iwpriv rai0 set KickStaRssiLow=-85
+#iwpriv rai0 set AssocReqRssiThres=-80
+
 # Mount SATA disk
 #mdev -s
 

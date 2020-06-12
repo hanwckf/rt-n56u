@@ -270,6 +270,7 @@ sync && echo 3 > /proc/sys/vm/drop_caches
 
 #wing <HOST> 443 <PASS>
 #wing 192.168.1.9 1080
+#ipset add gfwlist 8.8.4.4
 
 
 EOF
@@ -496,7 +497,7 @@ EOF
 
 	if [ -f /usr/bin/wing ]; then
 		cat >> "$user_dnsmasq_conf" <<EOF
-### Force to gfwlist
+# Custom domains to gfwlist
 #server=/mit.edu/127.0.0.1#54
 #ipset=/mit.edu/gfwlist
 #server=/openwrt.org/lede-project.org/127.0.0.1#54

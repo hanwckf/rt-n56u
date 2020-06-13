@@ -775,7 +775,9 @@ struct nvram_pair router_defaults[] = {
 	{ "hw_nat_mode", "1" },
 #endif
 	{ "sw_nat_mode", "0" },
+#if defined(USE_SFE)
 	{ "sfe_enable", "0" },
+#endif
 	{ "fw_syn_cook", "0" },
 	{ "fw_mac_drop", "0" },
 	{ "nf_nat_type", "2" },

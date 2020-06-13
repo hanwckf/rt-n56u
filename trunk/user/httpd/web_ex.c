@@ -4509,7 +4509,7 @@ struct ej_handler ej_handlers[] =
 	{ "hardware_pins", ej_hardware_pins_hook},
 	{ "detect_internet", ej_detect_internet_hook},
 	{ "dump_syslog", ej_dump_syslog_hook},
-	//{ "dump_eth_mib", ej_dump_eth_mib_hook},
+	{ "dump_eth_mib", ej_dump_eth_mib_hook},
 	{ "get_usb_ports_info", ej_get_usb_ports_info},
 	{ "get_ext_ports_info", ej_get_ext_ports_info},
 	{ "disk_pool_mapping_info", ej_disk_pool_mapping_info},
@@ -4575,4 +4575,3 @@ struct ej_handler ej_handlers[] =
 	{ "openvpn_cli_cert_hook", openvpn_cli_cert_hook},
 	{ NULL, NULL }
 };
-

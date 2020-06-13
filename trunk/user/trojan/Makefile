@@ -1,4 +1,4 @@
-SRC_NAME = trojan-1.15.1
+SRC_NAME = trojan-1.16.0
 THISDIR = $(shell pwd)
 CFLAGS := -O3 -ffunction-sections -fdata-sections
 CXXFLAGS += -std=c++11

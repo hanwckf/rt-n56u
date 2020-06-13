@@ -1,4 +1,4 @@
-SRC_NAME = dnsmasq-2.80
+SRC_NAME = dnsmasq-2.81
 THISDIR = $(shell pwd)
 
 COPTS := -DHAVE_BROKEN_RTC -DNO_INOTIFY -DNO_AUTH -DNO_LOOP
@@ -12,11 +12,18 @@ ifneq ($(CONFIG_FIRMWARE_INCLUDE_IPSET),y)
 COPTS += -DNO_IPSET
 endif
 
-all:
+all: extract_test
 	$(MAKE) -j$(HOST_NCPU) -C $(SRC_NAME) COPTS="$(COPTS)"
 
+extract_test:
+	( if [ ! -d $(SRC_NAME) ]; then \
+		tar zxf $(SRC_NAME).tar.gz ; \
+		patch -d $(SRC_NAME) -p1 -i ../patch/900-filter-aaaa.patch; \
+		patch -d $(SRC_NAME) -p1 -i ../patch/910-mini-ttl.patch; \
+	fi )
+
 clean:
-	$(MAKE) -C $(SRC_NAME) clean
+	rm -rf $(SRC_NAME)
 	rm -f dnsmasq
 
 romfs:

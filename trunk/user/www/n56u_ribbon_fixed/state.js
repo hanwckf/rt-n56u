@@ -451,7 +451,7 @@ if (found_app_mentohust()){
 } else menuL2_title.push("");
 
 
-menuL2_link  = new Array("", tablink[0][1], tablink[1][1], tablink[2][1], tablink[3][1], tablink[4][1], tablink[5][1], tablink[6][1], tablink[7][1], tablink[8][1], tablink[9][1]);
+menuL2_link  = new Array("", tablink[0][1], tablink[1][1], tablink[2][1], tablink[3][1], tablink[4][1], tablink[5][1], tablink[6][1], tablink[7][1], support_2g_radio() ? tablink[8][1] : "Main_EStatus_Content.asp", tablink[9][1]);
 if (found_app_scutclient()){
 	menuL2_link.push(scutclient_array[1]);
 } else menuL2_link.push("");
@@ -529,6 +529,8 @@ function show_menu(L1, L2, L3){
 		menuL2_title[1] = "";
 		tabtitle[0].splice(1,6);
 		tablink[0].splice(1,6);
+		tabtitle[8].splice(1,1);
+		tablink[8].splice(1,1);
 	}
 
 	if(!support_5g_radio()){
@@ -536,8 +538,9 @@ function show_menu(L1, L2, L3){
 		menuL2_title[2] = "";
 		tabtitle[1].splice(1,6);
 		tablink[1].splice(1,6);
-		tabtitle[8].splice(2,1);
-		tablink[8].splice(2,1);
+		var idx = support_2g_radio() ? 2 : 1;
+		tabtitle[8].splice(idx,1);
+		tablink[8].splice(idx,1);
 	}
 
 	if(!support_storage()){

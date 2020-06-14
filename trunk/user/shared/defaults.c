@@ -266,6 +266,7 @@ struct nvram_pair router_defaults[] = {
 	{ "wl_sta_auto", "0" },
 #endif
 
+#if BOARD_HAS_2G_RADIO
 	/* 2G Wireless parameters */
 	{ "rt_country_code", DEF_WLAN_2G_CC },
 	{ "rt_ssid", DEF_WLAN_2G_SSID },
@@ -362,6 +363,7 @@ struct nvram_pair router_defaults[] = {
 	{ "rt_sta_wpa_psk", "" },
 	{ "rt_sta_wisp", "0" },
 	{ "rt_sta_auto", "0" },
+#endif
 
 	// USB related
 	{ "acc_num", "0" },

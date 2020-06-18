@@ -210,7 +210,7 @@ func_fill()
 
 	user_hosts="$dir_dnsmasq/hosts"
 	user_dnsmasq_conf="$dir_dnsmasq/dnsmasq.conf"
-	user_dnsmasq_serv="$dir_dnsmasq/dnsmasq.servers"
+	user_dhcp_conf="$dir_dnsmasq/dhcp.conf"
 	user_ovpnsvr_conf="$dir_ovpnsvr/server.conf"
 	user_ovpncli_conf="$dir_ovpncli/client.conf"
 	user_inadyn_conf="$dir_inadyn/inadyn.conf"
@@ -265,8 +265,19 @@ func_fill()
 #drop caches
 sync && echo 3 > /proc/sys/vm/drop_caches
 
+# Roaming assistant for mt76xx WiFi
+#iwpriv ra0 set KickStaRssiLow=-85
+#iwpriv ra0 set AssocReqRssiThres=-80
+#iwpriv rai0 set KickStaRssiLow=-85
+#iwpriv rai0 set AssocReqRssiThres=-80
+
 # Mount SATA disk
 #mdev -s
+
+#wing <HOST> 443 <PASS>
+#wing 192.168.1.9 1080
+#ipset add gfwlist 8.8.4.4
+
 
 EOF
 		chmod 755 "$script_started"
@@ -293,6 +304,8 @@ EOF
 
 ### Custom user script
 ### Called after internal iptables reconfig (firewall update)
+
+#wing resume
 
 EOF
 		chmod 755 "$script_postf"
@@ -488,6 +501,19 @@ srv-host=_vlmcs._tcp,my.router,1688,0,100
 EOF
 	fi
 
+	if [ -f /usr/bin/wing ]; then
+		cat >> "$user_dnsmasq_conf" <<EOF
+# Custom domains to gfwlist
+#server=/mit.edu/127.0.0.1#54
+#ipset=/mit.edu/gfwlist
+#server=/openwrt.org/lede-project.org/127.0.0.1#54
+#ipset=/openwrt.org/lede-project.org/gfwlist
+#server=/github.com/github.io/githubusercontent.com/127.0.0.1#54
+#ipset=/github.com/github.io/githubusercontent.com/gfwlist
+
+EOF
+	fi
+
 	if [ -d $dir_gfwlist ]; then
 		cat >> "$user_dnsmasq_conf" <<EOF
 ### gfwlist related (resolve by port 5353)
@@ -500,14 +526,12 @@ EOF
 	fi
 
 	# create user dns servers
-	if [ ! -f "$user_dnsmasq_serv" ] ; then
-		cat > "$user_dnsmasq_serv" <<EOF
-# Custom user servers file for dnsmasq
-# Example:
-#server=/mit.ru/izmuroma.ru/10.25.11.30
+	if [ ! -f "$user_dhcp_conf" ] ; then
+		cat > "$user_dhcp_conf" <<EOF
+#6C:96:CF:E0:95:55,192.168.1.10,iMac
 
 EOF
-		chmod 644 "$user_dnsmasq_serv"
+		chmod 644 "$user_dhcp_conf"
 	fi
 
 	# create user inadyn.conf"

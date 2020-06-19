@@ -150,8 +150,9 @@ wyy_start()
 	fi
 	if [ "$APPTYPE" == "go" ]; then
 	get_bin
-    $wyy_bin -p 5200 -sp 5201 -c /etc_ro/UnblockNeteaseMusicGo/server.crt -k /etc_ro/UnblockNeteaseMusicGo/server.key -m 0 -e >/dev/null 2>&1 &
+	$wyy_bin -p 5200 -sp 5202 -m 0 -c /etc_ro/UnblockNeteaseMusicGo/server.crt -k /etc_ro/UnblockNeteaseMusicGo/server.key -m 0  >/dev/null 2>&1 &
     logger -t "音乐解锁" "启动 Golang Version (http:5200, https:5201)"
+	$wyy_bin -p 5203 -sp 5201 -m 0 -c /etc_ro/UnblockNeteaseMusicGo/server.crt -k /etc_ro/UnblockNeteaseMusicGo/server.key -m 0 -e  >/dev/null 2>&1 &
   else
     kill -9 $(busybox ps -w | grep 'sleep 60m' | grep -v grep | awk '{print $1}') >/dev/null 2>&1
     /usr/bin/UnblockNeteaseMusicCloud >/dev/null 2>&1 &

@@ -2,8 +2,8 @@
 #PATH=$(cd "${0%/*}"; pwd):$PATH
 
 DNSMASQ_CONF=/etc/storage/dnsmasq/dnsmasq.conf
-GFWLIST_CONF=/etc/storage/dnsmasq/gfwlist.conf
-GFWLIST_CONF_RO=/etc_ro/gfwlist.conf
+GFWLIST_CONF=/etc/storage/dnsmasq/gfwlist.txt
+GFWLIST_CONF_RO=/etc_ro/gfwlist.txt
 
 usage()
 {
@@ -18,8 +18,7 @@ usage()
 
 update()
 {
-	curl -k -o $GFWLIST_CONF https://cokebar.github.io/gfwlist2dnsmasq/dnsmasq_gfwlist_ipset.conf || exit 1
-	sed -i 's/#5353/#54/g' $GFWLIST_CONF
+	curl -k -o $GFWLIST_CONF https://cokebar.github.io/gfwlist2dnsmasq/gfwlist_domain.txt || exit 1
 }
 
 check()
@@ -103,11 +102,11 @@ start()
 	fi
 
 	# dnsmasq
-	# TODO: Modify dnsmasq to support domain-list-file based server config
-	grep "conf-file=$GFWLIST_CONF" $DNSMASQ_CONF > /dev/null
+	GFWLIST_LINE="gfwlist=$GFWLIST_CONF"
+	grep "$GFWLIST_LINE" $DNSMASQ_CONF > /dev/null
 	if [ $? != 0 ]; then
 		killall dnsmasq
-		echo "conf-file=$GFWLIST_CONF" >> $DNSMASQ_CONF
+		echo "$GFWLIST_LINE" >> $DNSMASQ_CONF
 		dnsmasq
 	fi
 	echo "Wing is running in $RUN_MODE mode..."

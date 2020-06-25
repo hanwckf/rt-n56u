@@ -1523,7 +1523,7 @@ void check_servers(void)
 	    }
 	  
 	  /* Do we need a socket set? */
-	  if (!serv->sfd && 
+	  if (!serv->sfd && !(serv->flags & SERV_IS_TCP) && 
 	      !(serv->sfd = allocate_sfd(&serv->source_addr, serv->interface)) &&
 	      errno != 0)
 	    {
@@ -1543,6 +1543,7 @@ void check_servers(void)
 	  if (++count > SERVERS_LOGGED)
 	    continue;
 	  
+	  char is_tcp = (serv->flags & SERV_IS_TCP) ? '~' : '#';
 	  if (serv->flags & (SERV_HAS_DOMAIN | SERV_FOR_NODOTS | SERV_USE_RESOLV))
 	    {
 	      char *s1, *s2, *s3 = "";
@@ -1566,16 +1567,16 @@ void check_servers(void)
 	      else if (serv->flags & SERV_USE_RESOLV)
 		my_syslog(LOG_INFO, _("using standard nameservers for %s %s"), s1, s2);
 	      else 
-		my_syslog(LOG_INFO, _("using nameserver %s#%d for %s %s %s"), daemon->namebuff, port, s1, s2, s3);
+		my_syslog(LOG_INFO, _("using nameserver %s%c%d for %s %s %s"), daemon->namebuff, is_tcp, port, s1, s2, s3);
 	    }
 #ifdef HAVE_LOOP
 	  else if (serv->flags & SERV_LOOP)
-	    my_syslog(LOG_INFO, _("NOT using nameserver %s#%d - query loop detected"), daemon->namebuff, port); 
+	    my_syslog(LOG_INFO, _("NOT using nameserver %s%c%d - query loop detected"), daemon->namebuff, is_tcp, port); 
 #endif
 	  else if (serv->interface[0] != 0)
-	    my_syslog(LOG_INFO, _("using nameserver %s#%d(via %s)"), daemon->namebuff, port, serv->interface); 
+	    my_syslog(LOG_INFO, _("using nameserver %s%c%d(via %s)"), daemon->namebuff, is_tcp, port, serv->interface); 
 	  else
-	    my_syslog(LOG_INFO, _("using nameserver %s#%d"), daemon->namebuff, port); 
+	    my_syslog(LOG_INFO, _("using nameserver %s%c%d"), daemon->namebuff, is_tcp, port); 
 	}
     }
   

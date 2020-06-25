@@ -778,8 +778,14 @@ char *parse_server(char *arg, union mysockaddr *addr, union mysockaddr *source_a
       !atoi_check16(portno, &source_port))
     return _("bad port");
   
-  if ((portno = split_chr(arg, '#')) && /* is there a port no. */
-      !atoi_check16(portno, &serv_port))
+  portno = split_chr(arg, '#'); /* is there a port no. */
+  if (portno == NULL) {
+    portno = split_chr(arg, '~'); /* is there a TCP port no. */
+    if (portno) {
+      *flags |= SERV_IS_TCP;
+		}
+  }
+  if (portno && !atoi_check16(portno, &serv_port))
     return _("bad port");
   
 #ifdef HAVE_IPV6

@@ -505,7 +505,7 @@ EOF
 		cat >> "$user_dnsmasq_conf" <<EOF
 # Custom domains to gfwlist
 #gfwlist=mit.edu
-#gfwlist=openwrt.org
+#gfwlist=openwrt.org,lede-project.org
 #gfwlist=github.com,github.io,githubusercontent.com
 
 EOF

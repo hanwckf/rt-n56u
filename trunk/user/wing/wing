@@ -74,7 +74,7 @@ start()
 
 	# ipt2socks
 	if [ ! -z $SOCKS_HOST ]; then
-		IPT2SOCKS_CMD="ipt2socks -s $SOCKS_HOST -p $SOCKS_PORT -b 0.0.0.0 -l 1088 -j `cat /proc/cpuinfo|grep processor|wc -l` -T -4 -R"
+		IPT2SOCKS_CMD="ipt2socks -s $SOCKS_HOST -p $SOCKS_PORT -b 0.0.0.0 -l 1088 -T -4 -R"
 		if [ $1 -ge 5 ]; then
 			$IPT2SOCKS_CMD &
 		elif [ $1 -ge 2 ]; then

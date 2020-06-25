@@ -113,6 +113,11 @@ config MTD_NAND_USE_UBI_PART
 	select MTD_UBI
 	select MTD_UBI_GLUEBI
 
+config MTD_FACTORY_PART_LAST
+	bool "Place 'Factory' Partition after 'Kernel+RootFS+Config+Storage' Partition"
+	default n
+	depends on (MTD_NAND_RALINK || MTD_NAND_MTK) && !MTD_NAND_USE_UBI_PART
+
 config MTD_CONFIG_PART_BELOW
 	bool "Place 'Config' Partition after 'Kernel+RootFS' Partition"
 	default n

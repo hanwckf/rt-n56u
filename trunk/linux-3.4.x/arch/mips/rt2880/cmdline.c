@@ -58,7 +58,11 @@ char rt2880_cmdline[] = CONFIG_CMDLINE;
 #if (defined (CONFIG_MTD_NAND_RALINK) || defined (CONFIG_MTD_NAND_MTK)) && !defined (CONFIG_MTD_CONFIG_PART_BELOW)
 #define MTD_ROOTFS_DEV	"/dev/mtdblock5 rootfstype=squashfs"
 #else
+#if defined (CONFIG_MTD_FACTORY_PART_LAST)
+#define MTD_ROOTFS_DEV	"/dev/mtdblock3 rootfstype=squashfs"
+#else
 #define MTD_ROOTFS_DEV	"/dev/mtdblock4 rootfstype=squashfs"
+#endif
 #endif
 #else
 #define MTD_ROOTFS_DEV	"/dev/ram0"

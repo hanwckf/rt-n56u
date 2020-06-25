@@ -3169,6 +3169,22 @@ static int one_opt(int option, char *arg, char *errstr, char *gen_err, int comma
 		     
 		      new->flags |= CONFIG_NAME;
 		      new->domain = strip_hostname(new->hostname);			
+		      if (new->flags & (CONFIG_ADDR | CONFIG_ADDR6)) {
+		        char *buf = daemon->namebuff;
+		        for (char *name = new->hostname; *name; name++) *buf++ = *name;
+		        if (new->flags & CONFIG_ADDR) {
+		          *buf++ = ',';
+		          inet_ntop(AF_INET, &new->addr, buf, MAXDNAME - 1 - (buf - daemon->namebuff));
+#ifdef HAVE_DHCP6
+		          buf += strlen(buf);
+		        }
+		        if (new->flags & CONFIG_ADDR6) {
+		          *buf++ = ',';
+		          inet_ntop(AF_INET6, &new->addr6, buf, MAXDNAME - 1 - (buf - daemon->namebuff));
+#endif
+		        }
+		        one_opt(LOPT_HOST_REC, daemon->namebuff, _("dhcp-host"), _("error"), 0, 0);
+		      }
 		    }
 		}
 	      else if (isdig)

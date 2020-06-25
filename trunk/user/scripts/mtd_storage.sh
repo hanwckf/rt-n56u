@@ -504,12 +504,9 @@ EOF
 	if [ -f /usr/bin/wing ]; then
 		cat >> "$user_dnsmasq_conf" <<EOF
 # Custom domains to gfwlist
-#server=/mit.edu/127.0.0.1#54
-#ipset=/mit.edu/gfwlist
-#server=/openwrt.org/lede-project.org/127.0.0.1#54
-#ipset=/openwrt.org/lede-project.org/gfwlist
-#server=/github.com/github.io/githubusercontent.com/127.0.0.1#54
-#ipset=/github.com/github.io/githubusercontent.com/gfwlist
+#gfwlist=mit.edu
+#gfwlist=openwrt.org
+#gfwlist=github.com,github.io,githubusercontent.com
 
 EOF
 	fi

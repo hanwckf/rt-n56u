@@ -57,7 +57,8 @@ log_debug = off;
 log_info = off;
 redirector = iptables;
 daemon = on;
-redsocks_conn_max = 1000;
+redsocks_conn_max = 10000;
+rlimit_nofile = 10240;
 }
 redsocks {
 local_ip = 0.0.0.0;

@@ -52,10 +52,6 @@ start()
 		HOST=$2
 		PORT=
 	fi
-	if ! expr match $HOST [0-9.]*$ > /dev/null; then
-		PING=`ping $HOST -c 1 -w 1` 2> /dev/null
-		[ ! -z "$PING" ] && HOST=`echo $PING | sed "1{s/[^(]*(//;s/).*//;q}"`
-	fi
 
 	# trojan
 	if [ -z $3 ]; then

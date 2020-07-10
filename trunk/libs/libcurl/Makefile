@@ -56,7 +56,8 @@ configure:
 		--without-libssh2 \
 		--without-krb4 \
 		--without-nss \
-		--without-ssl \
+		--with-ca-bundle=/etc/ssl/certs/ca-certificates.crt \
+                --with-ssl \
 		--with-random=/dev/urandom \
 		--with-zlib=$(STAGEDIR) \
 		--with-mbedtls=$(STAGEDIR) \

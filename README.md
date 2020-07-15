@@ -5,6 +5,7 @@
 * 集成/取消新增插件请修改此文件: trunk/build_firmware_modify
 
 - 已适配除官方适配外的以下机型
+>- ZTE-E8820V2，编译代码：ZTE-E8820。此固件还可完美在Newifi D1上完美使用，信号强度与官方媲美。
 >- MI-R3P(感谢群里emmmm适配,可能led控制有点问题,其它功能正常)
 >- 京东云路由(文件来自Lintel) 编译代码: JDC-1
 >- 歌华链(感谢群里Heaven适配与测试）编译代码: GHL

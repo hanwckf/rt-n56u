@@ -112,7 +112,8 @@ static int pcie_link_status = 0;
 #define GPIO_PCIE_PORT2			7	// TXD3 (I2S_WS)
 #endif
 #define RALINK_GPIO_CTRL0		*(volatile u32 *)(RALINK_PIO_BASE + 0x00)
-#define RALINK_GPIO_DATA0		*(volatile u32 *)(RALINK_PIO_BASE + 0x20)
+#define RALINK_GPIO_DSET0		*(volatile u32 *)(RALINK_PIO_BASE + 0x30)
+#define RALINK_GPIO_DCLR0		*(volatile u32 *)(RALINK_PIO_BASE + 0x40)
 #endif
 
 #define ASSERT_SYSRST_PCIE(val)		do { \
@@ -639,7 +640,7 @@ int __init init_ralink_pci(void)
 	mdelay(50);
 	RALINK_GPIO_CTRL0 |= val;			// switch PERST_N pin to output mode
 	mdelay(50);
-	RALINK_GPIO_DATA0 &= ~(val);			// fall PERST_N pin (reset peripherals)
+	RALINK_GPIO_DCLR0 = val;			// fall PERST_N pin (reset peripherals)
 #else /* !defined (GPIO_PERST) */
 	RALINK_GPIOMODE &= ~(0x3<<PCIE_SHARE_PIN_SW);	// fall PERST_N pin (reset peripherals)
 #endif
@@ -689,7 +690,7 @@ int __init init_ralink_pci(void)
 #if defined (CONFIG_PCIE_PORT2)
 	val |= (0x1<<GPIO_PCIE_PORT2);
 #endif
-	RALINK_GPIO_DATA0 |= val;			// rise PERST_N pin (complete reset peripherals)
+	RALINK_GPIO_DSET0 = val;			// rise PERST_N pin (complete reset peripherals)
 #else /* !defined (GPIO_PERST) */
 	RALINK_PCI_PCICFG_ADDR &= ~(1<<1);		// release PCIRST
 #endif

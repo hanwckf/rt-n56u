@@ -7,7 +7,7 @@ local ssrindext = io.popen("dbus get ssconf_basic_json_" .. server_section)
 local servertmp = ssrindext:read("*all")
 local server = cjson.decode(servertmp)
 if server.plugin == "simple-obfs" then
-local ssplugin = "obfs-local"
+ssplugin = "obfs-local"
 end
 local ss = {
 	server = server.server,

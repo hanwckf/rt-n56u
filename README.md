@@ -29,6 +29,7 @@
 >- MI-NANO
 >- MZ-R13
 >- MZ-R13P
+>- MZ-R18（USB）
 >- RT-AC1200GU (USB)
 >- XY-C1 (USB)
 >- WR1200JS (USB)

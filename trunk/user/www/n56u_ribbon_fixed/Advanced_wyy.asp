@@ -28,6 +28,7 @@ var $j = jQuery.noConflict();
 $j(document).ready(function() {
 
 	init_itoggle('wyy_enable');
+	init_itoggle('wyy_flac');
 
 });
 
@@ -421,6 +422,22 @@ function markGroupMDHCP(o, c, b) {
 					<input type="text" class="input" size="15" name="wyy_coustom_music" id="wyy_coustom_music" style="width: 200px" value="" />
 				</td>
 			</tr>-->
+			<tr>
+											<th width="30%" style="border-top: 0 none;">启用无损音质</th>
+											<td style="border-top: 0 none;">
+													<div class="main_itoggle">
+													<div id="wyy_flac_on_of">
+														<input type="checkbox" id="wyy_flac_fake" <% nvram_match_x("", "wyy_flac", "1", "value=1 checked"); %><% nvram_match_x("", "wyy_flac", "0", "value=0"); %>  />
+													</div>
+												</div>
+												<div style="position: absolute; margin-left: -10000px;">
+													<input type="radio" value="1" name="wyy_flac" id="wyy_flac_1" class="input" value="1" <% nvram_match_x("", "wyy_flac", "1", "checked"); %> /><#checkbox_Yes#>
+													<input type="radio" value="0" name="wyy_flac" id="wyy_flac_0" class="input" value="0" <% nvram_match_x("", "wyy_flac", "0", "checked"); %> /><#checkbox_No#>
+												</div>
+目前仅支持酷我、QQ、咪咕
+											</td>
+
+										</tr>
 										<tr>
 											<th>HTTPS 证书</th>
 											<td>

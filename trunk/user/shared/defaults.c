@@ -781,6 +781,7 @@ struct nvram_pair router_defaults[] = {
 	{ "wyy_musicapptype", "kuwo" },
 	{ "wyy_coustom_server", "" },
 	{ "wyy_coustom_music", "" },
+	{ "wyy_flac", "0" },
 	{ "wyy_staticnum_x", "0" },
 	
 	/*Zerotier*/

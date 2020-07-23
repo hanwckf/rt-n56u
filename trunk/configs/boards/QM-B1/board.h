@@ -4,8 +4,8 @@
 #define BOARD_NAME		"QM-B1"
 #define BOARD_DESC		"QM-B1 Wireless Router"
 #define BOARD_VENDOR_NAME	"QM-B1 Technology"
-#define BOARD_VENDOR_URL	"http://www.qianmo.com.cn/"
-#define BOARD_MODEL_URL		"http://www.qianmo.com.cn/"
+#define BOARD_VENDOR_URL	"http://www.qianmo.com/"
+#define BOARD_MODEL_URL		"http://www.qianmo.com/"
 #define BOARD_BOOT_TIME		30
 #define BOARD_FLASH_TIME	120
 #undef BOARD_GPIO_BTN_FN1
@@ -13,13 +13,13 @@
 #undef BOARD_GPIO_BTN_WP
 #undef BOARD_GPIO_LED_ALL
 #undef BOARD_GPIO_LED_WIFI  
-#undef BOARD_GPIO_LED_SW2G   
-#undef BOARD_GPIO_LED_SW5G   
+#define BOARD_GPIO_LED_SW2G  15  
+#define BOARD_GPIO_LED_SW5G  11 
 #undef BOARD_GPIO_LED_POWER	
-#define BOARD_GPIO_LED_SYS	29
+#define BOARD_GPIO_LED_SYS	12
 #undef BOARD_GPIO_LED_LAN
 #undef BOARD_GPIO_LED_WAN	
-#undef BOARD_GPIO_LED_USB	
+#define BOARD_GPIO_LED_USB	16
 #undef BOARD_GPIO_LED_ROUTER
 #undef  BOARD_GPIO_PWR_USB
 #define BOARD_HAS_5G_11AC	1

@@ -45,7 +45,7 @@ num=`nvram get wyy_staticnum_x`
 ENABLE=$(nvram get wyy_enable)
 TYPE=$(nvram get wyy_musicapptype)
 APPTYPE=$(nvram get wyy_apptype)
-#FLAC=$(uci_get_by_type unblockmusic flac_enabled 0)
+FLAC=$(nvram get wyy_flac)
 
 CLOUD=$(nvram get wyy_cloudserver)
 if [ "$CLOUD" = "coustom" ];then
@@ -120,26 +120,6 @@ add_rule
 /sbin/restart_dhcpd
 }
 
-get_bin(){
-wyy_bin="/usr/bin/UnblockNeteaseMusic"
-if [ ! -f "$wyy_bin" ]; then
-if [ ! -f "/tmp/UnblockNeteaseMusic" ];then
-	curl -k -s -o /tmp/UnblockNeteaseMusic --connect-timeout 10 --retry 3 https://cdn.jsdelivr.net/gh/chongshengB/rt-n56u/trunk/user/unblockmusic/UnblockNeteaseMusic
-	if [ ! -f "/tmp/UnblockNeteaseMusic" ]; then
-		logger -t "音乐解锁" "二进制文件下载失败，可能是地址失效或者网络异常！"
-		nvram set wyy_enable=0
-		wyy_close
-	else
-		logger -t "音乐解锁" "二进制文件下载成功"
-		chmod -R 777 /tmp/UnblockNeteaseMusic
-		wyy_bin="/tmp/UnblockNeteaseMusic"
-	fi
-	else
-	wyy_bin="/tmp/UnblockNeteaseMusic"
-	fi
-fi
-}
-
 wyy_start()
 {
 	[ $ENABLE -eq "0" ] && exit 0
@@ -149,14 +129,15 @@ wyy_start()
 		musictype="-o $TYPE"
 	fi
 	if [ "$APPTYPE" == "go" ]; then
-	get_bin
-	$wyy_bin -p 5200 -sp 5202 -m 0 -c /etc_ro/UnblockNeteaseMusicGo/server.crt -k /etc_ro/UnblockNeteaseMusicGo/server.key -m 0  >/dev/null 2>&1 &
-    logger -t "音乐解锁" "启动 Golang Version (http:5200, https:5201)"
-	$wyy_bin -p 5203 -sp 5201 -m 0 -c /etc_ro/UnblockNeteaseMusicGo/server.crt -k /etc_ro/UnblockNeteaseMusicGo/server.key -m 0 -e  >/dev/null 2>&1 &
+	if [ $FLAC -eq 1 ]; then
+      ENABLE_FLAC="-b "
+    fi
+    UnblockNeteaseMusic $ENABLE_FLAC -p 5200 -sp 5201 -m 0 -c /etc_ro/UnblockNeteaseMusicGo/server.crt -k /etc_ro/UnblockNeteaseMusicGo/server.key -m 0 -e >/dev/null 2>&1 &
+    logger -t "音乐解锁" "启动 Golang Version (http:5200, https:5201)"    
   else
     kill -9 $(busybox ps -w | grep 'sleep 60m' | grep -v grep | awk '{print $1}') >/dev/null 2>&1
     /usr/bin/UnblockNeteaseMusicCloud >/dev/null 2>&1 &
-     logger -t "音乐解锁" "启动 Cloud Version - Server: $cloudip (http:$cloudhttp, https:$cloudhttp)"
+     logger -t "音乐解锁" "启动 Cloud Version - Server: $cloudip (http:$cloudhttp, https:$cloudhttps)"
 	fi
 		
 	set_firewall

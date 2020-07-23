@@ -66,23 +66,6 @@ local type=$stype
 		;;
 	trojan)
 		tj_bin="/usr/bin/trojan"
-		if [ ! -f "$tj_bin" ]; then
-		if [ ! -f "/tmp/trojan" ];then
-			curl -k -s -o /tmp/trojan --connect-timeout 10 --retry 3 https://cdn.jsdelivr.net/gh/chongshengB/rt-n56u/trunk/user/trojan/trojan
-			if [ ! -f "/tmp/trojan" ]; then
-				logger -t "SS" "trojan二进制文件下载失败，可能是地址失效或者网络异常！"
-				nvram set ss_enable=0
-				ssp_close
-			else
-				logger -t "SS" "trojan二进制文件下载成功"
-				chmod -R 777 /tmp/trojan
-				tj_bin="/tmp/trojan"
-			fi
-			else
-			tj_bin="/tmp/trojan"
-			fi		
-		fi
-		#tj_file=$trojan_json_file
 		if [ "$2" = "0" ]; then
 		lua /etc_ro/ss/gentrojanconfig.lua $1 nat 1080 >$trojan_json_file
 		sed -i 's/\\//g' $trojan_json_file
@@ -93,22 +76,6 @@ local type=$stype
 		;;
 	v2ray)
 		v2_bin="/usr/bin/v2ray"
-		if [ ! -f "$v2_bin" ]; then
-		if [ ! -f "/tmp/v2ray" ];then
-			curl -k -s -o /tmp/v2ray --connect-timeout 10 --retry 3 https://cdn.jsdelivr.net/gh/chongshengB/rt-n56u/trunk/user/v2ray/v2ray
-			if [ ! -f "/tmp/v2ray" ]; then
-				logger -t "SS" "v2ray二进制文件下载失败，可能是地址失效或者网络异常！"
-				nvram set ss_enable=0
-				ssp_close
-			else
-				logger -t "SS" "v2ray二进制文件下载成功"
-				chmod -R 777 /tmp/v2ray
-				v2_bin="/tmp/v2ray"
-			fi
-			else
-			v2_bin="/tmp/v2ray"
-			fi
-		fi
 		v2ray_enable=1
 		if [ "$2" = "1" ]; then
 		lua /etc_ro/ss/genv2config.lua $1 udp 1080 >/tmp/v2-ssr-reudp.json

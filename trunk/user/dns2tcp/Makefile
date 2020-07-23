@@ -2,7 +2,7 @@ SRC_NAME = dns2tcp
 THISDIR = $(shell pwd)
 
 all: 
-	$(MAKE) -j$(HOST_NCPU) -C $(SRC_NAME)
+	$(MAKE) -j$(HOST_NCPU) -C $(SRC_NAME) CC="$(CC)"
 
 clean:
 	if [ -f $(SRC_NAME)/Makefile ] ; then \

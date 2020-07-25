@@ -221,7 +221,7 @@ BOOLEAN PeerAddBARspActionSanity(
 
 	if (pAddFrame->BaParm.BAPolicy != IMMED_BA)
 	{
-		DBGPRINT(RT_DEBUG_ERROR,("%s(): ADDBA Resp Ba Policy[%d] not support\n", __FUNCTION__, pAddFrame->BaParm.BAPolicy));
+		DBGPRINT(RT_DEBUG_TRACE,("%s(): ADDBA Resp Ba Policy[%d] not support\n", __FUNCTION__, pAddFrame->BaParm.BAPolicy));
 		return FALSE;
 	}
 

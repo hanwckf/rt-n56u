@@ -3269,7 +3269,7 @@ static VOID read_ht_param_from_file(struct _RTMP_ADAPTER *pAd, RTMP_STRING *tmpb
 
 	if (RTMPGetKeyParameter("HT_BSSCoexistence", tmpbuf, 25, buf, TRUE)) {
 		Value = os_str_tol(tmpbuf, 0, 10);
-		pAd->CommonCfg.bBssCoexEnable = ((Value == 1) ? TRUE : FALSE);
+		pAd->CommonCfg.bBssCoexEnable = 0;
 		MTWF_LOG(DBG_CAT_CFG, DBG_SUBCAT_ALL, DBG_LVL_TRACE, ("HT: 20/40 BssCoexSupport = %s\n",
 				 (pAd->CommonCfg.bBssCoexEnable == TRUE) ? "ON" : "OFF"));
 	}

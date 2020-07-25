@@ -58,7 +58,7 @@ configure_ssr:
 		--disable-ssp \
 		--disable-assert \
 		--enable-system-shared-lib \
-		--with-crypto-library=mbedtls \
+		--with-crypto-library=openssl \
 		--host=$(HOST_TARGET) \
 		--build=$(HOST_BUILD) ; \
 	)

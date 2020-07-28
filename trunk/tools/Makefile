@@ -1,4 +1,5 @@
 THISDIR = $(shell pwd)
+go_version = 1.14
 # use host target
 CC        = gcc
 GCC       = gcc
@@ -16,6 +17,8 @@ SSTRIP_NAME = ELFkickers-3.1
 CFLAGS    = -Wall -O2
 LDFLAGS   =
 
+
+
 -include $(LINUX_CONFIG)
 
 all:go_build
@@ -29,13 +32,12 @@ endif
 
 go_build:
 	mkdir -p $(THISDIR)/go
-	( if [ ! -f $(THISDIR)/go/go1.14.linux-amd64.tar.gz ]; then \
-	curl --create-dirs -L https://studygolang.com/dl/golang/go1.14.linux-amd64.tar.gz -o $(THISDIR)/go/go1.14.linux-amd64.tar.gz ; \
+	( if [ ! -f $(THISDIR)/go/go$(go_version).linux-amd64.tar.gz ]; then \
+	curl --create-dirs -L https://studygolang.com/dl/golang/go$(go_version).linux-amd64.tar.gz -o $(THISDIR)/go/go$(go_version).linux-amd64.tar.gz ; \
 	fi )
 	( if [ ! -d $(THISDIR)/go/go ]; then \
 	tar zxfv $(THISDIR)/go/go1.14.linux-amd64.tar.gz -C go ; \
 	fi )
-	export PATH=$(THISDIR)/go/go/bin:$PATH
 
 clean:
 	if [ -f $(SSTRIP_NAME)/Makefile ] ; then \

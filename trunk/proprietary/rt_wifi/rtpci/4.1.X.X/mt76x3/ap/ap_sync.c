@@ -81,7 +81,7 @@ VOID APPeerProbeReqAction(
 
 
 	if (PeerProbeReqSanity(pAd, Elem->Msg, Elem->MsgLen, &ProbeReqParam) == FALSE) {
-DBGPRINT(RT_DEBUG_OFF, ("%s():shiang! PeerProbeReqSanity failed!\n", __FUNCTION__));
+DBGPRINT(RT_DEBUG_TRACE, ("%s():shiang! PeerProbeReqSanity failed!\n", __FUNCTION__));
 		return;
 	}
 

@@ -10,8 +10,8 @@ on:
   #    - master
  # schedule:
  #   - cron: 0 17 * * 4
-#  watch:
-#    types: [started]
+  watch:
+    types: [started]
 
 jobs:
   build:

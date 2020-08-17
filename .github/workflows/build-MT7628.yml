@@ -6,12 +6,12 @@ on:
 #  push:
 #    tags:
 #    - 'v*'
-  #  branches: 
-  #    - master
+    branches: 
+      - dev
 #  schedule:
 #    - cron: 0 17 * * 4
-#  watch:
-#    types: [started]
+  watch:
+    types: [started]
 
 jobs:
   build:

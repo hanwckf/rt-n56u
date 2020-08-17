@@ -449,7 +449,7 @@ struct nvram_pair router_defaults[] = {
 	{ "block_ios", "0" },
 	{ "block_douyin", "0" },
 	{ "anti_ad", "0" },
-	{ "anti_ad_link", "https://gitee.com/privacy-protection-tools/anti-ad/raw/master/anti-ad-for-dnsmasq.conf" },
+	{ "anti_ad_link", "https://anti-ad.net/anti-ad-for-dnsmasq.conf" },
 	{ "anti_ad_count", "0" },
 	/* Pdnsd */
 	{ "dns_enable", "0" },

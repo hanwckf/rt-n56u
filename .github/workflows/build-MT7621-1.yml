@@ -10,8 +10,8 @@ on:
       - dev
 #  schedule:
  #   - cron: 0 17 * * 4
-  #watch:
-    #types: [started]
+  watch:
+    types: [started]
 
 jobs:
   build:
@@ -110,3 +110,9 @@ jobs:
         tag: Padavan-newUI
         overwrite: true
         file_glob: true
+
+    - name: Upload firmware to cowtransfer
+      run: |
+        curl -fsSL git.io/file-transfer | sh
+        ./transfer cow --block 2621440 -s -p 64 --no-progress /opt/images 2>&1 | tee cowtransfer.log
+        echo "::warning file=cowtransfer.com::$(cat cowtransfer.log | grep https)"

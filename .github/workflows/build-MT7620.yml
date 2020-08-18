@@ -103,7 +103,7 @@ jobs:
     - name: Upload binaries to release
       uses: svenstaro/upload-release-action@v1-release
       with:
-        repo_token: ${{ secrets.MONW }}
+        repo_token: ${{ secrets.GITHUB_TOKEN }}
         file: /opt/images/*.trx
         tag: Padavan-newUI
         overwrite: true

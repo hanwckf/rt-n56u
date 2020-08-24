@@ -86,7 +86,7 @@ function applyRule(){
 function restoreNVRAM(){
 	var alert_string = "<#Setting_factorydefault_hint1#>";
 	if(lan_ipaddr != "192.168.2.1")
-		alert_string += '\n<#Setting_factorydefault_iphint#> 默认的局域网 IP 是' + lan_ipaddr + '\n如果无法返回设置页面，请重新获取你的电脑的 IP 地址。\n';
+		alert_string += "\n<#Setting_factorydefault_iphint#>\n";
 	alert_string += "\n<#Setting_factorydefault_hint2#>";
 	if(confirm(alert_string)){
 		document.form.action1.blur();

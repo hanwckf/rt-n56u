@@ -422,6 +422,7 @@ StorageEnableAria=Enable Aria2?
 Console_warn=Warning! Console emulator may be used only for commands which return result immediately. Commands such as [top], [ping], [traceroute], etc. will block the WebUI.
 Scripts_desc=Flexible system configuration via Shell scripts that are called when certain events occur.
 InetCheck_desc=Internet Detector monitors access to the Internet and allows to perform the required actions when the state of Internet access changes.
+Menu_Customization_desc=This option can only block the display of the page and will not delete the program. It is suitable for severe obsessive-compulsive disorder.
 InetCheckMode=Internet Detector Poll Mode
 InetCheckModeItem0=While WebUI is opened
 InetCheckModeItem1=Continuous polling
@@ -910,6 +911,7 @@ menu5_8_2=Memory Usage
 menu5_10_1=Buttons/LED
 menu5_10_2=Scripts
 menu5_10_3=Internet Detector
+menu5_10_4=Menu Customization
 menu5_1_desc=Configure your Wireless Connection, Security and other Advanced Parameters.
 menu5_2_desc=Configure LAN, DHCP and Route Settings.
 menu5_3_desc=Configure the Internet Connection, QoS and Server setting.
@@ -1846,5 +1848,6 @@ GfwList=GfwList
 Login=Login
 BTN_SHUTDOWN=Shutdown
 JS_shutdown=You need manually power on after shutdown!!! Continue to shutdown?
-
-
+reboot_schedule_enable=Enable scheduled restart?
+reboot_schedule_date=Activation date:
+reboot_schedule_time=Activation time:

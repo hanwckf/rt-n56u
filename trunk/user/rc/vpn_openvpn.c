@@ -275,7 +275,7 @@ openvpn_add_cipher(FILE *fp, int cipher_idx, char *ncp_clist)
 	}
 
 	fprintf(fp, "cipher %s\n", cipher_str);
-	if (ncp_clist)
+	if (ncp_clist && strlen(ncp_clist) > 2)
 		fprintf(fp, "data-ciphers %s\n", ncp_clist);
 }
 

@@ -97,6 +97,7 @@ Contributors of this project are not responsible for what happens next.
 >- WDR7300
 >- RM2100
 >- R2100 
+>- E8820V2(USB)
 
 ***
 
@@ -134,7 +135,7 @@ sudo yum groupinstall "Development Tools"
 
 # Archlinux/Manjaro
 sudo pacman -Syu --needed git base-devel cmake gperf ncurses libmpc gmp python-docutils \
-vim rpcsvc-proto fakeroot
+vim rpcsvc-proto fakeroot cpio
 
 ```
 * 克隆源码

@@ -95,7 +95,7 @@ elif [ "$ID_FS_TYPE" == "ntfs" ] ; then
 	kernel_antfs=`modprobe -l | grep antfs`
 	if [ -n "$kernel_antfs" ]; then
 		func_load_module antfs
-		mount -t antfs "$dev_full" "$dev_mount" -o noatime,utf8,umask=0
+		mount -t antfs "$dev_full" "$dev_mount" -o noatime,utf8
 	elif [ -n "$kernel_ufsd" ] ; then
 		func_load_module ufsd
 		mount -t ufsd "$dev_full" "$dev_mount" -o noatime,sparse,nls=utf8,force

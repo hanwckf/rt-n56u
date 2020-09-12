@@ -274,8 +274,8 @@ sync && echo 3 > /proc/sys/vm/drop_caches
 # Mount SATA disk
 #mdev -s
 
-#wing <HOST> 443 <PASS>
-#wing 192.168.1.9 1080
+#wing <HOST:443> <PASS>
+#wing 192.168.1.9:1080
 #ipset add gfwlist 8.8.4.4
 
 
@@ -504,12 +504,9 @@ EOF
 	if [ -f /usr/bin/wing ]; then
 		cat >> "$user_dnsmasq_conf" <<EOF
 # Custom domains to gfwlist
-#server=/mit.edu/127.0.0.1#54
-#ipset=/mit.edu/gfwlist
-#server=/openwrt.org/lede-project.org/127.0.0.1#54
-#ipset=/openwrt.org/lede-project.org/gfwlist
-#server=/github.com/github.io/githubusercontent.com/127.0.0.1#54
-#ipset=/github.com/github.io/githubusercontent.com/gfwlist
+#gfwlist=mit.edu
+#gfwlist=openwrt.org,lede-project.org
+#gfwlist=github.com,github.io,githubusercontent.com
 
 EOF
 	fi

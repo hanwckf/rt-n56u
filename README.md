@@ -98,6 +98,7 @@ Contributors of this project are not responsible for what happens next.
 >- RM2100
 >- R2100 
 >- E8820V2(USB)
+>- MSG1500(USB)
 
 ***
 

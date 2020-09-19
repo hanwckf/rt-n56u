@@ -1433,8 +1433,8 @@ timeleft(tvp)
 {
     if (callout == NULL)
 	return NULL;
-	
-	check_time();
+
+    check_time();
 
     gettimeofday(&timenow, NULL);
     tvp->tv_sec = callout->c_time.tv_sec - timenow.tv_sec;

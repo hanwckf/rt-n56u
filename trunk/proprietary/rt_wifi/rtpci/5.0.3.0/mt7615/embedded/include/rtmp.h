@@ -897,8 +897,8 @@ typedef struct _COUNTER_RALINK {
 	UINT32 OneSecRxARalinkCnt;	/* Rx Ralink Aggregation frame cnt */
 	UINT32 OneSecEnd;	/* for one sec count clear use */
 
-	ULONG TransmittedByteCount;	/* both successful and failure, used to calculate TX throughput */
-	ULONG ReceivedByteCount;	/* both CRC okay and CRC error, used to calculate RX throughput */
+	UINT64 TransmittedByteCount;	/* both successful and failure, used to calculate TX throughput */
+	UINT64 ReceivedByteCount;	/* both CRC okay and CRC error, used to calculate RX throughput */
 	ULONG BadCQIAutoRecoveryCount;
 	ULONG PoorCQIRoamingCount;
 	ULONG MgmtRingFullCount;
@@ -2071,8 +2071,8 @@ typedef struct _BSS_STRUCT {
 	/*MBSS_STATISTICS MbssStat;*/
 	ULONG TxCount;
 	ULONG RxCount;
-	ULONG ReceivedByteCount;
-	ULONG TransmittedByteCount;
+	UINT64 ReceivedByteCount;
+	UINT64 TransmittedByteCount;
 	ULONG RxErrorCount;
 	ULONG RxDropCount;
 #ifdef CUSTOMER_DCC_FEATURE

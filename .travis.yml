@@ -32,7 +32,6 @@ after_script:
   && image_name=images_${build_variant}_${GIT_VERSION} || image_name=images_${build_variant}
 - cd /opt/images; md5sum *.trx |tee md5sum.txt; 7z a -mx=9 ${image_name}.7z ./*
 - curl -m 120 -F file=@${image_name}.7z https://file.io/?expires=3d ; echo
-- 'curl -m 120 -H ''Max-Days: 3'' --upload-file ./${image_name}.7z https://transfer.sh/${image_name}.7z ; echo'
 env:
   jobs:
   - build_variant=mt7621 targets="K2P_nano K2P_nano-5.0 K2P-5.0 DIR-878-5.0 WDR7300 RM2100"

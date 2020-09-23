@@ -44,6 +44,11 @@ config TPC_SUPPORT
 	depends on WIFI_DRIVER
 	default y
 
+config TXRX_STAT_SUPPORT
+	bool "TxRx Stats Support"
+	depends on WIFI_DRIVER
+	default n
+
 config ICAP_SUPPORT
 	bool "ICAP Support"
 	depends on WIFI_DRIVER

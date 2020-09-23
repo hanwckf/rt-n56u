@@ -145,7 +145,7 @@ typedef struct usb_ctrlrequest devctrlrequest;
 #ifdef INTELP6_SUPPORT
 #define L1_PROFILE_PATH	"/tmp/l1profile.dat"
 #else
-#define L1_PROFILE_PATH	"/etc/wireless/l1profile.dat"
+#define L1_PROFILE_PATH	"/etc_ro/Wireless/l1profile.dat"
 #endif
 #define L1PROFILE_INDEX_LEN		10
 #define	L1PROFILE_ATTRNAME_LEN	30
@@ -282,7 +282,7 @@ typedef int (*HARD_START_XMIT_FUNC)(struct sk_buff *skb, struct net_device *net_
 #define RTMP_DEC_REF(_A)		0
 #define RTMP_GET_REF(_A)		0
 
-#if defined(CONFIG_FAST_NAT_SUPPORT)
+#if 0
 #define RT_MOD_HNAT_DEREG(_net_dev) \
 	do {\
 		if (ppe_dev_unregister_hook != NULL) \
@@ -1315,8 +1315,10 @@ do{ 																\
 #ifdef CONFIG_FAST_NAT_SUPPORT
 extern int (*ra_sw_nat_hook_tx)(struct sk_buff *skb, int gmac_no);
 extern int (*ra_sw_nat_hook_rx)(struct sk_buff *skb);
+#if 0
 extern void (*ppe_dev_register_hook) (VOID  *dev);
 extern void (*ppe_dev_unregister_hook) (VOID  *dev);
+#endif
 
 #if defined(CONFIG_WIFI_PKT_FWD) || defined(CONFIG_WIFI_PKT_FWD_MODULE)
 extern int (*wf_ra_sw_nat_hook_tx_bkup)(struct sk_buff *skb, int gmac_no);

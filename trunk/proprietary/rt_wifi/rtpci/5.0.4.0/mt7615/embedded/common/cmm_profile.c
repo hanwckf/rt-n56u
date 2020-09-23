@@ -3742,7 +3742,7 @@ NDIS_STATUS	RTMPSetProfileParameters(
 					pAd->ApCfg.bAutoChannelAtBootup = FALSE;
 				else { /*Enable*/
 					pAd->ApCfg.bAutoChannelAtBootup = TRUE;
-					pAd->ApCfg.AutoChannelAlg = SelAlg;
+					pAd->ApCfg.AutoChannelAlg = 3; //force using busytime ACS alg
 				}
 			} else /*Disable*/
 				pAd->ApCfg.bAutoChannelAtBootup = FALSE;
@@ -4098,14 +4098,6 @@ NDIS_STATUS	RTMPSetProfileParameters(
 					pAd->CommonCfg.cPowerUpCckOfdm[BAND1][6]));
 			}
 #endif /* DBDC_MODE */
-			printk("[PowerUpCckOfdm] BAND1: (%d)-(%d)-(%d)-(%d)-(%d)-(%d)-(%d)\n",
-				pAd->CommonCfg.cPowerUpCckOfdm[BAND1][0],
-				pAd->CommonCfg.cPowerUpCckOfdm[BAND1][1],
-				pAd->CommonCfg.cPowerUpCckOfdm[BAND1][2],
-				pAd->CommonCfg.cPowerUpCckOfdm[BAND1][3],
-				pAd->CommonCfg.cPowerUpCckOfdm[BAND1][4],
-				pAd->CommonCfg.cPowerUpCckOfdm[BAND1][5],
-				pAd->CommonCfg.cPowerUpCckOfdm[BAND1][6]);
 		}
 
 		/* Power Boost (HT20) */

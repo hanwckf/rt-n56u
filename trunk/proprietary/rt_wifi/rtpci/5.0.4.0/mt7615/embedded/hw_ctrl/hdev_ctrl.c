@@ -1008,7 +1008,7 @@ EDCA_PARM *HcGetEdca(RTMP_ADAPTER *pAd, struct wifi_dev *wdev)
 	struct hdev_ctrl *ctrl = pAd->hdev_ctrl;
 
 	if (!hdev_obj_state_ready(obj)) {
-		MTWF_LOG(DBG_CAT_HW, DBG_SUBCAT_ALL, DBG_LVL_ERROR,
+		MTWF_LOG(DBG_CAT_HW, DBG_SUBCAT_ALL, DBG_LVL_TRACE,
 			("%s(): wdev=%d, hobj is not ready!\n", __func__, wdev->wdev_idx));
 		return NULL;
 	}

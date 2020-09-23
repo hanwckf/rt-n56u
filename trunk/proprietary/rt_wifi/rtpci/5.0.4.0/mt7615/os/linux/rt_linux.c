@@ -48,7 +48,8 @@
 #endif /* MEM_ALLOC_INFO_SUPPORT */
 
 #ifdef CONFIG_FAST_NAT_SUPPORT
-#include <net/ra_nat.h>
+#include "../../../../../../net/nat/hw_nat/ra_nat.h"
+#include "../../../../../../net/nat/hw_nat/frame_engine.h"
 #endif /*CONFIG_FAST_NAT_SUPPORT*/
 
 #ifdef VLAN_SUPPORT
@@ -1692,11 +1693,8 @@ int RtmpOSNetDevAttach(
 		  *  function will make kernel panic.
 		  */
 		if (pDevOpHook->get_stats)
-#if (KERNEL_VERSION(2, 6, 31) <= LINUX_VERSION_CODE)
-			pNetDevOps->ndo_get_stats = pDevOpHook->get_stats;
-
-#else
-			pNetDev->get_stats = pDevOpHook->get_stats;
+#if (KERNEL_VERSION(2, 6, 35) <= LINUX_VERSION_CODE)
+			pNetDevOps->ndo_get_stats64 = pDevOpHook->get_stats;
 #endif
 		/* OS specific flags, here we used to indicate if we are virtual interface */
 		/*		pNetDev->priv_flags = pDevOpHook->priv_flags; */
@@ -2444,7 +2442,7 @@ VOID RtmpOsPktNatMagicTag(IN PNDIS_PACKET pNetPkt)
 {
 	struct sk_buff *pRxPkt = RTPKT_TO_OSPKT(pNetPkt);
 
-	FOE_MAGIC_TAG(pRxPkt) = FOE_MAGIC_WLAN;
+	FOE_MAGIC_TAG(pRxPkt) = FOE_MAGIC_EXTIF;
 }
 #endif /*CONFIG_FAST_NAT_SUPPORT*/
 

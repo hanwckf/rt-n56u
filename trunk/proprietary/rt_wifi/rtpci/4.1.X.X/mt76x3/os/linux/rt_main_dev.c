@@ -377,7 +377,7 @@ PNET_DEV RtmpPhyNetDevInit(VOID *pAd, RTMP_OS_NETDEV_OP_HOOK *pNetDevHook)
 #endif /* IKANOS_VX_1X0 */
 	pNetDevHook->ioctl = rt28xx_ioctl;
 	pNetDevHook->priv_flags = InfId; /*INT_MAIN; */
-	pNetDevHook->get_stats = RT28xx_get_ether_stats;
+	pNetDevHook->get_stats = RT28xx_get_ether_stats64;
 
 	pNetDevHook->needProtcted = FALSE;
 

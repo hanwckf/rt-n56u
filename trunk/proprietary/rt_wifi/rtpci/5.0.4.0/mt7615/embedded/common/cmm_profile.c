@@ -362,6 +362,7 @@ static VOID RTMPChannelCfg(RTMP_ADAPTER *pAd, RTMP_STRING *Buffer)
 #endif /* CONFIG_AP_SUPPORT */
 	}
 
+#ifndef DBDC_MODE
 #ifdef CONFIG_AP_SUPPORT
 #ifdef MBSS_SUPPORT
 	/*Can not assign default channel to wdev-> channel when channel = 0 */
@@ -382,6 +383,7 @@ static VOID RTMPChannelCfg(RTMP_ADAPTER *pAd, RTMP_STRING *Buffer)
 	}
 #endif/*MBSS_SUPPORT*/
 #endif /*CONFIG_AP_SUPPORT*/
+#endif /*DBDC_MODE*/
 
 }
 
@@ -3734,7 +3736,9 @@ NDIS_STATUS	RTMPSetProfileParameters(
 
 #ifdef CONFIG_AP_SUPPORT
 		/*AutoChannelSelect*/
+		pAd->ApCfg.AutoChannelAlg = 3; //force using busytime ACS alg
 		if (RTMPGetKeyParameter("AutoChannelSelect", tmpbuf, 10, pBuffer, TRUE)) {
+			
 			if (os_str_tol(tmpbuf, 0, 10) != 0) { /*Enable*/
 				ChannelSel_Alg SelAlg = (ChannelSel_Alg)os_str_tol(tmpbuf, 0, 10);
 
@@ -3742,7 +3746,6 @@ NDIS_STATUS	RTMPSetProfileParameters(
 					pAd->ApCfg.bAutoChannelAtBootup = FALSE;
 				else { /*Enable*/
 					pAd->ApCfg.bAutoChannelAtBootup = TRUE;
-					pAd->ApCfg.AutoChannelAlg = 3; //force using busytime ACS alg
 				}
 			} else /*Disable*/
 				pAd->ApCfg.bAutoChannelAtBootup = FALSE;
@@ -3757,11 +3760,7 @@ NDIS_STATUS	RTMPSetProfileParameters(
 
 		/*Channel*/
 		/*Note: AutoChannelSelect must be put before Channel in dat file*/
-		if (RTMPGetKeyParameter("Channel", tmpbuf, 100, pBuffer, TRUE)
-#ifdef CONFIG_AP_SUPPORT
-			&& !pAd->ApCfg.bAutoChannelAtBootup
-#endif
-			) {
+		if (RTMPGetKeyParameter("Channel", tmpbuf, 100, pBuffer, TRUE)) {
 			RTMPChannelCfg(pAd, tmpbuf);
 		}
 

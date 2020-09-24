@@ -2161,6 +2161,13 @@ INT multi_profile_check(struct _RTMP_ADAPTER *ad, CHAR *final)
 	fname = multi_profile_fname_get(ad, MTB_2G_PROFILE);
 #endif
 
+	/*
+	 * if DEFAULT_5G_PROFILE is enabled, buf1 is 5G profile, buf2 is 2G profile.
+	 * Otherwise, buf1 is 2G profile, buf2 is 5G profile
+	 */
+
+	printk("%s: buf1: %s\n", __func__, fname);
+
 	if (multi_profile_read(fname, buf1) != NDIS_STATUS_SUCCESS)
 		goto end1;
 
@@ -2175,6 +2182,8 @@ INT multi_profile_check(struct _RTMP_ADAPTER *ad, CHAR *final)
 #else
 	fname = multi_profile_fname_get(ad, MTB_5G_PROFILE);
 #endif
+
+	printk("%s: buf2: %s\n", __func__, fname);
 
 	if (multi_profile_read(fname, buf2) != NDIS_STATUS_SUCCESS)
 		goto end2;

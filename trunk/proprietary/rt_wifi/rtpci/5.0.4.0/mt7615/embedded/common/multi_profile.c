@@ -2165,6 +2165,11 @@ INT multi_profile_check(struct _RTMP_ADAPTER *ad, CHAR *final)
 	 * if DEFAULT_5G_PROFILE is enabled, buf1 is 5G profile, buf2 is 2G profile.
 	 * Otherwise, buf1 is 2G profile, buf2 is 5G profile
 	 */
+#ifdef DEFAULT_5G_PROFILE
+	printk("%s: DEFAULT_5G_PROFILE is enable, buf1 is 5G profile, buf2 is 2G profile\n", __func__);
+#else
+	printk("%s: DEFAULT_5G_PROFILE is disable, buf1 is 2G profile, buf2 is 5G profile\n", __func__);
+#endif
 
 	printk("%s: buf1: %s\n", __func__, fname);
 

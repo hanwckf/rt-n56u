@@ -244,6 +244,13 @@ UCHAR ApAutoChannelAtBootUp(RTMP_ADAPTER *pAd, struct wifi_dev *wdev)
 #endif
 	UCHAR vht_bw = wlan_config_get_vht_bw(wdev);
 
+	if (!wdev) {
+		MTWF_LOG(DBG_CAT_ALL, DBG_SUBCAT_ALL, DBG_LVL_ERROR,
+				 ("\x1b[41m %s(): wdev is NULL !!\x1b[m\n", __func__));
+		MTWF_LOG(DBG_CAT_ALL, DBG_SUBCAT_ALL, DBG_LVL_OFF, ("%s<-----------------\n", __func__));
+		return FALSE;
+	}
+
 	MTWF_LOG(DBG_CAT_ALL, DBG_SUBCAT_ALL, DBG_LVL_OFF, ("%s----------------->\n", __func__));
 	MTWF_LOG(DBG_CAT_ALL, DBG_SUBCAT_ALL, DBG_LVL_OFF, ("%s: AutoChannelBootup = %d\n",
 			 __func__, pAd->ApCfg.bAutoChannelAtBootup));
@@ -258,18 +265,16 @@ UCHAR ApAutoChannelAtBootUp(RTMP_ADAPTER *pAd, struct wifi_dev *wdev)
 		return FALSE;
 	}
 #else
-	if (!pAd->ApCfg.bAutoChannelAtBootup) {
+#ifdef DBDC_MODE
+	if (wdev->channel != 0)
+#else
+	if (!pAd->ApCfg.bAutoChannelAtBootup)
+#endif
+	{
 		MTWF_LOG(DBG_CAT_ALL, DBG_SUBCAT_ALL, DBG_LVL_OFF, ("%s<-----------------\n", __func__));
 		return FALSE;
 	}
 #endif
-
-	if (!wdev) {
-		MTWF_LOG(DBG_CAT_ALL, DBG_SUBCAT_ALL, DBG_LVL_ERROR,
-				 ("\x1b[41m %s(): wdev is NULL !!\x1b[m\n", __func__));
-		MTWF_LOG(DBG_CAT_ALL, DBG_SUBCAT_ALL, DBG_LVL_OFF, ("%s<-----------------\n", __func__));
-		return FALSE;
-	}
 
 	BandIdx = HcGetBandByWdev(wdev);
 	pAutoChCtrl = HcGetAutoChCtrlbyBandIdx(pAd, BandIdx);

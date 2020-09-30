@@ -3188,6 +3188,8 @@ VOID UpdateBasicRateBitmap(RTMP_ADAPTER *pAdapter)
         return;
     }
 
+	bitmap = pAdapter->CommonCfg.BasicRateBitmap;  /* renew bitmap value */
+
     for(i=0; i<MAX_LEN_OF_SUPPORTED_RATES; i++)
     {
         sup_p[i] &= 0x7f;
@@ -7059,17 +7061,17 @@ CHAR RTMPMaxRssi(RTMP_ADAPTER *pAd, CHAR Rssi0, CHAR Rssi1, CHAR Rssi2)
 {
 	CHAR	larger = -127;
 	
-	if ((pAd->Antenna.field.RxPath == 1) && (Rssi0 != 0))
+	if ((pAd->Antenna.field.RxPath == 1) && (Rssi0 <= 0))
 	{
 		larger = Rssi0;
 	}
 
-	if ((pAd->Antenna.field.RxPath >= 2) && (Rssi1 != 0))
+	if ((pAd->Antenna.field.RxPath >= 2) && (Rssi1 <= 0))
 	{
 		larger = max(Rssi0, Rssi1);
 	}
 	
-	if ((pAd->Antenna.field.RxPath == 3) && (Rssi2 != 0))
+	if ((pAd->Antenna.field.RxPath == 3) && (Rssi2 <= 0))
 	{
 		larger = max(larger, Rssi2);
 	}
@@ -7084,17 +7086,17 @@ CHAR RTMPMinRssi(RTMP_ADAPTER *pAd, CHAR Rssi0, CHAR Rssi1, CHAR Rssi2)
 {
 	CHAR	smaller = -127;
 
-	if ((pAd->Antenna.field.RxPath == 1) && (Rssi0 != 0))
+	if ((pAd->Antenna.field.RxPath == 1) && (Rssi0 <= 0))
 	{
 		smaller = Rssi0;
 	}
 
-	if ((pAd->Antenna.field.RxPath >= 2) && (Rssi1 != 0))
+	if ((pAd->Antenna.field.RxPath >= 2) && (Rssi1 <= 0))
 	{
 		smaller = min(Rssi0, Rssi1);
 	}
 	
-	if ((pAd->Antenna.field.RxPath == 3) && (Rssi2 != 0))
+	if ((pAd->Antenna.field.RxPath == 3) && (Rssi2 <= 0))
 	{
 		smaller = min(smaller, Rssi2);
 	}

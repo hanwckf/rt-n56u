@@ -57,7 +57,8 @@ log_debug = off;
 log_info = off;
 redirector = iptables;
 daemon = on;
-redsocks_conn_max = 1000;
+redsocks_conn_max = 10000;
+rlimit_nofile = 10240;
 }
 redsocks {
 local_ip = 0.0.0.0;
@@ -82,8 +83,8 @@ fi
 }
 
 func_clean(){
-iptables -t nat -D PREROUTING 2
-iptables -t nat -D OUTPUT 1
+iptables -t nat -D PREROUTING `iptables -t nat -L PREROUTING --line-numbers|grep $CHAIN_NAME|head -n 1|tr -cd "[0-9]"`
+iptables -t nat -D OUTPUT `iptables -t nat -L OUTPUT --line-numbers|grep $CHAIN_NAME|head -n 1|tr -cd "[0-9]"`
 iptables -t nat -F $CHAIN_NAME
 iptables -t nat -X $CHAIN_NAME
 }
@@ -99,6 +100,13 @@ fi
 
 func_clean
 
+if [ ! -f $CNZONE_FILE ]
+then
+	wget -P $REDSOCKS_DIR http://www.ipdeny.com/ipblocks/data/countries/cn.zone
+	func_save
+	logger -t "SET FILE SAVED."
+fi
+
 if [ ! -f $LOCK ]
 then
 	ipset destroy $SET_NAME
@@ -107,13 +115,6 @@ then
 	touch $LOCK
 	logger -t $BINARY_NAME "SET LOCKED"
 fi
-
-if [ ! -f $CNZONE_FILE ]
-then
-	wget -P $REDSOCKS_DIR http://www.ipdeny.com/ipblocks/data/countries/cn.zone
-	func_save
-	logger -t "SET FILE SAVED."
-fi	
 
 iptables -t nat -N $CHAIN_NAME
 iptables -t nat -A $CHAIN_NAME -d $REMOTE_IP -j RETURN
@@ -154,7 +155,7 @@ restart)
 	func_start
 	;;
 *)
-	echo "Usage: $0 {start [ $1 IP $2 PORT $3 IP ]|stop|iptables [ $1 IP ]|restart}"
+	echo "Usage: $0 {start [ ARG2:Server IP ARG3:Server PORT ]|stop|iptables [ ARG1:Server IP ]|restart}"
 	exit 1
 	;;
 esac

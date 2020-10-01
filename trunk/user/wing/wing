@@ -1,0 +1,172 @@
+#!/bin/sh
+#PATH=$(cd "${0%/*}"; pwd):$PATH
+
+DNSMASQ_CONF=/etc/storage/dnsmasq/dnsmasq.conf
+GFWLIST_CONF=/etc/storage/dnsmasq/gfwlist.txt
+GFWLIST_CONF_RO=/etc_ro/gfwlist.txt
+
+usage()
+{
+	echo "Usage: $0 <[start]|restart|stop|pause|resume|redir|status|update>"
+	echo
+	echo "Local Transparent mode (trojan only): $0 <HOST>[:PORT] <PASS>"
+	echo "Local Socks mode (trojan+ipt2socks): $0 <HOST>[:PORT] <PASS> client"
+	echo "Remote Socks mode (ipt2socks only): $0 <HOST>[:PORT]"
+	echo
+	exit 0
+}
+
+update()
+{
+	curl -k -o $GFWLIST_CONF https://cokebar.github.io/gfwlist2dnsmasq/gfwlist_domain.txt || exit 1
+}
+
+check()
+{
+	if [ ! -f $GFWLIST_CONF ]; then
+		if [ -f $GFWLIST_CONF_RO ]; then
+			GFWLIST_CONF=$GFWLIST_CONF_RO
+		else
+			update
+		fi
+	fi
+}
+
+redir()
+{
+	iptables -t nat $1 OUTPUT -p tcp -m set --match-set gfwlist dst -j REDIRECT --to-port 1088
+	iptables -t nat $1 PREROUTING -p tcp -m set --match-set gfwlist dst -j REDIRECT --to-port 1088
+}
+
+start()
+{
+	# prepage
+	[ -z $2 ] && usage
+	check
+
+	# resolve
+	if echo $2 | grep : > /dev/null; then
+		HOST=`echo $2 | cut -d : -f 1`
+		PORT=`echo $2 | cut -d : -f 2`
+	else
+		HOST=$2
+		PORT=
+	fi
+
+	# trojan
+	if [ -z $3 ]; then
+		[ -z $PORT ] && PORT=1080
+		RUN_TYPE=socks
+	else
+		[ -z $PORT ] && PORT=443
+		if [ -z $4 ]; then
+			RUN_TYPE=nat
+			LOCAL_PORT=1088
+		else
+			RUN_TYPE=client
+			LOCAL_PORT=1080
+		fi
+		echo "{\"run_type\":\"$RUN_TYPE\",\"local_addr\":\"0.0.0.0\",\"local_port\":$LOCAL_PORT,\"remote_addr\":\"$HOST\",\"remote_port\":$PORT,\"password\":[\"$3\"],\"log_level\":$1,\"ssl\":{\"verify\":false}}" > /tmp/trojan.conf
+		if [ $1 -ge 5 ]; then
+			trojan -c /tmp/trojan.conf &
+		else
+			nohup trojan -c /tmp/trojan.conf &> /tmp/trojan.log &
+		fi
+	fi
+
+	# ipt2socks
+	if [ $RUN_TYPE != nat ]; then
+		if [ $RUN_TYPE = client ]; then
+			HOST=127.0.0.1
+			PORT=$LOCAL_PORT
+		fi
+		IPT2SOCKS_CMD="ipt2socks -s $HOST -p $PORT -b 0.0.0.0 -l 1088 -T -4 -R -j `cat /proc/cpuinfo|grep processor|wc -l`"
+		if [ $1 -ge 5 ]; then
+			$IPT2SOCKS_CMD &
+		elif [ $1 -ge 2 ]; then
+			nohup $IPT2SOCKS_CMD &> /tmp/ipt2socks.log &
+		else
+			nohup $IPT2SOCKS_CMD -v &> /tmp/ipt2socks.log &
+		fi
+	fi
+
+	# iptables
+	ipset create gfwlist iphash
+	ipset add gfwlist 8.8.8.8
+	redir -A
+
+	# dnsmasq
+	GFWLIST_LINE="gfwlist=$GFWLIST_CONF"
+	if ! grep "$GFWLIST_LINE" $DNSMASQ_CONF > /dev/null; then
+		killall dnsmasq
+		echo "$GFWLIST_LINE" >> $DNSMASQ_CONF
+		dnsmasq
+	fi
+	echo "Wing is running in $RUN_TYPE mode..."
+}
+
+stop()
+{
+	redir -D
+	ipset destroy gfwlist
+
+	[ -f /tmp/ipt2socks.log ] && rm /tmp/ipt2socks.log ; killall ipt2socks 2> /dev/null
+	[ -f /tmp/trojan.conf ] && rm /tmp/trojan.* && killall trojan
+}
+
+status()
+{
+	[ ${1::1} = t ] && ([ -f /tmp/trojan.log ] && tail -f /tmp/trojan.log; return)
+	[ ${1::4} = ipt2 ] && ([ -f /tmp/ipt2socks.log ] && tail -f /tmp/ipt2socks.log; return)
+
+	([ -z $1 ] || [ ${1::3} = ipt ]) && iptables -t nat -L PREROUTING && iptables -t nat -L OUTPUT
+	([ -z $1 ] || [ ${1::3} = ips ]) && echo && ipset -L gfwlist | more
+
+	[ -z $1 ] && [ -f /tmp/ipt2socks.log ] && echo && cat /tmp/ipt2socks.log | more
+	[ -z $1 ] && [ -f /tmp/trojan.log ] && echo && cat /tmp/trojan.log | more
+
+	([ -z $1 ] || [ ${1::1} = d ]) && tail -f /tmp/syslog.log
+}
+
+case "$1" in
+	start)
+		start 2 $2 $3 $4 $5
+		;;
+	stop)
+		stop
+		check
+		sed -i /gfwlist=${GFWLIST_CONF//\//\\/}/d $DNSMASQ_CONF
+		killall dnsmasq
+		dnsmasq
+		;;
+	restart)
+		stop
+		start 2 $2 $3 $4 $5
+		;;
+	pause)
+		redir -D
+		;;
+	resume)
+		ipset test gfwlist 8.8.8.8 && (redir -C || redir -A)
+		;;
+	redir)
+		redir $2
+		;;
+	s|status)
+		status $2
+		;;
+	update)
+		update
+		;;
+	-v0|-v1|-v2|-v3|-v4|-v5)
+		start ${1:2} $2 $3 $4 $5
+		;;
+	-v)
+		start 1 $2 $3 $4 $5
+		;;
+	*)
+		start 5 $1 $2 $3 $4
+		;;
+esac
+
+

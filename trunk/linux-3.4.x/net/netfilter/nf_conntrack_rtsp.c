@@ -484,6 +484,8 @@ static int help(struct sk_buff *skb, unsigned int protoff,
 		/* inbound packet: server->client */
 		ret = NF_ACCEPT;
 		break;
+	default:
+		break;
 	}
 
 	spin_unlock_bh(&rtsp_buffer_lock);

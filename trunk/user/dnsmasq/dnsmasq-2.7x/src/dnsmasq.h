@@ -494,6 +494,7 @@ union mysockaddr {
 #define SERV_LOOP           8192  /* server causes forwarding loop */
 #define SERV_DO_DNSSEC     16384  /* Validate DNSSEC when using this server */
 #define SERV_GOT_TCP       32768  /* Got some data from the TCP connection */
+#define SERV_IS_TCP        65536  /* Is TCP server */
 
 struct serverfd {
   int fd;

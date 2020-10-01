@@ -350,8 +350,8 @@ typedef struct __RT_CMD_STATS {
 
 	OUT unsigned long rx_packets;	/* total packets received       */
 	OUT unsigned long tx_packets;	/* total packets transmitted */
-	OUT unsigned long rx_bytes;	/* total bytes received         */
-	OUT unsigned long tx_bytes;	/* total bytes transmitted      */
+	OUT unsigned long long rx_bytes;	/* total bytes received         */
+	OUT unsigned long long tx_bytes;	/* total bytes transmitted      */
 	OUT unsigned long rx_errors;	/* bad packets received         */
 	OUT unsigned long tx_errors;	/* packet transmit problems     */
 	OUT unsigned long multicast;	/* multicast packets received */

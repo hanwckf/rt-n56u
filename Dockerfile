@@ -11,7 +11,7 @@ RUN apt -y -q update && apt -y -q upgrade && \
 	apt install -y -q unzip libtool-bin curl cmake gperf gawk flex bison htop \
 		nano xxd fakeroot cpio git python-docutils gettext automake autopoint \
 		texinfo build-essential help2man pkg-config zlib1g-dev libgmp3-dev libmpc-dev \
-		libmpfr-dev libncurses5-dev libltdl-dev wget module-init-tools sudo locales vim && \
+		libmpfr-dev libncurses5-dev libltdl-dev wget kmod sudo locales vim && \
 	rm -rf /var/cache/apt/
 
 RUN echo 'en_US.UTF-8 UTF-8' > /etc/locale.gen && locale-gen

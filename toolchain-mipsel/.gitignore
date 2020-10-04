@@ -23,6 +23,7 @@ maintainer/package-versions
 *.zip
 *.xz
 *.7zip
+!.tarball-version
 
 # Temporaries
 .*.swp

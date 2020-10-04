@@ -112,7 +112,11 @@ sudo apt update
 sudo apt install unzip libtool-bin curl cmake gperf gawk flex bison nano xxd \
 	fakeroot kmod cpio git python-docutils gettext automake autopoint \
 	texinfo build-essential help2man pkg-config zlib1g-dev libgmp3-dev \
-	libmpc-dev libmpfr-dev libncurses5-dev libltdl-dev wget
+	libmpc-dev libmpfr-dev libncurses5-dev libltdl-dev wget libc-dev-bin
+
+# Archlinux/Manjaro
+sudo pacman -Syu --needed git base-devel cmake gperf ncurses libmpc \
+        gmp python-docutils vim rpcsvc-proto fakeroot cpio help2man
 
 # CentOS 7
 sudo yum update
@@ -135,10 +139,6 @@ sudo yum install ncurses-* flex byacc bison zlib-* gmp-* mpfr-* gettext \
 # sudo ./configure
 # sudo make
 # sudo make install
-
-# Archlinux/Manjaro
-sudo pacman -Syu --needed git base-devel cmake gperf ncurses libmpc \
-	gmp python-docutils vim rpcsvc-proto fakeroot cpio
 
 ```
 

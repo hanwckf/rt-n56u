@@ -4,8 +4,12 @@ MAINTAINER hanwckf <hanwckf@vip.qq.com>
 
 ENV DEBIAN_FRONTEND noninteractive
 
-#RUN sed -i 's#http://archive.ubuntu.com#http://mirrors.huaweicloud.com#' /etc/apt/sources.list
-#RUN sed -i 's#http://security.ubuntu.com#http://mirrors.huaweicloud.com#' /etc/apt/sources.list
+ARG APT_MIRROR_URL
+RUN if test -n "$APT_MIRROR_URL"; then \
+	sed -i "s#http://archive.ubuntu.com#$APT_MIRROR_URL#; \
+	s#http://security.ubuntu.com#$APT_MIRROR_URL#; \
+	s#http://ports.ubuntu.com#$APT_MIRROR_URL#" \
+	/etc/apt/sources.list; fi
 
 RUN apt -y -q update && apt -y -q upgrade && \
 	apt install -y -q unzip libtool-bin curl cmake gperf gawk flex bison htop \

@@ -44,6 +44,10 @@
 #include "action.h"
 #include "error.h"
 
+#ifndef FNM_EXTMATCH
+#define FNM_EXTMATCH 0
+#endif
+
 /*
  * code to parse actions
  */

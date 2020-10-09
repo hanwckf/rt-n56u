@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 THISDIR = $(shell pwd)
 SRC_NAME = ipt2socks
 SRC_VERSION := 1.1.3
@@ -23,4 +24,30 @@ clean:
 
 romfs:
 	$(ROMFSINST) -p +x $(THISDIR)/$(SRC_DIR)/ipt2socks /usr/bin/ipt2socks
+=======
+SRC_NAME = ipt2socks-1.1.2
+THISDIR = $(shell pwd)
+
+all: extract_test
+	$(MAKE) -j$(HOST_NCPU) -C $(SRC_NAME) CC="$(CC)"
+	
+extract_test:
+	( if [ ! -d $(SRC_NAME) ]; then \
+		tar zxf $(SRC_NAME).tar.gz ; \
+	fi )
+
+config_test:
+	( if [ -f ./config_done ]; then \
+		echo "the same configuration"; \
+	else \
+		make configure && touch config_done; \
+	fi )
+
+clean:
+	rm -rf $(SRC_NAME)
+	rm -f config_done
+
+romfs:
+	$(ROMFSINST) -p +x $(THISDIR)/$(SRC_NAME)/ipt2socks /usr/bin/ipt2socks
+>>>>>>> a321e6940bb0cb44619e21b8b3df6e91f892751a
 

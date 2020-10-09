@@ -215,7 +215,11 @@ BOOLEAN PeerAddBARspActionSanity(
 	pAddFrame->TimeOutValue = cpu2le16(pAddFrame->TimeOutValue);
 
 	if (pAddFrame->BaParm.BAPolicy != IMMED_BA) {
+<<<<<<< HEAD
 		MTWF_LOG(DBG_CAT_MLME, DBG_SUBCAT_ALL, DBG_LVL_ERROR, ("%s(): ADDBA Resp Ba Policy[%d] not support\n", __func__, pAddFrame->BaParm.BAPolicy));
+=======
+		MTWF_LOG(DBG_CAT_MLME, DBG_SUBCAT_ALL, DBG_LVL_TRACE, ("%s(): ADDBA Resp Ba Policy[%d] not support\n", __func__, pAddFrame->BaParm.BAPolicy));
+>>>>>>> a321e6940bb0cb44619e21b8b3df6e91f892751a
 		return FALSE;
 	}
 

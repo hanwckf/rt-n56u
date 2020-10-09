@@ -111,8 +111,13 @@ extern int ra_mtd_read(int num, loff_t from, size_t len, u_char *buf);
 int mt_mtd_write_nm_wifi(char *name, loff_t to, size_t len, const u_char *buf);
 int mt_mtd_read_nm_wifi(char *name, loff_t from, size_t len, u_char *buf);
 
+<<<<<<< HEAD
 #define flash_read(_ctrl, _ptr, _offset, _len) mt_mtd_read_nm_wifi("Factory", _offset&0xFFFF, (size_t)_len, _ptr)
 #define flash_write(_ctrl, _ptr, _offset, _len) mt_mtd_write_nm_wifi("Factory", _offset&0xFFFF, (size_t)_len, _ptr)
+=======
+#define flash_read(_ctrl, _ptr, _offset, _len) mt_mtd_read_nm_wifi("Factory", _offset, (size_t)_len, _ptr)
+#define flash_write(_ctrl, _ptr, _offset, _len) mt_mtd_write_nm_wifi("Factory", _offset, (size_t)_len, _ptr)
+>>>>>>> a321e6940bb0cb44619e21b8b3df6e91f892751a
 
 #else
 /*

@@ -1216,7 +1216,11 @@ BOOLEAN MacTableDeleteEntry(RTMP_ADAPTER *pAd, USHORT wcid, UCHAR *pAddr)
 #endif /* TXBF_SUPPORT */
 			MTWF_LOG(DBG_CAT_MLME, DBG_SUBCAT_ALL, DBG_LVL_TRACE, ("MacTableDeleteEntry1 - Total= %d\n", pAd->MacTab.Size));
 		} else {
+<<<<<<< HEAD
 			MTWF_LOG(DBG_CAT_MLME, DBG_SUBCAT_ALL, DBG_LVL_OFF, ("\n%s: Impossible Wcid = %d !!!!!\n", __func__, wcid));
+=======
+			MTWF_LOG(DBG_CAT_MLME, DBG_SUBCAT_ALL, DBG_LVL_TRACE, ("\n%s: Impossible Wcid = %d !!!!!\n", __func__, wcid));
+>>>>>>> a321e6940bb0cb44619e21b8b3df6e91f892751a
 #ifdef CONFIG_AP_SUPPORT
 #if defined(RT_CFG80211_SUPPORT) || defined(MBO_SUPPORT)
 			bIndicateSendEvent = FALSE;

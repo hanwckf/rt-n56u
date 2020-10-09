@@ -3375,7 +3375,11 @@ VOID WPAConstructEapolKeyData(
 
 		if (pEntry->pMbss->HotSpotCtrl.HotSpotEnable
 			&& pEntry->pMbss->HotSpotCtrl.DGAFDisable) {
+<<<<<<< HEAD
 			MTWF_LOG(DBG_CAT_SEC, DBG_SUBCAT_ALL, DBG_LVL_OFF, ("[HOTSPOT]:%s - Unique GTK for each STA\n", __func__));
+=======
+			MTWF_LOG(DBG_CAT_SEC, DBG_SUBCAT_ALL, DBG_LVL_TRACE, ("[HOTSPOT]:%s - Unique GTK for each STA\n", __func__));
+>>>>>>> a321e6940bb0cb44619e21b8b3df6e91f892751a
 			NdisMoveMemory(&Key_Data[data_offset], pSecPairwise->HsUniGTK, gtk_len);
 		} else
 #endif /* defined(CONFIG_HOTSPOT) && defined(CONFIG_AP_SUPPORT) */
@@ -3907,9 +3911,15 @@ BOOLEAN WpaMessageSanity(
 		RTMPSendWirelessEvent(pAd, IW_REPLAY_COUNTER_DIFF_EVENT_FLAG, pEntry->Addr, pEntry->wdev->wdev_idx, 0);
 
 		if (MsgType < EAPOL_GROUP_MSG_1)
+<<<<<<< HEAD
 			MTWF_LOG(DBG_CAT_SEC, DBG_SUBCAT_ALL, DBG_LVL_ERROR, ("Replay Counter Different in pairwise msg %d of 4-way handshake!\n", MsgType));
 		else
 			MTWF_LOG(DBG_CAT_SEC, DBG_SUBCAT_ALL, DBG_LVL_ERROR, ("Replay Counter Different in group msg %d of 2-way handshake!\n", (MsgType - EAPOL_PAIR_MSG_4)));
+=======
+			MTWF_LOG(DBG_CAT_SEC, DBG_SUBCAT_ALL, DBG_LVL_TRACE, ("Replay Counter Different in pairwise msg %d of 4-way handshake!\n", MsgType));
+		else
+			MTWF_LOG(DBG_CAT_SEC, DBG_SUBCAT_ALL, DBG_LVL_TRACE, ("Replay Counter Different in group msg %d of 2-way handshake!\n", (MsgType - EAPOL_PAIR_MSG_4)));
+>>>>>>> a321e6940bb0cb44619e21b8b3df6e91f892751a
 
 		hex_dump("Receive replay counter ", pMsg->KeyDesc.ReplayCounter, LEN_KEY_DESC_REPLAY);
 		hex_dump("Current replay counter ", pHandshake4Way->ReplayCounter, LEN_KEY_DESC_REPLAY);
@@ -4352,7 +4362,11 @@ VOID WPABuildPairMsg3(
 		GenRandom(pAd, pEntry->Addr, HSClientGTK);
 		/* gtk_ptr = HSClientGTK; */
 		os_move_mem(pSecConfig->HsUniGTK, HSClientGTK, LEN_MAX_GTK);
+<<<<<<< HEAD
 		MTWF_LOG(DBG_CAT_SEC, DBG_SUBCAT_ALL, DBG_LVL_OFF, ("%s:Random unique GTK for each mobile device when dgaf disable\n", __func__));
+=======
+		MTWF_LOG(DBG_CAT_SEC, DBG_SUBCAT_ALL, DBG_LVL_TRACE, ("%s:Random unique GTK for each mobile device when dgaf disable\n", __func__));
+>>>>>>> a321e6940bb0cb44619e21b8b3df6e91f892751a
 		hex_dump("GTK", pSecConfig->HsUniGTK, 32);
 	}
 
@@ -4999,7 +5013,11 @@ VOID PeerPairMsg2Action(
 #endif /* DOT11W_PMF_SUPPORT */
 #ifdef CONFIG_HOTSPOT_R2
 		if (CLIENT_STATUS_TEST_FLAG(pEntry, fCLIENT_STATUS_OSEN_CAPABLE)) {
+<<<<<<< HEAD
 			MTWF_LOG(DBG_CAT_SEC, DBG_SUBCAT_ALL, DBG_LVL_OFF, ("got msg2 derivePTK\n"));
+=======
+			MTWF_LOG(DBG_CAT_SEC, DBG_SUBCAT_ALL, DBG_LVL_TRACE, ("got msg2 derivePTK\n"));
+>>>>>>> a321e6940bb0cb44619e21b8b3df6e91f892751a
 			WpaDerivePTK_KDF_256(pSecConfig->PMK,
 						  pHandshake4Way->ANonce,		/* ANONCE*/
 						  pHandshake4Way->AAddr,
@@ -5087,7 +5105,11 @@ VOID PeerPairMsg3Action(
 			pEntry->CCMP_BC_PN[kid] += ((UINT64)pReceiveEapol->KeyDesc.KeyRsc[idx] << (idx*8));
 		pEntry->Init_CCMP_BC_PN_Passed[kid] = FALSE;
 		pEntry->AllowUpdateRSC = FALSE;
+<<<<<<< HEAD
 		MTWF_LOG(DBG_CAT_CFG, DBG_SUBCAT_ALL, DBG_LVL_OFF, ("%s(%d): update CCMP_BC_PN to %llu\n",
+=======
+		MTWF_LOG(DBG_CAT_CFG, DBG_SUBCAT_ALL, DBG_LVL_TRACE, ("%s(%d): update CCMP_BC_PN to %llu\n",
+>>>>>>> a321e6940bb0cb44619e21b8b3df6e91f892751a
 			__FUNCTION__, pEntry->wcid, pEntry->CCMP_BC_PN[kid]));
 #ifdef MAC_REPEATER_SUPPORT
 		/* sync PN of ApCli entry as the time rept rekey */
@@ -5359,7 +5381,11 @@ VOID PeerPairMsg4Action(
 								req_data->type);
 			pEntry->IsWNMReqValid = FALSE;
 			os_free_mem(req_data);
+<<<<<<< HEAD
 			MTWF_LOG(DBG_CAT_SEC, DBG_SUBCAT_ALL, DBG_LVL_OFF, ("!!!!msg 4 send wnm req\n"));
+=======
+			MTWF_LOG(DBG_CAT_SEC, DBG_SUBCAT_ALL, DBG_LVL_TRACE, ("!!!!msg 4 send wnm req\n"));
+>>>>>>> a321e6940bb0cb44619e21b8b3df6e91f892751a
 		}
 
 #endif
@@ -5373,7 +5399,11 @@ VOID PeerPairMsg4Action(
 						 req_data->btm_req_len);
 			pEntry->IsBTMReqValid = FALSE;
 			os_free_mem(req_data);
+<<<<<<< HEAD
 			MTWF_LOG(DBG_CAT_SEC, DBG_SUBCAT_ALL, DBG_LVL_OFF, ("!!!!msg 4 send btm req\n"));
+=======
+			MTWF_LOG(DBG_CAT_SEC, DBG_SUBCAT_ALL, DBG_LVL_TRACE, ("!!!!msg 4 send btm req\n"));
+>>>>>>> a321e6940bb0cb44619e21b8b3df6e91f892751a
 		}
 
 #endif
@@ -5449,7 +5479,11 @@ VOID PeerGroupMsg1Action(
 			pEntry->CCMP_BC_PN[kid] += ((UINT64)pReceiveEapol->KeyDesc.KeyRsc[idx] << (idx*8));
 		pEntry->Init_CCMP_BC_PN_Passed[kid] = FALSE;
 		pEntry->AllowUpdateRSC = FALSE;
+<<<<<<< HEAD
 		MTWF_LOG(DBG_CAT_CFG, DBG_SUBCAT_ALL, DBG_LVL_OFF, ("%s(%d): update CCMP_BC_PN to %llu\n",
+=======
+		MTWF_LOG(DBG_CAT_CFG, DBG_SUBCAT_ALL, DBG_LVL_TRACE, ("%s(%d): update CCMP_BC_PN to %llu\n",
+>>>>>>> a321e6940bb0cb44619e21b8b3df6e91f892751a
 			__FUNCTION__, pEntry->wcid, pEntry->CCMP_BC_PN[kid]));
 #ifdef MAC_REPEATER_SUPPORT
 		/* Sync PN of ApCli entry as the time rept rekey */
@@ -5982,7 +6016,11 @@ VOID WPAHandshakeMsgRetryExec(
 			} else if (pHandshake->MsgType == EAPOL_GROUP_MSG_1) {
 				if (pHandshake->MsgRetryCounter > GROUP_MSG1_RETRY_LIMIT) {
 					pHandshake->GTKState = REKEY_FAILURE;
+<<<<<<< HEAD
 					MTWF_LOG(DBG_CAT_SEC, DBG_SUBCAT_ALL, DBG_LVL_ERROR, ("%s::Group rekey timeout from %02X:%02X:%02X:%02X:%02X:%02X\n", __func__, PRINT_MAC(pHandshake->SAddr)));
+=======
+					MTWF_LOG(DBG_CAT_SEC, DBG_SUBCAT_ALL, DBG_LVL_TRACE, ("%s::Group rekey timeout from %02X:%02X:%02X:%02X:%02X:%02X\n", __func__, PRINT_MAC(pHandshake->SAddr)));
+>>>>>>> a321e6940bb0cb44619e21b8b3df6e91f892751a
 				} else {
 					WPABuildGroupMsg1(pAd, &pEntry->SecConfig, pEntry);
 					MTWF_LOG(DBG_CAT_SEC, DBG_SUBCAT_ALL, DBG_LVL_TRACE, ("%s::ReTry MSG1 of 2-way Handshake, Counter = %d\n", __func__, pHandshake->MsgRetryCounter));

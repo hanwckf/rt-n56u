@@ -386,11 +386,19 @@ static NDIS_STATUS match_index_by_chipname(IN RTMP_STRING *l1profile_data,
 		sprintf(key, "INDEX%d", if_idx);
 		if (RTMPGetKeyParameter(key, tmpbuf, MAX_PARAM_BUFFER_SIZE, l1profile_data, TRUE)) {
 			if (strncmp(tmpbuf, chipName, strlen(chipName)) == 0) {
+<<<<<<< HEAD
 				MTWF_LOG(DBG_CAT_CFG, DBG_SUBCAT_ALL, DBG_LVL_INFO,
 						("%s found as %s\n", chipName, key));
 
 				if (is_dup_key(key)) {	/* There might be not only single entry for one chip */
 					MTWF_LOG(DBG_CAT_CFG, DBG_SUBCAT_ALL, DBG_LVL_TRACE,
+=======
+				MTWF_LOG(DBG_CAT_CFG, DBG_SUBCAT_ALL, DBG_LVL_OFF,
+						("%s found as %s\n", chipName, key));
+
+				if (is_dup_key(key)) {	/* There might be not only single entry for one chip */
+					MTWF_LOG(DBG_CAT_CFG, DBG_SUBCAT_ALL, DBG_LVL_OFF,
+>>>>>>> a321e6940bb0cb44619e21b8b3df6e91f892751a
 						("%s for %s occupied, next\n", key, chipName));
 				} else {
 					strncpy(l1profile[get_dev_config_idx(pAd)].profile_index,
@@ -399,13 +407,21 @@ static NDIS_STATUS match_index_by_chipname(IN RTMP_STRING *l1profile_data,
 					if_idx = MAX_L1PROFILE_INDEX;	/* found, intend to leave */
 				}
 			} else {
+<<<<<<< HEAD
 				MTWF_LOG(DBG_CAT_CFG, DBG_SUBCAT_ALL, DBG_LVL_TRACE,
+=======
+				MTWF_LOG(DBG_CAT_CFG, DBG_SUBCAT_ALL, DBG_LVL_OFF,
+>>>>>>> a321e6940bb0cb44619e21b8b3df6e91f892751a
 						("%s mismatch with %s as %s\n", chipName, tmpbuf, key));
 			}
 
 			if_idx++;
 		} else {
+<<<<<<< HEAD
 			MTWF_LOG(DBG_CAT_CFG, DBG_SUBCAT_ALL, DBG_LVL_TRACE, ("%s not found, dismissed.\n", key));
+=======
+			MTWF_LOG(DBG_CAT_CFG, DBG_SUBCAT_ALL, DBG_LVL_OFF, ("%s not found, dismissed.\n", key));
+>>>>>>> a321e6940bb0cb44619e21b8b3df6e91f892751a
 			if_idx = MAX_L1PROFILE_INDEX;	/* hit maximum avalable index, intend to leave */
 		}
 	}
@@ -430,10 +446,17 @@ static NDIS_STATUS l1get_profile_index(IN RTMP_STRING *l1profile_data, IN RTMP_A
 		strncat(chipName, "A", 9);
 
 	if (match_index_by_chipname(l1profile_data, pAd, chipName) == NDIS_STATUS_SUCCESS) {
+<<<<<<< HEAD
 		MTWF_LOG(DBG_CAT_CFG, DBG_SUBCAT_ALL, DBG_LVL_TRACE, ("[%d]%s found by chip\n", dev_idx, chipName));
 	} else {
 		retVal = NDIS_STATUS_FAILURE;
 		MTWF_LOG(DBG_CAT_CFG, DBG_SUBCAT_ALL, DBG_LVL_WARN, ("[%d]%s not found, keep default\n", dev_idx, chipName));
+=======
+		MTWF_LOG(DBG_CAT_CFG, DBG_SUBCAT_ALL, DBG_LVL_OFF, ("[%d]%s found by chip\n", dev_idx, chipName));
+	} else {
+		retVal = NDIS_STATUS_FAILURE;
+		MTWF_LOG(DBG_CAT_CFG, DBG_SUBCAT_ALL, DBG_LVL_OFF, ("[%d]%s not found, keep default\n", dev_idx, chipName));
+>>>>>>> a321e6940bb0cb44619e21b8b3df6e91f892751a
 	}
 
 	os_free_mem(tmpbuf);
@@ -514,7 +537,11 @@ INT get_dev_config_idx(RTMP_ADAPTER *pAd)
 #endif /* MULTI_INF_SUPPORT */
 
 #if defined(CONFIG_RT_SECOND_CARD)
+<<<<<<< HEAD
 #if defined(CONFIG_FIRST_IF_MT7603E)
+=======
+#if defined(CONFIG_RT_FIRST_IF_MT7603E)
+>>>>>>> a321e6940bb0cb44619e21b8b3df6e91f892751a
 	/* MT7603(ra0) + MT7615(rai0) combination */
 	if (IS_MT7615(pAd))
 		idx = 1;

@@ -378,8 +378,13 @@ INT32 TxSTypeCtlPerPktType(RTMP_ADAPTER *pAd, UINT8 PktType, UINT8 PktSubType, U
 			else if (WlanIdx >= 64 && WlanIdx < 128)
 				TxSCtl->TxSStatusPerWlanIdx[1] |= (1 << (UINT64)WlanIdx);
 			else {
+<<<<<<< HEAD
 				TxSCtl->TxSStatusPerWlanIdx[0] = 0xffffffffffffffff;
 				TxSCtl->TxSStatusPerWlanIdx[1] = 0xffffffffffffffff;
+=======
+				TxSCtl->TxSStatusPerWlanIdx[0] = 0xffffffffffffffffLL;
+				TxSCtl->TxSStatusPerWlanIdx[1] = 0xffffffffffffffffLL;
+>>>>>>> a321e6940bb0cb44619e21b8b3df6e91f892751a
 			}
 
 			TxSType->DumpTxSReport = DumpTxSReport;

@@ -32,13 +32,12 @@ after_script:
   && image_name=images_${build_variant}_${GIT_VERSION} || image_name=images_${build_variant}
 - cd /opt/images; md5sum *.trx |tee md5sum.txt; 7z a -mx=9 ${image_name}.7z ./*
 - curl -m 120 -F file=@${image_name}.7z https://file.io/?expires=3d ; echo
-- 'curl -m 120 -H ''Max-Days: 3'' --upload-file ./${image_name}.7z https://transfer.sh/${image_name}.7z ; echo'
 env:
   jobs:
   - build_variant=mt7621 targets="K2P_nano K2P_nano-5.0 K2P-5.0 DIR-878-5.0 WDR7300 RM2100"
   - build_variant=mt7628 targets="HC5861B MI-NANO MZ-R13 MZ-R13P 360P2 HC5761A HC5661A"
   - build_variant=mt7620 targets="PSG1208 PSG1218 NEWIFI-MINI MI-MINI MI-3 OYE-001"
-  - build_variant=mt7621-usb targets="JCG-836PRO-5.0 JCG-AC860M-5.0 DIR-882-5.0 A3004NS WR1200JS MI-R3G NEWIFI3 B70"
+  - build_variant=mt7621-usb targets="JCG-836PRO-5.0 JCG-AC860M-5.0 DIR-882-5.0 A3004NS MSG1500 WR1200JS MI-R3G NEWIFI3 B70"
   global:
   - toolchain_url="https://github.com/hanwckf/padavan-toolchain/releases/download/v1.1/mipsel-linux-uclibc.tar.xz"
 git:

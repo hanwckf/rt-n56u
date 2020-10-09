@@ -262,8 +262,14 @@ if [ -n "$CONFIG_MT7628_AP" ] ; then
 fi
 if [ -n "$CONFIG_MT7615_AP" ] ; then
 	dir_wifi_ver="4.4.2.1"
-	if [ "$CONFIG_FIRMWARE_WIFI_DRIVER" = "5.0.3.0" ] || [ "$CONFIG_FIRMWARE_WIFI2_DRIVER" = "5.0.3.0" ] || [ "$CONFIG_FIRMWARE_WIFI5_DRIVER" = "5.0.3.0" ]; then
+	if [ "$CONFIG_FIRMWARE_WIFI_DRIVER" = "5.0.3.0" ] || \
+		[ "$CONFIG_FIRMWARE_WIFI2_DRIVER" = "5.0.3.0" ] || \
+		[ "$CONFIG_FIRMWARE_WIFI5_DRIVER" = "5.0.3.0" ]; then
 		dir_wifi_ver="5.0.3.0"
+	elif [ "$CONFIG_FIRMWARE_WIFI_DRIVER" = "5.0.4.0" ] || \
+		[ "$CONFIG_FIRMWARE_WIFI2_DRIVER" = "5.0.4.0" ] || \
+		[ "$CONFIG_FIRMWARE_WIFI5_DRIVER" = "5.0.4.0" ]; then
+		dir_wifi_ver="5.0.4.0"
 	fi
 	if [ "$CONFIG_FIRMWARE_WIFI_DRIVER" = "5.0.4.0" ] || [ "$CONFIG_FIRMWARE_WIFI2_DRIVER" = "5.0.4.0" ] || [ "$CONFIG_FIRMWARE_WIFI5_DRIVER" = "5.0.4.0" ]; then
 		dir_wifi_ver="5.0.4.0"

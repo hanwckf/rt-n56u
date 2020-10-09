@@ -90,7 +90,11 @@ VOID APPeerProbeReqAction(
 #endif /* WDS_SUPPORT */
 
 	if (PeerProbeReqSanity(pAd, Elem->Msg, Elem->MsgLen, &ProbeReqParam) == FALSE) {
+<<<<<<< HEAD
 		MTWF_LOG(DBG_CAT_AP, DBG_SUBCAT_ALL, DBG_LVL_OFF, ("%s():shiang! PeerProbeReqSanity failed!\n", __func__));
+=======
+		MTWF_LOG(DBG_CAT_AP, DBG_SUBCAT_ALL, DBG_LVL_TRACE, ("%s():shiang! PeerProbeReqSanity failed!\n", __func__));
+>>>>>>> a321e6940bb0cb44619e21b8b3df6e91f892751a
 		return;
 	}
 

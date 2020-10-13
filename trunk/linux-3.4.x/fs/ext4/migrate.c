@@ -455,11 +455,13 @@ int ext4_ext_migrate(struct inode *inode)
 		 */
 		return retval;
 
+	/*
+	 * Worst case we can touch the allocation bitmaps, a bgd
+	 * block, and a block to link in the orphan list.  We do need
+	 * need to worry about credits for modifying the quota inode.
+	 */
 	handle = ext4_journal_start(inode,
-					EXT4_DATA_TRANS_BLOCKS(inode->i_sb) +
-					EXT4_INDEX_EXTRA_TRANS_BLOCKS + 3 +
-					EXT4_MAXQUOTAS_INIT_BLOCKS(inode->i_sb)
-					+ 1);
+					4 + EXT4_MAXQUOTAS_TRANS_BLOCKS(inode->i_sb));
 	if (IS_ERR(handle)) {
 		retval = PTR_ERR(handle);
 		return retval;

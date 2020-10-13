@@ -105,12 +105,12 @@ static inline int arch_get_random_int(unsigned int *v)
 }
 #endif
 
-#endif /* __KERNEL___ */
-
 /* Pseudo random number generator from numerical recipes. */
 static inline u32 next_pseudo_random32(u32 seed)
 {
 	return seed * 1664525 + 1013904223;
 }
+
+#endif /* __KERNEL___ */
 
 #endif /* _LINUX_RANDOM_H */

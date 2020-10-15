@@ -15,7 +15,7 @@ VERSIONPKG = 1.1
 
 include .config
 include versions.inc
-export EXTRACFLAGS := -DBCMWPA2 -fno-delete-null-pointer-checks -mips32 -mtune=mips32
+
 ifeq ($(CONFIG_WITHOUT_KERNEL),y)
 all: tools unpack_trx libc_only libs_only user_only romfs image
 else
@@ -81,7 +81,7 @@ ifneq ($(SUBARCH),)
 MAKEARCH = $(MAKE) ARCH=$(SUBARCH) CROSS_COMPILE=$(CROSS_COMPILE)
 MAKEARCH_KERNEL = $(MAKE) ARCH=$(ARCH) SUBARCH=$(SUBARCH) CROSS_COMPILE=$(KERNEL_CROSS_COMPILE)
 else
-MAKEARCH = $(MAKE) ARCH=$(ARCH) CROSS_COMPILE=$(KERNEL_CROSS_COMPILE)
+MAKEARCH = $(MAKE) ARCH=$(ARCH) CROSS_COMPILE=$(CROSS_COMPILE)
 MAKEARCH_KERNEL = $(MAKE) ARCH=$(ARCH) CROSS_COMPILE=$(KERNEL_CROSS_COMPILE)
 endif
 DIRS = libc libs user

@@ -362,10 +362,7 @@ static VOID RTMPChannelCfg(RTMP_ADAPTER *pAd, RTMP_STRING *Buffer)
 #endif /* CONFIG_AP_SUPPORT */
 	}
 
-<<<<<<< HEAD
-=======
 #ifndef DBDC_MODE
->>>>>>> a321e6940bb0cb44619e21b8b3df6e91f892751a
 #ifdef CONFIG_AP_SUPPORT
 #ifdef MBSS_SUPPORT
 	/*Can not assign default channel to wdev-> channel when channel = 0 */
@@ -386,10 +383,7 @@ static VOID RTMPChannelCfg(RTMP_ADAPTER *pAd, RTMP_STRING *Buffer)
 	}
 #endif/*MBSS_SUPPORT*/
 #endif /*CONFIG_AP_SUPPORT*/
-<<<<<<< HEAD
-=======
 #endif /*DBDC_MODE*/
->>>>>>> a321e6940bb0cb44619e21b8b3df6e91f892751a
 
 }
 
@@ -3742,13 +3736,9 @@ NDIS_STATUS	RTMPSetProfileParameters(
 
 #ifdef CONFIG_AP_SUPPORT
 		/*AutoChannelSelect*/
-<<<<<<< HEAD
-		if (RTMPGetKeyParameter("AutoChannelSelect", tmpbuf, 10, pBuffer, TRUE)) {
-=======
 		pAd->ApCfg.AutoChannelAlg = 3; //force using busytime ACS alg
 		if (RTMPGetKeyParameter("AutoChannelSelect", tmpbuf, 10, pBuffer, TRUE)) {
 			
->>>>>>> a321e6940bb0cb44619e21b8b3df6e91f892751a
 			if (os_str_tol(tmpbuf, 0, 10) != 0) { /*Enable*/
 				ChannelSel_Alg SelAlg = (ChannelSel_Alg)os_str_tol(tmpbuf, 0, 10);
 
@@ -3756,10 +3746,6 @@ NDIS_STATUS	RTMPSetProfileParameters(
 					pAd->ApCfg.bAutoChannelAtBootup = FALSE;
 				else { /*Enable*/
 					pAd->ApCfg.bAutoChannelAtBootup = TRUE;
-<<<<<<< HEAD
-					pAd->ApCfg.AutoChannelAlg = 3;
-=======
->>>>>>> a321e6940bb0cb44619e21b8b3df6e91f892751a
 				}
 			} else /*Disable*/
 				pAd->ApCfg.bAutoChannelAtBootup = FALSE;
@@ -3774,15 +3760,7 @@ NDIS_STATUS	RTMPSetProfileParameters(
 
 		/*Channel*/
 		/*Note: AutoChannelSelect must be put before Channel in dat file*/
-<<<<<<< HEAD
-		if (RTMPGetKeyParameter("Channel", tmpbuf, 100, pBuffer, TRUE)
-#ifdef CONFIG_AP_SUPPORT
-			&& !pAd->ApCfg.bAutoChannelAtBootup
-#endif
-			) {
-=======
 		if (RTMPGetKeyParameter("Channel", tmpbuf, 100, pBuffer, TRUE)) {
->>>>>>> a321e6940bb0cb44619e21b8b3df6e91f892751a
 			RTMPChannelCfg(pAd, tmpbuf);
 		}
 
@@ -4119,10 +4097,6 @@ NDIS_STATUS	RTMPSetProfileParameters(
 					pAd->CommonCfg.cPowerUpCckOfdm[BAND1][6]));
 			}
 #endif /* DBDC_MODE */
-<<<<<<< HEAD
-
-=======
->>>>>>> a321e6940bb0cb44619e21b8b3df6e91f892751a
 		}
 
 		/* Power Boost (HT20) */

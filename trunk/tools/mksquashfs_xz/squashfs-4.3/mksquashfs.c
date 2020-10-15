@@ -52,6 +52,10 @@
 #include <limits.h>
 #include <ctype.h>
 
+#ifndef FNM_EXTMATCH
+#define FNM_EXTMATCH 0
+#endif
+
 #ifndef linux
 #define __BYTE_ORDER BYTE_ORDER
 #define __BIG_ENDIAN BIG_ENDIAN

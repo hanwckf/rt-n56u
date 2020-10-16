@@ -37,19 +37,22 @@ jobs:
 
       # Runs a single command using the runners shell
       - name: 下载源码
-        run: git clone --depth=1 https://github.com/hanwckf/rt-n56u.git /opt/rt-n56u
+        run: git clone --depth=1 https://github.com/dream10201/rt-n56u.git /opt/rt-n56u
 
       # Runs a set of commands using the runners shell
       - name: 准备工具链
         run: |
           cd /opt/rt-n56u/toolchain-mipsel
           sh dl_toolchain.sh
+      - name: 修改配置
+        run: |
+          todo
       - name: 编译
         run: |
           cd /opt/rt-n56u/trunk
           ./clear_tree
           fakeroot ./build_firmware_modify R2100 
-      - name : Upload packages
+      - name : 打包发布
         uses: actions/upload-artifact@master
         if: always()
         with:

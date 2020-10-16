@@ -46,7 +46,7 @@ jobs:
           cd /opt/rt-n56u/toolchain-mipsel
           sh dl_toolchain.sh
       - name: 编译
-      - run: |
+        run: |
           cd /opt/rt-n56u/trunk
           ./clear_tree
           fakeroot ./build_firmware_modify AC2100

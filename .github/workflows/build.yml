@@ -48,4 +48,4 @@ jobs:
         run: |
           cd /opt/rt-n56u/trunk
           ./clear_tree
-          fakeroot ./build_firmware_modify AC2100
+          fakeroot ./build_firmware_modify R2100

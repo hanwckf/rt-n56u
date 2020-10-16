@@ -48,6 +48,7 @@ jobs:
           sh dl_toolchain.sh
       - name: 修改配置
         run: |
+          export cpath=${cpath}${ROUTE}.config
           ##################删除start######################
           sed -i '/CONFIG_FIRMWARE_ENABLE_IPV6=/d' $cpath
           sed -i '/CONFIG_FIRMWARE_INCLUDE_QOS=/d' $cpath
@@ -154,7 +155,7 @@ jobs:
           echo "CONFIG_FIRMWARE_INCLUDE_TUNSAFE=n" >> $cpath # Tunsafe VPN
           
         env:
-          cpath: /opt/rt-n56u/trunk/templates/${ROUTE}.config 
+          cpath: /opt/rt-n56u/trunk/templates/ 
       - name: 编译
         run: |
           cd /opt/rt-n56u/trunk

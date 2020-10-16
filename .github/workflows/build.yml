@@ -153,5 +153,5 @@ jobs:
         uses: actions/upload-artifact@master
         if: always()
         with:
-          name: Padavan-packages
+          name: Padavan-$(date "+%Y-%m-%d-%H%M")
           path: /opt/rt-n56u/trunk/images/*.trx

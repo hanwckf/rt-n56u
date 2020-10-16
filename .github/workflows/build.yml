@@ -155,7 +155,7 @@ jobs:
           echo "CONFIG_FIRMWARE_INCLUDE_TUNSAFE=n" >> $cpath # Tunsafe VPN
           
         env:
-          cpath: /opt/rt-n56u/trunk/templates/ 
+          cpath: /opt/rt-n56u/trunk/configs/templates/ 
       - name: 编译
         run: |
           cd /opt/rt-n56u/trunk

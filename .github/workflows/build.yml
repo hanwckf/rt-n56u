@@ -165,4 +165,4 @@ jobs:
         if: always()
         with:
           name: Padavan-packages
-          path: /opt/rt-n56u/trunk/configs/templates
+          path: /opt/rt-n56u/trunk/images

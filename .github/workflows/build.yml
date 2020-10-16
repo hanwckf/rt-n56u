@@ -23,6 +23,8 @@ jobs:
   build:
     # The type of runner that the job will run on
     runs-on: ubuntu-latest
+    env:
+      ROUTE: R2100 # 改成对应设备
     if: github.event.repository.owner.id == github.event.sender.id
 
     # Steps represent a sequence of tasks that will be executed as part of the job
@@ -152,12 +154,12 @@ jobs:
           echo "CONFIG_FIRMWARE_INCLUDE_TUNSAFE=n" >> $cpath # Tunsafe VPN
           
         env:
-          cpath: /opt/rt-n56u/trunk/templates/R2100.config 
+          cpath: /opt/rt-n56u/trunk/templates/${ROUTE}.config 
       - name: 编译
         run: |
           cd /opt/rt-n56u/trunk
           ./clear_tree
-          fakeroot ./build_firmware_modify R2100 
+          fakeroot ./build_firmware_modify ${ROUTE} 
       - name : 打包发布
         uses: actions/upload-artifact@master
         if: always()

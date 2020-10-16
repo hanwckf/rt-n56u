@@ -46,7 +46,28 @@ jobs:
           sh dl_toolchain.sh
       - name: 修改配置
         run: |
-          todo
+          ##################删除start######################
+          sed -i '/CONFIG_FIRMWARE_ENABLE_IPV6=/d' $cpath
+          sed -i '/CONFIG_FIRMWARE_INCLUDE_QOS=/d' $cpath
+          sed -i '/CONFIG_FIRMWARE_INCLUDE_LANG_CN=/d' $cpath
+          sed -i '/CONFIG_FIRMWARE_INCLUDE_TCPDUMP=/d' $cpath
+          sed -i '/CONFIG_FIRMWARE_INCLUDE_QOS=/d' $cpath
+          sed -i '/CONFIG_FIRMWARE_INCLUDE_QOS=/d' $cpath
+          sed -i '/CONFIG_FIRMWARE_INCLUDE_QOS=/d' $cpath
+          sed -i '/CONFIG_FIRMWARE_INCLUDE_QOS=/d' $cpath
+          sed -i '/CONFIG_FIRMWARE_INCLUDE_QOS=/d' $cpath
+          ##################删除end########################
+          
+          echo "CONFIG_FIRMWARE_ENABLE_IPV6=y" >> $cpath # ipv6支持
+          echo "CONFIG_FIRMWARE_INCLUDE_QOS=y" >> $cpath # 带宽管理
+          echo "CONFIG_FIRMWARE_INCLUDE_LANG_CN=y" >> $cpath # 中文
+          echo "CONFIG_FIRMWARE_INCLUDE_TCPDUMP=y" >> $cpath # tcpdump 抓包工具
+          echo "CONFIG_FIRMWARE_INCLUDE_LANG_CN=y" >> $cpath # 中文
+          echo "CONFIG_FIRMWARE_INCLUDE_LANG_CN=y" >> $cpath # 中文
+          echo "CONFIG_FIRMWARE_INCLUDE_LANG_CN=y" >> $cpath # 中文
+          
+        env:
+          cpath: /opt/rt-n56u/trunk/templates/R2100.config 
       - name: 编译
         run: |
           cd /opt/rt-n56u/trunk

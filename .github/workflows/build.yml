@@ -48,4 +48,10 @@ jobs:
         run: |
           cd /opt/rt-n56u/trunk
           ./clear_tree
-          fakeroot ./build_firmware_modify R2100
+          fakeroot ./build_firmware_modify R2100 
+      - name : Upload packages
+        uses: actions/upload-artifact@master
+        if: always()
+        with:
+          name: Padavan-packages
+          path: /opt/rt-n56u/trunk/configs/templates

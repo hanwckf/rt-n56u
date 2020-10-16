@@ -51,20 +51,105 @@ jobs:
           sed -i '/CONFIG_FIRMWARE_INCLUDE_QOS=/d' $cpath
           sed -i '/CONFIG_FIRMWARE_INCLUDE_LANG_CN=/d' $cpath
           sed -i '/CONFIG_FIRMWARE_INCLUDE_TCPDUMP=/d' $cpath
-          sed -i '/CONFIG_FIRMWARE_INCLUDE_QOS=/d' $cpath
-          sed -i '/CONFIG_FIRMWARE_INCLUDE_QOS=/d' $cpath
-          sed -i '/CONFIG_FIRMWARE_INCLUDE_QOS=/d' $cpath
-          sed -i '/CONFIG_FIRMWARE_INCLUDE_QOS=/d' $cpath
-          sed -i '/CONFIG_FIRMWARE_INCLUDE_QOS=/d' $cpath
+          sed -i '/CONFIG_FIRMWARE_INCLUDE_SFTP=/d' $cpath
+          sed -i '/CONFIG_FIRMWARE_INCLUDE_DROPBEAR=/d' $cpath
+          sed -i '/CONFIG_FIRMWARE_INCLUDE_DROPBEAR_FAST_CODE=/d' $cpath
+          
+          sed -i '/CONFIG_FIRMWARE_INCLUDE_OPENSSH=/d' $cpath
+          sed -i '/CONFIG_FIRMWARE_INCLUDE_OPENVPN=/d' $cpath
+          sed -i '/CONFIG_FIRMWARE_INCLUDE_SSWAN=/d' $cpath
+          sed -i '/CONFIG_FIRMWARE_INCLUDE_OPENSSL_EC=/d' $cpath
+          sed -i '/CONFIG_FIRMWARE_INCLUDE_XUPNPD=/d' $cpath
+          
+          sed -i '/CONFIG_FIRMWARE_INCLUDE_MINIDLNA=/d' $cpath
+          echo "CONFIG_FIRMWARE_INCLUDE_MINIDLNA=n" >> $cpath # Minidlna UPnP mediaserver.
+          sed -i '/CONFIG_FIRMWARE_INCLUDE_FIREFLY=/d' $cpath
+          echo "CONFIG_FIRMWARE_INCLUDE_FIREFLY=n" >> $cpath # Firefly iTunes mediaserver.   
+          sed -i '/CONFIG_FIRMWARE_INCLUDE_FFMPEG_NEW=/d' $cpath
+          echo "CONFIG_FIRMWARE_INCLUDE_FFMPEG_NEW=n" >> $cpath # Firefly iTunes mediaserver. 
+          
+          sed -i '/CONFIG_FIRMWARE_INCLUDE_TRANSMISSION=/d' $cpath
+          sed -i '/CONFIG_FIRMWARE_INCLUDE_TRANSMISSION_WEB_CONTROL=/d' $cpath
+          sed -i '/CONFIG_FIRMWARE_INCLUDE_ARIA=/d' $cpath
+          sed -i '/CONFIG_FIRMWARE_INCLUDE_ARIA_WEB_CONTROL=/d' $cpath
+          sed -i '/CONFIG_FIRMWARE_INCLUDE_CURL=/d' $cpath
+          sed -i '/CONFIG_FIRMWARE_INCLUDE_SCUTCLIENT=/d' $cpath
+          sed -i '/CONFIG_FIRMWARE_INCLUDE_GDUT_DRCOM=/d' $cpath
+          sed -i '/CONFIG_FIRMWARE_INCLUDE_DOGCOM=/d' $cpath
+          sed -i '/CONFIG_FIRMWARE_INCLUDE_MINIEAP=/d' $cpath
+          sed -i '/CONFIG_FIRMWARE_INCLUDE_NJIT_CLIENT=/d' $cpath
+          sed -i '/CONFIG_FIRMWARE_INCLUDE_NAPT66=/d' $cpath
+          sed -i '/CONFIG_FIRMWARE_INCLUDE_SHADOWSOCKS=/d' $cpath
+          sed -i '/CONFIG_FIRMWARE_INCLUDE_SSSERVER=/d' $cpath
+          sed -i '/CONFIG_FIRMWARE_INCLUDE_SOFTETHERVPN_SERVER=/d' $cpath
+          sed -i '/CONFIG_FIRMWARE_INCLUDE_SOFTETHERVPN_CLIENT=/d' $cpath
+          sed -i '/CONFIG_FIRMWARE_INCLUDE_SOFTETHERVPN_CMD=/d' $cpath
+          sed -i '/CONFIG_FIRMWARE_INCLUDE_DNSFORWARDER=/d' $cpath
+          sed -i '/CONFIG_FIRMWARE_INCLUDE_VLMCSD=/d' $cpath
+          sed -i '/CONFIG_FIRMWARE_INCLUDE_TTYD=/d' $cpath
+          sed -i '/CONFIG_FIRMWARE_INCLUDE_LRZSZ=/d' $cpath
+          sed -i '/CONFIG_FIRMWARE_INCLUDE_HTOP=/d' $cpath
+          sed -i '/CONFIG_FIRMWARE_INCLUDE_NANO=/d' $cpath
+          sed -i '/CONFIG_FIRMWARE_INCLUDE_IPERF3=/d' $cpath
+          sed -i '/CONFIG_FIRMWARE_INCLUDE_DUMP1090=/d' $cpath
+          sed -i '/CONFIG_FIRMWARE_INCLUDE_RTL_SDR=/d' $cpath
+          sed -i '/CONFIG_FIRMWARE_INCLUDE_MTR=/d' $cpath
+          sed -i '/CONFIG_FIRMWARE_INCLUDE_SOCAT=/d' $cpath
+          sed -i '/CONFIG_FIRMWARE_INCLUDE_SRELAY=/d' $cpath
+          sed -i '/CONFIG_FIRMWARE_INCLUDE_MENTOHUST=/d' $cpath
+          sed -i '/CONFIG_FIRMWARE_INCLUDE_FRPC=/d' $cpath
+          sed -i '/CONFIG_FIRMWARE_INCLUDE_FRPS=/d' $cpath
+          sed -i '/CONFIG_FIRMWARE_INCLUDE_TUNSAFE=/d' $cpath
           ##################删除end########################
           
           echo "CONFIG_FIRMWARE_ENABLE_IPV6=y" >> $cpath # ipv6支持
           echo "CONFIG_FIRMWARE_INCLUDE_QOS=y" >> $cpath # 带宽管理
           echo "CONFIG_FIRMWARE_INCLUDE_LANG_CN=y" >> $cpath # 中文
           echo "CONFIG_FIRMWARE_INCLUDE_TCPDUMP=y" >> $cpath # tcpdump 抓包工具
-          echo "CONFIG_FIRMWARE_INCLUDE_LANG_CN=y" >> $cpath # 中文
-          echo "CONFIG_FIRMWARE_INCLUDE_LANG_CN=y" >> $cpath # 中文
-          echo "CONFIG_FIRMWARE_INCLUDE_LANG_CN=y" >> $cpath # 中文
+          echo "CONFIG_FIRMWARE_INCLUDE_SFTP=n" >> $cpath # SFTP
+          echo "CONFIG_FIRMWARE_INCLUDE_DROPBEAR=y" >> $cpath # dropbear SSH 服务，比openssh轻量
+          echo "CONFIG_FIRMWARE_INCLUDE_DROPBEAR_FAST_CODE=y" >> $cpath # 使dropbear对称密码和哈希更快。
+          
+          echo "CONFIG_FIRMWARE_INCLUDE_OPENSSH=n" >> $cpath # OpenSSH dropbear ssh开启的话这个就关闭
+          
+          echo "CONFIG_FIRMWARE_INCLUDE_OPENVPN=n" >> $cpath # OpenVPN
+          echo "CONFIG_FIRMWARE_INCLUDE_SSWAN=n" >> $cpath # StrongSwan VPN
+          echo "CONFIG_FIRMWARE_INCLUDE_OPENSSL_EC=y" >> $cpath # openSSL 添加椭圆曲线算法支持
+          echo "CONFIG_FIRMWARE_INCLUDE_XUPNPD=n" >> $cpath # xUPNPd IPTV 媒体服务器
+          echo "CONFIG_FIRMWARE_INCLUDE_TRANSMISSION=n" >> $cpath # Transmission 下载软件
+          echo "CONFIG_FIRMWARE_INCLUDE_TRANSMISSION_WEB_CONTROL=n" >> $cpath # Transmission web管理界面
+          
+          echo "CONFIG_FIRMWARE_INCLUDE_ARIA=n" >> $cpath # Aria2 下载软件
+          echo "CONFIG_FIRMWARE_INCLUDE_ARIA_WEB_CONTROL=n" >> $cpath # Aria2 web管理界面
+          
+          echo "CONFIG_FIRMWARE_INCLUDE_CURL=n" >> $cpath # Curl命令
+          echo "CONFIG_FIRMWARE_INCLUDE_SCUTCLIENT=n" >> $cpath # scut 校园网
+          echo "CONFIG_FIRMWARE_INCLUDE_GDUT_DRCOM=n" >> $cpath # drcom 校园网
+          echo "CONFIG_FIRMWARE_INCLUDE_DOGCOM=n" >> $cpath # dogcom 校园网
+          echo "CONFIG_FIRMWARE_INCLUDE_MINIEAP=n" >> $cpath # 锐捷认证
+          echo "CONFIG_FIRMWARE_INCLUDE_NJIT_CLIENT=n" >> $cpath # njit client 校园网
+          echo "CONFIG_FIRMWARE_INCLUDE_NAPT66=n" >> $cpath # IPv6 NAT
+          echo "CONFIG_FIRMWARE_INCLUDE_SHADOWSOCKS=n" >> $cpath # Shadowsocks
+          echo "CONFIG_FIRMWARE_INCLUDE_SSSERVER=n" >> $cpath # SS Server
+          echo "CONFIG_FIRMWARE_INCLUDE_SOFTETHERVPN_SERVER=n" >> $cpath # SoftEther VPN Server
+          echo "CONFIG_FIRMWARE_INCLUDE_SOFTETHERVPN_CLIENT=n" >> $cpath # SoftEther VPN Client
+          echo "CONFIG_FIRMWARE_INCLUDE_SOFTETHERVPN_CMD=n" >> $cpath # SoftEther VPN cmd
+          echo "CONFIG_FIRMWARE_INCLUDE_DNSFORWARDER=n" >> $cpath # DNS 转发
+          echo "CONFIG_FIRMWARE_INCLUDE_VLMCSD=n" >> $cpath # KMS 激活服务器
+          echo "CONFIG_FIRMWARE_INCLUDE_TTYD=n" >> $cpath # web 终端
+          echo "CONFIG_FIRMWARE_INCLUDE_LRZSZ=n" >> $cpath # sz 命令 终端文件传输
+          echo "CONFIG_FIRMWARE_INCLUDE_HTOP=n" >> $cpath # htop 命令 进程管理
+          echo "CONFIG_FIRMWARE_INCLUDE_NANO=n" >> $cpath # nano 命令 文本编辑
+          echo "CONFIG_FIRMWARE_INCLUDE_IPERF3=n" >> $cpath # Iperf3 网速测试
+          echo "CONFIG_FIRMWARE_INCLUDE_DUMP1090=n" >> $cpath # dump1090
+          echo "CONFIG_FIRMWARE_INCLUDE_RTL_SDR=n" >> $cpath # 软件无线电
+          echo "CONFIG_FIRMWARE_INCLUDE_MTR=y" >> $cpath # mtr 网络诊断工具
+          echo "CONFIG_FIRMWARE_INCLUDE_SOCAT=y" >> $cpath # socat 网络工具
+          echo "CONFIG_FIRMWARE_INCLUDE_SRELAY=n" >> $cpath # socks代理服务器
+          echo "CONFIG_FIRMWARE_INCLUDE_MENTOHUST=n" >> $cpath # 锐捷认证
+          echo "CONFIG_FIRMWARE_INCLUDE_FRPC=n" >> $cpath # frpc
+          echo "CONFIG_FIRMWARE_INCLUDE_FRPS=n" >> $cpath # frps
+          echo "CONFIG_FIRMWARE_INCLUDE_TUNSAFE=n" >> $cpath # Tunsafe VPN
           
         env:
           cpath: /opt/rt-n56u/trunk/templates/R2100.config 

@@ -477,6 +477,7 @@ relookup:
 		p->tcp_ts_stamp = 0;
 		p->metrics[RTAX_LOCK-1] = INETPEER_METRICS_NEW;
 		p->rate_tokens = 0;
+		p->n_redirects = 0;
 		/* 60*HZ is arbitrary, but chosen enough high so that the first
 		 * calculation of tokens is at its maximum.
 		 */

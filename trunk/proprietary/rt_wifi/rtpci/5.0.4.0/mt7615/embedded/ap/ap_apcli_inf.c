@@ -54,11 +54,8 @@
 
 /* --------------------------------- Public -------------------------------- */
 NET_DEV_STATS *RT28xx_get_ether_stats(PNET_DEV net_dev);
-<<<<<<< HEAD
-=======
 struct rtnl_link_stats64 *RT28xx_get_ether_stats64(struct net_device *net_dev, struct rtnl_link_stats64 *stats);
 
->>>>>>> a321e6940bb0cb44619e21b8b3df6e91f892751a
 /*
 ========================================================================
 Routine Description:
@@ -85,11 +82,7 @@ VOID RT28xx_ApCli_Init(VOID *pAd, PNET_DEV main_dev_p)
 	netDevOpHook.stop = apcli_virtual_if_close;
 	netDevOpHook.xmit = rt28xx_send_packets;
 	netDevOpHook.ioctl = rt28xx_ioctl;
-<<<<<<< HEAD
-	netDevOpHook.get_stats = RT28xx_get_ether_stats;
-=======
 	netDevOpHook.get_stats = RT28xx_get_ether_stats64;
->>>>>>> a321e6940bb0cb44619e21b8b3df6e91f892751a
 	RTMP_AP_IoctlHandle(pAd, NULL, CMD_RTPRIV_IOCTL_APC_INIT,
 						0, &netDevOpHook, 0);
 }

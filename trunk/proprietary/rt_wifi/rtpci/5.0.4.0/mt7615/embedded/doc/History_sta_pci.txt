@@ -38,11 +38,7 @@
 7. Support WpaSupplicant(v0.6.9) WPS
 8. Fix WPS issue: Check SelectRegistrar is TRUE or FALSE
 9. Fix WPS issue: Some AP (ex. Buffalo WZR-AG300NH) would change SSID to another SSID after push WPS PBC button.
-<<<<<<< HEAD
 				  After WPS process finish, change SSID to original SSID.
-=======
-				  After WPS process finish, change SSID to original SSID.
->>>>>>> a321e6940bb0cb44619e21b8b3df6e91f892751a
 				  Driver needs to wait AP to re-generate Beacon; otherwise, driver will update this PBC SSID to MlmeAux.
 10. Fix statistics issue: It happened in big-endian platform, tx count would be zero.
 11. Support WiFi Draft_3.0 11n test items.

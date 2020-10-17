@@ -955,11 +955,7 @@ BOOLEAN BndStrg_CheckConnectionReq(
 	}
 
 /* WPS_BandSteering Support */
-<<<<<<< HEAD
-	#ifdef WSC_AP_SUPPORT
-=======
 #ifdef WSC_AP_SUPPORT
->>>>>>> a321e6940bb0cb44619e21b8b3df6e91f892751a
 	{
 		PWSC_CTRL pWscControl;
 
@@ -979,11 +975,7 @@ BOOLEAN BndStrg_CheckConnectionReq(
 				return TRUE;
 			}
 		}
-<<<<<<< HEAD
-#endif
-=======
 
->>>>>>> a321e6940bb0cb44619e21b8b3df6e91f892751a
 		if (FrameType == APMT2_PEER_AUTH_REQ) {
 			if (pWscControl->bWscTrigger) {
 				MTWF_LOG(DBG_CAT_CFG, DBG_SUBCAT_ALL, DBG_LVL_TRACE, ("channel %u: Auth req: STA %02x:%02x:%02x:%02x:%02x:%02x  wps whitelisted\n",
@@ -994,10 +986,7 @@ BOOLEAN BndStrg_CheckConnectionReq(
 			}
 		}
 	}
-<<<<<<< HEAD
-=======
 #endif
->>>>>>> a321e6940bb0cb44619e21b8b3df6e91f892751a
 
 	if (table->BndStrgMode == POST_CONNECTION_STEERING) {
 		return TRUE;

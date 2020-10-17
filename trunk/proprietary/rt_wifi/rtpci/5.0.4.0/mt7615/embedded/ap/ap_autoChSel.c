@@ -2221,11 +2221,7 @@ UCHAR MTAPAutoSelectChannel(
 	/* Re-arrange channel list and fill in channel properties for auto-channel selection*/
 	AutoChSelBuildChannelList(pAd, IsABand, pwdev);
 
-<<<<<<< HEAD
-	MTWF_LOG(DBG_CAT_ALL, DBG_SUBCAT_ALL, DBG_LVL_TRACE,
-=======
 	MTWF_LOG(DBG_CAT_ALL, DBG_SUBCAT_ALL, DBG_LVL_OFF,
->>>>>>> a321e6940bb0cb44619e21b8b3df6e91f892751a
 			("%s: IsABand = %d, ChannelListNum = %d\n", __func__, IsABand, pAutoChCtrl->AutoChSelCtrl.ChListNum));
 
 #ifdef ACS_CTCC_SUPPORT

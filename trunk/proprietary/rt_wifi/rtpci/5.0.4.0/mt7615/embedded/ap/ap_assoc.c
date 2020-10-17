@@ -267,11 +267,7 @@ static USHORT update_associated_mac_entry(
 			ie_list->operating_mode.rx_nss_type == 0) {
 			pEntry->operating_mode = ie_list->operating_mode;
 			pEntry->force_op_mode = TRUE;
-<<<<<<< HEAD
-			MTWF_LOG(DBG_CAT_AP, DBG_SUBCAT_ALL, DBG_LVL_OFF,
-=======
 			MTWF_LOG(DBG_CAT_AP, DBG_SUBCAT_ALL, DBG_LVL_TRACE,
->>>>>>> a321e6940bb0cb44619e21b8b3df6e91f892751a
 					 ("%s(): Peer's OperatingMode=>RxNssType: %d, RxNss: %d, ChBW: %d\n",
 					  __func__, pEntry->operating_mode.rx_nss_type,
 					  pEntry->operating_mode.rx_nss,

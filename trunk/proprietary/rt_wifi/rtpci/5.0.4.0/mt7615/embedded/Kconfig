@@ -10,77 +10,8 @@ config MT_WIFI
 	tristate "MT WIFI Driver"
 	select WIFI_BASIC_FUNC if MT_WIFI
 
-<<<<<<< HEAD
-config MT_WIFI_PATH
-		string
-		depends on MT_WIFI
-		default "mt7615_ap"
-
 if MT_WIFI
 menu "WiFi Generic Feature Options"
-#choice
-#		prompt "EEPROM Type of 1st Card"
-#		depends on ! RT_FIRST_IF_NONE
-
-#		config RT_FIRST_IF_EEPROM_FLASH
-#		bool "FLASH"
-
-#		config RT_FIRST_IF_EEPROM_EFUSE
-#		bool "EFUSE"
-#endchoice
-
-config RT_FIRST_CARD_EEPROM
-		string
-		depends on ! RT_FIRST_IF_NONE
-		default "flash" if RT_FIRST_IF_EEPROM_FLASH
-
-#choice
-#		prompt "EEPROM Type of 2nd Card"
-#		depends on ! RT_SECOND_IF_NONE
-
-#		config RT_SECOND_IF_EEPROM_FLASH
-#		bool "FLASH"
-
-#		config RT_SECOND_IF_EEPROM_PROM
-#		bool "EEPROM"
-
-#		config RT_SECOND_IF_EEPROM_EFUSE
-#		bool "EFUSE"
-
-#endchoice
-
-config RT_SECOND_CARD_EEPROM
-		string
-		depends on ! RT_SECOND_IF_NONE
-		default "prom" if RT_SECOND_IF_EEPROM_PROM
-		default "efuse" if RT_SECOND_IF_EEPROM_EFUSE
-		default "flash" if RT_SECOND_IF_EEPROM_FLASH
-
-#choice
-#		prompt "EEPROM Type of 3th Card"
-#		depends on ! RT_THIRD_IF_NONE
-
-#		config RT_THIRD_IF_EEPROM_FLASH
-#		bool "FLASH"
-
-#		config RT_THIRD_IF_EEPROM_PROM
-#		bool "EEPROM"
-
-#		config RT_THIRD_IF_EEPROM_EFUSE
-#		bool "EFUSE"
-
-#endchoice
-
-config RT_THIRD_CARD_EEPROM
-		string
-		depends on ! RT_THIRD_IF_NONE
-		default "prom" if RT_THIRD_IF_EEPROM_PROM
-		default "efuse" if RT_THIRD_IF_EEPROM_EFUSE
-		default "flash" if RT_THIRD_IF_EEPROM_FLASH
-=======
-if MT_WIFI
-menu "WiFi Generic Feature Options"
->>>>>>> a321e6940bb0cb44619e21b8b3df6e91f892751a
 	
 config MULTI_INF_SUPPORT
 		bool

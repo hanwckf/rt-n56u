@@ -4673,11 +4673,7 @@ INT RTMPAPSetInformation(
 		break;
 
 	case OID_802_11_VOW_BW_AT_EN: {
-<<<<<<< HEAD
-		P_VOW_UI_CONFIG cfg;
-=======
 		P_VOW_UI_CONFIG cfg = NULL;
->>>>>>> a321e6940bb0cb44619e21b8b3df6e91f892751a
 		UCHAR buf[VOW_CMD_STR_LEN];
 		UINT8 group;
 
@@ -4705,11 +4701,7 @@ INT RTMPAPSetInformation(
 	break;
 
 	case OID_802_11_VOW_BW_TPUT_EN: {
-<<<<<<< HEAD
-		P_VOW_UI_CONFIG cfg;
-=======
 		P_VOW_UI_CONFIG cfg = NULL;
->>>>>>> a321e6940bb0cb44619e21b8b3df6e91f892751a
 		UCHAR buf[VOW_CMD_STR_LEN];
 		UINT8 group;
 
@@ -4737,12 +4729,8 @@ INT RTMPAPSetInformation(
 	break;
 
 	case OID_802_11_VOW_ATF_EN: {
-<<<<<<< HEAD
-		UCHAR *val, buf[VOW_CMD_STR_LEN];
-=======
 		UCHAR *val = NULL;
 		UCHAR buf[VOW_CMD_STR_LEN] = {0};
->>>>>>> a321e6940bb0cb44619e21b8b3df6e91f892751a
 
 		os_alloc_mem(val, (UCHAR **)&val, wrq->u.data.length);
 
@@ -4765,12 +4753,8 @@ INT RTMPAPSetInformation(
 	break;
 
 	case OID_802_11_VOW_RX_EN: {
-<<<<<<< HEAD
-		UCHAR *val, buf[VOW_CMD_STR_LEN];
-=======
 		UCHAR *val = NULL;
 		UCHAR buf[VOW_CMD_STR_LEN] = {0};
->>>>>>> a321e6940bb0cb44619e21b8b3df6e91f892751a
 
 		os_alloc_mem(val, (UCHAR **)&val, wrq->u.data.length);
 
@@ -4793,11 +4777,7 @@ INT RTMPAPSetInformation(
 	break;
 
 	case OID_802_11_VOW_GROUP_MAX_RATE: {
-<<<<<<< HEAD
-		P_VOW_UI_CONFIG cfg;
-=======
 		P_VOW_UI_CONFIG cfg = NULL;
->>>>>>> a321e6940bb0cb44619e21b8b3df6e91f892751a
 		UCHAR buf[VOW_CMD_STR_LEN];
 		UINT8 group;
 
@@ -4825,11 +4805,7 @@ INT RTMPAPSetInformation(
 	break;
 
 	case OID_802_11_VOW_GROUP_MIN_RATE: {
-<<<<<<< HEAD
-		P_VOW_UI_CONFIG cfg;
-=======
 		P_VOW_UI_CONFIG cfg = NULL;
->>>>>>> a321e6940bb0cb44619e21b8b3df6e91f892751a
 		UCHAR buf[VOW_CMD_STR_LEN];
 		UINT8 group;
 
@@ -4857,11 +4833,7 @@ INT RTMPAPSetInformation(
 	break;
 
 	case OID_802_11_VOW_GROUP_MAX_RATIO: {
-<<<<<<< HEAD
-		P_VOW_UI_CONFIG cfg;
-=======
 		P_VOW_UI_CONFIG cfg = NULL;
->>>>>>> a321e6940bb0cb44619e21b8b3df6e91f892751a
 		UCHAR buf[VOW_CMD_STR_LEN];
 		UINT8 group;
 
@@ -4889,11 +4861,7 @@ INT RTMPAPSetInformation(
 	break;
 
 	case OID_802_11_VOW_GROUP_MIN_RATIO: {
-<<<<<<< HEAD
-		P_VOW_UI_CONFIG cfg;
-=======
 		P_VOW_UI_CONFIG cfg = NULL;
->>>>>>> a321e6940bb0cb44619e21b8b3df6e91f892751a
 		UCHAR buf[VOW_CMD_STR_LEN];
 		UINT8 group;
 
@@ -5083,11 +5051,7 @@ INT RTMPAPSetInformation(
 	case OID_802_11_VENDOR_IE_UPDATE:
 	case OID_802_11_VENDOR_IE_REMOVE:
 	{
-<<<<<<< HEAD
-		UCHAR *Buf;
-=======
 		UCHAR *Buf = NULL;
->>>>>>> a321e6940bb0cb44619e21b8b3df6e91f892751a
 		struct vie_op_data_s *vie_op_data;
 		struct wifi_dev *wdev = &pAd->ApCfg.MBSSID[pObj->ioctl_if].wdev;
 		UINT32 length = 0;

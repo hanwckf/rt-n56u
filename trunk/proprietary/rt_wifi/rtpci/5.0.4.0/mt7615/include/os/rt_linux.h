@@ -1319,10 +1319,7 @@ extern int (*ra_sw_nat_hook_rx)(struct sk_buff *skb);
 extern void (*ppe_dev_register_hook) (VOID  *dev);
 extern void (*ppe_dev_unregister_hook) (VOID  *dev);
 #endif
-<<<<<<< HEAD
-=======
 
->>>>>>> a321e6940bb0cb44619e21b8b3df6e91f892751a
 #if defined(CONFIG_WIFI_PKT_FWD) || defined(CONFIG_WIFI_PKT_FWD_MODULE)
 extern int (*wf_ra_sw_nat_hook_tx_bkup)(struct sk_buff *skb, int gmac_no);
 extern int (*wf_ra_sw_nat_hook_rx_bkup)(struct sk_buff *skb);

@@ -50,10 +50,7 @@
 
 /* --------------------------------- Public -------------------------------- */
 NET_DEV_STATS *RT28xx_get_ether_stats(PNET_DEV net_dev);
-<<<<<<< HEAD
-=======
 struct rtnl_link_stats64 *RT28xx_get_ether_stats64(struct net_device *net_dev, struct rtnl_link_stats64 *stats);
->>>>>>> a321e6940bb0cb44619e21b8b3df6e91f892751a
 
 /*
 ========================================================================
@@ -83,11 +80,7 @@ VOID RT28xx_MBSS_Init(VOID *pAd, PNET_DEV pDevMain)
 	netDevHook.stop = mbss_virtual_if_close;	/* device close hook point */
 	netDevHook.xmit = rt28xx_send_packets;	/* hard transmit hook point */
 	netDevHook.ioctl = rt28xx_ioctl;	/* ioctl hook point */
-<<<<<<< HEAD
-	netDevHook.get_stats = RT28xx_get_ether_stats;
-=======
 	netDevHook.get_stats = RT28xx_get_ether_stats64;
->>>>>>> a321e6940bb0cb44619e21b8b3df6e91f892751a
 	RTMP_AP_IoctlHandle(pAd, NULL, CMD_RTPRIV_IOCTL_MBSS_INIT,
 						0, &netDevHook, 0);
 }

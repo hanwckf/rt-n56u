@@ -245,11 +245,6 @@ UCHAR ApAutoChannelAtBootUp(RTMP_ADAPTER *pAd, struct wifi_dev *wdev)
 #endif
 	UCHAR vht_bw = wlan_config_get_vht_bw(wdev);
 
-<<<<<<< HEAD
-	MTWF_LOG(DBG_CAT_ALL, DBG_SUBCAT_ALL, DBG_LVL_OFF, ("%s----------------->\n", __func__));
-	MTWF_LOG(DBG_CAT_ALL, DBG_SUBCAT_ALL, DBG_LVL_OFF, ("%s: AutoChannelBootup = %d\n",
-			 __func__, pAd->ApCfg.bAutoChannelAtBootup));
-=======
 	if (!wdev) {
 		MTWF_LOG(DBG_CAT_ALL, DBG_SUBCAT_ALL, DBG_LVL_ERROR,
 				 ("\x1b[41m %s(): wdev is NULL !!\x1b[m\n", __func__));
@@ -260,7 +255,6 @@ UCHAR ApAutoChannelAtBootUp(RTMP_ADAPTER *pAd, struct wifi_dev *wdev)
 	MTWF_LOG(DBG_CAT_ALL, DBG_SUBCAT_ALL, DBG_LVL_OFF, ("%s----------------->\n", __func__));
 	MTWF_LOG(DBG_CAT_ALL, DBG_SUBCAT_ALL, DBG_LVL_OFF, ("%s: AutoChannelBootup = %d, pAd: %p, ifname: %s, channel: %d\n",
 			 __func__, pAd->ApCfg.bAutoChannelAtBootup, pAd, pAd->net_dev->name, wdev->channel));
->>>>>>> a321e6940bb0cb44619e21b8b3df6e91f892751a
 
 #ifdef DFS_VENDOR10_CUSTOM_FEATURE
 	if (IS_SUPPORT_V10_DFS(pAd) && (IS_V10_BOOTACS_INVALID(pAd) == FALSE) && (IS_V10_APINTF_DOWN(pAd) == FALSE)) {
@@ -272,20 +266,6 @@ UCHAR ApAutoChannelAtBootUp(RTMP_ADAPTER *pAd, struct wifi_dev *wdev)
 		return FALSE;
 	}
 #else
-<<<<<<< HEAD
-	if (!pAd->ApCfg.bAutoChannelAtBootup) {
-		MTWF_LOG(DBG_CAT_ALL, DBG_SUBCAT_ALL, DBG_LVL_OFF, ("%s<-----------------\n", __func__));
-		return FALSE;
-	}
-#endif
-
-	if (!wdev) {
-		MTWF_LOG(DBG_CAT_ALL, DBG_SUBCAT_ALL, DBG_LVL_ERROR,
-				 ("\x1b[41m %s(): wdev is NULL !!\x1b[m\n", __func__));
-		MTWF_LOG(DBG_CAT_ALL, DBG_SUBCAT_ALL, DBG_LVL_OFF, ("%s<-----------------\n", __func__));
-		return FALSE;
-	}
-=======
 #ifdef DBDC_MODE
 	if (wdev->channel != 0) 
 #else
@@ -296,7 +276,6 @@ UCHAR ApAutoChannelAtBootUp(RTMP_ADAPTER *pAd, struct wifi_dev *wdev)
 		return FALSE;
 	}
 #endif
->>>>>>> a321e6940bb0cb44619e21b8b3df6e91f892751a
 
 	BandIdx = HcGetBandByWdev(wdev);
 	pAutoChCtrl = HcGetAutoChCtrlbyBandIdx(pAd, BandIdx);
@@ -1479,15 +1458,10 @@ VOID APStopByBss(RTMP_ADAPTER *pAd, BSS_STRUCT *pMbss)
 #if defined(MESH_SUPPORT) || defined(APCLI_SUPPORT) || defined(BAND_STEERING)
 	INT idx;
 	struct wifi_dev *wdev;
-<<<<<<< HEAD
-	PWSC_CTRL pWscControl;
-#endif
-=======
 #ifdef WSC_AP_SUPPORT
 	PWSC_CTRL pWscControl;
 #endif
 #endif
->>>>>>> a321e6940bb0cb44619e21b8b3df6e91f892751a
 #ifdef GREENAP_SUPPORT
 	struct greenap_ctrl *greenap = &pAd->ApCfg.greenap;
 #endif /* GREENAP_SUPPORT */
@@ -1520,20 +1494,12 @@ VOID APStopByBss(RTMP_ADAPTER *pAd, BSS_STRUCT *pMbss)
 #endif
 		for (idx = 0; idx < MAX_APCLI_NUM; idx++) {
 			wdev = &pAd->ApCfg.ApCliTab[idx].wdev;
-<<<<<<< HEAD
-
-=======
 #ifdef WSC_AP_SUPPORT
->>>>>>> a321e6940bb0cb44619e21b8b3df6e91f892751a
 			/* WPS cli will disconnect and connect again */
 			pWscControl = &pAd->ApCfg.ApCliTab[idx].wdev.WscControl;
 			if (pWscControl->bWscTrigger == TRUE)
 				continue;
-<<<<<<< HEAD
-
-=======
 #endif
->>>>>>> a321e6940bb0cb44619e21b8b3df6e91f892751a
 			if (wdev->channel == wdev_bss->channel) {
 				UINT8 enable = pAd->ApCfg.ApCliTab[idx].Enable;
 

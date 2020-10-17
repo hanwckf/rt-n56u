@@ -87,11 +87,7 @@ int virtual_if_down_handler(VOID *dev);
 INT rt28xx_send_packets(IN struct sk_buff *skb_p, IN struct net_device *net_dev);
 
 struct net_device_stats *RT28xx_get_ether_stats(struct net_device *net_dev);
-<<<<<<< HEAD
-
-=======
 struct rtnl_link_stats64 *RT28xx_get_ether_stats64(struct net_device *net_dev, struct rtnl_link_stats64 *stats);
->>>>>>> a321e6940bb0cb44619e21b8b3df6e91f892751a
 
 /*
  * ========================================================================
@@ -537,11 +533,7 @@ PNET_DEV RtmpPhyNetDevInit(VOID *pAd, RTMP_OS_NETDEV_OP_HOOK *pNetDevHook)
 #endif /* IKANOS_VX_1X0 */
 	pNetDevHook->ioctl = rt28xx_ioctl;
 	pNetDevHook->priv_flags = InfId; /*INT_MAIN; */
-<<<<<<< HEAD
-	pNetDevHook->get_stats = RT28xx_get_ether_stats;
-=======
 	pNetDevHook->get_stats = RT28xx_get_ether_stats64;
->>>>>>> a321e6940bb0cb44619e21b8b3df6e91f892751a
 	pNetDevHook->needProtcted = FALSE;
 #if (WIRELESS_EXT < 21) && (WIRELESS_EXT >= 12)
 	pNetDevHook->get_wstats = rt28xx_get_wireless_stats;
@@ -783,8 +775,6 @@ struct net_device_stats *RT28xx_get_ether_stats(struct net_device *net_dev)
 		return NULL;
 }
 
-<<<<<<< HEAD
-=======
 struct rtnl_link_stats64 *RT28xx_get_ether_stats64(struct net_device *net_dev, struct rtnl_link_stats64 *stats)
 {
 	RT_CMD_STATS WifStats;
@@ -828,7 +818,6 @@ struct rtnl_link_stats64 *RT28xx_get_ether_stats64(struct net_device *net_dev, s
 		
 	return stats;
 }
->>>>>>> a321e6940bb0cb44619e21b8b3df6e91f892751a
 
 BOOLEAN RtmpPhyNetDevExit(VOID *pAd, PNET_DEV net_dev)
 {

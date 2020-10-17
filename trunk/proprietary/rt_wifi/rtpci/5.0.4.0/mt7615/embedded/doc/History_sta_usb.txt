@@ -1,15 +1,8 @@
 [V2.5.0.1]
-<<<<<<< HEAD
 1. Fix P2P CLIENT use PBC to connect P2P GO as negotiate by KEYPAD / DISPLAY.
 2. Fix P2P CLIENT difficult connect on P2P GO need scan times with wrong BSSID.
 3. Fix P2P CLIENT not use N-rate transmit data to GO.
 4. Fix P2P concurrent mode as INFRA + P2P_CLIENT with different HT_BW.
-=======
-1. Fix P2P CLIENT use PBC to connect P2P GO as negotiate by KEYPAD / DISPLAY.
-2. Fix P2P CLIENT difficult connect on P2P GO need scan times with wrong BSSID.
-3. Fix P2P CLIENT not use N-rate transmit data to GO.
-4. Fix P2P concurrent mode as INFRA + P2P_CLIENT with different HT_BW.
->>>>>>> a321e6940bb0cb44619e21b8b3df6e91f892751a
 5. Fix P2P Link Down not turn back to Listen Channel cause can¡¦t be found.
 
 [V2.5.0.0]
@@ -73,11 +66,7 @@
 5. Support WpaSupplicant(v0.6.9) WPS
 6. Fix WPS issue: Check SelectRegistrar is TRUE or FALSE
 7. Fix WPS issue: Some AP (ex. Buffalo WZR-AG300NH) would change SSID to another SSID after push WPS PBC button.
-<<<<<<< HEAD
 				  After WPS process finish, change SSID to original SSID.
-=======
-				  After WPS process finish, change SSID to original SSID.
->>>>>>> a321e6940bb0cb44619e21b8b3df6e91f892751a
 				  Driver needs to wait AP to re-generate Beacon; otherwise, driver will update this PBC SSID to MlmeAux.
 8. Shorten the waiting time when unplug the device.
 9. Fix mgmt ring full issue: It happened only in big-endian platform and quickly switch the network type between Infra and Adhoc mode.

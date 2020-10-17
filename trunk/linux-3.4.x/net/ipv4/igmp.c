@@ -221,7 +221,7 @@ static void igmp_start_timer(struct ip_mc_list *im, int max_delay)
 
 static void igmp_gq_start_timer(struct in_device *in_dev)
 {
-	int tv = net_random() % in_dev->mr_maxdelay;
+	int tv = prandom_u32() % in_dev->mr_maxdelay;
 	unsigned long exp = jiffies + tv + 2;
 
 	if (in_dev->mr_gq_running &&

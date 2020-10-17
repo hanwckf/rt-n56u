@@ -236,14 +236,14 @@ static bool loss_gilb_ell(struct netem_sched_data *q)
 
 	switch (clg->state) {
 	case 1:
-		if (net_random() < clg->a1)
+		if (prandom_u32() < clg->a1)
 			clg->state = 2;
-		if (net_random() < clg->a4)
+		if (prandom_u32() < clg->a4)
 			return true;
 	case 2:
-		if (net_random() < clg->a2)
+		if (prandom_u32() < clg->a2)
 			clg->state = 1;
-		if (clg->a3 > net_random())
+		if (clg->a3 > prandom_u32())
 			return true;
 	}
 

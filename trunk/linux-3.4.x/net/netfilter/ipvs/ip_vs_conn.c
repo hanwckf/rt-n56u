@@ -1169,7 +1169,7 @@ void ip_vs_random_dropentry(struct net *net)
 	 * Randomly scan 1/32 of the whole table every second
 	 */
 	for (idx = 0; idx < (ip_vs_conn_tab_size>>5); idx++) {
-		unsigned int hash = net_random() & ip_vs_conn_tab_mask;
+		unsigned int hash = prandom_u32() & ip_vs_conn_tab_mask;
 		struct hlist_node *n;
 
 		/*

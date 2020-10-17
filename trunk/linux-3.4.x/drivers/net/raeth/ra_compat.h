@@ -16,11 +16,6 @@
 #define skb_vlan_tag_get(x)			vlan_tx_tag_get(x)
 #endif
 
-#if LINUX_VERSION_CODE < KERNEL_VERSION(3,14,0)
-#define prandom_seed(x)				net_srandom(x)
-#define prandom_u32()				net_random()
-#endif
-
 #if LINUX_VERSION_CODE < KERNEL_VERSION(3,2,0)
 #include <linux/skbuff.h>
 static inline unsigned int skb_frag_size(const skb_frag_t *frag)

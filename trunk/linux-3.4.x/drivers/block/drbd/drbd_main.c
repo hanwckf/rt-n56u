@@ -399,7 +399,7 @@ static void _tl_restart(struct drbd_conf *mdev, enum drbd_req_event what)
 				list_splice(&carry_reads, &b->requests);
 				INIT_LIST_HEAD(&b->w.list);
 				b->w.cb = NULL;
-				b->br_number = net_random();
+				b->br_number = prandom_u32();
 				b->n_writes = 0;
 
 				*pn = b;

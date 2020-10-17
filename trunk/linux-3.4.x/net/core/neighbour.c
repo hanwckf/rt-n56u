@@ -1400,8 +1400,8 @@ void pneigh_enqueue(struct neigh_table *tbl, struct neigh_parms *p,
 		    struct sk_buff *skb)
 {
 	unsigned long now = jiffies;
-	unsigned long sched_next = now + (net_random() % p->proxy_delay);
-
+	unsigned long sched_next = now + (prandom_u32() % p->proxy_delay);
+	
 	if (tbl->proxy_queue.qlen > p->proxy_qlen) {
 		kfree_skb(skb);
 		return;

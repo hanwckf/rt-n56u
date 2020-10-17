@@ -3505,8 +3505,8 @@ int __init ip_rt_init(void)
 	INIT_DELAYED_WORK_DEFERRABLE(&expires_work, rt_worker_func);
 	expires_ljiffies = jiffies;
 	schedule_delayed_work(&expires_work,
-		net_random() % ip_rt_gc_interval + ip_rt_gc_interval);
-
+		prandom_u32() % ip_rt_gc_interval + ip_rt_gc_interval);
+		
 	if (ip_rt_proc_init())
 		pr_err("Unable to create route proc files\n");
 #ifdef CONFIG_XFRM

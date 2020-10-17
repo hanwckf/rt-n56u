@@ -112,7 +112,7 @@ int inet_csk_get_port(struct sock *sk, unsigned short snum)
 again:
 		inet_get_local_port_range(&low, &high);
 		remaining = (high - low) + 1;
-		smallest_rover = rover = net_random() % remaining + low;
+		smallest_rover = rover = prandom_u32() % remaining + low;
 
 		smallest_size = -1;
 		do {

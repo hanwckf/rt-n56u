@@ -677,14 +677,17 @@ static int ext2_get_blocks(struct inode *inode,
 		partial = ext2_get_branch(inode, depth, offsets, chain, &err);
 		if (!partial) {
 			count++;
-			mutex_unlock(&ei->truncate_mutex);
-			if (err)
-				goto cleanup;
+			mutex_unlock(&ei->truncate_mutex);			
 			clear_buffer_new(bh_result);
 			goto got_it;
 		}
-	}
 
+		if (err) {
+			mutex_unlock(&ei->truncate_mutex);
+			goto cleanup;
+		}
+	}
+	
 	/*
 	 * Okay, we need to do block allocation.  Lazily initialize the block
 	 * allocation info here if necessary

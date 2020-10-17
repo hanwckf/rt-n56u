@@ -1126,11 +1126,6 @@ skip:
 	}
 }
 
-static inline bool inetdev_valid_mtu(unsigned int mtu)
-{
-	return mtu >= 68;
-}
-
 static void inetdev_send_gratuitous_arp(struct net_device *dev,
 					struct in_device *in_dev)
 

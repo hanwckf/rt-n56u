@@ -222,8 +222,10 @@ static int crypto_report(struct sk_buff *in_skb, struct nlmsghdr *in_nlh,
 drop_alg:
 	crypto_mod_put(alg);
 
-	if (err)
+	if (err) {
+		kfree_skb(skb);
 		return err;
+	}
 
 	return nlmsg_unicast(crypto_nlsk, skb, NETLINK_CB(in_skb).pid);
 }
@@ -396,7 +398,7 @@ static int crypto_add_alg(struct sk_buff *skb, struct nlmsghdr *nlh,
 		crypto_mod_put(alg);
 		return -EEXIST;
 	}
-	
+
 	if (strlen(p->cru_driver_name))
 		name = p->cru_driver_name;
 	else

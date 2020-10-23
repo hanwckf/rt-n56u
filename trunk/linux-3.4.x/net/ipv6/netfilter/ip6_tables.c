@@ -1438,7 +1438,7 @@ compat_copy_entry_to_user(struct ip6t_entry *e, void __user **dstptr,
 }
 
 static int
-compat_find_calc_match(struct xt_entry_match *m,		       
+compat_find_calc_match(struct xt_entry_match *m,
 		       const struct ip6t_ip6 *ipv6,
 		       unsigned int hookmask,
 		       int *size)
@@ -1631,7 +1631,7 @@ static int compat_check_entry(struct ip6t_entry *e, struct net *net,
 }
 
 static int
-translate_compat_table(struct net *net,		      
+translate_compat_table(struct net *net,
 		       struct xt_table_info **pinfo,
 		       void **pentry0,
 		       const struct compat_ip6t_replace *compatr)

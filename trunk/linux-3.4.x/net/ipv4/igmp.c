@@ -798,7 +798,7 @@ static void igmp_timer_expire(unsigned long data)
 
 	if (im->unsolicit_count && --im->unsolicit_count)
 		igmp_start_timer(im, unsolicited_report_interval(in_dev));
-		
+
 	im->reporter = 1;
 	spin_unlock(&im->lock);
 

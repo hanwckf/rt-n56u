@@ -677,7 +677,7 @@ static int ext2_get_blocks(struct inode *inode,
 		partial = ext2_get_branch(inode, depth, offsets, chain, &err);
 		if (!partial) {
 			count++;
-			mutex_unlock(&ei->truncate_mutex);			
+			mutex_unlock(&ei->truncate_mutex);
 			clear_buffer_new(bh_result);
 			goto got_it;
 		}

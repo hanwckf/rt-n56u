@@ -248,7 +248,7 @@ extern void *arpt_alloc_initial_table(const struct xt_table *);
 extern struct xt_table *arpt_register_table(struct net *net,
 					    const struct xt_table *table,
 					    const struct arpt_replace *repl);
-extern void arpt_unregister_table(struct xt_table *table);
+extern void arpt_unregister_table(struct net *, struct xt_table *table);
 extern unsigned int arpt_do_table(struct sk_buff *skb,
 				  unsigned int hook,
 				  const struct net_device *in,

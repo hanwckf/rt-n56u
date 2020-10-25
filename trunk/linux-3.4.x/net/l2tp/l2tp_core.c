@@ -1413,6 +1413,8 @@ int l2tp_tunnel_create(struct net *net, int fd, int version, u32 tunnel_id, u32 
 	}
 
 	sk = sock->sk;
+	if (sk->sk_family != PF_INET && sk->sk_family != PF_INET6)
+		goto err;
 
 	if (cfg != NULL)
 		encap = cfg->encap;

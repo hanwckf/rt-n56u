@@ -574,10 +574,8 @@ int udpv6_queue_rcv_skb(struct sock * sk, struct sk_buff *skb)
 	}
 #endif
 
-	if (rcu_access_pointer(sk->sk_filter)) {
-		if (udp_lib_checksum_complete(skb))
-			goto drop;
-	}
+	if (udp_lib_checksum_complete(skb))
+		goto drop;
 
 	skb_dst_drop(skb);
 	rc = sock_queue_rcv_skb(sk, skb);

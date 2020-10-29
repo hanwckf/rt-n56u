@@ -669,6 +669,10 @@ KBUILD_CFLAGS  += $(call cc-option,-fno-stack-check,)
 # conserve stack if available
 KBUILD_CFLAGS	+= $(call cc-option,-fconserve-stack)
 
+# disable new loop optimization mode in gcc-4.8.x (and later) and
+# incorrect code generation in some situations
+KBUILD_CFLAGS += $(call cc-option,-fno-aggressive-loop-optimizations)
+
 # disallow errors like 'EXPORT_GPL(foo);' with missing header
 KBUILD_CFLAGS   += $(call cc-option,-Werror=implicit-int)
 

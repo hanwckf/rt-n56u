@@ -906,6 +906,7 @@ static int ieee80211_add_station(struct wiphy *wiphy, struct net_device *dev,
 	struct sta_info *sta;
 	struct ieee80211_sub_if_data *sdata;
 	int err;
+	int layer2_update;
 
 	if (params->vlan) {
 		sdata = IEEE80211_DEV_TO_SUB_IF(params->vlan);
@@ -942,11 +943,17 @@ static int ieee80211_add_station(struct wiphy *wiphy, struct net_device *dev,
 	if (!test_sta_flag(sta, WLAN_STA_TDLS_PEER))
 		rate_control_rate_init(sta);
 
+	layer2_update = sdata->vif.type == NL80211_IFTYPE_AP_VLAN ||
+		sdata->vif.type == NL80211_IFTYPE_AP;
+
 	err = sta_info_insert_rcu(sta);
 	if (err) {
 		rcu_read_unlock();
 		return err;
 	}
+
+	if (layer2_update)
+		ieee80211_send_layer2_update(sta);
 
 	rcu_read_unlock();
 
@@ -1014,8 +1021,7 @@ static int ieee80211_change_station(struct wiphy *wiphy,
 		}
 
 		sta->sdata = vlansdata;
-		if (sta->sta_state == IEEE80211_STA_AUTHORIZED)
-			ieee80211_send_layer2_update(sta);
+		ieee80211_send_layer2_update(sta);
 	}
 
 	err = sta_apply_parameters(local, sta, params);

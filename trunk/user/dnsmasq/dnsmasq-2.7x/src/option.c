@@ -161,6 +161,7 @@ struct myoption {
 #define LOPT_TFTP_MTU      349
 #define LOPT_REPLY_DELAY   350
 #define LOPT_GFWLIST       351
+#define LOPT_DHCP_TO_HOST  352
  
 #ifdef HAVE_GETOPT_LONG
 static const struct option opts[] =  
@@ -327,6 +328,7 @@ static const struct myoption opts[] =
     { "dhcp-ttl", 1, 0 , LOPT_DHCPTTL },
     { "dhcp-reply-delay", 1, 0, LOPT_REPLY_DELAY },
     { "gfwlist", 1, 0, LOPT_GFWLIST },
+	{ "dhcp-to-host", 0, 0, LOPT_DHCP_TO_HOST },
     { NULL, 0, 0, 0 }
   };
 
@@ -500,6 +502,7 @@ static struct {
   { LOPT_DHCPTTL, ARG_ONE, "<ttl>", gettext_noop("Set TTL in DNS responses with DHCP-derived addresses."), NULL }, 
   { LOPT_REPLY_DELAY, ARG_ONE, "<integer>", gettext_noop("Delay DHCP replies for at least number of seconds."), NULL },
   { LOPT_GFWLIST, ARG_DUP, "<path|domain>[@server][^ipset]", gettext_noop("Gfwlist path or domain to special server (default 8.8.8.8~53) and ipset (default gfwlist, pass ^ only to skip default ipset)"), NULL },
+  { LOPT_DHCP_TO_HOST, OPT_DHCP_TO_HOST, NULL, gettext_noop("Keep DHCP hostname valid at all times."), NULL },
   { 0, 0, NULL, NULL, NULL }
 }; 
 

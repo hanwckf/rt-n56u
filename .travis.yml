@@ -1,5 +1,5 @@
 os: linux
-dist: bionic
+dist: focal
 arch: arm64-graviton2
 virt: lxd
 group: edge
@@ -17,6 +17,8 @@ addons:
     - python-docutils
     - autopoint
     - shellcheck
+    - cpio
+    - libltdl-dev
 before_script:
 - "./trunk/tools/shellcheck.sh"
 - mkdir -p /opt/rt-n56u/toolchain-mipsel/toolchain-3.4.x && mkdir -p /opt/images/

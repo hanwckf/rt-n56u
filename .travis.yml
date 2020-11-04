@@ -1,12 +1,11 @@
 os: linux
 dist: bionic
+arch: arm64-graviton2
+virt: lxd
+group: edge
 language: c
 compiler:
 - gcc
-branches:
-  only:
-  - master
-  - "/^v.*$/"
 addons:
   apt:
     packages:
@@ -39,7 +38,7 @@ env:
   - build_variant=mt7620 targets="PSG1208 PSG1218 NEWIFI-MINI MI-MINI MI-3 OYE-001"
   - build_variant=mt7621-usb targets="JCG-836PRO-5.0 JCG-AC860M-5.0 DIR-882-5.0 A3004NS MSG1500 WR1200JS MI-R3G NEWIFI3 B70"
   global:
-  - toolchain_url="https://github.com/hanwckf/padavan-toolchain/releases/download/v1.1/mipsel-linux-uclibc.tar.xz"
+  - toolchain_url="https://github.com/hanwckf/padavan-toolchain/releases/download/v1.1/aarch64_mipsel-linux-uclibc.tar.xz"
 git:
   depth: 3
 deploy:

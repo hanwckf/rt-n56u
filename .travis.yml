@@ -19,6 +19,8 @@ addons:
     - shellcheck
     - cpio
     - libltdl-dev
+    - autoconf
+    - automake
 before_script:
 - "./trunk/tools/shellcheck.sh"
 - mkdir -p /opt/rt-n56u/toolchain-mipsel/toolchain-3.4.x && mkdir -p /opt/images/

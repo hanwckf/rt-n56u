@@ -1472,6 +1472,10 @@ void clear_cache_and_reload(time_t now)
       if (option_bool(OPT_ETHERS))
 	dhcp_read_ethers();
       reread_dhcp();
+      if (option_bool(OPT_DHCP_TO_HOST)) {
+        void dhcp_to_host();
+        dhcp_to_host();
+      }
 #ifdef HAVE_INOTIFY
       set_dynamic_inotify(AH_DHCP_HST | AH_DHCP_OPT, 0, NULL, 0);
 #endif

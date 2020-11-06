@@ -1,12 +1,11 @@
 os: linux
-dist: bionic
+dist: focal
+arch: arm64-graviton2
+virt: lxd
+group: edge
 language: c
 compiler:
 - gcc
-branches:
-  only:
-  - master
-  - "/^v.*$/"
 addons:
   apt:
     packages:
@@ -17,11 +16,15 @@ addons:
     - texinfo
     - python-docutils
     - autopoint
+    - shellcheck
+    - cpio
+    - libltdl-dev
+    - gettext
 before_script:
 - "./trunk/tools/shellcheck.sh"
 - mkdir -p /opt/rt-n56u/toolchain-mipsel/toolchain-3.4.x && mkdir -p /opt/images/
 - rm -rf toolchain-mipsel/ && mv -f * .[^.]* /opt/rt-n56u
-- curl -LO $toolchain_url && tar -xf mipsel-linux-uclibc.tar.xz -C /opt/rt-n56u/toolchain-mipsel/toolchain-3.4.x
+- curl -LO $toolchain_url && tar -xf $toolchain_pkg -C /opt/rt-n56u/toolchain-mipsel/toolchain-3.4.x
 - ls -Alh /opt/rt-n56u && cd /opt/rt-n56u/trunk/
 script:
 - for m in $targets; do fakeroot ./build_firmware_ci $m;
@@ -39,7 +42,8 @@ env:
   - build_variant=mt7620 targets="PSG1208 PSG1218 NEWIFI-MINI MI-MINI MI-3 OYE-001"
   - build_variant=mt7621-usb targets="JCG-836PRO-5.0 JCG-AC860M-5.0 DIR-882-5.0 A3004NS MSG1500 WR1200JS MI-R3G NEWIFI3 B70"
   global:
-  - toolchain_url="https://github.com/hanwckf/padavan-toolchain/releases/download/v1.1/mipsel-linux-uclibc.tar.xz"
+  - toolchain_pkg="aarch64_mipsel-linux-uclibc.tar.xz"
+  - toolchain_url="https://github.com/hanwckf/padavan-toolchain/releases/download/v1.1/$toolchain_pkg"
 git:
   depth: 3
 deploy:

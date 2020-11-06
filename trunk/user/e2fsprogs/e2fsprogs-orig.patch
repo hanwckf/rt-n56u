@@ -125,7 +125,7 @@ diff -urw e2fsprogs-1.44.4-ref/misc/mke2fs.conf.in e2fsprogs-1.44.4/misc/mke2fs.
  		inode_size = 256
  	}
  	small = {
---- a/Makefile.in.orig	2019-09-22 21:21:24.804332199 +0800
+--- a/Makefile.in	2019-09-22 21:21:24.804332199 +0800
 +++ b/Makefile.in	2019-09-22 21:21:30.724232438 +0800
 @@ -19,7 +19,7 @@ INSTALL = @INSTALL@
  @ALL_CMT@EXT2FS_LIB_SUBDIR= lib/ext2fs
@@ -136,7 +136,7 @@ diff -urw e2fsprogs-1.44.4-ref/misc/mke2fs.conf.in e2fsprogs-1.44.4/misc/mke2fs.
  
  PROG_SUBDIRS=e2fsck $(DEBUGFS_DIR) misc $(RESIZE_DIR) tests/progs po \
  	$(E2SCRUB_DIR)
---- e2fsprogs-1.45.3/configure.ac.orig	2019-09-22 21:24:14.103710000 +0800
+--- e2fsprogs-1.45.3-ref/configure.ac	2019-09-22 21:24:14.103710000 +0800
 +++ e2fsprogs-1.45.3/configure.ac	2019-09-22 21:24:42.528758384 +0800
 @@ -873,7 +873,7 @@ AC_SUBST(GETTEXT_PACKAGE)
  AC_SUBST(PACKAGE)

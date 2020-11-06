@@ -862,6 +862,49 @@ static void add_hosts_entry(struct crec *cache, struct all_addr *addr, int addrl
     add_hosts_cname(cache);
 }
 
+inline static int add_dhcp_to_host(char *hostname, struct all_addr *addr, int addrlen, int flags)
+{
+  struct crec *cache;
+  char *domain_suffix;
+  int count = 0, revhashsz = daemon->packet_buff_sz / sizeof(struct crec *);
+  if (option_bool(OPT_EXPAND) && (domain_suffix = (addrlen == INADDRSZ) ? get_domain(addr->addr.addr4) : get_domain6(&addr->addr.addr6)) && (cache = whine_malloc(sizeof(struct crec) + strlen(hostname)+2+strlen(domain_suffix)-SMALLDNAME))) {
+    strcpy(cache->name.sname, hostname);
+    strcat(cache->name.sname, ".");
+    strcat(cache->name.sname, domain_suffix);
+    cache->ttd = daemon->local_ttl;
+    cache->flags = flags;
+    add_hosts_entry(cache, addr, addrlen, SRC_CONFIG, (struct crec **)daemon->packet, revhashsz);
+    count++;
+  }
+  if ((cache = whine_malloc(sizeof(struct crec)))) {
+    cache->name.namep = hostname;
+    cache->ttd = daemon->local_ttl;
+    cache->flags = flags | F_NAMEP;
+    add_hosts_entry(cache, addr, addrlen, SRC_CONFIG, (struct crec **)daemon->packet, revhashsz);
+    count++;
+  }
+  return count;
+}
+
+void dhcp_to_host()
+{
+  int count = 0;
+  for (struct dhcp_config *conf = daemon->dhcp_conf; conf; conf = conf->next) {
+    if (conf->hostname) {
+      if (conf->flags & CONFIG_ADDR)
+        count += add_dhcp_to_host(conf->hostname, (struct all_addr *)&conf->addr, INADDRSZ, F_HOSTS | F_IMMORTAL | F_FORWARD | F_REVERSE | F_IPV4 | F_CONFIG);
+#ifdef HAVE_IPV6
+      if (conf->flags & CONFIG_ADDR6)
+        count += add_dhcp_to_host(conf->hostname, (struct all_addr *)&conf->addr6, IN6ADDRSZ, F_HOSTS | F_IMMORTAL | F_FORWARD | F_REVERSE | F_IPV6 | F_CONFIG);
+#endif
+    }
+  }
+  if (count) {
+    rehash(daemon->cachesize + count);
+    my_syslog(LOG_INFO, _("dhcp to host - %d address"), count);
+  }
+}
+
 static int eatspace(FILE *f)
 {
   int c, nl = 0;

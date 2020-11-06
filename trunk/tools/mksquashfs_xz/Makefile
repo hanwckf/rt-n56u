@@ -24,7 +24,7 @@ configure_xz:
 	)
 
 build_xz:
-	make -j$(HOST_NCPU) -C $(SRC_NAME2)
+	make -C $(SRC_NAME2)
 
 build_squashfs:
 	make -j$(HOST_NCPU) -C $(SRC_NAME1) XZUTILSDIR=$(shell pwd)/$(SRC_NAME2) ; \

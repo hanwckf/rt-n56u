@@ -22,6 +22,8 @@ jobs:
     steps:
       - name: 安装依赖
         run: |
+          sudo apt update
+          sudo apt upgrade -y
           sudo apt install unzip libtool-bin curl cmake gperf gawk flex bison nano xxd \
           fakeroot kmod cpio git python-docutils gettext automake autopoint \
           texinfo build-essential help2man pkg-config zlib1g-dev libgmp3-dev \
@@ -33,7 +35,11 @@ jobs:
       - name: 准备工具链
         run: |
           cd /opt/rt-n56u/toolchain-mipsel
-          sh dl_toolchain.sh
+          # 下载编译好的工具链
+          #sh dl_toolchain.sh
+          # 或者，也可以从源码编译工具链，这需要一些时间：
+          sudo ./clean_toolchain
+          sudo ./build_toolchain
       - name: 修改配置
         run: |
           export cpath=${cpath}${ROUTE}.config
@@ -125,7 +131,7 @@ jobs:
           echo "CONFIG_FIRMWARE_INCLUDE_SOFTETHERVPN_SERVER=n" >> $cpath # SoftEther VPN Server
           echo "CONFIG_FIRMWARE_INCLUDE_SOFTETHERVPN_CLIENT=n" >> $cpath # SoftEther VPN Client
           echo "CONFIG_FIRMWARE_INCLUDE_SOFTETHERVPN_CMD=n" >> $cpath # SoftEther VPN cmd
-          echo "CONFIG_FIRMWARE_INCLUDE_DNSFORWARDER=n" >> $cpath # DNS 转发
+          echo "CONFIG_FIRMWARE_INCLUDE_DNSFORWARDER=y" >> $cpath # DNS 转发
           echo "CONFIG_FIRMWARE_INCLUDE_VLMCSD=n" >> $cpath # KMS 激活服务器
           echo "CONFIG_FIRMWARE_INCLUDE_TTYD=n" >> $cpath # web 终端
           echo "CONFIG_FIRMWARE_INCLUDE_LRZSZ=n" >> $cpath # sz 命令 终端文件传输
@@ -147,7 +153,7 @@ jobs:
       - name: 编译
         run: |
           cd /opt/rt-n56u/trunk
-          ./clear_tree
+          sudo ./clear_tree
           fakeroot ./build_firmware_modify ${ROUTE} 
       - name : 打包发布
         uses: actions/upload-artifact@master

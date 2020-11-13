@@ -867,7 +867,7 @@ void mt7615_apply_cal_data(RTMP_ADAPTER *pAd, MT_SWITCH_CHANNEL_CFG SwChCfg)
 	}
 	else
 	{
-		MTWF_LOG(DBG_CAT_ALL, DBG_SUBCAT_ALL, DBG_LVL_ERROR, 
+		MTWF_LOG(DBG_CAT_ALL, DBG_SUBCAT_ALL, DBG_LVL_TRACE, 
 			("%s() : eeprom 0x52 bit 1 is 0, do runtime cal , skip RX reload\n",__FUNCTION__));
 	}
 
@@ -910,7 +910,7 @@ void mt7615_apply_cal_data(RTMP_ADAPTER *pAd, MT_SWITCH_CHANNEL_CFG SwChCfg)
 	}
 	else
 	{
-		MTWF_LOG(DBG_CAT_ALL, DBG_SUBCAT_ALL, DBG_LVL_ERROR, 
+		MTWF_LOG(DBG_CAT_ALL, DBG_SUBCAT_ALL, DBG_LVL_TRACE, 
 			("%s() : eeprom 0x52 bit 0 is 0, do runtime cal , skip TX reload\n",__FUNCTION__));
 	}
 }

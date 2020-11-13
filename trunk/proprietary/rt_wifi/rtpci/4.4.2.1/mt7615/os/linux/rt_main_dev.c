@@ -91,7 +91,7 @@ int virtual_if_down_handler(VOID *dev);
 INT rt28xx_send_packets(IN struct sk_buff *skb_p, IN struct net_device *net_dev);
 
 struct net_device_stats *RT28xx_get_ether_stats(struct net_device *net_dev);
-
+struct rtnl_link_stats64 *RT28xx_get_ether_stats64(struct net_device *net_dev, struct rtnl_link_stats64 *stats);
 
 /*
 ========================================================================
@@ -466,7 +466,7 @@ PNET_DEV RtmpPhyNetDevInit(VOID *pAd, RTMP_OS_NETDEV_OP_HOOK *pNetDevHook)
 #endif /* IKANOS_VX_1X0 */
 	pNetDevHook->ioctl = rt28xx_ioctl;
 	pNetDevHook->priv_flags = InfId; /*INT_MAIN; */
-	pNetDevHook->get_stats = RT28xx_get_ether_stats;
+	pNetDevHook->get_stats = RT28xx_get_ether_stats64;
 
 	pNetDevHook->needProtcted = FALSE;
 
@@ -742,6 +742,50 @@ struct net_device_stats *RT28xx_get_ether_stats(struct net_device *net_dev)
 	}
 	else
     	return NULL;
+}
+
+struct rtnl_link_stats64 *RT28xx_get_ether_stats64(struct net_device *net_dev, struct rtnl_link_stats64 *stats)
+{
+	RT_CMD_STATS WifStats;
+    VOID *pAd = NULL;
+
+	if (net_dev)
+		GET_PAD_FROM_NET_DEV(pAd, net_dev);	
+
+	if (!pAd)
+		return NULL;
+
+	WifStats.pNetDev = net_dev;
+	RTMP_DRIVER_INF_STATS_GET(pAd, &WifStats);
+
+	stats->rx_packets		= WifStats.rx_packets;
+	stats->tx_packets		= WifStats.tx_packets;
+	stats->rx_bytes			= WifStats.rx_bytes;
+	stats->tx_bytes			= WifStats.tx_bytes;
+	stats->rx_errors		= WifStats.rx_errors;
+	stats->tx_errors		= WifStats.tx_errors;
+	stats->rx_dropped		= 0;
+	stats->tx_dropped		= 0;
+	stats->multicast		= WifStats.multicast;
+	stats->collisions		= WifStats.collisions;
+
+	stats->rx_length_errors		= 0;
+	stats->rx_over_errors		= WifStats.rx_over_errors;
+	stats->rx_crc_errors		= 0;
+	stats->rx_frame_errors		= WifStats.rx_frame_errors;
+	stats->rx_fifo_errors		= WifStats.rx_fifo_errors;
+	stats->rx_missed_errors		= 0;
+
+	stats->tx_aborted_errors	= 0;
+	stats->tx_carrier_errors	= 0;
+	stats->tx_fifo_errors		= 0;
+	stats->tx_heartbeat_errors	= 0;
+	stats->tx_window_errors		= 0;
+
+	stats->rx_compressed		= 0;
+	stats->tx_compressed		= 0;
+		
+	return stats;
 }
 
 

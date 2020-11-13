@@ -28,28 +28,16 @@
 #include "rt_config.h"
 #include "action.h"
 
-/* The regulatory information in the Russia (RU) */
-static DOT11_REGULATORY_INFO RURegulatoryInfo[] =
-{
-/*  "regulatory class"  "number of channels"  "Max Tx Pwr"  "channel list" */
-    {0,                 {0,                   0,           {0}}}, /* Invalid entry*/
-    {1,                 {4,                  23,            {36, 40, 44, 48}}},
-    {2,                 {4,                  23,            {52, 56, 60, 64}}},
-    {3,                 {4,                  23,            {132, 136, 140, 144}}},
-    {4,                 {5,                  23,            {149, 153, 157, 161, 165}}},
-    {5,                 {14,                 20,            {1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14}}}
-};
-#define RU_REGULATORY_INFO_SIZE (sizeof(RURegulatoryInfo) / sizeof(DOT11_REGULATORY_INFO))
 
 /* The regulatory information in the USA (US) */
-static DOT11_REGULATORY_INFO USARegulatoryInfo[] = 
+DOT11_REGULATORY_INFO USARegulatoryInfo[] = 
 {
 /*  "regulatory class"  "number of channels"  "Max Tx Pwr"  "channel list" */
     {0,	                {0,                   0,           {0}}}, /* Invlid entry*/
-    {1,                 {4,                   23,           {36, 40, 44, 48}}}, 
+    {1,                 {4,                   16,           {36, 40, 44, 48}}}, 
     {2,                 {4,                   23,           {52, 56, 60, 64}}}, 
     {3,                 {4,                   29,           {149, 153, 157, 161}}}, 
-    {4,                 {11,                  23,           {100, 104, 108, 112, 116, 120, 124, 128, 132, 136, 140, 144}}}, 
+    {4,                 {11,                  23,           {100, 104, 108, 112, 116, 120, 124, 128, 132, 136, 140}}}, 
     {5,                 {5,                   30,           {149, 153, 157, 161, 165}}}, 
     {6,                 {10,                  14,           {1, 2, 3, 4, 5, 6, 7, 8, 9, 10}}}, 
     {7,                 {10,                  27,           {1, 2, 3, 4, 5, 6, 7, 8, 9, 10}}}, 
@@ -63,20 +51,20 @@ static DOT11_REGULATORY_INFO USARegulatoryInfo[] =
 
 
 /* The regulatory information in Europe */
-static DOT11_REGULATORY_INFO EuropeRegulatoryInfo[] = 
+DOT11_REGULATORY_INFO EuropeRegulatoryInfo[] = 
 {
 /*  "regulatory class"  "number of channels"  "Max Tx Pwr"  "channel list" */
     {0,                 {0,                   0,           {0}}}, /* Invalid entry*/
     {1,                 {4,                   20,           {36, 40, 44, 48}}}, 
     {2,                 {4,                   20,           {52, 56, 60, 64}}}, 
-    {3,                 {11,                  30,           {100, 104, 108, 112, 116, 120, 124, 128, 132, 136, 140, 144}}}, 
+    {3,                 {11,                  30,           {100, 104, 108, 112, 116, 120, 124, 128, 132, 136, 140}}}, 
     {4,                 {13,                  20,           {1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13}}}
 };
 #define EU_REGULATORY_INFO_SIZE (sizeof(EuropeRegulatoryInfo) / sizeof(DOT11_REGULATORY_INFO))
 
 
 /* The regulatory information in Japan */
-static DOT11_REGULATORY_INFO JapanRegulatoryInfo[] = 
+DOT11_REGULATORY_INFO JapanRegulatoryInfo[] = 
 {
 /*  "regulatory class"  "number of channels"  "Max Tx Pwr"  "channel list" */
     {0,                 {0,                   0,           {0}}}, /* Invalid entry*/
@@ -125,20 +113,10 @@ UINT8 GetRegulatoryMaxTxPwr(RTMP_ADAPTER *pAd, UINT8 channel)
 	RTMP_STRING *pCountry = (RTMP_STRING *)(pAd->CommonCfg.CountryCode);
 
 
-	if (strncmp(pCountry, "RU", 2) == 0)
-	{
-		MaxRegulatoryClassNum = RU_REGULATORY_INFO_SIZE;
-		pRegulatoryClass = &RURegulatoryInfo[0];
-	}
-	else if (strncmp(pCountry, "US", 2) == 0)
+	if (strncmp(pCountry, "US", 2) == 0)
 	{
 		MaxRegulatoryClassNum = USA_REGULATORY_INFO_SIZE;
 		pRegulatoryClass = &USARegulatoryInfo[0];
-	}
-	else if (strncmp(pCountry, "EU", 2) == 0)
-	{
-		MaxRegulatoryClassNum = EU_REGULATORY_INFO_SIZE;
-		pRegulatoryClass = &EuropeRegulatoryInfo[0];
 	}
 	else if (strncmp(pCountry, "JP", 2) == 0)
 	{
@@ -149,7 +127,7 @@ UINT8 GetRegulatoryMaxTxPwr(RTMP_ADAPTER *pAd, UINT8 channel)
 	{
 		DBGPRINT(RT_DEBUG_ERROR, ("%s: Unknow Country (%s)\n",
 					__FUNCTION__, pCountry));
-		return DEFAULT_MAX_TX_POWER;
+		return 0xff;
 	}
 
 	for (RegulatoryClassLoop = 0;
@@ -163,23 +141,20 @@ UINT8 GetRegulatoryMaxTxPwr(RTMP_ADAPTER *pAd, UINT8 channel)
 		{
 			DBGPRINT(RT_DEBUG_ERROR, ("%s: %c%c Unknow Requlatory class (%d)\n",
 						__FUNCTION__, pCountry[0], pCountry[1], RegulatoryClass));
-			return DEFAULT_MAX_TX_POWER;
+			return 0xff;
 		}
 		pChannelSet = &pRegulatoryClass[RegulatoryClass].ChannelSet;
 		for (ChIdx=0; ChIdx<pChannelSet->NumberOfChannels; ChIdx++)
 		{
-			if (channel == pChannelSet->ChannelList[ChIdx]) {
-				if (pChannelSet->MaxTxPwr >= 14)
-				    return pChannelSet->MaxTxPwr;
-				else
-				    return DEFAULT_MAX_TX_POWER;
-			}
+			if (channel == pChannelSet->ChannelList[ChIdx])
+				return pChannelSet->MaxTxPwr;
+		
 		}
 		if (ChIdx == pChannelSet->NumberOfChannels)
-			return DEFAULT_MAX_TX_POWER;
+			return 0xff;
 	}
 
-	return DEFAULT_MAX_TX_POWER;
+	return 0xff;
 }
 
 typedef struct __TX_PWR_CFG
@@ -234,26 +209,15 @@ CHAR RTMP_GetTxPwr(RTMP_ADAPTER *pAd, HTTRANSMIT_SETTING HTTxMode)
 	INT Idx;
 	UINT8 PhyMode;
 	CHAR CurTxPwr;
-	CHAR MaxTxPwr;
 	UINT8 TxPwrRef = 0;
 	CHAR DaltaPwr;
 	ULONG TxPwr[5];
 
 
 #ifdef SINGLE_SKU
-	CurTxPwr = MaxTxPwr = pAd->CommonCfg.DefineMaxTxPwr;
+	CurTxPwr = pAd->CommonCfg.DefineMaxTxPwr;
 #else
-	if (pAd->CommonCfg.CentralChannel > 14) {
-#if defined (CONFIG_RT_SECOND_IF_INTERNAL_PA_INTERNAL_LNA) || defined(CONFIG_RT_SECOND_IF_INTERNAL_PA_EXTERNAL_LNA) || defined(CONFIG_RALINK_MT7620)
-	    /* TPC report calculate from real maximum PWR+AntGain after calibration, for internal PA + 3-5dB antenna gain summart must be 20dBm */
-	    CurTxPwr = DEFAULT_MAX_TX_POWER;
-#else
-	    CurTxPwr = GetCuntryMaxTxPwr(pAd, pAd->CommonCfg.Channel);
-#endif
-	} else
-	    CurTxPwr = DEFAULT_MAX_TX_POWER;
-
-	MaxTxPwr = GetCuntryMaxTxPwr(pAd, pAd->CommonCfg.Channel);
+	CurTxPwr = 19;
 #endif /* SINGLE_SKU */
 
 	/* check Tx Power setting from UI. */
@@ -356,13 +320,6 @@ CHAR RTMP_GetTxPwr(RTMP_ADAPTER *pAd, HTTRANSMIT_SETTING HTTxMode)
 		}
 	}
 
-	if (MaxTxPwr > CurTxPwr) {
-	    /* calculate real power constraint limit for clients - reduce client side interference */
-	    pAd->CommonCfg.PwrConstraint = (MaxTxPwr - CurTxPwr);
-	} else {
-	    pAd->CommonCfg.PwrConstraint = 0;
-	}
-
 	return CurTxPwr;
 }
 
@@ -374,6 +331,7 @@ NDIS_STATUS	MeasureReqTabInit(RTMP_ADAPTER *pAd)
 	os_alloc_mem(pAd, (UCHAR **)&(pAd->CommonCfg.pMeasureReqTab), sizeof(MEASURE_REQ_TAB));
 	if (pAd->CommonCfg.pMeasureReqTab) {
 		NdisZeroMemory(pAd->CommonCfg.pMeasureReqTab, sizeof(MEASURE_REQ_TAB));
+
 		NdisAllocateSpinLock(pAd, &pAd->CommonCfg.MeasureReqTabLock);
 	}
 	else
@@ -391,6 +349,7 @@ VOID MeasureReqTabExit(RTMP_ADAPTER *pAd)
 	if (pAd->CommonCfg.pMeasureReqTab) {
 		os_free_mem(NULL, pAd->CommonCfg.pMeasureReqTab);
 		pAd->CommonCfg.pMeasureReqTab = NULL;
+
 		NdisFreeSpinLock(&pAd->CommonCfg.MeasureReqTabLock);
 	}
 	return;
@@ -461,6 +420,7 @@ PMEASURE_REQ_ENTRY MeasureReqInsert(RTMP_ADAPTER *pAd, UINT8 DialogToken)
 				PMEASURE_REQ_ENTRY pPrevEntry = NULL;
 				ULONG HashIdx = MQ_DIALOGTOKEN_HASH_INDEX(pEntry->DialogToken);
 				PMEASURE_REQ_ENTRY pProbeEntry = pTab->Hash[HashIdx];
+				BOOLEAN Cancelled;
 
 				/* update Hash list*/
 				do
@@ -482,6 +442,10 @@ PMEASURE_REQ_ENTRY MeasureReqInsert(RTMP_ADAPTER *pAd, UINT8 DialogToken)
 					pProbeEntry = pProbeEntry->pNext;
 				} while (pProbeEntry);
 
+				RTMPCancelTimer(&pEntry->WaitBCNRepTimer, &Cancelled);
+				RTMPReleaseTimer(&pEntry->WaitBCNRepTimer, &Cancelled);
+				RTMPCancelTimer(&pEntry->WaitNRRspTimer, &Cancelled);
+				RTMPReleaseTimer(&pEntry->WaitNRRspTimer, &Cancelled);
 				NdisZeroMemory(pEntry, sizeof(MEASURE_REQ_ENTRY));
 				pTab->Size--;
 
@@ -593,6 +557,7 @@ NDIS_STATUS TpcReqTabInit(RTMP_ADAPTER *pAd)
 	os_alloc_mem(pAd, (UCHAR **)&(pAd->CommonCfg.pTpcReqTab), sizeof(TPC_REQ_TAB));
 	if (pAd->CommonCfg.pTpcReqTab) {
 		NdisZeroMemory(pAd->CommonCfg.pTpcReqTab, sizeof(TPC_REQ_TAB));
+
 		NdisAllocateSpinLock(pAd, &pAd->CommonCfg.TpcReqTabLock);
 	}
 	else
@@ -610,6 +575,7 @@ VOID TpcReqTabExit(RTMP_ADAPTER *pAd)
 	if (pAd->CommonCfg.pTpcReqTab) {
 		os_free_mem(NULL, pAd->CommonCfg.pTpcReqTab);
 		pAd->CommonCfg.pTpcReqTab = NULL;
+
 		NdisFreeSpinLock(&pAd->CommonCfg.TpcReqTabLock);
 	}
 
@@ -833,24 +799,19 @@ static UINT64 GetCurrentTimeStamp(RTMP_ADAPTER *pAd)
 	Return	: Current Time Stamp.
 	==========================================================================
  */
-static UINT8 GetCurTxPwr(
-	IN PRTMP_ADAPTER pAd,
-	IN UINT8 Wcid)
+static UINT8 GetCurTxPwr(RTMP_ADAPTER *pAd, UINT8 Wcid)
 {
-	UCHAR MaxTxPower = GetCuntryMaxTxPwr(pAd, pAd->CommonCfg.Channel);
-	if (!MaxTxPower)
-	    return DEFAULT_MAX_TX_POWER; /* dbm */
-	else
-	    return MaxTxPower;
+	return 16; /* 16 dBm */
 }
+
 
 /*
 	==========================================================================
 	Description:
 		Get Current Transmit Power.
-
+		
 	Parametrs:
-
+	
 	Return	: Current Time Stamp.
 	==========================================================================
  */
@@ -860,103 +821,51 @@ VOID InsertChannelRepIE(
 	OUT PULONG pFrameLen,
 	IN RTMP_STRING *pCountry,
 	IN UINT8 RegulatoryClass,
-	IN UINT8 *ChReptList
-	)
+	IN UINT8 *ChReptList)
 {
 	ULONG TempLen;
 	UINT8 Len;
 	UINT8 IEId = IE_AP_CHANNEL_REPORT;
 	PUCHAR pChListPtr = NULL;
-	DOT11_CHANNEL_SET *pChannelSet = NULL;
 	UINT8 i,j;
+	PUCHAR channel_set = NULL;
 	UCHAR ChannelList[16] ={0};
 	UINT8 NumberOfChannels = 0;
 	UINT8 *pChannelList = NULL;
+	UCHAR channel_set_num = 0;
+	UCHAR ch_list_num = 0;
 
 	Len = 1;
-	if (strncmp(pCountry, "RU", 2) == 0)
-	{
-		if (RegulatoryClass >= RU_REGULATORY_INFO_SIZE)
-		{
-			DBGPRINT(RT_DEBUG_ERROR, ("%s: RU Unknow Requlatory class (%d)\n",
-						__FUNCTION__, RegulatoryClass));
-			return;
-		}
-		pChannelSet = &RURegulatoryInfo[RegulatoryClass].ChannelSet;
-	}
-	else if (strncmp(pCountry, "US", 2) == 0)
-	{
-		if (RegulatoryClass >= USA_REGULATORY_INFO_SIZE)
-		{
-			DBGPRINT(RT_DEBUG_ERROR, ("%s: USA Unknow Requlatory class (%d)\n",
-						__FUNCTION__, RegulatoryClass));
-			return;
-		}
-		pChannelSet = &USARegulatoryInfo[RegulatoryClass].ChannelSet;
-	}
-	else if (strncmp(pCountry, "EU", 2) == 0)
-	{
-		if (RegulatoryClass >= EU_REGULATORY_INFO_SIZE)
-		{
-			DBGPRINT(RT_DEBUG_ERROR, ("%s: EU Unknow Requlatory class (%d)\n",
-						__FUNCTION__, RegulatoryClass));
-			return;
-		}
-		pChannelSet = &EuropeRegulatoryInfo[RegulatoryClass].ChannelSet;
-	}
-	else if (strncmp(pCountry, "JP", 2) == 0)
-	{
-		if (RegulatoryClass >= JP_REGULATORY_INFO_SIZE)
-		{
-			DBGPRINT(RT_DEBUG_ERROR, ("%s: JP Unknow Requlatory class (%d)\n",
-						__FUNCTION__, RegulatoryClass));
-			return;
-		}
 
-		pChannelSet = &JapanRegulatoryInfo[RegulatoryClass].ChannelSet;
-	}
-	else
-	{
-		DBGPRINT(RT_DEBUG_ERROR, ("%s: Unknow Country (%s)\n",
-					__FUNCTION__, pCountry));
-		return;
-	}
+	channel_set = get_channelset_by_reg_class(pAd, RegulatoryClass);
+	channel_set_num = get_channel_set_num(channel_set);
+
+	ch_list_num = get_channel_set_num(ChReptList);
 
 	/* no match channel set. */
-	if (pChannelSet == NULL)
+	if (channel_set == NULL)
 		return;
 
 	/* empty channel set. */
-	if (pChannelSet->NumberOfChannels == 0)
+	if (channel_set_num == 0)
 		return;
 
-	if (ChReptList) // assign partial channel list
-	{
-		for (i=0; i <pChannelSet->NumberOfChannels; i++)
-		{
-			for (j=0; j <16; j++)
-			{
-				if (ChReptList[j] == pChannelSet->ChannelList[i])
-				{
-					ChannelList[NumberOfChannels++] = pChannelSet->ChannelList[i];
-				}
+	if (ch_list_num) { /* assign partial channel list */
+		for (i = 0; i < channel_set_num; i++) {
+			for (j = 0; j < ch_list_num; j++) {
+				if (ChReptList[j] == channel_set[i])
+					ChannelList[NumberOfChannels++] = channel_set[i];
 			}
 		}
 
 		pChannelList = &ChannelList[0];
+	} else {
+		NumberOfChannels = channel_set_num;
+		pChannelList = channel_set;
 	}
-	else
-	{
-		NumberOfChannels = pChannelSet->NumberOfChannels;	
-		pChannelList = pChannelSet->ChannelList;
-	}
-
-	//DBGPRINT(RT_DEBUG_TRACE, ("%s: Requlatory class (%d), NumberOfChannels=%d, pChannelSet->NumberOfChannels=%d\n",
-	//					__FUNCTION__, RegulatoryClass,NumberOfChannels,pChannelSet->NumberOfChannels));
 
 	Len += NumberOfChannels;
 	pChListPtr = pChannelList;
-
 
 	if (Len > 1)
 	{
@@ -970,6 +879,37 @@ VOID InsertChannelRepIE(
 		*pFrameLen = *pFrameLen + TempLen;
 	}
 	return;
+}
+
+/*
+*	==========================================================================
+*	Description:
+*		Add last beacon report indication request into beacon request
+*
+*	Parametrs:
+*
+*	Return	: NAN
+*	==========================================================================
+ */
+VOID InsertBcnReportIndicationReqIE(
+	IN RTMP_ADAPTER *pAd,
+	OUT PUCHAR pFrameBuf,
+	OUT PULONG pFrameLen,
+	IN UINT8 Data
+)
+{
+	ULONG TempLen;
+	UINT8 Len;
+	UINT8 IEId = IE_LAST_BCN_REPORT_INDICATION_REQUEST;
+
+	Len = 1;
+
+	MakeOutgoingFrame(pFrameBuf,	&TempLen,
+					  1,				&IEId,
+					  1,				&Len,
+					  1,				&Data,
+					  END_OF_ARGS);
+	*pFrameLen = *pFrameLen + TempLen;
 }
 
 /*
@@ -1190,17 +1130,20 @@ VOID MakeMeasurementReqFrame(
 {
 	ULONG TempLen;
 	MEASURE_REQ_INFO MeasureReqIE;
+	UINT16 leRepetitions;
 
 	InsertActField(pAd, (pOutBuffer + *pFrameLen), pFrameLen, Category, Action);
 
 	/* fill Dialog Token*/
 	InsertDialogToken(pAd, (pOutBuffer + *pFrameLen), pFrameLen, MeasureToken);
+	leRepetitions = cpu2le16(NumOfRepetitions);
+
 
 	/* fill Number of repetitions. */
 	if (Category == CATEGORY_RM)
 	{
 		MakeOutgoingFrame((pOutBuffer+*pFrameLen),	&TempLen,
-						2,							&NumOfRepetitions,
+						2,							&leRepetitions,
 						END_OF_ARGS);
 
 		*pFrameLen += TempLen;
@@ -1486,7 +1429,6 @@ VOID EnqueueChSwAnn(
 static BOOLEAN DfsRequirementCheck(RTMP_ADAPTER *pAd, UINT8 Channel)
 {
 	BOOLEAN Result = FALSE;
-#ifdef DFS_SUPPORT
 	INT i;
 
 	do
@@ -1512,7 +1454,7 @@ static BOOLEAN DfsRequirementCheck(RTMP_ADAPTER *pAd, UINT8 Channel)
 			}
 		}
 	} while(FALSE);
-#endif /* DFS_SUPPORT */
+
 	return Result;
 }
 
@@ -1524,7 +1466,6 @@ VOID NotifyChSwAnnToPeerAPs(
 	IN UINT8 ChSwMode,
 	IN UINT8 Channel)
 {
-#ifdef DFS_SUPPORT
 #ifdef WDS_SUPPORT
 	if (!((pRA[0] & 0xff) == 0xff)) /* is pRA a broadcase address.*/
 	{
@@ -1546,13 +1487,11 @@ VOID NotifyChSwAnnToPeerAPs(
 		}
 	}
 #endif /* WDS_SUPPORT */
-#endif /* DFS_SUPPORT */
 }
 
 
 static VOID StartDFSProcedure(RTMP_ADAPTER *pAd, UCHAR Channel, UINT8 ChSwMode)
 {
-#ifdef DFS_SUPPORT
 	/* start DFS procedure*/
 	pAd->CommonCfg.Channel = Channel;
 #ifdef DOT11_N_SUPPORT
@@ -1560,7 +1499,6 @@ static VOID StartDFSProcedure(RTMP_ADAPTER *pAd, UCHAR Channel, UINT8 ChSwMode)
 #endif /* DOT11_N_SUPPORT */
 	pAd->Dot11_H.RDMode = RD_SWITCHING_MODE;
 	pAd->Dot11_H.CSCount = 0;
-#endif /* DFS_SUPPORT */
 }
 
 
@@ -1586,7 +1524,6 @@ static VOID StartDFSProcedure(RTMP_ADAPTER *pAd, UCHAR Channel, UINT8 ChSwMode)
   +----+-----+-----------+------------+-----------+
     1    1        1           1            1      
 */
-#ifdef DFS_SUPPORT
 static BOOLEAN PeerChSwAnnSanity(
 	IN RTMP_ADAPTER *pAd,
 	IN VOID *pMsg,
@@ -1594,14 +1531,9 @@ static BOOLEAN PeerChSwAnnSanity(
 	OUT PCH_SW_ANN_INFO pChSwAnnInfo)
 {
 	PFRAME_802_11 Fr = (PFRAME_802_11)pMsg;
-	PUCHAR pFramePtr;
+	PUCHAR pFramePtr = Fr->Octet;
 	BOOLEAN result = FALSE;
 	PEID_STRUCT eid_ptr;
-
-	if (Fr == NULL || pChSwAnnInfo == NULL)
-		return result;
-
-	pFramePtr = Fr->Octet;
 
 	/* skip 802.11 header.*/
 	MsgLen -= sizeof(HEADER_802_11);
@@ -1609,6 +1541,9 @@ static BOOLEAN PeerChSwAnnSanity(
 	/* skip category and action code.*/
 	pFramePtr += 2;
 	MsgLen -= 2;
+
+	if (pChSwAnnInfo == NULL)
+		return result;
 
 	eid_ptr = (PEID_STRUCT)pFramePtr;
 	while (((UCHAR*)eid_ptr + eid_ptr->Len + 1) < ((PUCHAR)pFramePtr + MsgLen))
@@ -1631,7 +1566,7 @@ static BOOLEAN PeerChSwAnnSanity(
 
 	return result;
 }
-#endif /* DFS_SUPPORT */
+
 
 /*
 	==========================================================================
@@ -1655,17 +1590,12 @@ static BOOLEAN PeerMeasureReqSanity(
 	OUT PMEASURE_REQ pMeasureReq)
 {
 	PFRAME_802_11 Fr = (PFRAME_802_11)pMsg;
-	PUCHAR pFramePtr;
+	PUCHAR pFramePtr = Fr->Octet;
 	BOOLEAN result = FALSE;
 	PEID_STRUCT eid_ptr;
 	PUCHAR ptr;
 	UINT64 MeasureStartTime;
 	UINT16 MeasureDuration;
-
-	if (Fr == NULL || pMeasureReqInfo == NULL)
-		return result;
-
-	pFramePtr = Fr->Octet;
 
 	/* skip 802.11 header.*/
 	MsgLen -= sizeof(HEADER_802_11);
@@ -1674,6 +1604,8 @@ static BOOLEAN PeerMeasureReqSanity(
 	pFramePtr += 2;
 	MsgLen -= 2;
 
+	if (pMeasureReqInfo == NULL)
+		return result;
 
 	NdisMoveMemory(pDialogToken, pFramePtr, 1);
 	pFramePtr += 1;
@@ -1751,15 +1683,10 @@ static BOOLEAN PeerMeasureReportSanity(
 	OUT PUINT8 pReportBuf)
 {
 	PFRAME_802_11 Fr = (PFRAME_802_11)pMsg;
-	PUCHAR pFramePtr;
+	PUCHAR pFramePtr = Fr->Octet;
 	BOOLEAN result = FALSE;
 	PEID_STRUCT eid_ptr;
 	PUCHAR ptr;
-
-	if (Fr == NULL  || pMeasureReportInfo == NULL)
-		return result;
-
-	pFramePtr = Fr->Octet;
 
 	/* skip 802.11 header.*/
 	MsgLen -= sizeof(HEADER_802_11);
@@ -1767,6 +1694,9 @@ static BOOLEAN PeerMeasureReportSanity(
 	/* skip category and action code.*/
 	pFramePtr += 2;
 	MsgLen -= 2;
+
+	if (pMeasureReportInfo == NULL)
+		return result;
 
 	NdisMoveMemory(pDialogToken, pFramePtr, 1);
 	pFramePtr += 1;
@@ -1843,20 +1773,18 @@ static BOOLEAN PeerTpcReqSanity(
 	OUT PUINT8 pDialogToken)
 {
 	PFRAME_802_11 Fr = (PFRAME_802_11)pMsg;
-	PUCHAR pFramePtr;
+	PUCHAR pFramePtr = Fr->Octet;
 	BOOLEAN result = FALSE;
 	PEID_STRUCT eid_ptr;
-
-	if (Fr == NULL || pDialogToken == NULL)
-		return result;
-
-	pFramePtr = Fr->Octet;
 
 	MsgLen -= sizeof(HEADER_802_11);
 
 	/* skip category and action code.*/
 	pFramePtr += 2;
 	MsgLen -= 2;
+
+	if (pDialogToken == NULL)
+		return result;
 
 	NdisMoveMemory(pDialogToken, pFramePtr, 1);
 	pFramePtr += 1;
@@ -1903,20 +1831,18 @@ static BOOLEAN PeerTpcRepSanity(
 	OUT PTPC_REPORT_INFO pTpcRepInfo)
 {
 	PFRAME_802_11 Fr = (PFRAME_802_11)pMsg;
-	PUCHAR pFramePtr;
+	PUCHAR pFramePtr = Fr->Octet;
 	BOOLEAN result = FALSE;
 	PEID_STRUCT eid_ptr;
-
-	if (Fr == NULL || pDialogToken == NULL)
-		return result;
-
-	pFramePtr = Fr->Octet;
 
 	MsgLen -= sizeof(HEADER_802_11);
 
 	/* skip category and action code.*/
 	pFramePtr += 2;
 	MsgLen -= 2;
+
+	if (pDialogToken == NULL)
+		return result;
 
 	NdisMoveMemory(pDialogToken, pFramePtr, 1);
 	pFramePtr += 1;
@@ -1954,14 +1880,10 @@ static BOOLEAN PeerTpcRepSanity(
 	Return	: None.
 	==========================================================================
  */
-#ifdef DFS_SUPPORT
 static VOID PeerChSwAnnAction(RTMP_ADAPTER *pAd, MLME_QUEUE_ELEM *Elem) 
 {
 	CH_SW_ANN_INFO ChSwAnnInfo;
 	PFRAME_802_11 pFr = (PFRAME_802_11)Elem->Msg;
-
-	if (pFr == NULL)
-	    return;
 
 	NdisZeroMemory(&ChSwAnnInfo, sizeof(CH_SW_ANN_INFO));
 	if (! PeerChSwAnnSanity(pAd, Elem->Msg, Elem->MsgLen, &ChSwAnnInfo))
@@ -1983,7 +1905,7 @@ static VOID PeerChSwAnnAction(RTMP_ADAPTER *pAd, MLME_QUEUE_ELEM *Elem)
 
 	return;
 }
-#endif /* DFS_SUPPORT */
+
 
 /*
 	==========================================================================
@@ -2003,9 +1925,6 @@ static VOID PeerMeasureReqAction(RTMP_ADAPTER *pAd, MLME_QUEUE_ELEM *Elem)
 	MEASURE_REQ_INFO MeasureReqInfo;
 	MEASURE_REQ	MeasureReq;
 	MEASURE_REPORT_MODE ReportMode;
-
-	if (pFr == NULL)
-	    return;
 
 	if(PeerMeasureReqSanity(pAd, Elem->Msg, Elem->MsgLen, &DialogToken, &MeasureReqInfo, &MeasureReq))
 	{
@@ -2035,9 +1954,6 @@ static VOID PeerMeasureReportAction(RTMP_ADAPTER *pAd, MLME_QUEUE_ELEM *Elem)
 	PFRAME_802_11 pFr = (PFRAME_802_11)Elem->Msg;
 	UINT8 DialogToken;
 	PUINT8 pMeasureReportInfo;
-
-	if (pFr == NULL)
-	    return;
 
 	os_alloc_mem(pAd, (UCHAR **)&pMeasureReportInfo, sizeof(MEASURE_RPI_REPORT));
 	if (pMeasureReportInfo == NULL)
@@ -2097,22 +2013,17 @@ static VOID PeerMeasureReportAction(RTMP_ADAPTER *pAd, MLME_QUEUE_ELEM *Elem)
 static VOID PeerTpcReqAction(RTMP_ADAPTER *pAd, MLME_QUEUE_ELEM *Elem) 
 {
 	PFRAME_802_11 pFr = (PFRAME_802_11)Elem->Msg;
-	PUCHAR pFramePtr;
+	PUCHAR pFramePtr = pFr->Octet;
 	UINT8 DialogToken;
 	UINT8 TxPwr = GetCurTxPwr(pAd, Elem->Wcid);
 	UINT8 LinkMargin = 0;
 	CHAR RealRssi;
 
-	if (pFr == NULL)
-	    return;
-
-	pFramePtr = pFr->Octet;
-
 	/* link margin: Ratio of the received signal power to the minimum desired by the station (STA). The*/
 	/*				STA may incorporate rate information and channel conditions, including interference, into its computation*/
 	/*				of link margin.*/
 
-	RealRssi = RTMPMinRssi(pAd, ConvertToRssi(pAd, &Elem->rssi_info, RSSI_IDX_0),
+	RealRssi = RTMPMaxRssi(pAd, ConvertToRssi(pAd, &Elem->rssi_info, RSSI_IDX_0),
 				ConvertToRssi(pAd, &Elem->rssi_info, RSSI_IDX_1),
 				ConvertToRssi(pAd, &Elem->rssi_info, RSSI_IDX_2));
 
@@ -2203,14 +2114,15 @@ VOID PeerSpectrumAction(RTMP_ADAPTER *pAd, MLME_QUEUE_ELEM *Elem)
 			break;
 
 		case SPEC_CHANNEL_SWITCH:
-#ifdef DFS_SUPPORT
+
+#ifdef DOT11N_DRAFT3
 			{
 				SEC_CHA_OFFSET_IE	Secondary;
 				CHA_SWITCH_ANNOUNCE_IE	ChannelSwitch;
 
 				/* 802.11h only has Channel Switch Announcement IE. */
 				RTMPMoveMemory(&ChannelSwitch, &Elem->Msg[LENGTH_802_11+4], sizeof (CHA_SWITCH_ANNOUNCE_IE));
-
+					
 				/* 802.11n D3.03 adds secondary channel offset element in the end.*/
 				if (Elem->MsgLen ==  (LENGTH_802_11 + 2 + sizeof (CHA_SWITCH_ANNOUNCE_IE) + sizeof (SEC_CHA_OFFSET_IE)))
 				{
@@ -2220,14 +2132,15 @@ VOID PeerSpectrumAction(RTMP_ADAPTER *pAd, MLME_QUEUE_ELEM *Elem)
 				{
 					Secondary.SecondaryChannelOffset = 0;
 				}
+
 				if ((Elem->Msg[LENGTH_802_11+2] == IE_CHANNEL_SWITCH_ANNOUNCEMENT) && (Elem->Msg[LENGTH_802_11+3] == 3))
 				{
 					ChannelSwitchAction(pAd, Elem->Wcid, ChannelSwitch.NewChannel, Secondary.SecondaryChannelOffset);
 				}
 			}
+#endif /* DOT11N_DRAFT3 */
 
 			PeerChSwAnnAction(pAd, Elem);
-#endif /* DFS_SUPPORT */
 			break;
 	}
 
@@ -2317,14 +2230,8 @@ INT Set_MeasureReq_Proc(RTMP_ADAPTER *pAd, RTMP_STRING *arg)
 
 	//TotalLen = sizeof(MEASURE_REQ_INFO) + sizeof(MEASURE_REQ);
 
-	/*
-		according to 802.11h-2003.pdf 
-		Page#26
-		Table 19a!XCategory values
-		Spectrum management (CATEGORY_SPECTRUM) ==> 0
-	*/
 	MakeMeasurementReqFrame(pAd, pOutBuffer, &FrameLen,
-		sizeof(MEASURE_REQ_INFO), CATEGORY_SPECTRUM, SPEC_MRQ,
+		sizeof(MEASURE_REQ_INFO), CATEGORY_RM, RM_BASIC,
 		MeasureReqToken, MeasureReqMode.word,
 		MeasureReqType, 1);
 
@@ -2452,25 +2359,11 @@ static DOT11_REGULATORY_INFO *GetRugClassRegion(RTMP_STRING *pCountryCode, UINT8
 	pRugClass = NULL;
 	do
 	{
-		if (strncmp(pCountryCode, "RU", 2) == 0)
-		{
-			if (RugClass >= RU_REGULATORY_INFO_SIZE)
-				break;
-			pRugClass = &RURegulatoryInfo[RugClass];
-		}
-
 		if (strncmp(pCountryCode, "US", 2) == 0)
 		{
 			if (RugClass >= USA_REGULATORY_INFO_SIZE)
 				break;
 			pRugClass = &USARegulatoryInfo[RugClass];
-		}
-
-		if (strncmp(pCountryCode, "EU", 2) == 0)
-		{
-			if (RugClass >= EU_REGULATORY_INFO_SIZE)
-				break;
-			pRugClass = &EuropeRegulatoryInfo[RugClass];
 		}
 
 		if (strncmp(pCountryCode, "JP", 2) == 0)

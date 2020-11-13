@@ -44,6 +44,10 @@
 
 #define TPC_DIALOGTOKEN_HASH_INDEX(_DialogToken)	((_DialogToken) & (MAX_HASH_TPC_REQ_TAB_SIZE - 1))
 #define MQ_DIALOGTOKEN_HASH_INDEX(_DialogToken)		((_DialogToken) & (MAX_MEASURE_REQ_TAB_SIZE - 1))
+typedef enum {
+	REG_LOCAL,
+	REG_GLOBAL
+} REG_DOMAIN;
 
 typedef struct _MEASURE_REQ_ENTRY
 {
@@ -52,6 +56,13 @@ typedef struct _MEASURE_REQ_ENTRY
 	BOOLEAN	Valid;
 	UINT8 DialogToken;
 	UINT8 MeasureDialogToken[3];	/* 0:basic measure, 1: CCA measure, 2: RPI_Histogram measure. */
+	BOOLEAN skip_time_check;
+	UINT8 CurrentState;
+	void *Priv;
+	RALINK_TIMER_STRUCT WaitNRRspTimer;
+	UINT8 StaMac[MAC_ADDR_LEN];
+	UCHAR ControlIndex;
+	RALINK_TIMER_STRUCT WaitBCNRepTimer;
 } MEASURE_REQ_ENTRY, *PMEASURE_REQ_ENTRY;
 
 typedef struct _MEASURE_REQ_TAB

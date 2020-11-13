@@ -964,7 +964,7 @@ union GNU_PACKED rmac_rxd_0 {
 /*
 	Rx Normal Data frame Format
 */
-typedef struct GNU_PACKED rxd_base_struc{
+struct GNU_PACKED rxd_base_struct {
 	/* DWORD 0 */
 	struct rmac_rxd_0_normal rxd_0;
 	/* DWORD 1 */
@@ -973,7 +973,7 @@ typedef struct GNU_PACKED rxd_base_struc{
 	struct rmac_rxd_2_normal rxd_2;
 	/* DWORD 3 */
 	struct rmac_rxd_3_normal rxd_3;
-}RXD_BASE_STRUCT;
+};
 
 #define RXS_GROUP1 (1 << 0)
 #define RXS_GROUP2 (1 << 1)
@@ -1481,11 +1481,8 @@ typedef struct wtbl_entry {
 #define QID_AC_VI               2
 #define QID_AC_VO               3
 #define QID_HCCA                4
-#ifdef USE_BMC
-#define NUM_OF_TX_RING		5
-#else
 #define NUM_OF_TX_RING		4
-#endif /*USE_BMC*/
+/* USB need 5 , PCI only 4 */
 
 #define NUM_OF_WMM1_TX_RING	1
 
@@ -1524,6 +1521,10 @@ enum {
 	PID_NULL_FRAME_PWR_ACTIVE,
 	PID_NULL_FRAME_PWR_SAVE,
 	PID_QOS_NULL_FRAME,
+	PID_MGMT_ASSOC_RSP,
+#ifdef WH_EZ_SETUP
+	PID_EZ_ACTION,
+#endif
 	PID_MAX = 0x40,
 };
 
@@ -1620,6 +1621,7 @@ INT32 TxSTypeCtlPerPkt(struct _RTMP_ADAPTER *pAd, UINT32 Pid, UINT8 Format,
 						BOOLEAN DumpTxSReport, ULONG DumpTxSReportTimes);
 INT32 ParseTxSPacket(struct _RTMP_ADAPTER *pAd, UINT32 Pid, UINT8 Format, CHAR *Data);
 INT32 BcnTxSHandler(struct _RTMP_ADAPTER *pAd, CHAR *Data, UINT32 Priv);
+INT32 APAssocRespTxSHandler(struct _RTMP_ADAPTER *pAd, CHAR *Data, UINT32 Priv);
 INT32 NullFramePM1TxSHandler(struct _RTMP_ADAPTER *pAd, CHAR *Data);
 INT32 NullFramePM0TxSHandler(struct _RTMP_ADAPTER *pAd, CHAR *Data);
 #ifdef CFG_TDLS_SUPPORT

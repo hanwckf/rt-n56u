@@ -622,6 +622,7 @@ typedef	struct	_WSC_CTRL
 	NDIS_802_11_SSID	    WscSsid;		        /* select a desired ssid to connect for PIN mode */
 	UCHAR					WscPBCBssCount;			/* Count of PBC activated APs. */
 	UCHAR				    WscBssid[MAC_ADDR_LEN];	/* select a desired bssid to connect */
+	UCHAR				    WscPeerUuid[UUID_LEN_HEX];	/* Peer AP UUID*/
 	WSC_REG_DATA	RegData;		/* Registrar pair data */
 	UCHAR           lastId;
 	UCHAR           WscUseUPnP;
@@ -632,6 +633,7 @@ typedef	struct	_WSC_CTRL
 	BOOLEAN         Wsc2MinsTimerRunning;
 	RALINK_TIMER_STRUCT   Wsc2MinsTimer;
 	WSC_PROFILE			WscProfile;		/* Saved WSC profile after M8 */
+	WSC_PROFILE			WscBhProfiles;/* Saved Additional WSC profile after M8 */
 	WSC_UPNP_NODE_INFO	WscUPnPNodeInfo;	/*Use to save UPnP node related info. */
 
     BOOLEAN             EapolTimerRunning; 
@@ -726,6 +728,9 @@ typedef	struct	_WSC_CTRL
 #ifdef CONFIG_AP_SUPPORT
 	BOOLEAN				bWscAutoTriggerDisable; /* Default setting is FALSE */
 #endif /* CONFIG_AP_SUPPORT */
+#ifdef APCLI_SUPPORT
+	UCHAR				WscApCliScanMode; /* Only for ApClient , default setting is full scan */
+#endif /* APCLI_SUPPORT */
 }	WSC_CTRL, *PWSC_CTRL;
 
 typedef struct GNU_PACKED _WSC_CONFIGURED_VALUE {

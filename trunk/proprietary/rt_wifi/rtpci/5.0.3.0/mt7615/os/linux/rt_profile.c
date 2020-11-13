@@ -511,7 +511,7 @@ INT get_dev_config_idx(RTMP_ADAPTER *pAd)
 #endif /* MULTI_INF_SUPPORT */
 
 #if defined(CONFIG_RT_SECOND_CARD)
-#if defined(CONFIG_FIRST_IF_MT7603E)
+#if defined(CONFIG_RT_FIRST_IF_MT7603E)
 	/* MT7603(ra0) + MT7615(rai0) combination */
 	if (IS_MT7615(pAd))
 		idx = 1;

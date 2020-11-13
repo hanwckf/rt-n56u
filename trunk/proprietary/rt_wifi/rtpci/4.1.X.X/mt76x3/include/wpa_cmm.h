@@ -16,9 +16,9 @@
 
 /* WPA mechanism retry timer interval */
 #define PEER_MSG1_RETRY_EXEC_INTV	1000	/* 1 sec */
-#define PEER_MSG3_RETRY_EXEC_INTV	1000	/* 1 sec */
+#define PEER_MSG3_RETRY_EXEC_INTV	3000	/* 3 sec */
 #define GROUP_KEY_UPDATE_EXEC_INTV	1000	/* 1 sec */
-#define PEER_GROUP_KEY_UPDATE_INIV	1000	/* 1 sec, for peridic group rekey timer */
+#define PEER_GROUP_KEY_UPDATE_INIV	2000	/* 2 sec */
 
 #define	EAPOL_MSG_INVALID	0
 #define	EAPOL_PAIR_MSG_1	1
@@ -28,7 +28,7 @@
 #define	EAPOL_GROUP_MSG_1	5
 #define	EAPOL_GROUP_MSG_2	6
 
-#define ENQUEUE_EAPOL_START_TIMER	100	/* 100 ms, for 4 way */
+#define ENQUEUE_EAPOL_START_TIMER	100	/* 100 ms */
 
 /* group rekey interval */
 #define TIME_REKEY                          0
@@ -54,7 +54,8 @@
 #define MT2_EAPOLLogoff              2
 #define MT2_EAPOLKey                 3
 #define MT2_EAPOLASFAlert            4
-#define MAX_WPA_MSG                  5
+#define MT2_EAPOLTIMEOUT			5
+#define MAX_WPA_MSG                  6
 
 #define WPA_FUNC_SIZE                (MAX_WPA_PTK_STATE * MAX_WPA_MSG)
 
@@ -223,4 +224,17 @@ typedef struct _CMD_802_11_KEY {
     UINT8      aucKeyMaterial[32];
     UINT8      aucKeyRsc[16];
 } CMD_802_11_KEY, *P_CMD_802_11_KEY;
+#ifdef CONFIG_SECURITY_IMPROVEMENT_SUPPORT
+enum RSN_FIELD {
+	RSN_FIELD_NONE = 0,
+	RSN_FIELD_GROUP_CIPHER,
+	RSN_FIELD_PAIRWISE_CIPHER,
+	RSN_FIELD_AKM,
+	RSN_FIELD_RSN_CAP,
+	RSN_FIELD_PMKID,
+	RSN_FIELD_GROUP_MGMT_CIPHER,
+	RSN_FIELD_EXTENSIBLE_ELE
+};
+#endif
+
 #endif /* WPA_CMM_H */

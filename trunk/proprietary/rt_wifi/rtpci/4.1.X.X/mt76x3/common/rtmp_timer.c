@@ -45,7 +45,6 @@ BUILD_TIMER_FUNCTION(PMF_SAQueryConfirmTimeOut);
 
 
 #ifdef CONFIG_AP_SUPPORT
-#ifdef DOT11N_DRAFT3
 extern VOID APDetectOverlappingExec(
 				IN PVOID SystemSpecific1, 
 				IN PVOID FunctionContext, 
@@ -53,6 +52,8 @@ extern VOID APDetectOverlappingExec(
 				IN PVOID SystemSpecific3);
 
 BUILD_TIMER_FUNCTION(APDetectOverlappingExec);
+
+#ifdef DOT11N_DRAFT3
 BUILD_TIMER_FUNCTION(Bss2040CoexistTimeOut);
 #endif /* DOT11N_DRAFT3 */
 
@@ -107,9 +108,24 @@ BUILD_TIMER_FUNCTION(WscEapReqIdRetryTimeout);
 BUILD_TIMER_FUNCTION(ATEPeriodicExec);
 #endif /* CONFIG_ATE */
 
-#ifdef APCLI_SUPPORT
-BUILD_TIMER_FUNCTION(ApCliWpaDisassocApAndBlockAssoc);
-#endif /* APCLI_SUPPORT */
+#ifdef MIXMODE_SUPPORT
+BUILD_TIMER_FUNCTION(MixModeTimeout);
+#endif /* MIXMODE_SUPPORT */
+
+#ifdef WH_EZ_SETUP
+BUILD_TIMER_FUNCTION(ez_scan_timeout);
+//BUILD_TIMER_FUNCTION(ez_stop_scan_timeout);
+BUILD_TIMER_FUNCTION(ez_scan_pause_timeout);
+#ifdef EZ_NETWORK_MERGE_SUPPORT
+BUILD_TIMER_FUNCTION(ez_group_merge_timeout);
+#endif
+#ifdef NEW_CONNECTION_ALGO
+BUILD_TIMER_FUNCTION(ez_wait_for_connection_allow_timeout);
+#endif
+#ifdef EZ_DUAL_BAND_SUPPORT
+BUILD_TIMER_FUNCTION(ez_loop_chk_timeout);
+#endif
+#endif /* WH_EZ_SETUP */
 
 #ifdef RTMP_TIMER_TASK_SUPPORT
 static void RtmpTimerQHandle(RTMP_ADAPTER *pAd)

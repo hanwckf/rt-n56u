@@ -124,6 +124,13 @@ static VOID ApCliMlmeAuthReqAction(
 	UCHAR CliIdx = 0xFF;
 #endif /* MAC_REPEATER_SUPPORT */
 
+#ifdef WH_EZ_SETUP
+		struct wifi_dev *wdev;
+	
+		if(IS_ADPTR_EZ_SETUP_ENABLED(pAd))
+			EZ_DEBUG(DBG_CAT_CLIENT, DBG_SUBCAT_ALL, DBG_LVL_OFF, ("ApCliMlmeAuthReqAction()\n"));
+#endif /* WH_EZ_SETUP */
+
 	if ((ifIndex >= MAX_APCLI_NUM)
 #ifdef MAC_REPEATER_SUPPORT
 		 && (ifIndex < 64)
@@ -171,6 +178,14 @@ static VOID ApCliMlmeAuthReqAction(
 		Seq = 1;
 		Status = MLME_SUCCESS;
 
+#ifdef WH_EZ_SETUP
+		wdev = &pAd->ApCfg.ApCliTab[ifIndex].wdev;
+		if (IS_EZ_SETUP_ENABLED(wdev)
+			&& (Alg == AUTH_MODE_EZ)) {
+			Alg = cpu2le16(Alg);
+		}
+#endif /* WH_EZ_SETUP */
+
 		/* allocate and send out AuthReq frame */
 		NState = MlmeAllocateMemory(pAd, &pOutBuffer);
 		if(NState != NDIS_STATUS_SUCCESS)
@@ -202,6 +217,14 @@ static VOID ApCliMlmeAuthReqAction(
 						  2,                    &Seq, 
 						  2,                    &Status, 
 						  END_OF_ARGS);
+
+#ifdef WH_EZ_SETUP
+		if (IS_EZ_SETUP_ENABLED(wdev)
+			&& (pAd->ApCfg.ApCliTab[ifIndex].MlmeAux.support_easy_setup)) {
+			FrameLen += ez_build_auth_request_ie(wdev, 
+				pAd->ApCfg.ApCliTab[ifIndex].MlmeAux.Bssid, pOutBuffer+FrameLen);
+		}
+#endif /* WH_EZ_SETUP */
 
 		MiniportMMRequest(pAd, QID_AC_BE, pOutBuffer, FrameLen);
 		MlmeFreeMemory(pAd, pOutBuffer);
@@ -253,6 +276,11 @@ static VOID ApCliPeerAuthRspAtSeq2Action(RTMP_ADAPTER *pAd, MLME_QUEUE_ELEM * El
 	UCHAR CliIdx = 0xFF;
 #endif /* MAC_REPEATER_SUPPORT */
 
+#ifdef WH_EZ_SETUP
+		if(IS_ADPTR_EZ_SETUP_ENABLED(pAd))
+			EZ_DEBUG(DBG_CAT_CLIENT, CATCLIENT_APCLI, DBG_LVL_OFF, ("ApCliPeerAuthRspAtSeq2Action\n"));
+#endif
+
 	if ((ifIndex >= MAX_APCLI_NUM)
 #ifdef MAC_REPEATER_SUPPORT
 		&& (ifIndex < 64)
@@ -300,6 +328,20 @@ static VOID ApCliPeerAuthRspAtSeq2Action(RTMP_ADAPTER *pAd, MLME_QUEUE_ELEM * El
 
 			if(Status == MLME_SUCCESS)
 			{
+#ifdef WH_EZ_SETUP			
+				if (IS_EZ_SETUP_ENABLED(&apcli_entry->wdev)
+					&& (Alg == AUTH_MODE_EZ)) {
+					ez_process_auth_response(pAd, 
+							&apcli_entry->wdev,
+							Addr2,
+							pCurrState, 
+							Elem->Msg, 
+							Elem->MsgLen);
+					os_free_mem(NULL, ChlgText);
+					return;
+				}
+#endif /* WH_EZ_SETUP */
+			
 				if(apcli_entry->MlmeAux.Alg == Ndis802_11AuthModeOpen)
 				{
 					*pCurrState = APCLI_AUTH_REQ_IDLE;
@@ -537,6 +579,14 @@ static VOID ApCliPeerDeauthAction(RTMP_ADAPTER *pAd, MLME_QUEUE_ELEM *Elem)
 #ifdef MAC_REPEATER_SUPPORT
 	UCHAR CliIdx = 0xFF;
 #endif /* MAC_REPEATER_SUPPORT */
+#ifdef APCLI_SAE_SUPPORT
+	PULONG pCtrlCurrState = NULL;
+#endif
+
+#ifdef WH_EZ_SETUP
+		if(IS_ADPTR_EZ_SETUP_ENABLED(pAd))
+			EZ_DEBUG(DBG_CAT_CLIENT, CATCLIENT_APCLI, DBG_LVL_OFF, ("ApCliPeerDeauthAction\n"));
+#endif
 
 	if ((ifIndex >= MAX_APCLI_NUM)
 #ifdef MAC_REPEATER_SUPPORT
@@ -551,10 +601,18 @@ static VOID ApCliPeerDeauthAction(RTMP_ADAPTER *pAd, MLME_QUEUE_ELEM *Elem)
 		CliIdx = ((ifIndex - 64) % 16);
 		ifIndex = ((ifIndex - 64) / 16);
 		pCurrState = &pAd->ApCfg.ApCliTab[ifIndex].RepeaterCli[CliIdx].AuthCurrState;
-	}
-	else
+#ifdef APCLI_SAE_SUPPORT
+		pCtrlCurrState = &pAd->ApCfg.ApCliTab[ifIndex].RepeaterCli[CliIdx].CtrlCurrState;
+#endif
+
+	} else
 #endif /* MAC_REPEATER_SUPPORT */
+	{
 		pCurrState = &pAd->ApCfg.ApCliTab[ifIndex].AuthCurrState;
+#ifdef APCLI_SAE_SUPPORT
+		pCtrlCurrState = &pAd->ApCfg.ApCliTab[ifIndex].CtrlCurrState;
+#endif
+	}
 
 
 	if (PeerDeauthSanity(pAd, Elem->Msg, Elem->MsgLen, Addr1, Addr2, Addr3, &Reason))
@@ -562,6 +620,71 @@ static VOID ApCliPeerDeauthAction(RTMP_ADAPTER *pAd, MLME_QUEUE_ELEM *Elem)
 		DBGPRINT(RT_DEBUG_TRACE, ("APCLI AUTH_RSP - receive DE-AUTH from our AP\n"));
 		*pCurrState = APCLI_AUTH_REQ_IDLE;
 
+
+#ifdef APCLI_OWE_SUPPORT
+		apcli_reset_owe_parameters(pAd, ifIndex);
+#endif
+
+
+#if defined(APCLI_SAE_SUPPORT) || defined(APCLI_OWE_SUPPORT)
+	if ((*pCtrlCurrState == APCLI_CTRL_ASSOC) || (*pCtrlCurrState == APCLI_CTRL_CONNECTED)) {
+		UCHAR if_addr[6];
+		INT CachedIdx;
+		UCHAR pmkid[80];
+		UCHAR pmk[LEN_PMK];
+
+#ifdef MAC_REPEATER_SUPPORT
+		if (CliIdx != 0xFF)
+			NdisCopyMemory(if_addr,
+				&pAd->ApCfg.ApCliTab[ifIndex].RepeaterCli[CliIdx].CurrentAddress,
+				MAC_ADDR_LEN);
+		else
+#endif /* MAC_REPEATER_SUPPORT */
+			NdisCopyMemory(if_addr, &pAd->ApCfg.ApCliTab[ifIndex].wdev.if_addr, MAC_ADDR_LEN);
+
+		/*Received PMK invalid status from AP delete entry from SavedPMK and delete SAE instance*/
+		if (
+#ifdef APCLI_SAE_SUPPORT
+			(pAd->ApCfg.ApCliTab[ifIndex].wdev.AuthMode == Ndis802_11AuthModeWPA3PSK
+			&& sae_get_pmk_cache(&pAd->SaeCfg, if_addr,
+			pAd->ApCfg.ApCliTab[ifIndex].MlmeAux.Bssid, pmkid, pmk))
+#endif
+
+#ifdef APCLI_OWE_SUPPORT
+			|| pAd->ApCfg.ApCliTab[ifIndex].wdev.AuthMode == Ndis802_11AuthModeOWE
+#endif
+			) {
+
+			CachedIdx = apcli_search_pmkid_cache(pAd,
+				pAd->ApCfg.ApCliTab[ifIndex].MlmeAux.Bssid, ifIndex
+#ifdef MAC_REPEATER_SUPPORT
+				, CliIdx
+#endif
+				);
+
+			if (CachedIdx != INVALID_PMKID_IDX) {
+#ifdef APCLI_SAE_SUPPORT
+				SAE_INSTANCE *pSaeIns =
+					search_sae_instance(&pAd->SaeCfg, if_addr,
+						pAd->ApCfg.ApCliTab[ifIndex].MlmeAux.Bssid);
+
+				MTWF_LOG(DBG_CAT_SEC, CATSEC_SAE, DBG_LVL_OFF,
+					("%s:Reconnection falied with pmkid,delete cache entry and sae instance\n",
+					__func__));
+				if (pSaeIns != NULL)
+					delete_sae_instance(pSaeIns);
+#endif
+				apcli_delete_pmkid_cache(pAd,
+					pAd->ApCfg.ApCliTab[ifIndex].MlmeAux.Bssid, ifIndex
+#ifdef MAC_REPEATER_SUPPORT
+					, CliIdx
+#endif
+					);
+			}
+		}
+
+		}
+#endif
 
 #ifdef MAC_REPEATER_SUPPORT
 		ifIndex = (USHORT)(Elem->Priv);
@@ -682,7 +805,10 @@ static VOID ApCliInvalidStateWhenAuth(RTMP_ADAPTER *pAd, MLME_QUEUE_ELEM *Elem)
 	Description:
 	==========================================================================
  */
-static VOID ApCliMlmeDeauthReqAction(
+#ifndef WH_EZ_SETUP
+	static
+#endif
+VOID ApCliMlmeDeauthReqAction(
 	IN PRTMP_ADAPTER pAd, 
 	IN MLME_QUEUE_ELEM *Elem)
 {
@@ -744,6 +870,182 @@ static VOID ApCliMlmeDeauthReqAction(
 	return;
 }
 
+#ifdef APCLI_SAE_SUPPORT
+
+/*	==========================================================================*/
+/*	Description:																						*/
+/*																									*/
+/*	IRQL = DISPATCH_LEVEL																			*/
+/*																									*/
+/*	==========================================================================*/
+
+VOID ApCliMlmeSaeAuthReqAction(RTMP_ADAPTER *pAd, MLME_QUEUE_ELEM *Elem)
+{
+	USHORT ifIndex = (USHORT)(Elem->Priv);
+#ifdef MAC_REPEATER_SUPPORT
+	UCHAR CliIdx = 0xFF;
+	REPEATER_CLIENT_ENTRY *pReptEntry = NULL;
+#endif /* MAC_REPEATER_SUPPORT */
+	/* SAE_MLME_AUTH_REQ_STRUCT *AuthReq = (SAE_MLME_AUTH_REQ_STRUCT *)Elem->Msg; */
+	MLME_AUTH_REQ_STRUCT *AuthReq = (MLME_AUTH_REQ_STRUCT *)Elem->Msg;
+	PULONG pCurrState = NULL;
+	UCHAR if_addr[MAC_ADDR_LEN];
+	APCLI_STRUCT *apcli_entry = NULL;
+	UCHAR *pSae_cfg_group = NULL;
+	SAE_CFG *pSaeCfg = NULL;
+	APCLI_CTRL_MSG_STRUCT ApCliCtrlMsg;
+
+
+	pSaeCfg = &pAd->SaeCfg;
+
+		if ((ifIndex >= MAX_APCLI_NUM)
+#ifdef MAC_REPEATER_SUPPORT
+			&& (ifIndex < REPT_MLME_START_IDX)
+#endif /* MAC_REPEATER_SUPPORT */
+		   )
+		return;
+
+	NdisZeroMemory(if_addr, MAC_ADDR_LEN);
+#ifdef MAC_REPEATER_SUPPORT
+		if (ifIndex >= REPT_MLME_START_IDX) {
+			CliIdx = ((ifIndex - REPT_MLME_START_IDX) % 16);
+			ifIndex = ((ifIndex - REPT_MLME_START_IDX) / 16);
+			pReptEntry = &pAd->ApCfg.ApCliTab[ifIndex].RepeaterCli[CliIdx];
+			pSae_cfg_group = &pReptEntry->sae_cfg_group;
+			ifIndex = pReptEntry->wdev->func_idx;
+			apcli_entry = &pAd->ApCfg.ApCliTab[ifIndex];
+			pCurrState = &pReptEntry->AuthCurrState;
+			COPY_MAC_ADDR(if_addr, pReptEntry->CurrentAddress);
+		} else
+#endif /* MAC_REPEATER_SUPPORT */
+		{
+			apcli_entry = &pAd->ApCfg.ApCliTab[ifIndex];
+			pSae_cfg_group = &apcli_entry->sae_cfg_group;
+			pCurrState = &pAd->ApCfg.ApCliTab[ifIndex].AuthCurrState;
+			COPY_MAC_ADDR(if_addr, pAd->ApCfg.ApCliTab[ifIndex].wdev.if_addr);
+		}
+	MTWF_LOG(DBG_CAT_SEC, CATSEC_SAE, DBG_LVL_OFF, ("==>%s()\n", __func__));
+
+	if (sae_auth_init(pAd, &pAd->SaeCfg, if_addr, AuthReq->Addr,
+			apcli_entry->MlmeAux.Bssid, apcli_entry->PSK, *pSae_cfg_group))
+		*pCurrState = APCLI_AUTH_WAIT_SAE;
+	else {
+		*pCurrState = APCLI_AUTH_REQ_IDLE;
+		ApCliCtrlMsg.Status = MLME_UNSPECIFY_FAIL;
+#ifdef MAC_REPEATER_SUPPORT
+		ApCliCtrlMsg.BssIdx = ifIndex;
+		ApCliCtrlMsg.CliIdx = CliIdx;
+		ifIndex = (USHORT)(Elem->Priv);
+#endif /* MAC_REPEATER_SUPPORT */
+		MlmeEnqueue(pAd, APCLI_CTRL_STATE_MACHINE, APCLI_CTRL_AUTH_RSP,
+			sizeof(APCLI_CTRL_MSG_STRUCT), &ApCliCtrlMsg, ifIndex);
+		RTMP_MLME_HANDLER(pAd);
+
+	}
+}
+
+
+
+/*==========================================================================*/
+/*	Description:																						*/
+/*																									*/
+/*	IRQL = DISPATCH_LEVEL																			*/
+/*																									*/
+/*==========================================================================*/
+
+VOID ApCliMlmeSaeAuthRspAction(RTMP_ADAPTER *pAd, MLME_QUEUE_ELEM *Elem)
+{
+	FRAME_802_11 *Fr = (FRAME_802_11 *)Elem->Msg;
+	USHORT seq;
+	USHORT status;
+	UCHAR *pmk;
+	USHORT ifIndex = (USHORT)(Elem->Priv);
+	PULONG pAuthCurrState = NULL;
+	APCLI_CTRL_MSG_STRUCT ApCliCtrlMsg;
+	APCLI_STRUCT *apcli_entry;
+#ifdef MAC_REPEATER_SUPPORT
+	REPEATER_CLIENT_ENTRY *pReptEntry = NULL;
+#endif
+#if defined(MAC_REPEATER_SUPPORT)
+	UCHAR CliIdx = 0xFF;
+#endif /* MAC_REPEATER_SUPPORT */
+
+
+	if ((ifIndex >= MAX_APCLI_NUM)
+#ifdef MAC_REPEATER_SUPPORT
+		&& (ifIndex < REPT_MLME_START_IDX)
+#endif /* MAC_REPEATER_SUPPORT */
+		)
+		return;
+#ifdef MAC_REPEATER_SUPPORT
+	if (ifIndex >= REPT_MLME_START_IDX) {
+		CliIdx = ((ifIndex - REPT_MLME_START_IDX) % 16);
+		ifIndex = ((ifIndex - REPT_MLME_START_IDX) / 16);
+		pReptEntry = &pAd->ApCfg.ApCliTab[ifIndex].RepeaterCli[CliIdx];
+		ifIndex = pReptEntry->wdev->func_idx;
+		pAuthCurrState = &pReptEntry->AuthCurrState;
+	} else
+#endif /* MAC_REPEATER_SUPPORT */
+	{
+		pAuthCurrState = &pAd->ApCfg.ApCliTab[ifIndex].AuthCurrState;
+	}
+
+	apcli_entry = &pAd->ApCfg.ApCliTab[ifIndex];
+
+	NdisMoveMemory(&seq, &Fr->Octet[2], 2);
+	NdisMoveMemory(&status, &Fr->Octet[4], 2);
+
+
+	if (sae_handle_auth(pAd, &pAd->SaeCfg, Elem->Msg, Elem->MsgLen,
+			apcli_entry->PSK,
+			seq, status, &pmk) == FALSE){
+
+		*pAuthCurrState = APCLI_AUTH_REQ_IDLE;
+	/*If SAE instance has been deleted*/
+		ApCliCtrlMsg.Status = MLME_UNSPECIFY_FAIL;
+#ifdef MAC_REPEATER_SUPPORT
+		ApCliCtrlMsg.CliIdx = CliIdx;
+		ApCliCtrlMsg.BssIdx = ifIndex;
+		ifIndex = (USHORT)(Elem->Priv);
+#endif /* MAC_REPEATER_SUPPORT */
+
+		MlmeEnqueue(pAd, APCLI_CTRL_STATE_MACHINE, APCLI_CTRL_AUTH_RSP,
+					sizeof(APCLI_CTRL_MSG_STRUCT), &ApCliCtrlMsg, ifIndex);
+		RTMP_MLME_HANDLER(pAd);
+
+		} else if (pmk != NULL) {
+		USHORT Status;
+		MAC_TABLE_ENTRY *pEntry = NULL;
+
+		pEntry = &apcli_entry->pre_mac_entry;
+
+		DebugLevel = DBG_LVL_TRACE;
+		hex_dump("pmk:", (char *)pmk, LEN_PMK);
+		DebugLevel = DBG_LVL_ERROR;
+
+		if (pEntry) {
+			NdisMoveMemory(pEntry->PMK, pmk, LEN_PMK);
+			Status = MLME_SUCCESS;
+			MTWF_LOG(DBG_CAT_SEC, CATSEC_SAE, DBG_LVL_OFF,
+				("%s(): Security AKM = 0x%x, PairwiseCipher = 0x%x, GroupCipher = 0x%x\n",
+				__func__, pEntry->AuthMode, pEntry->WepStatus, pEntry->GroupKeyWepStatus));
+		} else
+			Status = MLME_UNSPECIFY_FAIL;
+		*pAuthCurrState = APCLI_AUTH_REQ_IDLE;
+		ApCliCtrlMsg.Status = Status;
+#ifdef MAC_REPEATER_SUPPORT
+		ApCliCtrlMsg.CliIdx = CliIdx;
+		ApCliCtrlMsg.BssIdx = ifIndex;
+		ifIndex = (USHORT)(Elem->Priv);
+#endif /* MAC_REPEATER_SUPPORT */
+		MlmeEnqueue(pAd, APCLI_CTRL_STATE_MACHINE, APCLI_CTRL_AUTH_RSP,
+					sizeof(APCLI_CTRL_MSG_STRUCT), &ApCliCtrlMsg, ifIndex);
+		RTMP_MLME_HANDLER(pAd);
+	}
+}
+#endif /* APCLI_SAE_SUPPORT */
+
+
 
 /*
 	==========================================================================
@@ -788,6 +1090,16 @@ VOID ApCliAuthStateMachineInit(
 	StateMachineSetAction(Sm, APCLI_AUTH_WAIT_SEQ4, APCLI_MT2_PEER_DEAUTH, (STATE_MACHINE_FUNC)ApCliPeerDeauthAction);
 	StateMachineSetAction(Sm, APCLI_AUTH_WAIT_SEQ4, APCLI_MT2_AUTH_TIMEOUT, (STATE_MACHINE_FUNC)ApCliAuthTimeoutAction);
 	StateMachineSetAction(Sm, APCLI_AUTH_WAIT_SEQ4, APCLI_MT2_MLME_DEAUTH_REQ, (STATE_MACHINE_FUNC)ApCliMlmeDeauthReqAction);
+
+#ifdef APCLI_SAE_SUPPORT
+	StateMachineSetAction(Sm, APCLI_AUTH_REQ_IDLE, APCLI_MT2_MLME_SAE_AUTH_REQ,
+						  (STATE_MACHINE_FUNC) ApCliMlmeSaeAuthReqAction);
+	StateMachineSetAction(Sm, APCLI_AUTH_WAIT_SAE, APCLI_MT2_MLME_SAE_AUTH_COMMIT,
+						  (STATE_MACHINE_FUNC) ApCliMlmeSaeAuthRspAction);
+	StateMachineSetAction(Sm, APCLI_AUTH_WAIT_SAE, APCLI_MT2_MLME_SAE_AUTH_CONFIRM,
+						  (STATE_MACHINE_FUNC) ApCliMlmeSaeAuthRspAction);
+#endif /*APCLI_SAE_SUPPORT */
+
 
 	for (i=0; i < MAX_APCLI_NUM; i++)
 	{

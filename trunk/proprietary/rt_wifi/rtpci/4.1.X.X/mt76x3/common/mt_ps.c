@@ -161,7 +161,9 @@ VOID MtTriggerMCUINT(RTMP_ADAPTER *pAd)
 
 BOOLEAN  MtStartPSRetrieve(RTMP_ADAPTER *pAd, USHORT wcid)
 {
+	NdisAcquireSpinLock(&pAd->PSRetrieveLock);
 	if (MtPSDummyCR(pAd) != 0) {
+		NdisReleaseSpinLock(&pAd->PSRetrieveLock);
 		return FALSE;
 	}
 
@@ -170,7 +172,7 @@ BOOLEAN  MtStartPSRetrieve(RTMP_ADAPTER *pAd, USHORT wcid)
 #ifdef RTMP_MAC_PCI
 //	MtTriggerMCUINT(pAd);
 #endif /* RTMP_MAC_PCI */		
-
+	NdisReleaseSpinLock(&pAd->PSRetrieveLock);
 	return TRUE;
 }
 #endif
@@ -195,6 +197,7 @@ VOID MtHandleRxPsPoll(RTMP_ADAPTER *pAd, UCHAR *pAddr, USHORT wcid, BOOLEAN isAc
 	INT           DequeuCOUNT;
 #ifdef MT_PS
 	INT i, Total_Packet_Number = 0;
+	unsigned long	IrqFlags = 0;
 #endif /* MT_PS */
 	//struct tx_swq_fifo *fifo_swq;
 
@@ -226,7 +229,8 @@ VOID MtHandleRxPsPoll(RTMP_ADAPTER *pAd, UCHAR *pAddr, USHORT wcid, BOOLEAN isAc
 					DBGPRINT(RT_DEBUG_TRACE | DBG_FUNC_PS, ("RtmpHandleRxPsPoll fetch tx queue tr_entry->ps_queue.Number= %x tr_entry->tx_queue[0].Number=%x Total_Packet_Number=%x\n",
 						tr_entry->ps_queue.Number, tr_entry->tx_queue[QID_AC_BE].Number, Total_Packet_Number));
 
-					for (i = WMM_QUE_NUM; i >=0; i--)
+					RTMP_IRQ_LOCK(&pAd->irq_lock, IrqFlags);
+					for (i = (WMM_QUE_NUM - 1); i >=0; i--)
 					{
 						if (tr_entry->tx_queue[i].Head)
 						{
@@ -242,7 +246,8 @@ VOID MtHandleRxPsPoll(RTMP_ADAPTER *pAd, UCHAR *pAddr, USHORT wcid, BOOLEAN isAc
 							tr_entry->PsQIdleCount = 0;
 							break;
 						}
-					}               
+					}
+					RTMP_IRQ_UNLOCK(&pAd->irq_lock, IrqFlags);
 				}
 			}
 			else /* Recieve ps_poll but no packet==>send NULL Packet */
@@ -321,9 +326,9 @@ VOID MtHandleRxPsPoll(RTMP_ADAPTER *pAd, UCHAR *pAddr, USHORT wcid, BOOLEAN isAc
 		{
 			IsDequeu = TRUE;
 			DequeuAC = NUM_OF_TX_RING;
-			if (tr_entry->enqCount > 8 /* MAX_TX_PROCESS */)
+			if (tr_entry->enqCount > MAX_TX_PROCESS)
 			{
-				DequeuCOUNT =  8 /* MAX_TX_PROCESS */;
+				DequeuCOUNT = MAX_TX_PROCESS;
 				rtmp_ps_enq(pAd,tr_entry);
 			}
 			else
@@ -343,6 +348,23 @@ VOID MtHandleRxPsPoll(RTMP_ADAPTER *pAd, UCHAR *pAddr, USHORT wcid, BOOLEAN isAc
 #endif /* CONFIG_AP_SUPPORT */
 }
 
+VOID PsRetrieveTimeout(RTMP_ADAPTER *pAd, STA_TR_ENTRY *tr_entry)
+{
+	UCHAR	ps_state_tmp;
+
+	ps_state_tmp = tr_entry->ps_state;
+	if (tr_entry->PsMode == PWR_ACTIVE)
+		tr_entry->ps_state = APPS_RETRIEVE_IDLE;
+	else
+		tr_entry->ps_state = APPS_RETRIEVE_DONE;
+
+	MtPsRedirectDisableCheck(pAd, tr_entry->wcid);
+
+/*
+	DBGPRINT(RT_DEBUG_OFF, ("%s() Recover ps state(state %d to state %d) [wcid = %d]!!\n",
+		__func__, ps_state_tmp, tr_entry->ps_state, tr_entry->wcid));
+*/
+}
 
 /*
 	==========================================================================
@@ -408,6 +430,7 @@ BOOLEAN MtPsIndicate(RTMP_ADAPTER *pAd, UCHAR *pAddr, UCHAR wcid, UCHAR Psm)
 #if defined(MT7603) && defined(RTMP_PCI_SUPPORT)
 			if (MtStartPSRetrieve(pAd, wcid) == TRUE) {
 			tr_entry->ps_state = APPS_RETRIEVE_START_PS;
+			tr_entry->ps_start_time = jiffies;
 			} else {
 				struct tx_swq_fifo *ps_fifo_swq;
 				INT enq_idx;

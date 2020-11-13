@@ -1,7 +1,7 @@
-diff -ur curl-7.63.0-ref/Makefile.am curl-7.63.0/Makefile.am
---- curl-7.63.0-ref/Makefile.am	2018-10-27 17:11:01.000000000 +0300
-+++ curl-7.63.0/Makefile.am	2018-12-28 19:42:44.541739033 +0300
-@@ -168,7 +168,7 @@
+diff -rupw curl.orig/Makefile.am curl/Makefile.am
+--- curl.orig/Makefile.am	2020-08-07 23:38:12.000000000 +0800
++++ curl/Makefile.am	2020-08-19 20:57:35.661728998 +0800
+@@ -192,7 +192,7 @@ CLEANFILES = $(VC6_LIBDSP) $(VC6_SRCDSP)
  bin_SCRIPTS = curl-config
  
  SUBDIRS = lib src
@@ -10,19 +10,19 @@ diff -ur curl-7.63.0-ref/Makefile.am curl-7.63.0/Makefile.am
  
  pkgconfigdir = $(libdir)/pkgconfig
  pkgconfig_DATA = libcurl.pc
-@@ -279,8 +279,6 @@
+@@ -303,8 +303,6 @@ cygwinbin:
  # We extend the standard install with a custom hook:
  install-data-hook:
- 	cd include && $(MAKE) install
--	cd docs && $(MAKE) install
--	cd docs/libcurl && $(MAKE) install
+ 	(cd include && $(MAKE) install)
+-	(cd docs && $(MAKE) install)
+-	(cd docs/libcurl && $(MAKE) install)
  
  # We extend the standard uninstall with a custom hook:
  uninstall-hook:
-diff -ur curl-7.63.0-ref/Makefile.in curl-7.63.0/Makefile.in
---- curl-7.63.0-ref/Makefile.in	2018-12-12 10:14:23.000000000 +0300
-+++ curl-7.63.0/Makefile.in	2018-12-28 19:43:30.224562122 +0300
-@@ -644,7 +644,7 @@
+diff -rupw curl.orig/Makefile.in curl/Makefile.in
+--- curl.orig/Makefile.in	2020-08-19 15:38:16.000000000 +0800
++++ curl/Makefile.in	2020-08-19 20:58:06.895062329 +0800
+@@ -692,7 +692,7 @@ CLEANFILES = $(VC6_LIBDSP) $(VC6_SRCDSP)
  
  bin_SCRIPTS = curl-config
  SUBDIRS = lib src
@@ -30,13 +30,13 @@ diff -ur curl-7.63.0-ref/Makefile.in curl-7.63.0/Makefile.in
 +DIST_SUBDIRS = $(SUBDIRS) packages include
  pkgconfigdir = $(libdir)/pkgconfig
  pkgconfig_DATA = libcurl.pc
- LIB_VAUTH_CFILES = vauth/vauth.c vauth/cleartext.c vauth/cram.c         \
-@@ -1449,8 +1449,6 @@
+ LIB_VAUTH_CFILES = vauth/cleartext.c vauth/cram.c vauth/digest.c             \
+@@ -1516,8 +1516,6 @@ cygwinbin:
  # We extend the standard install with a custom hook:
  install-data-hook:
- 	cd include && $(MAKE) install
--	cd docs && $(MAKE) install
--	cd docs/libcurl && $(MAKE) install
+ 	(cd include && $(MAKE) install)
+-	(cd docs && $(MAKE) install)
+-	(cd docs/libcurl && $(MAKE) install)
  
  # We extend the standard uninstall with a custom hook:
  uninstall-hook:

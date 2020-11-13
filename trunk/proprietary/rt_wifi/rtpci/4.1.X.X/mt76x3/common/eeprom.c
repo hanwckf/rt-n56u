@@ -33,14 +33,17 @@ struct chip_map{
 };
 
 struct chip_map RTMP_CHIP_E2P_FILE_TABLE[] = {
-#if 0
 	{0x3071,	"RT3092_PCIe_LNA_2T2R_ALC_V1_2.bin"},
 	{0x3090,	"RT3092_PCIe_LNA_2T2R_ALC_V1_2.bin"},
 	{0x3593,	"HMC_RT3593_PCIe_3T3R_V1_3.bin"},
 	{0x5392,	"RT5392_PCIe_2T2R_ALC_V1_4.bin"},
 	{0x5592,	"RT5592_PCIe_2T2R_V1_7.bin"},
-#endif
-	{0, NULL}
+	{0,}
+};
+
+
+struct chip_map chip_card_id_map[] ={
+	{7620, ""},
 };
 
 
@@ -149,7 +152,6 @@ INT rtmp_read_rssi_langain_from_eeprom(RTMP_ADAPTER *pAd)
 */
 INT rtmp_read_country_region_from_eeporm(RTMP_ADAPTER *pAd)
 {
-#if !defined(EEPROM_COUNTRY_UNLOCK)
 	UINT16 value, value2;
 
 	{
@@ -162,7 +164,6 @@ INT rtmp_read_country_region_from_eeporm(RTMP_ADAPTER *pAd)
 
 	if (value2 <= REGION_MAXIMUM_A_BAND)
 		pAd->CommonCfg.CountryRegionForABand = ((UCHAR) value2) | EEPROM_IS_PROGRAMMED;
-#endif
 
 	return TRUE;
 }
@@ -265,11 +266,10 @@ INT NICReadEEPROMParameters(RTMP_ADAPTER *pAd, RTMP_STRING *mac_addr)
 	EEPROM_VERSION_STRUC Version;
 	EEPROM_ANTENNA_STRUC Antenna;
 	EEPROM_NIC_CONFIG2_STRUC NicConfig2;
-#ifdef READ_MAC_FROM_EEPROM
-	USHORT Addr01, Addr23, Addr45;
-#endif
+	USHORT  Addr01,Addr23,Addr45 ;
 
 	DBGPRINT(RT_DEBUG_TRACE, ("%s()-->\n", __FUNCTION__));
+
 
 	if (pAd->chipOps.eeinit)
 	{
@@ -281,20 +281,20 @@ INT NICReadEEPROMParameters(RTMP_ADAPTER *pAd, RTMP_STRING *mac_addr)
 	}
 
 	/*Send EEprom parameter to FW*/
-#ifdef CONFIG_ATE
+	#ifdef CONFIG_ATE
 	if(!ATE_ON(pAd))
-#endif
+	#endif
 	{
 #ifdef LOAD_FW_ONE_TIME
-		DBGPRINT(RT_DEBUG_ERROR, ("@@@  NICReadEEPROMParameters : pAd->FWLoad=%u \n",pAd->FWLoad));
+		DBGPRINT(RT_DEBUG_ERROR, ("@@@  NICReadEEPROMParameters : pAd->FWLoad=%u \n",pAd->FWLoad));		
 		if (pAd->FWLoad == 0)
 #endif /* LOAD_FW_ONE_TIME */
 			CmdEfusBufferModeSet(pAd);
 	}
 
-#ifdef READ_MAC_FROM_EEPROM
 	/* Read MAC setting from EEPROM and record as permanent MAC address */
-	DBGPRINT(RT_DEBUG_ERROR, ("Initialize MAC Address from E2PROM \n"));
+	DBGPRINT(RT_DEBUG_TRACE, ("Initialize MAC Address from E2PROM \n"));
+
 	RT28xx_EEPROM_READ16(pAd, 0x04, Addr01);
 	RT28xx_EEPROM_READ16(pAd, 0x06, Addr23);
 	RT28xx_EEPROM_READ16(pAd, 0x08, Addr45);
@@ -310,22 +310,20 @@ INT NICReadEEPROMParameters(RTMP_ADAPTER *pAd, RTMP_STRING *mac_addr)
 	if (pAd->PermanentAddress[0] == 0xff)
 		pAd->PermanentAddress[0] = RandomByte(pAd)&0xf8;
 
-	DBGPRINT(RT_DEBUG_OFF, ("E2PROM MAC: =%02x:%02x:%02x:%02x:%02x:%02x\n",
+	DBGPRINT(RT_DEBUG_TRACE, ("E2PROM MAC: =%02x:%02x:%02x:%02x:%02x:%02x\n",
 								PRINT_MAC(pAd->PermanentAddress)));
 
 	/* Assign the actually working MAC Address */
 	if (pAd->bLocalAdminMAC)
 	{
-		DBGPRINT(RT_DEBUG_OFF, ("Use the MAC address what is assigned from Configuration file(.dat). \n"));
+		DBGPRINT(RT_DEBUG_TRACE, ("Use the MAC address what is assigned from Configuration file(.dat). \n"));
 #if defined(BB_SOC)&&!defined(NEW_MBSSID_MODE)
 		//BBUPrepareMAC(pAd, pAd->CurrentAddress);
 		COPY_MAC_ADDR(pAd->PermanentAddress, pAd->CurrentAddress);
 		printk("now bb MainSsid mac %02x:%02x:%02x:%02x:%02x:%02x\n",PRINT_MAC(pAd->CurrentAddress));
 #endif
 	}
-	else
-#endif
-	if (mac_addr &&
+	else if (mac_addr &&
 			 strlen((RTMP_STRING *)mac_addr) == 17 &&
 			 (strcmp(mac_addr, "00:00:00:00:00:00") != 0))
 	{
@@ -339,21 +337,19 @@ INT NICReadEEPROMParameters(RTMP_ADAPTER *pAd, RTMP_STRING *mac_addr)
 			macptr=macptr+3;
 		}
 
-		DBGPRINT(RT_DEBUG_OFF, ("Use the MAC address what is assigned from Moudle Parameter. \n"));
+		DBGPRINT(RT_DEBUG_TRACE, ("Use the MAC address what is assigned from Moudle Parameter. \n"));
 	}
-#ifdef READ_MAC_FROM_EEPROM
 	else
 	{
 		COPY_MAC_ADDR(pAd->CurrentAddress, pAd->PermanentAddress);
-		DBGPRINT(RT_DEBUG_OFF, ("Use the MAC address what is assigned from EEPROM. \n"));
+		DBGPRINT(RT_DEBUG_TRACE, ("Use the MAC address what is assigned from EEPROM. \n"));
 	}
-#endif
 
 	/* if E2PROM version mismatch with driver's expectation, then skip*/
 	/* all subsequent E2RPOM retieval and set a system error bit to notify GUI*/
 	RT28xx_EEPROM_READ16(pAd, EEPROM_VERSION_OFFSET, Version.word);
 	pAd->EepromVersion = Version.field.Version + Version.field.FaeReleaseNumber * 256;
-	DBGPRINT(RT_DEBUG_OFF, ("E2PROM: Version = %d, FAE release #%d\n", Version.field.Version, Version.field.FaeReleaseNumber));
+	DBGPRINT(RT_DEBUG_TRACE, ("E2PROM: Version = %d, FAE release #%d\n", Version.field.Version, Version.field.FaeReleaseNumber));
 
 	/* Read BBP default value from EEPROM and store to array(EEPROMDefaultValue) in pAd */
 	RT28xx_EEPROM_READ16(pAd, EEPROM_NIC1_OFFSET, value);
@@ -398,8 +394,7 @@ INT NICReadEEPROMParameters(RTMP_ADAPTER *pAd, RTMP_STRING *mac_addr)
 		RTMP_CHIP_ANTENNA_INFO_DEFAULT_RESET(pAd, &Antenna);
 
 // TODO: shiang-7603
-	/* Add (Antenna.word & 0xFF00) == 0xFF00) to prevent changing eeprom 's antenna setting. */
-	if ((IS_MT7603(pAd) || IS_MT7628(pAd))&&((Antenna.word & 0xFF00) == 0xFF00))
+	if (IS_MT7603(pAd) || IS_MT7628(pAd))
 		RTMP_CHIP_ANTENNA_INFO_DEFAULT_RESET(pAd, &Antenna);
 
 	/* Choose the desired Tx&Rx stream.*/
@@ -551,55 +546,58 @@ INT NICReadEEPROMParameters(RTMP_ADAPTER *pAd, RTMP_STRING *mac_addr)
 
 void rtmp_eeprom_of_platform(RTMP_ADAPTER *pAd)
 {
-	UCHAR e2p_default = E2P_FLASH_MODE;
-#if (CONFIG_RT_FIRST_CARD == 7603) && \
-    (CONFIG_RT_SECOND_CARD == 7603)
+#if defined(CONFIG_RT_FIRST_CARD_EEPROM) || defined(CONFIG_RT_SECOND_CARD_EEPROM)
+	UCHAR e2p_dafault = 0;
+#endif /* defined(CONFIG_RT_FIRST_CARD_EEPROM) || defined(CONFIG_RT_SECOND_CARD_EEPROM) */
+#ifdef CONFIG_RT_FIRST_CARD_EEPROM
 	if ( pAd->dev_idx == 0 )
 	{
 		if ( RTMPEqualMemory("efuse", CONFIG_RT_FIRST_CARD_EEPROM, 5) )
-			e2p_default = E2P_EFUSE_MODE;
+			e2p_dafault = E2P_EFUSE_MODE;
 		if ( RTMPEqualMemory("prom", CONFIG_RT_FIRST_CARD_EEPROM, 4) )
-			e2p_default = E2P_EEPROM_MODE;
+			e2p_dafault = E2P_EEPROM_MODE;
 		if ( RTMPEqualMemory("flash", CONFIG_RT_FIRST_CARD_EEPROM, 5) )
-			e2p_default = E2P_FLASH_MODE;
-		goto out;
-	}
+			e2p_dafault = E2P_FLASH_MODE;
 
+		pAd->E2pAccessMode = e2p_dafault;
+	}
+#endif /* CONFIG_RT_FIRST_CARD_EEPROM */
+
+#ifdef CONFIG_RT_SECOND_CARD_EEPROM
 	if ( pAd->dev_idx == 1 )
 	{
 		if ( RTMPEqualMemory("efuse", CONFIG_RT_SECOND_CARD_EEPROM, 5) )
-			e2p_default = E2P_EFUSE_MODE;
+			e2p_dafault = E2P_EFUSE_MODE;
 		if ( RTMPEqualMemory("prom", CONFIG_RT_SECOND_CARD_EEPROM, 4) )
-			e2p_default = E2P_EEPROM_MODE;
+			e2p_dafault = E2P_EEPROM_MODE;
 		if ( RTMPEqualMemory("flash", CONFIG_RT_SECOND_CARD_EEPROM, 5) )
-			e2p_default = E2P_FLASH_MODE;
-		goto out;
+			e2p_dafault = E2P_FLASH_MODE;
+
+		pAd->E2pAccessMode = e2p_dafault;
 	}
-out:
-#endif
-	DBGPRINT(RT_DEBUG_OFF, ("%s::e2p_default=%d\n", __FUNCTION__, e2p_default));
-	pAd->E2pAccessMode = e2p_default;
+#endif /* CONFIG_RT_SECOND_CARD_EEPROM */
 }
 
 UCHAR RtmpEepromGetDefault(RTMP_ADAPTER *pAd)
 {
-	UCHAR e2p_default = E2P_FLASH_MODE;
+	UCHAR e2p_dafault = 0;
+
 #ifdef RTMP_FLASH_SUPPORT
 	if (pAd->infType == RTMP_DEV_INF_RBUS)
-		e2p_default = E2P_FLASH_MODE;
+		e2p_dafault = E2P_FLASH_MODE;
 	else
 #endif /* RTMP_FLASH_SUPPORT */
 	{
 #ifdef RTMP_EFUSE_SUPPORT
 		if (pAd->bUseEfuse)
-			e2p_default = E2P_EFUSE_MODE;
+			e2p_dafault = E2P_EFUSE_MODE;
 		else
 #endif /* RTMP_EFUSE_SUPPORT */
-			e2p_default = E2P_EEPROM_MODE;
+			e2p_dafault = E2P_EEPROM_MODE;
 	}
 
-	DBGPRINT(RT_DEBUG_OFF, ("%s::e2p_default=%d\n", __FUNCTION__, e2p_default));
-	return e2p_default;
+	DBGPRINT(RT_DEBUG_OFF, ("%s::e2p_dafault=%d\n", __FUNCTION__, e2p_dafault));
+	return e2p_dafault;
 }
 
 
@@ -763,14 +761,15 @@ INT RtmpChipOpsEepromHook(RTMP_ADAPTER *pAd, INT infType,INT forceMode)
 			pChipOps->eeinit = rtmp_nv_init;
 			pChipOps->eeread = rtmp_ee_flash_read;
 			pChipOps->eewrite = rtmp_ee_flash_write;
-			pAd->flash_offset = DEFAULT_RF_OFFSET;
-#if (CONFIG_RT_FIRST_CARD == 7603) && \
-    (CONFIG_RT_SECOND_CARD == 7603)
+			pAd->flash_offset = get_dev_eeprom_offset(pAd);
+#ifdef CONFIG_RT_FIRST_CARD
 			if ( pAd->dev_idx == 0 )
 				pAd->flash_offset = CONFIG_RT_FIRST_IF_RF_OFFSET;
+#endif /* CONFIG_RT_FIRST_CARD */
+#ifdef CONFIG_RT_SECOND_CARD
 			if ( pAd->dev_idx == 1 )
 				pAd->flash_offset = CONFIG_RT_SECOND_IF_RF_OFFSET;
-#endif
+#endif /* CONFIG_RT_FIRST_CARD */
 			DBGPRINT(RT_DEBUG_OFF, ("NVM is FLASH mode, flash_offset = 0x%x\n", pAd->flash_offset));
 			return 0;
 		}
@@ -914,18 +913,7 @@ INT rtmp_ee_load_from_bin(
 	else
 #endif /* MULTIPLE_CARD_SUPPORT */
 #endif /* RT_SOC_SUPPORT */
-	{
-#ifdef MT7603
-		if (IS_MT7603(pAd))
-		{
-			src = EEPROM_DEFAULT_7603_FILE_PATH;
-		}
-		else
-#endif /* MT_MAC */
-		{
-			src = EEPROM_DEFAULT_FILE_PATH;
-		}
-	}
+		src = BIN_FILE_PATH;
 
 	DBGPRINT(RT_DEBUG_TRACE, ("%s::FileName=%s\n", __FUNCTION__, src));
 
@@ -1047,7 +1035,7 @@ INT rtmp_ee_write_to_bin(
 		buf_reg <<= 8;
 		buf_reg |= pAd->EEPROMImage[0x26+i];
 		buf_reg = le2cpu16 (buf_reg);
-		NdisMoveMemory(&pci_pm[i], &buf_reg, 2);
+      	NdisMoveMemory(&pci_pm[i], &buf_reg, 2);
 	}
 	eFuseRead(pAd, 0x26, (USHORT *)pci_efuse, PCI_EFUSE_SIZE);
 

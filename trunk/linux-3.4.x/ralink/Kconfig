@@ -384,7 +384,7 @@ endif
 
 if (RT_FIRST_IF_MT7603E || RT_SECOND_IF_MT7603E)
 menu "AP MODE MediaTek MT7603E PCIe Wireless driver"
-source "drivers/net/wireless/ralink/mt76x3_ap/Kconfig"
+source "drivers/net/wireless/ralink/mt76x3/Kconfig"
 endmenu
 endif
 
@@ -394,10 +394,12 @@ source "drivers/net/wireless/ralink/mt7615/embedded/Kconfig"
 endmenu
 endif
 
-if (!RT_FIRST_IF_NONE || !RT_SECOND_IF_NONE) && !RT_FIRST_IF_MT7615E && !RT_SECOND_IF_MT7615E
+if (!RT_FIRST_IF_NONE || !RT_SECOND_IF_NONE)
+if !(RT_FIRST_IF_MT7603E && RT_SECOND_IF_MT7615E) && !(RT_FIRST_IF_MT7615E && RT_SECOND_IF_MT7603E) && !(RT_FIRST_IF_MT7615E && RT_SECOND_IF_NONE) && !(RT_FIRST_IF_MT7615E && RT_SECOND_IF_MT7615E)
 menu "Wireless drivers common configs"
 source "drivers/net/wireless/ralink/Kconfig"
 endmenu
+endif
 endif
 
 endmenu

@@ -32,7 +32,16 @@
 #include "mat.h"
 
 #define BTM_MACHINE_BASE 0
-#define WaitPeerBTMRspTimeoutVale 1024
+#define WaitPeerBTMRspTimeoutVale (15*1000)
+#define WaitPeerBTMReqTimeoutVale (30*1000)
+
+#define BTM_ENABLE_OFFSET   (1<<0)
+
+#define	BTM_CANDIDATE_OFFSET (1<<0)
+#define	BTM_ABRIDGED_OFFSET (1<<1)
+#define	BTM_DISASSOC_OFFSET (1<<2)
+#define	BTM_TERMINATION_OFFSET (1<<3)
+#define	BTM_URL_OFFSET (1<<4)
 
 /* BTM states */
 enum BTM_STATE {
@@ -52,9 +61,13 @@ enum BTM_EVENT {
 	BTM_QUERY,
 	PEER_BTM_QUERY,
 	BTM_REQ,
+	BTM_REQ_IE,
+	BTM_REQ_PARAM,
 	BTM_RSP,
 	PEER_BTM_REQ,
 	PEER_BTM_RSP,
+	BTM_REQ_TIMEOUT,
+	PEER_BTM_RSP_TIMEOUT,
 	MAX_BTM_MSG,
 };
 
@@ -102,7 +115,9 @@ typedef struct _BTM_PEER_ENTRY {
 	void *Priv;
 #ifdef CONFIG_AP_SUPPORT
 	RALINK_TIMER_STRUCT WaitPeerBTMRspTimer;
+	RALINK_TIMER_STRUCT WaitPeerBTMReqTimer;
 #endif /* CONFIG_AP_SUPPORT */
+	UINT32 WaitPeerBTMRspTime;
 } BTM_PEER_ENTRY, *PBTM_PEER_ENTRY;
 
 typedef struct _PROXY_ARP_IPV4_ENTRY {
@@ -138,6 +153,7 @@ typedef struct _WNM_CTRL {
 	RTMP_OS_SEM WNMNotifyPeerListLock;
 	BOOLEAN ProxyARPEnable;
 	BOOLEAN WNMNotifyEnable;
+	BOOLEAN WNMBTMEnable;
 	RTMP_OS_SEM ProxyARPListLock;
 	RTMP_OS_SEM ProxyARPIPv6ListLock;
 	DL_LIST IPv4ProxyARPList;
@@ -244,6 +260,7 @@ VOID WNMIPv6ProxyARPCheck(
 
 DECLARE_TIMER_FUNCTION(WaitPeerBTMRspTimeout);
 DECLARE_TIMER_FUNCTION(WaitPeerWNMNotifyRspTimeout);
+DECLARE_TIMER_FUNCTION(WaitPeerBTMReqTimeout);
 
 VOID BTMStateMachineInit(
 			IN	PRTMP_ADAPTER pAd, 
@@ -253,6 +270,18 @@ VOID BTMStateMachineInit(
 enum BTM_STATE BTMPeerCurrentState(
 	IN PRTMP_ADAPTER pAd,
 	IN MLME_QUEUE_ELEM *Elem);
+VOID ReceiveWNMNotifyReq(IN PRTMP_ADAPTER pAd,
+			  IN MLME_QUEUE_ELEM *Elem);
+
+#ifndef WAPP_SUPPORT/*CONFIG_HOTSPOT_R2*/
+NDIS_STATUS wnm_handle_command(
+	IN PRTMP_ADAPTER pAd,
+	IN struct wnm_command *pCmd_data);
+#endif
+void WNM_ReadParametersFromFile(
+		IN PRTMP_ADAPTER pAd,
+		RTMP_STRING *tmpbuf,
+		RTMP_STRING *buffer);
 
 VOID ReceiveWNMNotifyRsp(IN PRTMP_ADAPTER pAd,
 						  IN MLME_QUEUE_ELEM *Elem);
@@ -355,6 +384,44 @@ VOID WNMNotifyStateMachineInit(
 			OUT STATE_MACHINE_FUNC	Trans[]);
 #endif /* CONFIG_HOTSPOT_R2 */
 #endif /* CONFIG_AP_SUPPORT */
+
+
+int send_btm_req_param(
+	IN PRTMP_ADAPTER pAd,
+	IN p_btm_reqinfo_t p_btm_req_data,
+	IN UINT32 btm_req_data_len);
+
+int send_btm_req_ie(
+	IN PRTMP_ADAPTER pAd,
+	IN p_btm_req_ie_data_t p_btm_req_data,
+	IN UINT32 btm_req_data_len);
+
+
+int check_btm_custom_params(
+	IN PRTMP_ADAPTER pAd,
+	IN p_btm_reqinfo_t p_btm_req_data, 
+	IN UINT32 btm_req_data_len);
+
+int compose_btm_req_ie(
+	IN PRTMP_ADAPTER pAd,
+	OUT PUCHAR p_btm_req_ie,
+	OUT PUINT32 p_btm_req_ie_len,
+	IN p_btm_reqinfo_t p_btm_req_data,
+	IN UINT32 btm_req_data_len);
+
+VOID WNM_InsertBSSTerminationSubIE(
+	IN PRTMP_ADAPTER pAd,
+	OUT PUCHAR pFrameBuf,
+	OUT PUINT32 pFrameLen,
+	IN UINT64 TSF,
+	IN UINT16 Duration);
+
+VOID RRM_InsertPreferenceSubIE(
+	IN PRTMP_ADAPTER pAd,
+	OUT PUCHAR pFrameBuf,
+	OUT PUINT32 pFrameLen,
+	IN UINT8 preference);
+
 
 #ifdef DOT11V_WNM_SUPPORT
 #include "rtmp_type.h"

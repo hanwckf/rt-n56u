@@ -1,0 +1,19 @@
+config ANTFS_FS
+	tristate "NTFS file system by AVM"
+	default n
+	help
+	  NTFS is the file system of Microsoft Windows NT, 2000, XP and 2003.
+	  
+	  This driver supports reading/writing files with following main
+	  exceptions - You cannot:
+	  *write compressed files
+	  *access encrypted files
+	  *create links (reparse points/junctions)
+	  *use ACLs (everything is RWXRWXRWX)
+
+	  If you don't use a NTFS partition, say N.
+
+config ANTFS_SYMLINKS
+	bool "Support reading symlinks in antfs"
+	default n
+	depends on ANTFS_FS

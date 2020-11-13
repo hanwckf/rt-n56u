@@ -57,7 +57,7 @@ int wl_proc_exit(void);
 #endif /* CONFIG_RALINK_RT5350 */
 
 #ifndef PROCREG_DIR
-#define PROCREG_DIR             "mt7603"
+#define PROCREG_DIR             "rt2880"
 #endif /* PROCREG_DIR */
 
 #ifdef CONFIG_PROC_FS

@@ -2552,6 +2552,8 @@ VOID UpdateBasicRateBitmap(
         return;
     } /* End of if */
 
+	bitmap = pAdapter->CommonCfg.BasicRateBitmap;  /* renew bitmap value */
+
     for(i=0; i<MAX_LEN_OF_SUPPORTED_RATES; i++)
     {
         sup_p[i] &= 0x7f;
@@ -6299,17 +6301,17 @@ CHAR RTMPMaxRssi(
 {
 	CHAR	larger = -127;
 	
-	if ((pAd->Antenna.field.RxPath == 1) && (Rssi0 != 0))
+	if ((pAd->Antenna.field.RxPath == 1) && (Rssi0 <= 0))
 	{
 		larger = Rssi0;
 	}
 
-	if ((pAd->Antenna.field.RxPath >= 2) && (Rssi1 != 0))
+	if ((pAd->Antenna.field.RxPath >= 2) && (Rssi1 <= 0))
 	{
 		larger = max(Rssi0, Rssi1);
 	}
 	
-	if ((pAd->Antenna.field.RxPath == 3) && (Rssi2 != 0))
+	if ((pAd->Antenna.field.RxPath == 3) && (Rssi2 <= 0))
 	{
 		larger = max(larger, Rssi2);
 	}

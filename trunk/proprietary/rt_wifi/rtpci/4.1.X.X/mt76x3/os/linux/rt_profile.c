@@ -29,134 +29,632 @@
 #include <linux/foe_hook.h>
 #endif
 
-#if defined(CONFIG_RA_HW_NAT) || defined(CONFIG_RA_HW_NAT_MODULE)
-#include "../../../../../../../net/nat/hw_nat/ra_nat.h"
-#include "../../../../../../../net/nat/hw_nat/frame_engine.h"
+#if defined (CONFIG_RA_HW_NAT)  || defined (CONFIG_RA_HW_NAT_MODULE)
+#include "../../../../../net/nat/hw_nat/ra_nat.h"
+#include "../../../../../net/nat/hw_nat/frame_engine.h"
 #endif
 
-struct dev_type_name_map{
-	INT type;
-	RTMP_STRING *prefix[2];
-};
 
-
+#if defined(ANDROID_SUPPORT) || defined(RT_CFG80211_SUPPORT)
+#define SECOND_INF_MAIN_DEV_NAME	"wlani"
+#define SECOND_INF_MBSSID_DEV_NAME	"wlani"
+#else
 #define SECOND_INF_MAIN_DEV_NAME	"rai"
 #define SECOND_INF_MBSSID_DEV_NAME	"rai"
+#endif /*#if defined(ANDROID_SUPPORT) || defined(RT_CFG80211_SUPPORT)*/
+
 #define SECOND_INF_WDS_DEV_NAME		"wdsi"
 #define SECOND_INF_APCLI_DEV_NAME	"apclii"
-#define SECOND_INF_MESH_DEV_NAME	"meshi"
+#define SECOND_INF_MESH_DEV_NAME		"meshi"
 #define SECOND_INF_P2P_DEV_NAME		"p2pi"
-#define SECOND_INF_MONITOR_DEV_NAME	"moni"
+#define SECOND_INF_MONITOR_DEV_NAME		"moni"
 
-#define xdef_to_str(s)			def_to_str(s)
-#define def_to_str(s)			#s
 
-#define FIRST_AP_PROFILE_PATH		"/etc/Wireless/RT2860/RT2860.dat"
-#define FIRST_CHIP_ID			xdef_to_str(CONFIG_RT_FIRST_CARD)
+#define xdef_to_str(s)   def_to_str(s) 
+#define def_to_str(s)    #s
 
-#define SECOND_AP_PROFILE_PATH		"/etc/Wireless/iNIC/iNIC_ap.dat"
-#define SECOND_CHIP_ID			xdef_to_str(CONFIG_RT_SECOND_CARD)
+#if defined(CONFIG_SUPPORT_OPENWRT)
+#define FIRST_EEPROM_FILE_PATH	"/etc/wireless/mt7603e/mt7603.eeprom.dat"
+#define FIRST_AP_PROFILE_PATH		"/etc/wireless/mt7603e/mt7603.dat"
+#else
+#define FIRST_EEPROM_FILE_PATH	"/etc_ro/Wireless/RT2860/"
+#define FIRST_AP_PROFILE_PATH		"/etc/Wireless/RT2860/RT2860AP.dat"
+#endif
+#define FIRST_CHIP_ID	xdef_to_str(CONFIG_RT_FIRST_CARD)
 
-static struct dev_type_name_map prefix_map[] =
-{
-	{INT_MAIN,		{INF_MAIN_DEV_NAME, SECOND_INF_MAIN_DEV_NAME}},
-#ifdef CONFIG_AP_SUPPORT
-#ifdef MBSS_SUPPORT
-	{INT_MBSSID,		{INF_MBSSID_DEV_NAME, SECOND_INF_MBSSID_DEV_NAME}},
-#endif /* MBSS_SUPPORT */
-#ifdef APCLI_SUPPORT
-	{INT_APCLI,		{INF_APCLI_DEV_NAME, SECOND_INF_APCLI_DEV_NAME}},
-#endif /* APCLI_SUPPORT */
-#ifdef WDS_SUPPORT
-	{INT_WDS,		{INF_WDS_DEV_NAME, SECOND_INF_WDS_DEV_NAME}},
-#endif /* WDS_SUPPORT */
-#endif /* CONFIG_AP_SUPPORT */
+#if defined(CONFIG_SUPPORT_OPENWRT)
+#define SECOND_EEPROM_FILE_PATH	"/etc/wireless/mt7603e/mt7603.eeprom.dat"
+#define SECOND_AP_PROFILE_PATH		"/etc/wireless/mt7603e/mt7603.dat"
+#else
+#define SECOND_EEPROM_FILE_PATH	"/etc_ro/Wireless/iNIC/"
+#define SECOND_AP_PROFILE_PATH	"/etc/Wireless/iNIC/iNIC_ap.dat"
+#endif
+#define SECOND_CHIP_ID	xdef_to_str(CONFIG_RT_SECOND_CARD)
 
-#ifdef CONFIG_SNIFFER_SUPPORT
-	{INT_MONITOR,		{INF_MONITOR_DEV_NAME, SECOND_INF_MONITOR_DEV_NAME}},
-#endif /* CONFIG_SNIFFER_SUPPORT */
 
-	{0},
+#define MAX_L1PROFILE_INDEX	10
+#define MAX_NUM_OF_INF               2
+
+#ifndef CONFIG_RT_FIRST_IF_RF_OFFSET
+#define CONFIG_RT_FIRST_IF_RF_OFFSET DEFAULT_RF_OFFSET
+#endif
+
+#ifndef CONFIG_RT_SECOND_IF_RF_OFFSET
+#define CONFIG_RT_SECOND_IF_RF_OFFSET DEFAULT_RF_OFFSET
+#endif
+
+struct dev_type_name_map_t {
+	INT type;
+	RTMP_STRING prefix[IFNAMSIZ];
+};
+
+struct l1profile_info_t {
+	RTMP_STRING profile_index[L1PROFILE_INDEX_LEN];
+	RTMP_STRING profile_path[L2PROFILE_PATH_LEN];
+	eeprom_flash_info ee_info;
+	struct dev_type_name_map_t dev_name_map[MAX_INT_TYPES+1];
+	RTMP_STRING single_sku_path[L2PROFILE_PATH_LEN];
+};
+
+struct l1profile_attribute_t {
+	RTMP_STRING name[L1PROFILE_ATTRNAME_LEN];
+	UINT32	extra;
+	INT	(*handler)(RTMP_ADAPTER *pAd, UINT32 extra, RTMP_STRING *value);
 };
 
 
-INT get_dev_config_idx(RTMP_ADAPTER *pAd)
+static struct l1profile_info_t l1profile[MAX_NUM_OF_INF] = {
+{{0}, FIRST_AP_PROFILE_PATH,  {CONFIG_RT_FIRST_IF_RF_OFFSET, EEPROM_SIZE},
+									   {{INT_MAIN, INF_MAIN_DEV_NAME},
+									   {INT_MBSSID, INF_MBSSID_DEV_NAME},
+									   {INT_WDS, INF_WDS_DEV_NAME},
+									   {INT_APCLI,	INF_APCLI_DEV_NAME},
+									   {INT_MESH, INF_MESH_DEV_NAME},
+									   {INT_P2P, INF_P2P_DEV_NAME},
+									   {INT_MONITOR, INF_MONITOR_DEV_NAME},
+									   {0} }
+#ifdef SINGLE_SKU_V2
+									   , {SINGLE_SKU_TABLE_FILE_NAME}
+#endif /* SINGLE_SKU_V2 */
+										},
+
+{{1}, SECOND_AP_PROFILE_PATH,   {CONFIG_RT_SECOND_IF_RF_OFFSET, EEPROM_SIZE},
+									   {{INT_MAIN,	SECOND_INF_MAIN_DEV_NAME},
+									   {INT_MBSSID,	SECOND_INF_MBSSID_DEV_NAME},
+									   {INT_WDS, SECOND_INF_WDS_DEV_NAME},
+									   {INT_APCLI, SECOND_INF_APCLI_DEV_NAME},
+									   {INT_MESH, SECOND_INF_MESH_DEV_NAME},
+									   {INT_P2P, SECOND_INF_P2P_DEV_NAME},
+									   {INT_MONITOR, SECOND_INF_MONITOR_DEV_NAME},
+									   {0} }
+#ifdef SINGLE_SKU_V2
+									   , {SINGLE_SKU_TABLE_FILE_NAME}
+#endif /* SINGLE_SKU_V2 */
+										}
+};
+
+
+struct dev_id_name_map{
+	INT chip_id;
+	RTMP_STRING *chip_name;
+};
+
+static const struct dev_id_name_map id_name_list[]=
 {
-	INT idx = 0;
-#if (CONFIG_RT_FIRST_CARD == 7603) && \
-    (CONFIG_RT_SECOND_CARD == 7603)
-	INT first_card = 0, second_card = 0;
+	{7610, "7610, 7610e 7610u"},
 
-	A2Hex(first_card, FIRST_CHIP_ID);
-	A2Hex(second_card, SECOND_CHIP_ID);
-	printk("chip_id1=0x%x, chip_id2=0x%x, pAd->MACVersion=0x%x\n", first_card, second_card, pAd->MACVersion);
+};
 
-	if (IS_RT8592(pAd))
-		idx = 0;
-	else if (IS_RT5392(pAd) || IS_MT76x0(pAd) || IS_MT76x2(pAd))
-		idx = 1;
-#endif
 
-	pAd->dev_idx = idx;
+static NDIS_STATUS l1set_profile_path(RTMP_ADAPTER *pAd, UINT32 extra, RTMP_STRING *value)
+{
+	INT retVal = NDIS_STATUS_SUCCESS;
+	RTMP_STRING *target = l1profile[get_dev_config_idx(pAd)].profile_path;
 
-	return idx;
+	if (strcmp(target, value)) {
+		MTWF_LOG(DBG_CAT_CFG, DBG_SUBCAT_ALL, DBG_LVL_OFF, ("%s() profile update from %s to %s\n",
+			__func__, target, value));
+		strncpy(target, value, L2PROFILE_PATH_LEN - 1);
+	} else
+		MTWF_LOG(DBG_CAT_CFG, DBG_SUBCAT_ALL, DBG_LVL_OFF, ("%s() profile remain %s\n", __func__, target));
+
+	return retVal;
+}
+
+static NDIS_STATUS l1set_eeprom_bin(RTMP_ADAPTER *pAd, UINT32 extra, RTMP_STRING *value)
+{
+	INT retVal = NDIS_STATUS_SUCCESS;
+	RTMP_STRING *target = l1profile[get_dev_config_idx(pAd)].ee_info.bin_name;
+	UINT8 str_len;
+
+	str_len = strlen(value);
+	if (strcmp(target, value) && (str_len < L1PROFILE_ATTRNAME_LEN)) {
+		MTWF_LOG(DBG_CAT_CFG, DBG_SUBCAT_ALL, DBG_LVL_TRACE,
+				 ("eeprom binary update from %s to %s\n", target, value));
+		strcpy(target, value);
+		*(target+str_len) = '\0';
+	} else
+		MTWF_LOG(DBG_CAT_CFG, DBG_SUBCAT_ALL, DBG_LVL_TRACE, ("eeprom binary remain %s\n", target));
+
+	return retVal;
+}
+
+
+static NDIS_STATUS l1set_eeprom_offset(RTMP_ADAPTER *pAd, UINT32 extra, RTMP_STRING *value)
+{
+	INT retVal = NDIS_STATUS_SUCCESS;
+	eeprom_flash_info *target = (eeprom_flash_info *)(&(l1profile[get_dev_config_idx(pAd)].ee_info));
+	UINT32	int_value = 0;
+
+	int_value = simple_strtol(value, NULL, 0);
+
+	if (target->offset != int_value) {
+		MTWF_LOG(DBG_CAT_CFG, DBG_SUBCAT_ALL, DBG_LVL_OFF,
+				("%s() eeprom offset update from 0x%x to 0x%x\n", __func__, target->offset, int_value));
+		target->offset = int_value;
+	} else
+		MTWF_LOG(DBG_CAT_CFG, DBG_SUBCAT_ALL, DBG_LVL_OFF,
+				("%s() eeprom offset remain 0x%x\n", __func__, target->offset));
+
+	return retVal;
+}
+
+
+static NDIS_STATUS l1set_eeprom_size(RTMP_ADAPTER *pAd, UINT32 extra, RTMP_STRING *value)
+{
+	UINT32 int_value;
+	INT retVal = NDIS_STATUS_SUCCESS;
+	eeprom_flash_info *target = (eeprom_flash_info *)(&(l1profile[get_dev_config_idx(pAd)].ee_info));
+
+	int_value = simple_strtol(value, NULL, 0);
+
+	if (target->size != int_value) {
+		MTWF_LOG(DBG_CAT_CFG, DBG_SUBCAT_ALL, DBG_LVL_OFF,
+				("%s() eeprom size update from 0x%x to 0x%x\n", __func__, target->size, int_value));
+		target->size = int_value;
+	} else
+		MTWF_LOG(DBG_CAT_CFG, DBG_SUBCAT_ALL, DBG_LVL_OFF,
+					("%s() eeprom size remain 0x%x\n", __func__, target->size));
+
+	return retVal;
+}
+
+
+#ifdef SINGLE_SKU_V2
+static NDIS_STATUS l1set_single_sku_path(RTMP_ADAPTER *pAd, UINT32 extra, RTMP_STRING *value)
+{
+	INT retVal = NDIS_STATUS_SUCCESS;
+	RTMP_STRING *target = l1profile[get_dev_config_idx(pAd)].single_sku_path;
+
+	if (strcmp(target, value)) {
+		MTWF_LOG(DBG_CAT_CFG, DBG_SUBCAT_ALL, DBG_LVL_OFF,
+			("%s() sku path update from %s to %s\n", __func__, target, value));
+		strncpy(target, value, L2PROFILE_PATH_LEN - 1);
+	} else
+		MTWF_LOG(DBG_CAT_CFG, DBG_SUBCAT_ALL, DBG_LVL_OFF, ("%s() profile remain %s\n", __func__, target));
+
+	return retVal;
+}
+#endif /*SINGLE_SKU_V2*/
+
+static NDIS_STATUS l1set_ifname(RTMP_ADAPTER *pAd, UINT32 extra, RTMP_STRING *value)
+{
+	INT retVal = NDIS_STATUS_SUCCESS;
+	RTMP_STRING *target = NULL;
+	RTMP_STRING realValue[IFNAMSIZ] = {0};
+	INT len = strlen(value);
+	
+	target = get_dev_name_prefix(pAd, extra);
+	if (target == NULL) {
+		MTWF_LOG(DBG_CAT_CFG, DBG_SUBCAT_ALL, DBG_LVL_ERROR,
+			("%s(): get_dev_name_prefix is NULL\n", __func__));
+		return NDIS_STATUS_FAILURE;
+	}
+
+	strncpy(realValue, value, IFNAMSIZ);
+	  if (extra == INT_MAIN) {
+		realValue[len - 1] = '\0';
+		MTWF_LOG(DBG_CAT_CFG, DBG_SUBCAT_ALL, DBG_LVL_OFF,
+			("%s() ifname rename from %s to %s\n", __func__, value, realValue));
+	  }
+
+	if (strcmp(target, realValue)) {
+		MTWF_LOG(DBG_CAT_CFG, DBG_SUBCAT_ALL, DBG_LVL_OFF,
+			("%s() ifname update from %s to %s\n", __func__, target, realValue));
+
+		strncpy(target, realValue, IFNAMSIZ);
+	} else
+		MTWF_LOG(DBG_CAT_CFG, DBG_SUBCAT_ALL, DBG_LVL_OFF, ("%s() ifname remain %s\n", __func__, target));
+
+	return retVal;
+}
+
+static NDIS_STATUS is_dup_key(RTMP_STRING *key)
+{
+	INT retVal = NDIS_STATUS_SUCCESS;
+	INT dev_idx = 0;
+	RTMP_STRING *profile_index = NULL;
+
+	for (dev_idx = 0; dev_idx < MAX_NUM_OF_INF; dev_idx++) {
+		profile_index = l1profile[dev_idx].profile_index;
+
+		if ((strlen(profile_index) > 0) && (strcmp(profile_index, key) == 0)) {
+			retVal = NDIS_STATUS_FAILURE;
+			dev_idx = MAX_NUM_OF_INF;	/* tend to leave loop */
+		}
+	}
+
+	return retVal;
+}
+
+static NDIS_STATUS match_index_by_chipname(IN RTMP_STRING *l1profile_data,
+					   IN RTMP_ADAPTER *pAd,
+					   IN RTMP_STRING *chipName)
+{
+	INT retVal = NDIS_STATUS_FAILURE;
+	INT if_idx = 0;
+	RTMP_STRING	key[10] = {0};
+	RTMP_STRING *tmpbuf = NULL;
+
+	os_alloc_mem(NULL, (UCHAR **)&tmpbuf, MAX_PARAM_BUFFER_SIZE);
+
+	while (if_idx < MAX_L1PROFILE_INDEX) {
+		sprintf(key, "INDEX%d", if_idx);
+		if (RTMPGetKeyParameter(key, tmpbuf, MAX_PARAM_BUFFER_SIZE, l1profile_data, TRUE)) {
+			if (strncmp(tmpbuf, chipName, strlen(chipName)) == 0) {
+				MTWF_LOG(DBG_CAT_CFG, DBG_SUBCAT_ALL, DBG_LVL_OFF,
+						("%s() %s found as %s\n", __func__, chipName, key));
+
+				if (is_dup_key(key)) {	/* There might be not only single entry for one chip */
+					MTWF_LOG(DBG_CAT_CFG, DBG_SUBCAT_ALL, DBG_LVL_OFF,
+						("%s() %s for %s occupied, next\n", __func__, key, chipName));
+				} else {
+					strncpy(l1profile[get_dev_config_idx(pAd)].profile_index,
+						key, L1PROFILE_INDEX_LEN - 1);
+					retVal = NDIS_STATUS_SUCCESS;
+					if_idx = MAX_L1PROFILE_INDEX;	/* found, intend to leave */
+				}
+			} else {
+				MTWF_LOG(DBG_CAT_CFG, DBG_SUBCAT_ALL, DBG_LVL_OFF,
+						("%s() %s mismatch with %s as %s\n", __func__, chipName, tmpbuf, key));
+			}
+
+			if_idx++;
+		} else {
+			MTWF_LOG(DBG_CAT_CFG, DBG_SUBCAT_ALL, DBG_LVL_OFF,
+				("%s() %s not found, dismissed.\n", __func__, key));
+			if_idx = MAX_L1PROFILE_INDEX;	/* hit maximum available index, intend to leave */
+		}
+	}
+
+	os_free_mem(NULL, tmpbuf);
+
+	return retVal;
+}
+
+
+static NDIS_STATUS l1get_profile_index(IN RTMP_STRING *l1profile_data, IN RTMP_ADAPTER *pAd)
+{
+	INT retVal = NDIS_STATUS_SUCCESS;
+	INT dev_idx = get_dev_config_idx(pAd);
+	RTMP_STRING chipName[10] = {0};
+	RTMP_STRING *tmpbuf = NULL;
+
+	sprintf(chipName, "MT%x", pAd->ChipID);
+	os_alloc_mem(NULL, (UCHAR **)&tmpbuf, MAX_PARAM_BUFFER_SIZE);
+
+	if (match_index_by_chipname(l1profile_data, pAd, chipName) == NDIS_STATUS_SUCCESS) {
+		MTWF_LOG(DBG_CAT_CFG, DBG_SUBCAT_ALL, DBG_LVL_TRACE,
+			("%s() [%d]%s found by chip\n", __func__, dev_idx, chipName));
+	} else {
+		retVal = NDIS_STATUS_FAILURE;
+		MTWF_LOG(DBG_CAT_CFG, DBG_SUBCAT_ALL, DBG_LVL_ERROR,
+			("%s() [%d]%s not found, keep default\n", __func__, dev_idx, chipName));
+	}
+
+	os_free_mem(NULL, tmpbuf);
+
+	return retVal;
+}
+
+
+static struct l1profile_attribute_t l1profile_attributes[] = {
+	{ {"profile_path"},		0,				l1set_profile_path},
+	{ {"EEPROM_name"},		0,				l1set_eeprom_bin},
+	{ {"EEPROM_offset"},	0,				l1set_eeprom_offset},
+	{ {"EEPROM_size"},		0,				l1set_eeprom_size},
+	{ {"main_ifname"},		INT_MAIN,		l1set_ifname},
+#ifdef CONFIG_AP_SUPPORT
+#ifdef MBSS_SUPPORT
+	{ {"ext_ifname"},		INT_MBSSID,		l1set_ifname},
+#endif	/* MBSS_SUPPORT */
+#ifdef WDS_SUPPORT
+	{ {"wds_ifname"},		INT_WDS,		l1set_ifname},
+#endif	/* WDS_SUPPORT */
+#endif	/* CONFIG_AP_SUPPORT */
+	{ {"apcli_ifname"},		INT_APCLI,		l1set_ifname},
+#ifdef CONFIG_SNIFFER_SUPPORT
+	{ {"monitor_ifname"},	INT_MONITOR,	l1set_ifname},
+#endif	/* monitor_ifname */
+
+#ifdef SINGLE_SKU_V2
+	{ {"single_sku_path"},		0,			l1set_single_sku_path},
+#endif /* SINGLE_SKU_V2 */
+};
+
+
+#ifdef SINGLE_SKU_V2
+UCHAR *get_single_sku_path(RTMP_ADAPTER *pAd)
+{
+	UCHAR *src = NULL;
+
+	src = l1profile[get_dev_config_idx(pAd)].single_sku_path;
+	return src;
+}
+
+#endif /*SINGLE_SKU_V2*/
+
+RTMP_STRING *get_dev_eeprom_binary(VOID *pvAd)
+{
+	RTMP_ADAPTER *pAd = (RTMP_ADAPTER *)pvAd;
+	return l1profile[get_dev_config_idx(pAd)].ee_info.bin_name;
+}
+
+
+UINT32 get_dev_eeprom_offset(VOID *pvAd)
+{
+	RTMP_ADAPTER *pAd = (RTMP_ADAPTER *)pvAd;
+
+	return l1profile[get_dev_config_idx(pAd)].ee_info.offset;
+}
+
+
+UINT32 get_dev_eeprom_size(VOID *pvAd)
+{
+	RTMP_ADAPTER *pAd = (RTMP_ADAPTER *)pvAd;
+
+	return l1profile[get_dev_config_idx(pAd)].ee_info.size;
 }
 
 
 UCHAR *get_dev_name_prefix(RTMP_ADAPTER *pAd, INT dev_type)
 {
-	struct dev_type_name_map *map;
+	struct dev_type_name_map_t *map;
 	INT type_idx = 0, dev_idx = get_dev_config_idx(pAd);
 
+	if (dev_idx < 0 || dev_idx >= MAX_NUM_OF_INF) {
+		MTWF_LOG(DBG_CAT_ALL, DBG_SUBCAT_ALL, DBG_LVL_OFF, ("%s():  invalid dev_idx(%d)!\n",
+				 __func__, dev_idx));
+		return NULL;
+	}
+
 	do {
-		map = &prefix_map[type_idx];
+		map = &(l1profile[dev_idx].dev_name_map[type_idx]);
+
 		if (map->type == dev_type) {
-			DBGPRINT(RT_DEBUG_TRACE, ("%s(): dev_idx = %d, dev_name_prefix=%s\n",
-						__FUNCTION__, dev_idx, map->prefix[dev_idx]));
-			return map->prefix[dev_idx];
+			MTWF_LOG(DBG_CAT_ALL, DBG_SUBCAT_ALL, DBG_LVL_TRACE,
+				("%s(): dev_idx = %d, dev_name_prefix=%s\n",  __func__, dev_idx, map->prefix));
+			return map->prefix;
 		}
+
 		type_idx++;
-	} while (prefix_map[type_idx].type != 0);
+	} while (l1profile[dev_idx].dev_name_map[type_idx].type != 0);
 
 	return NULL;
 }
 
 
-static UCHAR *get_dev_profile(RTMP_ADAPTER *pAd)
+UCHAR *get_dev_profile(RTMP_ADAPTER *pAd)
 {
 	UCHAR *src = NULL;
-
-	{
+	{	
 #ifdef CONFIG_AP_SUPPORT
 		IF_DEV_CONFIG_OPMODE_ON_AP(pAd)
 		{
-#if (CONFIG_RT_FIRST_CARD == 7603) && \
-    (CONFIG_RT_SECOND_CARD == 7603)
-			INT card_idx = get_dev_config_idx(pAd);
-			if (card_idx == 0)
-			{
-				src = FIRST_AP_PROFILE_PATH;
-			}
+#if defined(CONFIG_RT_FIRST_CARD) || defined(CONFIG_RT_SECOND_CARD)
+			if (get_dev_config_idx(pAd) < 2)
+				src = l1profile[get_dev_config_idx(pAd)].profile_path;
 			else
-			if (card_idx == 1)
-			{
-				src = SECOND_AP_PROFILE_PATH;
-			}
-			else
-#endif
+#endif /* CONFIG_RT_SECOND_CARD */
 			{
 				src = AP_PROFILE_PATH;
 			}
 		}
 #endif /* CONFIG_AP_SUPPORT */
+
 	}
 
 #ifdef MULTIPLE_CARD_SUPPORT
 	src = (RTMP_STRING *)pAd->MC_FileName;
 #endif /* MULTIPLE_CARD_SUPPORT */
-
+	if (src != NULL)
+		MTWF_LOG(DBG_CAT_ALL, DBG_SUBCAT_ALL, DBG_LVL_TRACE,
+			("%s() <--  dev profile name :%s \n", __func__, src));
+	else
+		MTWF_LOG(DBG_CAT_ALL, DBG_SUBCAT_ALL, DBG_LVL_OFF,
+			("%s() <--  dev profile name  NULL \n", __func__));
 	return src;
 }
+
+
+INT ShowL1profile(RTMP_ADAPTER *pAd, RTMP_STRING *arg)
+{
+	MTWF_LOG(DBG_CAT_ALL, DBG_SUBCAT_ALL, DBG_LVL_OFF, ("%s() ===== L1 profile settings =====\n", __func__));
+	MTWF_LOG(DBG_CAT_ALL, DBG_SUBCAT_ALL, DBG_LVL_OFF,
+		("%s = %s\n", "profile_path",      l1profile[get_dev_config_idx(pAd)].profile_path));
+	MTWF_LOG(DBG_CAT_ALL, DBG_SUBCAT_ALL, DBG_LVL_OFF,
+		("%s = %x\n", "EEPROM_offset", l1profile[get_dev_config_idx(pAd)].ee_info.offset));
+	MTWF_LOG(DBG_CAT_ALL, DBG_SUBCAT_ALL, DBG_LVL_OFF,
+		("%s = %x\n", "EEPROM_size",   l1profile[get_dev_config_idx(pAd)].ee_info.size));
+	MTWF_LOG(DBG_CAT_ALL, DBG_SUBCAT_ALL, DBG_LVL_OFF,
+		("%s = %s\n", "main_ifname",    l1profile[get_dev_config_idx(pAd)].dev_name_map[0].prefix));
+	MTWF_LOG(DBG_CAT_ALL, DBG_SUBCAT_ALL, DBG_LVL_OFF,
+		("%s = %s\n", "ext_ifname",      l1profile[get_dev_config_idx(pAd)].dev_name_map[1].prefix));
+	MTWF_LOG(DBG_CAT_ALL, DBG_SUBCAT_ALL, DBG_LVL_OFF,
+		("%s = %s\n", "wds_ifname",     l1profile[get_dev_config_idx(pAd)].dev_name_map[2].prefix));
+	MTWF_LOG(DBG_CAT_ALL, DBG_SUBCAT_ALL, DBG_LVL_OFF,
+		("%s = %s\n", "apcli_ifname",    l1profile[get_dev_config_idx(pAd)].dev_name_map[3].prefix));
+	MTWF_LOG(DBG_CAT_ALL, DBG_SUBCAT_ALL, DBG_LVL_OFF,
+		("%s = %s\n", "mesh_ifname",   l1profile[get_dev_config_idx(pAd)].dev_name_map[4].prefix));
+	MTWF_LOG(DBG_CAT_ALL, DBG_SUBCAT_ALL, DBG_LVL_OFF,
+		("%s = %s\n", "p2p_ifname",     l1profile[get_dev_config_idx(pAd)].dev_name_map[5].prefix));
+	MTWF_LOG(DBG_CAT_ALL, DBG_SUBCAT_ALL, DBG_LVL_OFF,
+		("%s = %s\n", "monitor_ifname", l1profile[get_dev_config_idx(pAd)].dev_name_map[6].prefix));
+#ifdef SINGLE_SKU_V2
+	MTWF_LOG(DBG_CAT_ALL, DBG_SUBCAT_ALL, DBG_LVL_OFF,
+	("%s = %s\n", "single_sku_path", l1profile[get_dev_config_idx(pAd)].single_sku_path));
+#else
+	MTWF_LOG(DBG_CAT_ALL, DBG_SUBCAT_ALL, DBG_LVL_OFF, ("%s = NULL \n", "single_sku_path"));
+#endif /* SINGLE_SKU_V2 */
+	return TRUE;
+}
+
+NDIS_STATUS load_dev_l1profile(RTMP_ADAPTER *pAd)
+{
+	RTMP_STRING *buffer = NULL;
+	RTMP_OS_FD srcf;
+	INT retval = NDIS_STATUS_SUCCESS;
+	ULONG buf_size = MAX_INI_BUFFER_SIZE;
+	RTMP_OS_FS_INFO		osFSInfo;
+#ifdef HOSTAPD_SUPPORT
+	int i;
+#endif /*HOSTAPD_SUPPORT */
+
+	DBGPRINT(RT_DEBUG_OFF, ("%s()-->\n", __func__));
+	os_alloc_mem(pAd, (UCHAR **)&buffer, buf_size);
+	if (!buffer) {
+		DBGPRINT(DBG_LVL_OFF, ("%s() <--   alloc memory fail!\n", __func__));
+		return NDIS_STATUS_FAILURE;
+	}
+
+	NdisZeroMemory(buffer, buf_size);
+
+	RtmpOSFSInfoChange(&osFSInfo, TRUE);
+	srcf = RtmpOSFileOpen(L1_PROFILE_PATH, O_RDONLY, 0);
+
+	if (IS_FILE_OPEN_ERR(srcf)) {
+		MTWF_LOG(DBG_CAT_ALL, DBG_SUBCAT_ALL, DBG_LVL_OFF,
+			("%s() Open file \"%s\" failed, try embedded default!\n", __func__, L1_PROFILE_PATH));
+		goto err_out1;
+	} else {
+
+		retval = RtmpOSFileRead(srcf, buffer, buf_size - 1);
+
+		if (retval == 0) {
+			MTWF_LOG(DBG_CAT_ALL, DBG_SUBCAT_ALL, DBG_LVL_OFF,
+				("%s() Read file \"%s\" fail! use default setting (%d)\n", __func__,
+				L1_PROFILE_PATH, retval));
+			goto err_out1;
+		} else {
+			MTWF_LOG(DBG_CAT_ALL, DBG_SUBCAT_ALL, DBG_LVL_TRACE,
+				("%s() Read file \"%s\"(%s) succeed!\n", __func__, L1_PROFILE_PATH, buffer));
+
+			if  (RtmpOSFileClose(srcf) != 0) {
+				MTWF_LOG(DBG_CAT_ALL, DBG_SUBCAT_ALL, DBG_LVL_ERROR,
+					("%s() Close file \"%s\" failed(errCode=%d)!\n", __func__,
+					L1_PROFILE_PATH, retval));
+				goto err_out1;
+			} else {
+
+				RTMP_STRING *tmpbuf = NULL;
+				RTMP_STRING key[30] = {'\0'};
+				UINT32	attr_index = 0;
+				INT dev_idx = get_dev_config_idx(pAd);
+				RTMP_STRING *profile_index = l1profile[dev_idx].profile_index;
+				struct l1profile_attribute_t *l1attr = NULL;
+
+				MTWF_LOG(DBG_CAT_ALL, DBG_SUBCAT_ALL, DBG_LVL_TRACE,
+					("%s() Close file \"%s\" succeed!\n", __func__, L1_PROFILE_PATH));
+
+				/* Do not fetch INDEX%d each time loading l1profile */
+				if ((strlen(profile_index) == 0) && (l1get_profile_index(buffer, pAd)
+					!= NDIS_STATUS_SUCCESS))
+					goto err_out1;
+
+				os_alloc_mem(NULL, (UCHAR **)&tmpbuf, MAX_PARAM_BUFFER_SIZE);
+
+				if (tmpbuf == NULL)
+					goto err_out1;
+
+				if (RTMPGetKeyParameter(profile_index, tmpbuf, MAX_PARAM_BUFFER_SIZE,
+					buffer, TRUE)) {
+					MTWF_LOG(DBG_CAT_ALL, DBG_SUBCAT_ALL, DBG_LVL_TRACE,
+						("%s() Chip=%s\n", __func__, tmpbuf));
+
+					for (attr_index = 0; attr_index < ARRAY_SIZE(l1profile_attributes);
+					       attr_index++) {
+						l1attr = &l1profile_attributes[attr_index];
+						snprintf(key, sizeof(key), "%s_%s", profile_index, l1attr->name);
+
+						if (RTMPGetKeyParameter(key, tmpbuf, MAX_PARAM_BUFFER_SIZE,
+							buffer, TRUE)) {
+							MTWF_LOG(DBG_CAT_ALL, DBG_SUBCAT_ALL, DBG_LVL_TRACE,
+								("%s() %s=%s\n", __func__, l1attr->name, tmpbuf));
+
+							if (l1attr->handler)
+								l1attr->handler(pAd, l1attr->extra, tmpbuf);
+							else
+								MTWF_LOG(DBG_CAT_ALL, DBG_SUBCAT_ALL, DBG_LVL_ERROR,
+								("unknown handler for %s, ignored!\n", l1attr->name));
+						} else {
+							MTWF_LOG(DBG_CAT_ALL, DBG_SUBCAT_ALL, DBG_LVL_ERROR,
+								("%s() %s not found\n", __func__, l1attr->name));
+						}
+					}
+
+					retval = NDIS_STATUS_SUCCESS;
+				} else {
+					MTWF_LOG(DBG_CAT_ALL, DBG_SUBCAT_ALL, DBG_LVL_ERROR,
+						("%s() %s not found!!\n", __func__, profile_index));
+					retval = NDIS_STATUS_FAILURE;
+				}
+				if (tmpbuf)
+					os_free_mem(NULL, tmpbuf);
+				if (buffer)
+					os_free_mem(NULL, buffer);
+				return retval;
+			}
+		}
+	}
+
+err_out1:
+	RtmpOSFSInfoChange(&osFSInfo, FALSE);
+	retval = NDIS_STATUS_FAILURE;
+	if (buffer)
+		os_free_mem(NULL, buffer);
+	return retval;
+}
+
+
+INT get_dev_config_idx(RTMP_ADAPTER *pAd)
+{
+
+	INT idx = 0;
+#if defined(CONFIG_RT_FIRST_CARD) && defined(CONFIG_RT_SECOND_CARD)
+	INT first_card = 0, second_card = 0;
+
+	A2Hex(first_card, FIRST_CHIP_ID);
+	A2Hex(second_card, SECOND_CHIP_ID);
+	DBGPRINT(RT_DEBUG_TRACE, ("chip_id1=0x%x, chip_id2=0x%x, pAd->MACVersion=0x%x\n",
+		first_card, second_card, pAd->MACVersion));
+
+	if (IS_RT8592(pAd))
+		idx = 0;
+	else if (IS_RT5392(pAd) || IS_MT76x0(pAd) || IS_MT76x2(pAd))
+		idx = 1;
+
+#if defined(CONFIG_RT_FIRST_IF_MT7615E)
+	/* MT7615A (ra0) + MT7603(rai0) combination */
+	if (IS_MT7603E(pAd))
+		idx = 1;
+#endif
+
+#endif /* defined(CONFIG_RT_FIRST_CARD) && defined(CONFIG_RT_SECOND_CARD) */
+
+	pAd->dev_idx = idx;
+	return idx;
+}
+
 
 void RTMPPreReadParametersHook(RTMP_ADAPTER *pAd)
 {
@@ -191,11 +689,7 @@ NDIS_STATUS	RTMPReadParametersHook(RTMP_ADAPTER *pAd)
 		{
 #ifndef OS_ABL_SUPPORT
 			// TODO: need to roll back when convert into OSABL code
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(3,19,0)
-				fsize = (ULONG)file_inode(srcf)->i_size;
-#else
-				fsize = (ULONG)srcf->f_dentry->d_inode->i_size;
-#endif
+				 fsize = (ULONG)srcf->f_dentry->d_inode->i_size;
 				if (buf_size < (fsize + 1))
 					buf_size = fsize + 1;
 #endif /* OS_ABL_SUPPORT */
@@ -303,7 +797,7 @@ void tbtt_tasklet(unsigned long data)
 			QUEUE_ENTRY *pEntry;	
 			QUEUE_ENTRY *pTail;
 			UINT count = 0;
-			ULONG IrqFlags = 0;
+			unsigned long IrqFlags = 0;			
 #endif /* RTMP_MAC_PCI */
 		
 #ifndef MT_MAC
@@ -411,14 +905,10 @@ void tbtt_tasklet(unsigned long data)
 						RTMP_IRQ_UNLOCK(&pAd->irq_lock, IrqFlags);
 #endif /* RTMP_MAC_PCI */
 
-						if (deq_cnt)
-						{
+
 						RTMPDeQueuePacket(pAd, FALSE, QID_AC_BE, wcid, deq_cnt); 
-#ifdef DATA_QUEUE_RESERVE
-							if (pAd->bDump)
-								DBGPRINT(RT_DEBUG_WARN, (" %s: bss:%u, deq_cnt = %u\n", __FUNCTION__, apidx, deq_cnt));
-#endif /* DATA_QUEUE_RESERVE */	
-						}
+			
+						DBGPRINT(RT_DEBUG_INFO, ("%s: bss:%d, deq_cnt = %d\n", __FUNCTION__, apidx, deq_cnt));
 					}
 			
 					if (WLAN_MR_TIM_BCMC_GET(apidx) == 0x01)
@@ -479,7 +969,7 @@ void tbtt_tasklet(unsigned long data)
 			if (bPS == TRUE) 
 			{
 				// TODO: shiang-usw, modify the WCID_ALL to pMBss->tr_entry because we need to tx B/Mcast frame here!!
-				RTMPDeQueuePacket(pAd, FALSE, WMM_NUM_OF_AC, WCID_ALL, /*MAX_TX_IN_TBTT*/MAX_PACKETS_IN_MCAST_PS_QUEUE);
+				RTMPDeQueuePacket(pAd, FALSE, NUM_OF_TX_RING, WCID_ALL, /*MAX_TX_IN_TBTT*/MAX_PACKETS_IN_MCAST_PS_QUEUE);
 			}
 #endif /* !MT_MAC */			
 		}
@@ -536,21 +1026,20 @@ static INT process_nbns_packet(
 }
 #endif /* INF_PPA_SUPPORT */
 
-#if defined (CONFIG_WIFI_PKT_FWD)
+#if defined(CONFIG_WIFI_PKT_FWD) || defined(CONFIG_WIFI_PKT_FWD_MODULE)
 struct net_device *rlt_dev_get_by_name(const char *name)
 {
-	struct net_device *dev;
+	struct net_device *pNetDev = NULL;
+
 #if LINUX_VERSION_CODE > KERNEL_VERSION(2,6,35)
-	dev = dev_get_by_name(&init_net, name);
+	pNetDev = dev_get_by_name(&init_net, name);
 #else
-	dev = dev_get_by_name(name);
+	pNetDev = dev_get_by_name(name);
 #endif
+	if (pNetDev)
+		dev_put(pNetDev);
 
-	if (dev)
-		dev_put(dev);
-	
-	return dev;
-
+	return pNetDev;
 }
 
 
@@ -559,81 +1048,116 @@ VOID ApCliLinkCoverRxPolicy(
 	IN PNDIS_PACKET pPacket,
 	OUT BOOLEAN *DropPacket)
 {
+#ifdef MAC_REPEATER_SUPPORT
 	VOID *opp_band_tbl = NULL;
 	VOID *band_tbl = NULL;
 	INVAILD_TRIGGER_MAC_ENTRY *pInvalidEntry = NULL;
 	REPEATER_CLIENT_ENTRY *pOtherBandReptEntry = NULL;
+#if (MT7615_MT7603_COMBO_FORWARDING == 1)
+	REPEATER_CLIENT_ENTRY *pAnotherBandReptEntry = NULL;
+	VOID *other_band_tbl = NULL;
+#endif
 	PNDIS_PACKET pRxPkt = pPacket;
 	UCHAR *pPktHdr = NULL;
 	UCHAR isLinkValid;
-	
+
 	pPktHdr = GET_OS_PKT_DATAPTR(pRxPkt);
 
 	if (wf_fwd_feedback_map_table)
-		wf_fwd_feedback_map_table(pAd, &band_tbl, &opp_band_tbl);
-	
+#if (MT7615_MT7603_COMBO_FORWARDING == 1)
+				wf_fwd_feedback_map_table(pAd, &band_tbl, &opp_band_tbl,&other_band_tbl);
+#else
+				wf_fwd_feedback_map_table(pAd, &band_tbl, &opp_band_tbl);
+#endif	
+
+#if (MT7615_MT7603_COMBO_FORWARDING == 1)
+	if ((opp_band_tbl == NULL) && (other_band_tbl == NULL))
+#else	
 	if (opp_band_tbl == NULL)
+#endif
 		return;
 
 	if (IS_GROUP_MAC(pPktHdr)) {
 		pInvalidEntry = RepeaterInvaildMacLookup(pAd, pPktHdr+6);
+#if (MT7615_MT7603_COMBO_FORWARDING == 1)
+	if (opp_band_tbl != NULL)
+#endif
 		pOtherBandReptEntry = RTMPLookupRepeaterCliEntry(opp_band_tbl, FALSE, pPktHdr+6, FALSE, &isLinkValid);
-
+#if (MT7615_MT7603_COMBO_FORWARDING == 1)
+		if (other_band_tbl != NULL)
+			pAnotherBandReptEntry = RTMPLookupRepeaterCliEntry(other_band_tbl, FALSE, pPktHdr+6, FALSE, &isLinkValid);
+		if ((pInvalidEntry != NULL) || (pOtherBandReptEntry != NULL) || (pAnotherBandReptEntry != NULL)) {
+			DBGPRINT(RT_DEBUG_INFO, ("%s, recv broadcast from InvalidRept Entry, drop this packet\n", __func__));
+#else
 		if ((pInvalidEntry != NULL) || (pOtherBandReptEntry != NULL)) {
 			DBGPRINT(RT_DEBUG_INFO, ("%s, recv broadcast from InvalidRept Entry, drop this packet\n", __func__));
+#endif
 			*DropPacket = TRUE;
 		}
 	}
+#endif
 }
 #endif /* CONFIG_WIFI_PKT_FWD */
+
 void announce_802_3_packet(
 	IN VOID *pAdSrc,
-	IN PNDIS_PACKET pNetPkt,
+	IN PNDIS_PACKET pPacket,
 	IN UCHAR OpMode)
 {
+#ifdef CONFIG_AP_SUPPORT
+#ifdef APCLI_SUPPORT
 	RTMP_ADAPTER *pAd = (RTMP_ADAPTER *)pAdSrc;
-	struct sk_buff *pRxPkt;
+#endif /* APCLI_SUPPORT */
+#endif /* CONFIG_AP_SUPPORT */
+	PNDIS_PACKET pRxPkt = pPacket;
+#if( defined(WH_EZ_SETUP) && (defined (CONFIG_WIFI_PKT_FWD) || defined (CONFIG_WIFI_PKT_FWD_MODULE)))
+	BOOLEAN bypass_rx_fwd = FALSE;
+#endif
 
+	//DBGPRINT(RT_DEBUG_OFF, ("=>%s(): OpMode=%d\n", __FUNCTION__, OpMode));
 #ifdef DOT11V_WNM_SUPPORT
 #endif /* DOT11V_WNM_SUPPORT */
-
-	ASSERT(pNetPkt);
-	MEM_DBG_PKT_FREE_INC(pNetPkt);
-
-	pRxPkt = RTPKT_TO_OSPKT(pNetPkt);
+	ASSERT(pPacket);
+	MEM_DBG_PKT_FREE_INC(pPacket);
 
 #ifdef CONFIG_AP_SUPPORT
 #ifdef APCLI_SUPPORT
 	IF_DEV_CONFIG_OPMODE_ON_AP(pAd)
 	{
 #ifdef MAT_SUPPORT
-		if (RTMP_MATPktRxNeedConvert(pAd, pRxPkt->dev))
+		if (RTMP_MATPktRxNeedConvert(pAd, RtmpOsPktNetDevGet(pRxPkt)))
 		{
 #if defined (CONFIG_WIFI_PKT_FWD)
+#if (MT7615_MT7603_COMBO_FORWARDING == 1)
+			if ((wf_fwd_needed_hook != NULL) && (wf_fwd_needed_hook() == TRUE)) {
+#endif
 			BOOLEAN	 need_drop = FALSE;
 
-			ApCliLinkCoverRxPolicy(pAd, pNetPkt, &need_drop);
-
+			ApCliLinkCoverRxPolicy(pAd, pPacket, &need_drop);
+			
 			if (need_drop == TRUE) {
 				RELEASE_NDIS_PACKET(pAd, pRxPkt, NDIS_STATUS_FAILURE);
 				return;
+#if (MT7615_MT7603_COMBO_FORWARDING == 1)
+		}
+#endif
 			}
 #endif /* CONFIG_WIFI_PKT_FWD */
-			RTMP_MATEngineRxHandle(pAd, pNetPkt, 0);
-		 }
+			RTMP_MATEngineRxHandle(pAd, pRxPkt, 0);
+		}
 #endif /* MAT_SUPPORT */
 	}
 #endif /* APCLI_SUPPORT */
 #endif /* CONFIG_AP_SUPPORT */
 
 
-	/* Push up the protocol stack */
+    /* Push up the protocol stack */
 #ifdef CONFIG_AP_SUPPORT
 #if defined(PLATFORM_BL2348) || defined(PLATFORM_BL23570)
 	{
 		extern int (*pToUpperLayerPktSent)(PNDIS_PACKET *pSkb);
-		pRxPkt->protocol = eth_type_trans(pRxPkt, pRxPkt->dev);
-		pToUpperLayerPktSent(pNetPkt);
+		RtmpOsPktProtocolAssign(pRxPkt);
+		pToUpperLayerPktSent(pRxPkt);
 		return;
 	}
 #endif /* defined(PLATFORM_BL2348) || defined(PLATFORM_BL23570) */
@@ -641,7 +1165,7 @@ void announce_802_3_packet(
 
 #ifdef IKANOS_VX_1X0
 	{
-		IKANOS_DataFrameRx(pAd, pNetPkt);
+		IKANOS_DataFrameRx(pAd, pRxPkt);
 		return;
 	}
 #endif /* IKANOS_VX_1X0 */
@@ -653,22 +1177,22 @@ void announce_802_3_packet(
 			INT retVal, ret = 0;
 			UINT ppa_flags = 0;
 			
-			retVal = process_nbns_packet(pAd, pNetPkt);
+			retVal = process_nbns_packet(pAd, pRxPkt);
 			
 			if (retVal > 0)
 			{
-				ret = ppa_hook_directpath_send_fn(pAd->g_if_id, pNetPkt, pNetPkt->len, ppa_flags);
+				ret = ppa_hook_directpath_send_fn(pAd->g_if_id, pRxPkt, pRxPkt->len, ppa_flags);
 				if (ret == 0)
 				{
 					pRxPkt = NULL;
 					return;
 				}
-				netif_rx(pRxPkt);
+				RtmpOsPktRcvHandle(pRxPkt);
 			}
 			else if (retVal == 0)
 			{
-				pRxPkt->protocol = eth_type_trans(pRxPkt, pRxPkt->dev);
-				netif_rx(pRxPkt);
+				RtmpOsPktProtocolAssign(pRxPkt);
+				RtmpOsPktRcvHandle(pRxPkt);
 			}
 			else
 			{
@@ -678,68 +1202,90 @@ void announce_802_3_packet(
 		}	
 		else
 		{
-			pRxPkt->protocol = eth_type_trans(pRxPkt, pRxPkt->dev);
-			netif_rx(pRxPkt);
+			RtmpOsPktProtocolAssign(pRxPkt);
+			RtmpOsPktRcvHandle(pRxPkt);
 		}
 
 		return;
 	}
 #endif /* INF_PPA_SUPPORT */
 
+	{
 #ifdef CONFIG_RT2880_BRIDGING_ONLY
-	PACKET_CB_ASSIGN(pRxPkt, 22) = 0xa8;
+		PACKET_CB_ASSIGN(pRxPkt, 22) = 0xa8;
 #endif
 
 #if defined(CONFIG_RA_CLASSIFIER)||defined(CONFIG_RA_CLASSIFIER_MODULE)
-	if(ra_classifier_hook_rx!= NULL)
-	{
-		ra_classifier_hook_rx(pNetPkt, classifier_cur_cycle);
-	}
+		if(ra_classifier_hook_rx!= NULL)
+		{
+			unsigned int flags;
+			
+			RTMP_IRQ_LOCK(&pAd->page_lock, flags);
+			ra_classifier_hook_rx(pRxPkt, classifier_cur_cycle);
+			RTMP_IRQ_UNLOCK(&pAd->page_lock, flags);
+		}
 #endif /* CONFIG_RA_CLASSIFIER */
 
-#if defined (CONFIG_RA_HW_NAT) || defined (CONFIG_RA_HW_NAT_MODULE)
-#if !defined (CONFIG_RA_NAT_NONE)
-	/*
-	 * ra_sw_nat_hook_rx return 1 --> continue
-	 * ra_sw_nat_hook_rx return 0 --> FWD & without netif_rx
-	*/
-	if (ra_sw_nat_hook_rx != NULL)
-	{
-		pRxPkt->protocol = eth_type_trans(pRxPkt, pRxPkt->dev);
-		FOE_MAGIC_TAG(pRxPkt) = FOE_MAGIC_EXTIF;
-		if (ra_sw_nat_hook_rx(pRxPkt))
-		{
-			FOE_MAGIC_TAG(pRxPkt) = 0;
-			netif_rx(pRxPkt);
-		}
-		
-		return;
-	}
-#endif
+#if !defined(CONFIG_RA_NAT_NONE)
+#if defined (CONFIG_RA_HW_NAT)  || defined (CONFIG_RA_HW_NAT_MODULE)
+		RtmpOsPktNatMagicTag(pRxPkt);
 #endif
 
+		/* bruce+
+			ra_sw_nat_hook_rx return 1 --> continue
+			ra_sw_nat_hook_rx return 0 --> FWD & without netif_rx
+		*/
+		if (ra_sw_nat_hook_rx!= NULL)
+		{
+			unsigned int flags;
+			
+			RtmpOsPktProtocolAssign(pRxPkt);
+
+			RTMP_IRQ_LOCK(&pAd->page_lock, flags);
+			if(ra_sw_nat_hook_rx(pRxPkt)) 
+			{
+				RtmpOsPktRcvHandle(pRxPkt);
+			}
+			RTMP_IRQ_UNLOCK(&pAd->page_lock, flags);
+			return;
+		}
+#else
+		{
+#if defined (CONFIG_RA_HW_NAT)  || defined (CONFIG_RA_HW_NAT_MODULE)
+			RtmpOsPktNatNone(pRxPkt);
+#endif /* CONFIG_RA_HW_NAT */
+		}
+#endif /* CONFIG_RA_NAT_NONE */
+	}
+
+	
 #ifdef CONFIG_AP_SUPPORT
 #ifdef BG_FT_SUPPORT
-	if (BG_FTPH_PacketFromApHandle(pNetPkt) == 0)
-		return;
+		if (BG_FTPH_PacketFromApHandle(pRxPkt) == 0)
+			return;
 #endif /* BG_FT_SUPPORT */
 #endif /* CONFIG_AP_SUPPORT */
 
-	pRxPkt->protocol = eth_type_trans(pRxPkt, pRxPkt->dev);
-
+		RtmpOsPktProtocolAssign(pRxPkt);
+		
 #if defined(BB_SOC) && defined(BB_RA_HWNAT_WIFI)
-	if (ra_sw_nat_hook_set_magic)
-		ra_sw_nat_hook_set_magic(pNetPkt, FOE_MAGIC_WLAN);
+		if (ra_sw_nat_hook_set_magic)
+			ra_sw_nat_hook_set_magic(pRxPkt, FOE_MAGIC_WLAN);
+		
+		if (ra_sw_nat_hook_rx != NULL) 
+		{
+			if (ra_sw_nat_hook_rx(pRxPkt) == 0)
+				return;
+		}
+#endif		
 
-	if (ra_sw_nat_hook_rx != NULL) 
-	{
-		if (ra_sw_nat_hook_rx(pNetPkt) == 0)
-			return;
-	}
-#endif
-#if defined (CONFIG_WIFI_PKT_FWD)
+#if defined(CONFIG_WIFI_PKT_FWD) || defined(CONFIG_WIFI_PKT_FWD_MODULE)
+#if (MT7615_MT7603_COMBO_FORWARDING == 1)
+		if ((wf_fwd_needed_hook != NULL) && (wf_fwd_needed_hook() == TRUE)) 
+#endif	
 		{
 			struct sk_buff *pOsRxPkt = RTPKT_TO_OSPKT(pRxPkt);
+#if (MT7615_MT7603_COMBO_FORWARDING != 1)
 			PNET_DEV rx_dev = RtmpOsPktNetDevGet(pRxPkt);
 
 			/* all incoming packets should set CB to mark off which net device received and in which band */
@@ -759,7 +1305,10 @@ void announce_802_3_packet(
 				else
 					RTMP_SET_PACKET_RECV_FROM(pOsRxPkt, RTMP_PACKET_RECV_FROM_2G_AP);
 			}
-
+#else
+		if (RTMP_IS_PACKET_AP_APCLI(pOsRxPkt))
+		{
+#endif
 			if (wf_fwd_rx_hook != NULL)
 			{
 				struct ethhdr *mh = eth_hdr(pRxPkt);
@@ -767,7 +1316,11 @@ void announce_802_3_packet(
 				
 				if ((mh->h_dest[0] & 0x1) == 0x1)
 				{
+#if (MT7615_MT7603_COMBO_FORWARDING == 1)
+					if (RTMP_IS_PACKET_APCLI(pOsRxPkt))
+#else
 					if (NdisEqualMemory(pOsRxPkt->dev->name, "apcli", 5)) 
+#endif
 					{
 #ifdef MAC_REPEATER_SUPPORT
 						if ((pAd->ApCfg.bMACRepeaterEn == TRUE) &&
@@ -780,19 +1333,78 @@ void announce_802_3_packet(
 						{
 							VOID *opp_band_tbl = NULL;
 							VOID *band_tbl = NULL;
+#if (MT7615_MT7603_COMBO_FORWARDING == 1)
+							VOID *other_band_tbl = NULL;	
+#endif
 
 							if (wf_fwd_feedback_map_table)
+#if (MT7615_MT7603_COMBO_FORWARDING == 1)
+								wf_fwd_feedback_map_table(pAd, &band_tbl, &opp_band_tbl,&other_band_tbl);
+#else
 								wf_fwd_feedback_map_table(pAd, &band_tbl, &opp_band_tbl);
+#endif							
+#if (MT7615_MT7603_COMBO_FORWARDING == 1)
 							
-							
+							if (band_tbl != NULL)
+							{
+								if (MAC_ADDR_EQUAL(((UCHAR *)((REPEATER_ADAPTER_DATA_TABLE *)band_tbl)->Wdev_ifAddr), mh->h_source))
+									{
+									//MTWF_LOG(DBG_CAT_ALL, DBG_SUBCAT_ALL, DBG_LVL_WARN, 
+									//    ("announce_802_3_packet: drop rx pkt by wf_fwd_feedback_map_table band_tbl check of source addr against Wdev_ifAddr\n"));
+										RELEASE_NDIS_PACKET(pAd, pRxPkt, NDIS_STATUS_FAILURE);
+										return;
+									}
+							}
+							if (opp_band_tbl != NULL)
+							{
+								if ((MAC_ADDR_EQUAL(((UCHAR *)((REPEATER_ADAPTER_DATA_TABLE *)opp_band_tbl)->Wdev_ifAddr), mh->h_source)))
+									{
+									//MTWF_LOG(DBG_CAT_ALL, DBG_SUBCAT_ALL, DBG_LVL_WARN, 
+									//    ("announce_802_3_packet: drop rx pkt by wf_fwd_feedback_map_table opp_band_tbl check of source addr against Wdev_ifAddr\n"));
+										RELEASE_NDIS_PACKET(pAd, pRxPkt, NDIS_STATUS_FAILURE);
+										return;
+									}
+							}
+							if (other_band_tbl != NULL)
+							{
+								if ((MAC_ADDR_EQUAL(((UCHAR *)((REPEATER_ADAPTER_DATA_TABLE *)other_band_tbl)->Wdev_ifAddr), mh->h_source)))
+									{
+									//MTWF_LOG(DBG_CAT_ALL, DBG_SUBCAT_ALL, DBG_LVL_WARN, 
+									// ("announce_802_3_packet: drop rx pkt by wf_fwd_feedback_map_table other_band_tbl check of source addr against Wdev_ifAddr\n"));
+										RELEASE_NDIS_PACKET(pAd, pRxPkt, NDIS_STATUS_FAILURE);
+										return;
+									}
+							}
+#else
 							if ((opp_band_tbl != NULL) 
 								&& MAC_ADDR_EQUAL(((UCHAR *)((REPEATER_ADAPTER_DATA_TABLE *)opp_band_tbl)->Wdev_ifAddr), mh->h_source)) {
 								RELEASE_NDIS_PACKET(pAd, pRxPkt, NDIS_STATUS_FAILURE);
 								return;
 							}
+#endif
 						}
 					}
 				}
+#ifdef WH_EZ_SETUP
+				if (IS_EZ_SETUP_ENABLED(pAd->wdev_list[pAd->CurWdevIdx]))
+				{
+					struct wifi_dev *wdev = pAd->wdev_list[pAd->CurWdevIdx];
+				//	interface_info_t other_band_config; 		
+					if (ez_need_bypass_rx_fwd(wdev)
+							/*wdev->wdev_type == WDEV_TYPE_APCLI && ez_get_other_band_info(pAd,wdev, &other_band_config)
+							&& !wdev->ez_security.this_band_info.shared_info.link_duplicate 
+							&& !MAC_ADDR_EQUAL(other_band_config.cli_peer_ap_mac ,ZERO_MAC_ADDR)*/)
+						{
+							bypass_rx_fwd = TRUE;
+						} else {
+							bypass_rx_fwd = FALSE;
+						}
+				} else
+					{
+						bypass_rx_fwd = FALSE;
+					}
+					if (!bypass_rx_fwd) {
+#endif		
 				
 				ret = wf_fwd_rx_hook(pRxPkt);
 
@@ -802,10 +1414,22 @@ void announce_802_3_packet(
 					RELEASE_NDIS_PACKET(pAd, pRxPkt, NDIS_STATUS_FAILURE);
 					return;
 				}
+#ifdef WH_EZ_SETUP		
+				}
+#endif			
+#if (MT7615_MT7603_COMBO_FORWARDING == 1)
 			}
+#endif
+			}
+#if (MT7615_MT7603_COMBO_FORWARDING == 1)
+		else
+			DBGPRINT(RT_DEBUG_TRACE, 
+			("No CB Packet RTMP_IS_PACKET_AP_APCLI(%d)\n", RTMP_IS_PACKET_AP_APCLI(pOsRxPkt)));
+#endif			
+			
 		}
 #endif /* CONFIG_WIFI_PKT_FWD */
-	netif_rx(pRxPkt);
+		RtmpOsPktRcvHandle(pRxPkt);
 }
 
 
@@ -815,6 +1439,9 @@ INT Monitor_VirtualIF_Open(PNET_DEV dev_p)
 {
 	VOID *pAd;
 
+	/* increase MODULE use count */
+	RT_MOD_INC_USE_COUNT();
+
 	pAd = RTMP_OS_NETDEV_GET_PRIV(dev_p);
 	ASSERT(pAd);
 
@@ -823,11 +1450,11 @@ INT Monitor_VirtualIF_Open(PNET_DEV dev_p)
 	if (VIRTUAL_IF_UP(pAd) != 0)
 		return -1;
 
-	/* increase MODULE use count */
-	RT_MOD_INC_USE_COUNT();
 	RTMP_COM_IoctlHandle(pAd, NULL, CMD_RTPRIV_IOCTL_SNIFF_OPEN, 0, dev_p, 0);
 
-
+#ifdef CONFIG_RA_HW_NAT_WIFI_NEW_ARCH
+	RT_MOD_HNAT_REG(dev_p);
+#endif
 	//Monitor_Open(pAd,dev_p);
 
 	return 0;
@@ -844,7 +1471,9 @@ INT Monitor_VirtualIF_Close(PNET_DEV dev_p)
 
 	RTMP_COM_IoctlHandle(pAd, NULL, CMD_RTPRIV_IOCTL_SNIFF_CLOSE, 0, dev_p, 0);
 	//Monitor_Close(pAd,dev_p);
-
+#ifdef CONFIG_RA_HW_NAT_WIFI_NEW_ARCH
+	RT_MOD_HNAT_DEREG(dev_p);
+#endif
 	VIRTUAL_IF_DOWN(pAd);
 
 	RT_MOD_DEC_USE_COUNT();
@@ -1129,6 +1758,11 @@ VOID RTMPFreeAdapter(VOID *pAdSrc)
 		os_free_mem(NULL, pAd->iw_stats);
 		pAd->iw_stats = NULL;
 	}
+	if (pAd->stats)
+	{
+		os_free_mem(NULL, pAd->stats);
+		pAd->stats = NULL;
+	}
 
 	NdisFreeSpinLock(&TimerSemLock);
 
@@ -1158,10 +1792,11 @@ VOID RTMPFreeAdapter(VOID *pAdSrc)
 	RTMP_OS_FREE_SEM(pAd);
 	RTMP_OS_FREE_ATOMIC(pAd);
 
-	RtmpOsVfree(pAd);
+	RtmpOsVfree(pAd); /* pci_free_consistent(os_cookie->pci_dev,sizeof(RTMP_ADAPTER),pAd,os_cookie->pAd_pa); */
 	if (os_cookie)
 		os_free_mem(NULL, os_cookie);
 }
+
 
 
 
@@ -1182,9 +1817,9 @@ int RTMPSendPackets(
 	if(pAd == NULL)
 	{
 		DBGPRINT(RT_DEBUG_ERROR, ("%s(): pAd is NULL!\n", __FUNCTION__));
-		return 0;
+	    return 0;
 	}
-
+	
 	INC_COUNTER64(pAd->WlanCounters.TransmitCountFrmOs);
 
 	if (!pPacket)
@@ -1233,8 +1868,22 @@ int RTMPSendPackets(
 	}
 #endif /* CONFIG_5VT_ENHANCE */
 
+#ifdef WH_EZ_SETUP
+	if(IS_EZ_SETUP_ENABLED(wdev)
+#ifdef EZ_API_SUPPORT	
+	 && (wdev->ez_driver_params.ez_api_mode != CONNECTION_OFFLOAD) 
+#endif	 
+	 && (wdev->wdev_type == WDEV_TYPE_STA) )
+	{
+		if (ez_handle_send_packets(wdev, pPacket) == 0)
+			return 0;
+	}
+#endif
 
-#if defined (CONFIG_WIFI_PKT_FWD)
+#if defined(CONFIG_WIFI_PKT_FWD) || defined(CONFIG_WIFI_PKT_FWD_MODULE)
+#if (MT7615_MT7603_COMBO_FORWARDING == 1)
+	if ((wf_fwd_needed_hook != NULL) && (wf_fwd_needed_hook() == TRUE)) {
+#endif
 	if (wf_fwd_tx_hook != NULL)
 	{
 		if (wf_fwd_tx_hook(pPacket) == 1)
@@ -1243,6 +1892,9 @@ int RTMPSendPackets(
 			return 0;
 		}
 	}
+#if (MT7615_MT7603_COMBO_FORWARDING == 1)
+    }
+#endif
 #endif /* CONFIG_WIFI_PKT_FWD */
 
 	return wdev_tx_pkts((NDIS_HANDLE)pAd, (PPNDIS_PACKET) &pPacket, 1, wdev);
@@ -1278,29 +1930,16 @@ INT RTMP_AP_IoctlPrepare(RTMP_ADAPTER *pAd, VOID *pCB)
 
 
 	pObj = (POS_COOKIE) pAd->OS_Cookie;
-
-	if((pConfig->priv_flags == INT_MAIN) && !RTMP_TEST_FLAG(pAd, fRTMP_ADAPTER_INTERRUPT_IN_USE))
+	//
+	// Check if radio is OFF then return from here.
+	//
+	if(!RTMP_TEST_FLAG(pAd, fRTMP_ADAPTER_INTERRUPT_IN_USE))
 	{
 		if (pConfig->pCmdData == NULL)
 			return Status;
-		if (RtPrivIoctlSetVal() == pConfig->CmdId_RTPRIV_IOCTL_SET)
-		{
-			if (TRUE
-#ifdef CONFIG_APSTA_MIXED_SUPPORT
-				&& (strstr(pConfig->pCmdData, "OpMode") == NULL)
-#endif /* CONFIG_APSTA_MIXED_SUPPORT */
-#ifdef SINGLE_SKU
-				&& (strstr(pConfig->pCmdData, "ModuleTxpower") == NULL)
-#endif /* SINGLE_SKU */
-			)
-			{
-				return -ENETDOWN;
-			}
-		}
-		else
-			return -ENETDOWN;
-    }
-	
+
+		return -ENETDOWN;
+    }	
 
     /* determine this ioctl command is comming from which interface. */
     if (pConfig->priv_flags == INT_MAIN)

@@ -1,7 +1,7 @@
-CC	= gcc
-COPTS	= -O2 -g
-CFLAGS	= $(COPTS) -I.. -I../../include -fPIC
-LDFLAGS	= -shared
+#CC	= gcc
+#COPTS	= -O2 -g
+CFLAGS	+= $(COPTS) -I.. -I../../include -fPIC
+LDFLAGS	+= -shared
 LDADD   = -lutil
 INSTALL	= install -o root
 prefix  = /usr/local

@@ -97,6 +97,35 @@ VOID GASSetPeerCurrentState(
 	RTMP_SEM_UNLOCK(&pGASCtrl->GASPeerListLock);
 }
 
+BOOLEAN GasEnable(IN PRTMP_ADAPTER pAd, IN MLME_QUEUE_ELEM *Elem)
+{
+#ifdef CONFIG_AP_SUPPORT
+	UCHAR APIndex;
+	GAS_FRAME *GASFrame;
+	PGAS_CTRL pGASCtrl = NULL;
+
+	GASFrame = (GAS_FRAME *)Elem->Msg;
+
+	for (APIndex = 0; APIndex < MAX_MBSSID_NUM(pAd); APIndex++) {
+		/* according to 802.11-2012, public action frame may have Wildcard BSSID in addr3,
+		use addr1(DA) for searching instead.
+		*/
+		if (MAC_ADDR_EQUAL(GASFrame->Hdr.Addr1, pAd->ApCfg.MBSSID[APIndex].wdev.bssid)) {
+			pGASCtrl = &pAd->ApCfg.MBSSID[APIndex].GASCtrl;
+			break;
+		}
+	}
+
+	if (!pGASCtrl) {
+		MTWF_LOG(DBG_CAT_ALL, DBG_SUBCAT_ALL, DBG_LVL_TRACE,
+				("%s Can not find Peer Control DA=%02X:%02X:%02X:%02X:%02X:%02X\n",
+				__func__, PRINT_MAC(GASFrame->Hdr.Addr1)));
+		return FALSE;
+	}
+
+	return pGASCtrl->b11U_enable;
+#endif /* CONFIG_AP_SUPPORT */
+}
 
 #ifdef CONFIG_AP_SUPPORT
 void wext_send_anqp_req_event(PNET_DEV net_dev, const char *peer_mac_addr,
@@ -329,7 +358,7 @@ VOID ReceiveGASInitReq(
 	UCHAR APIndex, *Pos, *Buf;
 	UINT16 VarLen;
 	UINT32 Len = 0;
-	BOOLEAN IsFound = FALSE, Cancelled;
+	BOOLEAN IsFound = FALSE, Cancelled;;
 
 	DBGPRINT(RT_DEBUG_TRACE, ("%s\n", __FUNCTION__));
 	

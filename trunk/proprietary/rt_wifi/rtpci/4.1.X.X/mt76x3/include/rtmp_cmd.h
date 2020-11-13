@@ -127,6 +127,9 @@ typedef enum _CMD_RTPRIV_IOCTL_AP {
 	CMD_RTPRIV_IOCTL_CHID_2_FREQ,
 	CMD_RTPRIV_IOCTL_FREQ_2_CHID,
 	CMD_RTPRIV_IOCTL_GET_MAC_TABLE_STRUCT,
+#ifdef WIFI_DIAG
+	CMD_RTPRIV_IOCTL_GET_PROCESS_INFO,
+#endif
 	/* mbss */
 	CMD_RTPRIV_IOCTL_MBSS_BEACON_UPDATE,
 	CMD_RTPRIV_IOCTL_MBSS_OPEN,
@@ -161,6 +164,13 @@ typedef enum _CMD_RTPRIV_IOCTL_AP {
 	CMD_RTPRIV_IOCTL_AP_SIOCGIWESSID,
 	CMD_RTPRIV_IOCTL_AP_SIOCGIWRATEQ,
 	CMD_RTPRIV_IOCTL_AP_SIOCSIWGENIE,
+
+/*driver version*/
+	CMD_RTPRIV_IOCTL_GET_DRIVER_INFO,
+
+#ifdef WH_EZ_SETUP
+	CMD_RTPRIV_IOCTL_GET_EZ_SCAN_TABLE = 0x150,
+#endif /* WH_EZ_SETUP */
 
 	/* can not exceed 0x5000 */
 } CMD_RTPRIV_IOCTL_AP;
@@ -257,9 +267,6 @@ typedef enum _CMD_RTPRIV_IOCTL_COMMON {
 	CMD_RTPRIV_IOCTL_WDS_REMOVE,
 	CMD_RTPRIV_IOCTL_WDS_STATS_GET,
 
-	/* apcli */
-	CMD_RTPRIV_IOCTL_APCLI_STATS_GET,
-
 	CMD_RTPRIV_IOCTL_MAC_ADDR_GET,
 
 
@@ -337,13 +344,14 @@ typedef struct __RT_CMD_INF_UP_DOWN {
 	IN	int (*rt28xx_close)(VOID *net_dev);
 } RT_CMD_INF_UP_DOWN;
 
-typedef struct __RT_CMD_STATS64 {
+typedef struct __RT_CMD_STATS {
 	IN VOID *pNetDev;
+	OUT VOID *pStats;	/* point to pAd->stats */
 
-	OUT UINT64        rx_bytes;	/* total bytes received         */
-	OUT UINT64        tx_bytes;	/* total bytes transmitted      */
 	OUT unsigned long rx_packets;	/* total packets received       */
 	OUT unsigned long tx_packets;	/* total packets transmitted */
+	OUT unsigned long long rx_bytes;	/* total bytes received         */
+	OUT unsigned long long tx_bytes;	/* total bytes transmitted      */
 	OUT unsigned long rx_errors;	/* bad packets received         */
 	OUT unsigned long tx_errors;	/* packet transmit problems     */
 	OUT unsigned long multicast;	/* multicast packets received */
@@ -353,7 +361,7 @@ typedef struct __RT_CMD_STATS64 {
 	OUT unsigned long rx_crc_errors;	/* recved pkt with crc error    */
 	OUT unsigned long rx_frame_errors;	/* recv'd frame alignment error */
 	OUT unsigned long rx_fifo_errors;	/* recv'r fifo overrun                  */
-} RT_CMD_STATS64;
+} RT_CMD_STATS;
 
 typedef struct __RT_CMD_IW_STATS {
 

@@ -790,6 +790,16 @@ start_8021x_wl(void)
 	if (is_need_8021x(nvram_wlan_get(1, "auth_mode")))
 		eval("rt2860apd", "-i", IFNAME_5G_MAIN);
 #endif
+
+	const char *wifname = find_wlan_if_up(1);
+
+	if (!wifname)
+		return;
+
+	int wl_KickStaRssiLow = nvram_get_int("wl_KickStaRssiLow");
+	int wl_AssocReqRssiThres = nvram_get_int("wl_AssocReqRssiThres");
+	doSystem("iwpriv %s set %s=%d", wifname, "KickStaRssiLow", wl_KickStaRssiLow);
+	doSystem("iwpriv %s set %s=%d", wifname, "AssocReqRssiThres", wl_AssocReqRssiThres);
 }
 
 void
@@ -801,6 +811,16 @@ start_8021x_rt(void)
 #endif
 	if (is_need_8021x(nvram_wlan_get(0, "auth_mode")))
 		eval("rtinicapd", "-i", IFNAME_2G_MAIN);
+
+	const char *wifname = find_wlan_if_up(0);
+
+	if (!wifname)
+		return;
+
+	int rt_KickStaRssiLow = nvram_get_int("rt_KickStaRssiLow");
+	int rt_AssocReqRssiThres = nvram_get_int("rt_AssocReqRssiThres");
+	doSystem("iwpriv %s set %s=%d", wifname, "KickStaRssiLow", rt_KickStaRssiLow);
+	doSystem("iwpriv %s set %s=%d", wifname, "AssocReqRssiThres", rt_AssocReqRssiThres);
 }
 
 void

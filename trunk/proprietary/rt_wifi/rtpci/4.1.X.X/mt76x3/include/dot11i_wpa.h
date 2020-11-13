@@ -41,6 +41,16 @@
 #define LEN_KEY_DESC_REPLAY			8
 #define LEN_KEY_DESC_MIC			16
 
+#ifdef CONFIG_OWE_SUPPORT
+#define LEN_KEY_DESC_MIC_SHA384			24
+
+#define LEN_PTK_KCK_SHA384			24
+#define LEN_PTK_KEK_SHA384			32
+#define LEN_TK_SHA384				32
+#define LEN_PTK_SHA384				(LEN_PTK_KCK_SHA384 + LEN_PTK_KEK_SHA384 + LEN_TK_SHA384)
+#define LEN_OWE_PTK_SHA384			(LEN_PTK_KCK_SHA384 + LEN_PTK_KEK_SHA384 + LEN_AES_TK)
+#endif
+
 /* EAP Code Type */
 #define EAP_CODE_REQUEST	1
 #define EAP_CODE_RESPONSE	2
@@ -57,7 +67,22 @@
 #define OSEN_KEY_DESC               0x00
 
 /* Key Descriptor Version of Key Information */
+#if defined(DOT11_SAE_SUPPORT) || defined(CONFIG_OWE_SUPPORT)
+#define KEY_DESC_NOT_DEFINED		0
+#define KEY_DESC_OSEN			KEY_DESC_NOT_DEFINED
+#else
 #define KEY_DESC_OSEN			0
+#endif
+
+#if defined(DOT11_SAE_SUPPORT) || defined(CONFIG_OWE_SUPPORT)
+enum SEC_KEY_DERI_ALG {
+	SEC_KEY_DERI_SHA1 = 0,
+	SEC_KEY_DERI_SHA256,
+	SEC_KEY_DERI_SHA384,
+	SEC_KEY_DERI_SHA512
+};
+#endif
+
 #define	KEY_DESC_TKIP			1
 #define	KEY_DESC_AES			2
 #define KEY_DESC_EXT			3
@@ -80,8 +105,20 @@
 
 /* RSN IE Length definition */
 #define MAX_LEN_OF_RSNIE         	255
-#define MIN_LEN_OF_RSNIE         	18
+#ifndef CONFIG_SECURITY_IMPROVEMENT_SUPPORT
+#define MIN_LEN_OF_RSNIE	18
+#else
+#define MIN_LEN_OF_RSNIE	2
+#endif
 #define MAX_LEN_GTK					32
+#ifdef WH_EZ_SETUP
+#define LEN_MAX_GTK					32	
+#endif
+
+#if  defined(DOT11_SAE_SUPPORT)
+#define LEN_MAX_WPA2PSK_PSD 64
+#define LEN_MAX_WPA3PSK_PSD 63
+#endif
 #define MIN_LEN_GTK					5
 
 #define LEN_PMK						32

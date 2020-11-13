@@ -32,9 +32,9 @@
 #endif /* RLT_MAC */
 #ifdef RTMP_MAC
 #include "mac/mac_ral/omac/ral_omac_usb.h"
-#include "mac/mac_ral/rtmp_mac.h"
 #endif /* RTMP_MAC */
 
+#include "mac/mac_ral/rtmp_mac.h"
 #include "phy/phy.h"
 #include "rtmp_iface.h"
 #include "rtmp_dot11.h"

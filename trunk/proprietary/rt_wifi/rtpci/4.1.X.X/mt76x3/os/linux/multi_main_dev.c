@@ -54,6 +54,7 @@ static int __init wifi_drv_init_module(void)
 
 static void __exit wifi_drv_cleanup_module(void)
 {
+//	int status = 0;
 
 #ifdef RTMP_PCI_SUPPORT
 	rt_pci_cleanup_module();

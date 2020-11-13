@@ -168,7 +168,8 @@ enum EXT_CMD_TYPE {
 	EXT_CMD_GET_THEMAL_SENSOR=0x2C,
 	EXT_CMD_ID_WAKEUP_OPTION = 0x2E,
 	EXT_CMD_ID_AC_QUEUE_CONTROL = 0x31,
-    EXT_CMD_ID_BCN_UPDATE = 0x33
+    	EXT_CMD_ID_BCN_UPDATE = 0x33,
+	EXT_CMD_FLUSH_FRAME_WCID = 0x34
 };
 
 /*
@@ -501,6 +502,10 @@ typedef struct _EXT_CMD_CHAN_SWITCH_T {
     UINT8          aucReserve1[3];
 } EXT_CMD_CHAN_SWITCH_T, *P_EXT_CMD_CHAN_SWITCH_T;
 
+typedef struct _EXT_CMD_FLUSH_FRAME_BY_WCID_INFO_T {
+    UINT8          ucWlanIdx;
+    UINT8          aucReserve1[3];
+}EXT_CMD_FLUSH_FRAME_BY_WCID_INFO_T;
 
 typedef struct _EXT_CMD_TX_POWER_CTRL_T {
 	UINT8 ucCenterChannel;
@@ -913,6 +918,7 @@ INT32 CmdRadioOnOffCtrl(struct _RTMP_ADAPTER *pAd, UINT8 On);
 INT32 CmdWiFiRxDisable(struct _RTMP_ADAPTER *pAd, UINT RxDisable);
 INT32 CmdChannelSwitch(struct _RTMP_ADAPTER *pAd, UINT8 control_chl, UINT8 central_chl,
 							UINT8 BW, UINT8 TXStream, UINT8 RXStream);
+INT32 CmdFlushFrameByWlanIdx(struct _RTMP_ADAPTER *pAd, UINT8 WlanIdx);
 INT32 CmdNicCapability(struct _RTMP_ADAPTER *pAd);
 INT32 CmdPsRetrieveReq(struct _RTMP_ADAPTER *pAd, UINT32 enable);
 

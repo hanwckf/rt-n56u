@@ -322,7 +322,7 @@ VOID RTMPSetLEDStatus(RTMP_ADAPTER *pAd, UCHAR Status)
 			if(WscSupportWPSLEDMode10(pAd))
 			{
 				LinkStatus = LINK_STATUS_WPS_MODE10_TURN_OFF;
-				MCUCmd = MCU_SET_WPS_LED_MODE;
+				MCUCmd = MCU_SET_WPS_LED_MODE;;
 			}
 			else
 				bIgnored = TRUE;

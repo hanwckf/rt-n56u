@@ -74,15 +74,16 @@ INT32 UAPSDTxSHandler(RTMP_ADAPTER *pAd, CHAR *Data, UINT32 Priv)
 	return 0;
 }
 #endif
-
 INT32 BcnTxSHandler(RTMP_ADAPTER *pAd, CHAR *Data, UINT32 Priv)
-{
-#if defined(CONFIG_AP_SUPPORT) && defined(DBG)
+{	
 	TXS_STRUC *txs_entry = (TXS_STRUC *)Data;
 	//TXS_D_0 *txs_d0 = &txs_entry->txs_d0;
+#if defined(CONFIG_AP_SUPPORT) && defined(DBG)
 	TXS_D_1 *txs_d1 = &txs_entry->txs_d1;
+#endif /* defined(CONFIG_AP_SUPPORT) && defined(DBG) */
 	//TXS_D_2 *txs_d2 = &txs_entry->txs_d2;
 	//TXS_D_3 *txs_d3 = &txs_entry->txs_d3;
+#if defined(CONFIG_AP_SUPPORT) && defined(DBG)
 	TXS_D_4 *txs_d4 = &txs_entry->txs_d4;
 #endif /* defined(CONFIG_AP_SUPPORT) && defined(DBG) */
 
@@ -96,17 +97,16 @@ INT32 BcnTxSHandler(RTMP_ADAPTER *pAd, CHAR *Data, UINT32 Priv)
 			pMbss = &pAd->ApCfg.MBSSID[bss_idx];
 			pMbss->bcn_buf.bcn_state = BCN_TX_IDLE;
 			pMbss->bcn_not_idle_time = 0;
-			DBGPRINT(RT_DEBUG_LOUD, ("%s():idx: %x, change state as idle\n", __FUNCTION__, bss_idx));
+			DBGPRINT(RT_DEBUG_INFO, ("%s():idx: %x, change state as idle\n", __FUNCTION__, bss_idx));
 
 #ifdef DBG
 			pMbss->TXS_TSF[pMbss->timer_loop] = txs_d1->timestamp;
 			pMbss->TXS_SN[pMbss->timer_loop] = txs_d4->sn;
 #endif /* DBG */
-			if (pMbss->timer_loop < MAX_TIME_RECORD - 1)
-				pMbss->timer_loop++;
-			else
+			pMbss->timer_loop++;
+			if (pMbss->timer_loop >= MAX_TIME_RECORD)
 				pMbss->timer_loop = 0;
-			
+
 			return 0;
 		}
 #endif /* CONFIG_AP_SUPPORT */
@@ -174,8 +174,8 @@ INT32 EapReqIdTxSHandler(RTMP_ADAPTER *pAd, CHAR *Data, UINT32 Priv)
 	TXS_D_3 *txs_d3 = &txs_entry->txs_d3;
 	MAC_TABLE_ENTRY *pEntry;
  
-	if ((txs_d3 == NULL) || (txs_d3->wlan_idx >= MAX_LEN_OF_TR_TABLE))
-	{      	
+	if ((txs_d3 == NULL) || (txs_d3->wlan_idx >= MAX_LEN_OF_MAC_TABLE))
+	{
 		return 0;
 	}
 
@@ -202,17 +202,15 @@ INT32 APQoSNullTxSHandler(RTMP_ADAPTER *pAd, CHAR *Data, UINT32 Priv)
 	TXS_D_3 *txs_d3 = &txs_entry->txs_d3;
 	MAC_TABLE_ENTRY *pEntry;
  
-	if ((txs_d3 == NULL) || (txs_d3->wlan_idx >= MAX_LEN_OF_TR_TABLE))
-	{      	
+	if ((txs_d3 == NULL) || (txs_d3->wlan_idx >= MAX_LEN_OF_MAC_TABLE))
 		return 0;
-	}
 
-	DBGPRINT(RT_DEBUG_INFO,("%s: (RE=%d, LE=%d, ME=%d), wlan_idx = %d\n",__FUNCTION__, txs_d0->RE, txs_d0->LE, txs_d0->ME, txs_d3->wlan_idx));  
+	DBGPRINT(RT_DEBUG_TRACE,("%s: (RE=%d, LE=%d, ME=%d), wlan_idx = %d\n",__FUNCTION__, txs_d0->RE, txs_d0->LE, txs_d0->ME, txs_d3->wlan_idx));  
 
 	if ((txs_d0->RE == 0) && (txs_d0->LE == 0) && (txs_d0->ME == 0))
 	{
 		pEntry = &pAd->MacTab.Content[txs_d3->wlan_idx];
-		DBGPRINT(RT_DEBUG_INFO,("%s: wlan_idx = %d,  pEntry->NoDataIdleCount=%lu go to clear!!\n",__FUNCTION__, txs_d3->wlan_idx, pEntry->NoDataIdleCount));
+		DBGPRINT(RT_DEBUG_TRACE,("%s: wlan_idx = %d,  pEntry->NoDataIdleCount=%lu go to clear!!\n",__FUNCTION__, txs_d3->wlan_idx, pEntry->NoDataIdleCount));
 		pEntry->NoDataIdleCount	= 0 ;
 	}
 
@@ -220,6 +218,67 @@ INT32 APQoSNullTxSHandler(RTMP_ADAPTER *pAd, CHAR *Data, UINT32 Priv)
 }
 #endif /* defined(MT_MAC) && defined(CONFIG_AP_SUPPORT) */
 
+#ifdef WH_EZ_SETUP
+INT32 ez_action_txs_handler(RTMP_ADAPTER *pAd, CHAR *Data, UINT32 Priv)
+{
+	TXS_STRUC *txs_entry = (TXS_STRUC *)Data;
+	TXS_D_0 *txs_d0 = &txs_entry->txs_d0;
+	TXS_D_3 *txs_d3 = &txs_entry->txs_d3;
+	BOOLEAN TxError;
+	MAC_TABLE_ENTRY *pEntry = NULL;
+	struct wifi_dev *wdev = NULL;
+	
+	if ((txs_d3 == NULL) || (txs_d3->wlan_idx >= MAX_LEN_OF_TR_TABLE))
+	{
+		return 0;
+	}
+	TxError = (txs_d0->ME || txs_d0->RE || txs_d0->LE || txs_d0->BE || txs_d0->txop || txs_d0->ps || txs_d0->baf);
+	pEntry = &pAd->MacTab.Content[txs_d3->wlan_idx];
+	wdev = pEntry->wdev;
+	if(wdev && IS_EZ_SETUP_ENABLED(wdev)){
+		EZ_DEBUG(DBG_CAT_ALL, DBG_SUBCAT_ALL, DBG_LVL_OFF,("Raghav: Received TXS: Wcid=%d\n", txs_d3->wlan_idx));
+		if(TxError && IS_EZ_SETUP_ENABLED(wdev)){
+			ez_handle_action_txstatus(pAd, txs_d3->wlan_idx);
+		}
+	}
+
+	return 0;
+}
+#endif /* defined(MT_MAC) && defined(CONFIG_AP_SUPPORT) */
+INT32 APAssocRespTxSHandler(RTMP_ADAPTER *pAd, CHAR *Data, UINT32 Priv)
+{
+    TXS_STRUC *txs_entry = (TXS_STRUC *)Data;
+    TXS_D_0 *txs_d0 = &txs_entry->txs_d0;
+    TXS_D_3 *txs_d3 = &txs_entry->txs_d3;
+    
+    MAC_TABLE_ENTRY *pEntry = NULL;
+
+    if ( txs_d3 == NULL )
+    {
+        DBGPRINT(RT_DEBUG_ERROR,("===[%s] ERROR: txs3 = NULL\n", __FUNCTION__));
+        return 0;
+    }
+	if ( txs_d3->wlan_idx >= MAX_LEN_OF_MAC_TABLE )
+    {
+        DBGPRINT(RT_DEBUG_ERROR,("===[%s]ERROR:  txs_d3->wlan_idx(%d) >= MAX_LEN_OF_TR_TABLE\n", __FUNCTION__, txs_d3->wlan_idx));
+        return 0;
+    }
+	DBGPRINT(RT_DEBUG_WARN, ("===[%s]: (RE=%d, LE=%d, ME=%d), wlan_idx = %d\n", __FUNCTION__,
+		txs_d0->RE, txs_d0->LE, txs_d0->ME, txs_d3->wlan_idx));
+		if ((txs_d0->RE == 0) && (txs_d0->LE == 0) && (txs_d0->ME == 0))
+    {
+        pEntry = &pAd->MacTab.Content[txs_d3->wlan_idx];
+        if(pEntry) 
+		{
+            pEntry->AuthAssocNotInProgressFlag = 1;
+			DBGPRINT(RT_DEBUG_WARN, ("===[%s]: wlan_idx = %d,AuthAssocNotInProgressFlag = %d pEntry->bssid %02x:%02x:%02x:%02x:%02x:%02x \n",
+				__FUNCTION__, txs_d3->wlan_idx, pEntry->AuthAssocNotInProgressFlag, PRINT_MAC(pEntry->bssid)));
+        }
+    } else {
+			DBGPRINT(RT_DEBUG_WARN, ("===[%s] status  error returned \n", __FUNCTION__));
+	}
+    return 0;
+}
 
 INT32 InitTxSTypeTable(RTMP_ADAPTER *pAd)
 {
@@ -260,7 +319,9 @@ INT32 InitTxSTypeTable(RTMP_ADAPTER *pAd)
 	AddTxSTypePerPktType(pAd, FC_TYPE_MGMT, SUBTYPE_ALL, TXS_FORMAT0, MgmtTxSHandler);
 	AddTxSTypePerPktType(pAd, FC_TYPE_CNTL, SUBTYPE_ALL, TXS_FORMAT0, CtrlTxSHandler);
 	AddTxSTypePerPktType(pAd, FC_TYPE_DATA, SUBTYPE_ALL, TXS_FORMAT0, DataTxSHandler);
-
+	/* Assoc_resp sync */
+	AddTxSTypePerPkt(pAd, PID_MGMT_ASSOC_RSP, TXS_FORMAT0, APAssocRespTxSHandler);
+    TxSTypeCtlPerPkt(pAd, PID_MGMT_ASSOC_RSP, TXS_FORMAT0, FALSE, TRUE, FALSE, 0);
 	/* PsDataTxSHandler */
 	AddTxSTypePerPkt(pAd, PID_PS_DATA, TXS_FORMAT0, PsDataTxSHandler); 
 	TxSTypeCtlPerPkt(pAd, PID_PS_DATA, TXS_FORMAT0, FALSE, TRUE, FALSE, 0);
@@ -284,6 +345,10 @@ INT32 InitTxSTypeTable(RTMP_ADAPTER *pAd)
 	TxSTypeCtlPerPkt(pAd, PID_QOS_NULL_FRAME, TXS_FORMAT0, FALSE, TRUE, FALSE, 0);
 #endif /* defined(MT_MAC) && defined(CONFIG_AP_SUPPORT)	 */
 
+#ifdef WH_EZ_SETUP
+	AddTxSTypePerPkt(pAd,PID_EZ_ACTION, TXS_FORMAT0, ez_action_txs_handler);
+	TxSTypeCtlPerPkt(pAd, PID_EZ_ACTION, TXS_FORMAT0, FALSE, TRUE, FALSE, TXS_DUMP_REPEAT);
+#endif
 
 	TxSCtl->TxSValid = TRUE;
 
@@ -567,8 +632,7 @@ INT32 TxSTypeCtlPerPktType(RTMP_ADAPTER *pAd, UINT8 PktType, UINT8 PktSubType, U
 
 
 static VOID DumpTxSFormat(RTMP_ADAPTER *pAd, UINT8 Format, CHAR *Data)
-{
-#if defined(CONFIG_AP_SUPPORT) && defined(DBG)
+{ 
 	TXS_STRUC *txs_entry = (TXS_STRUC *)Data;
 	TXS_D_0 *txs_d0 = &txs_entry->txs_d0;
 	TXS_D_1 *txs_d1 = &txs_entry->txs_d1;
@@ -605,7 +669,6 @@ static VOID DumpTxSFormat(RTMP_ADAPTER *pAd, UINT8 Format, CHAR *Data)
 	DBGPRINT(RT_DEBUG_OFF, ("\t\tTxDelay=0x%x(unit 32us), RxVSeqNum=0x%x, Wlan Idx=0x%x\n",\
                              txs_d3->transmission_delay, txs_d3->rxv_sn, txs_d3->wlan_idx));
 	DBGPRINT(RT_DEBUG_OFF, ("\t\tSN=0x%x, TxBW=0x%x, AMPDU=%d, Final MPDU=%d PID=0x%x, MPDU TxCnt=%d, MCS Idx=%d\n", txs_d4->sn, txs_d4->tbw, txs_d4->am, txs_d4->fm, txs_d4->pid, txs_d4->mpdu_tx_cnt, txs_d4->last_tx_rate_idx));
-#endif
 }
  
 

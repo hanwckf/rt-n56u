@@ -122,14 +122,20 @@ UINT32 TYPE_FUNC FT_RIC_ResourceRequestHandle(
 	/* init */
 	pBufReqElm = pBufReq;
 	pBufRspElm = pBufRsp;
+	if (pRspLen == NULL)
+	{
+		DBGPRINT(RT_DEBUG_ERROR,
+				("ft_ric> (ResourceRequestHandle) Error! NULL pointer!\n"));
+		return 0;
+	}
 	*pRspLen = 0;
 	HandledSize = 0;
 
 	/* sanity check */
 	if ((pCdb == NULL) ||
 		(pBufReq == NULL) ||
-		(pBufRsp == NULL) ||
-		(pRspLen == NULL))
+		(pBufRsp == NULL)
+		)
 	{
 		DBGPRINT(RT_DEBUG_ERROR,
 				("ft_ric> (ResourceRequestHandle) Error! NULL pointer!\n"));
@@ -345,11 +351,7 @@ extern BOOLEAN BARecSessionAdd(
 		return Status;
 
 	BaParm.BAPolicy = IMMED_BA;
-
 	BaParm.AMSDUSupported = 0;
-	if (pAd->CommonCfg.DesiredHtPhy.AmsduEnable)
-		BaParm.AMSDUSupported = 1;
-
 	BaParm.TID = AddreqFrame.BaParm.TID;
 	BaParm.BufSize = min(((UCHAR)AddreqFrame.BaParm.BufSize), (UCHAR)pAd->CommonCfg.BACapability.field.RxBAWinLimit);
 	if (BaParm.BufSize == 0)

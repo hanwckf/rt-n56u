@@ -160,6 +160,8 @@ struct myoption {
 #define LOPT_DHCPTTL       348
 #define LOPT_TFTP_MTU      349
 #define LOPT_REPLY_DELAY   350
+#define LOPT_GFWLIST       351
+#define LOPT_DHCP_TO_HOST  352
  
 #ifdef HAVE_GETOPT_LONG
 static const struct option opts[] =  
@@ -325,6 +327,8 @@ static const struct myoption opts[] =
     { "script-arp", 0, 0, LOPT_SCRIPT_ARP },
     { "dhcp-ttl", 1, 0 , LOPT_DHCPTTL },
     { "dhcp-reply-delay", 1, 0, LOPT_REPLY_DELAY },
+    { "gfwlist", 1, 0, LOPT_GFWLIST },
+	{ "dhcp-to-host", 0, 0, LOPT_DHCP_TO_HOST },
     { NULL, 0, 0, 0 }
   };
 
@@ -497,6 +501,8 @@ static struct {
   { LOPT_IGNORE_ADDR, ARG_DUP, "<ipaddr>", gettext_noop("Ignore DNS responses containing ipaddr."), NULL }, 
   { LOPT_DHCPTTL, ARG_ONE, "<ttl>", gettext_noop("Set TTL in DNS responses with DHCP-derived addresses."), NULL }, 
   { LOPT_REPLY_DELAY, ARG_ONE, "<integer>", gettext_noop("Delay DHCP replies for at least number of seconds."), NULL },
+  { LOPT_GFWLIST, ARG_DUP, "<path|domain>[@server][^ipset]", gettext_noop("Gfwlist path or domain to special server (default 8.8.8.8~53) and ipset (default gfwlist, pass ^ only to skip default ipset)"), NULL },
+  { LOPT_DHCP_TO_HOST, OPT_DHCP_TO_HOST, NULL, gettext_noop("Keep DHCP hostname valid at all times."), NULL },
   { 0, 0, NULL, NULL, NULL }
 }; 
 
@@ -778,8 +784,14 @@ char *parse_server(char *arg, union mysockaddr *addr, union mysockaddr *source_a
       !atoi_check16(portno, &source_port))
     return _("bad port");
   
-  if ((portno = split_chr(arg, '#')) && /* is there a port no. */
-      !atoi_check16(portno, &serv_port))
+  portno = split_chr(arg, '#'); /* is there a port no. */
+  if (portno == NULL) {
+    portno = split_chr(arg, '~'); /* is there a TCP port no. */
+    if (portno) {
+      *flags |= SERV_IS_TCP;
+		}
+  }
+  if (portno && !atoi_check16(portno, &serv_port))
     return _("bad port");
   
 #ifdef HAVE_IPV6
@@ -1775,7 +1787,14 @@ static int one_opt(int option, char *arg, char *errstr, char *gen_err, int comma
     case LOPT_SERVERS_FILE:
       daemon->servers_file = opt_string_alloc(arg);
       break;
-      
+
+    case LOPT_GFWLIST:
+      {
+        void load_gfwlist(char *gfwlist);
+        load_gfwlist(arg);
+      }
+      break;
+
     case 'm':  /* --mx-host */
       {
 	int pref = 1;
@@ -4516,7 +4535,73 @@ void read_servers_file(void)
   
   read_file(daemon->servers_file, f, LOPT_REV_SERV);
 }
- 
+
+void add_gfwline(char *gfwline, const char *server, const char *ipset)
+{
+  char *end = gfwline + 1;
+  while (*end && *end != '#' && *end != '\n' && *end != '\r') end++;
+  for (char *buf = end; buf >= gfwline; buf--) {
+    if (*buf == ',' || buf == gfwline) {
+      if (buf + 1 < end) {
+        *buf = '/';
+        *end++ = '/';
+
+#ifdef HAVE_IPSET
+        if (*ipset) {
+          strcpy(end, ipset);
+          one_opt(LOPT_IPSET, buf, _("gfwlist"), _("error"), 0, 0);
+          end[-1] = '/';
+        }
+#endif
+        strcpy(end, server);
+        one_opt('S', buf, _("gfwlist"), _("error"), 0, 0);
+     }
+      end = buf;
+    }
+  }
+}
+
+void load_gfwlist(char *gfwlist)
+{
+	char *cfg_server = NULL, *cfg_ipset = NULL;
+	for (char *p = gfwlist; *p; p++) {
+		if (*p == '@') cfg_server = p;
+		else if (*p == '^') cfg_ipset = p;
+	}
+
+	const char *server, *ipset;
+  if (cfg_server) {
+    *cfg_server = 0;
+    server = cfg_server + 1;
+  } else {
+    server = "8.8.8.8~53";
+  }
+	if (cfg_ipset) {
+    *cfg_ipset = 0;
+    ipset = cfg_ipset + 1;
+  } else {
+    ipset = "gfwlist";
+  }
+
+  FILE *f = NULL;
+  do {
+    if (*gfwlist == '/') {
+    	if (!(f = fopen(gfwlist, "r"))) {
+    		my_syslog(LOG_ERR, _("cannot read %s: %s"), gfwlist, strerror(errno));
+    		break;
+    	}
+      for (char buf[MAXDNAME]; fgets(buf+ 1, MAXDNAME - 1, f); add_gfwline(buf, server, ipset));
+    } else {
+      char old = gfwlist[-1];
+      add_gfwline(gfwlist - 1, server, ipset);
+      gfwlist[-1] = old;
+    }
+  } while (0);
+
+  if (f) fclose(f);
+  if (cfg_server) *cfg_server = '@';
+  if (cfg_ipset) *cfg_ipset = '^';
+}
 
 #ifdef HAVE_DHCP
 void reread_dhcp(void)

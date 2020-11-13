@@ -247,6 +247,7 @@ function show_banner(L3){
 		bc += '<table class="" style="margin-top: 0px; margin-bottom: 5px" width="100%" border="0">\n';
 		bc += '  <tr>\n';
 		bc += '    <td width="60%" style="text-align: left"><b><#General_x_SystemTime_itemname#>:</b><span class="alert alert-info" style="margin-left: 10px; padding-top: 4px; padding-bottom: 4px;" id="system_time_log_area"></span></td>\n';
+		bc += '    <td style="text-align: lift"><input type="hidden" id="scrATop" value=""></td>\n';
 		bc += '    <td style="text-align: right"><button type="button" id="clearlog_btn" class="btn btn-info" style="min-width: 170px;" onclick="clearlog();"><#CTL_clear#></button></td>\n';
 		bc += '  </tr>\n';
 		bc += '</table>\n';
@@ -450,7 +451,7 @@ if (found_app_mentohust()){
 } else menuL2_title.push("");
 
 
-menuL2_link  = new Array("", tablink[0][1], tablink[1][1], tablink[2][1], tablink[3][1], tablink[4][1], tablink[5][1], tablink[6][1], tablink[7][1], tablink[8][1], tablink[9][1]);
+menuL2_link  = new Array("", tablink[0][1], tablink[1][1], tablink[2][1], tablink[3][1], tablink[4][1], tablink[5][1], tablink[6][1], tablink[7][1], support_2g_radio() ? tablink[8][1] : "Main_EStatus_Content.asp", tablink[9][1]);
 if (found_app_scutclient()){
 	menuL2_link.push(scutclient_array[1]);
 } else menuL2_link.push("");
@@ -528,6 +529,8 @@ function show_menu(L1, L2, L3){
 		menuL2_title[1] = "";
 		tabtitle[0].splice(1,6);
 		tablink[0].splice(1,6);
+		tabtitle[8].splice(1,1);
+		tablink[8].splice(1,1);
 	}
 
 	if(!support_5g_radio()){
@@ -535,8 +538,9 @@ function show_menu(L1, L2, L3){
 		menuL2_title[2] = "";
 		tabtitle[1].splice(1,6);
 		tablink[1].splice(1,6);
-		tabtitle[8].splice(2,1);
-		tablink[8].splice(2,1);
+		var idx = support_2g_radio() ? 2 : 1;
+		tabtitle[8].splice(idx,1);
+		tablink[8].splice(idx,1);
 	}
 
 	if(!support_storage()){
@@ -1221,10 +1225,18 @@ function setLogData(){
         if($j("#log_area").val() == ''){
             $j("#log_area").text(data);
             $j("#log_area").prop('scrollTop', $j("#log_area").prop('scrollHeight'));
+            $j("#scrATop").val($j("#log_area").prop('scrollTop'));
         }else{
+            var scrMaxTop = $j("#log_area").prop('scrollHeight')
             var scrTop = $j("#log_area").prop('scrollTop');
             $j("#log_area").text(data);
-            $j("#log_area").prop('scrollTop', scrTop);
+            var scrITop = scrMaxTop - scrTop;
+            if($j("#scrATop").val() == scrTop || scrITop < 629){
+                $j("#log_area").prop('scrollTop', scrMaxTop);
+                $j("#scrATop").val($j("#log_area").prop('scrollTop'));
+            }else{
+                $j("#log_area").prop('scrollTop', scrTop);
+            }
         }
     });
 }

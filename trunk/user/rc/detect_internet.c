@@ -273,14 +273,12 @@ di_on_timer(void)
 		di_time_diff_state = now - di_time_last_state;
 		
 		nvram_set_int_temp("link_internet", link_internet);
+#if defined (BOARD_GPIO_LED_WAN)
+		if (nvram_get_int("front_led_wan") == 3){
+			LED_CONTROL(BOARD_GPIO_LED_WAN, (link_internet) ? LED_ON : LED_OFF);
 #if ((BOARD_GPIO_LED_POWER == 13 && BOARD_GPIO_LED_WIFI == 14 && BOARD_GPIO_LED_WAN ==15) || (BOARD_GPIO_LED_POWER == 8 && BOARD_GPIO_LED_WIFI == 11 && BOARD_GPIO_LED_WAN ==10))
-		if (nvram_get_int("front_led_wan") == 3){
-			LED_CONTROL(BOARD_GPIO_LED_WAN, (link_internet) ? LED_ON : LED_OFF);
 			LED_CONTROL(BOARD_GPIO_LED_WIFI, (link_internet) ? LED_OFF : LED_ON);
-		}
-#elif defined (BOARD_GPIO_LED_WAN)
-		if (nvram_get_int("front_led_wan") == 3){
-			LED_CONTROL(BOARD_GPIO_LED_WAN, (link_internet) ? LED_ON : LED_OFF);
+#endif
 		}
 #endif
 		if (di_poll_mode != 0 && !di_pause_received) {

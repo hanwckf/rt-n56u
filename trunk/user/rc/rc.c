@@ -185,6 +185,9 @@ load_mmc_modules(void)
 	/* start mmc block device */
 	module_smart_load("mmc_block", NULL);
 
+	module_smart_load("sdhci", NULL);
+	module_smart_load("sdhci-pltfm", NULL);
+
 	/* start mmc host */
 #if defined (USE_MTK_MMC)
 	module_smart_load("mtk_sd", NULL);

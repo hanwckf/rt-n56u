@@ -17,6 +17,8 @@
 
 #include <linux/version.h>
 
+//#define CONFIG_NF_CONNTRACK_CHAIN_EVENTS
+
 #if (LINUX_VERSION_CODE >= KERNEL_VERSION(3, 4, 0))
 #if (LINUX_VERSION_CODE >= KERNEL_VERSION(3, 7, 0))
 #include <net/netfilter/nf_conntrack_timeout.h>

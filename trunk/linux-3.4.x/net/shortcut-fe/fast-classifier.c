@@ -105,7 +105,9 @@ struct fast_classifier {
 	 */
 	struct notifier_block dev_notifier;	/* Device notifier */
 	struct notifier_block inet_notifier;	/* IPv4 notifier */
+#ifdef SFE_SUPPORT_IPV6
 	struct notifier_block inet6_notifier;	/* IPv6 notifier */
+#endif
 	u32 exceptions[FAST_CL_EXCEPTION_MAX];
 };
 
@@ -254,6 +256,7 @@ int fast_classifier_recv(struct sk_buff *skb)
 
 		ret = sfe_ipv4_recv(dev, skb);
 
+#ifdef SFE_SUPPORT_IPV6
 	} else if (likely(htons(ETH_P_IPV6) == skb->protocol)) {
 		struct inet6_dev *in_dev;
 
@@ -276,7 +279,7 @@ int fast_classifier_recv(struct sk_buff *skb)
 		}
 
 		ret = sfe_ipv6_recv(dev, skb);
-
+#endif
 	} else {
 		DEBUG_TRACE("not IP packet\n");
 	}
@@ -303,7 +306,9 @@ static bool fast_classifier_find_dev_and_mac_addr(sfe_ip_addr_t *addr, struct ne
 {
 	struct neighbour *neigh;
 	struct rtable *rt;
+#ifdef SFE_SUPPORT_IPV6
 	struct rt6_info *rt6;
+#endif
 	struct dst_entry *dst;
 	struct net_device *mac_dev;
 
@@ -319,7 +324,9 @@ static bool fast_classifier_find_dev_and_mac_addr(sfe_ip_addr_t *addr, struct ne
 		}
 
 		dst = (struct dst_entry *)rt;
-	} else {
+	} 
+#ifdef SFE_SUPPORT_IPV6
+	else {
 		rt6 = rt6_lookup(&init_net, (struct in6_addr *)addr->ip6, 0, 0, 0);
 		if (!rt6) {
 			goto ret_fail;
@@ -327,6 +334,7 @@ static bool fast_classifier_find_dev_and_mac_addr(sfe_ip_addr_t *addr, struct ne
 
 		dst = (struct dst_entry *)rt6;
 	}
+#endif
 
 	rcu_read_lock();
 	neigh = sfe_dst_get_neighbour(dst, addr);
@@ -1003,11 +1011,14 @@ static unsigned int fast_classifier_post_routing(struct sk_buff *skb, bool is_v4
 						fc_msg.ethertype = AF_INET;
 						fc_msg.src_saddr.in = *((struct in_addr *)&sic.src_ip);
 						fc_msg.dst_saddr.in = *((struct in_addr *)&sic.dest_ip_xlate);
-					} else {
+					} 
+#ifdef SFE_SUPPORT_IPV6
+					else {
 						fc_msg.ethertype = AF_INET6;
 						fc_msg.src_saddr.in6 = *((struct in6_addr *)&sic.src_ip);
 						fc_msg.dst_saddr.in6 = *((struct in6_addr *)&sic.dest_ip_xlate);
 					}
+#endif
 
 					fc_msg.proto = sic.protocol;
 					fc_msg.sport = sic.src_port;
@@ -1233,10 +1244,12 @@ static int fast_classifier_conntrack_event(unsigned int events, struct nf_ct_eve
 		sid.src_ip.ip = (__be32)orig_tuple.src.u3.ip;
 		sid.dest_ip.ip = (__be32)orig_tuple.dst.u3.ip;
 		is_v4 = true;
+#ifdef SFE_SUPPORT_IPV6
 	} else if (likely(nf_ct_l3num(ct) == AF_INET6)) {
 		sid.src_ip.ip6[0] = *((struct sfe_ipv6_addr *)&orig_tuple.src.u3.in6);
 		sid.dest_ip.ip6[0] = *((struct sfe_ipv6_addr *)&orig_tuple.dst.u3.in6);
 		is_v4 = false;
+#endif
 	} else {
 		DEBUG_TRACE("ignoring non-IPv4 and non-IPv6 connection\n");
 		return NOTIFY_DONE;
@@ -1299,11 +1312,14 @@ static int fast_classifier_conntrack_event(unsigned int events, struct nf_ct_eve
 			fc_msg.ethertype = AF_INET;
 			fc_msg.src_saddr.in = *((struct in_addr *)&conn->sic->src_ip);
 			fc_msg.dst_saddr.in = *((struct in_addr *)&conn->sic->dest_ip_xlate);
-		} else {
+		}
+#ifdef SFE_SUPPORT_IPV6 
+		else {
 			fc_msg.ethertype = AF_INET6;
 			fc_msg.src_saddr.in6 = *((struct in6_addr *)&conn->sic->src_ip);
 			fc_msg.dst_saddr.in6 = *((struct in6_addr *)&conn->sic->dest_ip_xlate);
 		}
+#endif
 
 		fc_msg.proto = conn->sic->protocol;
 		fc_msg.sport = conn->sic->src_port;
@@ -1381,6 +1397,7 @@ static void fast_classifier_sync_rule(struct sfe_connection_sync *sis)
 	tuple.dst.protonum = (u8)sis->protocol;
 	tuple.dst.u.all = (__be16)sis->dest_port;
 
+#ifdef SFE_SUPPORT_IPV6
 	if (sis->is_v6) {
 		tuple.src.u3.in6 = *((struct in6_addr *)sis->src_ip.ip6);
 		tuple.dst.u3.in6 = *((struct in6_addr *)sis->dest_ip.ip6);
@@ -1390,7 +1407,9 @@ static void fast_classifier_sync_rule(struct sfe_connection_sync *sis)
 			    (int)tuple.dst.protonum,
 			    &tuple.src.u3.in6, (unsigned int)ntohs(tuple.src.u.all),
 			    &tuple.dst.u3.in6, (unsigned int)ntohs(tuple.dst.u.all));
-	} else {
+	} else 
+#endif
+	{
 		tuple.src.u3.ip = sis->src_ip.ip;
 		tuple.dst.u3.ip = sis->dest_ip.ip;
 		tuple.src.l3num = AF_INET;
@@ -1521,6 +1540,7 @@ static int fast_classifier_inet_event(struct notifier_block *this, unsigned long
 /*
  * fast_classifier_inet6_event()
  */
+#ifdef SFE_SUPPORT_IPV6
 static int fast_classifier_inet6_event(struct notifier_block *this, unsigned long event, void *ptr)
 {
 	struct net_device *dev = ((struct inet6_ifaddr *)ptr)->idev->dev;
@@ -1531,6 +1551,7 @@ static int fast_classifier_inet6_event(struct notifier_block *this, unsigned lon
 
 	return NOTIFY_DONE;
 }
+#endif
 
 /*
  * fast_classifier_get_offload_at_pkts()
@@ -1727,9 +1748,11 @@ static int __init fast_classifier_init(void)
 	sc->inet_notifier.priority = 1;
 	register_inetaddr_notifier(&sc->inet_notifier);
 
+#ifdef SFE_SUPPORT_IPV6
 	sc->inet6_notifier.notifier_call = fast_classifier_inet6_event;
 	sc->inet6_notifier.priority = 1;
 	register_inet6addr_notifier(&sc->inet6_notifier);
+#endif
 
 	/*
 	 * Register our netfilter hooks.
@@ -1812,7 +1835,9 @@ exit4:
 
 exit3:
 	unregister_inetaddr_notifier(&sc->inet_notifier);
+#ifdef SFE_SUPPORT_IPV6
 	unregister_inet6addr_notifier(&sc->inet6_notifier);
+#endif
 	unregister_netdevice_notifier(&sc->dev_notifier);
 	sysfs_remove_file(sc->sys_fast_classifier, &fast_classifier_offload_at_pkts_attr.attr);
 	sysfs_remove_file(sc->sys_fast_classifier, &fast_classifier_debug_info_attr.attr);
@@ -1877,7 +1902,9 @@ static void __exit fast_classifier_exit(void)
 #endif
 	nf_unregister_hooks(fast_classifier_ops_post_routing, ARRAY_SIZE(fast_classifier_ops_post_routing));
 
+#ifdef SFE_SUPPORT_IPV6
 	unregister_inet6addr_notifier(&sc->inet6_notifier);
+#endif
 	unregister_inetaddr_notifier(&sc->inet_notifier);
 	unregister_netdevice_notifier(&sc->dev_notifier);
 

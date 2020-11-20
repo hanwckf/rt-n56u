@@ -1834,6 +1834,9 @@ static int nf_conntrack_init_net(struct net *net)
 	if (ret < 0)
 		goto err_timeout;
 
+#ifdef CONFIG_NF_CONNTRACK_CHAIN_EVENTS
+	ATOMIC_INIT_NOTIFIER_HEAD(&net->ct.nf_conntrack_chain);
+#endif
 	return 0;
 
 err_timeout:

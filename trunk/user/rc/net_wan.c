@@ -94,14 +94,14 @@ control_wan_led_isp_state(int is_wan_up, int is_modem_unit)
 				has_link = get_wan_ether_link_cached();
 		}
 		LED_CONTROL(BOARD_GPIO_LED_WAN, (is_wan_up && has_link) ? LED_ON : LED_OFF);
-#if ((BOARD_GPIO_LED_POWER == 13 && BOARD_GPIO_LED_WIFI == 14 && BOARD_GPIO_LED_WAN ==15) || (BOARD_GPIO_LED_POWER == 8 && BOARD_GPIO_LED_WIFI == 11 && BOARD_GPIO_LED_WAN ==10))
+#if defined (BOARD_K2P) || defined (BOARD_PSG1218)
 		LED_CONTROL(BOARD_GPIO_LED_WIFI, (is_wan_up && has_link) ? LED_OFF : LED_ON);
 #endif
 	} else if (front_led_wan == 3) {
 		if (!is_wan_up)
 			LED_CONTROL(BOARD_GPIO_LED_WAN, LED_OFF);
-#if ((BOARD_GPIO_LED_POWER == 13 && BOARD_GPIO_LED_WIFI == 14 && BOARD_GPIO_LED_WAN ==15) || (BOARD_GPIO_LED_POWER == 8 && BOARD_GPIO_LED_WIFI == 11 && BOARD_GPIO_LED_WAN ==10))
-			LED_CONTROL(BOARD_GPIO_LED_WIFI, LED_ON);
+#if defined (BOARD_K2P) || defined (BOARD_PSG1218)
+		LED_CONTROL(BOARD_GPIO_LED_WIFI, LED_ON);
 #endif
 	}
 #endif

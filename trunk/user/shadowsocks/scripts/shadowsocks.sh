@@ -23,6 +23,7 @@ redir_udp=0
 tunnel_enable=0
 local_enable=0
 pdnsd_enable_flag=0
+chinadnsng_enable_flag=0
 wan_bp_ips="/tmp/whiteip.txt"
 wan_fw_ips="/tmp/blackip.txt"
 lan_fp_ips="/tmp/lan_ip.txt"
@@ -272,23 +273,24 @@ case "$run_mode" in
 		ipset -! restore </tmp/china.ipset 2>/dev/null
 		rm -f /tmp/china.ipset
 		if [ $(nvram get ss_chdns) = 1 ]; then
-		logger -t "SS" "下载cdn域名文件..."
-		wget --no-check-certificate --timeout=8 -qO - https://gitee.com/bkye/rules/raw/master/cdn.txt > /tmp/cdn.txt
-		if [ ! -f "/tmp/cdn.txt" ]; then
-        logger -t "SS" "cdn域名文件下载失败，可能是地址失效或者网络异常！可能会影响部分国内域名解析了国外的IP！"
-        else
-        logger -t "SS" "cdn域名文件下载成功"
-		fi
-		logger -st "SS" "启动chinadns..."
-		dns2tcp -L"127.0.0.1#5353" -R"$(nvram get tunnel_forward)" >/dev/null 2>&1 &
-		chinadns-ng -b 0.0.0.0 -l 65353 -c $(nvram get china_dns) -t 127.0.0.1#5353 -4 china -m /tmp/cdn.txt >/dev/null 2>&1 &
-	sed -i '/no-resolv/d' /etc/storage/dnsmasq/dnsmasq.conf
-sed -i '/server=127.0.0.1/d' /etc/storage/dnsmasq/dnsmasq.conf
-cat >> /etc/storage/dnsmasq/dnsmasq.conf << EOF
+			chinadnsng_enable_flag=1
+			logger -t "SS" "下载cdn域名文件..."
+			wget --no-check-certificate --timeout=8 -qO - https://gitee.com/bkye/rules/raw/master/cdn.txt > /tmp/cdn.txt
+			if [ ! -f "/tmp/cdn.txt" ]; then
+				logger -t "SS" "cdn域名文件下载失败，可能是地址失效或者网络异常！可能会影响部分国内域名解析了国外的IP！"
+			else
+				logger -t "SS" "cdn域名文件下载成功"
+			fi
+			logger -st "SS" "启动chinadns..."
+			dns2tcp -L"127.0.0.1#5353" -R"$(nvram get tunnel_forward)" >/dev/null 2>&1 &
+			chinadns-ng -b 0.0.0.0 -l 65353 -c $(nvram get china_dns) -t 127.0.0.1#5353 -4 china -M -m /tmp/cdn.txt >/dev/null 2>&1 &
+			sed -i '/no-resolv/d' /etc/storage/dnsmasq/dnsmasq.conf
+			sed -i '/server=127.0.0.1/d' /etc/storage/dnsmasq/dnsmasq.conf
+			cat >> /etc/storage/dnsmasq/dnsmasq.conf << EOF
 no-resolv
 server=127.0.0.1#65353
 EOF
-    fi
+    		fi
 	;;
 	gfw)
 		if [ $(nvram get pdnsd_enable) = 0 ]; then
@@ -320,22 +322,22 @@ EOF
 }
 
 start_AD() {
-mkdir -p /tmp/dnsmasq.dom
-curl -k -s -o /tmp/adnew.conf --connect-timeout 10 --retry 3 $(nvram get ss_adblock_url)
-if [ ! -f "/tmp/adnew.conf" ]; then
-logger -t "SS" "AD文件下载失败，可能是地址失效或者网络异常！"
-else
-logger -t "SS" "AD文件下载成功"
-if [ -f "/tmp/adnew.conf" ]; then
-check = `grep -wq "address=" /tmp/adnew.conf`
-  if [ ! -n "$check" ] ; then
-    cp /tmp/adnew.conf /tmp/dnsmasq.dom/ad.conf
-  else
-    cat /tmp/adnew.conf | grep ^\|\|[^\*]*\^$ | sed -e 's:||:address\=\/:' -e 's:\^:/0\.0\.0\.0:' > /tmp/dnsmasq.dom/ad.conf
-  fi
-fi
-fi
-rm -f /tmp/adnew.conf
+	mkdir -p /tmp/dnsmasq.dom
+	curl -k -s -o /tmp/adnew.conf --connect-timeout 10 --retry 3 $(nvram get ss_adblock_url)
+	if [ ! -f "/tmp/adnew.conf" ]; then
+		logger -t "SS" "AD文件下载失败，可能是地址失效或者网络异常！"
+	else
+		logger -t "SS" "AD文件下载成功"
+		if [ -f "/tmp/adnew.conf" ]; then
+			check = `grep -wq "address=" /tmp/adnew.conf`
+	  		if [ ! -n "$check" ] ; then
+	    			cp /tmp/adnew.conf /tmp/dnsmasq.dom/ad.conf
+	  		else
+			    cat /tmp/adnew.conf | grep ^\|\|[^\*]*\^$ | sed -e 's:||:address\=\/:' -e 's:\^:/0\.0\.0\.0:' > /tmp/dnsmasq.dom/ad.conf
+			fi
+		fi
+	fi
+	rm -f /tmp/adnew.conf
 }
 
 
@@ -395,10 +397,10 @@ rules() {
 
 start_watchcat() {
 	if [ $(nvram get ss_watchcat) = 1 ]; then
-		let total_count=server_count+redir_tcp+redir_udp+tunnel_enable+v2ray_enable+local_enable+pdnsd_enable_flag
+		let total_count=server_count+redir_tcp+redir_udp+tunnel_enable+v2ray_enable+local_enable+pdnsd_enable_flag+chinadnsng_enable_flag
 		if [ $total_count -gt 0 ]; then
 			#param:server(count) redir_tcp(0:no,1:yes)  redir_udp tunnel kcp local gfw
-			/usr/bin/ssr-monitor $server_count $redir_tcp $redir_udp $tunnel_enable $v2ray_enable $local_enable $pdnsd_enable_flag >/dev/null 2>&1 &
+			/usr/bin/ssr-monitor $server_count $redir_tcp $redir_udp $tunnel_enable $v2ray_enable $local_enable $pdnsd_enable_flag $chinadnsng_enable_flag >/dev/null 2>&1 &
 		fi
 	fi
 }

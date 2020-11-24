@@ -4,7 +4,7 @@
 #define BOARD_NAME		"K2P-USB"
 #define BOARD_DESC		"PHICOMM K2P Wireless Router"
 #define BOARD_VENDOR_NAME	"PHICOMM"
-#define BOARD_K2P		1
+#define BOARD_K2P		
 #define BOARD_VENDOR_URL	"http://www.phicomm.com/"
 #define BOARD_MODEL_URL		"http://www.phicomm.com/"
 #define BOARD_BOOT_TIME		30

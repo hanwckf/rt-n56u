@@ -108,9 +108,6 @@ dl_handle_link_wan(void)
 			}
 		}
 #endif
-
-
-
 #if defined (BOARD_GPIO_LED_LAN)
 		front_led_x = nvram_get_int("front_led_lan");
 		if (front_led_x == 1)

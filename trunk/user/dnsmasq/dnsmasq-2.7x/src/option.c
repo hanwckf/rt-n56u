@@ -106,6 +106,7 @@ struct myoption {
 #define LOPT_PROXY         295
 #define LOPT_GEN_NAMES     296
 #define LOPT_MAXTTL        297
+#define LOPT_MINTTL        397
 #define LOPT_NO_REBIND     298
 #define LOPT_LOC_REBND     299
 #define LOPT_ADD_MAC       300
@@ -161,7 +162,8 @@ struct myoption {
 #define LOPT_TFTP_MTU      349
 #define LOPT_REPLY_DELAY   350
 #define LOPT_GFWLIST       351
- 
+#define LOPT_DHCP_TO_HOST  352
+#define LOPT_FILTER_AAAA   353 
 #ifdef HAVE_GETOPT_LONG
 static const struct option opts[] =  
 #else
@@ -273,6 +275,7 @@ static const struct myoption opts[] =
     { "dhcp-broadcast", 2, 0, LOPT_BROADCAST },
     { "neg-ttl", 1, 0, LOPT_NEGTTL },
     { "max-ttl", 1, 0, LOPT_MAXTTL },
+    { "min-ttl", 1, 0, LOPT_MINTTL },
     { "min-cache-ttl", 1, 0, LOPT_MINCTTL },
     { "max-cache-ttl", 1, 0, LOPT_MAXCTTL },
     { "dhcp-alternate-port", 2, 0, LOPT_ALTPORT },
@@ -327,6 +330,8 @@ static const struct myoption opts[] =
     { "dhcp-ttl", 1, 0 , LOPT_DHCPTTL },
     { "dhcp-reply-delay", 1, 0, LOPT_REPLY_DELAY },
     { "gfwlist", 1, 0, LOPT_GFWLIST },
+    { "dhcp-to-host", 0, 0, LOPT_DHCP_TO_HOST },
+    { "filter-aaaa", 0, 0, LOPT_FILTER_AAAA },
     { NULL, 0, 0, 0 }
   };
 
@@ -399,6 +404,7 @@ static struct {
   { 'T', ARG_ONE, "<integer>", gettext_noop("Specify time-to-live in seconds for replies from /etc/hosts."), NULL },
   { LOPT_NEGTTL, ARG_ONE, "<integer>", gettext_noop("Specify time-to-live in seconds for negative caching."), NULL },
   { LOPT_MAXTTL, ARG_ONE, "<integer>", gettext_noop("Specify time-to-live in seconds for maximum TTL to send to clients."), NULL },
+  { LOPT_MINTTL, ARG_ONE, "<integer>", gettext_noop("Specify time-to-live in seconds for minimum TTL to send to clients."), NULL },
   { LOPT_MAXCTTL, ARG_ONE, "<integer>", gettext_noop("Specify time-to-live ceiling for cache."), NULL },
   { LOPT_MINCTTL, ARG_ONE, "<integer>", gettext_noop("Specify time-to-live floor for cache."), NULL },
   { 'u', ARG_ONE, "<username>", gettext_noop("Change to this user after startup. (defaults to %s)."), CHUSER }, 
@@ -500,6 +506,8 @@ static struct {
   { LOPT_DHCPTTL, ARG_ONE, "<ttl>", gettext_noop("Set TTL in DNS responses with DHCP-derived addresses."), NULL }, 
   { LOPT_REPLY_DELAY, ARG_ONE, "<integer>", gettext_noop("Delay DHCP replies for at least number of seconds."), NULL },
   { LOPT_GFWLIST, ARG_DUP, "<path|domain>[@server][^ipset]", gettext_noop("Gfwlist path or domain to special server (default 8.8.8.8~53) and ipset (default gfwlist, pass ^ only to skip default ipset)"), NULL },
+  { LOPT_DHCP_TO_HOST, OPT_DHCP_TO_HOST, NULL, gettext_noop("Keep DHCP hostname valid at all times."), NULL },
+  { LOPT_FILTER_AAAA, OPT_FILTER_AAAA, NULL, gettext_noop("Filter all AAAA requests."), NULL },
   { 0, 0, NULL, NULL, NULL }
 }; 
 
@@ -2658,6 +2666,7 @@ static int one_opt(int option, char *arg, char *errstr, char *gen_err, int comma
     case 'T':         /* --local-ttl */
     case LOPT_NEGTTL: /* --neg-ttl */
     case LOPT_MAXTTL: /* --max-ttl */
+    case LOPT_MINTTL: /* --min-ttl */
     case LOPT_MINCTTL: /* --min-cache-ttl */
     case LOPT_MAXCTTL: /* --max-cache-ttl */
     case LOPT_AUTHTTL: /* --auth-ttl */
@@ -2670,6 +2679,8 @@ static int one_opt(int option, char *arg, char *errstr, char *gen_err, int comma
 	  daemon->neg_ttl = (unsigned long)ttl;
 	else if (option == LOPT_MAXTTL)
 	  daemon->max_ttl = (unsigned long)ttl;
+	else if (option == LOPT_MINTTL)
+    daemon->min_ttl = (unsigned long)ttl;
 	else if (option == LOPT_MINCTTL)
 	  {
 	    if (ttl > TTL_FLOOR_LIMIT)

@@ -4,7 +4,7 @@
 #define BOARD_NAME		"PSG1218"
 #define BOARD_DESC		"PHICOMM PSG1218 Wireless Router"
 #define BOARD_VENDOR_NAME	"PHICOMM"
-#define BOARD_PSG1218		"YES"
+#define BOARD_PSG1218		
 #define BOARD_VENDOR_URL	"http://www.phicomm.com/"
 #define BOARD_MODEL_URL		"http://www.phicomm.com/"
 #define BOARD_BOOT_TIME		25

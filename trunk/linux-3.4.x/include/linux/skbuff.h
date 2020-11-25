@@ -451,6 +451,9 @@ struct sk_buff {
 				ipvs_property:1,
 				peeked:1,
 				nf_trace:1;
+#ifdef CONFIG_SHORTCUT_FE
+	__u8			fast_forwarded:1;
+#endif
 	kmemcheck_bitfield_end(flags1);
 	__be16			protocol;
 
@@ -503,9 +506,6 @@ struct sk_buff {
 #endif
 #ifdef CONFIG_NETWORK_SECMARK
 	__u32			secmark;
-#endif
-#ifdef CONFIG_SHORTCUT_FE
-	__u8			fast_forwarded:1;
 #endif
 	union {
 		__u32		mark;

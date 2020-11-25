@@ -482,6 +482,12 @@ if [ "$CONFIG_FIRMWARE_INCLUDE_AUDIO" != "y" ] || [ "$CONFIG_FIRMWARE_ENABLE_USB
 	func_disable_kernel_param "CONFIG_FW_LOADER"
 	func_disable_kernel_param "CONFIG_SOUND"
 fi
+######################### SHORTCUT_FE #################################
+if [ "$CONFIG_FIRMWARE_INCLUDE_SFE" = "y" ] ; then
+	func_enable_kernel_param "CONFIG_SHORTCUT_FE"
+	func_enable_kernel_param "CONFIG_NF_CONNTRACK_EVENTS"
+	func_enable_kernel_param "CONFIG_NF_CONNTRACK_CHAIN_EVENTS"
+fi
 #######################################################################
 echo --------------------------MAKE-DEP--------------------------------
 make dep

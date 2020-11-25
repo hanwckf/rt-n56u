@@ -773,7 +773,7 @@ reload_nat_modules(void)
 	hwnat_configure(hwnat_allow);
 #endif
 #if defined (USE_SFE)
-	int sfe_enable = nvram_get_int("sfe_enable");
+	int sfe_enable = nvram_safe_get_int("sfe_enable", 0, 0, 2);
 	int sfe_loaded = is_module_loaded("fast_classifier");
 
 	if (sfe_loaded && !sfe_enable) {
@@ -784,11 +784,8 @@ reload_nat_modules(void)
 		module_smart_load("fast_classifier", NULL);
 		sfe_loaded = 1;
 	}
-	if (sfe_loaded) {
-		if (sfe_enable == 1)
-			doSystem("echo 0 > /sys/fast_classifier/skip_to_bridge_ingress");
-		else if (sfe_enable == 2)
-			doSystem("echo 1 > /sys/fast_classifier/skip_to_bridge_ingress");
+	if (sfe_loaded && ((sfe_enable == 1) || (sfe_enable == 2 ))) {
+			fput_int("/sys/fast_classifier/skip_to_bridge_ingress", sfe_enable - 1);
 	}
 #endif
 }

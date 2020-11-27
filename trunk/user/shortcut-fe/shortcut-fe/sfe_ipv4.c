@@ -2,7 +2,7 @@
  * sfe_ipv4.c
  *	Shortcut forwarding engine - IPv4 edition.
  *
- * Copyright (c) 2013-2016 The Linux Foundation. All rights reserved.
+ * Copyright (c) 2013-2016, 2019, The Linux Foundation. All rights reserved.
  * Permission to use, copy, modify, and/or distribute this software for
  * any purpose with or without fee is hereby granted, provided that the
  * above copyright notice and this permission notice appear in all copies.
@@ -1303,6 +1303,26 @@ static int sfe_ipv4_recv_udp(struct sfe_ipv4 *si, struct sk_buff *skb, struct ne
 	 */
 
 	/*
+	 * Check if skb was cloned. If it was, unshare it. Because
+	 * the data area is going to be written in this path and we don't want to
+	 * change the cloned skb's data section.
+	 */
+	if (unlikely(skb_cloned(skb))) {
+		DEBUG_TRACE("%p: skb is a cloned skb\n", skb);
+		skb = skb_unshare(skb, GFP_ATOMIC);
+                if (!skb) {
+			DEBUG_WARN("Failed to unshare the cloned skb\n");
+			return 0;
+		}
+
+		/*
+		 * Update the iph and udph pointers with the unshared skb's data area.
+		 */
+		iph = (struct sfe_ipv4_ip_hdr *)skb->data;
+		udph = (struct sfe_ipv4_udp_hdr *)(skb->data + ihl);
+	}
+
+	/*
 	 * Update DSCP
 	 */
 	if (unlikely(cm->flags & SFE_IPV4_CONNECTION_MATCH_FLAG_DSCP_REMARK)) {
@@ -1857,6 +1877,26 @@ static int sfe_ipv4_recv_tcp(struct sfe_ipv4 *si, struct sk_buff *skb, struct ne
 	/*
 	 * From this point on we're good to modify the packet.
 	 */
+
+	/*
+	 * Check if skb was cloned. If it was, unshare it. Because
+	 * the data area is going to be written in this path and we don't want to
+	 * change the cloned skb's data section.
+	 */
+	if (unlikely(skb_cloned(skb))) {
+		DEBUG_TRACE("%p: skb is a cloned skb\n", skb);
+		skb = skb_unshare(skb, GFP_ATOMIC);
+                if (!skb) {
+			DEBUG_WARN("Failed to unshare the cloned skb\n");
+			return 0;
+		}
+
+		/*
+		 * Update the iph and tcph pointers with the unshared skb's data area.
+		 */
+		iph = (struct sfe_ipv4_ip_hdr *)skb->data;
+		tcph = (struct sfe_ipv4_tcp_hdr *)(skb->data + ihl);
+	}
 
 	/*
 	 * Update DSCP

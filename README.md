@@ -96,7 +96,8 @@ Contributors of this project are not responsible for what happens next.
 >- MR2600 (USB)
 >- WDR7300
 >- RM2100
->- R2100 
+>- R2100
+>- JCG-Y2(USB)
 >- E8820V2(USB)
 >- MSG1500(USB)
 

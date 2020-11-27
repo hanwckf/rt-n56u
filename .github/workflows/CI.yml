@@ -46,16 +46,22 @@ jobs:
           for m in $targets; do fakeroot ./build_firmware_ci $m; \
           if [ $? = 0 ]; then cp -f images/*.trx /opt/images/$m.trx; else exit 1; fi; \
           ./clear_tree_simple >/dev/null 2>&1; done
-      - name: Upload images to file.io
-        if: ${{ github.repository == 'hanwckf/rt-n56u' && github.event_name != 'release' }}
+      - name: Create archive
+        if: ${{ github.event_name != 'release' && success() }}
         run: |
           cd /opt/rt-n56u
           GIT_VERSION=`git rev-parse --short=7 HEAD 2>/dev/null` && [ -n "$GIT_VERSION" ] && \
           image_name=images_${build_variant}_${GIT_VERSION} || image_name=images_${build_variant}
           cd /opt/images; md5sum *.trx |tee md5sum.txt; 7z a -mx=9 ${image_name}.7z ./*
-          curl -m 120 -F file=@${image_name}.7z https://file.io/?expires=3d ; echo
+          echo "image_name=${image_name}" >> $GITHUB_ENV
+      - name: Upload images to Artifact
+        if: ${{ github.event_name != 'release' && success() }}
+        uses: actions/upload-artifact@v2.2.1
+        with:
+          name: ${{ env.image_name }}
+          path: /opt/images/*.7z
       - name: Upload images to Releases
-        if: ${{ github.repository == 'hanwckf/rt-n56u' && github.event_name == 'release' }}
+        if: ${{ github.event_name == 'release' && success() }}
         uses: svenstaro/upload-release-action@2.2.0
         with:
           repo_token: ${{ secrets.GITHUB_TOKEN }}

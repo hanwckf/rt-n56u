@@ -1,7 +1,12 @@
 name: CI
 
 # Controls when the action will run. 
-on: [push, pull_request, workflow_dispatch, release]
+on: 
+  push:
+  pull_request:
+  workflow_dispatch:
+  release:
+    types: [published]
 
 env:
   toolchain_pkg: mipsel-linux-uclibc.tar.xz

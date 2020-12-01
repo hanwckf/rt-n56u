@@ -3509,8 +3509,7 @@ another_round:
 	if (fast_recv) {
 		if (fast_recv(skb)) {
 			ret = NET_RX_SUCCESS;
-			rcu_read_unlock();
-			return ret;
+			goto out;
 		}
 	}
 #endif

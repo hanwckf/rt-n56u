@@ -147,7 +147,7 @@ struct sfe_connection_mark {
 /*
  * Expose the hook for the receive processing.
  */
-extern int (*fast_nat_recv)(struct sk_buff *skb);
+extern int (*athrs_fast_nat_recv)(struct sk_buff *skb);
 
 /*
  * Expose what should be a static flag in the TCP connection tracker.

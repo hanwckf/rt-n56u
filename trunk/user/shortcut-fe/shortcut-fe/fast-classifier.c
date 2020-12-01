@@ -1787,8 +1787,8 @@ static int __init fast_classifier_init(void)
 	/*
 	 * Hook the receive path in the network stack.
 	 */
-	BUG_ON(fast_nat_recv);
-	RCU_INIT_POINTER(fast_nat_recv, fast_classifier_recv);
+	BUG_ON(athrs_fast_nat_recv);
+	RCU_INIT_POINTER(athrs_fast_nat_recv, fast_classifier_recv);
 
 	/*
 	 * Hook the shortcut sync callback.
@@ -1846,7 +1846,7 @@ static void __exit fast_classifier_exit(void)
 	/*
 	 * Unregister our receive callback.
 	 */
-	RCU_INIT_POINTER(fast_nat_recv, NULL);
+	RCU_INIT_POINTER(athrs_fast_nat_recv, NULL);
 
 	/*
 	 * Wait for all callbacks to complete.

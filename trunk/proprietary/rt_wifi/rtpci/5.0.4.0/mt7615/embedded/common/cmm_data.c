@@ -5139,7 +5139,7 @@ VOID dev_rx_ctrl_frm(RTMP_ADAPTER *pAd, RX_BLK *pRxBlk)
 						pEntry = &pAd->MacTab.Content[pAd->ApCfg.ApCliTab[apcli_idx].MacTabWCID];
 						pRxBlk->wcid = pEntry->wcid;
 					} else {
-						MTWF_LOG(DBG_CAT_RX, DBG_SUBCAT_ALL, DBG_LVL_ERROR, ("%s():Cannot found WCID of BAR packet!. A1:%02x:%02x:%02x:%02x:%02x:%02x,A2:%02x:%02x:%02x:%02x:%02x:%02x\n\r", __func__,
+						MTWF_LOG(DBG_CAT_RX, DBG_SUBCAT_ALL, DBG_LVL_TRACE, ("%s():Cannot found WCID of BAR packet!. A1:%02x:%02x:%02x:%02x:%02x:%02x,A2:%02x:%02x:%02x:%02x:%02x:%02x\n\r", __func__,
 								 PRINT_MAC(pRxBlk->Addr1), PRINT_MAC(pRxBlk->Addr2)));
 						break;
 					}
@@ -5157,7 +5157,7 @@ VOID dev_rx_ctrl_frm(RTMP_ADAPTER *pAd, RX_BLK *pRxBlk)
 						if (pAd->monitor_ctrl[0].bMonitorOn == FALSE)
 #endif
 #endif
-				MTWF_LOG(DBG_CAT_RX, DBG_SUBCAT_ALL, DBG_LVL_ERROR, ("%s(): Cannot found WCID of BAR packet!\n",
+				MTWF_LOG(DBG_CAT_RX, DBG_SUBCAT_ALL, DBG_LVL_TRACE, ("%s(): Cannot found WCID of BAR packet!\n",
 						 __func__));
 			}
 		}

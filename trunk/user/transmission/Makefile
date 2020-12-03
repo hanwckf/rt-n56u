@@ -1,13 +1,24 @@
-SRC_NAME=transmission-2.9x
-
-CFLAGS   += -O2 -ffunction-sections -fdata-sections -D_LARGEFILE64_SOURCE -D_LFS64_LARGEFILE
+SRC_NAME = transmission-2.94
+SRC_URL = https://github.com/transmission/transmission/archive/2.94.tar.gz
+CFLAGS   += -O2 -ffunction-sections -fdata-sections -D_LARGEFILE64_SOURCE -D_LFS64_LARGEFILE -Wno-implicit-fallthrough
 LDFLAGS  += -Wl,--gc-sections
 
 THISDIR = $(shell pwd)
 
-all: config_test
+all: download_test extract_test config_test
 	$(MAKE) -C $(SRC_NAME) && \
 	$(MAKE) -C $(SRC_NAME) install DESTDIR=$(THISDIR)/install
+
+download_test:
+	( if [ ! -f $(SRC_NAME).tar.gz ]; then \
+		wget -t5 --timeout=20 --no-check-certificate -O $(SRC_NAME).tar.gz $(SRC_URL); \
+	fi )
+
+extract_test:
+	( if [ ! -d $(SRC_NAME) ]; then \
+		tar -xf $(SRC_NAME).tar.gz; \
+		patch -p1 -d $(SRC_NAME) < $(SRC_NAME).patch; \
+	fi )
 
 config_test:
 	( if [ -f ./config_done ]; then \
@@ -20,16 +31,17 @@ configure:
 	( cd $(SRC_NAME) ; \
 	HAVE_CXX=yes \
 	PKG_CONFIG_PATH=$(STAGEDIR)/lib/pkgconfig \
-	./configure \
+	./autogen.sh \
 		--prefix=/usr \
 		--enable-daemon \
 		--enable-lightweight \
-		--disable-utp \
+		--enable-utp \
 		--disable-nls \
 		--disable-cli \
 		--disable-mac \
 		--without-gtk \
 		--with-inotify \
+		--with-crypto=openssl \
 		--with-zlib=$(STAGEDIR) \
 		OPENSSL_CFLAGS="-I$(STAGEDIR)/include" \
 		OPENSSL_LIBS="-L$(STAGEDIR)/lib -lssl -lcrypto" \
@@ -43,7 +55,7 @@ configure:
 
 clean:
 	if [ -f $(SRC_NAME)/Makefile ] ; then \
-		$(MAKE) -C $(SRC_NAME) distclean ; \
+		$(MAKE) -C $(SRC_NAME) clean ; \
 	fi ; \
 	rm -f config_done
 	rm -rf install

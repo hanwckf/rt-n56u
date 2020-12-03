@@ -778,9 +778,13 @@ reload_nat_modules(void)
 
 	if (sfe_loaded && !sfe_enable) {
 		module_smart_unload("fast_classifier", 1);
+		doSystem("echo 1 > /proc/sys/net/netfilter/nf_conntrack_tcp_be_liberal");
+		doSystem("echo 1 > /proc/sys/net/netfilter/nf_conntrack_tcp_no_window_check");
 		sfe_loaded = 0;
 	}
 	if (sfe_enable && !sfe_loaded) {
+		doSystem("echo 0 > /proc/sys/net/netfilter/nf_conntrack_tcp_be_liberal");
+		doSystem("echo 0 > /proc/sys/net/netfilter/nf_conntrack_tcp_no_window_check");
 		module_smart_load("fast_classifier", NULL);
 		sfe_loaded = 1;
 	}

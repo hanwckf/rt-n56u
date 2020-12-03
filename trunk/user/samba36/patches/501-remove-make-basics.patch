@@ -1,0 +1,20 @@
+--- a/source3/Makefile.in
++++ b/source3/Makefile.in
+@@ -1531,7 +1531,7 @@ SPLIT_TOKENS_OBJ = utils/split_tokens.o
+ ######################################################################
+ # now the rules...
+ ######################################################################
+-all:: SHOWFLAGS basics libs $(SBIN_PROGS) $(BIN_PROGS) \
++all:: SHOWFLAGS libs $(SBIN_PROGS) $(BIN_PROGS) \
+ 	$(MODULES) $(NSS_MODULES) $(PAM_MODULES) \
+ 	$(EXTRA_ALL_TARGETS)
+ 
+@@ -1547,7 +1547,7 @@ pam_winbind: SHOWFLAGS bin/pam_winbind.@
+ 
+ gpext_modules:: $(GPEXT_MODULES)
+ 
+-torture:: SHOWFLAGS basics $(TORTURE_PROGS) @SMBTORTURE4@
++torture:: SHOWFLAGS $(TORTURE_PROGS) @SMBTORTURE4@
+ 
+ smbtorture : SHOWFLAGS bin/smbtorture@EXEEXT@
+ 

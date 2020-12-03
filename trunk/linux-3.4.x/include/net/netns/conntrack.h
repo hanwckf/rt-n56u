@@ -18,7 +18,11 @@ struct netns_ct {
 	struct hlist_nulls_head	unconfirmed;
 	struct hlist_nulls_head	dying;
 	struct ip_conntrack_stat __percpu *stat;
+#ifdef CONFIG_NF_CONNTRACK_CHAIN_EVENTS
+	struct atomic_notifier_head nf_conntrack_chain;
+#else
 	struct nf_ct_event_notifier __rcu *nf_conntrack_event_cb;
+#endif
 	struct nf_exp_event_notifier __rcu *nf_expect_event_cb;
 	int			sysctl_events;
 	unsigned int		sysctl_events_retry_timeout;

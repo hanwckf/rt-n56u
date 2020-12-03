@@ -26,6 +26,7 @@ configure:
 	./configure \
 		--prefix=$(STAGEDIR) \
 		--without-ada \
+		--without-termlib \
 		--without-progs \
 		--without-tests \
 		--without-manpages \

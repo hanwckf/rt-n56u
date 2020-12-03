@@ -96,6 +96,7 @@ nf_conntrack_event_cache(enum ip_conntrack_events event, struct nf_conn *ct)
 	set_bit(event, &e->cache);
 }
 
+#ifdef CONFIG_NF_CONNTRACK_CHAIN_EVENTS
 static inline int
 nf_conntrack_eventmask_report(unsigned int eventmask,
 			      struct nf_conn *ct,
@@ -103,26 +104,11 @@ nf_conntrack_eventmask_report(unsigned int eventmask,
 			      int report)
 {
 	struct nf_conntrack_ecache *e;
-#ifndef CONFIG_NF_CONNTRACK_CHAIN_EVENTS
-	int ret = 0;
 	struct net *net = nf_ct_net(ct);
-	struct nf_ct_event_notifier *notify;
-
-	rcu_read_lock();
-	notify = rcu_dereference(net->ct.nf_conntrack_event_cb);
-	if (notify == NULL)
-		goto out_unlock;
-#else
-	struct net *net = nf_ct_net(ct);
-#endif
 
 	e = nf_ct_ecache_find(ct);
 	if (e == NULL)
-#ifndef CONFIG_NF_CONNTRACK_CHAIN_EVENTS
-		goto out_unlock;
-#else
 		return 0;
-#endif
 
 	if (nf_ct_is_confirmed(ct) && !nf_ct_is_dying(ct)) {
 		struct nf_ct_event item = {
@@ -134,7 +120,44 @@ nf_conntrack_eventmask_report(unsigned int eventmask,
 		unsigned long missed = e->pid ? 0 : e->missed;
 
 		if (!((eventmask | missed) & e->ctmask))
-#ifndef CONFIG_NF_CONNTRACK_CHAIN_EVENTS
+			return 0;
+
+		atomic_notifier_call_chain(&net->ct.nf_conntrack_chain, eventmask | missed, &item);
+    }
+
+    return 0;
+}
+#else
+static inline int
+nf_conntrack_eventmask_report(unsigned int eventmask,
+			      struct nf_conn *ct,
+			      u32 pid,
+			      int report)
+{
+	int ret = 0;
+	struct net *net = nf_ct_net(ct);
+	struct nf_ct_event_notifier *notify;
+	struct nf_conntrack_ecache *e;
+
+	rcu_read_lock();
+	notify = rcu_dereference(net->ct.nf_conntrack_event_cb);
+	if (notify == NULL)
+		goto out_unlock;
+
+	e = nf_ct_ecache_find(ct);
+	if (e == NULL)
+		goto out_unlock;
+
+	if (nf_ct_is_confirmed(ct) && !nf_ct_is_dying(ct)) {
+		struct nf_ct_event item = {
+			.ct 	= ct,
+			.pid	= e->pid ? e->pid : pid,
+			.report = report
+		};
+		/* This is a resent of a destroy event? If so, skip missed */
+		unsigned long missed = e->pid ? 0 : e->missed;
+
+		if (!((eventmask | missed) & e->ctmask))
 			goto out_unlock;
 
 		ret = notify->fcn(eventmask | missed, &item);
@@ -157,13 +180,8 @@ nf_conntrack_eventmask_report(unsigned int eventmask,
 out_unlock:
 	rcu_read_unlock();
 	return ret;
-#else
-			return 0;
-		atomic_notifier_call_chain(&net->ct.nf_conntrack_chain, eventmask | missed, &item);
-	}
-	return 0;
-#endif
 }
+#endif
 
 static inline int
 nf_conntrack_event_report(enum ip_conntrack_events event, struct nf_conn *ct,

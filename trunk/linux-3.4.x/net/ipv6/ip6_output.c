@@ -385,6 +385,9 @@ static int ip6_forward_proxy_check(struct sk_buff *skb)
 	return 0;
 }
 
+static int napt66_enabled __read_mostly = 0;
+EXPORT_SYMBOL_GPL(napt66_enabled);
+
 static inline int ip6_forward_finish(struct sk_buff *skb)
 {
 	return dst_output(skb);
@@ -398,8 +401,10 @@ int ip6_forward(struct sk_buff *skb)
 	struct net *net = dev_net(dst->dev);
 	u32 mtu;
 
-/*	if (net->ipv6.devconf_all->forwarding == 0)
-		goto error;*/
+	if (!napt66_enabled) {
+		if (net->ipv6.devconf_all->forwarding == 0)
+			goto error;
+	}
 
 	if (skb->pkt_type != PACKET_HOST)
 		goto drop;

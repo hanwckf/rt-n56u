@@ -41,6 +41,7 @@ bool inet6_addr_flag;
 extern int get_entry(struct sk_buff *skb,struct conn_entry** pp_entry,int direc);
 extern int nat(struct sk_buff *skb,struct conn_entry* entry,int direc);
 extern void hash_table_init(struct hash_entry* table);
+extern int napt66_enabled;
 
 long time(void* ptr)
 {
@@ -107,6 +108,7 @@ unsigned int hook_func_out(unsigned int hooknum,struct sk_buff *skb,const struct
 	printk(KERN_INFO "TIME 2011.4.10 final\n");
 
 	inet6_addr_flag = false;
+	napt66_enabled = 1;
 
 	hash_table_init(source_table);
 	hash_table_init(ipproto_table);
@@ -132,9 +134,8 @@ unsigned int hook_func_out(unsigned int hooknum,struct sk_buff *skb,const struct
 
 void cleanup_module()
 {
-	//kfree(g_in_addr_1);
-
 	printk(KERN_INFO "Remove netfilter module for IPv6 NAPT66 . <NSRC_NAPT66_TEAM@BUPT,2010>\n");	
-   nf_unregister_hook(&nfho_in);
+	nf_unregister_hook(&nfho_in);
 	nf_unregister_hook(&nfho_out);
+	napt66_enabled = 0;
 }

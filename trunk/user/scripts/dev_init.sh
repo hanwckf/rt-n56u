@@ -89,14 +89,14 @@ if [ -f /etc/storage/authorized_keys ] ; then
 	chmod 600 /home/root/.ssh/authorized_keys
 fi
 
-# perform start script
-if [ -x /etc/storage/start_script.sh ] ; then
-	/etc/storage/start_script.sh
-fi
-
 # setup htop default color
 if [ -f /usr/bin/htop ]; then
 	mkdir -p /home/root/.config/htop
 	echo "color_scheme=6" > /home/root/.config/htop/htoprc
+fi
+
+# perform start script
+if [ -x /etc/storage/start_script.sh ] ; then
+	/etc/storage/start_script.sh
 fi
 

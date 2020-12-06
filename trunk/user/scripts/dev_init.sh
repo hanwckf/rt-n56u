@@ -93,3 +93,10 @@ fi
 if [ -x /etc/storage/start_script.sh ] ; then
 	/etc/storage/start_script.sh
 fi
+
+# setup htop default color
+if [ -f /usr/bin/htop ]; then
+	mkdir -p /home/root/.config/htop
+	echo "color_scheme=6" > /home/root/.config/htop/htoprc
+fi
+

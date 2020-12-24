@@ -1,16 +1,14 @@
-SRC_NAME=redsocks-release-0.5-11-g19b822e
-SRC_URL=https://github.com/SuzukiHonoka/redsocks_for_mipsel/releases/download/release-0.5-11-g19b822e/redsocks
+SRC_NAME := redsocks-19b822e
+THISDIR := $(shell pwd)
 
-THISDIR = $(shell pwd)
+all:
+	$(MAKE) -C $(SRC_NAME)
 
-all: download_test
-
-download_test:
-	( if [ ! -f redsocks ]; then \
-		wget -t5 --timeout=20 --no-check-certificate -O redsocks $(SRC_URL); \
+clean:
+	( if [ -f $(SRC_NAME)/Makefile ] ; then \
+		$(MAKE) -C $(SRC_NAME) clean ; \
 	fi )
 
 romfs:
-	$(ROMFSINST) $(THISDIR)/redsocks /usr/bin/redsocks
-	$(ROMFSINST) $(THISDIR)/redsocks.sh /usr/bin/redsocks.sh
-	$(ROMFSINST) -p +x /usr/bin/redsocks.sh
+	$(ROMFSINST) $(THISDIR)/$(SRC_NAME)/redsocks /usr/bin/redsocks
+#	$(ROMFSINST) -p +x $(THISDIR)/redsocks.sh /usr/bin/redsocks.sh

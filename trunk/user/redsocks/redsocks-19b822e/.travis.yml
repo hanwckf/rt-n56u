@@ -1,0 +1,17 @@
+os:
+  - linux
+  - osx
+
+addons:
+  apt:
+    packages:
+    - libevent-dev
+
+language: c
+
+compiler:
+  - gcc
+  - clang
+
+script:
+  - make all

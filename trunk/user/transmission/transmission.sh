@@ -26,6 +26,8 @@ func_start()
 		echo "[FAILED], unable to find target dir!"
 		return 1
 	fi
+
+	export TR_CURL_SSL_NO_VERIFY=1
 	
 	DIR_CFG="${DIR_LINK}/config"
 	DIR_DL1="`cd \"$DIR_LINK\"; dirname \"$(pwd -P)\"`/Downloads"

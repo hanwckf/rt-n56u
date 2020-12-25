@@ -53,6 +53,8 @@ start()
 		PORT=
 	fi
 
+	ulimit -n 65536
+
 	# trojan
 	if [ -z $3 ]; then
 		[ -z $PORT ] && PORT=1080

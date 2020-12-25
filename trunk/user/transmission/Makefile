@@ -1,13 +1,26 @@
-SRC_NAME=transmission-2.9x
-
-CFLAGS   += -O2 -ffunction-sections -fdata-sections -D_LARGEFILE64_SOURCE -D_LFS64_LARGEFILE
+SRC_NAME = transmission-3.00
+SRC_URL = https://github.com/transmission/transmission/releases/download/3.00/transmission-3.00.tar.xz
+CFLAGS   += -O2 -ffunction-sections -fdata-sections -D_LARGEFILE64_SOURCE -D_LFS64_LARGEFILE -Wno-implicit-fallthrough
 LDFLAGS  += -Wl,--gc-sections
 
 THISDIR = $(shell pwd)
 
-all: config_test
+all: download_test extract_test config_test
 	$(MAKE) -C $(SRC_NAME) && \
 	$(MAKE) -C $(SRC_NAME) install DESTDIR=$(THISDIR)/install
+
+download_test:
+	( if [ ! -f $(SRC_NAME).tar.xz ]; then \
+		wget -t5 --timeout=20 --no-check-certificate -O $(SRC_NAME).tar.xz $(SRC_URL); \
+	fi )
+
+extract_test:
+	( if [ ! -d $(SRC_NAME) ]; then \
+		tar -xf $(SRC_NAME).tar.xz; \
+		patch -p1 -d $(SRC_NAME) < $(SRC_NAME).patch; \
+		mkdir -p $(SRC_NAME)/third-party/miniupnpc/include/miniupnp ; \
+		cp -r $(SRC_NAME)/third-party/miniupnpc/*.h $(SRC_NAME)/third-party/miniupnpc/include/miniupnp ; \
+	fi )
 
 config_test:
 	( if [ -f ./config_done ]; then \
@@ -20,16 +33,18 @@ configure:
 	( cd $(SRC_NAME) ; \
 	HAVE_CXX=yes \
 	PKG_CONFIG_PATH=$(STAGEDIR)/lib/pkgconfig \
-	./configure \
+	./autogen.sh \
 		--prefix=/usr \
 		--enable-daemon \
 		--enable-lightweight \
-		--disable-utp \
+		--enable-utp \
 		--disable-nls \
 		--disable-cli \
 		--disable-mac \
 		--without-gtk \
+		--without-systemd \
 		--with-inotify \
+		--with-crypto=openssl \
 		--with-zlib=$(STAGEDIR) \
 		OPENSSL_CFLAGS="-I$(STAGEDIR)/include" \
 		OPENSSL_LIBS="-L$(STAGEDIR)/lib -lssl -lcrypto" \
@@ -43,7 +58,7 @@ configure:
 
 clean:
 	if [ -f $(SRC_NAME)/Makefile ] ; then \
-		$(MAKE) -C $(SRC_NAME) distclean ; \
+		$(MAKE) -C $(SRC_NAME) clean ; \
 	fi ; \
 	rm -f config_done
 	rm -rf install

@@ -1,0 +1,20 @@
+diff -rupw 3proxy-0.9.3-orig/Makefile.Linux 3proxy-0.9.3/Makefile.Linux
+--- 3proxy-0.9.3-orig/Makefile.Linux	2020-12-25 10:47:39.762479989 +0800
++++ 3proxy-0.9.3/Makefile.Linux	2020-12-25 10:46:54.502480750 +0800
+@@ -8,13 +8,13 @@
+ # library support. Add -DSAFESQL for poorely written ODBC library / drivers.
+ 
+ BUILDDIR = ../bin/
+-CC = gcc
++#CC = gcc
+ 
+-CFLAGS = -g  -fPIC -O2 -fno-strict-aliasing -c -pthread -DWITHSPLICE -D_GNU_SOURCE -DGETHOSTBYNAME_R -D_THREAD_SAFE -D_REENTRANT -DNOODBC -DWITH_STD_MALLOC -DFD_SETSIZE=4096 -DWITH_POLL -DWITH_NETFILTER
++CFLAGS += -fPIC -fno-strict-aliasing -c -pthread -DWITHSPLICE -D_GNU_SOURCE -DGETHOSTBYNAME_R -D_THREAD_SAFE -D_REENTRANT -DNOODBC -DWITH_STD_MALLOC -DFD_SETSIZE=4096 -DWITH_POLL -DWITH_NETFILTER
+ COUT = -o 
+ LN = $(CC)
+ DCFLAGS = 
+-LDFLAGS = -fPIE -O2 -fno-strict-aliasing -pthread
++LDFLAGS += -fno-strict-aliasing -pthread
+ DLFLAGS = -shared
+ DLSUFFICS = .ld.so
+ # -lpthreads may be reuqired on some platforms instead of -pthreads

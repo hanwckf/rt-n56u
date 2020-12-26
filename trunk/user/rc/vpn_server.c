@@ -365,7 +365,7 @@ vpns_route_to_remote_lan(const char *cname, char *ifname, char *gw, int add)
 {
 	int i, i_max;
 	char *acl_user, *acl_rnet, *acl_rmsk, *lnet, *lmsk;
-	char acl_user_var[16], acl_rnet_var[16], acl_rmsk_var[16];
+	char acl_user_var[22], acl_rnet_var[22], acl_rmsk_var[22];
 
 	lnet = nvram_safe_get("lan_ipaddr");
 	lmsk = nvram_safe_get("lan_netmask");

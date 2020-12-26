@@ -161,7 +161,7 @@ CFLAGS += $(call check-gcc-nowarn,unused-but-set-variable,)
 CFLAGS += $(call check-gcc-flag,-fno-tree-slsr,)
 
 # disable new loop optimization mode in gcc >= 4.8.x (fix loop regressions)
-#CFLAGS += $(call check-gcc-flag,-fno-aggressive-loop-optimizations,)
+CFLAGS += $(call check-gcc-flag,-fno-aggressive-loop-optimizations,)
 
 ############################################################################
 #
@@ -180,4 +180,6 @@ CXXLIBS   = -Wl,-Bdynamic $(LIBC) $(LIBGCC) $(CRTN)
 
 # disable pointer signed/unsigned warnings in gcc >= 4.x
 CFLAGS += -Wno-pointer-sign
+
+CFLAGS += -Wno-unused-value -Wno-unused-local-typedefs -Wno-unused-but-set-variable -Wno-unused-variable -Wno-unused-const-variable
 

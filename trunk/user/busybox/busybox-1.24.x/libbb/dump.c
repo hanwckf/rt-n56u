@@ -480,7 +480,7 @@ static const char conv_str[] ALIGN1 =
 static void conv_c(PR *pr, unsigned char *p)
 {
 	const char *str = conv_str;
-	char buf[10];
+	char buf[12];
 
 	do {
 		if (*p == *str) {

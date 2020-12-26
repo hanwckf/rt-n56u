@@ -595,7 +595,7 @@ static NOINLINE void display_process_list(int lines_rem, int scr_width)
 	};
 
 	top_status_t *s;
-	char vsz_str_buf[8];
+	char vsz_str_buf[9];
 	unsigned long total_memory = display_header(scr_width, &lines_rem); /* or use total_vsz? */
 	/* xxx_shift and xxx_scale variables allow us to replace
 	 * expensive divides with multiply and shift */

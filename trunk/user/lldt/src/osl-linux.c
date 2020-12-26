@@ -776,8 +776,8 @@ get_ipv6addr(void *data)
 
 #ifdef USE_IPV6
     ipv6addr_t* ipv6addr = (ipv6addr_t*) data;
-    char	dflt_if[] = {"br0"};
-    char       *interface = g_interface;
+    char dflt_if[] = {"br0"};
+    char *interface = g_interface;
     FILE *netinet6;
     char addr6[40], devname[20];
     int plen, scope, dad_status, if_idx;
@@ -792,11 +792,15 @@ get_ipv6addr(void *data)
 #else
     netinet6 = g_procnetinet6;
 #endif
-    if (netinet6 <= 0)
-	return TLV_GET_FAILED;
+    if (netinet6 == NULL) {
+#if CAN_FOPEN_IN_SELECT_LOOP
+        fclose(netinet6);
+#endif
+        return TLV_GET_FAILED;
+    }
 
     if (interface == NULL) interface = dflt_if;
-    while (fscanf(netinet6, "%4s%4s%4s%4s%4s%4s%4s%4s %08x %02x %02x %02x %20s\n",
+    while (fscanf(netinet6, "%4s%4s%4s%4s%4s%4s%4s%4s %08x %02x %02x %02x %19s\n",
 	addr6p[0], addr6p[1], addr6p[2], addr6p[3], addr6p[4],
 	addr6p[5], addr6p[6], addr6p[7], &if_idx, &plen, &scope,
 	&dad_status, devname) != EOF)

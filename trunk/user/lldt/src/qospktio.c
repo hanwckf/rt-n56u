@@ -119,13 +119,11 @@ get_raw_samples(void)
         g_rbytes = g_rpkts = g_tbytes = g_tpkts  = 0;
     }
 #ifdef  __DEBUG__
-#ifdef  __DEBUG__
     IF_TRACED(TRC_QOS)
 	dbgprintf("qos perf-cntr: g_rbytes=" FMT_UINT32 "; g_rpkts=" FMT_UINT32 \
 	          "; g_tbytes=" FMT_UINT32 "; g_tpkts=" FMT_UINT32 "\n",
 	          g_rbytes, g_rpkts, g_tbytes, g_tpkts);
     END_TRACE
-#endif
 #endif
 }
 

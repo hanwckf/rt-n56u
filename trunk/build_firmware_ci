@@ -1,8 +1,7 @@
 #!/bin/sh
 echo "======================= BUILD_CI $1 ======================="
 
-basedir="/opt/rt-n56u"
-rm -f $basedir/trunk/images/*.trx
+[ -d images ] && rm -f ./images/*.trx
 ./build_firmware_modify $1 > build.log 2>&1 &
 
 while true ;do
@@ -12,7 +11,7 @@ while true ;do
 
 	if [ -z "$process_status" ] ;then
 		echo "Build script is exited"
-		if [ -f $basedir/trunk/images/*.trx ]; then
+		if [ -f ./images/*.trx ]; then
 			tail -20 build.log && exit 0
 		else
 			tail -60 build.log && exit 1

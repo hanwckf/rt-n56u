@@ -8,10 +8,6 @@ on:
   release:
     types: [published]
 
-env:
-  toolchain_pkg: mipsel-linux-uclibc.tar.xz
-  toolchain_url: https://github.com/hanwckf/padavan-toolchain/releases/download/v1.1
-
 # A workflow run is made up of one or more jobs that can run sequentially or in parallel
 jobs:
   build:
@@ -21,6 +17,7 @@ jobs:
     env:
       build_variant: ${{ matrix.build_variant }}
       targets: ${{ matrix.targets }}
+      images_dir: /opt/images
     strategy:
       matrix:
         include:
@@ -29,7 +26,7 @@ jobs:
           - build_variant: "mt7628"
             targets: "HC5861B MI-NANO MZ-R13 MZ-R13P 360P2 HC5761A HC5661A"
           - build_variant: "mt7621"
-            targets: "K2P_nano K2P_nano-5.0 K2P-5.0 DIR-878-5.0 RM2100"
+            targets: "K2P_nano-5.0 K2P-5.0 DIR-878-5.0 RM2100"
           - build_variant: "mt7621-usb"
             targets: "JCG-836PRO-5.0 JCG-AC860M-5.0 JCG-Y2-5.0 DIR-882-5.0 A3004NS MSG1500 WR1200JS MI-R3G NEWIFI3 B70"
     steps:
@@ -42,36 +39,35 @@ jobs:
         run: sh ./trunk/tools/shellcheck.sh
       - name: Prepare toolchain
         run: |
-          mkdir -p /opt/rt-n56u/toolchain-mipsel/toolchain-3.4.x && mkdir -p /opt/images/
-          rm -rf toolchain-mipsel/ && mv -f * .[^.]* /opt/rt-n56u
-          curl -LO ${toolchain_url}/${toolchain_pkg}
-          tar -xf $toolchain_pkg -C /opt/rt-n56u/toolchain-mipsel/toolchain-3.4.x
+          cd toolchain-mipsel
+          sh dl_toolchain.sh
       - name: Start build
         run: |
-          cd /opt/rt-n56u/trunk
+          cd trunk
+          mkdir -p ${images_dir}
           for m in $targets; do fakeroot ./build_firmware_ci $m; \
-          if [ $? = 0 ]; then cp -f images/*.trx /opt/images/$m.trx; else exit 1; fi; \
+          if [ $? = 0 ]; then cp -f images/*.trx ${images_dir}/$m.trx; else exit 1; fi; \
           ./clear_tree_simple >/dev/null 2>&1; done
       - name: Create archive
         if: ${{ github.event_name != 'release' && success() }}
         run: |
-          cd /opt/rt-n56u
+          ls -lh ${images_dir}
           GIT_VERSION=`git rev-parse --short=7 HEAD 2>/dev/null` && [ -n "$GIT_VERSION" ] && \
           image_name=images_${build_variant}_${GIT_VERSION} || image_name=images_${build_variant}
-          cd /opt/images; md5sum *.trx |tee md5sum.txt; 7z a -mx=9 ${image_name}.7z ./*
+          cd ${images_dir}; md5sum *.trx |tee md5sum.txt; 7z a -mx=9 ${image_name}.7z ./*
           echo "image_name=${image_name}" >> $GITHUB_ENV
       - name: Upload images to Artifact
         if: ${{ github.event_name != 'release' && success() }}
         uses: actions/upload-artifact@v2.2.1
         with:
           name: ${{ env.image_name }}
-          path: /opt/images/*.7z
+          path: ${{ env.images_dir }}/*.7z
       - name: Upload images to Releases
         if: ${{ github.event_name == 'release' && success() }}
         uses: svenstaro/upload-release-action@2.2.0
         with:
           repo_token: ${{ secrets.GITHUB_TOKEN }}
-          file: /opt/images/*.trx
+          file: ${{ env.images_dir }}/*.trx
           tag: ${{ github.ref }}
           overwrite: true
           file_glob: true

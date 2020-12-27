@@ -864,7 +864,7 @@ if_dircase_exist(const char *dir, const char *subdir)
 {
 	DIR *dirp;
 	struct dirent *direntp;
-	char oldpath[64];
+	char oldpath[257];
 
 	if (!dir || !subdir)
 		return NULL;

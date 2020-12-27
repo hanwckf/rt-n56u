@@ -311,7 +311,7 @@ char *get_usb_interface_subclass(const char *usb_interface_id, char *buf, const 
 int get_usb_interface_Int_endpoint(const char *usb_interface_id)
 {
 	FILE *fp;
-	char interface_path[128], bmAttributes_file[128], buf[8], *ptr;
+	char interface_path[128], bmAttributes_file[270], buf[8], *ptr;
 	DIR *interface_dir = NULL;
 	struct dirent *end_name;
 	int bNumEndpoints, end_count, got_Int = 0;

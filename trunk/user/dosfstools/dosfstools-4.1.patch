@@ -1,0 +1,12 @@
+diff -rupw dosfstools-4.1-orig/src/boot.c dosfstools-4.1/src/boot.c
+--- dosfstools-4.1-orig/src/boot.c	2020-12-27 20:59:04.384818690 +0800
++++ dosfstools-4.1/src/boot.c	2020-12-27 20:57:28.714820422 +0800
+@@ -171,7 +171,7 @@ static void check_backup_boot(DOS_FS * f
+ 	/* there are any differences */
+ 	uint8_t *p, *q;
+ 	int i, pos, first = 1;
+-	char buf[20];
++	char buf[32];
+ 
+ 	printf("There are differences between boot sector and its backup.\n");
+ 	printf("This is mostly harmless. Differences: (offset:original/backup)\n  ");

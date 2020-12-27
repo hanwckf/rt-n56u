@@ -497,7 +497,7 @@ int main (int argc, char **argv)
 				image_len = st.st_size;
 				if (image_ofs > 0 && image_len > image_ofs) {
 					if (lseek(image_fd, image_ofs, SEEK_SET) < 0) {
-						fprintf(stderr, "Unable seek to offset 0x%llx in file '%s' (errno: %d)!\n", image_ofs, image_file, errno);
+						fprintf(stderr, "Unable seek to offset 0x%lx in file '%s' (errno: %d)!\n", image_ofs, image_file, errno);
 						close(image_fd);
 						exit(1);
 					}

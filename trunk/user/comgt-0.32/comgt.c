@@ -74,7 +74,7 @@ int labels;   /* Number of labels found in script */
 long intvars[NVARS]; /* [a-z][0-9] integer variables */
 char string[STRINGL]; /* For getstring() returns and misc. use (misuse) */
 char *stringvars[NVARS]; /* $[a-z][0-9] string variables */
-char cspeed[10];  /* Ascii representation of baudrate */
+char cspeed[11];  /* Ascii representation of baudrate */
 int speed=B0; /* Set to B110, B150, B300,..., B38400 */
 char device[MAXPATH]; /* Comm device.  May be "-" */
 char token[MAXTOKEN];   /* For gettoken() returns */

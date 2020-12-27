@@ -42,7 +42,7 @@ static void nvram_commit_safe()
 
 int get_account_list(int *acc_num, char ***account_list)
 {
-	char nvram_name[16], *nvram_value;
+	char nvram_name[24], *nvram_value;
 	char **tmp_account_list, **tmp_account;
 	int acc_max, len, i, j;
 
@@ -96,7 +96,7 @@ int get_account_list(int *acc_num, char ***account_list)
 
 int get_folder_list_in_mount_path(const char *const mount_path, int *sh_num, char ***folder_list)
 {
-	char **tmp_folder_list, target[16];
+	char **tmp_folder_list, target[20];
 	int len, i;
 	char *list_file, *list_info;
 	char *follow_info, *follow_info_end, backup;
@@ -154,7 +154,7 @@ int get_folder_list_in_mount_path(const char *const mount_path, int *sh_num, cha
 
 	for (i = 0; i < *sh_num; ++i) {
 		// 5. get folder name
-		memset(target, 0, 16);
+		memset(target, 0, 20);
 		sprintf(target, "\nsh_name%d=", i);
 		follow_info = strstr(list_info, target);
 		if (follow_info == NULL) {

@@ -49,7 +49,7 @@ configure:
 		OPENSSL_CFLAGS="-I$(STAGEDIR)/include" \
 		OPENSSL_LIBS="-L$(STAGEDIR)/lib -lssl -lcrypto" \
 		LIBCURL_CFLAGS="-I$(STAGEDIR)/include" \
-		LIBCURL_LIBS="-L$(STAGEDIR)/lib -lcurl" \
+		LIBCURL_LIBS="-L$(STAGEDIR)/lib -lcurl -Wl,-rpath-link=$(STAGEDIR)/lib" \
 		LIBEVENT_CFLAGS="-I$(STAGEDIR)/include" \
 		LIBEVENT_LIBS="-L$(STAGEDIR)/lib -levent" \
 		--host=$(HOST_TARGET) \

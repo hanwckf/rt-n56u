@@ -181,5 +181,5 @@ CXXLIBS   = -Wl,-Bdynamic $(LIBC) $(LIBGCC) $(CRTN)
 # disable pointer signed/unsigned warnings in gcc >= 4.x
 CFLAGS += -Wno-pointer-sign
 
-CFLAGS += -Wno-unused-value -Wno-unused-local-typedefs -Wno-unused-but-set-variable -Wno-unused-variable -Wno-unused-const-variable
+CFLAGS += -Wno-unused
 

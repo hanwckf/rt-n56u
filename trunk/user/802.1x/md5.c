@@ -323,7 +323,7 @@ VOID MD5Final(UCHAR Digest[16], MD5_CTX *pCtx)
 
     NdisMoveMemory((UCHAR *)Digest, (ULONG *)pCtx->Buf, 16); // output
     byteReverse((UCHAR *)Digest, 4);
-    NdisZeroMemory(pCtx, sizeof(pCtx)); // memory free 
+    NdisZeroMemory(pCtx, sizeof(*pCtx)); // memory free 
 }
 
 

@@ -105,7 +105,7 @@ static inline int rtnl_open(struct rtnl_handle *rth, unsigned subscriptions)
 {
 	int addr_len;
 
-	memset(rth, 0, sizeof(rth));
+	memset(rth, 0, sizeof(*rth));
 
 	rth->fd = socket(PF_NETLINK, SOCK_RAW, NETLINK_ROUTE);
 	if (rth->fd < 0) {

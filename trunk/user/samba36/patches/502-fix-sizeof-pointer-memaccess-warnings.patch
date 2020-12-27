@@ -1,0 +1,12 @@
+diff -rupw samba-3.6.25-orig/source3/registry/reg_perfcount.c samba-3.6.25/source3/registry/reg_perfcount.c
+--- samba-3.6.25-orig/source3/registry/reg_perfcount.c	2020-12-27 16:42:58.368429184 +0800
++++ samba-3.6.25/source3/registry/reg_perfcount.c	2020-12-27 16:44:22.875094356 +0800
+@@ -942,7 +942,7 @@ static bool _reg_perfcount_init_data_blo
+ 	tm = time(NULL);
+ 	make_systemtime(&(block->SystemTime), gmtime(&tm));
+ 	_reg_perfcount_init_data_block_perf(block, names);
+-	memset(temp, 0, sizeof(temp));
++	memset(temp, 0, sizeof(*temp));
+ 	rpcstr_push((void *)temp, global_myname(), sizeof(temp), STR_TERMINATE);
+ 	block->SystemNameLength = (strlen_w(temp) * 2) + 2;
+ 	block->data = TALLOC_ZERO_ARRAY(mem_ctx, uint8, block->SystemNameLength + (8 - (block->SystemNameLength % 8)));

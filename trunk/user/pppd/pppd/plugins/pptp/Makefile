@@ -18,8 +18,8 @@ INSTALL	= install
 # Version is set ONLY IN THE MAKEFILE!  Don't delete this!
 PLUGINVERSION=0.8.5
 
-COPTS=-O2 -g
-CFLAGS = $(COPTS) -I. -I../.. -I../../.. -I../../../include '-DPLUGINVERSION="$(PLUGINVERSION)"'
+COPTS=
+CFLAGS += $(COPTS) -I. -I../.. -I../../.. -I../../../include '-DPLUGINVERSION="$(PLUGINVERSION)"'
 
 all: pptp.so
 

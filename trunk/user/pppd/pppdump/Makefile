@@ -2,7 +2,7 @@ DESTDIR = $(INSTROOT)/usr
 BINDIR = $(DESTDIR)/sbin
 MANDIR = $(DESTDIR)/share/man/man8
 
-CFLAGS= -O -I../include/net
+CFLAGS += -O -I../include/net
 OBJS = pppdump.o bsd-comp.o deflate.o zlib.o
 
 INSTALL= install

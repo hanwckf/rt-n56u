@@ -16,7 +16,7 @@ LIBS =
 
 INSTALL= install
 
-CFLAGS = $(COPTS) $(COMPILE_FLAGS)
+CFLAGS += $(COPTS) $(COMPILE_FLAGS)
 
 all: pppstats
 

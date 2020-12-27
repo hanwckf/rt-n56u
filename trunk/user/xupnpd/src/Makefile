@@ -1,8 +1,8 @@
 LUA      = lua-5.1.4
 #LUA      = lua-5.2.0
 STATIC   = false
-CFLAGS   = -O2 -Wall
-CPPFLAGS = -O2 -fno-exceptions -fno-rtti -I$(LUA) -L$(LUA)
+CFLAGS   += -O2 -Wall
+CPPFLAGS += -O2 -fno-exceptions -fno-rtti -I$(LUA) -L$(LUA)
 SRC      = main.cpp soap.cpp mem.cpp mcast.cpp luaxlib.cpp luaxcore.cpp luajson.cpp luajson_parser.cpp
 LUAMYCFLAGS = -DLUA_USE_LINUX
 

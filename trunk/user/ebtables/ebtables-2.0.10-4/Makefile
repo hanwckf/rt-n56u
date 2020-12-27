@@ -17,7 +17,7 @@ INITDIR:=/etc/rc.d/init.d
 SYSCONFIGDIR:=/etc/sysconfig
 DESTDIR:=
 
-CFLAGS:=-Os -Wall -Wunused
+CFLAGS +=-Os -Wall -Wunused
 CFLAGS_SH_LIB:=-fPIC -Os
 
 ifeq ($(shell uname -m),sparc64)

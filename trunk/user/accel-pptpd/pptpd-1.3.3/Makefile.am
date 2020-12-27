@@ -11,7 +11,7 @@ INCLUDES = -I.
 ##  warning with -Wmissing-prototypes).
 ## -Wmissing-prototypes removed (eg, Linux 2.2.6 headers
 ##  aren't up to it).
-CFLAGS = -O2 -fno-builtin -Wall -DSBINDIR='"$(sbindir)"' -I$(kernel_headers)
+CFLAGS += -O2 -fno-builtin -Wall -DSBINDIR='"$(sbindir)"' -I$(kernel_headers)
 #CFLAGS = -O2 -fno-builtin -Wall -ansi -DSBINDIR='"$(sbindir)"'
 #CFLAGS = -O2 -fno-builtin -Wall -ansi -pedantic -Wmissing-prototypes -Werror -DSBINDIR='"$(sbindir)"'
 

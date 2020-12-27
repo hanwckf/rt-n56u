@@ -32,7 +32,7 @@ endif
 
 # CC = gcc
 #
-COPTS = -O2 -pipe -Wall -g
+COPTS = -pipe -Wall
 LIBS =
 
 # Uncomment the next 2 lines to include support for Microsoft's
@@ -79,7 +79,7 @@ INCLUDE_DIRS= -I../include
 
 COMPILE_FLAGS= #-DHAVE_PATHS_H -DIPX_CHANGE -DHAVE_MMAP
 
-CFLAGS= $(COPTS) $(COMPILE_FLAGS) $(INCLUDE_DIRS) '-DDESTDIR="/usr"'
+CFLAGS += $(COPTS) $(COMPILE_FLAGS) $(INCLUDE_DIRS) '-DDESTDIR="/usr"'
 
 ifdef CHAPMS
 CFLAGS   += -DCHAPMS=1

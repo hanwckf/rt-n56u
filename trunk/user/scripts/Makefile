@@ -15,7 +15,6 @@ ifdef CONFIG_BLK_DEV_SD
 	$(ROMFSINST) /sbin/hddtune.sh
 	$(ROMFSINST) /sbin/spindown.sh
 endif
-	$(ROMFSINST) /etc_ro/ld.so.conf
 	$(ROMFSINST) /etc_ro/protocols
 	$(ROMFSINST) /etc_ro/services
 	$(ROMFSINST) /etc_ro/profile

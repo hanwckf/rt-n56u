@@ -58,7 +58,6 @@ mkdir -p -m 750 /etc/Wireless/iNIC
 mtd_storage.sh load
 
 touch /etc/resolv.conf
-cp -f /etc_ro/ld.so.cache /etc
 
 if [ -f /etc_ro/openssl.cnf ]; then
 	cp -f /etc_ro/openssl.cnf /etc/ssl
@@ -74,7 +73,6 @@ ln -sf /etc_ro/shells /etc/shells
 ln -sf /etc_ro/profile /etc/profile
 ln -sf /etc_ro/e2fsck.conf /etc/e2fsck.conf
 ln -sf /etc_ro/ipkg.conf /etc/ipkg.conf
-ln -sf /etc_ro/ld.so.conf /etc/ld.so.conf
 
 # tune linux kernel
 echo 65536        > /proc/sys/fs/file-max

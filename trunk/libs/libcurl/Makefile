@@ -56,10 +56,9 @@ configure:
 		--without-libssh2 \
 		--without-krb4 \
 		--without-nss \
-		--without-ssl \
 		--with-random=/dev/urandom \
 		--with-zlib=$(STAGEDIR) \
-		--with-mbedtls=$(STAGEDIR) \
+		--with-ssl=$(STAGEDIR) \
 		--host=$(HOST_TARGET) \
 		--build=$(HOST_BUILD) ; \
 	)

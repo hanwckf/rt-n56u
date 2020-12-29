@@ -190,7 +190,11 @@ http_ssl_info_cb(const SSL *ssl, int where, int ret)
 {
 	/* disable SSL renegotiation */
 	if (where & SSL_CB_HANDSHAKE_DONE) {
+#if OPENSSL_VERSION_NUMBER < 0x10100000L
 		ssl->s3->flags |= SSL3_FLAGS_NO_RENEGOTIATE_CIPHERS;
+#else
+		SSL_set_options(ssl, SSL_OP_NO_RENEGOTIATION);
+#endif
 	}
 }
 
@@ -208,6 +212,7 @@ int ssl_server_init(char* ca_file, char *crt_file, char *key_file, char *dhp_fil
 {
 	static const char *ssl_ctx_id = "httpd";
 	long ssl_options;
+	BIGNUM *p, *g;
 
 	if (!crt_file || !f_exists(crt_file)) {
 		httpd_log("%s: Server certificate (%s) is not found!", SYSLOG_ID_SSL, crt_file);
@@ -286,10 +291,16 @@ int ssl_server_init(char* ca_file, char *crt_file, char *key_file, char *dhp_fil
 		/* Default DH parameters from RFC5114 */
 		DH *dh = DH_new();
 		if (dh) {
-			dh->p = BN_bin2bn(dh1024_p, sizeof(dh1024_p), NULL);
-			dh->g = BN_bin2bn(dh1024_g, sizeof(dh1024_g), NULL);
+			p = BN_bin2bn(dh1024_p, sizeof(dh1024_p), NULL);
+			g = BN_bin2bn(dh1024_g, sizeof(dh1024_g), NULL);
+#if OPENSSL_VERSION_NUMBER < 0x10100000L
+			dh->p = p;
+			dh->g = g;
 			dh->length = 160;
 			if (dh->p && dh->g) {
+#else
+			if(DH_set0_pqg(dh, p, NULL, g) && DH_set_length(dh, 160)) {
+#endif
 				SSL_CTX_set_tmp_dh(ssl_ctx, dh);
 				SSL_CTX_set_options(ssl_ctx, SSL_OP_SINGLE_DH_USE);
 			}

@@ -2,14 +2,8 @@
  * TLSv1 credentials
  * Copyright (c) 2006-2007, Jouni Malinen <j@w1.fi>
  *
- * This program is free software; you can redistribute it and/or modify
- * it under the terms of the GNU General Public License version 2 as
- * published by the Free Software Foundation.
- *
- * Alternatively, this software may be distributed under the terms of BSD
- * license.
- *
- * See README and COPYING for more details.
+ * This software may be distributed under the terms of the BSD license.
+ * See README for more details.
  */
 
 #ifndef TLSV1_CRED_H
@@ -20,11 +14,19 @@ struct tlsv1_credentials {
 	struct x509_certificate *cert;
 	struct crypto_private_key *key;
 
+	unsigned int cert_probe:1;
+	unsigned int ca_cert_verify:1;
+	unsigned int server_cert_only:1;
+	u8 srv_cert_hash[32];
+
 	/* Diffie-Hellman parameters */
 	u8 *dh_p; /* prime */
 	size_t dh_p_len;
 	u8 *dh_g; /* generator */
 	size_t dh_g_len;
+
+	char *ocsp_stapling_response;
+	char *ocsp_stapling_response_multi;
 };
 
 

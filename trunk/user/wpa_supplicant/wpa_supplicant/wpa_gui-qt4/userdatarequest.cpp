@@ -2,23 +2,17 @@
  * wpa_gui - UserDataRequest class
  * Copyright (c) 2005-2006, Jouni Malinen <j@w1.fi>
  *
- * This program is free software; you can redistribute it and/or modify
- * it under the terms of the GNU General Public License version 2 as
- * published by the Free Software Foundation.
- *
- * Alternatively, this software may be distributed under the terms of BSD
- * license.
- *
- * See README and COPYING for more details.
+ * This software may be distributed under the terms of the BSD license.
+ * See README for more details.
  */
 
 #include "userdatarequest.h"
 #include "wpagui.h"
-#include "wpa_ctrl.h"
+#include "common/wpa_ctrl.h"
 
 
 UserDataRequest::UserDataRequest(QWidget *parent, const char *, bool,
-				 Qt::WFlags)
+				 Qt::WindowFlags)
 	: QDialog(parent)
 {
 	setupUi(this);
@@ -64,15 +58,15 @@ int UserDataRequest::setParams(WpaGui *_wpagui, const char *reqMsg)
 	networkid = atoi(pos);
 	queryInfo->setText(pos2);
 	if (strcmp(tmp, "PASSWORD") == 0) {
-		queryField->setText("Password: ");
+		queryField->setText(tr("Password: "));
 		queryEdit->setEchoMode(QLineEdit::Password);
 	} else if (strcmp(tmp, "NEW_PASSWORD") == 0) {
-		queryField->setText("New password: ");
+		queryField->setText(tr("New password: "));
 		queryEdit->setEchoMode(QLineEdit::Password);
 	} else if (strcmp(tmp, "IDENTITY") == 0)
-		queryField->setText("Identity: ");
+		queryField->setText(tr("Identity: "));
 	else if (strcmp(tmp, "PASSPHRASE") == 0) {
-		queryField->setText("Private key passphrase: ");
+		queryField->setText(tr("Private key passphrase: "));
 		queryEdit->setEchoMode(QLineEdit::Password);
 	} else
 		queryField->setText(field + ":");
@@ -95,6 +89,6 @@ void UserDataRequest::sendReply()
 	QString cmd = QString(WPA_CTRL_RSP) + field + '-' +
 		QString::number(networkid) + ':' +
 		queryEdit->text();
-	wpagui->ctrlRequest(cmd.toAscii().constData(), reply, &reply_len);
+	wpagui->ctrlRequest(cmd.toLocal8Bit().constData(), reply, &reply_len);
 	accept();
 }

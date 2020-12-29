@@ -2,21 +2,14 @@
  * WPA Supplicant / Crypto wrapper for LibTomCrypt (for internal TLSv1)
  * Copyright (c) 2005-2006, Jouni Malinen <j@w1.fi>
  *
- * This program is free software; you can redistribute it and/or modify
- * it under the terms of the GNU General Public License version 2 as
- * published by the Free Software Foundation.
- *
- * Alternatively, this software may be distributed under the terms of BSD
- * license.
- *
- * See README and COPYING for more details.
+ * This software may be distributed under the terms of the BSD license.
+ * See README for more details.
  */
 
 #include "includes.h"
 #include <tomcrypt.h>
 
 #include "common.h"
-#include "rc4.h"
 #include "crypto.h"
 
 #ifndef mp_init_multi
@@ -29,7 +22,7 @@
 #endif
 
 
-void md4_vector(size_t num_elem, const u8 *addr[], const size_t *len, u8 *mac)
+int md4_vector(size_t num_elem, const u8 *addr[], const size_t *len, u8 *mac)
 {
 	hash_state md;
 	size_t i;
@@ -38,10 +31,11 @@ void md4_vector(size_t num_elem, const u8 *addr[], const size_t *len, u8 *mac)
 	for (i = 0; i < num_elem; i++)
 		md4_process(&md, addr[i], len[i]);
 	md4_done(&md, mac);
+	return 0;
 }
 
 
-void des_encrypt(const u8 *clear, const u8 *key, u8 *cypher)
+int des_encrypt(const u8 *clear, const u8 *key, u8 *cypher)
 {
 	u8 pkey[8], next, tmp;
 	int i;
@@ -59,11 +53,11 @@ void des_encrypt(const u8 *clear, const u8 *key, u8 *cypher)
 	des_setup(pkey, 8, 0, &skey);
 	des_ecb_encrypt(clear, cypher, &skey);
 	des_done(&skey);
+	return 0;
 }
 
 
-#ifdef EAP_TLS_FUNCS
-void md5_vector(size_t num_elem, const u8 *addr[], const size_t *len, u8 *mac)
+int md5_vector(size_t num_elem, const u8 *addr[], const size_t *len, u8 *mac)
 {
 	hash_state md;
 	size_t i;
@@ -72,10 +66,11 @@ void md5_vector(size_t num_elem, const u8 *addr[], const size_t *len, u8 *mac)
 	for (i = 0; i < num_elem; i++)
 		md5_process(&md, addr[i], len[i]);
 	md5_done(&md, mac);
+	return 0;
 }
 
 
-void sha1_vector(size_t num_elem, const u8 *addr[], const size_t *len, u8 *mac)
+int sha1_vector(size_t num_elem, const u8 *addr[], const size_t *len, u8 *mac)
 {
 	hash_state md;
 	size_t i;
@@ -84,6 +79,7 @@ void sha1_vector(size_t num_elem, const u8 *addr[], const size_t *len, u8 *mac)
 	for (i = 0; i < num_elem; i++)
 		sha1_process(&md, addr[i], len[i]);
 	sha1_done(&md, mac);
+	return 0;
 }
 
 
@@ -101,10 +97,10 @@ void * aes_encrypt_init(const u8 *key, size_t len)
 }
 
 
-void aes_encrypt(void *ctx, const u8 *plain, u8 *crypt)
+int aes_encrypt(void *ctx, const u8 *plain, u8 *crypt)
 {
 	symmetric_key *skey = ctx;
-	aes_ecb_encrypt(plain, crypt, skey);
+	return aes_ecb_encrypt(plain, crypt, skey) == CRYPT_OK ? 0 : -1;
 }
 
 
@@ -130,10 +126,10 @@ void * aes_decrypt_init(const u8 *key, size_t len)
 }
 
 
-void aes_decrypt(void *ctx, const u8 *crypt, u8 *plain)
+int aes_decrypt(void *ctx, const u8 *crypt, u8 *plain)
 {
 	symmetric_key *skey = ctx;
-	aes_ecb_encrypt(plain, (u8 *) crypt, skey);
+	return aes_ecb_encrypt(plain, (u8 *) crypt, skey) == CRYPT_OK ? 0 : -1;
 }
 
 
@@ -144,8 +140,6 @@ void aes_decrypt_deinit(void *ctx)
 	os_free(skey);
 }
 
-
-#ifdef CONFIG_TLS_INTERNAL
 
 struct crypto_hash {
 	enum crypto_hash_alg alg;
@@ -304,7 +298,7 @@ struct crypto_cipher {
 struct crypto_cipher * crypto_cipher_init(enum crypto_cipher_alg alg,
 					  const u8 *iv, const u8 *key,
 					  size_t key_len)
-{	
+{
 	struct crypto_cipher *ctx;
 	int idx, res, rc4 = 0;
 
@@ -451,7 +445,8 @@ struct crypto_public_key * crypto_public_key_import(const u8 *key, size_t len)
 
 
 struct crypto_private_key * crypto_private_key_import(const u8 *key,
-						      size_t len)
+						      size_t len,
+						      const char *passwd)
 {
 	int res;
 	struct crypto_private_key *pk;
@@ -697,7 +692,43 @@ void crypto_global_deinit(void)
 }
 
 
-#ifdef EAP_FAST
+#ifdef CONFIG_MODEXP
+
+int crypto_dh_init(u8 generator, const u8 *prime, size_t prime_len, u8 *privkey,
+		   u8 *pubkey)
+{
+	size_t pubkey_len, pad;
+
+	if (os_get_random(privkey, prime_len) < 0)
+		return -1;
+	if (os_memcmp(privkey, prime, prime_len) > 0) {
+		/* Make sure private value is smaller than prime */
+		privkey[0] = 0;
+	}
+
+	pubkey_len = prime_len;
+	if (crypto_mod_exp(&generator, 1, privkey, prime_len, prime, prime_len,
+			   pubkey, &pubkey_len) < 0)
+		return -1;
+	if (pubkey_len < prime_len) {
+		pad = prime_len - pubkey_len;
+		os_memmove(pubkey + pad, pubkey, pubkey_len);
+		os_memset(pubkey, 0, pad);
+	}
+
+	return 0;
+}
+
+
+int crypto_dh_derive_secret(u8 generator, const u8 *prime, size_t prime_len,
+			    const u8 *privkey, size_t privkey_len,
+			    const u8 *pubkey, size_t pubkey_len,
+			    u8 *secret, size_t *len)
+{
+	return crypto_mod_exp(pubkey, pubkey_len, privkey, privkey_len,
+			      prime, prime_len, secret, len);
+}
+
 
 int crypto_mod_exp(const u8 *base, size_t base_len,
 		   const u8 *power, size_t power_len,
@@ -729,8 +760,4 @@ fail:
 	return -1;
 }
 
-#endif /* EAP_FAST */
-
-#endif /* CONFIG_TLS_INTERNAL */
-
-#endif /* EAP_TLS_FUNCS */
+#endif /* CONFIG_MODEXP */

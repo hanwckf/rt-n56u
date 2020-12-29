@@ -1,0 +1,28 @@
+diff -rupw njit8021xclient-1.3.1-pdv-orig/src/configure.ac njit8021xclient-1.3.1-pdv/src/configure.ac
+--- njit8021xclient-1.3.1-pdv-orig/src/configure.ac	2020-12-29 13:22:56.961775343 +0800
++++ njit8021xclient-1.3.1-pdv/src/configure.ac	2020-12-29 13:23:24.148441657 +0800
+@@ -7,6 +7,11 @@ if test "x$program_prefix" = "x" || test
+ fi
+ AC_MSG_RESULT([$program_prefix])
+ 
++AC_CHECK_LIB(crypto, MD5,
++    [LIBS="-lcrypto $LIBS"],
++    [AC_MSG_ERROR([OpenSSL libraries not found.])]
++  )
++
+ AM_INIT_AUTOMAKE([-Wall -Werror foreign])
+ AC_LBL_C_INIT_BEFORE_CC(V_CCOPT, V_INCLS)
+ AC_PROG_CC
+diff -rupw njit8021xclient-1.3.1-pdv-orig/src/Makefile.am njit8021xclient-1.3.1-pdv/src/Makefile.am
+--- njit8021xclient-1.3.1-pdv-orig/src/Makefile.am	2020-12-29 13:22:56.961775343 +0800
++++ njit8021xclient-1.3.1-pdv/src/Makefile.am	2020-12-29 13:23:07.305108544 +0800
+@@ -11,9 +11,6 @@ client_SOURCES = \
+ 		njit8021xclient.c \
+ 		njit8021xclient.h \
+ 		debug.h \
+-		md5-buildin/md5_one.c \
+-		md5-buildin/md5_dgst.c \
+-		md5-buildin/mem_clr.c \
+ 		$(NULL)
+ CCOPT = $(V_CCOPT)
+ DEFS  = $(V_DEFS)

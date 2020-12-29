@@ -2,20 +2,15 @@
  * IKEv2 initiator (RFC 4306) for EAP-IKEV2
  * Copyright (c) 2007, Jouni Malinen <j@w1.fi>
  *
- * This program is free software; you can redistribute it and/or modify
- * it under the terms of the GNU General Public License version 2 as
- * published by the Free Software Foundation.
- *
- * Alternatively, this software may be distributed under the terms of BSD
- * license.
- *
- * See README and COPYING for more details.
+ * This software may be distributed under the terms of the BSD license.
+ * See README for more details.
  */
 
 #include "includes.h"
 
 #include "common.h"
-#include "dh_groups.h"
+#include "crypto/dh_groups.h"
+#include "crypto/random.h"
 #include "ikev2.h"
 
 
@@ -138,7 +133,7 @@ static int ikev2_parse_transform(struct ikev2_initiator_data *data,
 
 	t = (const struct ikev2_transform *) pos;
 	transform_len = WPA_GET_BE16(t->transform_length);
-	if (transform_len < (int) sizeof(*t) || pos + transform_len > end) {
+	if (transform_len < (int) sizeof(*t) || transform_len > end - pos) {
 		wpa_printf(MSG_INFO, "IKEV2: Invalid transform length %d",
 			   transform_len);
 		return -1;
@@ -226,7 +221,7 @@ static int ikev2_parse_proposal(struct ikev2_initiator_data *data,
 
 	p = (const struct ikev2_proposal *) pos;
 	proposal_len = WPA_GET_BE16(p->proposal_length);
-	if (proposal_len < (int) sizeof(*p) || pos + proposal_len > end) {
+	if (proposal_len < (int) sizeof(*p) || proposal_len > end - pos) {
 		wpa_printf(MSG_INFO, "IKEV2: Invalid proposal length %d",
 			   proposal_len);
 		return -1;
@@ -261,7 +256,7 @@ static int ikev2_parse_proposal(struct ikev2_initiator_data *data,
 
 	ppos = (const u8 *) (p + 1);
 	pend = pos + proposal_len;
-	if (ppos + p->spi_size > pend) {
+	if (p->spi_size > pend - ppos) {
 		wpa_printf(MSG_INFO, "IKEV2: Not enough room for SPI "
 			   "in proposal");
 		return -1;
@@ -403,7 +398,7 @@ static int ikev2_process_ker(struct ikev2_initiator_data *data,
 	}
 
 	/* RFC 4306, Section 3.4:
-	 * The length of DH public value MUST be equal to the lenght of the
+	 * The length of DH public value MUST be equal to the length of the
 	 * prime modulus.
 	 */
 	if (ker_len - 4 != data->dh->prime_len) {
@@ -549,10 +544,9 @@ static int ikev2_process_idr(struct ikev2_initiator_data *data,
 		}
 		os_free(data->IDr);
 	}
-	data->IDr = os_malloc(idr_len);
+	data->IDr = os_memdup(idr, idr_len);
 	if (data->IDr == NULL)
 		return -1;
-	os_memcpy(data->IDr, idr, idr_len);
 	data->IDr_len = idr_len;
 	data->IDr_type = id_type;
 
@@ -638,7 +632,7 @@ static int ikev2_process_auth_secret(struct ikev2_initiator_data *data,
 		return -1;
 
 	if (auth_len != prf->hash_len ||
-	    os_memcmp(auth, auth_data, auth_len) != 0) {
+	    os_memcmp_const(auth, auth_data, auth_len) != 0) {
 		wpa_printf(MSG_INFO, "IKEV2: Invalid Authentication Data");
 		wpa_hexdump(MSG_DEBUG, "IKEV2: Received Authentication Data",
 			    auth, auth_len);
@@ -995,7 +989,7 @@ static int ikev2_build_kei(struct ikev2_initiator_data *data,
 	 */
 	wpabuf_put(msg, data->dh->prime_len - wpabuf_len(pv));
 	wpabuf_put_buf(msg, pv);
-	os_free(pv);
+	wpabuf_free(pv);
 
 	plen = (u8 *) wpabuf_put(msg, 0) - (u8 *) phdr;
 	WPA_PUT_BE16(phdr->payload_length, plen);
@@ -1100,7 +1094,7 @@ static struct wpabuf * ikev2_build_sa_init(struct ikev2_initiator_data *data)
 		    data->i_spi, IKEV2_SPI_LEN);
 
 	data->i_nonce_len = IKEV2_NONCE_MIN_LEN;
-	if (os_get_random(data->i_nonce, data->i_nonce_len))
+	if (random_get_bytes(data->i_nonce, data->i_nonce_len))
 		return NULL;
 	wpa_hexdump(MSG_DEBUG, "IKEV2: Ni", data->i_nonce, data->i_nonce_len);
 
@@ -1148,14 +1142,13 @@ static struct wpabuf * ikev2_build_sa_auth(struct ikev2_initiator_data *data)
 		if (data->shared_secret == NULL)
 			return NULL;
 		data->shared_secret_len = 16;
-		if (os_get_random(data->shared_secret, 16))
+		if (random_get_bytes(data->shared_secret, 16))
 			return NULL;
 	} else {
 		os_free(data->shared_secret);
-		data->shared_secret = os_malloc(secret_len);
+		data->shared_secret = os_memdup(secret, secret_len);
 		if (data->shared_secret == NULL)
 			return NULL;
-		os_memcpy(data->shared_secret, secret, secret_len);
 		data->shared_secret_len = secret_len;
 	}
 

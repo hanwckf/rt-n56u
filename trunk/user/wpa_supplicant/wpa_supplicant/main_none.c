@@ -2,14 +2,8 @@
  * WPA Supplicant / Example program entrypoint
  * Copyright (c) 2003-2005, Jouni Malinen <j@w1.fi>
  *
- * This program is free software; you can redistribute it and/or modify
- * it under the terms of the GNU General Public License version 2 as
- * published by the Free Software Foundation.
- *
- * Alternatively, this software may be distributed under the terms of BSD
- * license.
- *
- * See README and COPYING for more details.
+ * This software may be distributed under the terms of the BSD license.
+ * See README for more details.
  */
 
 #include "includes.h"
@@ -34,7 +28,7 @@ int main(int argc, char *argv[])
 	memset(&iface, 0, sizeof(iface));
 	/* TODO: set interface parameters */
 
-	if (wpa_supplicant_add_iface(global, &iface) == NULL)
+	if (wpa_supplicant_add_iface(global, &iface, NULL) == NULL)
 		exitcode = -1;
 
 	if (exitcode == 0)

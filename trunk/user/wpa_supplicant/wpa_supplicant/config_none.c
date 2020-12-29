@@ -2,14 +2,8 @@
  * WPA Supplicant / Configuration backend: empty starting point
  * Copyright (c) 2003-2005, Jouni Malinen <j@w1.fi>
  *
- * This program is free software; you can redistribute it and/or modify
- * it under the terms of the GNU General Public License version 2 as
- * published by the Free Software Foundation.
- *
- * Alternatively, this software may be distributed under the terms of BSD
- * license.
- *
- * See README and COPYING for more details.
+ * This software may be distributed under the terms of the BSD license.
+ * See README for more details.
  *
  * This file implements dummy example of a configuration backend. None of the
  * functions are actually implemented so this can be used as a simple
@@ -23,11 +17,16 @@
 #include "base64.h"
 
 
-struct wpa_config * wpa_config_read(const char *name)
+struct wpa_config * wpa_config_read(const char *name, struct wpa_config *cfgp)
 {
 	struct wpa_config *config;
 
-	config = wpa_config_alloc_empty(NULL, NULL);
+	if (name == NULL)
+		return NULL;
+	if (cfgp)
+		config = cfgp;
+	else
+		config = wpa_config_alloc_empty(NULL, NULL);
 	if (config == NULL)
 		return NULL;
 	/* TODO: fill in configuration data */
@@ -37,7 +36,6 @@ struct wpa_config * wpa_config_read(const char *name)
 
 int wpa_config_write(const char *name, struct wpa_config *config)
 {
-#ifndef CONFIG_NO_CONFIG_WRITE
 	struct wpa_ssid *ssid;
 	struct wpa_config_blob *blob;
 
@@ -55,7 +53,4 @@ int wpa_config_write(const char *name, struct wpa_config *config)
 	}
 
 	return 0;
-#else /* CONFIG_NO_CONFIG_WRITE */
-	return -1;
-#endif /* CONFIG_NO_CONFIG_WRITE */
 }

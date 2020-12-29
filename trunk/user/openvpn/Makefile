@@ -41,6 +41,7 @@ configure:
 		--enable-ssl \
 		--enable-crypto \
 		--enable-lzo \
+		--disable-lz4 \
 		--with-crypto-library=openssl \
 		OPENSSL_CRYPTO_CFLAGS="-I$(STAGEDIR)/include" \
 		OPENSSL_CRYPTO_LIBS="-L$(STAGEDIR)/lib -lcrypto" \

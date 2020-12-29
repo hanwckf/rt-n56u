@@ -55,3 +55,4 @@ install:
 
 romfs:
 	cp -fP $(DESTDIR)/lib/libwebsockets.so* $(ROMFSDIR)/lib
+	cp -fP $(DESTDIR)/lib/libwebsockets-evlib_uv.so $(ROMFSDIR)/lib

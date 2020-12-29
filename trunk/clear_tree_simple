@@ -4,21 +4,26 @@ ROOTDIR=`pwd`
 export ROOTDIR=$ROOTDIR
 
 if [ ! -f "$ROOTDIR/.config" ] ; then
-	cp -fv "$ROOTDIR/configs/templates/n56u_dlna.config" "$ROOTDIR/.config"
-fi
-
-if [ ! -f "$ROOTDIR/.config" ] ; then
 	echo "Project config file .config not found! Terminate."
 	exit 1
 fi
 
-echo "-------------CLEAN-ALL---------------"
-rm -rf $ROOTDIR/stage
-DIRS="user/rc user/httpd user/wpa_supplicant user/shared user/libdisk user/wireless_tools"
+echo "-------------CLEAN-SIMPLE---------------"
+
+DIRS="user/rc user/httpd user/wpa_supplicant user/shared \
+user/libdisk user/wireless_tools user/utils user/nvram \
+user/pppoe user/pppd user/802.1x user/lldt user/u2ec \
+user/networkmap user/inadyn user/vsftpd user/infosvr \
+user/LPRng user/wsdd2 user/lanauth user/mtd_write \
+user/rp-l2tp user/udpxy user/xl2tpd user/xupnpd \
+user/accel-pptpd"
+
 for dir in ${DIRS} ; do
 	make -C $dir clean
 done
 
-rm -rfv $ROOTDIR/romfs
-rm -rfv $ROOTDIR/images
-rm -rfv $ROOTDIR/stage
+rm -rf $ROOTDIR/stage
+rm -rf $ROOTDIR/romfs
+rm -rf $ROOTDIR/images
+rm -rf $ROOTDIR/stage
+

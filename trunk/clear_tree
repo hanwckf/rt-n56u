@@ -9,13 +9,15 @@ if [ ! -f "$ROOTDIR/.config" ] ; then
 fi
 
 echo "-------------CLEAN-ALL---------------"
-rm -rf $ROOTDIR/stage
 make clean
 
-rm -rfv $ROOTDIR/romfs
-rm -rfv $ROOTDIR/images
-rm -rfv $ROOTDIR/stage
+rm -rf $ROOTDIR/stage
+rm -rf $ROOTDIR/romfs
+rm -rf $ROOTDIR/images
+rm -rf $ROOTDIR/stage
+
 . $ROOTDIR/.config
 if [ -d $ROOTDIR/merge/$CONFIG_FIRMWARE_PRODUCT_ID ]; then
 	rm -rf $ROOTDIR/merge/$CONFIG_FIRMWARE_PRODUCT_ID
 fi
+

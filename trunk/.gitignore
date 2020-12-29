@@ -12,6 +12,7 @@
 .libs
 .depend
 .dirstamp
+.config
 autom4te.cache
 config.h.in~
 config.log

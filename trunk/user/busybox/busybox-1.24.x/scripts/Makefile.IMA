@@ -49,7 +49,6 @@ OBJCOPY         = $(CROSS_COMPILE)objcopy
 OBJDUMP         = $(CROSS_COMPILE)objdump
 
 CFLAGS   := $(CFLAGS)
-CPPFLAGS += -D"KBUILD_STR(s)=\#s" #-Q
 
 # We need some generic definitions
 include $(srctree)/scripts/Kbuild.include

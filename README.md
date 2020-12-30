@@ -75,6 +75,7 @@ Contributors of this project are not responsible for what happens next.
 >- NEWIFI-MINI (USB)
 >- MI-MINI (USB)
 >- MI-3 (USB)
+>- MI-3C
 >- MI-R3G (USB)
 >- HC5661A
 >- HC5761A (USB)

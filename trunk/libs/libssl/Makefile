@@ -19,7 +19,8 @@ OPENSSL_CIPHERS = no-capieng no-cms no-rfc3779 no-seed \
   no-static-engine no-md2 no-sse2 no-dso no-ts no-mdc2 \
   no-cast no-whirlpool no-sctp no-srp no-ssl2 no-ssl3 \
   no-async no-blake2 no-hw-padlock no-aria no-hw \
-  no-devcryptoeng no-ssl3-method no-tests
+  no-devcryptoeng no-ssl3-method no-tests no-sm2 \
+  no-sm3 no-sm4
 
 ifneq ($(CONFIG_FIRMWARE_INCLUDE_SSWAN),y)
 OPENSSL_CIPHERS += no-rc2

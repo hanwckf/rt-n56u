@@ -20,7 +20,7 @@ include $(ARCH_CONFIG)
 
 VEND=$(ROOTDIR)/vendors
 
-dir_v := $(VEND)/$(CONFIG_VENDOR)/$(CONFIG_PRODUCT)/.
+dir_v := $(VEND)/$(CONFIG_VENDOR)/.
 
 # Note: the all and clean targets are not normally used,
 # since user/Makefile jumps directory to the product directory

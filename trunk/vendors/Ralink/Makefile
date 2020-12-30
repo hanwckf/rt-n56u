@@ -6,22 +6,42 @@ ROMFS_DIR	= $(ROOTDIR)/romfs
 MKIMAGE_DIR	:= $(ROOTDIR)/tools/mkimage
 CUR_DIR		= $(shell pwd)
 COMP		= lzma
-ifeq ($(CONFIG_WITHOUT_KERNEL),y)
-UBOOT_HEADER	= $(MERGE_DIR)/$(CONFIG_FIRMWARE_PRODUCT_ID).trx
-endif
 
-ifeq ($(CONFIG_MTD_NAND_MTK),y)
+ifneq ($(filter y,$(CONFIG_MTD_NAND_MTK) $(CONFIG_MTD_NAND_RALINK)),)
 PART_ALIGN	= 131072
 else
 PART_ALIGN	= 16
 endif
+
+ifeq ($(CONFIG_PRODUCT),MT7621)
+LOAD_ADDR = 80001000
+else
+LOAD_ADDR = 80001000
+endif
+
+ifeq ($(CONFIG_RT2880_FLASH_32M),y)
+FLASH_SIZE = 32
+else
+ifeq ($(CONFIG_RT2880_FLASH_16M),y)
+FLASH_SIZE = 16
+else
+FLASH_SIZE = 8
+endif
+endif
+
+ifeq ($(CONFIG_WITHOUT_KERNEL),y)
+ENTRY_CMD = $(MKIMAGE_DIR)/mkimage -l $(UBOOT_HEADER) 2>/dev/null |grep "Entry" |awk '{print $$3}'
+else
+ENTRY_CMD = readelf -h $(ROOTDIR)/$(LINUXDIR)/vmlinux | grep "Entry" | awk '{print $$4}'
+endif
+
 ROMFS_DIRS	= \
 	bin \
 	dev dev/pts \
 	home \
 	etc \
 	etc_ro etc_ro/ppp/peers etc_ro/ppp/plugins etc_ro/ppp/3g \
-		etc_ro/Wireless etc_ro/Wireless \
+	etc_ro/Wireless etc_ro/Wireless \
 	lib lib/modules \
 	mnt \
 	media \
@@ -47,35 +67,7 @@ romfs:
 	for i in `ls $(BOARD_DIR)/SingleSKU*.dat` ; do \
 		[ -f $$i ] && cp -f $$i $(ROMFSDIR)/etc_ro/Wireless; \
 	done
-ifdef CONFIG_MT7610_AP
-	$(ROMFSINST) /etc_ro/Wireless/MT7610E-V10-FEM.bin
-endif
-ifdef CONFIG_MT76X2_AP
-ifeq ($(CONFIG_RT_FIRST_CARD),7602)
-	$(ROMFSINST) /etc_ro/Wireless/MT7602E_EEPROM.bin
-else
-ifeq ($(CONFIG_RT_SECOND_CARD),7602)
-	$(ROMFSINST) /etc_ro/Wireless/MT7602E_EEPROM.bin
-endif
-endif
-ifeq ($(CONFIG_RT_FIRST_CARD),7612)
-	$(ROMFSINST) /etc_ro/Wireless/MT7612E_EEPROM.bin
-else
-ifeq ($(CONFIG_RT_SECOND_CARD),7612)
-	$(ROMFSINST) /etc_ro/Wireless/MT7612E_EEPROM.bin
-endif
-endif
-endif
-ifdef CONFIG_MT76X3_AP
-	$(ROMFSINST) /etc_ro/Wireless/MT7603E_EEPROM.bin
-endif
-ifeq ($(CONFIG_RT_FIRST_CARD),7615)
-	$(ROMFSINST) /etc_ro/Wireless/mt7615e.eeprom.bin
-else
-ifeq ($(CONFIG_RT_SECOND_CARD),7615)
-	$(ROMFSINST) /etc_ro/Wireless/mt7615e.eeprom.bin
-endif
-endif
+
 romfs.post::
 	[ -d $(IMAGEDIR) ] || mkdir -p $(IMAGEDIR)
 	#/sbin/ldconfig -r $(ROMFSDIR) -C /etc_ro/ld.so.cache
@@ -98,9 +90,9 @@ endif
 ifeq ($(CONFIG_BLK_DEV_INITRD),)
 ifeq ($(CONFIG_ROOTFS_IN_FLASH_NO_PADDING),)
 	@#============================================================
-	@# uboot hdr(64B) + mtd0(192KB) + mtd1(64KB) + mtd2(64KB) +
-	@# mtd3 + mtd4 + mtd5
-	@#
+	@# uboot hdr(64B) + mtdblock0(192KB) + mtdblock1(64KB) + 
+	@# mtdblock2(64KB) + mtdblock3 + mtdblock4 + mtdblock5
+	@# 
 	@# Padding size of mtdblock3 is equal to "MTD_KRN_PART_SIZE 
 	@# - 64B - the size of compressed kernel image"
 	@#
@@ -123,7 +115,7 @@ ifeq ($(CONFIG_ROOTFS_IN_FLASH_NO_PADDING),)
 	# Kernel/Library/Defaults Selection  --->
 	#   [*] Customize Kernel Settings (NEW)
 	#      Machine selection  --->
-	#        (e0000) MTD Kernel Partition Size (Unit:Bytes)
+	#        (90000) MTD Kernel Partition Size (Unit:Bytes)
 	#=============================================================
 	# Original Kernel Image Size
 	@wc -c $(KERNELZ).$(COMP)
@@ -148,29 +140,16 @@ else
 		dd if=/dev/zero count=1 bs=$$PAD conv=sync 2> /dev/null | tr \\000 \\377 >> $(KERNELZ).$(COMP) ; \
 	fi
 endif
-	# Padded Kernel Image Size
-	@wc -c $(KERNELZ).$(COMP)
-	# Original RootFs Size
-	  @du -sb $(ROMFSDIR)
-	# Compressed RootFs Size
-	  @wc -c $(RAMDISK)
 	# Padded Kernel Image + Compressed Rootfs Size
-	  @cat $(RAMDISK) >> $(KERNELZ).$(COMP)
-	  @wc -c $(KERNELZ).$(COMP)
+	@cat $(RAMDISK) >> $(KERNELZ).$(COMP)
+	@wc -c $(KERNELZ).$(COMP)
 	# !!! Please make sure that Padded Kernel Image + Compressed Rootfs size
-ifeq ($(CONFIG_MTD_NAND_MTK),y)
+ifneq ($(filter y,$(CONFIG_MTD_NAND_MTK) $(CONFIG_MTD_NAND_RALINK)),)
 	# can't bigger than 33554432 (32MiB) !!!
 else
 ifneq ($(CONFIG_RT2880_FLASH_AUTO),y)
-ifeq ($(CONFIG_RT2880_FLASH_32M),y)
-	# can't bigger than 32964544 !!!
-else
-ifeq ($(CONFIG_RT2880_FLASH_16M),y)
-	# can't bigger than 16187136 !!!
-else
-	# can't bigger than 7995136 !!!
-endif
-endif
+	@MAX_SIZE=$$(( $(FLASH_SIZE)*1024*1024 - 320*1024 - $(CONFIG_MTD_STORE_PART_SIZ) - 64 )) ; \
+	echo "can't bigger than: $$MAX_SIZE !!!"
 else
 	# can't bigger than: flash size - storage partition size -
 	# uboot_hdr(64B) - mtd0(192KiB) - mtd1(64KiB) - mtd2(64KiB) !!!
@@ -181,27 +160,18 @@ endif
 	# Pack final image and write headers
 ifeq ($(CONFIG_ROOTFS_IN_FLASH_NO_PADDING),)
 	@cd $(IMAGEDIR) ; \
-	ENTRY=`LANG=C LC_ALL=C readelf -h $(ROOTDIR)/$(LINUXDIR)/vmlinux | grep "Entry" | awk '{print $$4}'` ; \
-	$(MKIMAGE_DIR)/mkimage -A mips -O linux -T kernel -C $(COMP) -a 80001000 -e $$ENTRY \
+	ENTRY=`LANG=C LC_ALL=C $(ENTRY_CMD)` ; \
+	$(MKIMAGE_DIR)/mkimage -A mips -O linux -T kernel -C $(COMP) -a $(LOAD_ADDR) -e $$ENTRY \
 	-n $(CONFIG_FIRMWARE_PRODUCT_ID) -V $(FIRMWARE_KERNEL_VER) $(FIRMWARE_ROOTFS_VER) -d $(KERNELZ).$(COMP) $(IMAGE)
 else
 	# For No padded, need write kernel size in image header 
 	# to correct mount partition in mtd drivers address
-ifeq ($(CONFIG_WITHOUT_KERNEL),y)
 	@cd $(IMAGEDIR) ; \
-	ENTRY=`$(MKIMAGE_DIR)/mkimage -l $(UBOOT_HEADER) 2>/dev/null |grep "Entry" |awk '{print $$3}'` ; \
+	ENTRY=`LANG=C LC_ALL=C $(ENTRY_CMD)` ; \
 	ISIZE=`wc -c $(KERNELZ).$(COMP) | awk '{print $$1}'` ; \
 	RSIZE=`wc -c $(RAMDISK) | awk '{print $$1}'` ; \
 	KRN_SIZE=`expr $$ISIZE - $$RSIZE + 64` ; \
-	$(MKIMAGE_DIR)/mkimage -A mips -O linux -T kernel -C $(COMP) -a 80001000 -e $$ENTRY -k $$KRN_SIZE \
-	-n $(CONFIG_FIRMWARE_PRODUCT_ID) -V $(FIRMWARE_KERNEL_VER) $(FIRMWARE_ROOTFS_VER) -d $(KERNELZ).$(COMP) $(IMAGE)
-else
-	@cd $(IMAGEDIR) ; \
-	ENTRY=`LANG=C LC_ALL=C readelf -h $(ROOTDIR)/$(LINUXDIR)/vmlinux | grep "Entry" | awk '{print $$4}'` ; \
-	ISIZE=`wc -c $(KERNELZ).$(COMP) | awk '{print $$1}'` ; \
-	RSIZE=`wc -c $(RAMDISK) | awk '{print $$1}'` ; \
-	KRN_SIZE=`expr $$ISIZE - $$RSIZE + 64` ; \
-	$(MKIMAGE_DIR)/mkimage -A mips -O linux -T kernel -C $(COMP) -a 80001000 -e $$ENTRY -k $$KRN_SIZE \
+	$(MKIMAGE_DIR)/mkimage -A mips -O linux -T kernel -C $(COMP) -a $(LOAD_ADDR) -e $$ENTRY -k $$KRN_SIZE \
 	-n $(CONFIG_FIRMWARE_PRODUCT_ID) -V $(FIRMWARE_KERNEL_VER) $(FIRMWARE_ROOTFS_VER) -d $(KERNELZ).$(COMP) $(IMAGE)
 endif
-endif
+

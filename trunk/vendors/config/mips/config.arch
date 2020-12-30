@@ -149,7 +149,7 @@ endif
 CFLAGS += -Wall -Wno-trigraphs -Wno-strict-aliasing -Wno-format-security
 
 # disable unused variable warnings in gcc >= 4.6.x
-CFLAGS += $(call check-gcc-nowarn,unused-but-set-variable,)
+# CFLAGS += $(call check-gcc-nowarn,unused-but-set-variable,)
 
 ############################################################################
 #

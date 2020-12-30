@@ -1,0 +1,12 @@
+diff -rupw ncurses-6.2-orig/misc/run_tic.in ncurses-6.2/misc/run_tic.in
+--- ncurses-6.2-orig/misc/run_tic.in	2020-02-12 17:50:22.000000000 +0800
++++ ncurses-6.2/misc/run_tic.in	2020-12-30 10:26:00.107716122 +0800
+@@ -43,7 +43,7 @@ echo "** Building terminfo database, ple
+ #	make install.data
+ 
+ : ${suffix:=@EXEEXT@}
+-: ${DESTDIR:=@DESTDIR@}
++#: ${DESTDIR:=@DESTDIR@}
+ : ${prefix:=@prefix@}
+ : ${exec_prefix:=@exec_prefix@}
+ : ${bindir:=@bindir@}

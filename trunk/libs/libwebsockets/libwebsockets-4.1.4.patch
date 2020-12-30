@@ -1,0 +1,12 @@
+diff -rupw libwebsockets-4.1.4-orig/cmake/lws_config.h.in libwebsockets-4.1.4/cmake/lws_config.h.in
+--- libwebsockets-4.1.4-orig/cmake/lws_config.h.in	2020-10-26 19:31:31.000000000 +0800
++++ libwebsockets-4.1.4/cmake/lws_config.h.in	2020-12-30 09:55:18.141019011 +0800
+@@ -7,7 +7,7 @@
+ #endif
+ 
+ #define LWS_INSTALL_DATADIR "${CMAKE_INSTALL_PREFIX}/share"
+-#define LWS_INSTALL_LIBDIR "${CMAKE_INSTALL_PREFIX}/${LWS_INSTALL_LIB_DIR}${LIB_SUFFIX}"
++#define LWS_INSTALL_LIBDIR "/lib"
+ #define LWS_LIBRARY_VERSION_MAJOR ${LWS_LIBRARY_VERSION_MAJOR}
+ #define LWS_LIBRARY_VERSION_MINOR ${LWS_LIBRARY_VERSION_MINOR}
+ #define LWS_LIBRARY_VERSION_PATCH_ELABORATED ${LWS_LIBRARY_VERSION_PATCH_ELABORATED}

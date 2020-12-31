@@ -299,34 +299,6 @@ else
 fi
 ############################# USB #####################################
 if [ "$CONFIG_FIRMWARE_ENABLE_USB" != "y" ] || [ -z "$CONFIG_USB_SUPPORT" ] ; then
-# 	func_disable_kernel_param "CONFIG_SWAP"
-# 	func_disable_kernel_param "CONFIG_FAT_FS"
-# 	func_disable_kernel_param "CONFIG_MSDOS_FS"
-# 	func_disable_kernel_param "CONFIG_VFAT_FS"
-# 	func_disable_kernel_param "CONFIG_UFSD_FS"
-# 	func_disable_kernel_param "CONFIG_EXFAT_FS"
-# 	func_disable_kernel_param "CONFIG_EXT2_FS"
-# 	func_disable_kernel_param "CONFIG_EXT3_FS"
-# 	func_disable_kernel_param "CONFIG_EXT4_FS"
-# 	func_disable_kernel_param "CONFIG_JBD"
-# 	func_disable_kernel_param "CONFIG_JBD2"
-# 	func_disable_kernel_param "CONFIG_XFS_FS"
-# 	func_disable_kernel_param "CONFIG_FUSE_FS"
-# 	func_disable_kernel_param "CONFIG_FSCACHE"
-# 	func_disable_kernel_param "CONFIG_INOTIFY_USER"
-# 	func_disable_kernel_param "CONFIG_NFSD"
-# 	func_disable_kernel_param "CONFIG_PARTITION_ADVANCED"
-# 	func_disable_kernel_param "CONFIG_NLS_CODEPAGE_866"
-# 	func_disable_kernel_param "CONFIG_NLS_ISO8859_1"
-# 	func_disable_kernel_param "CONFIG_SCSI"
-# 	func_disable_kernel_param "CONFIG_SCSI_MOD"
-# 	func_disable_kernel_param "CONFIG_INPUT"
-# 	func_disable_kernel_param "CONFIG_USB_SUPPORT"
-# 	func_disable_kernel_param "CONFIG_HID_SUPPORT"
-# 	func_disable_kernel_param "CONFIG_MEDIA_SUPPORT"
-# 	func_disable_kernel_param "CONFIG_CRC16"
-# 	func_disable_kernel_param "CONFIG_NETFILTER_FP_SMB"
-# 	func_disable_kernel_param "CONFIG_RT3XXX_EHCI_OHCI"
 	func_disable_busybox_param "CONFIG_FDISK"
 	func_disable_busybox_param "CONFIG_FEATURE_FDISK_WRITABLE"
 	func_disable_busybox_param "CONFIG_FEATURE_FDISK_ADVANCED"
@@ -342,11 +314,6 @@ if [ "$CONFIG_FIRMWARE_ENABLE_USB" != "y" ] || [ -z "$CONFIG_USB_SUPPORT" ] ; th
 	func_disable_busybox_param "CONFIG_FEATURE_VOLUMEID_EXT"
 	func_disable_busybox_param "CONFIG_FEATURE_VOLUMEID_XFS"
 	func_disable_busybox_param "CONFIG_FEATURE_VOLUMEID_LINUXSWAP"
-#	if [ "$CONFIG_FIRMWARE_INCLUDE_OPENVPN" != "y" ] ; then
-#		func_disable_kernel_param "CONFIG_TUN"
-#		func_disable_kernel_param "CONFIG_HOTPLUG"
-#	fi
-	CONFIG_FIRMWARE_INCLUDE_NFSD=n
 else
 ############################# UFSD ####################################
 if [ "$CONFIG_FIRMWARE_ENABLE_UFSD" != "y" ] ; then

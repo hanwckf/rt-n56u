@@ -40,8 +40,9 @@ ROMFS_DIRS	= \
 	dev dev/pts \
 	home \
 	etc \
-	etc_ro etc_ro/ppp/peers etc_ro/ppp/plugins etc_ro/ppp/3g \
-	etc_ro/Wireless etc_ro/Wireless \
+	etc_ro \
+	etc_ro/ppp/peers etc_ro/ppp/plugins etc_ro/ppp/3g \
+	etc_ro/Wireless \
 	lib lib/modules \
 	mnt \
 	media \
@@ -64,13 +65,12 @@ romfs:
 	if [ -f $(BOARD_DIR)/l1profile.dat ]; then \
 		cp -f $(BOARD_DIR)/l1profile.dat $(ROMFSDIR)/etc_ro/Wireless; \
 	fi
-	for i in `ls $(BOARD_DIR)/SingleSKU*.dat` ; do \
+	for i in `ls $(BOARD_DIR)/SingleSKU*.dat 2>/dev/null` ; do \
 		[ -f $$i ] && cp -f $$i $(ROMFSDIR)/etc_ro/Wireless; \
 	done
 
 romfs.post::
 	[ -d $(IMAGEDIR) ] || mkdir -p $(IMAGEDIR)
-	#/sbin/ldconfig -r $(ROMFSDIR) -C /etc_ro/ld.so.cache
 	rm -f $(RAMDISK)
 	rm -f $(KERNELZ).lzma
 ifeq ($(CONFIG_RT2880_ROOTFS_IN_FLASH),y)

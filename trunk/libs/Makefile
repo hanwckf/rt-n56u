@@ -44,6 +44,7 @@ LIBS_INCLUDE_READLINE=n
 LIBS_INCLUDE_LIBRTLSDR=n
 LIBS_INCLUDE_C_ARES=n
 LIBS_INCLUDE_LIBEVENT=n
+LIBS_INCLUDE_BOOST=n
 STORAGE_ENABLED=n
 
 ifdef CONFIG_MMC_BLOCK
@@ -197,6 +198,11 @@ LIBS_INCLUDE_LIBPCAP=y
 LIBS_INCLUDE_LIBICONV=y
 endif
 
+ifneq ($(filter y,$(CONFIG_FIRMWARE_INCLUDE_WING) $(CONFIG_FIRMWARE_INCLUDE_TROJAN)),)
+LIBS_INCLUDE_BOOST=y
+LIBS_INCLUDE_LIBSSL=y
+endif
+
 dir_y						+= libz
 dir_$(LIBS_INCLUDE_NCURSES)			+= libncurses
 dir_$(LIBS_INCLUDE_LIBLZO)			+= liblzo
@@ -214,6 +220,7 @@ dir_$(LIBS_INCLUDE_LIBSODIUM)			+= libsodium
 dir_$(LIBS_INCLUDE_LIBUDNS)			+= libudns
 dir_$(LIBS_INCLUDE_MBEDTLS)			+= mbedtls
 dir_$(LIBS_INCLUDE_CURL)			+= libcurl
+dir_$(LIBS_INCLUDE_BOOST)			+= boost
 dir_y						+= libnfnetlink
 # ipset shared libs
 ifneq ($(CONFIG_WITHOUT_KERNEL),y)

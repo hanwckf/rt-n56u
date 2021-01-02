@@ -1380,19 +1380,18 @@ $j = jQuery.noConflict();
 
 $j(function(){
 	if($j(window).width()<800){
-		setTimeout(function(){
-			var h=$j('#subMenu1').html();
-			$j(h).insertBefore('#subMenu a:eq(0)');
-			$j('#subMenu1').remove();
+		var h=$j('#subMenu1').html();
+		$j(h).insertBefore('#subMenu a:eq(0)');
+		$j('#subMenu1').remove();
 			
-			var h2="";
-			$j('.table-big tr').each(function(){
-				var o=$j(this);
-				h2+='<div class="sub" id="'+o.attr('id')+'" style="'+o.attr('style')+'">'+$j('td',o).html()+'</div>';
-			});
-			$j('<div class="quickmenu">'+h2+'</div>').insertBefore("#tabMenu");
-			$j('.table-big').remove();
-		},300);
+		var h2="";
+		$j('.table-big tr').each(function(){
+			var o=$j(this);
+			h2+='<div class="sub" id="'+o.attr('id')+'" style="'+o.attr('style')+'">'+$j('td',o).html()+'</div>';
+		});
+		$j('<div class="quickmenu">'+h2+'</div>').insertBefore("#tabMenu");
+		$j('.table-big').remove();
+		
 	}
 });
 }

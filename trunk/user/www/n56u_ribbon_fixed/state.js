@@ -377,7 +377,7 @@ function show_banner(L3){
 	show_top_status();
 }
 
-//new MENUS 2021-1-2 14:55
+//new MENU 2021-1-2 17:47 by xtr3mz
 var tabM0=[
 	{"title":"<#menu5_1_1#>","link":"Advanced_Wireless2g_Content.asp"},
 	{"title":"<#menu5_1_2#>","link":"Advanced_WGuest2g_Content.asp"},
@@ -471,6 +471,7 @@ var menuL1=[
 	{"title":"插件","link":"javascript:;","icon":"icon-wrench","sub":"plugin"}
 ];
 //Level 2 Menu
+//sub 与 L1的sub 对应，自动显示到L1下面
 var menuL2=[
 	{"title":"<#menu5_11#>","link":tabM[0][0].link,"sub":"main"},
 	{"title":"<#menu5_12#>","link":tabM[1][0].link,"sub":"main"},
@@ -487,7 +488,7 @@ var menuL2=[
 /* plugin menu 插件菜单 */
 if (found_app_scutclient()){
 	var mx={"title":"<#menu5_13#>","link":"scutclient.asp","sub":"plugin"};//json格式
-	var mx2=[mx,{"title":"log","link":"scutclient_log.asp"}];//多个页面
+	var mx2=[mx,{"title":"log","link":"scutclient_log.asp"}];//显示tab，多个页面
 	menuL2.push(mx);//必须写
 	tabM.push(mx2);//必须写
 }
@@ -607,7 +608,7 @@ function show_menu(L1, L2, L3){
 		
 		if(title1 == ""){continue;}
 		if(typeof sub1 !="undefined" && sub1 != ""){
-			//L2
+			//L2 ，根据sub属性，显示到L1的下面
 			for(var j = 0; j < menuL2.length; j++){
 				console.log(menuL2[j].sub +"--" + sub1);
 				if (typeof menuL2[j].sub =='undefined' || menuL2[j].sub != sub1) {continue;}

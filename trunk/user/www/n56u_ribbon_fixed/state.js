@@ -1330,7 +1330,72 @@ function removeFromLocalStorage(name){
         localStorage.removeItem(name);
     }
 }
+function mobilestyle(){
+var sc = document.createElement("meta");sc.setAttribute("name", "viewport");sc.setAttribute("content", "width=device-width, initial-scale=1, user-scalable=yes");document.head.appendChild(sc);
+var style=document.createElement('style');
+style.type='text/css';
 
+style.innerHTML="@media screen and (max-width:800px){"
++"#loadingBlock{margin-top:50px !important}"
++".wrapper{width:100%}"
++".wrapper>.container-fluid,.wrapper>form>.container-fluid{padding:0 5px 5px 5px;margin:0}"
++".container-fluid{padding:none}"
++"#TopBanner .span6{width:auto;float:none;margin:5px;}"
++"#TopBanner .container-fluid{padding:0;margin:0}"
++"#logo{height:50px;margin:-8px auto -12px auto;z-index:-1;}"
++".row-fluid>.span3,.row-fluid>.span9{float:none;width:auto;margin:0}"
+//*menu*/
++".sidebar-nav.side_nav,#mainMenu{padding:none;background:none}"
++"#mainMenu{margin:0 0 10px;list-style:none;background:none repeat scroll 0 0 #F5F5F5}"
++"#mainMenu li {float: left; width:50%}"
++"#mainMenu li.active a,#mainMenu li:hover a{background: green;}"
++"#mainMenu li a{display:block;line-height:30px;text-align:center;border-left:1px solid #ccc;}"
++"#subMenu{clear:both;background:none}"
++"#subMenu a{display:block;height:30px;overflow:hidden;float:left;width:33.3%;padding:0;line-height:30px}"
+//*body menu*/
++".row-fluid .span9{float:none;width:auto;margin:0}"
++".row-fluid>.span2{float:none;width:auto;height:auto}"
+
++".row-fluid .span10{float:none;width:auto;margin:0}"
++"#menu_body.sitemap .nav-list{padding:0}"
++"#menu_body.sitemap .nav-list>li>a{margin:0;padding:0}"
++"#menu_body.sitemap table{font-size:0.9em;}"
++"#menu_body.sitemap table td{padding:3px}"
++"#menu_body.sitemap table td li{line-height:22px}"
++"#cpu_chart svg,#mem_chart svg{width:290px}"
+//tabmenu devs
++".row-fluid>.span2>.well{height:50px !important;padding:0 !important}"
++".quickmenu{padding:0 !important;margin:5px 0;position:relative;}"
++".quickmenu .sub{float:left;width:20%;position:relative}"
++".quickmenu .badge{margin:0 10px 0 -30px}"
++".big-icons,.big-ss {width: 35px !important;height: 35px !important;background-size:35px;}"
++"#iconInternet{background-position:0 0 !important}"
++"#iconRouter{background-position:0 -165px !important}"
++"#iconClient{background-position:0 -82px !important}"
++"#iconUSBdisk0{background-position:0 -333px !important}"
++"}";
+document.getElementsByTagName('head')[0].appendChild(style);
+
+$j = jQuery.noConflict();
+
+$j(function(){
+	if($j(window).width()<800){
+		setTimeout(function(){
+			var h=$j('#subMenu1').html();
+			$j(h).insertBefore('#subMenu a:eq(0)');
+			$j('#subMenu1').remove();
+			
+			var h2="";
+			$j('.table-big tr').each(function(){
+				var o=$j(this);
+				h2+='<div class="sub" id="'+o.attr('id')+'" style="'+o.attr('style')+'">'+$j('td',o).html()+'</div>';
+			});
+			$j('<div class="quickmenu">'+h2+'</div>').insertBefore("#tabMenu");
+			$j('.table-big').remove();
+		},300);
+	}
+});
+}
 (function($){
     var $j = $.noConflict();
     $j.fn.tabSlideOut = function(callerSettings){
@@ -1510,4 +1575,5 @@ function removeFromLocalStorage(name){
             hoverAction();
         }
     };
+    mobilestyle();
 })(jQuery);

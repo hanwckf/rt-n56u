@@ -614,3 +614,49 @@ textarea[readonly] {
     border-radius: 3px 0 0 3px;
 }
 
+/* xtr3mz new menu patch */
+#mainMenu li>i{margin:0 5px 0 0}
+.side_nav ul li>a{background:transparent !important;color:#08c !important;border:none !important;box-shadow:inset -1px -1px 1px #ccc}
+.side_nav ul li>a:hover{background:#ddd !important}
+.side_nav ul li div a{background:#fff}
+#subMenu{display:none}
+/* xtr3mz mobile patch*/
+@media screen and (max-width:800px){
+#mainMenu .accordion{display:none}
+#subMenu{display:block}
+#loadingBlock{margin-top:50px !important}
+.wrapper{width:100%}
+.wrapper>.container-fluid,.wrapper>form>.container-fluid{padding:0 5px 5px 5px;margin:0}
+.container-fluid{padding:none}
+#TopBanner .span6{width:auto;float:none;margin:5px;}
+#TopBanner .container-fluid{padding:0;margin:0}
+#logo{height:50px;margin:-5px auto -18px auto;}
+.row-fluid>.span3,.row-fluid>.span9{float:none;width:auto;margin:0}
+/*menu*/
+.sidebar-nav.side_nav,#mainMenu{padding:none;background:none}
+#mainMenu{margin:-22px 0 10px 0;list-style:none;background:none repeat scroll 0 0 #F5F5F5}
+#mainMenu li {float: left; width:50%;}
+#mainMenu li a{border-radius:none;display:block;line-height:30px;text-align:center}
+#subMenu{clear:both;background:none}
+#subMenu a{display:block;height:30px;overflow:hidden;float:left;width:33.3%;padding:0;line-height:30px}
+/*body menu*/
+.row-fluid .span9{float:none;width:auto;margin:0}
+.row-fluid>.span2{float:none;width:auto;height:auto}
+.row-fluid .span10{float:none;width:auto;margin:0}
+#menu_body.sitemap .nav-list{padding:0}
+#menu_body.sitemap .nav-list>li>a{margin:0;padding:0}
+#menu_body.sitemap table{font-size:0.9em;}
+#menu_body.sitemap table td{padding:3px}
+#menu_body.sitemap table td li{line-height:22px}
+.chart-parent{width:100%;overflow:scroll}
+/*tabM devs*/
+.row-fluid>.span2>.well{height:50px !important;padding:0 !important}
+.quickmenu{padding:0 !important;margin:5px 0;position:relative;}
+.quickmenu .sub{float:left;width:20%;position:relative}
+.quickmenu .badge{margin:0 10px 0 -30px}
+.big-icons,.big-ss {width: 35px !important;height: 35px !important;background-size:35px;}
+#iconInternet{background-position:0 0 !important}
+#iconRouter{background-position:0 -165px !important}
+#iconClient{background-position:0 -82px !important}
+#iconUSBdisk0{background-position:0 -333px !important}
+}

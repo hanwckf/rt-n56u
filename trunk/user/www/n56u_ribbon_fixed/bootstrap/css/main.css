@@ -197,7 +197,7 @@ ul#icons span.ui-icon {
     text-shadow: 0 1px 0 #FFFFFF;
 }
 .bar_nav ul li:hover > a, .side_nav ul li:hover > a {
-    color: #FFFFFF;
+    /*color: #FFFFFF;*/
     text-shadow: none;
 }
 .bar_nav > ul > li > a {
@@ -256,7 +256,7 @@ li:last-child > div.accordion > a:last-child {
 
 .clearfix li.active a {
     border-radius: 0 0 0 0;
-    cursor: default;
+    /*cursor: default;*/
 }
 
 .clearfix li.active > a {
@@ -290,7 +290,7 @@ li div.accordion a {
     background: linear-gradient(top, #ffffff 0%, #ededed 99%);
     background: -ms-linear-gradient(top, #ffffff 0%, #ededed 99%);
 }
-.grad_grey_reverse, .bar_nav ul li:hover > a, .side_nav ul li:hover > a, .side_nav ul li.active > a {
+.grad_grey_reverse/*, .bar_nav ul li:hover > a, .side_nav ul li:hover > a*/, .side_nav ul li.active > a {
     background: #ddd; /* old browsers */
     background: -moz-linear-gradient(top, #a0a3a8 0%, #888b90 100%); /* firefox */
     background: -webkit-gradient(linear, left top, left bottom, color-stop(0%, #a0a3a8), color-stop(100%, #888b90)); /* webkit */
@@ -614,13 +614,10 @@ textarea[readonly] {
     border-radius: 3px 0 0 3px;
 }
 
-/* xtr3mz new menu patch */
+/* mobile patch */
 #mainMenu li>i{margin:0 5px 0 0}
-.side_nav ul li>a{background:transparent !important;color:#08c !important;border:none !important;box-shadow:inset -1px -1px 1px #ccc}
-.side_nav ul li>a:hover{background:#ddd !important}
-.side_nav ul li div a{background:#fff}
 #subMenu{display:none}
-/* xtr3mz mobile patch*/
+
 @media screen and (max-width:800px){
 #mainMenu .accordion{display:none}
 #subMenu{display:block}

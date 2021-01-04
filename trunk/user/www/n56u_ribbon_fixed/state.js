@@ -469,19 +469,20 @@ var menuL1=[
 	{"title":"<#menu5#>","link":"as.asp","icon":"icon-wrench","sub":"adv"},
 	{"title":"插件","link":"javascript:;","icon":"icon-tasks","sub":"plugin"}
 ];
-//Level 2 Menu
+//Level 2 Menu 
+// 2021-1-4 sub值全改为adv，L2菜单显示到高级设置下面，恢复之前菜单样式
 var menuL2=[
-	{"title":"<#menu5_11#>","link":tabM[0][0].link,"sub":"main"},
-	{"title":"<#menu5_12#>","link":tabM[1][0].link,"sub":"main"},
-	{"title":"<#menu5_2#>","link":tabM[2][0].link,"sub":"main"},
-	{"title":"<#menu5_3#>","link":tabM[3][0].link,"sub":"main"},
+	{"title":"<#menu5_11#>","link":tabM[0][0].link,"sub":"adv"},
+	{"title":"<#menu5_12#>","link":tabM[1][0].link,"sub":"adv"},
+	{"title":"<#menu5_2#>","link":tabM[2][0].link,"sub":"adv"},
+	{"title":"<#menu5_3#>","link":tabM[3][0].link,"sub":"adv"},
 	{"title":"<#menu5_5#>","link":tabM[4][0].link,"sub":"adv"},
 	{"title":"<#menu5_4#>","link":tabM[5][0].link,"sub":"adv"},
 	{"title":"<#menu5_6#>","link":tabM[6][0].link,"sub":"adv"},
 	{"title":"<#menu5_10#>","link":tabM[7][0].link,"sub":"adv"},
-	{"title":"<#menu5_9#>","link":support_2g_radio() ? tabM[8][0].link : "Main_EStatus_Content.asp","sub":"log"},
-	{"title":"<#menu5_7#>","link":tabM[9][0].link,"sub":"log"},
-	{"title":"<#menu4#>","link":"Main_TrafficMonitor_realtime.asp","sub":"log"}
+	{"title":"<#menu5_9#>","link":support_2g_radio() ? tabM[8][0].link : "Main_EStatus_Content.asp","sub":"adv"},
+	{"title":"<#menu5_7#>","link":tabM[9][0].link,"sub":"adv"},
+	{"title":"<#menu4#>","link":"Main_TrafficMonitor_realtime.asp","sub":"adv"}
 ];
 
 /* plugin menu 插件菜单 */
@@ -624,6 +625,7 @@ function show_menu(L1, L2, L3){
 					navL2 += '<a href="'+link2+'"><i class="icon-minus"></i>&nbsp;&nbsp;'+title2+'</a>';
 			}
 			$j('#subMenu').append(navL2);
+			$j('#subMenu').css('display','none');//隐藏mobile下才有的菜单
 			navL2= '<div class="accordion">'+navL2+'</div>';
 		}
 		var icon=menuL1[i].icon !== ""?menuL1[i].icon:"";

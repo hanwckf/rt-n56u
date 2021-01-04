@@ -244,8 +244,8 @@ li:last-child > div.accordion > a:last-child {
     border-top: 0 solid #999999;
 }
 .bar_nav ul ul li:hover > a, .side_nav ul li:hover > a {
-    border-bottom: 1px solid #888B90;
-    border-top: 1px solid #888888;
+    /*border-bottom: 1px solid #888B90;
+    border-top: 1px solid #888888;*/
     cursor: pointer;
 }
 .bar_nav > ul > li > ul li:first-child > a, .side_nav > ul li:first-child > a {

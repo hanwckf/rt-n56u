@@ -1,4 +1,4 @@
-SRC_NAME = ipt2socks-1.1.2
+SRC_NAME = ipt2socks-1.1.3
 THISDIR = $(shell pwd)
 
 all: extract_test

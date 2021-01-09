@@ -461,47 +461,51 @@ var tabM=[tabM0,tabM1,tabM2,tabM3,tabM4,tabM5,tabM6,tabM7,tabM8,tabM9];
 //Level 1 Menu in Gateway, Router mode
 //生成子菜单 /L1 sub 与 L2 sub对应
 var menuL1=[
-	{"title":"<#menu1#>","link":"index.asp","icon":"icon-home"},
+	{"title":"<#menu1#>","link":"index.asp","icon":"icon-home","sub":"main"},
+	//{"title":"HDD","link":"","icon":"icon-hdd"},
+	//{"title":"","link":"","icon":"icon-retweet"},
+	//{"title":"","link":"","icon":"icon-globe"},
 	{"title":"<#menu4#>","link":"Main_TrafficMonitor_realtime.asp","icon":"icon-tasks"},
-	{"title":"<#menu5_8#>","link":"Advanced_System_Info.asp","icon":"icon-random"},
-	{"title":"<#menu5#>","link":"as.asp","icon":"icon-wrench"}
+	{"title":"<#menu5_8#>","link":"Advanced_System_Info.asp","icon":"icon-random","sub":"log"},
+	{"title":"<#menu5#>","link":"as.asp","icon":"icon-wrench","sub":"adv"},
+	{"title":"插件","link":"javascript:;","icon":"icon-wrench","sub":"plugin"}
 ];
 //Level 2 Menu
 //sub 与 L1的sub 对应，自动显示到L1下面
 var menuL2=[
-	{"title":"<#menu5_11#>","link":tabM[0][0].link},
-	{"title":"<#menu5_12#>","link":tabM[1][0].link},
-	{"title":"<#menu5_2#>","link":tabM[2][0].link},
-	{"title":"<#menu5_3#>","link":tabM[3][0].link},
-	{"title":"<#menu5_5#>","link":tabM[4][0].link},
-	{"title":"<#menu5_4#>","link":tabM[5][0].link},
-	{"title":"<#menu5_6#>","link":tabM[6][0].link},
-	{"title":"<#menu5_10#>","link":tabM[7][0].link},
-	{"title":"<#menu5_9#>","link":support_2g_radio() ? tabM[8][0].link : "Main_EStatus_Content.asp"},
-	{"title":"<#menu5_7#>","link":tabM[9][0].link}
+	{"title":"<#menu5_11#>","link":tabM[0][0].link,"sub":"main"},
+	{"title":"<#menu5_12#>","link":tabM[1][0].link,"sub":"main"},
+	{"title":"<#menu5_2#>","link":tabM[2][0].link,"sub":"main"},
+	{"title":"<#menu5_3#>","link":tabM[3][0].link,"sub":"main"},
+	{"title":"<#menu5_5#>","link":tabM[4][0].link,"sub":"adv"},
+	{"title":"<#menu5_4#>","link":tabM[5][0].link,"sub":"adv"},
+	{"title":"<#menu5_6#>","link":tabM[6][0].link,"sub":"adv"},
+	{"title":"<#menu5_10#>","link":tabM[7][0].link,"sub":"adv"},
+	{"title":"<#menu5_9#>","link":support_2g_radio() ? tabM[8][0].link : "Main_EStatus_Content.asp","sub":"log"},
+	{"title":"<#menu5_7#>","link":tabM[9][0].link,"sub":"log"}
 ];
 
 /* plugin menu 插件菜单 */
 if (found_app_scutclient()){
-	var mx={"title":"<#menu5_13#>","link":"scutclient.asp"};//json格式
+	var mx={"title":"<#menu5_13#>","link":"scutclient.asp","sub":"plugin"};//json格式
 	var mx2=[mx,{"title":"log","link":"scutclient_log.asp"}];//显示tab，多个页面
 	menuL2.push(mx);//必须写
 	tabM.push(mx2);//必须写
 }
 if (found_app_dnsforwarder()){
-	var mx={"title":"<#menu5_15#>","link":"dns-forwarder.asp"};
+	var mx={"title":"<#menu5_15#>","link":"dns-forwarder.asp","sub":"plugin"};
 	var mx2=[mx];
 	menuL2.push(mx);
 	tabM.push(mx2);
 }
 if (found_app_shadowsocks()){
-	var mx={"title":"<#menu5_16#>","link":"Shadowsocks.asp"};
+	var mx={"title":"<#menu5_16#>","link":"Shadowsocks.asp","sub":"plugin"};
 	var mx2=[mx,{"title":"log","link":"Shadowsocks_log.asp"}];
 	menuL2.push(mx);
 	tabM.push(mx2);
 }
 if (found_app_mentohust()){
-	var mx={"title":"mentohust","link":"mentohust.asp"};
+	var mx={"title":"mentohust","link":"mentohust.asp","sub":"plugin"};
 	var mx2=[mx,{"title":"log","link":"mentohust_log.asp"}];
 	menuL2.push(mx);
 	tabM.push(mx2);
@@ -593,33 +597,39 @@ function show_menu(L1, L2, L3){
 			tabM[5].splice(3,1);
 		}
 	}
+	//showmenu(L1_id , L2_id , L3_id)
 	//L1
 	var navL1="";var navL2S="";//submenu
 	for(i = 0; i < menuL1.length; i++){
 		var navL2="";
 		var title1=menuL1[i].title;
 		var link1=menuL1[i].link;
+		var sub1=menuL1[i].sub || "";
 		
 		if(title1 == ""){continue;}
+		if(typeof sub1 !="undefined" && sub1 != ""){
+			//L2 ，根据sub属性，显示到L1的下面
+			for(var j = 0; j < menuL2.length; j++){
+				console.log(menuL2[j].sub +"--" + sub1);
+				if (typeof menuL2[j].sub =='undefined' || menuL2[j].sub != sub1) {continue;}
+				var title2= menuL2[j].title;
+				var link2= menuL2[j].link;
+				if(title2 == ""){continue;}
+				else if(L2 == (j+1))
+					navL2 += '<a href="javascript: void(0)" style="color: #005580"><i class="icon-minus"></i><b>&nbsp;&nbsp;'+title2+'</b></a>';
+				else
+					navL2 += '<a href="'+link2+'"><i class="icon-minus"></i>&nbsp;&nbsp;'+title2+'</a>';
+			}
+			$j('#subMenu').append(navL2);
+			navL2= '<div class="accordion">'+navL2+'</div>';
+		}
 		var icon=menuL1[i].icon !== ""?menuL1[i].icon:"";
 		if(L1 == (i+1) && L2 <= 0)
-			navL1 += '<li class="active" id="option'+i+'"><a href="javascript:;"><i class="'+icon+'"></i>&nbsp;&nbsp;'+title1+'</a></li>';
+			navL1 += '<li class="active" id="option'+i+'"><a href="javascript:;"><i class="'+icon+'"></i>&nbsp;&nbsp;'+title1+'</a>'+navL2+'</li>';
 		else
-			navL1 += '<li id="option'+i+'"><a href="'+link1+'"><i class="'+icon+'"></i>&nbsp;&nbsp;'+title1+'</a></li>';
+			navL1 += '<li id="option'+i+'"><a href="'+link1+'"><i class="'+icon+'"></i>&nbsp;&nbsp;'+title1+'</a>'+navL2+'</li>';
 	}
 	$j("#mainMenu").html(navL1);
-	//L2
-	for(var j = 0; j < menuL2.length; j++){
-		var title2= menuL2[j].title;
-		var link2= menuL2[j].link;
-		if(title2 == ""){continue;}
-		else if(L2 == (j+1))
-			navL2 += '<a href="javascript: void(0)" style="color: #005580"><i class="icon-minus"></i><b>&nbsp;&nbsp;'+title2+'</b></a>';
-		else
-			navL2 += '<a href="'+link2+'"><i class="icon-minus"></i>&nbsp;&nbsp;'+title2+'</a>';
-	}
-	navL2= '<div class="accordion">'+navL2+'</div>';
-	$j('#subMenu').append(navL2);
 	
 	//L3
 	if(L3){
@@ -1366,6 +1376,52 @@ function removeFromLocalStorage(name){
 }
 
 function mobilestyle(){
+var sc = document.createElement("meta");sc.setAttribute("name", "viewport");sc.setAttribute("content", "width=device-width, initial-scale=1, user-scalable=yes");document.head.appendChild(sc);
+var style=document.createElement('style');
+style.type='text/css';
+style.innerHTML="#mainMenu li>i{margin:0 5px 0 0}"
++"#subMenu{display:none}"
++"@media screen and (max-width:800px){"
++"#mainMenu .accordion{display:none}"
++"#subMenu{display:block}"
++"#loadingBlock{margin-top:50px !important}"
++".wrapper{width:100%}"
++".wrapper>.container-fluid,.wrapper>form>.container-fluid{padding:0 5px 5px 5px;margin:0}"
++".container-fluid{padding:none}"
++"#TopBanner .span6{width:auto;float:none;margin:5px;}"
++"#TopBanner .container-fluid{padding:0;margin:0}"
++"#logo{height:50px;margin:-8px auto -12px auto;z-index:-1;}"
++".row-fluid>.span3,.row-fluid>.span9{float:none;width:auto;margin:0}"
+//*menu*/
++".sidebar-nav.side_nav,#mainMenu{padding:none;background:none}"
++"#mainMenu{margin:0 0 10px;list-style:none;background:none repeat scroll 0 0 #F5F5F5}"
++"#mainMenu li {float: left; width:50%}"
++"#mainMenu li.active a,#mainMenu li:hover a{background: green;}"
++"#mainMenu li a{display:block;line-height:30px;text-align:center;border-left:1px solid #ccc;}"
++"#subMenu{clear:both;background:none}"
++"#subMenu a{display:block;height:30px;overflow:hidden;float:left;width:33.3%;padding:0;line-height:30px}"
+//*body menu*/
++".row-fluid .span9{float:none;width:auto;margin:0}"
++".row-fluid>.span2{float:none;width:auto;height:auto}"
++".row-fluid .span10{float:none;width:auto;margin:0}"
++"#menu_body.sitemap .nav-list{padding:0}"
++"#menu_body.sitemap .nav-list>li>a{margin:0;padding:0}"
++"#menu_body.sitemap table{font-size:0.9em;}"
++"#menu_body.sitemap table td{padding:3px}"
++"#menu_body.sitemap table td li{line-height:22px}"
++".chart-parent{width:100%;overflow:scroll}"
+//tabM devs
++".row-fluid>.span2>.well{height:50px !important;padding:0 !important}"
++".quickmenu{padding:0 !important;margin:5px 0;position:relative;}"
++".quickmenu .sub{float:left;width:20%;position:relative}"
++".quickmenu .badge{margin:0 10px 0 -30px}"
++".big-icons,.big-ss {width: 35px !important;height: 35px !important;background-size:35px;}"
++"#iconInternet{background-position:0 0 !important}"
++"#iconRouter{background-position:0 -165px !important}"
++"#iconClient{background-position:0 -82px !important}"
++"#iconUSBdisk0{background-position:0 -333px !important}"
++"}";
+document.getElementsByTagName('head')[0].appendChild(style);
 
 	$j = jQuery.noConflict();
 	setTimeout(function(){
@@ -1374,6 +1430,7 @@ function mobilestyle(){
 			$j('.table-big tr').each(function(){
 				var o=$j(this);
 				qc+='<div class="sub" id="'+o.attr('id')+'" style="'+o.attr('style')+'">'+$j('td',o).html()+'</div>';
+				console.log('111');
 			});
 			$j('<div class="quickmenu">'+qc+'</div>').insertBefore("#tabMenu");
 			$j('.table-big').remove();

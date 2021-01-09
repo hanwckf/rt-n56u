@@ -34,6 +34,68 @@ var cookie = {
 	}
 };
 
+function HashMap(){
+	var length = 0;
+	var obj = new Object();
+	this.isEmpty = function(){
+	  return length == 0;
+	};
+	
+	this.containsKey=function(key){
+		return (key in obj);  
+	};
+	
+	this.containsValue=function(value){
+		for(var key in obj){
+			if(obj[key] == value){
+				return true;
+			}
+		}
+		return false;
+	};
+	
+	this.put=function(key,value){
+		if(!this.containsKey(key)){
+			length++;
+		}
+		obj[key] = value;
+	};
+	
+	this.get=function(key){
+		return this.containsKey(key)?obj[key]:null;
+	};
+	
+	this.remove=function(key){
+		if(this.containsKey(key)&&(delete obj[key])){
+			length--;
+		}
+	};
+	
+	this.values=function(){
+		var _values= new Array();
+		for(var key in obj){
+			_values.push(obj[key]);
+		}
+		return _values;
+	};
+	
+	this.keySet=function(){
+		var _keys = new Array();
+		for(var key in obj){
+			_keys.push(key);
+		}
+		return _keys;
+	};  
+	
+	this.size = function(){
+		return length;
+	};
+	
+	this.clear = function(){
+		length = 0;
+		obj = new Object();
+	};
+ }
 <% firmware_caps_hook(); %>
 
 function get_ap_mode(){
@@ -440,7 +502,8 @@ var tabM7=[
 var tabM8=[
 	{"title":"<#menu5_11#>","link":"Main_WStatus2g_Content.asp"},
 	{"title":"<#menu5_12#>","link":"Main_WStatus_Content.asp"},
-	{"title":"WAN","link":"Main_EStatus_Content.asp#0"},
+	//{"title":"WAN","link":"Main_EStatus_Content.asp#0"},
+	{"title":"","link":""},
 	{"title":"","link":""},
 	{"title":"","link":""},
 	{"title":"","link":""},
@@ -456,75 +519,87 @@ var tabM9=[
 	{"title":"<#menu5_7_6#>","link":"Main_RouteStatus_Content.asp"},
 	{"title":"<#menu5_7_8#>","link":"Main_CTStatus_Content.asp"},
 ];
-var tabM=[tabM0,tabM1,tabM2,tabM3,tabM4,tabM5,tabM6,tabM7,tabM8,tabM9];
+var tabMenuHash = new HashMap();
+tabMenuHash.put('1', tabM0);
+tabMenuHash.put('2', tabM1);
+tabMenuHash.put('3', tabM2);
+tabMenuHash.put('4', tabM3);
+tabMenuHash.put('5', tabM4);
+tabMenuHash.put('6', tabM5);
+tabMenuHash.put('7', tabM6);
+tabMenuHash.put('8', tabM7);
+tabMenuHash.put('9', tabM8);
+tabMenuHash.put('10', tabM9);
 
 //Level 1 Menu in Gateway, Router mode
 //生成子菜单 /L1 sub 与 L2 sub对应
 var menuL1=[
-	{"title":"<#menu1#>","link":"index.asp","icon":"icon-home","sub":"main"},
-	//{"title":"HDD","link":"","icon":"icon-hdd"},
-	//{"title":"","link":"","icon":"icon-retweet"},
-	//{"title":"","link":"","icon":"icon-globe"},
+	{"title":"<#menu1#>","link":"index.asp","icon":"icon-home"},
 	{"title":"<#menu4#>","link":"Main_TrafficMonitor_realtime.asp","icon":"icon-tasks"},
-	{"title":"<#menu5_8#>","link":"Advanced_System_Info.asp","icon":"icon-random","sub":"log"},
-	{"title":"<#menu5#>","link":"as.asp","icon":"icon-wrench","sub":"adv"},
-	{"title":"插件","link":"javascript:;","icon":"icon-wrench","sub":"plugin"}
+	{"title":"<#menu5_8#>","link":"Advanced_System_Info.asp","icon":"icon-random"},
+	{"title":"<#menu5#>","link":"as.asp","icon":"icon-wrench"}
 ];
 //Level 2 Menu
 //sub 与 L1的sub 对应，自动显示到L1下面
 var menuL2=[
-	{"title":"<#menu5_11#>","link":tabM[0][0].link,"sub":"main"},
-	{"title":"<#menu5_12#>","link":tabM[1][0].link,"sub":"main"},
-	{"title":"<#menu5_2#>","link":tabM[2][0].link,"sub":"main"},
-	{"title":"<#menu5_3#>","link":tabM[3][0].link,"sub":"main"},
-	{"title":"<#menu5_5#>","link":tabM[4][0].link,"sub":"adv"},
-	{"title":"<#menu5_4#>","link":tabM[5][0].link,"sub":"adv"},
-	{"title":"<#menu5_6#>","link":tabM[6][0].link,"sub":"adv"},
-	{"title":"<#menu5_10#>","link":tabM[7][0].link,"sub":"adv"},
-	{"title":"<#menu5_9#>","link":support_2g_radio() ? tabM[8][0].link : "Main_EStatus_Content.asp","sub":"log"},
-	{"title":"<#menu5_7#>","link":tabM[9][0].link,"sub":"log"}
+	{"title":"<#menu5_11#>","link":tabMenuHash.get('1')[0].link},
+	{"title":"<#menu5_12#>","link":tabMenuHash.get('2')[0].link},
+	{"title":"<#menu5_2#>","link":tabMenuHash.get('3')[0].link},
+	{"title":"<#menu5_3#>","link":tabMenuHash.get('4')[0].link},
+	{"title":"<#menu5_5#>","link":tabMenuHash.get('5')[0].link},
+	{"title":"<#menu5_4#>","link":tabMenuHash.get('6')[0].link},
+	{"title":"<#menu5_6#>","link":tabMenuHash.get('7')[0].link},
+	{"title":"<#menu5_10#>","link":tabMenuHash.get('8')[0].link},
+	{"title":"<#menu5_9#>","link":support_2g_radio() ? tabMenuHash.get('9')[0].link : "Main_EStatus_Content.asp"},
+	{"title":"<#menu5_7#>","link":tabMenuHash.get('10')[0].link}
 ];
 
 /* plugin menu 插件菜单 */
 if (found_app_scutclient()){
-	var mx={"title":"<#menu5_13#>","link":"scutclient.asp","sub":"plugin"};//json格式
-	var mx2=[mx,{"title":"log","link":"scutclient_log.asp"}];//显示tab，多个页面
+	var mx={"title":"<#menu5_13#>","link":"scutclient.asp"};//json格式
+	var mx2=[mx,{"title":"<#menu5_13_log#>","link":"scutclient_log.asp"}];//显示tab，多个页面
 	menuL2.push(mx);//必须写
-	tabM.push(mx2);//必须写
+	tabMenuHash.put('11', mx2);
 }
 if (found_app_dnsforwarder()){
-	var mx={"title":"<#menu5_15#>","link":"dns-forwarder.asp","sub":"plugin"};
+	var mx={"title":"<#menu5_15#>","link":"dns-forwarder.asp"};
 	var mx2=[mx];
 	menuL2.push(mx);
-	tabM.push(mx2);
+	tabMenuHash.put('12', mx2);
 }
 if (found_app_shadowsocks()){
-	var mx={"title":"<#menu5_16#>","link":"Shadowsocks.asp","sub":"plugin"};
-	var mx2=[mx,{"title":"log","link":"Shadowsocks_log.asp"}];
+	var mx={"title":"<#menu5_16#>","link":"Shadowsocks.asp"};
+	var mx2=[mx,{"title":"<#menu5_16_20#>","link":"Shadowsocks_log.asp"}];
 	menuL2.push(mx);
-	tabM.push(mx2);
+	tabMenuHash.put('13', mx2);
 }
 if (found_app_mentohust()){
-	var mx={"title":"mentohust","link":"mentohust.asp","sub":"plugin"};
-	var mx2=[mx,{"title":"log","link":"mentohust_log.asp"}];
+	var mx={"title":"<#menu5_18#>","link":"mentohust.asp"};
+	var mx2=[mx,{"title":"<#menu5_13_log#>","link":"mentohust_log.asp"}];
 	menuL2.push(mx);
-	tabM.push(mx2);
+	tabMenuHash.put('14', mx2);
 }
 /* plugin menu 插件菜单 结束*/
 
 /* 旧代码兼容/as.asp menu compatibility start */
-var menuL2_title=Array();var menuL2_link=Array();
+var menuL2_title = []; 
+var menuL2_link = [];
 for(var i=0;i<menuL2.length;i++){
 	menuL2_title[i]=menuL2[i].title;
 	menuL2_link[i]=menuL2[i].link;
 }
-var tabtitle=Array();var tablink=Array();
-for(var i=0;i<tabM.length;i++){
-	tabtitle[i]= Array();
-	tablink[i]=Array();
-	for(var j=0;j<tabM[i].length;j++){
-		tablink[i][j]=tabM[i][j].link;
-		tabtitle[i][j]=tabM[i][j].title;
+var tabtitle = []; 
+var tablink = [];
+var tabKeys = tabMenuHash.keySet();
+var tabKey, tabMenus;
+for (var i = 0; i < tabKeys.length; i++) {
+	tabKey = tabKeys[i];
+    tabMenus = tabMenuHash.get(tabKey);
+	tabtitle[i] = [];
+	tablink[i] = [];
+	for (var j = 0; j < tabMenus.length; j++) {
+		tablink[i][j] = tabMenus[j].link;
+		tabtitle[i][j] = tabMenus[j].title;
 	}
 }
 /* menu compatibility end */
@@ -533,25 +608,41 @@ function show_menu(L1, L2, L3){
 	var $j = jQuery.noConflict();
 	var i;
 	if(sw_mode == '3'){
-		tabM[2].splice(3,1);//LAN
-		tabM[3].splice(1,5);//WAN
-		tabM[4].splice(1,5);//firewall
-		tabM[5].splice(4,1);//USB
-		tabM[9].splice(2,4);//log
-		menuL2[4].link = "";  //remove WAN
-		menuL2[5].link = "";  //remove Firewall
+		//AP模式
+		//tabM[2].splice(3,1);//LAN
+		tabMenuHash.get('3').splice(2, 1);//Remove GWStaticRoute tab menu of LAN Menu
+		//tabM[3].splice(1,5);//WAN
+		tabMenuHash.get('4').splice(0);//Clear All tabmenus of WAN Menu
+		//tabM[4].splice(1,5);//firewall
+		tabMenuHash.get('5').splice(0);//Clear All tabmenus of Firewall Menu
+		//tabM[5].splice(4,1);//USB
+		tabMenuHash.get('6').splice(3, 1);//Remove Modem tab menu of USBApp Menu
+		//tabM[9].splice(2,4);//log
+		tabMenuHash.get('10').splice(1, 4);//Remain LogStatus tab menu of Log Menu
+		//menuL2[4].link = "";  //remove WAN
+		menuL2[3].link = ''; //remove WAN Menu
+		menuL2[3].title = ''; //remove WAN Menu
+		//menuL2[5].link = "";  //remove Firewall
+		menuL2[4].link = ''; //remove Firewall Menu
+		menuL2[4].title = ''; //remove Firewall Menu
 		if (lan_proto == '1'){
-			tabM[2].splice(2,1);
+			//tabM[2].splice(2,1);
+			tabMenuHash.get('3').splice(1, 1);//Remove DHCP tab menu of LAN Menu
 		}
 		var url="Advanced_APLAN_Content.asp";
-		tabM[2][1].link = url;
-		menuL2[3].link = url;
+		//tabM[2][1].link = url;
+		tabMenuHash.get('3')[0].link = url;//Update tab menu url of LAN Menu
+		//menuL2[3].link = url;
+		menuL2[2].link = url;//Update url of LAN Menu
 	}else{
 		if(sw_mode == '4'){
-			tabM[3].splice(3,2);
+			//Route模式
+			//tabM[3].splice(3,2);
+			tabMenuHash.get('4').splice(2, 2);//Remove 端口映射 (UPnP)/端口转发 (DMZ) tab menus from WAN Menu
 		}
 		if(!support_ipv6()){
-			tabM[3].splice(2,1);
+			//tabM[3].splice(2,1);
+			tabMenuHash.get('4').splice(1, 1);//Remove IPV6 tab menu from WAN Menu
 		}
 	}
 	//LAN编号 网络信息页
@@ -560,90 +651,109 @@ function show_menu(L1, L2, L3){
 		num_ephy = 2;
 	if (num_ephy > 8)
 		num_ephy = 8;
-	for (i=1;i<num_ephy;i++){
-		tabM[8][i+3] = {"title":"LAN"+i,"link":"Main_EStatus_Content.asp#"+i};
+	for (var i=0;i<num_ephy;i++){
+		//tabM[8][i+3] = {"title":"LAN"+i,"link":"Main_EStatus_Content.asp#"+i};
+		if (i == 0)
+			tabMenuHash.get('9')[i + 2] = { "title": "WAN", "link": "Main_EStatus_Content.asp#" + i.toString() };
+		else
+			tabMenuHash.get('9')[i + 2] = { "title": "LAN" + i.toString(), "link": "Main_EStatus_Content.asp#" + i.toString() };
 	}
 	if(num_ephy<8){
-		tabM[8].splice(3+num_ephy,8-num_ephy);
+		//tabM[8].splice(3+num_ephy,8-num_ephy);
+		tabMenuHash.get('9').splice(2 + num_ephy, 8 - num_ephy);
 	}
 
 	if(!support_2g_radio()){
-		menuL2.splice(1,1);  //remove 2G
-		tabM[0].splice(1,6);
-		tabM[8].splice(1,1);
+		//menuL2.splice(1,1);  //remove 2G
+		menuL2[0].title = '';//Remove 2G menu
+		menuL2[0].link = '';//Remove 2G menu
+		//tabM[0].splice(1,6);
+		tabMenuHash.get('1').splice(0);//Clear all tab menus of 2G Menu
+		//tabM[8].splice(1,1);
+		tabMenuHash.get('9').splice(0, 1);//Remove 2G info of NetInfo Menu
 	}
 
 	if(!support_5g_radio()){
-		menuL2.splice(2,1);;  //remove 5GHz
-		tabM[1].splice(1,6);
-		var idx = support_2g_radio() ? 2 : 1;
-		tabM[8].splice(idx,1);
+		//menuL2.splice(2,1);;  //remove 5GHz
+		menuL2[1].title = '';//Remove 5G menu
+		menuL2[1].link = '';//Remove 5G menu
+		//tabM[1].splice(1,6);
+		tabMenuHash.get('2').splice(0);//Clear all tab menus of 5G Menu
+		var idx = support_2g_radio() ? 1 : 0;
+		//tabM[8].splice(idx,1);
+		tabMenuHash.get('9').splice(idx, 1);//Remove 5G info of NetInfo Menu
 	}
 
 	if(!support_storage()){
-		tabM[5].splice(1,5);
-		menuL2[6].link = "";  //remove USB
+		//tabM[5].splice(1,5);
+		tabMenuHash.get('6').splice(0);//Clear All tab menus of USBApp Menu
+		//menuL2[6].link = "";  //remove USB
+		menuL2[5].link = '';//Remove USBApp Menu
+		menuL2[5].title = '';//Remove USBApp Menu
 	}else{
 		if(!support_usb()){
-			tabM[5].splice(4,2);
+			//tabM[5].splice(4,2);
+			tabMenuHash.get('6').splice(3, 2);
 		}
 		if(!found_app_smbd() && !found_app_ftpd()){
-			tabM[5].splice(2,2);
+			//tabM[5].splice(2,2);
+			tabMenuHash.get('6').splice(1, 2);
 		}
 		else if(!found_app_smbd()){
-			tabM[5].splice(2,1);
+			//tabM[5].splice(2,1);
+			tabMenuHash.get('6').splice(1, 1);
 		}
 		else if(!found_app_ftpd()){
-			tabM[5].splice(3,1);
+			//tabM[5].splice(3,1);
+			tabMenuHash.get('6').splice(2, 1);
 		}
 	}
-	//showmenu(L1_id , L2_id , L3_id)
 	//L1
-	var navL1="";var navL2S="";//submenu
-	for(i = 0; i < menuL1.length; i++){
-		var navL2="";
+	var navL1="";
+	for(var i = 0; i < menuL1.length; i++){
 		var title1=menuL1[i].title;
+		if (title1 == "") { continue; }
 		var link1=menuL1[i].link;
-		var sub1=menuL1[i].sub || "";
+		var icon1=menuL1[i].icon !== ""?menuL1[i].icon:"";
 		
-		if(title1 == ""){continue;}
-		if(typeof sub1 !="undefined" && sub1 != ""){
-			//L2 ，根据sub属性，显示到L1的下面
-			for(var j = 0; j < menuL2.length; j++){
-				console.log(menuL2[j].sub +"--" + sub1);
-				if (typeof menuL2[j].sub =='undefined' || menuL2[j].sub != sub1) {continue;}
-				var title2= menuL2[j].title;
-				var link2= menuL2[j].link;
-				if(title2 == ""){continue;}
-				else if(L2 == (j+1))
-					navL2 += '<a href="javascript: void(0)" style="color: #005580"><i class="icon-minus"></i><b>&nbsp;&nbsp;'+title2+'</b></a>';
-				else
-					navL2 += '<a href="'+link2+'"><i class="icon-minus"></i>&nbsp;&nbsp;'+title2+'</a>';
-			}
-			$j('#subMenu').append(navL2);
-			navL2= '<div class="accordion">'+navL2+'</div>';
+		if(L1 == (i+1)){
+			if (L2 <= 0) link1 = 'javascript:;';
+			navL1 += '<li class="active" id="option'+i+'"><a href="'+link1+'"><i class="'+icon1+'"></i>&nbsp;&nbsp;'+title1+'</a></li>';
 		}
-		var icon=menuL1[i].icon !== ""?menuL1[i].icon:"";
-		if(L1 == (i+1) && L2 <= 0)
-			navL1 += '<li class="active" id="option'+i+'"><a href="javascript:;"><i class="'+icon+'"></i>&nbsp;&nbsp;'+title1+'</a>'+navL2+'</li>';
 		else
-			navL1 += '<li id="option'+i+'"><a href="'+link1+'"><i class="'+icon+'"></i>&nbsp;&nbsp;'+title1+'</a>'+navL2+'</li>';
+			navL1 += '<li id="option'+i+'"><a href="'+link1+'"><i class="'+icon1+'"></i>&nbsp;&nbsp;'+title1+'</a></li>';
 	}
 	$j("#mainMenu").html(navL1);
 	
+	//L2
+	var navL2 = "";
+	for (var i = 0; i < menuL2.length; i++) {
+		var title2 = menuL2[i].title;
+		if (title2 == "") { continue; }
+		var link2 = menuL2[i].link;
+		var icon2 = "icon-minus";
+	    if (L2 == (i+1))
+			navL2 += '<a href="javascript: void(0)" class="current"><i class="' + icon2 + '"></i><b>&nbsp;&nbsp;' + title2 + '</b></a>';
+		else
+			navL2 += '<a href="' + link2 + '"><i class="' + icon2 + '"></i>&nbsp;&nbsp;' + title2 + '</a>';
+	}
+	$j('#subMenu').append(navL2);
+	
 	//L3
 	if(L3){
-		tab_code = '<ul class="nav nav-tabs" style="margin-bottom: 0px;">';
-		for(var i = 0; i < tabM[L2-1].length; ++i){
-			var title=typeof tabM[L2-1][i].title =="undefined"?"":tabM[L2-1][i].title;
-			var link=typeof tabM[L2-1][i].link =="undefined"?"":tabM[L2-1][i].link;
-			if(title == "")
-				continue;
-			if(L3 ==( i+1)){
-				var tab_ref = (L2==9 && i>0 && link.indexOf("#")>0)?link:"javascript: void(0)";
-				tab_code += '<li class="active"><a href="' +tab_ref+ '">'+title+'</a></li>';
-			}else
-				tab_code += '<li><a href="' +link+ '">'+title+'</a></li>';
+		var tab_code = '<ul class="nav nav-tabs" style="margin-bottom: 0px;">';
+		if (tabMenuHash.containsKey(L2)) {
+			var currentTabMenus = tabMenuHash.get(L2);
+			for (var i = 0; i < currentTabMenus.length; ++i) {
+				var title = typeof currentTabMenus[i].title == "undefined" ? "" : currentTabMenus[i].title;
+				if (title == "") { continue; }
+				var link = typeof currentTabMenus[i].link == "undefined" ? "" : currentTabMenus[i].link;
+				if (L3 == (i + 1)) {
+					var tab_ref = (L2 == '9' && i > 0 && link.indexOf("#") > 0) ? link : "javascript: void(0)";
+					tab_code += '<li class="active"><a href="' + tab_ref + '">' + title + '</a></li>';
+				} else
+					tab_code += '<li><a href="' + link + '">' + title + '</a></li>';
+			}
 		}
 		tab_code += '</ul>';
 		$j("#tabMenu").html(tab_code);
@@ -1376,52 +1486,10 @@ function removeFromLocalStorage(name){
 }
 
 function mobilestyle(){
-var sc = document.createElement("meta");sc.setAttribute("name", "viewport");sc.setAttribute("content", "width=device-width, initial-scale=1, user-scalable=yes");document.head.appendChild(sc);
-var style=document.createElement('style');
-style.type='text/css';
-style.innerHTML="#mainMenu li>i{margin:0 5px 0 0}"
-+"#subMenu{display:none}"
-+"@media screen and (max-width:800px){"
-+"#mainMenu .accordion{display:none}"
-+"#subMenu{display:block}"
-+"#loadingBlock{margin-top:50px !important}"
-+".wrapper{width:100%}"
-+".wrapper>.container-fluid,.wrapper>form>.container-fluid{padding:0 5px 5px 5px;margin:0}"
-+".container-fluid{padding:none}"
-+"#TopBanner .span6{width:auto;float:none;margin:5px;}"
-+"#TopBanner .container-fluid{padding:0;margin:0}"
-+"#logo{height:50px;margin:-8px auto -12px auto;z-index:-1;}"
-+".row-fluid>.span3,.row-fluid>.span9{float:none;width:auto;margin:0}"
-//*menu*/
-+".sidebar-nav.side_nav,#mainMenu{padding:none;background:none}"
-+"#mainMenu{margin:0 0 10px;list-style:none;background:none repeat scroll 0 0 #F5F5F5}"
-+"#mainMenu li {float: left; width:50%}"
-+"#mainMenu li.active a,#mainMenu li:hover a{background: green;}"
-+"#mainMenu li a{display:block;line-height:30px;text-align:center;border-left:1px solid #ccc;}"
-+"#subMenu{clear:both;background:none}"
-+"#subMenu a{display:block;height:30px;overflow:hidden;float:left;width:33.3%;padding:0;line-height:30px}"
-//*body menu*/
-+".row-fluid .span9{float:none;width:auto;margin:0}"
-+".row-fluid>.span2{float:none;width:auto;height:auto}"
-+".row-fluid .span10{float:none;width:auto;margin:0}"
-+"#menu_body.sitemap .nav-list{padding:0}"
-+"#menu_body.sitemap .nav-list>li>a{margin:0;padding:0}"
-+"#menu_body.sitemap table{font-size:0.9em;}"
-+"#menu_body.sitemap table td{padding:3px}"
-+"#menu_body.sitemap table td li{line-height:22px}"
-+".chart-parent{width:100%;overflow:scroll}"
-//tabM devs
-+".row-fluid>.span2>.well{height:50px !important;padding:0 !important}"
-+".quickmenu{padding:0 !important;margin:5px 0;position:relative;}"
-+".quickmenu .sub{float:left;width:20%;position:relative}"
-+".quickmenu .badge{margin:0 10px 0 -30px}"
-+".big-icons,.big-ss {width: 35px !important;height: 35px !important;background-size:35px;}"
-+"#iconInternet{background-position:0 0 !important}"
-+"#iconRouter{background-position:0 -165px !important}"
-+"#iconClient{background-position:0 -82px !important}"
-+"#iconUSBdisk0{background-position:0 -333px !important}"
-+"}";
-document.getElementsByTagName('head')[0].appendChild(style);
+	var sc = document.createElement("meta");
+	sc.setAttribute("name", "viewport");
+	sc.setAttribute("content", "width=device-width, initial-scale=1, user-scalable=yes");
+	document.head.appendChild(sc);
 
 	$j = jQuery.noConflict();
 	setTimeout(function(){
@@ -1430,7 +1498,6 @@ document.getElementsByTagName('head')[0].appendChild(style);
 			$j('.table-big tr').each(function(){
 				var o=$j(this);
 				qc+='<div class="sub" id="'+o.attr('id')+'" style="'+o.attr('style')+'">'+$j('td',o).html()+'</div>';
-				console.log('111');
 			});
 			$j('<div class="quickmenu">'+qc+'</div>').insertBefore("#tabMenu");
 			$j('.table-big').remove();

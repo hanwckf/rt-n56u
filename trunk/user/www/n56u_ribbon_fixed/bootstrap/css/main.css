@@ -614,3 +614,42 @@ textarea[readonly] {
     border-radius: 3px 0 0 3px;
 }
 
+@media screen and (max-width:800px){
+	#mainMenu .accordion{display:none}
+	#subMenu{display:block}
+	#loadingBlock{margin-top:50px !important}
+	.wrapper{width:100%}
+	.wrapper>.container-fluid,
+	.wrapper>form>.container-fluid{padding:0 5px 5px 5px;margin:0}
+	.container-fluid{padding:none}
+	#TopBanner .span6{width:auto;float:none;margin:5px;}
+	#TopBanner .container-fluid{padding:0;margin:0}
+	#logo{height:50px;margin:-8px auto -12px auto;z-index:-1;}
+	.row-fluid>.span3,.row-fluid>.span9{float:none;width:auto;margin:0}
+	.sidebar-nav.side_nav,
+	#mainMenu{padding:none;background:none}
+	#mainMenu{margin:0 0 10px;list-style:none;background:none repeat scroll 0 0 #F5F5F5}
+	#mainMenu li {float: left; width:50%}
+	#mainMenu li.active a,#mainMenu li:hover a{background: green;}
+	#mainMenu li a{display:block;line-height:30px;text-align:left;border-left:1px solid #ccc;}
+	#subMenu{clear:both;background:none}
+	#subMenu a{display:block;height:30px;overflow:hidden;float:left;width:33.3%;padding:0;line-height:30px}
+	.row-fluid .span9{float:none;width:auto;margin:0}
+	.row-fluid>.span2{float:none;width:auto;height:auto}
+	.row-fluid .span10{float:none;width:auto;margin:0}
+	#menu_body.sitemap .nav-list{padding:0}
+	#menu_body.sitemap .nav-list>li>a{margin:0;padding:0}
+	#menu_body.sitemap table{font-size:0.9em;}
+	#menu_body.sitemap table td{padding:3px}
+	#menu_body.sitemap table td li{line-height:22px}
+	.chart-parent{width:100%;overflow:scroll}
+	.row-fluid>.span2>.well{height:50px !important;padding:0 !important}
+	.quickmenu{padding:0 !important;margin:5px 0;position:relative;}
+	.quickmenu .sub{float:left;width:20%;position:relative}
+	.quickmenu .badge{margin:0 10px 0 -5px}
+	.big-icons,.big-ss {width: 35px !important;height: 35px !important;background-size:35px;}
+	#iconInternet{background-position:0 0 !important}
+	#iconRouter{background-position:0 -165px !important}
+	#iconClient{background-position:0 -82px !important}
+	#iconUSBdisk{background-position:0 -333px !important}
+}

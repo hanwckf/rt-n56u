@@ -46,4 +46,6 @@ install:
 
 romfs:
 	cp -fP $(DESTDIR)/lib/libevent-2.1.so* $(ROMFSDIR)/lib
-
+ifeq ($(CONFIG_FIRMWARE_INCLUDE_REDSOCKS),y)
+	cp -fP $(DESTDIR)/lib/libevent_core-2.1.so.* $(ROMFSDIR)/lib
+endif

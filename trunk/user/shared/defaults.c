@@ -647,6 +647,7 @@ struct nvram_pair router_defaults[] = {
 	{ "force_mld", "0" },
 	{ "udpxy_enable_x", "0" },
 	{ "udpxy_clients", "10" },
+	{ "udpxy_renew_period", "120" },
 #if defined(APP_XUPNPD)
 	{ "xupnpd_enable_x", "0" },
 	{ "xupnpd_udpxy", "0" },

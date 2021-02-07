@@ -15,7 +15,7 @@ CPPFLAGS += \
 	-include include/autoconf.h \
 	-D_GNU_SOURCE -DNDEBUG \
 	$(if $(CONFIG_LFS),-D_LARGEFILE_SOURCE -D_LARGEFILE64_SOURCE -D_FILE_OFFSET_BITS=64) \
-	-DBB_VER=$(call name-fix,$(BB_VER)) -DBB_BT=AUTOCONF_TIMESTAMP
+	-DBB_VER=$(squote)$(quote)$(BB_VER)$(quote)$(squote) -DBB_BT=AUTOCONF_TIMESTAMP
 
 CFLAGS += $(call cc-option,-Wall,)
 CFLAGS += $(call cc-option,-Wshadow,)

@@ -51,9 +51,6 @@ check_cc() {
     echo "int main(int argc,char**argv){return argv?argc:0;}" >"$tempname".c
     # Can use "-o /dev/null", but older gcc tend to *unlink it* on failure! :(
     # Was using "-xc /dev/null", but we need a valid C program.
-    # "eval" may be needed if CFLAGS can contain
-    # '... -D"BB_VER=KBUILD_STR(1.N.M)" ...'
-    # and we need shell to process quotes!
     $CC $CFLAGS $1 "$tempname".c -o "$tempname" >/dev/null 2>&1
     r=$?
     rm -f "$tempname" "$tempname".c "$tempname".o

@@ -69,9 +69,9 @@ function initial(){
 	if (openssl_util_found() && login_safe()) {
 		if (!support_openssl_ec()) {
 			var o = document.form.vpns_gen_rb;
-			o.remove(3);
-			o.remove(3);
-			o.remove(3);
+			for (var i=0;i<5;i++) {
+				o.remove(3);
+			}
 		}
 		showhide_div('tbl_vpns_gen', 1);
 	}
@@ -304,9 +304,7 @@ function change_vpns_type(){
 		if (openssl_util_found() && login_safe() && openvpn_srv_cert_found()) {
 			if (!support_openssl_ec()) {
 				var o = document.form.vpns_exp_rb;
-				o.remove(3);
-				o.remove(3);
-				o.remove(3);
+				for (var i=0;i<5;i++) o.remove(3);
 			}
 			showhide_div('row_vpns_exp', 1);
 		}
@@ -1074,6 +1072,8 @@ function getHash(){
                                             <option value="prime256v1">EC P-256</option>
                                             <option value="secp384r1">EC P-384</option>
                                             <option value="secp521r1">EC P-521</option>
+                                            <option value="ed25519">EC ED25519</option>
+                                            <option value="ed448">EC ED448</option>
                                         </select>
                                     </td>
                                     <td align="left" style="border-top: 0 none; padding-top: 0px;">
@@ -1098,6 +1098,8 @@ function getHash(){
                                             <option value="prime256v1">EC P-256</option>
                                             <option value="secp384r1">EC P-384</option>
                                             <option value="secp521r1">EC P-521</option>
+                                            <option value="ed25519">EC ED25519</option>
+                                            <option value="ed448">EC ED448</option>
                                         </select>
                                     </td>
                                     <td align="left">

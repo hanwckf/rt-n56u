@@ -23,7 +23,7 @@
 //config:	With this option passwd will refuse new passwords which are "weak".
 
 //applet:/* Needs to be run by root or be suid root - needs to change /etc/{passwd,shadow}: */
-//applet:IF_PASSWD(APPLET(passwd, BB_DIR_USR_BIN, BB_SUID_REQUIRE))
+//applet:IF_PASSWD(APPLET(passwd, BB_DIR_BIN, BB_SUID_REQUIRE))
 
 //kbuild:lib-$(CONFIG_PASSWD) += passwd.o
 
@@ -187,6 +187,10 @@ int passwd_main(int argc UNUSED_PARAM, char **argv)
 		if (!newp) {
 			logmode = LOGMODE_STDIO;
 			bb_error_msg_and_die("password for %s is unchanged", name);
+		} else if (newp[0] == 0) {
+			logmode = LOGMODE_STDIO;
+			free(newp);
+			bb_perror_msg_and_die("password encryption failed");
 		}
 	} else if (opt & OPT_lock) {
 		if (!c)

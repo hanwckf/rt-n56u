@@ -31,6 +31,10 @@
 #define SIGWINCH 28
 #endif
 
+#ifndef SIGWINCH
+#define SIGWINCH 28
+#endif
+
 #define LKC_DIRECT_LINK
 #include "lkc.h"
 

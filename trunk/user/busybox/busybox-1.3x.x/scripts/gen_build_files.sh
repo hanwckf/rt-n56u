@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/usr/bin/env bash
 
 # Note: was using sed OPTS CMD -- FILES
 # but users complain that many sed implementations

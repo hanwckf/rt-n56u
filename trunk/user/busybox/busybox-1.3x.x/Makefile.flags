@@ -60,7 +60,7 @@ CFLAGS += $(call cc-option,-funsigned-char,)
 
 ifneq ($(CC),clang)
 # "clang-9: warning: argument unused during compilation: '-static-libgcc'"
-CFLAGS += $(call cc-option,-static-libgcc,)
+CFLAGS += $(call cc-option,)
 endif
 
 CFLAGS += $(call cc-option,-falign-functions=1,)

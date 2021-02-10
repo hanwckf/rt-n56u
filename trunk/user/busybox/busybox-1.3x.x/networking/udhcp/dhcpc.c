@@ -683,6 +683,7 @@ static int bcast_or_ucast(struct dhcp_packet *packet, uint32_t ciaddr, uint32_t 
 static NOINLINE int send_discover(uint32_t xid, uint32_t requested)
 {
 	struct dhcp_packet packet;
+	static int msgs = 0;
 
 	/* Fill in: op, htype, hlen, cookie, chaddr fields,
 	 * random xid field (we override it below),
@@ -699,8 +700,8 @@ static NOINLINE int send_discover(uint32_t xid, uint32_t requested)
 	 * "param req" option according to -O, options specified with -x
 	 */
 	add_client_options(&packet);
-
-	bb_info_msg("sending %s", "discover");
+	if (msgs++ < 3)
+	    bb_info_msg("sending %s", "discover");
 	return raw_bcast_from_client_data_ifindex(&packet, INADDR_ANY);
 }
 
@@ -1094,7 +1095,6 @@ static void perform_renew(void)
 		client_data.state = RENEW_REQUESTED;
 		break;
 	case RENEW_REQUESTED: /* impatient are we? fine, square 1 */
-		udhcp_run_script(NULL, "deconfig");
 	case REQUESTING:
 	case RELEASED:
 		change_listen_mode(LISTEN_RAW);
@@ -1392,6 +1392,12 @@ int udhcpc_main(int argc UNUSED_PARAM, char **argv)
 		struct dhcp_packet packet;
 		/* silence "uninitialized!" warning */
 		unsigned timestamp_before_wait = timestamp_before_wait;
+
+		/* When running on a bridge, the ifindex may have changed (e.g. if
+		 * member interfaces were added/removed or if the status of the
+		 * bridge changed).
+		 * Workaround: refresh it here before processing the next packet */
+		udhcp_read_interface(client_data.interface, &client_data.ifindex, NULL, client_data.client_mac, &client_data.client_mtu);
 
 		//bb_error_msg("sockfd:%d, listen_mode:%d", client_data.sockfd, client_data.listen_mode);
 

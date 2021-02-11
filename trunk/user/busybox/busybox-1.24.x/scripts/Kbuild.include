@@ -4,6 +4,7 @@
 # Convinient variables
 comma   := ,
 squote  := '
+quote   := "
 empty   :=
 space   := $(empty) $(empty)
 

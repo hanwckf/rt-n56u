@@ -1,0 +1,77 @@
+# MAKEFILE for linux GCC
+#
+# This makefile produces a shared object and requires libtool to be installed.
+#
+# Thanks to Zed Shaw for helping debug this on BSD/OSX.
+# Tom St Denis
+#
+#  (GNU make only)
+
+### USAGE:
+#
+# CFLAGS="-DUSE_LTM -DLTM_DESC -I/path/to/libtommath" make -f makefile.shared all EXTRALIBS=/path/to/libtommath/libtommath.a
+# ./test
+# make -f makefile.shared PREFIX=/opt/libtom install
+#
+
+PLATFORM := $(shell uname | sed -e 's/_.*//')
+
+ifndef LIBTOOL
+  ifeq ($(PLATFORM), Darwin)
+    LIBTOOL:=glibtool
+  else
+    LIBTOOL:=libtool
+  endif
+endif
+ifeq ($(PLATFORM), CYGWIN)
+  NO_UNDEFINED:=-no-undefined
+endif
+LTCOMPILE = $(LIBTOOL) --mode=compile --tag=CC $(CC)
+INSTALL_CMD = $(LIBTOOL) --mode=install install
+UNINSTALL_CMD = $(LIBTOOL) --mode=uninstall rm
+
+#Output filenames for various targets.
+ifndef LIBNAME
+   LIBNAME=libtomcrypt.la
+endif
+
+
+include makefile_include.mk
+
+
+#ciphers come in two flavours... enc+dec and enc
+src/ciphers/aes/aes_enc.o: src/ciphers/aes/aes.c src/ciphers/aes/aes_tab.c
+	$(LTCOMPILE) $(LTC_CFLAGS) $(CPPFLAGS) $(LTC_LDFLAGS) -DENCRYPT_ONLY -c src/ciphers/aes/aes.c -o src/ciphers/aes/aes_enc.o
+
+.c.o:
+	$(LTCOMPILE) $(LTC_CFLAGS) $(CPPFLAGS) $(LTC_LDFLAGS) -o $@ -c $<
+
+LOBJECTS = $(OBJECTS:.o=.lo)
+
+$(LIBNAME): $(OBJECTS)
+	$(LIBTOOL) --mode=link --tag=CC $(CC) $(LTC_LDFLAGS) $(LOBJECTS) $(EXTRALIBS) -o $@ -rpath $(LIBPATH) -version-info $(VERSION_LT) $(NO_UNDEFINED)
+
+test: $(call print-help,test,Builds the library and the 'test' application to run all self-tests) $(LIBNAME) $(TOBJECTS)
+	$(LIBTOOL) --mode=link --tag=CC $(CC) $(LTC_LDFLAGS) -o $(TEST) $(TOBJECTS) $(LIBNAME) $(EXTRALIBS)
+
+# build the demos from a template
+define DEMO_template
+$(1): $(call print-help,$(1),Builds the library and the '$(1)' demo) demos/$(1).o $$(LIBNAME)
+	$$(LIBTOOL) --mode=link --tag=CC $$(CC) $$(LTC_LDFLAGS) $$^ $$(EXTRALIBS) -o $(1)
+endef
+
+$(foreach demo, $(strip $(DEMOS)), $(eval $(call DEMO_template,$(demo))))
+
+install: $(call print-help,install,Installs the library + headers + pkg-config file) .common_install
+	sed -e 's,^prefix=.*,prefix=$(PREFIX),' -e 's,^Version:.*,Version: $(VERSION_PC),' libtomcrypt.pc.in > libtomcrypt.pc
+	install -p -d $(DESTDIR)$(LIBPATH)/pkgconfig
+	install -p -m 644 libtomcrypt.pc $(DESTDIR)$(LIBPATH)/pkgconfig/
+
+install_bins: $(call print-help,install_bins,Installs the useful demos ($(USEFUL_DEMOS))) .common_install_bins
+
+uninstall: $(call print-help,uninstall,Uninstalls the library + headers + pkg-config file) .common_uninstall
+	rm $(DESTDIR)$(LIBPATH)/pkgconfig/libtomcrypt.pc
+
+# ref:         $Format:%D$
+# git commit:  $Format:%H$
+# commit time: $Format:%ai$

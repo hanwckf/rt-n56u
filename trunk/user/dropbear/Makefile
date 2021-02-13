@@ -1,4 +1,4 @@
-SRC_NAME=dropbear-201X.XX
+SRC_NAME=dropbear-202X.XX
 
 ifeq ($(CONFIG_FIRMWARE_INCLUDE_SFTP),y)
 COPT=-DSFTPSERVER_PATH=\"/usr/libexec/sftp-server\"
@@ -12,7 +12,7 @@ CFLAGS+=$(COPT) -ffunction-sections -fdata-sections
 LDFLAGS += -Wl,--gc-sections
 
 all: config_test
-	$(MAKE) -C $(SRC_NAME) PROGRAMS="dropbear dbclient dropbearkey dropbearconvert scp" MULTI=1
+	$(MAKE) -j$(HOST_NCPU) -C $(SRC_NAME) PROGRAMS="dropbear dbclient dropbearkey dropbearconvert scp" MULTI=1
 
 config_test:
 	( if [ -f ./config_done ]; then \
@@ -23,6 +23,7 @@ config_test:
 
 configure:
 	( cd $(SRC_NAME) ; \
+	autoreconf -v; \
 	./configure \
 		--prefix=/usr \
 		--disable-lastlog \

@@ -917,7 +917,7 @@ common_traceroute_main(int op, char **argv)
 #if ENABLE_TRACEROUTE6
 	if (af == AF_INET6) {
 		xmove_fd(xsocket(AF_INET6, SOCK_RAW, IPPROTO_ICMPV6), rcvsock);
-		setsockopt_1(rcvsock, SOL_IPV6, IPV6_RECVPKTINFO);
+		socket_want_pktinfo(rcvsock);
 	} else
 #endif
 	{

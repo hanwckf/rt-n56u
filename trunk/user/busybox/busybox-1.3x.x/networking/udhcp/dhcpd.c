@@ -941,7 +941,7 @@ int udhcpd_main(int argc UNUSED_PARAM, char **argv)
 	if (udhcp_read_interface(server_data.interface,
 			&server_data.ifindex,
 			(server_data.server_nip == 0 ? &server_data.server_nip : NULL),
-			server_data.server_mac)
+			server_data.server_mac, NULL)
 	) {
 		retval = 1;
 		goto ret;

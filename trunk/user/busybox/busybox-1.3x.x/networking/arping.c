@@ -29,7 +29,7 @@
 //usage:     "\n	-c N		Stop after sending N ARP requests"
 //usage:     "\n	-w TIMEOUT	Seconds to wait for ARP reply"
 //NB: in iputils-s20160308, iface is mandatory, no default
-//usage:     "\n	-I IFACE	Interface to use (default eth0)"
+//usage:     "\n	-I IFACE	Interface to use (default br0)"
 //usage:     "\n	-s SRC_IP	Sender IP address"
 //usage:     "\n	DST_IP		Target IP address"
 
@@ -295,7 +295,7 @@ static void recv_pack(unsigned char *buf, int len, struct sockaddr_ll *FROM)
 int arping_main(int argc, char **argv) MAIN_EXTERNALLY_VISIBLE;
 int arping_main(int argc UNUSED_PARAM, char **argv)
 {
-	const char *device = "eth0";
+	const char *device = "br0";
 	char *source = NULL;
 	char *target;
 	char *err_str;

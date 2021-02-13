@@ -795,7 +795,7 @@ static enum obj_reloc
 arch_apply_relocation(struct obj_file *f,
 		struct obj_section *targsec,
 		/*struct obj_section *symsec,*/
-		struct obj_symbol *sym,
+		struct obj_symbol *sym PLTGOT_UNUSED_PARAM,
 		ElfW(RelM) *rel, ElfW(Addr) v)
 {
 #if defined(__arm__) || defined(__i386__) || defined(__mc68000__) \
@@ -1764,7 +1764,7 @@ static struct obj_section *arch_xsect_init(struct obj_file *f, const char *name,
 
 #endif
 
-static void arch_create_got(struct obj_file *f)
+static void arch_create_got(struct obj_file *f PLTGOT_UNUSED_PARAM)
 {
 #if defined(USE_GOT_ENTRIES) || defined(USE_PLT_ENTRIES)
 	struct arch_file *ifile = (struct arch_file *) f;
@@ -3826,7 +3826,7 @@ int FAST_FUNC bb_init_module_24(const char *m_filename, const char *options)
 		/* Load module into memory and unzip if compressed */
 		image = xmalloc_open_zipped_read_close(m_filename, &image_size);
 		if (!image)
-			return EXIT_FAILURE;
+			return (-errno);
 	}
 
 	m_name = xstrdup(bb_basename(m_filename));
@@ -3857,8 +3857,10 @@ int FAST_FUNC bb_init_module_24(const char *m_filename, const char *options)
 				"\twhile this kernel is version %s",
 				flag_force_load ? "warning: " : "",
 				m_name, m_strversion, uts.release);
-			if (!flag_force_load)
+			if (!flag_force_load) {
+				exit_status = ESRCH;
 				goto out;
+			}
 		}
 	}
 #endif

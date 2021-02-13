@@ -76,6 +76,7 @@ static const char udhcpc_longopts[] ALIGN1 =
 	"background\0"     No_argument       "b"
 	)
 	"broadcast\0"      No_argument       "B"
+	"daemon\0"         No_argument       "d"
 	IF_FEATURE_UDHCPC_ARPING("arping\0"	Optional_argument "a")
 	IF_FEATURE_UDHCP_PORT("client-port\0"	Required_argument "P")
 	;
@@ -106,9 +107,11 @@ enum {
 /* The rest has variable bit positions, need to be clever */
 	OPTBIT_B = 20,
 	USE_FOR_MMU(             OPTBIT_b,)
+	USE_FOR_MMU(             OPTBIT_d,)
 	IF_FEATURE_UDHCPC_ARPING(OPTBIT_a,)
 	IF_FEATURE_UDHCP_PORT(   OPTBIT_P,)
 	USE_FOR_MMU(             OPT_b = 1 << OPTBIT_b,)
+	USE_FOR_MMU(             OPT_d = 1 << OPTBIT_d,)
 	IF_FEATURE_UDHCPC_ARPING(OPT_a = 1 << OPTBIT_a,)
 	IF_FEATURE_UDHCP_PORT(   OPT_P = 1 << OPTBIT_P,)
 };
@@ -121,7 +124,9 @@ static const uint8_t len_of_option_as_string[] ALIGN1 = {
 	[OPTION_IP              ] = sizeof("255.255.255.255 "),
 	[OPTION_IP_PAIR         ] = sizeof("255.255.255.255 ") * 2,
 	[OPTION_STATIC_ROUTES   ] = sizeof("255.255.255.255/32 255.255.255.255 "),
+#if ENABLE_FEATURE_UDHCP_RFC5969
 	[OPTION_6RD             ] = sizeof("132 128 ffff:ffff:ffff:ffff:ffff:ffff:ffff:ffff 255.255.255.255 "),
+#endif
 	[OPTION_STRING          ] = 1,
 	[OPTION_STRING_HOST     ] = 1,
 #if ENABLE_FEATURE_UDHCP_RFC3397
@@ -292,6 +297,7 @@ static NOINLINE char *xmalloc_optname_optval(uint8_t *option, const struct dhcp_
 
 			return ret;
 		}
+#if ENABLE_FEATURE_UDHCP_RFC5969
 		case OPTION_6RD:
 			/* Option binary format (see RFC 5969):
 			 *  0                   1                   2                   3
@@ -334,6 +340,7 @@ static NOINLINE char *xmalloc_optname_optval(uint8_t *option, const struct dhcp_
 			}
 
 			return ret;
+#endif
 #if ENABLE_FEATURE_UDHCP_RFC3397
 		case OPTION_DNS_STRING:
 			/* unpack option into dest; use ret for prefix (i.e., "optname=") */
@@ -583,7 +590,10 @@ static void add_client_options(struct dhcp_packet *packet)
 {
 	int i, end, len;
 
-	udhcp_add_simple_option(packet, DHCP_MAX_SIZE, htons(IP_UDP_DHCP_SIZE));
+	len = sizeof(struct ip_udp_dhcp_packet);
+	if (client_data.client_mtu > 0)
+		len = MIN(client_data.client_mtu, len);
+	udhcp_add_simple_option(packet, DHCP_MAX_SIZE, htons(len));
 
 	/* Add a "param req" option with the list of options we'd like to have
 	 * from stubborn DHCP servers. Pull the data from the struct in common.c.
@@ -1169,6 +1179,7 @@ static void client_background(void)
 //usage:     "\n	-A SEC		Wait if lease is not obtained (default 20)"
 //usage:	USE_FOR_MMU(
 //usage:     "\n	-b		Background if lease is not obtained"
+//usage:     "\n	-d		Background after run"
 //usage:	)
 //usage:     "\n	-n		Exit if lease is not obtained"
 //usage:     "\n	-q		Exit after obtaining lease"
@@ -1210,12 +1221,13 @@ int udhcpc_main(int argc UNUSED_PARAM, char **argv)
 	llist_t *list_x = NULL;
 	int tryagain_timeout = 20;
 	int discover_timeout = 3;
-	int discover_retries = 3;
+	int discover_retries = 4;
 	uint32_t server_addr = server_addr; /* for compiler */
 	uint32_t requested_ip = 0;
 	uint32_t xid = xid; /* for compiler */
 	int packet_num;
 	int timeout; /* must be signed */
+	int timeout_t2 = 60;
 	unsigned already_waited_sec;
 	unsigned opt;
 	IF_FEATURE_UDHCPC_ARPING(unsigned arpping_ms;)
@@ -1240,6 +1252,7 @@ int udhcpc_main(int argc UNUSED_PARAM, char **argv)
 		/* O,x: list; -T,-t,-A take numeric param */
 		"CV:H:h:F:i:np:qRr:s:T:+t:+SA:+O:*ox:*fB"
 		USE_FOR_MMU("b")
+		USE_FOR_MMU("d")
 		IF_FEATURE_UDHCPC_ARPING("a::")
 		IF_FEATURE_UDHCP_PORT("P:")
 		"v"
@@ -1257,8 +1270,6 @@ int udhcpc_main(int argc UNUSED_PARAM, char **argv)
 		IF_UDHCP_VERBOSE(, &dhcp_verbose)
 	);
 	if (opt & (OPT_h|OPT_H)) {
-		//msg added 2011-11
-		bb_simple_error_msg("option -h NAME is deprecated, use -x hostname:NAME");
 		client_data.hostname = alloc_dhcp_option(DHCP_HOST_NAME, str_h, 0);
 	}
 	if (opt & OPT_F) {
@@ -1314,7 +1325,8 @@ int udhcpc_main(int argc UNUSED_PARAM, char **argv)
 	if (udhcp_read_interface(client_data.interface,
 			&client_data.ifindex,
 			NULL,
-			client_data.client_mac)
+			client_data.client_mac,
+			&client_data.client_mtu)
 	) {
 		return 1;
 	}
@@ -1343,6 +1355,13 @@ int udhcpc_main(int argc UNUSED_PARAM, char **argv)
 		bb_daemonize_or_rexec(0 /* flags */, argv);
 		logmode = LOGMODE_NONE;
 	}
+#else
+	if (!(opt & OPT_f) && (opt & OPT_d) ) {
+		bb_daemonize(0);
+		logmode = LOGMODE_NONE;
+		/* do not background again! */
+		opt = ((opt & ~OPT_b) | OPT_f);
+	}
 #endif
 	if (opt & OPT_S) {
 		openlog(applet_name, LOG_PID, LOG_DAEMON);
@@ -1357,7 +1376,7 @@ int udhcpc_main(int argc UNUSED_PARAM, char **argv)
 	srand(monotonic_us());
 
 	client_data.state = INIT_SELECTING;
-	udhcp_run_script(NULL, "deconfig");
+//	udhcp_run_script(NULL, "deconfig");
 	change_listen_mode(LISTEN_RAW);
 	packet_num = 0;
 	timeout = 0;
@@ -1415,7 +1434,8 @@ int udhcpc_main(int argc UNUSED_PARAM, char **argv)
 			if (udhcp_read_interface(client_data.interface,
 					&client_data.ifindex,
 					NULL,
-					client_data.client_mac)
+					client_data.client_mac,
+					&client_data.client_mtu)
 			) {
 				goto ret0; /* iface is gone? */
 			}
@@ -1486,7 +1506,7 @@ int udhcpc_main(int argc UNUSED_PARAM, char **argv)
 			case RENEW_REQUESTED: /* manual (SIGUSR1) renew */
 			case_RENEW_REQUESTED:
 			case RENEWING:
-				if (timeout >= 60) {
+				if (timeout >= timeout_t2) {
 					/* send an unicast renew request */
 			/* Sometimes observed to fail (EADDRNOTAVAIL) to bind
 			 * a new UDP socket for sending inside send_renew.
@@ -1562,6 +1582,8 @@ int udhcpc_main(int argc UNUSED_PARAM, char **argv)
 				 */
 				if (timeout > 60)
 					timeout = 60;
+				/* allow first renew via unicast */
+				timeout_t2 = tryagain_timeout;
 				goto case_RENEW_REQUESTED;
 			}
 			/* Start things over */
@@ -1744,7 +1766,10 @@ int udhcpc_main(int argc UNUSED_PARAM, char **argv)
 				start = monotonic_sec();
 				udhcp_run_script(&packet, client_data.state == REQUESTING ? "bound" : "renew");
 				already_waited_sec = (unsigned)monotonic_sec() - start;
+				/* T1 expired on 1/2 of the lease time (RFC2132) */
 				timeout = lease_seconds / 2;
+				/* T2 expired on 7/8 of the lease time (RFC2132) */
+				timeout_t2 = lease_seconds / 8;
 				if ((unsigned)timeout < already_waited_sec) {
 					/* Something went wrong. Back to discover state */
 					timeout = already_waited_sec = 0;

@@ -481,10 +481,10 @@ struct globals {
 #define INIT_G() do { \
 	SET_PTR_TO_GLOBALS(xzalloc(sizeof(G))); \
 	sector_size = DEFAULT_SECTOR_SIZE; \
-	sector_offset = 1; \
+	sector_offset = 2048; \
 	g_partitions = 4; \
 	units_per_sector = 1; \
-	dos_compatible_flag = 1; \
+	dos_compatible_flag = 0; \
 } while (0)
 
 
@@ -498,8 +498,8 @@ static sector_t bb_BLKGETSIZE_sectors(int fd)
 	unsigned long longsectors;
 
 	if (ioctl(fd, BLKGETSIZE64, &v64) == 0) {
-		/* Got bytes, convert to 512 byte sectors */
-		v64 >>= 9;
+		/* Got bytes, convert to sectors */
+		v64 /= sector_size;
 		if (v64 != (sector_t)v64) {
  ret_trunc:
 			/* Not only DOS, but all other partition tables
@@ -1383,10 +1383,7 @@ get_partition_table_geometry(void)
 static void
 get_geometry(void)
 {
-	int sec_fac;
-
 	get_sectorsize();
-	sec_fac = sector_size / 512;
 #if ENABLE_FEATURE_SUN_LABEL
 	guess_device_type();
 #endif
@@ -1405,11 +1402,11 @@ get_geometry(void)
 		kern_sectors ? kern_sectors : 63;
 	total_number_of_sectors = bb_BLKGETSIZE_sectors(dev_fd);
 
-	sector_offset = 1;
+	sector_offset = 2048;
 	if (dos_compatible_flag)
 		sector_offset = g_sectors;
 
-	g_cylinders = total_number_of_sectors / (g_heads * g_sectors * sec_fac);
+	g_cylinders = total_number_of_sectors / g_heads / g_sectors;
 	if (!g_cylinders)
 		g_cylinders = user_cylinders;
 }
@@ -1797,7 +1794,7 @@ toggle_dos_compatibility_flag(void)
 		sector_offset = g_sectors;
 		printf("DOS Compatibility flag is %sset\n", "");
 	} else {
-		sector_offset = 1;
+		sector_offset = 2048;
 		printf("DOS Compatibility flag is %sset\n", "not ");
 	}
 }
@@ -2025,7 +2022,8 @@ check_consistency(const struct partition *p, int partition)
 static void
 list_disk_geometry(void)
 {
-	ullong xbytes = total_number_of_sectors / (1024*1024 / 512);
+	ullong bytes = ((ullong)total_number_of_sectors * sector_size);
+	ullong xbytes = bytes / (1024*1024);
 	char x = 'M';
 
 	if (xbytes >= 10000) {

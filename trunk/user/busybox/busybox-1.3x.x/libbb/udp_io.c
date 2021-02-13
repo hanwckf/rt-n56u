@@ -24,6 +24,7 @@ socket_want_pktinfo(int fd UNUSED_PARAM)
 #endif
 #if ENABLE_FEATURE_IPV6 && defined(IPV6_RECVPKTINFO)
 	setsockopt_1(fd, IPPROTO_IPV6, IPV6_RECVPKTINFO);
+	setsockopt_1(fd, IPPROTO_IPV6, IPV6_2292PKTINFO);
 #endif
 }
 
@@ -80,7 +81,12 @@ send_to_from(int fd, void *buf, size_t len, int flags,
 	 * was seen showing IPv6 "from" even when the destination
 	 * of received packet (our local address) was IPv4.
 	 */
-	if (/* to->sa_family == AF_INET && */ from->sa_family == AF_INET) {
+# if ENABLE_FEATURE_IPV6
+	if ((to->sa_family == AF_INET || to->sa_family == AF_INET6)
+# else
+	if ((to->sa_family == AF_INET)
+# endif
+	    && from->sa_family == AF_INET) {
 		struct in_pktinfo *pktptr;
 		cmsgptr->cmsg_level = IPPROTO_IP;
 		cmsgptr->cmsg_type = IP_PKTINFO;
@@ -172,14 +178,19 @@ recv_from_to(int fd, void *buf, size_t len, int flags,
 		}
 # if ENABLE_FEATURE_IPV6 && defined(IPV6_PKTINFO)
 		if (cmsgptr->cmsg_level == IPPROTO_IPV6
-		 && cmsgptr->cmsg_type == IPV6_PKTINFO
-		) {
+		 && (cmsgptr->cmsg_type == IPV6_PKTINFO
+#if defined(IPV6_2292PKTINFO) && defined(IPV6_RECVPKTINFO)
+					|| cmsgptr->cmsg_type == IPV6_2292PKTINFO
+#endif
+		)) {
 			const int IPI6_ADDR_OFF = offsetof(struct in6_pktinfo, ipi6_addr);
+			const int IPI6_IFINDEX_OFF = offsetof(struct in6_pktinfo, ipi6_ifindex);
 			to->sa_family = AF_INET6;
 			/*#  define pktinfo(cmsgptr) ( (struct in6_pktinfo*)(CMSG_DATA(cmsgptr)) )*/
 			/*to6->sin6_addr = pktinfo(cmsgptr)->ipi6_addr; - may be unaligned */
 			memcpy(&to6->sin6_addr, (char*)(CMSG_DATA(cmsgptr)) + IPI6_ADDR_OFF, sizeof(to6->sin6_addr));
 			/*to6->sin6_port = 123; */
+			move_from_unaligned_int(to6->sin6_scope_id, (char*)(CMSG_DATA(cmsgptr)) + IPI6_IFINDEX_OFF);
 			break;
 		}
 # endif

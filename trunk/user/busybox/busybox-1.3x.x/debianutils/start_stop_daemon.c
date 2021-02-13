@@ -549,16 +549,8 @@ int start_stop_daemon_main(int argc UNUSED_PARAM, char **argv)
 	if (opt & OPT_c) {
 		struct bb_uidgid_t ugid;
 		parse_chown_usergroup_or_die(&ugid, chuid);
-		if (ugid.uid != (uid_t) -1L) {
-			struct passwd *pw = xgetpwuid(ugid.uid);
-			if (ugid.gid != (gid_t) -1L)
-				pw->pw_gid = ugid.gid;
-			/* initgroups, setgid, setuid: */
-			change_identity(pw);
-		} else if (ugid.gid != (gid_t) -1L) {
-			xsetgid(ugid.gid);
-			setgroups(1, &ugid.gid);
-		}
+		if (ugid.gid != (gid_t) -1L) xsetgid(ugid.gid);
+		if (ugid.uid != (uid_t) -1L) xsetuid(ugid.uid);
 	}
 	/* Try:
 	 * strace -oLOG start-stop-daemon -S -x /bin/usleep -a qwerty 500000

@@ -328,6 +328,7 @@ int zcip_main(int argc UNUSED_PARAM, char **argv)
 	{
 		uint32_t t;
 		move_from_unaligned32(t, ((char *)&G.our_ethaddr + 2));
+		t += getpid();
 		srand(t);
 	}
 	// FIXME cases to handle:

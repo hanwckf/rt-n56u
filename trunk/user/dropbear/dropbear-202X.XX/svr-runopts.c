@@ -90,6 +90,9 @@ static void printhelp(const char * progname) {
 					"-a		Allow connections to forwarded ports from any host\n"
 					"-c command	Force executed command\n"
 #endif
+#if defined AF_INET6 && AF_INET6 < AF_MAX
+					"-4,-6		Explicitly force IPv4 or IPv6 usage\n"
+#endif
 					"-p [address:]port\n"
 					"		Listen on specified tcp port (and optionally address),\n"
 					"		up to %d can be specified\n"
@@ -177,17 +180,13 @@ void svr_getopts(int argc, char ** argv) {
 #ifndef DISABLE_ZLIB
 	opts.compress_mode = DROPBEAR_COMPRESS_DELAYED;
 #endif 
-
-	/* not yet
-	opts.ipv4 = 1;
-	opts.ipv6 = 1;
-	*/
 #if DO_MOTD
 	svr_opts.domotd = 1;
 #endif
 #ifndef DISABLE_SYSLOG
 	opts.usingsyslog = 1;
 #endif
+	svr_opts.ipfamily = AF_UNSPEC;
 	opts.recv_window = DEFAULT_RECV_WINDOW;
 	opts.keepalive_secs = DEFAULT_KEEPALIVE;
 	opts.idle_timeout_secs = DEFAULT_IDLE_TIMEOUT;
@@ -239,6 +238,14 @@ void svr_getopts(int argc, char ** argv) {
 #if INETD_MODE
 				case 'i':
 					svr_opts.inetdmode = 1;
+					break;
+#endif
+#if defined AF_INET6 && AF_INET6 < AF_MAX
+				case '4':
+					svr_opts.ipfamily = AF_INET;
+					break;
+				case '6':
+					svr_opts.ipfamily = AF_INET6;
 					break;
 #endif
 				case 'p':

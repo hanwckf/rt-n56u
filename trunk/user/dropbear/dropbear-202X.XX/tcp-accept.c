@@ -123,7 +123,7 @@ int listen_tcpfwd(struct TCPListener* tcpinfo, struct Listener **ret_listener) {
 	/* first we try to bind, so don't need to do so much cleanup on failure */
 	snprintf(portstring, sizeof(portstring), "%u", tcpinfo->listenport);
 
-	nsocks = dropbear_listen(tcpinfo->listenaddr, portstring, socks, 
+	nsocks = dropbear_listen(AF_UNSPEC, tcpinfo->listenaddr, portstring, socks,
 			DROPBEAR_MAX_SOCKS, &errstring, &ses.maxfd);
 	if (nsocks < 0) {
 		dropbear_log(LOG_INFO, "TCP forward failed: %s", errstring);

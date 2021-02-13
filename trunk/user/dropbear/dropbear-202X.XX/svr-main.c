@@ -128,6 +128,7 @@ static void main_noinetd() {
 	int childsock;
 	int childpipe[2];
 
+	memset(listensocks, 0, sizeof(listensocks));
 	/* Note: commonsetup() must happen before we daemon()ise. Otherwise
 	   daemon() will chdir("/"), and we won't be able to find local-dir
 	   hostkeys. */
@@ -417,7 +418,8 @@ static size_t listensockets(int *socks, size_t sockcount, int *maxfd) {
 
 		TRACE(("listening on '%s:%s'", svr_opts.addresses[i], svr_opts.ports[i]))
 
-		nsock = dropbear_listen(svr_opts.addresses[i], svr_opts.ports[i], &socks[sockpos], 
+		nsock = dropbear_listen(svr_opts.ipfamily,
+				svr_opts.addresses[i], svr_opts.ports[i], &socks[sockpos], 
 				sockcount - sockpos,
 				&errstring, maxfd);
 

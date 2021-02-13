@@ -19,7 +19,7 @@ void get_socket_address(int fd, char **local_host, char **local_port,
 		char **remote_host, char **remote_port, int host_lookup);
 void getaddrstring(struct sockaddr_storage* addr, 
 		char **ret_host, char **ret_port, int host_lookup);
-int dropbear_listen(const char* address, const char* port,
+int dropbear_listen(int family, const char* address, const char* port,
 		int *socks, unsigned int sockcount, char **errstring, int *maxfd);
 
 struct dropbear_progress_connection;
@@ -29,8 +29,8 @@ errstring is only set on DROPBEAR_FAILURE, returns failure message for the last 
 typedef void(*connect_callback)(int result, int sock, void* data, const char* errstring);
 
 /* Always returns a progress connection, if it fails it will call the callback at a later point */
-struct dropbear_progress_connection * connect_remote (const char* remotehost, const char* remoteport,
-	connect_callback cb, void *cb_data, const char* bind_address, const char* bind_port);
+struct dropbear_progress_connection * connect_remote (int family, const char* remotehost,
+	const char* remoteport, connect_callback cb, void *cb_data, const char* bind_address, const char* bind_port);
 
 /* Sets up for select() */
 void set_connect_fds(fd_set *writefd);

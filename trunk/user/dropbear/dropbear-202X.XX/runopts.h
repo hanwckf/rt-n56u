@@ -80,11 +80,8 @@ typedef struct svr_runopts {
 
 	int inetdmode;
 
-	/* Flags indicating whether to use ipv4 and ipv6 */
-	/* not used yet
-	int ipv4;
-	int ipv6;
-	*/
+	/* ip protocol family to use */
+	int ipfamily;
 
 #if DO_MOTD
 	/* whether to print the MOTD */
@@ -140,6 +137,10 @@ void loadhostkeys(void);
 typedef struct cli_runopts {
 
 	char *progname;
+
+	/* ip protocol family to use */
+	int ipfamily;
+
 	char *remotehost;
 	const char *remoteport;
 

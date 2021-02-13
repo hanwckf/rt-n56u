@@ -107,7 +107,7 @@ if test "$hardenbuild" -eq 1; then
 	    [AC_MSG_NOTICE([Setting $TESTFLAGS])], 
 	    [
 			CFLAGS="$OLDCFLAGS"
-			TESTFLAGS="-fstack-protector --param=ssp-buffer-size=4"
+			TESTFLAGS=""
 			CFLAGS="$CFLAGS $TESTFLAGS"
 			AC_COMPILE_IFELSE([AC_LANG_PROGRAM([])], 
 			    [AC_MSG_NOTICE([Setting $TESTFLAGS])], 

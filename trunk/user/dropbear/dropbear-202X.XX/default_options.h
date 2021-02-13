@@ -19,10 +19,10 @@ IMPORTANT: Some options will require "make clean" after changes */
 #define DROPBEAR_DEFADDRESS ""
 
 /* Default hostkey paths - these can be specified on the command line */
-#define DSS_PRIV_FILENAME "/etc/dropbear/dropbear_dss_host_key"
-#define RSA_PRIV_FILENAME "/etc/dropbear/dropbear_rsa_host_key"
-#define ECDSA_PRIV_FILENAME "/etc/dropbear/dropbear_ecdsa_host_key"
-#define ED25519_PRIV_FILENAME "/etc/dropbear/dropbear_ed25519_host_key"
+#define DSS_PRIV_FILENAME "/etc/storage/dropbear/dss_host_key"
+#define RSA_PRIV_FILENAME "/etc/storage/dropbear/rsa_host_key"
+#define ECDSA_PRIV_FILENAME "/etc/storage/dropbear/ecdsa_host_key"
+#define ED25519_PRIV_FILENAME "/etc/storage/dropbear/ed25519_host_key"
 
 /* Set NON_INETD_MODE if you require daemon functionality (ie Dropbear listens
  * on chosen ports and keeps accepting connections. This is the default.

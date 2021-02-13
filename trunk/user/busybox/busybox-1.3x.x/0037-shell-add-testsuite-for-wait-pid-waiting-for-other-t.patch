@@ -1,0 +1,63 @@
+From d4dd48f2948b006f4ccb7cc2b603fb3d00f90685 Mon Sep 17 00:00:00 2001
+From: Denys Vlasenko <vda.linux@googlemail.com>
+Date: Tue, 29 Sep 2020 22:36:36 +0200
+Subject: [PATCH 037/228] shell: add testsuite for "wait $pid" waiting for
+ other tasks
+
+Signed-off-by: Denys Vlasenko <vda.linux@googlemail.com>
+---
+ shell/ash_test/ash-misc/wait7.right   | 2 ++
+ shell/ash_test/ash-misc/wait7.tests   | 7 +++++++
+ shell/hush_test/hush-misc/wait7.right | 2 ++
+ shell/hush_test/hush-misc/wait7.tests | 7 +++++++
+ 4 files changed, 18 insertions(+)
+ create mode 100644 shell/ash_test/ash-misc/wait7.right
+ create mode 100755 shell/ash_test/ash-misc/wait7.tests
+ create mode 100644 shell/hush_test/hush-misc/wait7.right
+ create mode 100755 shell/hush_test/hush-misc/wait7.tests
+
+diff --git a/shell/ash_test/ash-misc/wait7.right b/shell/ash_test/ash-misc/wait7.right
+new file mode 100644
+index 000000000..4b6445841
+--- /dev/null
++++ b/shell/ash_test/ash-misc/wait7.right
+@@ -0,0 +1,2 @@
++Background1
++Ok:0
+diff --git a/shell/ash_test/ash-misc/wait7.tests b/shell/ash_test/ash-misc/wait7.tests
+new file mode 100755
+index 000000000..a54a778e5
+--- /dev/null
++++ b/shell/ash_test/ash-misc/wait7.tests
+@@ -0,0 +1,7 @@
++sleep 1 && echo "Background1" &
++pid=$!
++sleep 3 && echo "Background2: BUG!" &
++# Shouldn't wait for 2nd bkgd:
++wait $pid
++kill $!
++echo Ok:$?
+diff --git a/shell/hush_test/hush-misc/wait7.right b/shell/hush_test/hush-misc/wait7.right
+new file mode 100644
+index 000000000..4b6445841
+--- /dev/null
++++ b/shell/hush_test/hush-misc/wait7.right
+@@ -0,0 +1,2 @@
++Background1
++Ok:0
+diff --git a/shell/hush_test/hush-misc/wait7.tests b/shell/hush_test/hush-misc/wait7.tests
+new file mode 100755
+index 000000000..a54a778e5
+--- /dev/null
++++ b/shell/hush_test/hush-misc/wait7.tests
+@@ -0,0 +1,7 @@
++sleep 1 && echo "Background1" &
++pid=$!
++sleep 3 && echo "Background2: BUG!" &
++# Shouldn't wait for 2nd bkgd:
++wait $pid
++kill $!
++echo Ok:$?
+-- 
+2.25.0
+

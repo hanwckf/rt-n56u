@@ -1,0 +1,35 @@
+From 841878e7eeb8861aa1b6f94436b8dcf3b064d1e4 Mon Sep 17 00:00:00 2001
+From: Denys Vlasenko <vda.linux@googlemail.com>
+Date: Thu, 1 Oct 2020 00:57:05 +0200
+Subject: [PATCH 042/228] shell: remove FAST_FUNC from a static function
+
+Signed-off-by: Denys Vlasenko <vda.linux@googlemail.com>
+---
+ shell/math.c | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/shell/math.c b/shell/math.c
+index aac5017d0..2942cdd26 100644
+--- a/shell/math.c
++++ b/shell/math.c
+@@ -251,7 +251,7 @@ typedef struct remembered_name {
+ } remembered_name;
+ 
+ 
+-static arith_t FAST_FUNC
++static arith_t
+ evaluate_string(arith_state_t *math_state, const char *expr);
+ 
+ static const char*
+@@ -582,7 +582,7 @@ static arith_t strto_arith_t(const char *nptr, char **endptr)
+ # endif
+ #endif
+ 
+-static arith_t FAST_FUNC
++static arith_t
+ evaluate_string(arith_state_t *math_state, const char *expr)
+ {
+ 	operator lasttok;
+-- 
+2.25.0
+

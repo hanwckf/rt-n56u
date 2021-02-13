@@ -1,0 +1,195 @@
+From e16f7eb5967b9a960f4600c20690af63fb830b60 Mon Sep 17 00:00:00 2001
+From: Denys Vlasenko <vda.linux@googlemail.com>
+Date: Sat, 24 Oct 2020 04:26:43 +0200
+Subject: [PATCH 056/228] hush: output bash-compat killing signal names
+
+This significantly syncronises ash-signals and hush-signals tests.
+
+function                                             old     new   delta
+process_wait_result                                  449     450      +1
+
+Signed-off-by: Denys Vlasenko <vda.linux@googlemail.com>
+---
+ shell/ash_test/ash-signals/usage.right        | 14 ++++++++++
+ shell/ash_test/ash-signals/usage.tests        | 23 +++++++++++++++
+ shell/hush.c                                  |  4 +--
+ shell/hush_test/hush-misc/sig_exitcode.right  |  4 +--
+ shell/hush_test/hush-signals/catch.right      |  2 +-
+ shell/hush_test/hush-signals/signal1.right    | 20 +++++++++++++
+ shell/hush_test/hush-signals/signal1.tests    | 28 +++++++++++++++++++
+ .../hush_test/hush-signals/signal_read2.right |  2 +-
+ shell/hush_test/hush-signals/subshell.right   |  2 +-
+ 9 files changed, 92 insertions(+), 7 deletions(-)
+ create mode 100644 shell/ash_test/ash-signals/usage.right
+ create mode 100755 shell/ash_test/ash-signals/usage.tests
+ create mode 100644 shell/hush_test/hush-signals/signal1.right
+ create mode 100755 shell/hush_test/hush-signals/signal1.tests
+
+diff --git a/shell/ash_test/ash-signals/usage.right b/shell/ash_test/ash-signals/usage.right
+new file mode 100644
+index 000000000..c0dbd6c3c
+--- /dev/null
++++ b/shell/ash_test/ash-signals/usage.right
+@@ -0,0 +1,14 @@
++___
++___
++___
++trap -- 'a' EXIT
++trap -- 'a' INT
++trap -- 'a' USR1
++trap -- 'a' USR2
++___
++___
++trap -- 'a' USR1
++trap -- 'a' USR2
++___
++___
++trap -- 'a' USR2
+diff --git a/shell/ash_test/ash-signals/usage.tests b/shell/ash_test/ash-signals/usage.tests
+new file mode 100755
+index 000000000..d29c6e74a
+--- /dev/null
++++ b/shell/ash_test/ash-signals/usage.tests
+@@ -0,0 +1,23 @@
++# no output -- default state
++echo ___
++trap
++
++# assign some traps
++echo ___
++trap "a" EXIT INT USR1 USR2
++
++# show them all
++echo ___
++trap
++
++# clear one
++echo ___
++trap 0 INT
++echo ___
++trap
++
++# clear another
++echo ___
++trap "-" USR1
++echo ___
++trap
+diff --git a/shell/hush.c b/shell/hush.c
+index 2b34b7da5..bc6e6014f 100644
+--- a/shell/hush.c
++++ b/shell/hush.c
+@@ -8704,8 +8704,8 @@ static int process_wait_result(struct pipe *fg_pipe, pid_t childpid, int status)
+ 					 */
+ 					 && i == fg_pipe->num_cmds-1
+ 					) {
+-						/* TODO: use strsignal() instead for bash compat? but that's bloat... */
+-						puts(sig == SIGINT || sig == SIGPIPE ? "" : get_signame(sig));
++						/* strsignal() is for bash compat. ~600 bloat versus bbox's get_signame() */
++						puts(sig == SIGINT || sig == SIGPIPE ? "" : strsignal(sig));
+ 					}
+ 					/* TODO: if (WCOREDUMP(status)) + " (core dumped)"; */
+ 					/* TODO: MIPS has 128 sigs (1..128), what if sig==128 here?
+diff --git a/shell/hush_test/hush-misc/sig_exitcode.right b/shell/hush_test/hush-misc/sig_exitcode.right
+index d5f000a08..7cbc1072d 100644
+--- a/shell/hush_test/hush-misc/sig_exitcode.right
++++ b/shell/hush_test/hush-misc/sig_exitcode.right
+@@ -1,5 +1,5 @@
+-KILL
++Killed
+ 137:137
+-KILL
++Killed
+ 0:0
+ Done
+diff --git a/shell/hush_test/hush-signals/catch.right b/shell/hush_test/hush-signals/catch.right
+index 80a062c4b..68530c6e7 100644
+--- a/shell/hush_test/hush-signals/catch.right
++++ b/shell/hush_test/hush-signals/catch.right
+@@ -2,4 +2,4 @@ sending USR2
+ caught
+ sending USR2
+ sending USR2
+-USR2
++User defined signal 2
+diff --git a/shell/hush_test/hush-signals/signal1.right b/shell/hush_test/hush-signals/signal1.right
+new file mode 100644
+index 000000000..cf403ac62
+--- /dev/null
++++ b/shell/hush_test/hush-signals/signal1.right
+@@ -0,0 +1,20 @@
++got signal
++trap -- 'echo got signal' USR1
++sent 1 signal
++got signal
++wait interrupted
++trap -- 'echo got signal' USR1
++sent 2 signal
++got signal
++wait interrupted
++trap -- 'echo got signal' USR1
++sent 3 signal
++got signal
++wait interrupted
++trap -- 'echo got signal' USR1
++sent 4 signal
++got signal
++wait interrupted
++trap -- 'echo got signal' USR1
++sent 5 signal
++sleep completed
+diff --git a/shell/hush_test/hush-signals/signal1.tests b/shell/hush_test/hush-signals/signal1.tests
+new file mode 100755
+index 000000000..61943467a
+--- /dev/null
++++ b/shell/hush_test/hush-signals/signal1.tests
+@@ -0,0 +1,28 @@
++trap "echo got signal" USR1
++
++for try in 1 2 3 4 5; do
++    kill -USR1 $$
++    sleep 0.2
++    echo "sent $try signal"
++done &
++
++# Ensure "wait" has something to wait for
++sleep 2 &
++
++# Ensure we do not execute "trap" below before "kill -USR1" above
++# (was getting failure on loaded machine without this)
++sleep 0.1
++
++sleeping=true
++while $sleeping; do
++    trap
++    if wait %%; then
++        echo "sleep completed"
++        sleeping=false
++    elif [ $? = 127 ]; then
++        echo "BUG: no processes to wait for?!"
++        sleeping=false
++    else
++        echo "wait interrupted"
++    fi
++done
+diff --git a/shell/hush_test/hush-signals/signal_read2.right b/shell/hush_test/hush-signals/signal_read2.right
+index 71a6bc16d..87d8da304 100644
+--- a/shell/hush_test/hush-signals/signal_read2.right
++++ b/shell/hush_test/hush-signals/signal_read2.right
+@@ -1,2 +1,2 @@
+-HUP
++Hangup
+ Done:129
+diff --git a/shell/hush_test/hush-signals/subshell.right b/shell/hush_test/hush-signals/subshell.right
+index f865b932b..248fcc41a 100644
+--- a/shell/hush_test/hush-signals/subshell.right
++++ b/shell/hush_test/hush-signals/subshell.right
+@@ -17,5 +17,5 @@ Ok
+ trap -- '' HUP
+ trap -- '' QUIT
+ trap -- '' SYS
+-TERM
++Terminated
+ Done
+-- 
+2.25.0
+

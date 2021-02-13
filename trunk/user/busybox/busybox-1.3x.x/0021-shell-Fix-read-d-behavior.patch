@@ -1,0 +1,81 @@
+From 39925026f6857979cbe603efd42073eb63f8d9de Mon Sep 17 00:00:00 2001
+From: Christian Eggers <ceggers@arri.de>
+Date: Mon, 29 Jun 2020 17:57:24 +0200
+Subject: [PATCH 021/228] shell: Fix "read -d ''" behavior
+
+With bash's read builtin it is possible to read from a file (e.g.
+device-tree) until the first '\0' character:
+
+IFS= read -r -d '' VARIABLE < file
+
+In busybox ash the -d extension is also implemented, but checking the
+read character for '\0' has to be performed after comparing with the
+delimiter.
+
+Signed-off-by: Christian Eggers <ceggers@arri.de>
+Signed-off-by: Denys Vlasenko <vda.linux@googlemail.com>
+---
+ shell/ash_test/ash-read/read_d0.right   | 1 +
+ shell/ash_test/ash-read/read_d0.tests   | 1 +
+ shell/hush_test/hush-read/read_d0.right | 1 +
+ shell/hush_test/hush-read/read_d0.tests | 1 +
+ shell/shell_common.c                    | 4 ++--
+ 5 files changed, 6 insertions(+), 2 deletions(-)
+ create mode 100644 shell/ash_test/ash-read/read_d0.right
+ create mode 100755 shell/ash_test/ash-read/read_d0.tests
+ create mode 100644 shell/hush_test/hush-read/read_d0.right
+ create mode 100755 shell/hush_test/hush-read/read_d0.tests
+
+diff --git a/shell/ash_test/ash-read/read_d0.right b/shell/ash_test/ash-read/read_d0.right
+new file mode 100644
+index 000000000..9daeafb98
+--- /dev/null
++++ b/shell/ash_test/ash-read/read_d0.right
+@@ -0,0 +1 @@
++test
+diff --git a/shell/ash_test/ash-read/read_d0.tests b/shell/ash_test/ash-read/read_d0.tests
+new file mode 100755
+index 000000000..630d80787
+--- /dev/null
++++ b/shell/ash_test/ash-read/read_d0.tests
+@@ -0,0 +1 @@
++printf 'test\0zest\n' | (read -d '' reply; echo "$reply")
+diff --git a/shell/hush_test/hush-read/read_d0.right b/shell/hush_test/hush-read/read_d0.right
+new file mode 100644
+index 000000000..9daeafb98
+--- /dev/null
++++ b/shell/hush_test/hush-read/read_d0.right
+@@ -0,0 +1 @@
++test
+diff --git a/shell/hush_test/hush-read/read_d0.tests b/shell/hush_test/hush-read/read_d0.tests
+new file mode 100755
+index 000000000..630d80787
+--- /dev/null
++++ b/shell/hush_test/hush-read/read_d0.tests
+@@ -0,0 +1 @@
++printf 'test\0zest\n' | (read -d '' reply; echo "$reply")
+diff --git a/shell/shell_common.c b/shell/shell_common.c
+index 12c4a073c..42c4c9c97 100644
+--- a/shell/shell_common.c
++++ b/shell/shell_common.c
+@@ -209,8 +209,6 @@ shell_builtin_read(struct builtin_read_params *params)
+ 		}
+ 
+ 		c = buffer[bufpos];
+-		if (c == '\0')
+-			continue;
+ 		if (!(read_flags & BUILTIN_READ_RAW)) {
+ 			if (backslash) {
+ 				backslash = 0;
+@@ -225,6 +223,8 @@ shell_builtin_read(struct builtin_read_params *params)
+ 		}
+ 		if (c == delim) /* '\n' or -d CHAR */
+ 			break;
++		if (c == '\0')
++			continue;
+ 
+ 		/* $IFS splitting. NOT done if we run "read"
+ 		 * without variable names (bash compat).
+-- 
+2.25.0
+

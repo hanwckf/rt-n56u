@@ -1,0 +1,56 @@
+From b65d6cb00fa0ea51bac4c4e62b576b43ae2c996b Mon Sep 17 00:00:00 2001
+From: Denys Vlasenko <vda.linux@googlemail.com>
+Date: Sat, 24 Oct 2020 03:33:32 +0200
+Subject: [PATCH 055/228] hush: do not print killing signal name in
+ `cmd_whihc_dies_on_signal`
+
+function                                             old     new   delta
+process_wait_result                                  438     449     +11
+
+Signed-off-by: Denys Vlasenko <vda.linux@googlemail.com>
+---
+ shell/hush.c                            | 8 +++++++-
+ shell/hush_test/hush-psubst/tick6.right | 1 +
+ shell/hush_test/hush-psubst/tick6.tests | 1 +
+ 3 files changed, 9 insertions(+), 1 deletion(-)
+ create mode 100644 shell/hush_test/hush-psubst/tick6.right
+ create mode 100755 shell/hush_test/hush-psubst/tick6.tests
+
+diff --git a/shell/hush.c b/shell/hush.c
+index e9cec1cc9..2b34b7da5 100644
+--- a/shell/hush.c
++++ b/shell/hush.c
+@@ -8698,9 +8698,15 @@ static int process_wait_result(struct pipe *fg_pipe, pid_t childpid, int status)
+ 				 */
+ 				if (WIFSIGNALED(status)) {
+ 					int sig = WTERMSIG(status);
+-					if (i == fg_pipe->num_cmds-1)
++					if (G.run_list_level == 1
++					/* ^^^^^ Do not print in nested contexts, example:
++					 * echo `sleep 1; sh -c 'kill -9 $$'` - prints "137", NOT "Killed 137"
++					 */
++					 && i == fg_pipe->num_cmds-1
++					) {
+ 						/* TODO: use strsignal() instead for bash compat? but that's bloat... */
+ 						puts(sig == SIGINT || sig == SIGPIPE ? "" : get_signame(sig));
++					}
+ 					/* TODO: if (WCOREDUMP(status)) + " (core dumped)"; */
+ 					/* TODO: MIPS has 128 sigs (1..128), what if sig==128 here?
+ 					 * Maybe we need to use sig | 128? */
+diff --git a/shell/hush_test/hush-psubst/tick6.right b/shell/hush_test/hush-psubst/tick6.right
+new file mode 100644
+index 000000000..065fd3e79
+--- /dev/null
++++ b/shell/hush_test/hush-psubst/tick6.right
+@@ -0,0 +1 @@
++137
+diff --git a/shell/hush_test/hush-psubst/tick6.tests b/shell/hush_test/hush-psubst/tick6.tests
+new file mode 100755
+index 000000000..33dd3630d
+--- /dev/null
++++ b/shell/hush_test/hush-psubst/tick6.tests
+@@ -0,0 +1 @@
++true; echo `sh -c 'kill -9 $$'` $?
+-- 
+2.25.0
+

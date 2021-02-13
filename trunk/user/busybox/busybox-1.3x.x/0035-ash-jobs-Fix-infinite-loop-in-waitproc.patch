@@ -1,0 +1,76 @@
+From 8d5f465a206e307bc47d8157b6c90152ddd2ab3c Mon Sep 17 00:00:00 2001
+From: Denys Vlasenko <vda.linux@googlemail.com>
+Date: Tue, 29 Sep 2020 16:44:46 +0200
+Subject: [PATCH 035/228] ash: jobs: Fix infinite loop in waitproc
+
+Upstream commit:
+
+    Date: Fri, 10 Apr 2020 21:03:09 +1000
+    jobs: Fix infinite loop in waitproc
+
+    After we changed the resetting of gotsigchld so that it is only
+    done if jp is NULL, we can now get an infinite loop in waitproc
+    if gotsigchld is set but there is no outstanding child because
+    everything had been waited for previously without gotsigchld being
+    zeroed.
+
+    This patch fixes it by always zeroing gotsigchld as we did before.
+    The bug that the previous patch was trying to fix is now resolved
+    by switching the blocking mode to DOWAIT_NORMAL after the specified
+    job has been completed so that we really do wait for all outstanding
+    dead children.
+
+    Reported-by: Harald van Dijk <harald@gigawatt.nl>
+    Fixes: 6c691b3e5099 ("jobs: Only clear gotsigchld when waiting...")
+    Signed-off-by: Herbert Xu <herbert@gondor.apana.org.au>
+
+function                                             old     new   delta
+dowait                                               553     631     +78
+
+Signed-off-by: Denys Vlasenko <vda.linux@googlemail.com>
+---
+ shell/ash.c | 25 +++++++++++++++++++------
+ 1 file changed, 19 insertions(+), 6 deletions(-)
+
+diff --git a/shell/ash.c b/shell/ash.c
+index ac25866ec..13470b2fa 100644
+--- a/shell/ash.c
++++ b/shell/ash.c
+@@ -4453,15 +4453,28 @@ waitone(int block, struct job *job)
+ static int
+ dowait(int block, struct job *jp)
+ {
+-	int pid = block == DOWAIT_NONBLOCK ? got_sigchld : 1;
++	smallint gotchld = *(volatile smallint *)&got_sigchld;
++	int rpid;
++	int pid;
++
++	if (jp && jp->state != JOBRUNNING)
++		block = DOWAIT_NONBLOCK;
++
++	if (block == DOWAIT_NONBLOCK && !gotchld)
++		return 1;
++
++	rpid = 1;
+ 
+-	while (jp ? jp->state == JOBRUNNING : pid > 0) {
+-		if (!jp)
+-			got_sigchld = 0;
++	do {
++		got_sigchld = 0;
+ 		pid = waitone(block, jp);
+-	}
++		rpid &= !!pid;
+ 
+-	return pid;
++		if (!pid || (jp && jp->state != JOBRUNNING))
++			block = DOWAIT_NONBLOCK;
++	} while (pid >= 0);
++
++	return rpid;
+ }
+ 
+ #if JOBS
+-- 
+2.25.0
+

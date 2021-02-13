@@ -1,0 +1,32 @@
+From 777a6357c09e1e91acfde060144dd019e3baaf3c Mon Sep 17 00:00:00 2001
+From: Denys Vlasenko <vda.linux@googlemail.com>
+Date: Tue, 29 Sep 2020 16:25:32 +0200
+Subject: [PATCH 034/228] ash: remove a tentative TODO, it's a wrong idea
+
+Upstream tried it, and then reverted by:
+
+    From: Herbert Xu <herbert@gondor.apana.org.au>
+    Date: Tue, 26 May 2020 23:19:05 +1000
+    parser: Fix double-backslash nl in old-style command sub
+
+Signed-off-by: Denys Vlasenko <vda.linux@googlemail.com>
+---
+ shell/ash.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/shell/ash.c b/shell/ash.c
+index ecb9b132b..ac25866ec 100644
+--- a/shell/ash.c
++++ b/shell/ash.c
+@@ -12811,7 +12811,7 @@ parsebackq: {
+ 				goto done;
+ 
+ 			case '\\':
+-				pc = pgetc(); /* or pgetc_eatbnl()? why (example)? */
++				pc = pgetc(); /* not pgetc_eatbnl! */
+ 				if (pc != '\\' && pc != '`' && pc != '$'
+ 				 && (!synstack->dblquote || pc != '"')
+ 				) {
+-- 
+2.25.0
+

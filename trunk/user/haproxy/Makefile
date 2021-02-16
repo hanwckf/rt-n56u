@@ -14,7 +14,7 @@ all: bin_download src_download
 
 bin_download:
 	( if [ ! -d $(BIN_NAME) ];then \
-		git clone --depth=1 $(BIN_URL); \
+		git clone --depth=1 $(BIN_URL) --single-branch; \
 	fi )
 	
 

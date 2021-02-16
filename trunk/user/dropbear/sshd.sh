@@ -4,20 +4,24 @@ dir_storage="/etc/storage/dropbear"
 rsa_key="$dir_storage/rsa_host_key"
 dss_key="$dir_storage/dss_host_key"
 ecdsa_key="$dir_storage/ecdsa_host_key"
+ed25519_key="$dir_storage/ed25519_host_key"
 
 func_createkeys()
 {
 	rm -f "$rsa_key"
 	rm -f "$dss_key"
 	rm -f "$ecdsa_key"
+	rm -f "$ed25519_key"
 
 	[ ! -d "$dir_storage" ] && mkdir -p -m 755 $dir_storage
 	/usr/bin/dropbearkey -t rsa -f "$rsa_key"
 	/usr/bin/dropbearkey -t dss -f "$dss_key"
 	/usr/bin/dropbearkey -t ecdsa -f "$ecdsa_key"
+	/usr/bin/dropbearkey -t ed25519 -f "$ed25519_key"
 	chmod 600 "$rsa_key"
 	chmod 600 "$dss_key"
 	chmod 600 "$ecdsa_key"
+	chmod 600 "$ed25519_key"
 }
 
 func_start()
@@ -39,6 +43,11 @@ func_start()
 	if [ ! -f "$ecdsa_key" ] ; then
 		/usr/bin/dropbearkey -t ecdsa -f "$ecdsa_key"
 		chmod 600 "$ecdsa_key"
+	fi
+
+	if [ ! -f "$ed25519_key" ] ; then
+		/usr/bin/dropbearkey -t ed25519 -f "$ed25519_key"
+		chmod 600 "$ed25519_key"
 	fi
 
 	if [ -n "$1" ] ; then

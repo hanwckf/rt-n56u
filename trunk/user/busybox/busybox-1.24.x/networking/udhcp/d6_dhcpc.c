@@ -793,13 +793,23 @@ static void perform_renew(void)
 static void perform_d6_release(struct in6_addr *server_ipv6, struct in6_addr *our_cur_ipv6)
 {
 	/* send release packet */
-	if (state == BOUND || state == RENEWING || state == REBINDING) {
+	if (state == BOUND
+	 || state == RENEWING
+	 || state == REBINDING
+	 || state == RENEW_REQUESTED
+	) {
 		bb_info_msg("Unicasting a release");
 		send_d6_release(server_ipv6, our_cur_ipv6); /* unicast */
-		d6_run_script(NULL, "deconfig");
 	}
 	bb_info_msg("Entering released state");
 
+/*
+ * We can be here on: SIGUSR2,
+ * or on exit (SIGTERM) and -R "release on quit" is specified.
+ * Users requested to be notified in all cases, even if not in one
+ * of the states above.
+ */
+	d6_run_script(NULL, "deconfig");
 	change_listen_mode(LISTEN_NONE);
 	state = RELEASED;
 }

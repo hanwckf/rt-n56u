@@ -10,7 +10,6 @@ THISDIR = $(shell pwd)
 all: bin_download src_download
 	$(MAKE) -C $(BIN_NAME) ARCH=mips_24kc LDFLAGS=-static CC=$(CONFIG_CROSS_COMPILER_ROOT)/bin/mipsel-linux-uclibc-gcc TARGET=generic -j$(HOST_NCPU)
 	$(CONFIG_CROSS_COMPILER_ROOT)/bin/mipsel-linux-uclibc-strip $(BIN_NAME)/$(BIN_NAME)
-	upx --best --lzma $(BIN_NAME)/$(BIN_NAME)
 
 bin_download:
 	( if [ ! -d $(BIN_NAME) ];then \

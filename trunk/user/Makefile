@@ -176,6 +176,7 @@ endif
 dir_$(TROJAN_ENABLE) 			+= trojan
 dir_$(CONFIG_FIRMWARE_INCLUDE_REDSOCKS)			+= redsocks
 dir_$(CONFIG_FIRMWARE_INCLUDE_HAPROXY)			+= haproxy
+dir_$(CONFIG_FIRMWARE_INCLUDE_SMARTDNS)			+= smartdns
 dir_$(CONFIG_FIRMWARE_INCLUDE_3PROXY)			+= 3proxy
 
 ifdef CONFIG_BLK_DEV_SD

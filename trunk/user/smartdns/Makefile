@@ -1,7 +1,7 @@
 BIN_NAME=smartdns
 SRC_NAME=$(BIN_NAME).sh
 BIN_URL=https://github.com/pymumu/smartdns
-SRC_URL=https://raw.githubusercontent.com/SuzukiHonoka/Smartdns_Padavan/master/smartdns.sh
+SRC_URL=https://raw.githubusercontent.com/SuzukiHonoka/Smartdns_Padavan/master/$(SRC_NAME)
 BIN_PATH=/usr/bin
 
 THISDIR = $(shell pwd)

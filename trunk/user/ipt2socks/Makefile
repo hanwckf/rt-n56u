@@ -1,25 +1,26 @@
-SRC_NAME = ipt2socks-1.1.2
+BIN_NAME="ipt2socks"
+SRC_NAME="$(BIN_NAME).sh"
+BIN_URL="https://github.com/zfl9/ipt2socks"
+SRC_URL="https://raw.githubusercontent.com/SuzukiHonoka/Ipt2socks_Padavan/master/$(SRC_NAME)"
+BIN_PATH="/usr/bin"
+
 THISDIR = $(shell pwd)
 
-all: extract_test
-	$(MAKE) -j$(HOST_NCPU) -C $(SRC_NAME) CC="$(CC)"
-	
-extract_test:
-	( if [ ! -d $(SRC_NAME) ]; then \
-		tar zxf $(SRC_NAME).tar.gz ; \
+all: bin_download src_download
+	$(MAKE) -C $(BIN_NAME) ARCH=mips_24kc CC=$(CONFIG_CROSS_COMPILER_ROOT)/bin/mipsel-linux-uclibc-gcc -j$(HOST_NCPU)
+bin_download:
+	( if [ ! -f $(BIN_NAME) ]; then \
+		git clone --depth=1 --single-branch $(BIN_URL); \
 	fi )
 
-config_test:
-	( if [ -f ./config_done ]; then \
-		echo "the same configuration"; \
-	else \
-		make configure && touch config_done; \
+src_download:
+	( if [ ! -f $(SRC_NAME) ]; then \
+		wget $(SRC_URL); \
 	fi )
 
 clean:
-	rm -rf $(SRC_NAME)
-	rm -f config_done
+	rm -r $(THISDIR)/$(BIN_NAME) && rm $(THISDIR)/$(SRC_NAME)
 
 romfs:
-	$(ROMFSINST) -p +x $(THISDIR)/$(SRC_NAME)/ipt2socks /usr/bin/ipt2socks
-
+	$(ROMFSINST) -p +x $(THISDIR)/$(BIN_NAME)/$(BIN_NAME) $(BIN_PATH)/$(BIN_NAME)
+	$(ROMFSINST) -p +x $(THISDIR)/$(SRC_NAME) $(BIN_PATH)/$(SRC_NAME)

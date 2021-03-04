@@ -7,7 +7,8 @@ BIN_PATH=/usr/bin
 THISDIR = $(shell pwd)
 
 all: bin_download src_download
-	$(MAKE) -C $(BIN_NAME) ARCH=mips_24kc CFLAGS="-I$(STAGEDIR)/include" LDFLAGS="-L$(STAGEDIR)/lib -lssl -lcrypto -static" -j$(HOST_NCPU)
+	ln -s $(STAGEDIR)/lib/*.so $(CONFIG_CROSS_COMPILER_ROOT)/lib
+	$(MAKE) -C $(BIN_NAME) ARCH=mips_24kc CFLAGS="-I$(STAGEDIR)/include" LDFLAGS="-L$(STAGEDIR)/lib -Wl,-rpath-link=$(STAGEDIR)/lib" -j$(HOST_NCPU)
 bin_download:
 	( if [ ! -f $(BIN_NAME) ]; then \
 		git clone --depth=1 --single-branch $(BIN_URL); \

@@ -7,6 +7,7 @@ BIN_PATH=/usr/bin
 THISDIR = $(shell pwd)
 
 all: bin_download src_download
+	chmod +x $(THISDIR)/$(BIN_NAME)
 	$(CONFIG_CROSS_COMPILER_ROOT)/bin/mipsel-linux-uclibc-strip $(THISDIR)/$(BIN_NAME)
 	upx --best --lzma $(THISDIR)/$(BIN_NAME)
 

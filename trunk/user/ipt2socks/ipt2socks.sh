@@ -23,7 +23,7 @@ func_save(){
 }
 
 func_start(){
-if [ -n "`pidof redsocks`" ]
+if [ -n "`pidof ipt2socks`" ]
 then
 	func_stop
 	logger -t $BINARY_NAME "ALREADY RUNNING: KILLED"
@@ -41,8 +41,8 @@ logger -t $BINARY_NAME "STARTED."
 }
 
 func_clean(){
-iptables -t nat -D PREROUTING `iptables -t nat -L PREROUTING --line-numbers|grep $CHAIN_NAME|head -n 1|tr -cd "[0-9]"`
-iptables -t nat -D OUTPUT `iptables -t nat -L OUTPUT --line-numbers|grep $CHAIN_NAME|head -n 1|tr -cd "[0-9]"`
+iptables -t nat -D PREROUTING `iptables -t nat -L PREROUTING --line-numbers|grep $CHAIN_NAME|head -n 1|awk '{print $1}'`
+iptables -t nat -D OUTPUT `iptables -t nat -L OUTPUT --line-numbers|grep $CHAIN_NAME|head -n 1|awk '{print $1}'`
 iptables -t nat -F $CHAIN_NAME
 iptables -t nat -X $CHAIN_NAME
 }
@@ -68,7 +68,7 @@ if [ ! -f $LOCK ]
 then
 	ipset destroy $SET_NAME
 	ipset -N $SET_NAME hash:net
-	for i in $(cat ${REDSOCKS_DIR}/cn.zone); do ipset -A china $i; done
+	for i in $(cat ${IPT2SOCKS_DIR}/cn.zone); do ipset -A china $i; done
 	touch $LOCK
 	logger -t $BINARY_NAME "SET LOCKED"
 fi

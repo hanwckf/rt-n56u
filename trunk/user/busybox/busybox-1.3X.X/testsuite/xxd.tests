@@ -1,0 +1,34 @@
+#!/bin/sh
+
+# Copyright 2020 by Denys Vlasenko <vda.linux@googlemail.com>
+# Licensed under GPLv2, see file LICENSE in this source tree.
+
+. ./testing.sh
+
+# testing "description" "command" "result" "infile" "stdin"
+testing 'xxd -p with one NUL' \
+	'xxd -p' \
+	"\
+00
+" \
+	'' \
+	'\0'
+
+testing 'xxd -p with 30 NULs' \
+	'xxd -p' \
+	"\
+000000000000000000000000000000000000000000000000000000000000
+" \
+	'' \
+	'\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0'
+
+testing 'xxd -p with 31 NULs' \
+	'xxd -p' \
+	"\
+000000000000000000000000000000000000000000000000000000000000
+00
+" \
+	'' \
+	'\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0'
+
+exit $FAILCOUNT

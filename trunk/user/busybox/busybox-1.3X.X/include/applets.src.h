@@ -88,6 +88,7 @@ s     - suid type:
 
 INSERT
 
+IF_DHCP6C(APPLET(dhcp6c, BB_DIR_SBIN, BB_SUID_DROP))
 
 #if !defined(PROTOTYPES) && !defined(NAME_MAIN) && !defined(MAKE_USAGE) \
 	&& !defined(MAKE_LINKS) && !defined(MAKE_SUID)

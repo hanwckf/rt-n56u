@@ -147,6 +147,14 @@ config UDHCPC_SLACK_FOR_BUGGY_SERVERS
 		which are 28 bytes too large.
 	Seednet (ISP) VDSL: sends packets 2 bytes too large.
 
+config FEATURE_UDHCP_RFC5969
+	bool "Support for RFC5969 IPv6 Rapid Deployment (6RD)"
+	default y
+	depends on UDHCPC && FEATURE_IPV6
+	help
+	  If selected, client will support passing of 6rd delegated
+	  prefix via option 212, specified in RFC 5969.
+
 config FEATURE_UDHCP_RFC3397
 	bool "Support RFC 3397 domain search options"
 	default y

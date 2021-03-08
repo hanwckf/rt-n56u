@@ -92,7 +92,9 @@ enum {
 	OPTION_S32,
 	OPTION_BIN,
 	OPTION_STATIC_ROUTES,
+#if ENABLE_FEATURE_UDHCP_RFC5969
 	OPTION_6RD,
+#endif
 #if ENABLE_FEATURE_UDHCP_RFC3397 || ENABLE_FEATURE_UDHCPC6_RFC3646 || ENABLE_FEATURE_UDHCPC6_RFC4704
 	OPTION_DNS_STRING,  /* RFC1035 compressed domain name list */
 #endif
@@ -166,6 +168,8 @@ struct dhcp_scan_state {
 //#define DHCP_PXE_PATH_PREFIX  0xd2 /* 210: RFC 5071 Path prefix */
 //#define DHCP_REBOOT_TIME      0xd3 /* 211: RFC 5071 Reboot time */
 //#define DHCP_MS_STATIC_ROUTES 0xf9 /* 249: Microsoft's pre-RFC 3442 code for 0x79? */
+//#define DHCP_6RD              0xd4 /* RFC 5969 6RD option */
+//#define DHCP_COMCAST_6RD      0x96 /* Comcast ISP RFC 5969 compatible 6RD option */
 //#define DHCP_WPAD             0xfc /* 252: MSIE's Web Proxy Autodiscovery Protocol */
 #define DHCP_END                0xff /* 255: */
 

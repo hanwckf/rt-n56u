@@ -87,7 +87,7 @@ int cryptpw_main(int argc UNUSED_PARAM, char **argv)
 	/* Supports: cryptpw -m sha256 PASS 'rounds=999999999$SALT' */
 	char salt[MAX_PW_SALT_LEN + sizeof("rounds=999999999$")];
 	char *salt_ptr;
-	char *password;
+	char *password, *hash;
 	const char *opt_m, *opt_S;
 	int fd;
 
@@ -132,8 +132,12 @@ int cryptpw_main(int argc UNUSED_PARAM, char **argv)
 		/* may still be NULL on EOF/error */
 	}
 
-	if (password)
-		puts(pw_encrypt(password, salt, 1));
+	if (password) {
+		hash = pw_encrypt(password, salt, 1);
+		if (hash[0] == 0)
+			bb_perror_msg_and_die("password encryption failed");
+		puts(hash);
+	}
 
 	return EXIT_SUCCESS;
 }

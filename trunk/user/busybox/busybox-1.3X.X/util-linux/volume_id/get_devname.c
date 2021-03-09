@@ -315,6 +315,7 @@ int resolve_mount_spec(char **fsname)
 	else {
 		*fsname = xstrdup(*fsname);
 		return 0; /* no UUID= or LABEL= prefix found */
+	}
 
 	if (!tmp)
 		return -2; /* device defined by UUID= or LABEL= wasn't found */

@@ -179,7 +179,7 @@
 /* Slew threshold (sec): adjtimex() won't accept offsets larger than this.
  * Using exact power of 2 (1/8, 1/2 etc) results in smaller code
  */
-#define SLEW_THRESHOLD   0.25
+#define SLEW_THRESHOLD   0.5
 // ^^^^ used to be 0.125.
 // Since Linux 2.6.26 (circa 2006), kernel accepts (-0.5s, +0.5s) range
 
@@ -197,7 +197,7 @@
 
 #define FREQ_TOLERANCE  0.000015 /* frequency tolerance (15 PPM) */
 #define BURSTPOLL       0       /* initial poll */
-#define MINPOLL         6       /* minimum poll interval. std ntpd uses 6 (6: 64 sec) */
+#define MINPOLL         5       /* minimum poll interval. std ntpd uses 6 (6: 64 sec) */
 /*
  * If offset > discipline_jitter * POLLADJ_GATE, and poll interval is > 2^BIGPOLL,
  * then it is decreased _at once_. (If <= 2^BIGPOLL, it will be decreased _eventually_).
@@ -226,7 +226,7 @@
  * and when it goes below -POLLADJ_LIMIT, we poll_exp--.
  * (Bumped from 30 to 40 since otherwise I often see poll_exp going *2* steps down)
  */
-#define POLLADJ_LIMIT   36
+#define POLLADJ_LIMIT   40
 /* If offset < discipline_jitter * POLLADJ_GATE, then we decide to increase
  * poll interval (we think we can't improve timekeeping
  * by staying at smaller poll).

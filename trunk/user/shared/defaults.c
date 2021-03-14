@@ -624,7 +624,7 @@ struct nvram_pair router_defaults[] = {
 	{ "ddns2_ssl", "1" },
 	{ "asusddns_tos_agreement", "0" },
 
-	{ "preferred_lang", "CN" },
+	{ "preferred_lang", "EN" },
 
 	{ "modem_rule", "0" },
 	{ "modem_prio", "1" },

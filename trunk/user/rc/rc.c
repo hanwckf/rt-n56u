@@ -278,6 +278,16 @@ init_gpio_leds_buttons(void)
 	LED_CONTROL(BOARD_GPIO_LED_POWER, LED_ON);
 #endif
 
+	/*	hide amber lights on the Dlink models	*/
+#if defined (BOARD_GPIO_LED_POWER_AMBER)
+		cpu_gpio_set_pin_direction(BOARD_GPIO_LED_POWER_AMBER, 1);
+		LED_CONTROL(BOARD_GPIO_LED_POWER_AMBER, LED_OFF);
+#endif
+#if defined (BOARD_GPIO_LED_WAN_AMBER)
+		cpu_gpio_set_pin_direction(BOARD_GPIO_LED_WAN_AMBER, 1);
+		LED_CONTROL(BOARD_GPIO_LED_WAN_AMBER, LED_OFF);
+#endif
+
 	/* enable USB port 5V power */
 #if defined (BOARD_GPIO_PWR_USB)
 	cpu_gpio_set_pin_direction(BOARD_GPIO_PWR_USB, 1);
@@ -703,6 +713,14 @@ LED_CONTROL(int gpio_led, int flag)
 	{
 #if defined (BOARD_GPIO_LED_ROUTER)
 	case BOARD_GPIO_LED_ROUTER:
+		break;
+#endif
+#if defined (BOARD_GPIO_LED_POWER_AMBER)
+	case BOARD_GPIO_LED_POWER_AMBER:
+		break;
+#endif
+#if defined (BOARD_GPIO_LED_WAN_AMBER)
+	case BOARD_GPIO_LED_WAN_AMBER:
 		break;
 #endif
 #if defined (BOARD_GPIO_LED_WAN)

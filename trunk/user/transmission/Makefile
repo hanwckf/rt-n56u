@@ -6,8 +6,8 @@ LDFLAGS  += -Wl,--gc-sections
 THISDIR = $(shell pwd)
 
 all: download_test extract_test config_test
-	$(MAKE) -j$(HOST_NCPU) -C $(SRC_NAME) && \
-	$(MAKE) -C $(SRC_NAME) install DESTDIR=$(THISDIR)/install
+	$(MAKE) -j$(HOST_NCPU) -C $(SRC_NAME)/build && \
+	$(MAKE) -C $(SRC_NAME)/build install DESTDIR=$(THISDIR)/install
 
 download_test:
 	( if [ ! -f $(SRC_NAME).tar.xz ]; then \
@@ -30,30 +30,25 @@ config_test:
 	fi )
 
 configure:
-	( cd $(SRC_NAME) ; \
-	HAVE_CXX=yes \
-	PKG_CONFIG_PATH=$(STAGEDIR)/lib/pkgconfig \
-	./autogen.sh \
-		--prefix=/usr \
-		--enable-daemon \
-		--enable-lightweight \
-		--enable-utp \
-		--disable-nls \
-		--disable-cli \
-		--disable-mac \
-		--without-gtk \
-		--without-systemd \
-		--with-inotify \
-		--with-crypto=openssl \
-		--with-zlib=$(STAGEDIR) \
-		OPENSSL_CFLAGS="-I$(STAGEDIR)/include" \
-		OPENSSL_LIBS="-L$(STAGEDIR)/lib -lssl -lcrypto" \
-		LIBCURL_CFLAGS="-I$(STAGEDIR)/include" \
-		LIBCURL_LIBS="-L$(STAGEDIR)/lib -lcurl -Wl,-rpath-link=$(STAGEDIR)/lib" \
-		LIBEVENT_CFLAGS="-I$(STAGEDIR)/include" \
-		LIBEVENT_LIBS="-L$(STAGEDIR)/lib -levent" \
-		--host=$(HOST_TARGET) \
-		--build=$(HOST_BUILD) ; \
+	( mkdir -p $(SRC_NAME)/build && cd $(SRC_NAME)/build ; \
+	cmake -DCMAKE_TOOLCHAIN_FILE=../../cross-mipsel-linux.cmake \
+		  -DCMAKE_INSTALL_PREFIX=/usr \
+		  -DCMAKE_BUILD_TYPE=Release \
+		  -DENABLE_CLI=OFF \
+		  -DENABLE_DAEMON=ON \
+		  -DENABLE_GTK=OFF \
+		  -DENABLE_LIGHTWEIGHT=ON \
+		  -DENABLE_NLS=OFF \
+		  -DENABLE_QT=OFF \
+		  -DENABLE_TESTS=OFF \
+		  -DINSTALL_DOC=OFF \
+		  -DUSE_SYSTEM_MINIUPNPC=OFF \
+		  -DUSE_SYSTEM_NATPMP=OFF \
+		  -DUSE_SYSTEM_UTP=OFF \
+		  -DWITH_SYSTEMD=OFF \
+		  -DWITH_INOTIFY=ON \
+		  -DWITH_CRYPTO=openssl \
+		  .. \
 	)
 
 clean:

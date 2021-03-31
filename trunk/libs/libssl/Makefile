@@ -1,4 +1,4 @@
-SRC_NAME=openssl-1.1.1i
+SRC_NAME=openssl-1.1.1k
 SRC_URL=https://www.openssl.org/source/$(SRC_NAME).tar.gz
 
 # openssl use CROSS_COMPILE prefix

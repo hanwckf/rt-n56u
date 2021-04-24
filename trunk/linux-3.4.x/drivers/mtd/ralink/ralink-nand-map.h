@@ -8,6 +8,12 @@
 #define NAND_MTD_CONFIG_PART_SIZE	CONFIG_MTD_CONFIG_PART_SIZ
 #define NAND_MTD_STORE_PART_SIZE	CONFIG_MTD_STORE_PART_SIZ
 
+#if defined (CONFIG_MTD_NETGEAR_LAYOUT)
+#define NAND_MTD_FACTORY_OFFSET		CONFIG_MTD_FACTORY_OFFSET
+#define NAND_MTD_KERNEL_PART_IDX	2
+#define NAND_MTD_KERNEL_PART_OFFSET	(NAND_MTD_BOOT_PART_SIZE + NAND_MTD_BOOTENV_PART_SIZE)
+#define NAND_MTD_RWFS_PART_OFFSET	CONFIG_MTD_RWFS_OFFSET
+#else
 #if defined (CONFIG_MTD_CONFIG_PART_BELOW)
 #define NAND_MTD_KERNEL_PART_IDX	3
 #define NAND_MTD_KERNEL_PART_OFFSET	(NAND_MTD_BOOT_PART_SIZE + NAND_MTD_BOOTENV_PART_SIZE + NAND_MTD_FACTORY_PART_SIZE)
@@ -16,6 +22,7 @@
 #define NAND_MTD_KERNEL_PART_IDX	4
 #define NAND_MTD_KERNEL_PART_OFFSET	(NAND_MTD_BOOT_PART_SIZE + NAND_MTD_BOOTENV_PART_SIZE + NAND_MTD_CONFIG_PART_SIZE + NAND_MTD_FACTORY_PART_SIZE)
 #define NAND_MTD_RWFS_PART_OFFSET	(NAND_MTD_KERNEL_PART_OFFSET + NAND_MTD_KERNEL_PART_SIZE + NAND_MTD_STORE_PART_SIZE)
+#endif
 #endif
 
 #if defined (CONFIG_RT2880_ROOTFS_IN_FLASH)
@@ -34,16 +41,18 @@ static struct mtd_partition rt2880_partitions[] = {
 		name:   "BootEnv",			/* mtdblock1 */
 		size:   NAND_MTD_BOOTENV_PART_SIZE,	/* 256K */
 		offset: MTDPART_OFS_APPEND,
-#if !defined (CONFIG_MTD_CONFIG_PART_BELOW)
+#if (!defined (CONFIG_MTD_CONFIG_PART_BELOW) && !defined (CONFIG_MTD_NETGEAR_LAYOUT))
 	}, {
 		name:   "Config",			/* mtdblock2 */
 		size:   NAND_MTD_CONFIG_PART_SIZE,	/* 1024K */
 		offset: MTDPART_OFS_APPEND,
 #endif
+#if !defined (CONFIG_MTD_NETGEAR_LAYOUT)
 	}, {
 		name:   "Factory",			/* mtdblock3 */
 		size:   NAND_MTD_FACTORY_PART_SIZE,	/* 256K */
 		offset: MTDPART_OFS_APPEND,
+#endif
 	}, {
 		name:   "Kernel",			/* mtdblock4 */
 		size:   NAND_MTD_KERNEL_PART_SIZE,	/* 16M */
@@ -54,7 +63,7 @@ static struct mtd_partition rt2880_partitions[] = {
 		size:   0,				/* calc */
 		offset: MTDPART_OFS_APPEND,
 #endif
-#if defined (CONFIG_MTD_CONFIG_PART_BELOW)
+#if (defined (CONFIG_MTD_CONFIG_PART_BELOW) || defined(CONFIG_MTD_NETGEAR_LAYOUT))
 	}, {
 		name:   "Config",			/* mtdblockX */
 		size:   NAND_MTD_CONFIG_PART_SIZE,	/* 1024K */
@@ -64,10 +73,21 @@ static struct mtd_partition rt2880_partitions[] = {
 		name:   "Storage",			/* mtdblock6 */
 		size:   NAND_MTD_STORE_PART_SIZE,	/* 2M */
 		offset: MTDPART_OFS_APPEND,
+#if defined (CONFIG_MTD_NETGEAR_LAYOUT)
+	}, {
+		name:   "Factory",			/* mtdblockY */
+		size:   NAND_MTD_FACTORY_PART_SIZE,	/* 2M */
+		offset: NAND_MTD_FACTORY_OFFSET,
+	}, {
+		name:   "RWFS",				/* mtdblock7 */
+		size:   0,				/* calc */
+		offset: NAND_MTD_RWFS_PART_OFFSET,
+#else
 	}, {
 		name:   "RWFS",				/* mtdblock7 */
 		size:   0,				/* calc */
 		offset: MTDPART_OFS_APPEND,
+#endif
 	}, {
 		name:   "Firmware_Stub",		/* mtdblock8 */
 		size:   NAND_MTD_KERNEL_PART_SIZE,	/* Kernel+RootFS */

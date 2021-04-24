@@ -121,12 +121,12 @@ config MTD_NETGEAR_LAYOUT
 config MTD_FACTORY_OFFSET
 	hex "MTD 'Factory' Partition Offset (Unit:Bytes), for NETGEAR layout"
 	default 0x4600000
-	depends on (MTD_NAND_RALINK || MTD_NAND_MTK)
+	depends on (MTD_NETGEAR_LAYOUT)
 
 config MTD_RWFS_OFFSET
 	hex "MTD 'RWFS' Partition Offset (Unit:Bytes), for NETGEAR layout"
 	default 0x5400000
-	depends on (MTD_NAND_RALINK || MTD_NAND_MTK)
+	depends on (MTD_NETGEAR_LAYOUT)
 
 
 config MTD_CONFIG_PART_BELOW

@@ -1,7 +1,5 @@
-/* YOUHUA WR1200JS */
-
-#define BOARD_PID		"R4A"
-#define BOARD_NAME		"R4A"
+#define BOARD_PID		"MI-R4A"
+#define BOARD_NAME		"MI-R4A"
 #define BOARD_DESC		"Xiaomi Mi R4A Wireless Router"
 #define BOARD_VENDOR_NAME	"Beijing Xiaomi Technology Co., Ltd."
 #define BOARD_VENDOR_URL	"http://www.mi.com/"

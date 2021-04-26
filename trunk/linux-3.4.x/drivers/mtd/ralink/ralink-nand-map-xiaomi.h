@@ -1,94 +1,86 @@
-#ifndef __RALINK_NAND_MAP_H__
-#define __RALINK_NAND_MAP_H__
+#ifndef __RALINK_NAND_MAP_XIAOMI_H__
+#define __RALINK_NAND_MAP_XIAOMI_H__
 
-#define NAND_MTD_BOOT_PART_SIZE		CONFIG_MTD_BOOTLOADER_PART_SIZ
-#define NAND_MTD_BOOTENV_PART_SIZE	CONFIG_MTD_BOOTENV_PART_SIZ
+/*
+ * mi-3:	uboot(256k),config(256k),bdata(256k),factory(256k),crash(256k),crash_syslog(256k),reserved0(512k),kernel0(4096k),kernel1(4096k),rootfs+overlay(-)
+ * mi-r3p:	uboot(256k),config(256k),bdata(256k),factory(256k),crash(256k),crash_syslog(512k),cfg_bak(256k),kernel0(4096k),kernel1(4096k),rootfs+overlay(-)
+ * mi-r3g:	uboot(512k),config(256k),bdata(256k),factory(256k),crash(256k),crash_syslog(256k),reserved0(256k),kernel0(4096k),kernel1(4096k),rootfs+overlay(-)
+ * rm2100:	uboot(512k),config(256k),bdata(256k),factory(256k),crash(256k),crash_syslog(256k),reserved0(256k),kernel0(4096k),kernel1(4096k),rootfs+overlay+obr(-)
+ * cr660x:	uboot(512k),nvram(256k),bdata(256k),factory(512k),crash(256k),crash_syslog(256k),firmware(30720k),firmware1(30720k),overlay+obr(-)
+*/
+
+#define NAND_MTD_BOOT_PART_SIZE	CONFIG_MTD_BOOTLOADER_PART_SIZ
+#define NAND_MTD_CFG_ENV_PART_SIZE	CONFIG_MTD_BOOTENV_PART_SIZ
 #define NAND_MTD_FACTORY_PART_SIZE	CONFIG_MTD_FACTORY_PART_SIZ
+#define NAND_MTD_RESERVED_PART_SIZE	CONFIG_MTD_RESERVED_PART_SIZ
 #define NAND_MTD_KERNEL_PART_SIZE	CONFIG_MTD_FIRMWARE_PART_SIZ
 #define NAND_MTD_CONFIG_PART_SIZE	CONFIG_MTD_CONFIG_PART_SIZ
 #define NAND_MTD_STORE_PART_SIZE	CONFIG_MTD_STORE_PART_SIZ
 
-#if defined (CONFIG_MTD_NETGEAR_LAYOUT)
-#define NAND_MTD_FACTORY_OFFSET		CONFIG_MTD_FACTORY_OFFSET
-#define NAND_MTD_KERNEL_PART_IDX	2
-#define NAND_MTD_KERNEL_PART_OFFSET	(NAND_MTD_BOOT_PART_SIZE + NAND_MTD_BOOTENV_PART_SIZE)
-#define NAND_MTD_RWFS_PART_OFFSET	CONFIG_MTD_RWFS_OFFSET
-#else
-#if defined (CONFIG_MTD_CONFIG_PART_BELOW)
-#define NAND_MTD_KERNEL_PART_IDX	3
-#define NAND_MTD_KERNEL_PART_OFFSET	(NAND_MTD_BOOT_PART_SIZE + NAND_MTD_BOOTENV_PART_SIZE + NAND_MTD_FACTORY_PART_SIZE)
-#define NAND_MTD_RWFS_PART_OFFSET	(NAND_MTD_KERNEL_PART_OFFSET + NAND_MTD_KERNEL_PART_SIZE + NAND_MTD_CONFIG_PART_SIZE + NAND_MTD_STORE_PART_SIZE)
-#else
 #define NAND_MTD_KERNEL_PART_IDX	4
-#define NAND_MTD_KERNEL_PART_OFFSET	(NAND_MTD_BOOT_PART_SIZE + NAND_MTD_BOOTENV_PART_SIZE + NAND_MTD_CONFIG_PART_SIZE + NAND_MTD_FACTORY_PART_SIZE)
-#define NAND_MTD_RWFS_PART_OFFSET	(NAND_MTD_KERNEL_PART_OFFSET + NAND_MTD_KERNEL_PART_SIZE + NAND_MTD_STORE_PART_SIZE)
-#endif
-#endif
+#define NAND_MTD_KERNEL_PART_OFFSET	(NAND_MTD_BOOT_PART_SIZE + NAND_MTD_CFG_ENV_PART_SIZE + NAND_MTD_FACTORY_PART_SIZE + NAND_MTD_RESERVED_PART_SIZE)
+#define NAND_MTD_RWFS_PART_OFFSET	(NAND_MTD_KERNEL_PART_OFFSET + NAND_MTD_KERNEL_PART_SIZE + NAND_MTD_CONFIG_PART_SIZE + NAND_MTD_STORE_PART_SIZE)
 
 #if defined (CONFIG_RT2880_ROOTFS_IN_FLASH)
 #define NAND_MTD_ROOTFS_PART_IDX	(NAND_MTD_KERNEL_PART_IDX + 1)
-#define NAND_MTD_RWFS_PART_IDX		7
+#define NAND_MTD_RWFS_PART_IDX		8
 #else
-#define NAND_MTD_RWFS_PART_IDX		6
+#define NAND_MTD_RWFS_PART_IDX		7
 #endif
 
 static struct mtd_partition rt2880_partitions[] = {
 	{
+		/* mtd0 */
 		name:   "Bootloader",
 		size:   NAND_MTD_BOOT_PART_SIZE,
 		offset: 0,
 	}, {
-		name:   "BootEnv",
-		size:   NAND_MTD_BOOTENV_PART_SIZE,
+		/* mtd1 */
+		/* Config/Nvram + Bdata */
+		name:   "CFG_Bdata",
+		size:   NAND_MTD_CFG_ENV_PART_SIZE,
 		offset: MTDPART_OFS_APPEND,
-#if (!defined (CONFIG_MTD_CONFIG_PART_BELOW) && !defined (CONFIG_MTD_NETGEAR_LAYOUT))
 	}, {
-		name:   "Config",
-		size:   NAND_MTD_CONFIG_PART_SIZE,
-		offset: MTDPART_OFS_APPEND,
-#endif
-#if !defined (CONFIG_MTD_NETGEAR_LAYOUT)
-	}, {
+		/* mtd2 */
 		name:   "Factory",
 		size:   NAND_MTD_FACTORY_PART_SIZE,
 		offset: MTDPART_OFS_APPEND,
-#endif
 	}, {
+		/* mtd3 */
+		/* crash + crash_log + reserved0/cfg_bak(optional) + kernel0(optional) */
+		name:   "Reserved",
+		size:   NAND_MTD_RESERVED_PART_SIZE,
+		offset: MTDPART_OFS_APPEND,
+	}, {
+		/* mtd4 */
+		/* kernel1 */
 		name:   "Kernel",
 		size:   NAND_MTD_KERNEL_PART_SIZE,
 		offset: NAND_MTD_KERNEL_PART_OFFSET,
 #if defined (CONFIG_RT2880_ROOTFS_IN_FLASH)
 	}, {
+		/* mtd5 */
 		name:   "RootFS",
 		size:   0,				/* calc */
 		offset: MTDPART_OFS_APPEND,
 #endif
-#if (defined (CONFIG_MTD_CONFIG_PART_BELOW) || defined(CONFIG_MTD_NETGEAR_LAYOUT))
 	}, {
+		/* mtd6 */
 		name:   "Config",
 		size:   NAND_MTD_CONFIG_PART_SIZE,
 		offset: MTDPART_OFS_APPEND,
-#endif
 	}, {
+		/* mtd7 */
 		name:   "Storage",
 		size:   NAND_MTD_STORE_PART_SIZE,
 		offset: MTDPART_OFS_APPEND,
-#if defined (CONFIG_MTD_NETGEAR_LAYOUT)
 	}, {
-		name:   "Factory",
-		size:   NAND_MTD_FACTORY_PART_SIZE,
-		offset: NAND_MTD_FACTORY_OFFSET,
-	}, {
-		name:   "RWFS",
-		size:   0,				/* calc */
-		offset: NAND_MTD_RWFS_PART_OFFSET,
-#else
-	}, {
+		/* mtd8 */
 		name:   "RWFS",
 		size:   0,				/* calc */
 		offset: MTDPART_OFS_APPEND,
-#endif
 	}, {
+		/* mtd9 */
 		name:   "Firmware_Stub",
 		size:   NAND_MTD_KERNEL_PART_SIZE,	/* Kernel+RootFS */
 		offset: NAND_MTD_KERNEL_PART_OFFSET,

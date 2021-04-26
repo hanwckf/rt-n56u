@@ -74,6 +74,8 @@ Contributors of this project are not responsible for what happens next.
 >- MI-3 (USB)
 >- MI-3C
 >- MI-R3G (USB)
+>- MI-R4A
+>- MI-R3P (USB)
 >- HC5661A
 >- HC5761A (USB)
 >- HC5861B
@@ -100,6 +102,9 @@ Contributors of this project are not responsible for what happens next.
 >- JCG-Y2(USB)
 >- E8820V2(USB)
 >- MSG1500(USB)
+>- R6220
+>- NETGEAR-CHJ (R6260, R6350, R6850, WAC124)
+>- NETGEAR-BZV (R6800, R6700-v2, R7200, Nighthawk AC2400)
 
 ***
 

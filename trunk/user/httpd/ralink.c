@@ -1474,7 +1474,7 @@ ej_wl_auth_list(int eid, webs_t wp, int argc, char **argv)
 }
 
 
-#define SSURV_LINE_LEN		(4+33+20+23+9+9+7+3)		// Channel+SSID+Bssid+Security+Signal+WiressMode+ExtCh+NetworkType
+#define SSURV_LINE_LEN		(4+33+20+23+9+12+7+3)		// Channel+SSID+Bssid+Security+Signal+WiressMode+ExtCh+NetworkType
 #define SSURV_LINE_LEN_WPS	(4+33+20+23+9+7+7+3+4+5)	// Channel+SSID+Bssid+Security+Signal+WiressMode+ExtCh+NetworkType+WPS+PIN
 
 #if BOARD_HAS_5G_RADIO

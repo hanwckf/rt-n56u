@@ -4233,7 +4233,7 @@ RTMP_STRING *GetAuthMode(CHAR auth)
 			3.) UI needs to prepare at least 4096bytes to get the results
     ==========================================================================
 */
-#define	LINE_LEN	(4+33+20+23+9+9+7+3)	/* Channel+SSID+Bssid+Security+Signal+WiressMode+ExtCh+NetworkType*/
+#define	LINE_LEN	(4+33+20+23+9+12+7+3)	/* Channel+SSID+Bssid+Security+Signal+WiressMode+ExtCh+NetworkType*/
 
 
 #ifdef WSC_INCLUDED
@@ -4302,19 +4302,19 @@ VOID RTMPCommSiteSurveyData(
 
 	if (wireless_mode == Ndis802_11FH ||
 		wireless_mode == Ndis802_11DS)
-		sprintf(msg + strlen(msg), "%-9s", "11b");
+		sprintf(msg + strlen(msg), "%-12s", "11b");
 	else if (wireless_mode == Ndis802_11OFDM5)
-		sprintf(msg + strlen(msg), "%-9s", "11a");
+		sprintf(msg + strlen(msg), "%-12s", "11a");
 	else if (wireless_mode == Ndis802_11OFDM5_N)
-		sprintf(msg + strlen(msg), "%-9s", "11a/n");
+		sprintf(msg + strlen(msg), "%-12s", "11a/n");
 	else if (wireless_mode == Ndis802_11OFDM5_AC)
-		sprintf(msg + strlen(msg), "%-9s", "11a/n/ac");
+		sprintf(msg + strlen(msg), "%-12s", "11a/n/ac");
 	else if (wireless_mode == Ndis802_11OFDM24)
-		sprintf(msg + strlen(msg), "%-9s", "11b/g");
+		sprintf(msg + strlen(msg), "%-12s", "11b/g");
 	else if (wireless_mode == Ndis802_11OFDM24_N)
-		sprintf(msg + strlen(msg), "%-9s", "11b/g/n");
+		sprintf(msg + strlen(msg), "%-12s", "11b/g/n");
 	else
-		sprintf(msg + strlen(msg), "%-9s", "unknow");
+		sprintf(msg + strlen(msg), "%-12s", "unknow");
 
 	/* Ext Channel*/
 	if (pBss->AddHtInfoLen > 0) {
@@ -4689,7 +4689,7 @@ max_len += OWETRANSIE_LINE_LEN;
 	sprintf(msg, "\n");
 //	sprintf(msg + strlen(msg), "Total=%-4d", pAdapter->ScanTab.BssNr);
 //	sprintf(msg + strlen(msg), "\n");
-	sprintf(msg + strlen(msg), "%-4s%-33s%-20s%-23s%-9s%-9s%-7s%-3s\n",
+	sprintf(msg + strlen(msg), "%-4s%-33s%-20s%-23s%-9s%-12s%-7s%-3s\n",
 			"Ch", "SSID", "BSSID", "Security", "Signal(%)", "W-Mode", " ExtCH", " NT");
 #ifdef WSC_INCLUDED
 	sprintf(msg + strlen(msg) - 1, "%-4s%-5s\n", " WPS", " DPID");

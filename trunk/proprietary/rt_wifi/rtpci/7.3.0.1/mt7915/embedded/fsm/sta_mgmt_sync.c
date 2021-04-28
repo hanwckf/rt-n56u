@@ -911,9 +911,14 @@ static BOOLEAN sta_join_peer_response_matched(struct _RTMP_ADAPTER *pAd,
 		return FALSE;
 	}
 
+#ifdef WSC_AP_SUPPORT
 	if ((ScanTab != NULL) &&
 			((wdev->WscControl.WscConfMode == WSC_DISABLE) ||
-			 (wdev->WscControl.bWscTrigger == FALSE))) {
+			 (wdev->WscControl.bWscTrigger == FALSE))) 
+#else
+	if (ScanTab != NULL)
+#endif
+		{
 		Bssidx = BssTableSearch(ScanTab, ie_list->Bssid, ie_list->Channel);
 		if (Bssidx != BSS_NOT_FOUND) {
 			pInBss = &ScanTab->BssEntry[Bssidx];

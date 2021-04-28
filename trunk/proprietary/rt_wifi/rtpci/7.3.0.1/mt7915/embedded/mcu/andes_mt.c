@@ -4627,7 +4627,7 @@ INT AndesLedEnhanceOP(
 	struct cmd_msg *msg;
 	CHAR *pos, *buf;
 	UCHAR *p_pattern = NULL;
-	UINT32 len, patt_len;
+	UINT32 len, patt_len = 0;
 
 	struct _CMD_ATTRIBUTE attr = {0};
 

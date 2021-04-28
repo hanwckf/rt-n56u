@@ -10113,8 +10113,10 @@ INT MtATE_DPD_Cal_Store_Proc_7915(RTMP_ADAPTER *pAd, UINT8 op)
 	USHORT                doCal1 = 0;
 	MT_SWITCH_CHANNEL_CFG ch_cfg;
 #ifdef DBDC_MODE
-	u_int32 band0_tx_path_backup, band0_rx_path_backup;
-	u_int32 band1_tx_path_backup, band1_rx_path_backup;
+	u_int32 band0_tx_path_backup = 0;
+	u_int32 band0_rx_path_backup = 0;
+	u_int32 band1_tx_path_backup = 0;
+	u_int32 band1_rx_path_backup = 0;
 #endif
 	RTMP_CHIP_OP *pChipOps = hc_get_chip_ops(pAd->hdev_ctrl);
 

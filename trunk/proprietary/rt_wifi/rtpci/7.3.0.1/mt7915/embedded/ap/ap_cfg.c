@@ -5419,7 +5419,7 @@ INT RTMPAPSetInformation(
 #endif
 #ifdef CONFIG_DOT11V_WNM
 	case OID_802_11_WNM_COMMAND: {
-		UCHAR *Buf;
+		UCHAR *Buf = NULL;
 		struct wnm_command *cmd_data;
 
 		os_alloc_mem(Buf, (UCHAR **)&Buf, wrq->u.data.length);
@@ -5467,7 +5467,7 @@ INT RTMPAPSetInformation(
 	break;
 
 	case OID_802_11_WNM_BTM_REQ: {
-		UCHAR *Buf;
+		UCHAR *Buf = NULL;
 		MAC_TABLE_ENTRY *pEntry = NULL;
 		struct btm_req_data *req_data;
 
@@ -5511,7 +5511,7 @@ INT RTMPAPSetInformation(
 
 #ifdef CONFIG_STA_SUPPORT
 	case OID_802_11_WNM_BTM_RSP: {
-		UCHAR *Buf;
+		UCHAR *Buf = NULL;
 		MAC_TABLE_ENTRY *pEntry = NULL;
 		struct btm_rsp_data *rsp_data;
 		os_alloc_mem(Buf, (UCHAR **)&Buf, wrq->u.data.length);
@@ -5567,7 +5567,7 @@ INT RTMPAPSetInformation(
 #endif /*OCE_SUPPORT*/
 
 	case OID_802_11_WNM_NOTIFY_REQ: {
-		UCHAR *Buf;
+		UCHAR *Buf = NULL;
 		MAC_TABLE_ENTRY *pEntry;
 		struct wnm_req_data *req_data;
 
@@ -9405,6 +9405,7 @@ INT RTMPAPQueryInformation(
 			Status = copy_to_user(wrq->u.data.pointer, &rejected_group, wrq->u.data.length);
 			break;
 		}
+#if defined(CONFIG_BS_SUPPORT) || defined(CONFIG_MAP_SUPPORT)
 	case OID_GET_ASSOC_REQ_FRAME:
 		{
 			os_alloc_mem(NULL, &pStaMacAddr, MAC_ADDR_LEN);
@@ -9437,6 +9438,7 @@ INT RTMPAPQueryInformation(
 			}
 			break;
 		}
+#endif
 	default:
 		Status = -EOPNOTSUPP;
 
@@ -10366,7 +10368,7 @@ INT	Set_VLAN_TAG_Proc(RTMP_ADAPTER *pAd, RTMP_STRING *arg)
 			StaCfg.u2WlanIdx = wdev->tr_tb_idx;
 			StaCfg.pEntry = pEntry;
 
-			if (arch_ops->archSetStaRec) {
+			if (arch_ops->archSetStaRec && wdev->tr_tb_idx != WCID_INVALID) {
 				ret = arch_ops->archSetStaRec(pAd, StaCfg);
 				return ret;
 			}
@@ -18475,7 +18477,7 @@ INT Set_UAPSD_Proc(RTMP_ADAPTER *pAd, RTMP_STRING *arg)
 #ifdef CONFIG_RA_PHY_RATE_SUPPORT
 INT set_mgm_rate_proc(IN PRTMP_ADAPTER pAd, IN RTMP_STRING *arg)
 {
-	HTTRANSMIT_SETTING *transmit;
+	HTTRANSMIT_SETTING *transmit = NULL;
 	/*UCHAR cfg_ht_bw;*/
 	struct wifi_dev *wdev = NULL;
 	BOOLEAN	status = TRUE;
@@ -19883,6 +19885,8 @@ INT RTMP_AP_IoctlHandle(
 	PRTMP_ADAPTER pAd = (PRTMP_ADAPTER)pAdSrc;
 	POS_COOKIE pObj = (POS_COOKIE)pAd->OS_Cookie;
 	INT Status = NDIS_STATUS_SUCCESS;
+	int i;
+	struct tx_rx_ctl *tr_ctl = &pAd->tr_ctl;
 
 	switch (cmd) {
 	case CMD_RTPRIV_IOCTL_SET:
@@ -20009,12 +20013,18 @@ INT RTMP_AP_IoctlHandle(
 #ifdef APCLI_SUPPORT
 
 		if (pSSID->priv_flags == INT_APCLI) {
+			pSSID->length = 0;
+			pSSID->pSsidStr = NULL;
 			if (pAd->StaCfg[pObj->ioctl_if].ApcliInfStat.Valid == TRUE) {
-				pSSID->length = pAd->StaCfg[pObj->ioctl_if].SsidLen;
-				pSSID->pSsidStr = (char *)&pAd->StaCfg[pObj->ioctl_if].Ssid;
-			} else {
-				pSSID->length = 0;
-				pSSID->pSsidStr = NULL;
+				for (i = 0; VALID_UCAST_ENTRY_WCID(pAd, i); i++) {
+					if(tr_ctl){
+						STA_TR_ENTRY *tr_entry = &tr_ctl->tr_entry[i];
+						if(tr_entry->PortSecured == WPA_802_1X_PORT_SECURED){
+							pSSID->length = pAd->StaCfg[pObj->ioctl_if].SsidLen;
+							pSSID->pSsidStr = (char *)&pAd->StaCfg[pObj->ioctl_if].Ssid;	
+						}
+					}
+				}
 			}
 		} else
 #endif /* APCLI_SUPPORT */
@@ -20137,14 +20147,19 @@ INT RTMP_AP_IoctlHandle(
 
 	case CMD_RTPRIV_IOCTL_AP_SIOCGIWAP: {
 		UCHAR *pBssidDest = (UCHAR *)pData;
-		PCHAR pBssidStr;
-#ifdef APCLI_SUPPORT
+		PCHAR pBssidStr = NULL;
 
+#ifdef APCLI_SUPPORT
 		if (Data == INT_APCLI) {
-			if (pAd->StaCfg[pObj->ioctl_if].ApcliInfStat.Valid == TRUE)
-				pBssidStr = (PCHAR)&APCLI_ROOT_BSSID_GET(pAd, pAd->StaCfg[pObj->ioctl_if].MacTabWCID);
-			else
-				pBssidStr = NULL;
+			if (pAd->StaCfg[pObj->ioctl_if].ApcliInfStat.Valid == TRUE) {
+				for (i = 0; VALID_UCAST_ENTRY_WCID(pAd, i); i++) {
+					if(tr_ctl){
+						STA_TR_ENTRY *tr_entry = &tr_ctl->tr_entry[i];
+						if(tr_entry->PortSecured == WPA_802_1X_PORT_SECURED)
+							pBssidStr = (PCHAR)&APCLI_ROOT_BSSID_GET(pAd, pAd->StaCfg[pObj->ioctl_if].MacTabWCID);						
+					}
+				}
+			}
 		} else
 #endif /* APCLI_SUPPORT */
 		{

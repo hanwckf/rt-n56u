@@ -40,7 +40,8 @@
 
 
 #ifdef CONFIG_FAST_NAT_SUPPORT
-#include <net/ra_nat.h>
+#include "../../../../../../net/nat/hw_nat/ra_nat.h"
+#include "../../../../../../net/nat/hw_nat/frame_engine.h"
 #endif /*CONFIG_FAST_NAT_SUPPORT*/
 
 #define BSSID_WCID_TO_REMOVE 1
@@ -532,7 +533,7 @@ INT get_dev_config_idx(RTMP_ADAPTER *pAd)
 		idx = 0;
 
 #if defined(CONFIG_RT_SECOND_CARD)
-#if defined(CONFIG_FIRST_IF_MT7603E) || defined(CONFIG_FIRST_IF_MT7628) || defined(CONFIG_FIRST_IF_MT7620)
+#if defined(CONFIG_RT_FIRST_IF_MT7603E)
 	/* MT7603(ra0) + MT7613/MT7615/MT7915(rai0) combination */
 		if (IS_MT7663(pAd) || IS_MT7615(pAd) || IS_MT7915(pAd))
 			idx = 1;

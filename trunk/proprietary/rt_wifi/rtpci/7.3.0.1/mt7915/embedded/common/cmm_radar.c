@@ -430,13 +430,14 @@ NTSTATUS Dot11HCntDownTimeoutAction(PRTMP_ADAPTER pAd, PCmdQElmt CMDQelmt)
 	DedicatedZeroWaitStop(pAd, FALSE);
 #endif
 	pDot11h->RDMode = RD_SILENCE_MODE;
-#if (defined(CONFIG_MAP_SUPPORT) || defined(CHANNEL_OPTIMIZATION))
+
+#if defined(CONFIG_MAP_SUPPORT)
 		MTWF_LOG(DBG_CAT_AP, DBG_SUBCAT_ALL, DBG_LVL_ERROR,
 		("quick %d ,ch %d , cacreq %d\n", pMbss->wdev.quick_ch_change, pMbss->wdev.channel, pMbss->wdev.cac_not_required));
 		if ((pMbss->wdev.quick_ch_change == TRUE
 #ifdef CHANNEL_OPTIMIZATION
 			|| pAd->QuickChSwEn[BandIdx]
-#endif
+#endif /* CHANNEL_OPTIMIZATION */
 			) && (!RadarChannelCheck(pAd, pMbss->wdev.channel) || (RadarChannelCheck(pAd, pMbss->wdev.channel) && pMbss->wdev.cac_not_required))) {
 			MTWF_LOG(DBG_CAT_AP, DBG_SUBCAT_ALL, DBG_LVL_ERROR, ("%s %d\n",
 							(char *)pMbss->wdev.if_dev->name,
@@ -444,11 +445,11 @@ NTSTATUS Dot11HCntDownTimeoutAction(PRTMP_ADAPTER pAd, PCmdQElmt CMDQelmt)
 			ap_phy_rrm_init_byRf(pAd, &pMbss->wdev);
 #ifdef CHANNEL_OPTIMIZATION
 			if (!pAd->QuickChSwEn[BandIdx])
-#endif
+#endif /* CHANNEL_OPTIMIZATION */
 			{
 #ifdef OFFCHANNEL_SCAN_FEATURE
 				wdev->quick_ch_change = FALSE;
-#endif
+#endif /* OFFCHANNEL_SCAN_FEATURE */
 				pMbss->wdev.cac_not_required = FALSE;
 #ifdef CONFIG_MAP_SUPPORT
 				for (u = 0; u < pAd->ApCfg.BssidNum; u++) {
@@ -462,21 +463,24 @@ NTSTATUS Dot11HCntDownTimeoutAction(PRTMP_ADAPTER pAd, PCmdQElmt CMDQelmt)
 									(char *)wdev_temp->if_dev->name,
 									wdev_temp->cac_not_required));
 				}
-#endif
+#endif /* CONFIG_MAP_SUPPORT */
 			}
 		} else {
-#endif
+#endif /* CONFIG_MAP_SUPPORT */
+
 	APStop(pAd, pMbss, apOper);
 #ifdef MT_DFS_SUPPORT
 	if (DfsStopWifiCheck(pAd, &pMbss->wdev)) {
 		MTWF_LOG(DBG_CAT_AP, DBG_SUBCAT_ALL, DBG_LVL_OFF, ("[%s] Stop AP Startup\n", __func__));
 		goto end;
 	}
-#endif
+#endif /* MT_DFS_SUPPORT */
 	APStartUp(pAd, pMbss, apOper);
+
 #ifdef CONFIG_MAP_SUPPORT
 		}
-#endif
+#endif /* CONFIG_MAP_SUPPORT */
+
 #ifdef MT_DFS_SUPPORT
 	if (pAd->CommonCfg.dbdc_mode) {
 		MtCmdSetDfsTxStart(pAd, HcGetBandByWdev(&pMbss->wdev));
@@ -493,7 +497,8 @@ NTSTATUS Dot11HCntDownTimeoutAction(PRTMP_ADAPTER pAd, PCmdQElmt CMDQelmt)
 #ifdef BACKGROUND_SCAN_SUPPORT
 	/*DfsDedicatedScanStart(pAd);*/
 #endif
-#endif
+#endif /* MT_DFS_SUPPORT */
+
 #ifdef CONFIG_MAP_SUPPORT
 	if (IS_MAP_TURNKEY_ENABLE(pAd)) {
 		if (pMbss->wdev.cac_not_required) {
@@ -532,8 +537,8 @@ NTSTATUS Dot11HCntDownTimeoutAction(PRTMP_ADAPTER pAd, PCmdQElmt CMDQelmt)
 			}
 		}
 	MTWF_LOG(DBG_CAT_AP, DBG_SUBCAT_ALL, DBG_LVL_OFF, ("[%s] cac not req %d\n", __func__, pDot11h->cac_not_required));
+#endif /* CONFIG_MAP_SUPPORT */
 
-#endif
 #ifdef OFFCHANNEL_SCAN_FEATURE
 			RfIC = (WMODE_CAP_5G(pMbss->wdev.PhyMode)) ? RFIC_5GHZ : RFIC_24GHZ;
 			Rsp.data.operating_ch_info.channel = HcGetChannelByRf(pAd, RfIC);
@@ -566,7 +571,7 @@ NTSTATUS Dot11HCntDownTimeoutAction(PRTMP_ADAPTER pAd, PCmdQElmt CMDQelmt)
 					NULL,
 					(UCHAR *) &Rsp,
 					sizeof(OFFCHANNEL_SCAN_MSG));
-#endif
+#endif /* OFFCHANNEL_SCAN_FEATURE */
 end:
 	pAd->ApCfg.set_ch_async_flag = FALSE;
 	if (pAd->ApCfg.iwpriv_event_flag) {

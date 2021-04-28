@@ -9742,7 +9742,7 @@ static VOID show_candidate_list(struct _RTMP_ADAPTER *pAd, UINT_8 counter, UINT3
 	UINT_8 i, j, value, bit;
 	UINT_32 addr_3, addr_4;
 	RTMP_STRING * group[3] = {" 8: ", "36: ", "71: "};
-	UINT_8 u1CnBits, u1MaxBits;
+	UINT_8 u1CnBits = 0, u1MaxBits;
 
 	for (i = 0; i < counter; i++) {
 		addr_3 = addr + sizeof(UINT_8) * i * MAX_CAP_MUM_GRP_BLOCK;

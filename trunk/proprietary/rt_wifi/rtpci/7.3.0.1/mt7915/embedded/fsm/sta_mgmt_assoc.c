@@ -2404,7 +2404,7 @@ static VOID sta_peer_disassoc_action(RTMP_ADAPTER *pAd, MLME_QUEUE_ELEM *Elem)
 
 	if (!pStaCfg)
 		return;
-
+#ifdef WSC_INCLUDED
 	{
 		struct wifi_dev *wdev = &pStaCfg->wdev;
 		WSC_CTRL *wsc_ctrl = &wdev->WscControl;
@@ -2414,6 +2414,7 @@ static VOID sta_peer_disassoc_action(RTMP_ADAPTER *pAd, MLME_QUEUE_ELEM *Elem)
 								DISASSOC_WAIT_EAP_SUCCESS);
 		}
 	}
+#endif
 
 #ifdef MAC_REPEATER_SUPPORT
 	if (wdev->wdev_type == WDEV_TYPE_REPEATER) {

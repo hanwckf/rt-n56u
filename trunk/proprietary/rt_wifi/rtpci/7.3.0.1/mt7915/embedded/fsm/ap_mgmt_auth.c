@@ -446,7 +446,7 @@ VOID ap_peer_auth_req_at_idle_action(RTMP_ADAPTER *pAd, MLME_QUEUE_ELEM *Elem)
 	PFT_INFO pFtInfoBuf;
 #endif /* DOT11R_FT_SUPPORT */
 	BSS_STRUCT *pMbss;
-	struct wifi_dev *wdev;
+	struct wifi_dev *wdev = NULL;
 #ifdef WAPP_SUPPORT
 	UINT8 wapp_cnnct_stage = WAPP_AUTH;
 	UINT16 wapp_auth_fail = NOT_FAILURE;

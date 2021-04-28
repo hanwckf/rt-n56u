@@ -1788,6 +1788,7 @@ VOID mt_off_ch_scan_dedicated(
 
 }
 
+#ifdef BACKGROUND_SCAN_SUPPORT
 VOID bgnd_scan_ipi_cr_init(
 	IN PRTMP_ADAPTER pAd)
 {
@@ -1803,6 +1804,8 @@ VOID bgnd_scan_ipi_cr_init(
 	MTWF_LOG(DBG_CAT_AP, DBG_SUBCAT_ALL, DBG_LVL_TRACE,
 			("%s(): BW: %d, ret = %d\n", __func__, cmd_rdd_ipi_hist.set_val, ret));
 }
+#endif
+
 #endif
 
 #if defined(MT_MAC) && defined(TXBF_SUPPORT)

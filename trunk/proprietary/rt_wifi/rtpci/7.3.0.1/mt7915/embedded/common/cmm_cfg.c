@@ -5189,7 +5189,7 @@ INT set_ra_dbg_ctrl(RTMP_ADAPTER *pAd, RTMP_STRING *arg)
 	INT status = TRUE;
 	UINT8 i = 0;
 	CHAR *value = 0;
-	UINT8 param_num;
+	UINT8 param_num = 0;
 	UINT32 param[RA_DBG_SUPPORT_PARAM_NUM] = {0};
 
 	/* sanity check for input parameter format */
@@ -8536,7 +8536,7 @@ INT set_hnat_register(RTMP_ADAPTER *pAd, RTMP_STRING *arg)
 					RTMP_OS_NETDEV_GET_DEVNAME(wdev->if_dev)));
 			MTWF_LOG(DBG_CAT_CFG, DBG_SUBCAT_ALL, DBG_LVL_INFO, ("\t\tWdev(list) Idx:%d\n", wdev->wdev_idx));
 			MTWF_LOG(DBG_CAT_CFG, DBG_SUBCAT_ALL, DBG_LVL_INFO, ("\t\t Idx:%d\n", RtmpOsGetNetIfIndex(wdev->if_dev)));
-#if defined(CONFIG_FAST_NAT_SUPPORT)
+#if 0
 
 			if (ppe_dev_unregister_hook != NULL &&
 				ppe_dev_register_hook != NULL) {

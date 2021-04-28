@@ -1633,9 +1633,11 @@ INT	rtmp_set_channel(RTMP_ADAPTER *pAd, struct wifi_dev *wdev, UCHAR Channel)
 				wdev->channel = OriChannel;
 				wdev_sync_prim_ch(wdev->sys_handle, wdev);
 #if (DFS_ZEROWAIT_DEFAULT_FLOW == 1)
+#ifdef MT_DFS_SUPPORT
 				/* if radar is detected during in-band ch switch, dev resets inband channel if new dfs ch is invalid */
 				if (pAd->CommonCfg.DfsParameter.bDedicatedZeroWaitDefault == 0)
 					return FALSE;
+#endif
 #else
 				return FALSE;
 #endif
@@ -4725,7 +4727,7 @@ RTMP_STRING *GetAuthMode(CHAR auth)
 			3.) UI needs to prepare at least 4096bytes to get the results
     ==========================================================================
 */
-#define	LINE_LEN	(4+33+20+23+9+7+7+3)	/* Channel+SSID+Bssid+Security+Signal+WiressMode+ExtCh+NetworkType*/
+#define	LINE_LEN	(4+33+20+23+9+12+7+3)	/* Channel+SSID+Bssid+Security+Signal+WiressMode+ExtCh+NetworkType*/
 
 #ifdef CONFIG_STA_SUPPORT
 #ifdef WSC_STA_SUPPORT
@@ -4757,7 +4759,7 @@ VOID RTMPCommSiteSurveyData(
 
 		sprintf(Ssid, "0x");
 
-		for (idx = 0; (idx < 14) && (idx < pBss->SsidLen); idx++)
+		for (idx = 0; (idx < 15) && (idx < pBss->SsidLen); idx++)
 			sprintf(Ssid + 2 + (idx * 2), "%02X", (UCHAR)pBss->Ssid[idx]);
 	}
 
@@ -4792,23 +4794,23 @@ VOID RTMPCommSiteSurveyData(
 
 	if (wireless_mode == Ndis802_11FH ||
 		wireless_mode == Ndis802_11DS)
-		sprintf(msg + strlen(msg), "%-11s", "11b");
+		sprintf(msg + strlen(msg), "%-12s", "11b");
 	else if (wireless_mode == Ndis802_11OFDM5)
-		sprintf(msg + strlen(msg), "%-11s", "11a");
+		sprintf(msg + strlen(msg), "%-12s", "11a");
 	else if (wireless_mode == Ndis802_11OFDM5_N)
-		sprintf(msg + strlen(msg), "%-11s", "11a/n");
+		sprintf(msg + strlen(msg), "%-12s", "11a/n");
 	else if (wireless_mode == Ndis802_11OFDM5_AC)
-		sprintf(msg + strlen(msg), "%-11s", "11a/n/ac");
+		sprintf(msg + strlen(msg), "%-12s", "11a/n/ac");
 	else if (wireless_mode == Ndis802_11OFDM24)
-		sprintf(msg + strlen(msg), "%-11s", "11b/g");
+		sprintf(msg + strlen(msg), "%-12s", "11b/g");
 	else if (wireless_mode == Ndis802_11OFDM24_N)
-		sprintf(msg + strlen(msg), "%-11s", "11b/g/n");
+		sprintf(msg + strlen(msg), "%-12s", "11b/g/n");
 	else if (wireless_mode == Ndis802_11OFDM24_HE)
-		sprintf(msg + strlen(msg), "%-11s", "11b/g/n/ax");
+		sprintf(msg + strlen(msg), "%-12s", "11b/g/n/ax");
 	else if (wireless_mode == Ndis802_11OFDM5_HE)
-		sprintf(msg + strlen(msg), "%-11s", "11a/n/ac/ax");
+		sprintf(msg + strlen(msg), "%-12s", "11a/n/ac/ax");
 	else
-		sprintf(msg + strlen(msg), "%-11s", "unknow");
+		sprintf(msg + strlen(msg), "%-12s", "unknow");
 
 	/* Ext Channel*/
 	if (HAS_HT_OP_EXIST(pBss->ie_exists)) {
@@ -4828,7 +4830,7 @@ VOID RTMPCommSiteSurveyData(
 		sprintf(msg + strlen(msg), "%-3s", " In");
 
 	/* SSID Length */
-	sprintf(msg + strlen(msg), " %-8d", pBss->SsidLen);
+	//sprintf(msg + strlen(msg), " %-8d", pBss->SsidLen);
 
 	sprintf(msg + strlen(msg), "\n");
 	return;
@@ -4874,17 +4876,13 @@ VOID RTMPIoctlGetSiteSurvey(
 	UINT32		bss_start_idx;
 	BSS_ENTRY *pBss;
 	UINT32 TotalLen, BufLen = IW_SCAN_MAX_DATA;
+#ifdef CONFIG_STA_SUPPORT
+	STA_ADMIN_CONFIG *pApCliEntry = NULL;
+#endif
 	POS_COOKIE pObj = (POS_COOKIE)pAdapter->OS_Cookie;
 	struct wifi_dev *wdev = get_wdev_by_ioctl_idx_and_iftype(pAdapter, pObj->ioctl_if, pObj->ioctl_if_type);
 	BSS_TABLE *ScanTab = get_scan_tab_by_wdev(pAdapter, wdev);
 #ifdef CONFIG_STA_SUPPORT
-	STA_ADMIN_CONFIG *pApCliEntry = NULL;
-#ifdef WSC_STA_SUPPORT
-	max_len += WPS_LINE_LEN;
-#endif /* WSC_STA_SUPPORT */
-#ifdef DOT11R_FT_SUPPORT
-	max_len += DOT11R_LINE_LEN;
-#endif /* DOT11R_FT_SUPPORT */
 	if (wdev->wdev_type == WDEV_TYPE_STA) {
 		pApCliEntry = &pAdapter->StaCfg[wdev->func_idx];
 		pApCliEntry->apcliNeedEnable = FALSE;
@@ -4947,22 +4945,10 @@ VOID RTMPIoctlGetSiteSurvey(
 	}
 
 	sprintf(msg, "%s", "\n");
-	sprintf(msg + strlen(msg), "Total=%-4d", ScanTab->BssNr);
-	sprintf(msg + strlen(msg), "%s", "\n");
-	sprintf(msg + strlen(msg), "%-4s%-4s%-33s%-20s%-23s%-9s%-7s%-11s%-3s%-8s\n",
-			"No", "Ch", "SSID", "BSSID", "Security", "Siganl(%)", "W-Mode", " ExtCH", " NT", " SSID_Len");
-#ifdef WSC_INCLUDED
-	sprintf(msg + strlen(msg) - 1, "%-4s%-5s\n", " WPS", " DPID");
-#endif /* WSC_INCLUDED */
-	sprintf(msg + strlen(msg) - 1, "%-10s\n", " BcnRept");
-#ifdef MWDS
-	sprintf(msg + strlen(msg) - 1, "%-8s\n", " MWDSCap");
-#endif /* MWDS */
-#ifdef CONFIG_STA_SUPPORT
-#ifdef DOT11R_FT_SUPPORT
-	sprintf(msg + strlen(msg) - 1, "%-5s%-9s%-10s\n", " MDId", " FToverDS", " RsrReqCap");
-#endif /* DOT11R_FT_SUPPORT */
-#endif /* CONFIG_STA_SUPPORT */
+
+	sprintf(msg + strlen(msg), "%-4s%-33s%-20s%-23s%-9s%-12s%-7s%-3s\n",
+			"Ch", "SSID", "BSSID", "Security", "Siganl(%)", "W-Mode", " ExtCH", " NT");
+
 	WaitCnt = 0;
 #ifdef CONFIG_STA_SUPPORT
 	if (wdev->wdev_type == WDEV_TYPE_STA)
@@ -4979,6 +4965,7 @@ VOID RTMPIoctlGetSiteSurvey(
 			OS_WAIT(500);
 	}
 
+	BssTableSortByRssi(ScanTab,FALSE);
 
 	for (i = bss_start_idx; i < ScanTab->BssNr; i++) {
 		pBss = &ScanTab->BssEntry[i];
@@ -4989,55 +4976,8 @@ VOID RTMPIoctlGetSiteSurvey(
 		if ((strlen(msg) + 100) >= BufLen)
 			break;
 
-		/*No*/
-		sprintf(msg + strlen(msg), "%-4d", i);
 		RTMPCommSiteSurveyData(msg, pBss, TotalLen);
-#ifdef WSC_INCLUDED
 
-		/*WPS*/
-		if (pBss->WpsAP & 0x01)
-			sprintf(msg + strlen(msg) - 1, "%-4s", " YES");
-		else
-			sprintf(msg + strlen(msg) - 1, "%-4s", "  NO");
-
-		if (pBss->WscDPIDFromWpsAP == DEV_PASS_ID_PIN)
-			sprintf(msg + strlen(msg), "%-5s", " PIN");
-		else if (pBss->WscDPIDFromWpsAP == DEV_PASS_ID_PBC)
-			sprintf(msg + strlen(msg), "%-5s", " PBC");
-		else
-			sprintf(msg + strlen(msg), "%-5s", " ");
-
-#endif /* WSC_INCLUDED */
-#ifndef MWDS
-		sprintf(msg + strlen(msg), "%-7s\n", pBss->FromBcnReport ? " YES" : " NO");
-#else
-		sprintf(msg + strlen(msg), "%-7s", pBss->FromBcnReport ? " YES" : " NO");
-
-		if (pBss->bSupportMWDS)
-			sprintf(msg + strlen(msg), "%-4s\n", " YES");
-		else
-			sprintf(msg + strlen(msg), "%-4s\n", " NO");
-
-#endif /* MWDS */
-#ifdef CONFIG_STA_SUPPORT
-#ifdef DOT11R_FT_SUPPORT
-
-		if (pBss->bHasMDIE) {
-			sprintf(msg + strlen(msg) - 1, " %02x%02x", pBss->FT_MDIE.MdId[0], pBss->FT_MDIE.MdId[1]);
-
-			if (pBss->FT_MDIE.FtCapPlc.field.FtOverDs)
-				sprintf(msg + strlen(msg), "%-9s", " TRUE");
-			else
-				sprintf(msg + strlen(msg), "%-9s", " FALSE");
-
-			if (pBss->FT_MDIE.FtCapPlc.field.RsrReqCap)
-				sprintf(msg + strlen(msg), "%-10s\n", " TRUE");
-			else
-				sprintf(msg + strlen(msg), "%-10s\n", " FALSE");
-		}
-
-#endif /* DOT11R_FT_SUPPORT */
-#endif /* CONFIG_STA_SUPPORT */
 	}
 
 #ifdef CONFIG_STA_SUPPORT
@@ -5085,36 +5025,108 @@ USHORT RTMPGetLastTxRate(PRTMP_ADAPTER pAd, MAC_TABLE_ENTRY *pEntry)
 	return lastTxRate.word;
 }
 
+typedef struct _RT_802_11_MAC_ENTRY_PDV {
+	UCHAR ApIdx;
+	UCHAR Addr[MAC_ADDR_LEN];
+	UCHAR Aid;
+	UCHAR Psm;
+	UCHAR MimoPs;
+	CHAR AvgRssi0;
+	CHAR AvgRssi1;
+	CHAR AvgRssi2;
+	UINT32 ConnectedTime;
+	HTTRANSMIT_SETTING TxRate;
+	UINT32 LastRxRate;
+} RT_802_11_MAC_ENTRY_PDV, *PRT_802_11_MAC_ENTRY_PDV;
+
+typedef struct _RT_802_11_MAC_TABLE_PDV {
+	ULONG Num;
+	RT_802_11_MAC_ENTRY_PDV Entry[MAX_NUMBER_OF_MAC];
+} RT_802_11_MAC_TABLE_PDV, *PRT_802_11_MAC_TABLE_PDV;
+
+static VOID
+copy_mac_table_entry(RT_802_11_MAC_ENTRY_PDV *pDst, MAC_TABLE_ENTRY *pEntry)
+{
+	pDst->ApIdx = (UCHAR)pEntry->func_tb_idx;
+	COPY_MAC_ADDR(pDst->Addr, &pEntry->Addr);
+	pDst->Aid = (UCHAR)pEntry->Aid;
+	pDst->Psm = pEntry->PsMode;
+
+#ifdef DOT11_N_SUPPORT
+	pDst->MimoPs = pEntry->MmpsMode;
+#endif /* DOT11_N_SUPPORT */
+
+	/* Fill in RSSI per entry*/
+	pDst->AvgRssi0 = pEntry->RssiSample.AvgRssi[0];
+	pDst->AvgRssi1 = pEntry->RssiSample.AvgRssi[1];
+	pDst->AvgRssi2 = pEntry->RssiSample.AvgRssi[2];
+
+	/* the connected time per entry*/
+	pDst->ConnectedTime = pEntry->StaConnectTime;
+
+	pDst->TxRate.word = pEntry->HTPhyMode.word;
+	pDst->LastRxRate = pEntry->LastRxRate;
+}
+
 VOID RTMPIoctlGetMacTableStaInfo(
 	IN PRTMP_ADAPTER pAd,
 	IN RTMP_IOCTL_INPUT_STRUCT *wrq)
 {
 	INT i;
-	BOOLEAN need_send = FALSE;
-	RT_802_11_MAC_TABLE *pMacTab = NULL;
-	PRT_802_11_MAC_ENTRY pDst;
+	RT_802_11_MAC_TABLE_PDV *pMacTab = NULL;
+	PRT_802_11_MAC_ENTRY_PDV pDst;
 	MAC_TABLE_ENTRY *pEntry;
+	UINT16 wrq_len = wrq->u.data.length;
+	POS_COOKIE pObj = (POS_COOKIE)pAd->OS_Cookie;
+	struct tx_rx_ctl *tr_ctl = &pAd->tr_ctl;
+	STA_TR_ENTRY *tr_entry;
+
+	wrq->u.data.length = 0;
+
+#ifdef APCLI_SUPPORT
+	if (pObj->ioctl_if_type == INT_APCLI)
+	{
+		if (!tr_ctl)
+			return;
+		if (wrq_len < sizeof(RT_802_11_MAC_ENTRY_PDV))
+			return;
+		if (pObj->ioctl_if >= MAX_APCLI_NUM)
+			return;
+		if (pAd->StaCfg[pObj->ioctl_if].ApcliInfStat.Valid != TRUE)
+			return;
+
+		tr_entry = &tr_ctl->tr_entry[pAd->StaCfg[pObj->ioctl_if].MacTabWCID];
+		pEntry = &pAd->MacTab.Content[pAd->StaCfg[pObj->ioctl_if].MacTabWCID];
+
+		if ((pEntry->Sst == SST_ASSOC) && (tr_entry->PortSecured == WPA_802_1X_PORT_SECURED))
+		{
+			RT_802_11_MAC_ENTRY_PDV MacEntry;
+			
+			pDst = &MacEntry;
+			copy_mac_table_entry(pDst, pEntry);
+			
+			wrq->u.data.length = sizeof(RT_802_11_MAC_ENTRY_PDV);
+			copy_to_user(wrq->u.data.pointer, pDst, wrq->u.data.length);
+		}
+		
+		return;
+	}
+#endif
+
 	/* allocate memory */
-	os_alloc_mem(NULL, (UCHAR **)&pMacTab, sizeof(RT_802_11_MAC_TABLE));
+	os_alloc_mem(NULL, (UCHAR **)&pMacTab, sizeof(RT_802_11_MAC_TABLE_PDV));
 
 	if (pMacTab == NULL) {
 		MTWF_LOG(DBG_CAT_CFG, DBG_SUBCAT_ALL, DBG_LVL_ERROR, ("%s: Allocate memory fail!!!\n", __func__));
 		return;
 	}
 
-	NdisZeroMemory(pMacTab, sizeof(RT_802_11_MAC_TABLE));
+	NdisZeroMemory(pMacTab, sizeof(RT_802_11_MAC_TABLE_PDV));
 
 	for (i = 0; VALID_UCAST_ENTRY_WCID(pAd, i); i++) {
 		pEntry = &(pAd->MacTab.Content[i]);
 
-		if (pEntry->wdev != NULL) {
-			/* As per new GUI design ifname with index as ra0/ra1/rai0/rai1/... (may not work with older GUI)*/
-			if (!strcmp(wrq->ifr_ifrn.ifrn_name, pEntry->wdev->if_dev->name))
-				need_send = TRUE;
-			else
-				need_send = FALSE;
-		}
-		if (IS_ENTRY_CLIENT(pEntry) && (pEntry->Sst == SST_ASSOC) && (need_send == TRUE)) {
+		if (IS_ENTRY_CLIENT(pEntry) && (pEntry->Sst == SST_ASSOC)) {
 			pDst = &pMacTab->Entry[pMacTab->Num];
 			pDst->ApIdx = pEntry->func_tb_idx;
 			COPY_MAC_ADDR(pDst->Addr, &pEntry->Addr);
@@ -5135,7 +5147,7 @@ VOID RTMPIoctlGetMacTableStaInfo(
 		}
 	}
 
-	wrq->u.data.length = sizeof(RT_802_11_MAC_TABLE);
+	wrq->u.data.length = sizeof(RT_802_11_MAC_TABLE_PDV);
 
 	if (copy_to_user(wrq->u.data.pointer, pMacTab, wrq->u.data.length))
 		MTWF_LOG(DBG_CAT_CFG, DBG_SUBCAT_ALL, DBG_LVL_TRACE, ("%s: copy_to_user() fail\n", __func__));
@@ -15579,11 +15591,6 @@ INT	Set_Led_Proc(RTMP_ADAPTER *pAd, RTMP_STRING *arg)
 		if (i >= 8)
 			break;
 	}
-
-	printk("\n%s\n", __func__);
-
-	for (j = 0; j < i; j++)
-		printk("%02x\n", (UINT)led_param[j]);
 
 	if (IS_MT7615(pAd) || IS_MT7663(pAd) || IS_MT7626(pAd) || IS_MT7915(pAd)) {
 		rtmp_control_led_cmd(pAd, led_param[0], led_param[1], led_param[2], led_param[3],

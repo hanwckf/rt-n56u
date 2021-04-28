@@ -132,7 +132,7 @@ typedef struct usb_ctrlrequest devctrlrequest;
  *	Profile related sections
  ***********************************************************************************/
 
-#define L1_PROFILE_PATH	"/etc/wireless/l1profile.dat"
+#define L1_PROFILE_PATH	"/etc_ro/Wireless/l1profile.dat"
 #define L1PROFILE_INDEX_LEN		10
 #define	L1PROFILE_ATTRNAME_LEN	30
 #define	L2PROFILE_PATH_LEN		50
@@ -268,7 +268,7 @@ typedef int (*HARD_START_XMIT_FUNC)(struct sk_buff *skb, struct net_device *net_
 #define RTMP_DEC_REF(_A)		0
 #define RTMP_GET_REF(_A)		0
 
-#if defined(CONFIG_FAST_NAT_SUPPORT)
+#if 0
 #define RT_MOD_HNAT_DEREG(_net_dev) \
 	do {\
 		if (ppe_dev_unregister_hook != NULL) \
@@ -824,7 +824,7 @@ void linux_pci_unmap_single(void *handle, ra_dma_addr_t dma_addr, size_t size, i
 #define SKB_BUF_MINIMUN_SIZE	(1984)
 
 
-#ifdef CONFIG_WIFI_BUILD_SKB
+#if 1
 #define DEV_ALLOC_FRAG(_Pkt, _length)		\
 	do {\
 		_Pkt = netdev_alloc_frag(_length);\
@@ -1072,8 +1072,10 @@ void linux_pci_unmap_single(void *handle, ra_dma_addr_t dma_addr, size_t size, i
 #ifdef CONFIG_FAST_NAT_SUPPORT
 extern int (*ra_sw_nat_hook_tx)(struct sk_buff *skb, int gmac_no);
 extern int (*ra_sw_nat_hook_rx)(struct sk_buff *skb);
+#if 0
 extern void (*ppe_dev_register_hook) (VOID  *dev);
 extern void (*ppe_dev_unregister_hook) (VOID  *dev);
+#endif
 
 #if defined(CONFIG_WIFI_PKT_FWD) || defined(CONFIG_WIFI_PKT_FWD_MODULE)
 extern int (*wf_ra_sw_nat_hook_tx_bkup)(struct sk_buff *skb, int gmac_no);

@@ -685,6 +685,10 @@ enum WIFI_MODE {
 
 #define MAX_NUM_OF_ACL_LIST				MAX_NUMBER_OF_ACL
 
+#define VALID_WCID(_wcid)   ((_wcid) < MAX_LEN_OF_MAC_TABLE)
+
+#define VALID_TR_WCID(_wcid)        ((_wcid) < MAX_LEN_OF_TR_TABLE)
+
 #define VALID_UCAST_ENTRY_WCID(_pAd, _wcid) ((_wcid) < HcGetMaxStaNum(_pAd))
 #define GET_MAX_UCAST_NUM(_pAd) HcGetMaxStaNum(_pAd)
 
@@ -2097,7 +2101,7 @@ typedef struct _WIFI_NODE_TYPE {
 #endif
 #endif /* CONFIG_SUPPORT_OPENWRT */
 #else /* !ANDROID_SUPPORT */
-#if CONFIG_RTPCI_AP_RF_OFFSET == 0x48000
+#if CONFIG_RTPCI_AP_RF_OFFSET == 0x48000 || CONFIG_RT_FIRST_CARD == 7603
 #define INF_MAIN_DEV_NAME		"rai"
 #define INF_MBSSID_DEV_NAME		"rai"
 #else
@@ -2114,7 +2118,7 @@ typedef struct _WIFI_NODE_TYPE {
 #define INF_MSTA_DEV_NAME		"ra"
 
 
-#if CONFIG_RTPCI_AP_RF_OFFSET == 0x48000
+#if CONFIG_RTPCI_AP_RF_OFFSET == 0x48000 || CONFIG_RT_FIRST_CARD == 7603
 #define INF_WDS_DEV_NAME		"wdsi"
 #define INF_APCLI_DEV_NAME		"apclii"
 #define INF_MESH_DEV_NAME		"meshi"

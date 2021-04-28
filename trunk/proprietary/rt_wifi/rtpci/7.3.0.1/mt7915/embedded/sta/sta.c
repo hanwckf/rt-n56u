@@ -29,6 +29,7 @@
 #include "rt_config.h"
 
 NET_DEV_STATS *RT28xx_get_ether_stats(PNET_DEV net_dev);
+struct rtnl_link_stats64 *RT28xx_get_ether_stats64(struct net_device *net_dev, struct rtnl_link_stats64 *stats);
 
 VOID STARxErrorHandle(RTMP_ADAPTER *pAd, RX_BLK *pRxBlk)
 {
@@ -172,7 +173,7 @@ VOID RT28xx_MSTA_Init(VOID *pAd, PNET_DEV main_dev_p)
 	netDevHook.stop = msta_virtual_if_close; /* device close hook point */
 	netDevHook.xmit = rt28xx_send_packets;  /* hard transmit hook point */
 	netDevHook.ioctl = rt28xx_ioctl;    /* ioctl hook point */
-	netDevHook.get_stats = RT28xx_get_ether_stats;
+	netDevHook.get_stats = RT28xx_get_ether_stats64;
 	RTMP_STA_IoctlHandle(pAd, NULL, CMD_RTPRIV_IOCTL_MSTA_INIT,
 						 0, &netDevHook, 0, 0);
 }

@@ -5924,15 +5924,16 @@ BOOLEAN DOT1X_EapTriggerAction(RTMP_ADAPTER *pAd, MAC_TABLE_ENTRY *pEntry)
 
 INT rtmp_ap_init(RTMP_ADAPTER *pAd)
 {
-#ifdef WSC_AP_SUPPORT
 	UCHAR j;
 	BSS_STRUCT *mbss = NULL;
 	struct wifi_dev *wdev = NULL;
+#ifdef WSC_AP_SUPPORT
 	PWSC_CTRL pWscControl;
+#endif
 #ifdef CFG_SUPPORT_FALCON_MURU
 	UINT8 u1BandIdx;
 #endif /* CFG_SUPPORT_FALCON_MURU */
-
+#ifdef WSC_AP_SUPPORT
 	for (j = BSS0; j < pAd->ApCfg.BssidNum; j++) {
 		mbss = &pAd->ApCfg.MBSSID[j];
 		wdev = &pAd->ApCfg.MBSSID[j].wdev;

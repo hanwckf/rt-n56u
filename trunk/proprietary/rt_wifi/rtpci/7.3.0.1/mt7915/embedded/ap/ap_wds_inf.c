@@ -39,7 +39,6 @@
 
 NET_DEV_STATS *RT28xx_get_wds_ether_stats(PNET_DEV net_dev);
 
-
 /* Register WDS interface */
 VOID RT28xx_WDS_Init(VOID *pAd, UCHAR band_idx, PNET_DEV net_dev)
 {

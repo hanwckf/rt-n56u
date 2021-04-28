@@ -1810,12 +1810,12 @@ VOID RTMPRxDataDeqOffloadToOtherCPU(RTMP_ADAPTER *pAd)
 INT32 ge_rx_enq_dataq_pkt(RTMP_ADAPTER *pAd, PNDIS_PACKET pkt)
 {
 	struct tr_counter *tr_cnt = &pAd->tr_ctl.tr_cnt;
-	UINT32 hash = RTPKT_TO_OSPKT(pkt)->hash;
+	UINT32 hash = RTPKT_TO_OSPKT(pkt)->rxhash;
 	struct _RTMP_CHIP_CAP *cap = hc_get_chip_cap(pAd->hdev_ctrl);
 	UINT8 cpu;
 	UINT32 qlen_upper_bound = RX_DATA_QUE_MAX_NUMS;
 
-	RTPKT_TO_OSPKT(pkt)->hash = 0;
+	RTPKT_TO_OSPKT(pkt)->rxhash = 0;
 	cpu = cap->RxSwRpsCpuMap[((hash-1) % cap->RxSwRpsNum)];
 
 	if (pAd->rx_dequeue_sw_rps_enable == FALSE)

@@ -317,9 +317,11 @@ static NTSTATUS ApCliPbcApFoundHandler(IN PRTMP_ADAPTER pAd, IN PCmdQElmt CMDQel
 		ApCliIfDown(pAd);
 	}
 	pApCliTab->ApcliInfStat.Enable = apcliEn;
+#ifdef WSC_INCLUDED
 	/* Change WPS State */
 	pApCliTab->wdev.WscControl.WscState = WSC_STATE_START;
 	pApCliTab->wdev.WscControl.WscStatus = STATUS_WSC_START_ASSOC;
+#endif
 	return NDIS_STATUS_SUCCESS;
 }
 

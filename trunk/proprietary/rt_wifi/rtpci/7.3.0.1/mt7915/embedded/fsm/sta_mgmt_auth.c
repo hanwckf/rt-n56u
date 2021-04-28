@@ -319,7 +319,7 @@ VOID sta_peer_deauth_action(
 
 	if (!pStaCfg)
 		return;
-
+#ifdef WSC_INCLUDED
 	{
 		struct wifi_dev *wdev = &pStaCfg->wdev;
 		WSC_CTRL *wsc_ctrl = &wdev->WscControl;
@@ -329,7 +329,7 @@ VOID sta_peer_deauth_action(
 								DISASSOC_WAIT_EAP_SUCCESS);
 		}
 	}
-
+#endif
 	if (IS_APCLI_RPT_IFINDEX_INVALID(pAd, wdev, ifIndex))
 		return;
 

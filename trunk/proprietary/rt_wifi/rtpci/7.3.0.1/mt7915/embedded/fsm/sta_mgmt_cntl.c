@@ -1162,7 +1162,7 @@ static VOID sta_cntl_join_conf(
 	struct wifi_dev *wdev;
 	STA_ADMIN_CONFIG *pStaCfg;
 #ifdef DOT11_SAE_SUPPORT
-	MAC_TABLE_ENTRY *pAPEntry;
+	MAC_TABLE_ENTRY *pAPEntry = NULL;
 #endif
 #ifndef CONFIG_STA_ADHOC_SUPPORT
 	struct _SECURITY_CONFIG *pProfile_SecConfig;
@@ -2947,9 +2947,8 @@ VOID LinkUp(RTMP_ADAPTER *pAd, UCHAR BssType, struct wifi_dev *wdev, UINT link_u
 	struct DOT11_H *pDot11h = NULL;
 	SCAN_INFO *ScanInfo = &wdev->ScanInfo;
 	struct tx_rx_ctl *tr_ctl = &pAd->tr_ctl;
-#if defined(WSC_STA_SUPPORT) || defined(ANTENNA_CONTROL_SUPPORT)
 	UINT8 TxPath = pAd->Antenna.field.TxPath;
-#endif /* defined(WSC_STA_SUPPORT) || defined(ANTENNA_CONTROL_SUPPORT) */
+
 	ASSERT(pStaCfg);
 
 	if (!pStaCfg)

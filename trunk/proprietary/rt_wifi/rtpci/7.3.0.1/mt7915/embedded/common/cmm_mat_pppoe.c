@@ -754,6 +754,8 @@ static PUCHAR MATProto_PPPoEDis_Tx(
 	switch (*pData) {
 	/* Send by pppoe client */
 	case PPPOE_CODE_PADI:
+		findTag = PPPOE_TAG_ID_HOST_UNIQ;
+		break;
 	case PPPOE_CODE_PADR:
 		findTag = PPPOE_TAG_ID_HOST_UNIQ;
 		break;
@@ -822,14 +824,24 @@ static PUCHAR MATProto_PPPoEDis_Tx(
 	if (pEntry && (pTagContent == NULL)) {
 		PUCHAR tailHead;
 
-		if (OS_PKT_CLONED(pSkb)) {
-			/*			pModSkb = (PNDIS_PACKET)skb_copy(RTPKT_TO_OSPKT(pSkb), MEM_ALLOC_FLAG); */
-			OS_PKT_COPY(RTPKT_TO_OSPKT(pSkb), pModSkb);
-		} else
-			pModSkb = (PNDIS_PACKET)RTPKT_TO_OSPKT(pSkb);
-
-		if (!pModSkb)
+		pModSkb = (PNDIS_PACKET)skb_copy(RTPKT_TO_OSPKT(pSkb), GFP_ATOMIC);
+		if(!pModSkb)
 			return NULL;
+
+		if (skb_tailroom(RTPKT_TO_OSPKT(pModSkb)) < (PPPOE_DIS_UID_LEN + 4)) {
+			struct sk_buff *skb2 = NULL;
+			struct sk_buff *skb = RTPKT_TO_OSPKT(pModSkb);
+			skb2 = skb_copy_expand(skb,skb_headroom(skb),(skb_tailroom(skb)+PPPOE_DIS_UID_LEN + 4),GFP_ATOMIC);
+			if (skb2 == NULL) {
+				printk("\n !skb_copy_expand failed! \n");
+				return NULL;
+			}
+			kfree_skb(skb);
+			pModSkb = OSPKT_TO_RTPKT(skb2);
+		}
+		pPktHdr = GET_OS_PKT_DATAPTR(pModSkb);
+		pDstMac = pPktHdr;
+		pSrcMac = (pPktHdr + 6);
 
 		/*		tailHead = skb_put(RTPKT_TO_OSPKT(pModSkb), (PPPOE_DIS_UID_LEN + 4)); */
 		tailHead = OS_PKT_TAIL_BUF_EXTEND(pModSkb, (PPPOE_DIS_UID_LEN + 4));
@@ -838,8 +850,8 @@ static PUCHAR MATProto_PPPoEDis_Tx(
 			pPayloadLen = GET_OS_PKT_DATAPTR(pModSkb) + offset;
 			pPPPPoETail = pPayloadLen + payloadLen;
 
-			if (tailHead > pPPPPoETail)
-				tailHead = pPPPPoETail;
+			//if (tailHead > pPPPPoETail)
+			//	tailHead = pPPPPoETail;
 
 			if (pEntry->isServer) {
 				/*Append the AC-Cookie tag info in the tail of the pppoe packet. */

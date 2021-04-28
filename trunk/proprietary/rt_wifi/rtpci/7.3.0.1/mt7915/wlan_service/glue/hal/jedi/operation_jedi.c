@@ -2491,7 +2491,8 @@ s_int32 mt_op_set_test_mode_dnlk_2g(
 	RTMP_ADAPTER *ad = NULL;
 	struct _ATE_CTRL *ATECtrl = NULL;
 #ifdef DBDC_MODE
-	u_int32 band0_tx_path_backup, band0_rx_path_backup;
+	u_int32 band0_tx_path_backup = 0;
+	u_int32 band0_rx_path_backup = 0;
 #endif
 
 	/* Get adapter from jedi driver first */
@@ -2578,7 +2579,8 @@ s_int32 mt_op_set_test_mode_dnlk_5g(
 	RTMP_ADAPTER *ad = NULL;
 	struct _ATE_CTRL *ATECtrl = NULL;
 #ifdef DBDC_MODE
-	u_int32 band1_tx_path_backup, band1_rx_path_backup;
+	u_int32 band1_tx_path_backup = 0;
+	u_int32 band1_rx_path_backup = 0;
 #endif
 
 	/* Get adapter from jedi driver first */

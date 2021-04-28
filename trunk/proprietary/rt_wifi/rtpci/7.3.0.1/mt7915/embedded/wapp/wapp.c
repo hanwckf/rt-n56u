@@ -1107,8 +1107,9 @@ VOID setChannelList(
 #ifdef CONFIG_MAP_SUPPORT
 	UCHAR band_idx;
 #endif
+#ifdef MT_DFS_SUPPORT
 	PDFS_PARAM pDfsParam = &pAd->CommonCfg.DfsParameter;
-
+#endif
 #ifdef CONFIG_MAP_SUPPORT
 	band_idx = HcGetBandByWdev(wdev);
 #endif
@@ -1117,7 +1118,7 @@ VOID setChannelList(
 
 		/* Set Preference & reason */
 		if (pAd->ChannelList[i].DfsReq) {
-#ifdef CONFIG_MAP_SUPPORT /* TODO: move to MAP */
+#if defined (CONFIG_MAP_SUPPORT) && defined (MT_DFS_SUPPORT) /* TODO: move to MAP */
 			chn_list->ch_list[i].pref |= (OP_DISALLOWED_DUE_TO_DFS | NON_PREF);
 			if ((pAd->CommonCfg.RDDurRegion == CE) &&
 				DfsCacRestrictBand(pAd, pDfsParam->band_bw[band_idx], pAd->ChannelList[i].Channel,0)) {
@@ -1841,7 +1842,7 @@ INT wapp_send_sta_rssi_query_rsp(
 	return 0;
 }
 
-
+#ifdef WSC_INCLUDED
 INT wapp_send_wsc_scan_complete_notification(
 	PRTMP_ADAPTER pAd,
 	struct wifi_dev *wdev)
@@ -1863,7 +1864,7 @@ INT wapp_send_wsc_scan_complete_notification(
 	}
 	return 0;
 }
-
+#endif
 
 INT wapp_send_wsc_eapol_start_notification(
 	PRTMP_ADAPTER pAd,
@@ -2268,6 +2269,7 @@ INT	wapp_event_handle(
 	case WAPP_GET_SCAN_RESULTS:
 		RTMPIoctlGetScanResults(pAd, req);
 		break;
+#ifdef WSC_INCLUDED
 	case WAPP_WSC_PBC_EXEC:
 		{
 			POS_COOKIE pObj = (POS_COOKIE) pAd->OS_Cookie;
@@ -2283,9 +2285,11 @@ INT	wapp_event_handle(
 			WscPBCExec(pAd, FALSE, pWscControl);
 			break;
 		}
+#endif
 	case WAPP_SEND_NULL_FRAMES:
 		RTMPIoctlSendNullDataFrame(pAd, req);
 		break;
+#ifdef WSC_INCLUDED
 	case WAPP_WSC_SET_BH_PROFILE:
 		{
 			POS_COOKIE pObj = (POS_COOKIE) pAd->OS_Cookie;
@@ -2309,6 +2313,7 @@ INT	wapp_event_handle(
 			}
 			break;
 		}
+#endif
 #ifdef CONFIG_MAP_SUPPORT
 	case WAPP_SET_SCAN_BH_SSIDS:
 		{

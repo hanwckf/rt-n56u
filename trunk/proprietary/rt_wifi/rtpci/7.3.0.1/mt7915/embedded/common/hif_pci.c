@@ -1613,9 +1613,9 @@ static PNDIS_PACKET pci_get_pkt_dynamic_page_ddone(
 					if ((wcid == 0) || (wcid >= MAX_LEN_OF_MAC_TABLE))
 						wcid = smp_processor_id()+1;
 				}
-					RTPKT_TO_OSPKT(pRxPacket)->hash = wcid;
+					RTPKT_TO_OSPKT(pRxPacket)->rxhash = wcid;
 			} else
-					RTPKT_TO_OSPKT(pRxPacket)->hash = smp_processor_id()+1;
+					RTPKT_TO_OSPKT(pRxPacket)->rxhash = smp_processor_id()+1;
 			}
 
 #endif
@@ -3147,6 +3147,7 @@ static VOID pci_rx_data_done_func(unsigned long data)
 	RTMP_INT_UNLOCK(&pci_hif_chip->LockInterrupt, flags);
 }
 
+#if 0
 static INT pci_rx_data_done_poll_func(struct napi_struct *napi, int budget)
 {
 	INT done = 0;
@@ -3249,6 +3250,7 @@ static INT pci_rx_data_done_poll_func(struct napi_struct *napi, int budget)
 
 	return done;
 }
+#endif
 
 /*
 *
@@ -3983,7 +3985,7 @@ static VOID pci_reset_txrx_ring_mem(void *hdev_ctrl)
 
 	for (index = 0; index < num_of_rx_ring; index++) {
 		UINT16 RxRingSize;
-#ifdef CONFIG_WIFI_BUILD_SKB
+#if 1
 		UINT skb_data_size = 0;
 #endif
 		struct hif_pci_rx_ring *rx_ring = pci_get_rx_ring_by_ridx(hif, index);
@@ -4018,7 +4020,7 @@ static VOID pci_reset_txrx_ring_mem(void *hdev_ctrl)
 				PCI_UNMAP_SINGLE(ad, cur_pa, dma_cb->DmaBuf.AllocSize, RTMP_PCI_DMA_FROMDEVICE);
 
 				if (attr == HIF_RX_DATA) {
-#ifdef CONFIG_WIFI_BUILD_SKB
+#if 1
 					skb_data_size = SKB_DATA_ALIGN(SKB_BUF_HEADROOM_RSV + dma_cb->DmaBuf.AllocSize) +
 							SKB_DATA_ALIGN(SKB_BUF_TAILROOM_RSV);
 
@@ -5162,7 +5164,9 @@ static NDIS_STATUS pci_init_task_group(void *hdev_ctrl)
 #endif
 			RTMP_OS_TASKLET_INIT(NULL, &task_group->subsys_int_task, pci_subsys_int_func, (unsigned long)hif_chip);
 			RTMP_OS_TASKLET_INIT(NULL, &task_group->sw_int_task, pci_sw_int_func, (unsigned long)hif_chip);
-		} else if (cap->hif_tm == TASKLET_NAPI_METHOD) {
+		}
+#if 0
+		 else if (cap->hif_tm == TASKLET_NAPI_METHOD) {
 			hif_chip->schedule_task_ops = &tasklet_napi_schedule_ops;
 			init_dummy_netdev(&task_group->napi_dev);
 			task_group->priv = (VOID *)hif_chip;
@@ -5181,6 +5185,7 @@ static NDIS_STATUS pci_init_task_group(void *hdev_ctrl)
 			RTMP_OS_TASKLET_INIT(NULL, &task_group->subsys_int_task, pci_subsys_int_func, (unsigned long)hif_chip);
 			RTMP_OS_TASKLET_INIT(NULL, &task_group->sw_int_task, pci_sw_int_func, (unsigned long)hif_chip);
 		}
+#endif
 	}
 
 	return NDIS_STATUS_SUCCESS;

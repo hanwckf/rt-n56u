@@ -6275,7 +6275,7 @@ s_int32 mt_agent_set_txbf_dut_init_proc(
 	u_long  in_value;
 	boolean fg_dbdc;
 	char    cmdStr[24], addr[6];
-	u_char  tx_path;
+	u_char  tx_path = 0;
 	s_int32 ret = SERV_STATUS_SUCCESS;
 
 

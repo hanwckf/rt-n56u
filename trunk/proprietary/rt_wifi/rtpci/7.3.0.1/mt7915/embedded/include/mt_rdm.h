@@ -18,6 +18,10 @@
 #ifndef _MT_RDM_H_
 #define _MT_RDM_H_
 
+
+#define IS_CH_ABAND(_ch)	\
+		(_ch > 14)
+
 #ifdef MT_DFS_SUPPORT
 
 #include "rt_config.h"
@@ -169,8 +173,7 @@ enum {
 #define DYNAMIC_ZEROWAIT_ON			1
 #define DYNAMIC_ZEROWAIT_OFF			0
 
-#define IS_CH_ABAND(_ch)	\
-		(_ch > 14)
+
 
 #define GET_BGND_PARAM(_pAd, _param)		\
 	DfsGetBgndParameter(pAd, _param)

@@ -326,7 +326,7 @@ ifeq ($(CONFIG_WNM_SUPPORT),y)
         spec_objs += $(SRC_EMBEDDED_DIR)/common/wnm.o
 endif
 
-ifeq ($(CONFIG_INTERWORKING),y)
+ifeq ($(CONFIG_MT_INTERWORKING),y)
         EXTRA_CFLAGS += -DCONFIG_DOT11U_INTERWORKING
         spec_objs += $(SRC_EMBEDDED_DIR)/common/gas.o
 endif

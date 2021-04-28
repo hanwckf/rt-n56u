@@ -79,7 +79,7 @@ config DOT11K_RRM_SUPPORT
 	depends on MT_AP_SUPPORT
 	default n
 
-config INTERWORKING
+config MT_INTERWORKING
 	bool "802.11u Interworking/Gas Support"
         depends on MT_AP_SUPPORT
         default n

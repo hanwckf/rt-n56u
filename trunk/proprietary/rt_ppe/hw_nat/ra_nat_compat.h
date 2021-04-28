@@ -73,7 +73,7 @@
 #define HWNAT_USE_IF_MESH
 #endif
 
-#if defined (CONFIG_CHIP_MT7615E)
+#if defined (CONFIG_CHIP_MT7615E) || defined (CONFIG_CHIP_MT7915)
 
 #if defined (CONFIG_MBSS_SUPPORT)
 #define HWNAT_USE_IF_MBSS
@@ -88,9 +88,7 @@
 #endif
 
 #if defined (CONFIG_DBDC_MODE) 
-#if defined (CONFIG_RT_SECOND_IF_NONE)
 #define HWNAT_USE_IF_DBDC
-#endif
 #endif
 
 #endif

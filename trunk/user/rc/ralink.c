@@ -162,7 +162,7 @@ static const struct cc_t {
 inline int
 get_wired_mac_is_single(void)
 {
-#if defined (BOARD_N14U) || defined (BOARD_N11P) || defined (BOARD_MZ_R13) || defined (BOARD_MZ_R13P)
+#if defined (BOARD_N14U) || defined (BOARD_N11P) || defined (BOARD_MZ_R13) || defined (BOARD_MZ_R13P) || defined (BOARD_CR660x)
 	return 1;
 #else
 	return 0;
@@ -176,6 +176,8 @@ get_wired_mac_e2p_offset(int is_wan)
 	return 0x018E;
 #elif defined (BOARD_MZ_R13) || defined (BOARD_MZ_R13P)
 	return 0xe000;
+#elif defined (BOARD_CR660x)
+	return 0x3FFFA;
 #else
 	return (is_wan) ? OFFSET_MAC_GMAC2 : OFFSET_MAC_GMAC0;
 #endif

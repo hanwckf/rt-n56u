@@ -28,6 +28,8 @@
 #define NAND_MTD_RWFS_PART_IDX		7
 #endif
 
+#define NAND_MTD_ALL_PART_IDX (NAND_MTD_RWFS_PART_IDX + 2)
+
 static struct mtd_partition rt2880_partitions[] = {
 	{
 		/* mtd0 */
@@ -84,6 +86,11 @@ static struct mtd_partition rt2880_partitions[] = {
 		name:   "Firmware_Stub",
 		size:   NAND_MTD_KERNEL_PART_SIZE,	/* Kernel+RootFS */
 		offset: NAND_MTD_KERNEL_PART_OFFSET,
+	}, {
+		/* mtd10 */
+		name:	"ALL",
+		size:	0,
+		offset: 0,
 	}
 };
 
@@ -102,6 +109,8 @@ inline void recalc_partitions(uint64_t flash_size, uint32_t kernel_size)
 
 	/* calc "RWFS" size (UBIFS or JFFS2) */
 	rt2880_partitions[NAND_MTD_RWFS_PART_IDX].size = flash_size - NAND_MTD_RWFS_PART_OFFSET;
+
+	rt2880_partitions[NAND_MTD_ALL_PART_IDX].size = flash_size;
 }
 
 #endif

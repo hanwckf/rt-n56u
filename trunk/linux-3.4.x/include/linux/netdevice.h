@@ -1489,6 +1489,8 @@ struct napi_gro_cb {
 
 	/* used in skb_gro_receive() slow path */
 	struct sk_buff *last;
+#define NAPI_GRO_FREE		  1
+#define NAPI_GRO_FREE_STOLEN_HEAD 2
 };
 
 #define NAPI_GRO_CB(skb) ((struct napi_gro_cb *)(skb)->cb)

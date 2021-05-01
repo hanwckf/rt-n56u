@@ -1182,7 +1182,7 @@ PNET_DEV RtmpPhyNetDevMainCreate(VOID *pAdSrc)
 	PNET_DEV pDevNew;
 	UINT32 MC_RowID = 0, IoctlIF = 0;
 	char *dev_name;
-#if defined(MT_WIFI_MODULE) && defined(PROBE2LOAD_L1PROFILE)
+#if 1
 	if (load_dev_l1profile(pAd) == NDIS_STATUS_SUCCESS)
 		MTWF_LOG(DBG_CAT_CFG, DBG_SUBCAT_ALL, DBG_LVL_INFO, ("load l1profile succeed!\n"));
 	else

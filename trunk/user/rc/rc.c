@@ -120,6 +120,10 @@ load_wireless_modules(void)
 	module_smart_load("mt_7615e", NULL);
 #endif
 
+#if defined (USE_MT7915_AP)
+	module_smart_load("mt_7915", NULL);
+#endif
+
 #if defined (USE_RT3090_AP)
 	module_smart_load("rt3090_ap", NULL);
 #elif defined (USE_RT5392_AP)

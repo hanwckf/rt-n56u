@@ -49,7 +49,7 @@
 #define BOARD_2G_AS_WSOC		(BOARD_2G_IN_SOC || !BOARD_5G_IN_SOC)
 
 #if BOARD_2G_AS_WSOC
-#if defined (BOARD_MT7615_DBDC)
+#if defined (BOARD_MT7615_DBDC) || defined (BOARD_MT7915_DBDC)
 #define IFNAME_2G_MAIN			"rax0"
 #define IFNAME_2G_GUEST			"rax1"
 #define IFNAME_2G_APCLI			"apclix0"
@@ -82,7 +82,7 @@
 #define IFNAME_5G_WDS2			"wds2"
 #define IFNAME_5G_WDS3			"wds3"
 #else
-#if defined (BOARD_MT7615_DBDC)
+#if defined (BOARD_MT7615_DBDC) || defined (BOARD_MT7915_DBDC)
 #define IFNAME_5G_MAIN			"ra0"
 #define IFNAME_5G_GUEST			"ra1"
 #define IFNAME_5G_APCLI			"apcli0"

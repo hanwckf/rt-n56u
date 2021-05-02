@@ -2,7 +2,7 @@ var wep1, wep2, wep3, wep4;
 
 function automode_hint() {
     var gmode = document.form.wl_gmode.value;
-    if ((gmode == "2" || gmode == "3" || gmode == "4") &&
+    if ((gmode == "2" || gmode == "3" || gmode == "4" || gmode == "5") &&
        (document.form.wl_wep_x.value == 1 || document.form.wl_wep_x.value == 2 || document.form.wl_auth_mode.value == "radius" ||
             (document.form.wl_crypto.value.indexOf("tkip") == 0 && !document.form.wl_crypto.disabled)))
         $("wl_gmode_hint").style.display = "block";
@@ -465,7 +465,7 @@ function enableExtChRows(o) {
         $("row_HT_BW").style.display = "";
         $("row_HT_EXTCHA").style.display = "";
     }
-    if (o.value == "3" || o.value == "4")
+    if (o.value == "3" || o.value == "4" || o.value == "5")
         insert_vht_bw(1);
     else
         insert_vht_bw(0);

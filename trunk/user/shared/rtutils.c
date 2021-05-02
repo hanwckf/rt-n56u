@@ -74,6 +74,12 @@ is_phy_mode_can_vht(int i_phy_mode)
 	case PHY_11VHT_N_AG_MIXED:
 	case PHY_11VHT_N_A_MIXED:
 	case PHY_11VHT_N_MIXED:
+	case PHY_11AX_24G:
+	case PHY_11AX_5G:
+	case PHY_11AX_6G:
+	case PHY_11AX_24G_6G:
+	case PHY_11AX_5G_6G:
+	case PHY_11AX_24G_5G_6G:
 		return 1;
 	}
 
@@ -120,6 +126,11 @@ calc_phy_mode(int i_val, int is_aband)
 		case 5:  // G,N
 			i_phy_mode = PHY_11GN_MIXED;
 			break;
+#if defined(BOARD_HAS_2G_11AX) && BOARD_HAS_2G_11AX
+		case 6: // B/G/N/AX
+			i_phy_mode = PHY_11AX_24G;
+			break;
+#endif
 		}
 	} else {
 #if BOARD_HAS_5G_11AC
@@ -144,6 +155,11 @@ calc_phy_mode(int i_val, int is_aband)
 			break;
 		case 4:  // A/N/AC
 			i_phy_mode = PHY_11VHT_N_A_MIXED;
+			break;
+#endif
+#if defined(BOARD_HAS_5G_11AX) && BOARD_HAS_5G_11AX
+		case 5: // A/N/AC/AX
+			i_phy_mode = PHY_11AX_5G;
 			break;
 #endif
 		}

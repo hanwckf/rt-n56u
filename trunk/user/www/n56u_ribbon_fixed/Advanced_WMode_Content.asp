@@ -33,6 +33,14 @@ function initial(){
 	insertChannelOption();
 	document.form.wl_channel.remove(0);
 
+	if (typeof(support_5g_wid) === 'function'){
+		wid = support_5g_wid();
+		if (wid==7915){
+			document.form.wl_mode_x.remove(1);
+			document.form.wl_mode_x.remove(1);
+		}
+	}
+
 	showLANIPList();
 
 	change_wireless_bridge();

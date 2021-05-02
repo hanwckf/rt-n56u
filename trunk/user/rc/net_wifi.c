@@ -34,6 +34,7 @@
 static int
 wif_control(const char *wifname, int is_up)
 {
+	logmessage(LOGNAME, "%s: ifname: %s, isup: %d", __func__, wifname, is_up);
 	return doSystem("ifconfig %s %s 2>/dev/null", wifname, (is_up) ? "up" : "down");
 }
 

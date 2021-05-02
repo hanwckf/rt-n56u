@@ -2296,18 +2296,18 @@ VOID RTMP_AllTimerListRelease(RTMP_ADAPTER *pAd)
 	RALINK_TIMER_STRUCT *pTimer;
 	/* try to find old entry */
 	pObj = (LIST_RESOURCE_OBJ_ENTRY *)(pRscList->pHead);
-	MTWF_LOG(DBG_CAT_INIT, DBG_SUBCAT_ALL, DBG_LVL_ERROR, ("%s: Size=%d\n", __func__, pRscList->size));
+	MTWF_LOG(DBG_CAT_INIT, DBG_SUBCAT_ALL, DBG_LVL_INFO, ("%s: Size=%d\n", __func__, pRscList->size));
 
 	while (1) {
 		if (pObj == NULL)
 			break;
 
-		MTWF_LOG(DBG_CAT_INIT, DBG_SUBCAT_ALL, DBG_LVL_ERROR, ("%s: Cancel timer obj %lx!\n", __func__,
+		MTWF_LOG(DBG_CAT_INIT, DBG_SUBCAT_ALL, DBG_LVL_INFO, ("%s: Cancel timer obj %lx!\n", __func__,
 				 (ULONG)(pObj->pRscObj)));
 		pObjOld = pObj;
 		pObj = pObj->pNext;
 		pTimer = (RALINK_TIMER_STRUCT *)pObjOld->pRscObj;
-		MTWF_LOG(DBG_CAT_INIT, DBG_SUBCAT_ALL, DBG_LVL_ERROR, ("%s: Timer is allocated by %pS,Valid:%d,Lock:%lx,State:%d\n",
+		MTWF_LOG(DBG_CAT_INIT, DBG_SUBCAT_ALL, DBG_LVL_INFO, ("%s: Timer is allocated by %pS,Valid:%d,Lock:%lx,State:%d\n",
 				 __func__,
 				 pTimer->pCaller, pTimer->Valid, (ULONG)pTimer->timer_lock, pTimer->State));
 		RTMPReleaseTimer(pObjOld->pRscObj, &Cancel);

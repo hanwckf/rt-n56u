@@ -687,7 +687,7 @@ void mt7915_apply_dpd_flatness_data(
 			}
 		}
 	} else {
-		MTWF_LOG(DBG_CAT_ALL, DBG_SUBCAT_ALL, DBG_LVL_ERROR,
+		MTWF_LOG(DBG_CAT_ALL, DBG_SUBCAT_ALL, DBG_LVL_INFO,
 			("%s: eeprom 0x%2x bit 0 is 0, do runtime cal\n",
 			__func__, PRECAL_INDICATION_BYTE));
 		return;

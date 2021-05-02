@@ -218,7 +218,7 @@ static VOID auth_fsm_peer_auth_req_action(RTMP_ADAPTER *pAd, MLME_QUEUE_ELEM *El
 		return;
 	}
 
-	log_time_end(LOG_TIME_CONNECTION, "peer_auth_req", DBG_LVL_OFF, &tl);
+	log_time_end(LOG_TIME_CONNECTION, "peer_auth_req", DBG_LVL_INFO, &tl);
 }
 
 

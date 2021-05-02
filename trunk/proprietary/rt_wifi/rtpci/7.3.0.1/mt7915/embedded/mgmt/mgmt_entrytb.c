@@ -913,7 +913,7 @@ MAC_TABLE_ENTRY *MacTableInsertEntry(
 		NdisReleaseSpinLock(&pAd->MacTabLock);
 		return NULL;
 	}
-	MTWF_LOG(DBG_CAT_MLME, CATMLME_WTBL, DBG_LVL_ERROR,
+	MTWF_LOG(DBG_CAT_MLME, CATMLME_WTBL, DBG_LVL_INFO,
 			 ("%s(): wcid %d EntryType:%d =====\n", __func__, i, pAd->MacTab.Content[i].EntryType));
 	MTWF_LOG(DBG_CAT_MLME, CATMLME_WTBL, DBG_LVL_TRACE,
 			 ("\t(caller:%pS)\n", OS_TRACE));
@@ -1321,7 +1321,7 @@ MAC_TABLE_ENTRY *MacTableInsertEntry(
 
 #ifdef MTFWD
 			if (IS_ENTRY_CLIENT(pEntry)) {
-				MTWF_LOG(DBG_CAT_MLME, CATMLME_WTBL, DBG_LVL_OFF, ("New Sta:%pM\n", pEntry->Addr));
+				MTWF_LOG(DBG_CAT_MLME, CATMLME_WTBL, DBG_LVL_INFO, ("New Sta:%pM\n", pEntry->Addr));
 				RtmpOSWrielessEventSend(pEntry->wdev->if_dev,
 							RT_WLAN_EVENT_CUSTOM,
 							FWD_CMD_ADD_TX_SRC,
@@ -1500,7 +1500,7 @@ BOOLEAN MacTableDeleteEntry(RTMP_ADAPTER *pAd, USHORT wcid, UCHAR *pAddr)
 	if (!(VALID_UCAST_ENTRY_WCID(pAd, wcid)))
 		return FALSE;
 
-	MTWF_LOG(DBG_CAT_MLME, CATMLME_WTBL, DBG_LVL_ERROR,
+	MTWF_LOG(DBG_CAT_MLME, CATMLME_WTBL, DBG_LVL_INFO,
 			 ("%s(): wcid %d =====\n", __func__, wcid));
 	MTWF_LOG(DBG_CAT_MLME, CATMLME_WTBL, DBG_LVL_TRACE,
 			 ("\t(caller:%pS)\n", OS_TRACE));
@@ -1547,7 +1547,7 @@ BOOLEAN MacTableDeleteEntry(RTMP_ADAPTER *pAd, USHORT wcid, UCHAR *pAddr)
 #endif /* CONFIG_WIFI_PKT_FWD */
 
 #ifdef MTFWD
-		MTWF_LOG(DBG_CAT_MLME, CATMLME_WTBL, DBG_LVL_OFF, ("Del Sta:%pM\n", pEntry->Addr));
+		MTWF_LOG(DBG_CAT_MLME, CATMLME_WTBL, DBG_LVL_INFO, ("Del Sta:%pM\n", pEntry->Addr));
 		if (pEntry->wdev)
 			if_dev = pEntry->wdev->if_dev;
 #ifdef MAC_REPEATER_SUPPORT

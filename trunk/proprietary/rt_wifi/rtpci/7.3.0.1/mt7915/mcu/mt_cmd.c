@@ -2385,14 +2385,14 @@ INT32 MtCmdChannelSwitch(RTMP_ADAPTER *pAd, MT_SWITCH_CHANNEL_CFG SwChCfg)
 #endif
 
 	{
-		MTWF_LOG(DBG_CAT_FW, DBG_SUBCAT_ALL, DBG_LVL_ERROR,
+		MTWF_LOG(DBG_CAT_FW, DBG_SUBCAT_ALL, DBG_LVL_INFO,
 				 ("%s: ctrl_chl=%d, ctrl_ch2=%d, cent_ch=%d DBDCIdx=%d, ChBand=%d, BW=%d, TXStream=%d, RXStream=%d, scan(%d)\n",
 				  __func__, SwChCfg.ControlChannel, SwChCfg.ControlChannel2,
 				  SwChCfg.CentralChannel, SwChCfg.BandIdx, SwChCfg.Channel_Band, SwChCfg.Bw,
 				  CmdChanSwitch.ucTxStreamNum, CmdChanSwitch.ucRxStreamNum, SwChCfg.bScan));
 
 		if (SwChCfg.ap_bw) {
-			MTWF_LOG(DBG_CAT_FW, DBG_SUBCAT_ALL, DBG_LVL_ERROR, ("AP BW = %d, AP central_chn = %d\n", SwChCfg.ap_bw, SwChCfg.ap_central_channel));
+			MTWF_LOG(DBG_CAT_FW, DBG_SUBCAT_ALL, DBG_LVL_INFO, ("AP BW = %d, AP central_chn = %d\n", SwChCfg.ap_bw, SwChCfg.ap_central_channel));
 		}
 	}
 
@@ -2618,7 +2618,7 @@ INT MtCmdSetTxRxPath(struct _RTMP_ADAPTER *pAd, MT_SWITCH_CHANNEL_CFG SwChCfg)
 #endif
 	CmdChanSwitch.u2CacCase = cpu2le16(CmdChanSwitch.u2CacCase);
 
-	MTWF_LOG(DBG_CAT_FW, DBG_SUBCAT_ALL, DBG_LVL_OFF,
+	MTWF_LOG(DBG_CAT_FW, DBG_SUBCAT_ALL, DBG_LVL_INFO,
 			 ("%s: ctrl_chl=%d, ctrl_ch2=%d, cent_ch=%d, RxPath=%x, BandIdx=%d, ChBand=%d, BW=%d,TXStream=%d, RXStream=%d, scan(%d)\n",
 			  __func__, pSwChCfg->ControlChannel, pSwChCfg->ControlChannel2,
 			  pSwChCfg->CentralChannel, RxPath, pSwChCfg->BandIdx, pSwChCfg->Channel_Band,

@@ -1277,7 +1277,7 @@ static BOOLEAN PeerAssocReqCmmSanity
 #endif /*CONFIG_OWE_SUPPORT*/
 				break;
 			default:
-				MTWF_LOG(DBG_CAT_AP, DBG_SUBCAT_ALL, DBG_LVL_ERROR,
+				MTWF_LOG(DBG_CAT_AP, DBG_SUBCAT_ALL, DBG_LVL_INFO,
 					("IE_WLAN_EXTENSION: no handler for extension_id:%d\n", *extension_id));
 				break;
 			}
@@ -2043,7 +2043,7 @@ SendAssocResponse:
 		UINT32 offset = 0;
 
 		offset = add_assoc_rsp_he_ies(wdev, (UINT8 *)pOutBuffer, FrameLen);
-		MTWF_LOG(DBG_CAT_AP, DBG_SUBCAT_ALL, DBG_LVL_OFF,
+		MTWF_LOG(DBG_CAT_AP, DBG_SUBCAT_ALL, DBG_LVL_INFO,
 				("add he assoc_rsp, len=%d\n", offset));
 		FrameLen += offset;
 #ifdef WIFI_TWT_SUPPORT
@@ -2056,7 +2056,7 @@ SendAssocResponse:
 				pEntry->wcid,
 				(UINT8 *)(pOutBuffer + FrameLen),
 				ie_list);
-			MTWF_LOG(DBG_CAT_AP, DBG_SUBCAT_ALL, DBG_LVL_OFF,
+			MTWF_LOG(DBG_CAT_AP, DBG_SUBCAT_ALL, DBG_LVL_INFO,
 			    ("add twt ie in assoc_rsp, len=%d\n", offset));
 			FrameLen += offset;
 		}
@@ -2906,7 +2906,7 @@ assoc_post:
 				if (!pHSCtrl->QosMapAddToPool) {
 					pHSCtrl->QosMapAddToPool = TRUE;
 					pHSCtrl->QosMapPoolID = hotspot_qosmap_add_pool(pAd, pEntry);
-					MTWF_LOG(DBG_CAT_AP, DBG_SUBCAT_ALL, DBG_LVL_ERROR, ("add current MBSS qosmap to CR4\n"));
+					MTWF_LOG(DBG_CAT_AP, DBG_SUBCAT_ALL, DBG_LVL_INFO, ("add current MBSS qosmap to CR4\n"));
 				}
 
 				hotspot_qosmap_update_sta_mapping_to_cr4(pAd, pEntry, pHSCtrl->QosMapPoolID);

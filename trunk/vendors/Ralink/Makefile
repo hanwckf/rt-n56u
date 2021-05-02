@@ -152,11 +152,13 @@ endif
 	@wc -c $(KERNELZ).$(COMP)
 	# !!! Please make sure that Padded Kernel Image + Compressed Rootfs size
 ifneq ($(filter y,$(CONFIG_MTD_NAND_MTK) $(CONFIG_MTD_NAND_RALINK)),)
-	# can't bigger than 33554432 (32MiB) !!!
+	@MAX_SIZE=$$(($(CONFIG_MTD_FIRMWARE_PART_SIZ))) ; \
+	if [ "$$MAX_SIZE" -gt 33554432 ]; then MAX_SIZE=33554432 ; fi ; \
+	echo "# can't bigger than $$MAX_SIZE !!!"
 else
 ifneq ($(CONFIG_RT2880_FLASH_AUTO),y)
 	@MAX_SIZE=$$(( $(FLASH_SIZE)*1024*1024 - 320*1024 - $(CONFIG_MTD_STORE_PART_SIZ) - 64 )) ; \
-	echo "can't bigger than: $$MAX_SIZE !!!"
+	echo "# can't bigger than: $$MAX_SIZE !!!"
 else
 	# can't bigger than: flash size - storage partition size -
 	# uboot_hdr(64B) - mtd0(192KiB) - mtd1(64KiB) - mtd2(64KiB) !!!

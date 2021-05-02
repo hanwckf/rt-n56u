@@ -98,11 +98,13 @@ Contributors of this project are not responsible for what happens next.
 >- MR2600 (USB)
 >- WDR7300
 >- RM2100
+>- CR660x (CR6606, CR6608, CR6609)
 >- R2100
->- JCG-Y2(USB)
->- E8820V2(USB)
->- MSG1500(USB)
->- R6220
+>- JCG-Y2 (USB)
+>- E8820V2 (USB)
+>- ZTE_E8820S (USB)
+>- MSG1500 (USB)
+>- R6220 (USB)
 >- NETGEAR-CHJ (R6260, R6350, R6850, WAC124)
 >- NETGEAR-BZV (R6800, R6700-v2, R7200, Nighthawk AC2400)
 

@@ -133,11 +133,14 @@ rm -rf "$dir_wifi_dst/mt76x2"
 rm -rf "$dir_wifi_dst/mt76x3"
 rm -rf "$dir_wifi_dst/mt7628"
 rm -rf "$dir_wifi_dst/mt7615"
+rm -rf "$dir_wifi_dst/mt7915"
 
 mkdir -p "$dir_wifi_dst/mt76x3"
 cp -f "$dir_wifi_src/rtpci/4.1.X.X/mt76x3/Kconfig" "$dir_wifi_dst/mt76x3/Kconfig"
 mkdir -p "$dir_wifi_dst/mt7615/embedded"
-cp -f "$dir_wifi_src/rtpci/4.4.2.1/mt7615/embedded/Kconfig" "$dir_wifi_dst/mt7615/embedded/Kconfig"
+cp -f "$dir_wifi_src/rtpci/5.0.4.0/mt7615/embedded/Kconfig" "$dir_wifi_dst/mt7615/embedded/Kconfig"
+mkdir -p "$dir_wifi_dst/mt7915/embedded"
+cp -f "$dir_wifi_src/rtpci/7.3.0.1/mt7915/embedded/Kconfig" "$dir_wifi_dst/mt7915/embedded/Kconfig"
 
 if [ -n "$CONFIG_RT2860V2_AP" ] ; then
 	dir_wifi_ver="2.7.X.X"
@@ -207,14 +210,19 @@ if [ -n "$CONFIG_MT7628_AP" ] ; then
 	cp -rfL "$dir_wifi_src/rtsoc/$dir_wifi_ver/mt7628_ap" "$dir_wifi_dst/"
 fi
 if [ -n "$CONFIG_MT7615_AP" ] ; then
-	dir_wifi_ver="4.4.2.1"
-	if [ "$CONFIG_FIRMWARE_WIFI_DRIVER" = "5.0.4.0" ] || \
-		[ "$CONFIG_FIRMWARE_WIFI2_DRIVER" = "5.0.4.0" ] || \
-		[ "$CONFIG_FIRMWARE_WIFI5_DRIVER" = "5.0.4.0" ]; then
-		dir_wifi_ver="5.0.4.0"
+	dir_wifi_ver="5.0.4.0"
+	if [ "$CONFIG_FIRMWARE_WIFI_DRIVER" = "4.4.2.1" ] || \
+		[ "$CONFIG_FIRMWARE_WIFI2_DRIVER" = "4.4.2.1" ] || \
+		[ "$CONFIG_FIRMWARE_WIFI5_DRIVER" = "4.4.2.1" ]; then
+		dir_wifi_ver="4.4.2.1"
 	fi
 	cp -rfL "$dir_wifi_src/rtpci/$dir_wifi_ver/mt7615" "$dir_wifi_dst/"
 	cp -rfL "$dir_wifi_src/rtpci/$dir_wifi_ver/mt7615_ap" "$dir_wifi_dst/"
+fi
+if [ -n "$CONFIG_MT7915_AP" ] ; then
+	dir_wifi_ver="7.3.0.1"
+	cp -rfL "$dir_wifi_src/rtpci/$dir_wifi_ver/mt7915" "$dir_wifi_dst/"
+	cp -rfL "$dir_wifi_src/rtpci/$dir_wifi_ver/mt7915_ap" "$dir_wifi_dst/"
 fi
 ############################ HWNAT ####################################
 dir_ppe_src="$ROOTDIR/proprietary/rt_ppe"

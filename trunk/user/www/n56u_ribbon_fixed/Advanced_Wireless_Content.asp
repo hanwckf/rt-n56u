@@ -38,16 +38,21 @@ function initial(){
 	show_menu(5,2,1);
 	show_footer();
 
+	var o1 = document.form.wl_gmode;
+	var o2 = document.form.wl_mcs_mode;
+
+	if (!support_5g_11ax()){
+		o1.remove(0);
+	}
+
 	if (!support_5g_11ac()){
-		var o1 = document.form.wl_gmode;
 		o1.remove(0);
 		o1.remove(0);
 		o1.options[0].text = "a/n Mixed (*)";
 		insert_vht_bw(0);
-		o1 = document.form.wl_mcs_mode;
-		o1.remove(1);
-		o1.remove(1);
-		o1.remove(1);
+		o2.remove(1);
+		o2.remove(1);
+		o2.remove(1);
 	}
 
 	if (!support_5g_160mhz()){
@@ -397,6 +402,7 @@ function validate_wlphrase(s, v, obj){
                                             <th><a class="help_tooltip" href="javascript:void(0);" onmouseover="openTooltip(this, 0, 4);"><#WLANConfig11b_x_Mode11g_itemname#></a></th>
                                             <td>
                                                 <select name="wl_gmode" class="input" onChange="return change_common_wl(this, 'WLANConfig11a', 'wl_gmode')">
+                                                    <option value="5" <% nvram_match_x("","wl_gmode", "5","selected"); %>>a/n/ac/ax Mixed</option>
                                                     <option value="4" <% nvram_match_x("","wl_gmode", "4","selected"); %>>a/n/ac Mixed (*)</option>
                                                     <option value="3" <% nvram_match_x("","wl_gmode", "3","selected"); %>>n/ac Mixed</option>
                                                     <option value="2" <% nvram_match_x("","wl_gmode", "2","selected"); %>>a/n Mixed</option>

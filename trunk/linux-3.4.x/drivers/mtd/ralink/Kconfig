@@ -113,10 +113,30 @@ config MTD_NAND_USE_UBI_PART
 	select MTD_UBI
 	select MTD_UBI_GLUEBI
 
+config MTD_NETGEAR_LAYOUT
+	bool "NETGEAR flash layout"
+	default n
+	depends on (MTD_NAND_RALINK || MTD_NAND_MTK) && !MTD_NAND_USE_UBI_PART
+
+config MTD_NAND_USE_XIAOMI_PART
+	bool "Use xiaomi NAND partitions"
+	default n
+	depends on (MTD_NAND_RALINK || MTD_NAND_MTK) && !MTD_NAND_USE_UBI_PART
+
+config MTD_FACTORY_OFFSET
+	hex "MTD 'Factory' Partition Offset (Unit:Bytes), for NETGEAR layout"
+	default 0x4600000
+	depends on (MTD_NETGEAR_LAYOUT)
+
+config MTD_RWFS_OFFSET
+	hex "MTD 'RWFS' Partition Offset (Unit:Bytes), for NETGEAR layout"
+	default 0x5400000
+	depends on (MTD_NETGEAR_LAYOUT)
+
 config MTD_CONFIG_PART_BELOW
 	bool "Place 'Config' Partition after 'Kernel+RootFS' Partition"
 	default n
-	depends on (MTD_NAND_RALINK || MTD_NAND_MTK) && !MTD_NAND_USE_UBI_PART
+	depends on (MTD_NAND_RALINK || MTD_NAND_MTK) && !MTD_NAND_USE_UBI_PART && !MTD_NAND_USE_XIAOMI_PART
 
 config MTD_BOOTLOADER_PART_SIZ
 	hex "MTD 'Bootloader' Partition Size (Unit:Bytes)"
@@ -137,6 +157,11 @@ config MTD_FACTORY_PART_SIZ
 	hex "MTD 'Factory' Partition Size (Unit:Bytes)"
 	default 0x0080000
 	depends on (MTD_NAND_RALINK || MTD_NAND_MTK) && !MTD_NAND_USE_UBI_PART
+
+config MTD_RESERVED_PART_SIZ
+	hex "MTD 'Reserved' Partition Size (Unit:Bytes), for xiaomi boards"
+	default 0x04c0000
+	depends on (MTD_NAND_RALINK || MTD_NAND_MTK) && !MTD_NAND_USE_UBI_PART && MTD_NAND_USE_XIAOMI_PART
 
 config MTD_KERNEL_PART_SIZ
 	hex "MTD 'Kernel' Partition Size (Unit:Bytes)"

@@ -42,12 +42,9 @@ Contributors of this project are not responsible for what happens next.
 >- [minieap](https://github.com/hanwckf/minieap) ```CONFIG_FIRMWARE_INCLUDE_MINIEAP```
 >- [njit-client](https://github.com/hanwckf/njit8021xclient) ```CONFIG_FIRMWARE_INCLUDE_NJIT_CLIENT```
 >- [napt66](https://github.com/mzweilin/napt66) ```CONFIG_FIRMWARE_INCLUDE_NAPT66```
->- [ssr](https://github.com/shadowsocksr-backup/shadowsocksr-libev)/[ss](https://github.com/shadowsocks/shadowsocks-libev) ```CONFIG_FIRMWARE_INCLUDE_SHADOWSOCKS```
->- [ss-server](https://github.com/shadowsocks/shadowsocks-libev) ```CONFIG_FIRMWARE_INCLUDE_SSSERVER```
 >- [softether-vpnserver](https://github.com/SoftEtherVPN/SoftEtherVPN_Stable) ```CONFIG_FIRMWARE_INCLUDE_SOFTETHERVPN_SERVER```
 >- [softether-vpnclient](https://github.com/SoftEtherVPN/SoftEtherVPN_Stable) ```CONFIG_FIRMWARE_INCLUDE_SOFTETHERVPN_CLIENT```
 >- [softether-vpncmd](https://github.com/SoftEtherVPN/SoftEtherVPN_Stable) ```CONFIG_FIRMWARE_INCLUDE_SOFTETHERVPN_CMD```
->- [dns-forwarder](https://github.com/aa65535/hev-dns-forwarder) ```CONFIG_FIRMWARE_INCLUDE_DNSFORWARDER```
 >- [vlmcsd](https://github.com/hanwckf/vlmcsd) ```CONFIG_FIRMWARE_INCLUDE_VLMCSD```
 >- [ttyd](https://github.com/tsl0922/ttyd) ```CONFIG_FIRMWARE_INCLUDE_TTYD```
 >- [lrzsz](https://ohse.de/uwe/software/lrzsz.html) ```CONFIG_FIRMWARE_INCLUDE_LRZSZ```
@@ -77,6 +74,8 @@ Contributors of this project are not responsible for what happens next.
 >- MI-3 (USB)
 >- MI-3C
 >- MI-R3G (USB)
+>- MI-R4A
+>- MI-R3P (USB)
 >- HC5661A
 >- HC5761A (USB)
 >- HC5861B
@@ -99,10 +98,15 @@ Contributors of this project are not responsible for what happens next.
 >- MR2600 (USB)
 >- WDR7300
 >- RM2100
+>- CR660x (CR6606, CR6608, CR6609)
 >- R2100
->- JCG-Y2(USB)
->- E8820V2(USB)
->- MSG1500(USB)
+>- JCG-Y2 (USB)
+>- E8820V2 (USB)
+>- ZTE_E8820S (USB)
+>- MSG1500 (USB)
+>- R6220 (USB)
+>- NETGEAR-CHJ (R6260, R6350, R6850, WAC124)
+>- NETGEAR-BZV (R6800, R6700-v2, R7200, Nighthawk AC2400)
 
 ***
 

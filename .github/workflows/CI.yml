@@ -26,9 +26,9 @@ jobs:
           - build_variant: "mt7628"
             targets: "HC5861B MI-NANO MZ-R13 MZ-R13P 360P2 HC5761A HC5661A"
           - build_variant: "mt7621"
-            targets: "K2P_nano-5.0 K2P-5.0 DIR-878-5.0 RM2100"
+            targets: "K2P_nano K2P DIR-878 RM2100 CR660x"
           - build_variant: "mt7621-usb"
-            targets: "XY-C1 JCG-836PRO-5.0 JCG-AC860M-5.0 JCG-Y2-5.0 DIR-882-5.0 A3004NS MSG1500 WR1200JS MI-R3G NEWIFI3 B70"
+            targets: "XY-C1 JCG-836PRO JCG-AC860M JCG-Y2 DIR-882 A3004NS MSG1500 WR1200JS MI-R3G NEWIFI3 B70"
     steps:
       - uses: actions/checkout@v2
       - name: Prepare environment

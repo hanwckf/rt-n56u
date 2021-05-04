@@ -54,15 +54,23 @@ char rt2880_cmdline[] = CONFIG_CMDLINE;
 #else
 #define MTD_UBI_MTD	""
 #endif
+
 #if defined (CONFIG_RT2880_ROOTFS_IN_FLASH)
-#if (defined (CONFIG_MTD_NAND_RALINK) || defined (CONFIG_MTD_NAND_MTK)) && !defined (CONFIG_MTD_CONFIG_PART_BELOW)
+
+#if defined (CONFIG_MTD_NETGEAR_LAYOUT) /* netgear parts */
+#define MTD_ROOTFS_DEV	"/dev/mtdblock3 rootfstype=squashfs"
+#elif defined (CONFIG_MTD_NAND_USE_XIAOMI_PART) /* xiaomi parts */
 #define MTD_ROOTFS_DEV	"/dev/mtdblock5 rootfstype=squashfs"
-#else
+#elif (defined (CONFIG_MTD_NAND_RALINK) || defined (CONFIG_MTD_NAND_MTK)) && !defined (CONFIG_MTD_CONFIG_PART_BELOW) /* nand parts (normal) */
+#define MTD_ROOTFS_DEV	"/dev/mtdblock5 rootfstype=squashfs"
+#else /* nor parts or nand parts(config below) */
 #define MTD_ROOTFS_DEV	"/dev/mtdblock4 rootfstype=squashfs"
 #endif
-#else
+
+#else /* CONFIG_RT2880_ROOTFS_IN_FLASH */
 #define MTD_ROOTFS_DEV	"/dev/ram0"
 #endif
+
 char rt2880_cmdline[]="console=ttyS0," TTY_BAUDRATE "" MTD_UBI_MTD " root=" MTD_ROOTFS_DEV "";
 #endif
 
@@ -112,4 +120,3 @@ void  __init prom_init_cmdline(void)
 		--cp;
 	*cp = '\0';
 }
-

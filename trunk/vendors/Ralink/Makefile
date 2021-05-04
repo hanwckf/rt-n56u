@@ -5,7 +5,11 @@ BOARD_DIR	= $(ROOTDIR)/configs/boards/$(CONFIG_FIRMWARE_PRODUCT_ID)
 ROMFS_DIR	= $(ROOTDIR)/romfs
 MKIMAGE_DIR	:= $(ROOTDIR)/tools/mkimage
 CUR_DIR		= $(shell pwd)
+ifeq ($(CONFIG_KERNEL_NO_COMPRESS),y)
+COMP		= none
+else
 COMP		= lzma
+endif
 
 ifneq ($(filter y,$(CONFIG_MTD_NAND_MTK) $(CONFIG_MTD_NAND_RALINK)),)
 PART_ALIGN	= 131072
@@ -72,7 +76,7 @@ romfs:
 romfs.post::
 	[ -d $(IMAGEDIR) ] || mkdir -p $(IMAGEDIR)
 	rm -f $(RAMDISK)
-	rm -f $(KERNELZ).lzma
+	rm -f $(KERNELZ).*
 ifeq ($(CONFIG_RT2880_ROOTFS_IN_FLASH),y)
 	$(ROOTDIR)/tools/mksquashfs_xz/mksquashfs $(ROMFSDIR) $(RAMDISK) -all-root -no-exports -noappend -nopad -noI -no-xattrs
 endif
@@ -84,8 +88,11 @@ ifeq ($(CONFIG_WITHOUT_KERNEL),y)
 	cp -f $(MERGE_DIR)/$(CONFIG_FIRMWARE_PRODUCT_ID)/kernel.bin $(KERNELZ).$(COMP)
 else
 	$(CROSS_COMPILE)objcopy -O binary -R .note -R .comment -S $(ROOTDIR)/$(LINUXDIR)/vmlinux $(KERNELZ)
-	cd $(IMAGEDIR) ; rm -f $(KERNELZ).*; \
-	$(ROOTDIR)/tools/lzma/lzma e -a1 -d25 $(KERNELZ) $(KERNELZ).$(COMP)
+ifeq ($(CONFIG_KERNEL_NO_COMPRESS),y)
+	cd $(IMAGEDIR); rm -f $(KERNELZ).*; mv -f $(KERNELZ) $(KERNELZ).$(COMP)
+else
+	cd $(IMAGEDIR); rm -f $(KERNELZ).*; $(ROOTDIR)/tools/lzma/lzma e -a1 -d25 $(KERNELZ) $(KERNELZ).$(COMP)
+endif
 endif
 ifeq ($(CONFIG_BLK_DEV_INITRD),)
 ifeq ($(CONFIG_ROOTFS_IN_FLASH_NO_PADDING),)
@@ -145,11 +152,13 @@ endif
 	@wc -c $(KERNELZ).$(COMP)
 	# !!! Please make sure that Padded Kernel Image + Compressed Rootfs size
 ifneq ($(filter y,$(CONFIG_MTD_NAND_MTK) $(CONFIG_MTD_NAND_RALINK)),)
-	# can't bigger than 33554432 (32MiB) !!!
+	@MAX_SIZE=$$(($(CONFIG_MTD_FIRMWARE_PART_SIZ))) ; \
+	if [ "$$MAX_SIZE" -gt 33554432 ]; then MAX_SIZE=33554432 ; fi ; \
+	echo "# can't bigger than $$MAX_SIZE !!!"
 else
 ifneq ($(CONFIG_RT2880_FLASH_AUTO),y)
 	@MAX_SIZE=$$(( $(FLASH_SIZE)*1024*1024 - 320*1024 - $(CONFIG_MTD_STORE_PART_SIZ) - 64 )) ; \
-	echo "can't bigger than: $$MAX_SIZE !!!"
+	echo "# can't bigger than: $$MAX_SIZE !!!"
 else
 	# can't bigger than: flash size - storage partition size -
 	# uboot_hdr(64B) - mtd0(192KiB) - mtd1(64KiB) - mtd2(64KiB) !!!

@@ -80,6 +80,10 @@ choice
 	config RT_FIRST_IF_MT7615E
 	bool "MT7615E PCIe"
 	depends on RALINK_MT7621
+
+	config RT_FIRST_IF_MT7915
+	bool "MT7915 PCIe"
+	depends on RALINK_MT7621
 endchoice
 
 choice
@@ -91,7 +95,7 @@ choice
 
 	config RT_FIRST_IF_RANGE_5GHZ
 	bool "5GHz"
-	depends on (RT_FIRST_IF_RT2860 || RT_FIRST_IF_RT5592 || RT_FIRST_IF_RT3593 || RT_FIRST_IF_MT7610E || RT_FIRST_IF_MT7612E || RT_FIRST_IF_MT7615E)
+	depends on (RT_FIRST_IF_RT2860 || RT_FIRST_IF_RT5592 || RT_FIRST_IF_RT3593 || RT_FIRST_IF_MT7610E || RT_FIRST_IF_MT7612E || RT_FIRST_IF_MT7615E || RT_FIRST_IF_MT7915)
 endchoice
 
 choice
@@ -103,11 +107,11 @@ choice
 
 	config RT_FIRST_IF_EEPROM_EFUSE
 	bool "eFUSE on-die"
-	depends on !(RT_FIRST_IF_RT2860 || RT_FIRST_IF_MT7620 || RT_FIRST_IF_MT7628 || RT_FIRST_IF_MT7615E)
+	depends on !(RT_FIRST_IF_RT2860 || RT_FIRST_IF_MT7620 || RT_FIRST_IF_MT7628 || RT_FIRST_IF_MT7615E || RT_FIRST_IF_MT7915)
 
 	config RT_FIRST_IF_EEPROM_PROM
 	bool "EEPROM chip"
-	depends on !(RT_FIRST_IF_RT2860 || RT_FIRST_IF_MT7620 || RT_FIRST_IF_MT7628 || RT_FIRST_IF_MT7615E)
+	depends on !(RT_FIRST_IF_RT2860 || RT_FIRST_IF_MT7620 || RT_FIRST_IF_MT7628 || RT_FIRST_IF_MT7615E || RT_FIRST_IF_MT7915)
 endchoice
 
 config  RT_FIRST_IF_RF_OFFSET
@@ -130,6 +134,7 @@ config  RT_FIRST_CARD
 	default 7612 if RT_FIRST_IF_MT7612E
 	default 7603 if RT_FIRST_IF_MT7603E
 	default 7615 if RT_FIRST_IF_MT7615E
+	default 7915 if RT_FIRST_IF_MT7915
 
 config RT_FIRST_CARD_EEPROM
 	string
@@ -174,6 +179,9 @@ choice
 
 	config RT_SECOND_IF_MT7615E
 	bool "MT7615E PCIe"
+
+	config RT_SECOND_IF_MT7915
+	bool "MT7915 PCIe"
 endchoice
 
 choice
@@ -185,7 +193,7 @@ choice
 
 	config RT_SECOND_IF_RANGE_5GHZ
 	bool "5GHz"
-	depends on (RT_SECOND_IF_RT5592 || RT_SECOND_IF_RT3593 || RT_SECOND_IF_MT7610E || RT_SECOND_IF_MT7612E || RT_SECOND_IF_MT7615E)
+	depends on (RT_SECOND_IF_RT5592 || RT_SECOND_IF_RT3593 || RT_SECOND_IF_MT7610E || RT_SECOND_IF_MT7612E || RT_SECOND_IF_MT7615E || RT_SECOND_IF_MT7915)
 endchoice
 
 choice
@@ -220,6 +228,7 @@ config  RT_SECOND_CARD
 	default 7612 if RT_SECOND_IF_MT7612E
 	default 7603 if RT_SECOND_IF_MT7603E
 	default 7615 if RT_SECOND_IF_MT7615E
+	default 7915 if RT_SECOND_IF_MT7915
 
 config RT_SECOND_CARD_EEPROM
 	string
@@ -237,12 +246,16 @@ choice
 
 	config RT_THIRD_IF_MT7615E
 	bool "MT7615E PCIe"
+
+	config RT_THIRD_IF_MT7915
+	bool "MT7915 PCIe"
 endchoice
 
 config RT_THIRD_CARD
 	int
 	default 0    if RT_THIRD_IF_NONE
 	default 7615 if RT_THIRD_IF_MT7615E
+	default 7915 if RT_THIRD_IF_MT7915
 
 choice
 	prompt "Range of 3rd Wireless Interface"
@@ -388,14 +401,86 @@ source "drivers/net/wireless/ralink/mt76x3/Kconfig"
 endmenu
 endif
 
+if (RT_FIRST_IF_MT7615E || RT_SECOND_IF_MT7615E || RT_FIRST_IF_MT7915 || RT_SECOND_IF_MT7915)
+menu "MT7615/MT7915 common configs"
+
+choice
+        prompt "PA LNA Type of 1st Card"
+		depends on ! RT_FIRST_IF_NONE
+		
+		config FIRST_IF_EPAELNA
+		bool "ePAeLNA"
+		config FIRST_IF_IPAILNA
+		bool "iPAiLNA"		
+		config FIRST_IF_IPAELNA
+		bool "iPAeLNA"
+#		config FIRST_IF_EPAILNA
+#		bool "ePAiLNA"
+endchoice
+
+choice
+        prompt "PA LNA Type of 2nd Card"
+		depends on ! RT_SECOND_IF_NONE
+		
+		config SECOND_IF_EPAELNA
+		bool "ePAeLNA"
+		config SECOND_IF_IPAILNA
+		bool "iPAiLNA"		
+		config SECOND_IF_IPAELNA
+		bool "iPAeLNA"
+#		config SECOND_IF_EPAILNA
+#		bool "ePAiLNA"
+endchoice
+
+choice
+        prompt "PA LNA Type of 3rd Card"
+		depends on ! RT_THIRD_IF_NONE
+		
+		config THIRD_IF_EPAELNA
+		bool "ePAeLNA"
+		config THIRD_IF_IPAILNA
+		bool "iPAiLNA"		
+		config THIRD_IF_IPAELNA
+		bool "iPAeLNA"
+#		config THIRD_IF_EPAILNA
+#		bool "ePAiLNA"
+endchoice
+
+choice
+	prompt "Main Mode"
+	default WIFI_MODE_AP
+
+	config WIFI_MODE_AP
+			tristate "AP"
+			select MT_AP_SUPPORT
+
+	config WIFI_MODE_STA
+			tristate "STA"
+			select MT_STA_SUPPORT
+
+	config WIFI_MODE_BOTH
+			tristate "APSTA"
+			select MT_AP_SUPPORT
+			select MT_STA_SUPPORT
+endchoice
+
+endmenu
+endif
+
 if (RT_FIRST_IF_MT7615E || RT_SECOND_IF_MT7615E)
 menu "AP MODE MediaTek MT7615E PCIe Wireless driver"
 source "drivers/net/wireless/ralink/mt7615/embedded/Kconfig"
 endmenu
 endif
 
+if (RT_FIRST_IF_MT7915 || RT_SECOND_IF_MT7915)
+menu "AP MODE MediaTek MT7915 PCIe Wireless driver"
+source "drivers/net/wireless/ralink/mt7915/embedded/Kconfig"
+endmenu
+endif
+
 if (!RT_FIRST_IF_NONE || !RT_SECOND_IF_NONE)
-if !(RT_FIRST_IF_MT7603E && RT_SECOND_IF_MT7615E) && !(RT_FIRST_IF_MT7615E && RT_SECOND_IF_MT7603E) && !(RT_FIRST_IF_MT7615E && RT_SECOND_IF_NONE) && !(RT_FIRST_IF_MT7615E && RT_SECOND_IF_MT7615E)
+if !(RT_FIRST_IF_MT7603E && RT_SECOND_IF_MT7615E) && !(RT_FIRST_IF_MT7615E && RT_SECOND_IF_MT7603E) && !(RT_FIRST_IF_MT7615E && RT_SECOND_IF_NONE) && !(RT_FIRST_IF_MT7615E && RT_SECOND_IF_MT7615E) && !(RT_FIRST_IF_MT7915 || RT_SECOND_IF_MT7915)
 menu "Wireless drivers common configs"
 source "drivers/net/wireless/ralink/Kconfig"
 endmenu

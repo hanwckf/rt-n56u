@@ -38,12 +38,22 @@
 #define MODE_HTMIX		2
 #define MODE_HTGREENFIELD	3
 #define MODE_VHT		4
+#define MODE_HE		5
+#define MODE_HE_SU		8
+#define MODE_HE_24G		7
+#define MODE_HE_5G		6
+#define MODE_HE_EXT_SU		9
+#define MODE_HE_TRIG		10
+#define MODE_HE_MU		11
+#define MODE_UNKNOWN		255
 
 #define BW_20			0
 #define BW_40			1
 #define BW_80			2
 #define BW_160			3
-#define BW_10			4 // not used
+#define BW_10			4
+#define BW_5			5
+#define BW_8080		6
 
 #define WDS_DISABLE_MODE	0
 #define WDS_RESTRICT_MODE	1
@@ -68,6 +78,12 @@ typedef enum _RT_802_11_PHY_MODE {
 	PHY_11VHT_N_AG_MIXED = 13, /* 13 -> AC/A/AN/G/GN mixed  */
 	PHY_11VHT_N_A_MIXED = 14, /* 14 -> AC/AN/A mixed in 5G band */
 	PHY_11VHT_N_MIXED = 15, /* 15 -> AC/AN mixed in 5G band */
+	PHY_11AX_24G = 16,
+	PHY_11AX_5G = 17,
+	PHY_11AX_6G = 18,
+	PHY_11AX_24G_6G = 19,
+	PHY_11AX_5G_6G = 20,
+	PHY_11AX_24G_5G_6G = 21,
 } RT_802_11_PHY_MODE;
 
 enum WIFI_MODE {
@@ -78,7 +94,10 @@ enum WIFI_MODE {
 	WMODE_GN = 1 << 3,
 	WMODE_AN = 1 << 4,
 	WMODE_AC = 1 << 5,
-	WMODE_COMP = 6,	/* total types of supported wireless mode, add this value once yow add new type */
+	WMODE_AX_24G = 1 << 6,
+	WMODE_AX_5G = 1 << 7,
+	WMODE_AX_6G = 1 << 8,
+	WMODE_COMP = 9,	/* total types of supported wireless mode, add this value once yow add new type */
 };
 
 typedef union _MACHTTRANSMIT_SETTING {
@@ -215,12 +234,12 @@ typedef struct _PAIR_CHANNEL_FREQ_ENTRY
 #define MTD_PART_NAME_KERNEL	"Kernel"
 #define MTD_PART_NAME_RWFS	"RWFS"
 
-#if defined (CONFIG_RALINK_MT7621)
-#define OFFSET_MAC_GMAC0	0xE000
-#define OFFSET_MAC_GMAC2	0xE006
-#elif defined (BOARD_360P2)
+#if defined (BOARD_360P2)
 #define OFFSET_MAC_GMAC0	0xFFE8
 #define OFFSET_MAC_GMAC2	0xFFEE
+#elif defined (CONFIG_RALINK_MT7621)
+#define OFFSET_MAC_GMAC0	0xE000
+#define OFFSET_MAC_GMAC2	0xE006
 #else
 #define OFFSET_MAC_GMAC0	0x0028
 #define OFFSET_MAC_GMAC2	0x0022

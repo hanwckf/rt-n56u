@@ -26,6 +26,8 @@
 #include "ralink-flash.h"
 #if defined (CONFIG_MTD_NAND_USE_UBI_PART)
 #include "ralink-nand-map-ubi.h"
+#elif defined (CONFIG_MTD_NAND_USE_XIAOMI_PART)
+#include "ralink-nand-map-xiaomi.h"
 #else
 #include "ralink-nand-map.h"
 #endif

@@ -120,6 +120,10 @@ load_wireless_modules(void)
 	module_smart_load("mt_7615e", NULL);
 #endif
 
+#if defined (USE_MT7915_AP)
+	module_smart_load("mt_7915", NULL);
+#endif
+
 #if defined (USE_RT3090_AP)
 	module_smart_load("rt3090_ap", NULL);
 #elif defined (USE_RT5392_AP)
@@ -274,6 +278,10 @@ init_gpio_leds_buttons(void)
 #endif
 	/* show PWR soft-led  */
 #if defined (BOARD_GPIO_LED_POWER)
+#if defined (BOARD_CR660x)
+	cpu_gpio_set_pin_direction(14, 1);
+	cpu_gpio_set_pin(14, LED_OFF);
+#endif
 	cpu_gpio_set_pin_direction(BOARD_GPIO_LED_POWER, 1);
 	LED_CONTROL(BOARD_GPIO_LED_POWER, LED_ON);
 #endif

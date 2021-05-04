@@ -75,7 +75,7 @@
 #include "../net/nat/hw_nat/ra_nat.h"
 #endif
 
-static struct kmem_cache *skbuff_head_cache __read_mostly;
+struct kmem_cache *skbuff_head_cache __read_mostly;
 static struct kmem_cache *skbuff_fclone_cache __read_mostly;
 #if defined(CONFIG_IMQ) || defined(CONFIG_IMQ_MODULE)
 static struct kmem_cache *skbuff_cb_store_cache __read_mostly;
@@ -317,20 +317,21 @@ EXPORT_SYMBOL(__alloc_skb);
  *  before giving packet to stack.
  *  RX rings only contains data buffers, not full skbs.
  */
-struct sk_buff *build_skb(void *data)
+struct sk_buff *build_skb(void *data, unsigned int frag_size)
 {
 	struct skb_shared_info *shinfo;
 	struct sk_buff *skb;
-	unsigned int size;
+	unsigned int size = frag_size ? : ksize(data);;
 
 	skb = kmem_cache_alloc(skbuff_head_cache, GFP_ATOMIC);
 	if (!skb)
 		return NULL;
 
-	size = ksize(data) - SKB_DATA_ALIGN(sizeof(struct skb_shared_info));
+	size -= SKB_DATA_ALIGN(sizeof(struct skb_shared_info));
 
 	memset(skb, 0, offsetof(struct sk_buff, tail));
 	skb->truesize = SKB_TRUESIZE(size);
+	skb->head_frag = frag_size != 0;
 	atomic_set(&skb->users, 1);
 	skb->head = data;
 	skb->data = data;
@@ -350,6 +351,57 @@ struct sk_buff *build_skb(void *data)
 }
 EXPORT_SYMBOL(build_skb);
 
+struct netdev_alloc_cache {
+	struct page *page;
+	unsigned int offset;
+	unsigned int pagecnt_bias;
+};
+static DEFINE_PER_CPU(struct netdev_alloc_cache, netdev_alloc_cache);
+
+#define NETDEV_PAGECNT_BIAS (PAGE_SIZE / SMP_CACHE_BYTES)
+
+/**
+ * netdev_alloc_frag - allocate a page fragment
+ * @fragsz: fragment size
+ *
+ * Allocates a frag from a page for receive buffer.
+ * Uses GFP_ATOMIC allocations.
+ */
+void *netdev_alloc_frag(unsigned int fragsz)
+{
+	struct netdev_alloc_cache *nc;
+	void *data = NULL;
+	unsigned long flags;
+
+	local_irq_save(flags);
+	nc = &__get_cpu_var(netdev_alloc_cache);
+	if (unlikely(!nc->page)) {
+refill:
+		nc->page = alloc_page(GFP_ATOMIC | __GFP_COLD);
+		if (unlikely(!nc->page))
+			goto end;
+recycle:
+		atomic_set(&nc->page->_count, NETDEV_PAGECNT_BIAS);
+		nc->pagecnt_bias = NETDEV_PAGECNT_BIAS;
+		nc->offset = 0;
+	}
+	if (nc->offset + fragsz > PAGE_SIZE) {
+		/* avoid unnecessary locked operations if possible */
+		if ((atomic_read(&nc->page->_count) == nc->pagecnt_bias) ||
+		    atomic_sub_and_test(nc->pagecnt_bias, &nc->page->_count))
+				goto recycle;
+		goto refill;
+	}
+
+	data = page_address(nc->page) + nc->offset;
+	nc->offset += fragsz;
+	nc->pagecnt_bias--;
+end:
+	local_irq_restore(flags);
+	return data;
+}
+EXPORT_SYMBOL(netdev_alloc_frag);
+
 /**
  *	__netdev_alloc_skb - allocate an skbuff for rx on a specific device
  *	@dev: network device to receive on
@@ -364,11 +416,23 @@ EXPORT_SYMBOL(build_skb);
  *	%NULL is returned if there is no free memory.
  */
 struct sk_buff *__netdev_alloc_skb(struct net_device *dev,
-		unsigned int length, gfp_t gfp_mask)
+				   unsigned int length, gfp_t gfp_mask)
 {
-	struct sk_buff *skb;
+	struct sk_buff *skb = NULL;
+	unsigned int fragsz = SKB_DATA_ALIGN(length + NET_SKB_PAD) +
+			      SKB_DATA_ALIGN(sizeof(struct skb_shared_info));
 
-	skb = __alloc_skb(length + NET_SKB_PAD, gfp_mask, 0, NUMA_NO_NODE);
+	if (fragsz <= PAGE_SIZE && !(gfp_mask & (__GFP_WAIT | GFP_DMA))) {
+		void *data = netdev_alloc_frag(fragsz);
+
+		if (likely(data)) {
+			skb = build_skb(data, fragsz);
+			if (unlikely(!skb))
+				put_page(virt_to_head_page(data));
+		}
+	} else {
+		skb = __alloc_skb(length + NET_SKB_PAD, gfp_mask, 0, NUMA_NO_NODE);
+	}
 	if (likely(skb)) {
 		skb_reserve(skb, NET_SKB_PAD);
 		skb->dev = dev;
@@ -406,6 +470,14 @@ static void skb_clone_fraglist(struct sk_buff *skb)
 		skb_get(list);
 }
 
+static void skb_free_head(struct sk_buff *skb)
+{
+	if (skb->head_frag)
+		put_page(virt_to_head_page(skb->head));
+	else
+		kfree(skb->head);
+}
+
 static void skb_release_data(struct sk_buff *skb)
 {
 	if (!skb->cloned ||
@@ -434,7 +506,7 @@ static void skb_release_data(struct sk_buff *skb)
 		if (skb_has_frag_list(skb))
 			skb_drop_fraglist(skb);
 
-		kfree(skb->head);
+		skb_free_head(skb);
 	}
 }
 
@@ -658,6 +730,7 @@ static struct sk_buff *__skb_clone(struct sk_buff *n, struct sk_buff *skb)
 	C(tail);
 	C(end);
 	C(head);
+	C(head_frag);
 	C(data);
 	C(truesize);
 	atomic_set(&n->users, 1);
@@ -712,7 +785,7 @@ int skb_copy_ubufs(struct sk_buff *skb, gfp_t gfp_mask)
 		u8 *vaddr;
 		skb_frag_t *f = &skb_shinfo(skb)->frags[i];
 
-		page = alloc_page(GFP_ATOMIC);
+		page = alloc_page(gfp_mask);
 		if (!page) {
 			while (head) {
 				struct page *next = (struct page *)head->private;
@@ -730,13 +803,13 @@ int skb_copy_ubufs(struct sk_buff *skb, gfp_t gfp_mask)
 	}
 
 	/* skb frags release userspace buffers */
-	for (i = 0; i < skb_shinfo(skb)->nr_frags; i++)
+	for (i = 0; i < num_frags; i++)
 		skb_frag_unref(skb, i);
 
 	uarg->callback(uarg);
 
 	/* skb frags point to kernel buffers */
-	for (i = skb_shinfo(skb)->nr_frags; i > 0; i--) {
+	for (i = num_frags - 1; i >= 0; i--) {
 		__skb_fill_page_desc(skb, i-1, head, 0,
 				     skb_shinfo(skb)->frags[i - 1].size);
 		head = (struct page *)head->private;
@@ -939,7 +1012,6 @@ int pskb_expand_head(struct sk_buff *skb, int nhead, int ntail,
 	u8 *data;
 	int size = nhead + skb_end_offset(skb) + ntail;
 	long off;
-	bool fastpath;
 
 #if IS_ENABLED(CONFIG_RA_HW_NAT)
 #if defined(HNAT_USE_TAILROOM)
@@ -954,27 +1026,6 @@ int pskb_expand_head(struct sk_buff *skb, int nhead, int ntail,
 		BUG();
 
 	size = SKB_DATA_ALIGN(size);
-
-	/* Check if we can avoid taking references on fragments if we own
-	 * the last reference on skb->head. (see skb_release_data())
-	 */
-	if (!skb->cloned)
-		fastpath = true;
-	else {
-		int delta = skb->nohdr ? (1 << SKB_DATAREF_SHIFT) + 1 : 1;
-		fastpath = atomic_read(&skb_shinfo(skb)->dataref) == delta;
-	}
-
-	if (fastpath &&
-	    size + sizeof(struct skb_shared_info) <= ksize(skb->head)) {
-		memmove(skb->head + size, skb_shinfo(skb),
-			offsetof(struct skb_shared_info,
-				 frags[skb_shinfo(skb)->nr_frags]));
-		memmove(skb->head + nhead, skb->head,
-			skb_tail_pointer(skb) - skb->head);
-		off = nhead;
-		goto adjust_others;
-	}
 
 	data = kmalloc(size + SKB_DATA_ALIGN(sizeof(struct skb_shared_info)),
 		       gfp_mask);
@@ -998,9 +1049,12 @@ int pskb_expand_head(struct sk_buff *skb, int nhead, int ntail,
 	memcpy((data + size - FOE_INFO_LEN), FOE_INFO_START_ADDR(skb), FOE_INFO_LEN); // copy FoE Info to tailroom
 #endif
 #endif
-	if (fastpath) {
-		kfree(skb->head);
-	} else {
+	/*
+	 * if shinfo is shared we must drop the old head gracefully, but if it
+	 * is not we can just drop the old head and let the existing refcount
+	 * be since all we did is relocate the values
+	 */
+	if (skb_cloned(skb)) {
 #if IS_ENABLED(CONFIG_MACVTAP)
 		/* copy this zero copy skb frags */
 		if (skb_shinfo(skb)->tx_flags & SKBTX_DEV_ZEROCOPY) {
@@ -1017,11 +1071,13 @@ int pskb_expand_head(struct sk_buff *skb, int nhead, int ntail,
 			skb_clone_fraglist(skb);
 
 		skb_release_data(skb);
+	} else {
+		skb_free_head(skb);
 	}
 	off = (data + nhead) - skb->head;
 
 	skb->head     = data;
-adjust_others:
+	skb->head_frag = 0;
 	skb->data    += off;
 #ifdef NET_SKBUFF_DATA_USES_OFFSET
 	skb->end      = size;
@@ -1577,9 +1633,9 @@ static void sock_spd_release(struct splice_pipe_desc *spd, unsigned int i)
 	put_page(spd->pages[i]);
 }
 
-static inline struct page *linear_to_page(struct page *page, unsigned int *len,
-					  unsigned int *offset,
-					  struct sk_buff *skb, struct sock *sk)
+static struct page *linear_to_page(struct page *page, unsigned int *len,
+				   unsigned int *offset,
+				   struct sk_buff *skb, struct sock *sk)
 {
 	struct page *p = sk->sk_sndmsg_page;
 	unsigned int off;
@@ -1595,6 +1651,9 @@ new_page:
 	} else {
 		unsigned int mlen;
 
+		/* If we are the only user of the page, we can reset offset */
+		if (page_count(p) == 1)
+			sk->sk_sndmsg_off = 0;
 		off = sk->sk_sndmsg_off;
 		mlen = PAGE_SIZE - off;
 		if (mlen < 64 && mlen < *len) {
@@ -1608,36 +1667,48 @@ new_page:
 	memcpy(page_address(p) + off, page_address(page) + *offset, *len);
 	sk->sk_sndmsg_off += *len;
 	*offset = off;
-	get_page(p);
 
 	return p;
+}
+
+static bool spd_can_coalesce(const struct splice_pipe_desc *spd,
+			     struct page *page,
+			     unsigned int offset)
+{
+	return	spd->nr_pages &&
+		spd->pages[spd->nr_pages - 1] == page &&
+		(spd->partial[spd->nr_pages - 1].offset +
+		 spd->partial[spd->nr_pages - 1].len == offset);
 }
 
 /*
  * Fill page/offset/length into spd, if it can hold more pages.
  */
-static inline int spd_fill_page(struct splice_pipe_desc *spd,
-				struct pipe_inode_info *pipe, struct page *page,
-				unsigned int *len, unsigned int offset,
-				struct sk_buff *skb, int linear,
-				struct sock *sk)
+static bool spd_fill_page(struct splice_pipe_desc *spd,
+			  struct pipe_inode_info *pipe, struct page *page,
+			  unsigned int *len, unsigned int offset,
+			  struct sk_buff *skb, bool linear,
+			  struct sock *sk)
 {
-	if (unlikely(spd->nr_pages == pipe->buffers))
-		return 1;
+	if (unlikely(spd->nr_pages == MAX_SKB_FRAGS))
+		return true;
 
 	if (linear) {
 		page = linear_to_page(page, len, &offset, skb, sk);
 		if (!page)
-			return 1;
-	} else
-		get_page(page);
-
+			return true;
+	}
+	if (spd_can_coalesce(spd, page, offset)) {
+		spd->partial[spd->nr_pages - 1].len += *len;
+		return false;
+	}
+	get_page(page);
 	spd->pages[spd->nr_pages] = page;
 	spd->partial[spd->nr_pages].len = *len;
 	spd->partial[spd->nr_pages].offset = offset;
 	spd->nr_pages++;
 
-	return 0;
+	return false;
 }
 
 static inline void __segment_seek(struct page **page, unsigned int *poff,
@@ -1654,20 +1725,20 @@ static inline void __segment_seek(struct page **page, unsigned int *poff,
 	*plen -= off;
 }
 
-static inline int __splice_segment(struct page *page, unsigned int poff,
-				   unsigned int plen, unsigned int *off,
-				   unsigned int *len, struct sk_buff *skb,
-				   struct splice_pipe_desc *spd, int linear,
-				   struct sock *sk,
-				   struct pipe_inode_info *pipe)
+static bool __splice_segment(struct page *page, unsigned int poff,
+			     unsigned int plen, unsigned int *off,
+			     unsigned int *len, struct sk_buff *skb,
+			     struct splice_pipe_desc *spd, bool linear,
+			     struct sock *sk,
+			     struct pipe_inode_info *pipe)
 {
 	if (!*len)
-		return 1;
+		return true;
 
 	/* skip this segment if already processed */
 	if (*off >= plen) {
 		*off -= plen;
-		return 0;
+		return false;
 	}
 
 	/* ignore any bits we already processed */
@@ -1683,34 +1754,38 @@ static inline int __splice_segment(struct page *page, unsigned int poff,
 		flen = min_t(unsigned int, flen, PAGE_SIZE - poff);
 
 		if (spd_fill_page(spd, pipe, page, &flen, poff, skb, linear, sk))
-			return 1;
+			return true;
 
 		__segment_seek(&page, &poff, &plen, flen);
 		*len -= flen;
 
 	} while (*len && plen);
 
-	return 0;
+	return false;
 }
 
 /*
- * Map linear and fragment data from the skb to spd. It reports failure if the
+ * Map linear and fragment data from the skb to spd. It reports true if the
  * pipe is full or if we already spliced the requested length.
  */
-static int __skb_splice_bits(struct sk_buff *skb, struct pipe_inode_info *pipe,
-			     unsigned int *offset, unsigned int *len,
-			     struct splice_pipe_desc *spd, struct sock *sk)
+static bool __skb_splice_bits(struct sk_buff *skb, struct pipe_inode_info *pipe,
+			      unsigned int *offset, unsigned int *len,
+			      struct splice_pipe_desc *spd, struct sock *sk)
 {
 	int seg;
 
-	/*
-	 * map the linear part
+	/* map the linear part :
+	 * If skb->head_frag is set, this 'linear' part is backed by a
+	 * fragment, and if the head is not shared with any clones then
+	 * we can avoid a copy since we own the head portion of this page.
 	 */
 	if (__splice_segment(virt_to_page(skb->data),
 			     (unsigned long) skb->data & (PAGE_SIZE - 1),
 			     skb_headlen(skb),
-			     offset, len, skb, spd, 1, sk, pipe))
-		return 1;
+			     offset, len, skb, spd,
+			     skb_head_is_locked(skb),
+			     sk, pipe))
+		return true;
 
 	/*
 	 * then map the fragments
@@ -1720,11 +1795,11 @@ static int __skb_splice_bits(struct sk_buff *skb, struct pipe_inode_info *pipe,
 
 		if (__splice_segment(skb_frag_page(f),
 				     f->page_offset, skb_frag_size(f),
-				     offset, len, skb, spd, 0, sk, pipe))
-			return 1;
+				     offset, len, skb, spd, false, sk, pipe))
+			return true;
 	}
 
-	return 0;
+	return false;
 }
 
 /*
@@ -1737,8 +1812,8 @@ int skb_splice_bits(struct sk_buff *skb, unsigned int offset,
 		    struct pipe_inode_info *pipe, unsigned int tlen,
 		    unsigned int flags)
 {
-	struct partial_page partial[PIPE_DEF_BUFFERS];
-	struct page *pages[PIPE_DEF_BUFFERS];
+	struct partial_page partial[MAX_SKB_FRAGS];
+	struct page *pages[MAX_SKB_FRAGS];
 	struct splice_pipe_desc spd = {
 		.pages = pages,
 		.partial = partial,
@@ -1750,9 +1825,6 @@ int skb_splice_bits(struct sk_buff *skb, unsigned int offset,
 	struct sk_buff *frag_iter;
 	struct sock *sk = skb->sk;
 	int ret = 0;
-
-	if (splice_grow_spd(pipe, &spd))
-		return -ENOMEM;
 
 	/*
 	 * __skb_splice_bits() only fails if the output has no room left,
@@ -1789,7 +1861,6 @@ done:
 		lock_sock(sk);
 	}
 
-	splice_shrink_spd(&spd);
 	return ret;
 }
 
@@ -2875,6 +2946,7 @@ int skb_gro_receive(struct sk_buff **head, struct sk_buff *skb)
 	unsigned int len = skb_gro_len(skb);
 	unsigned int offset = skb_gro_offset(skb);
 	unsigned int headlen = skb_headlen(skb);
+	unsigned int delta_truesize = 0;
 
 	if (p->len + len >= 65536)
 		return -E2BIG;
@@ -2904,11 +2976,40 @@ int skb_gro_receive(struct sk_buff **head, struct sk_buff *skb)
 		frag->page_offset += offset;
 		skb_frag_size_sub(frag, offset);
 
+		/* all fragments truesize : remove (head size + sk_buff) */
+		delta_truesize = skb->truesize - SKB_TRUESIZE(skb_end_pointer(skb) - skb->head);
+
 		skb->truesize -= skb->data_len;
 		skb->len -= skb->data_len;
 		skb->data_len = 0;
 
-		NAPI_GRO_CB(skb)->free = 1;
+		NAPI_GRO_CB(skb)->free = NAPI_GRO_FREE;
+		goto done;
+	} else if (skb->head_frag) {
+		int nr_frags = pinfo->nr_frags;
+		skb_frag_t *frag = pinfo->frags + nr_frags;
+		struct page *page = virt_to_head_page(skb->head);
+		unsigned int first_size = headlen - offset;
+		unsigned int first_offset;
+
+		if (nr_frags + 1 + skbinfo->nr_frags > MAX_SKB_FRAGS)
+			return -E2BIG;
+
+		first_offset = skb->data -
+			       (unsigned char *)page_address(page) +
+			       offset;
+
+		pinfo->nr_frags = nr_frags + 1 + skbinfo->nr_frags;
+
+		frag->page.p	  = page;
+		frag->page_offset = first_offset;
+		skb_frag_size_set(frag, first_size);
+
+		memcpy(frag + 1, skbinfo->frags, sizeof(*frag) * skbinfo->nr_frags);
+		/* We dont need to clear skbinfo->nr_frags here */
+
+		delta_truesize = skb->truesize - SKB_DATA_ALIGN(sizeof(struct sk_buff));
+		NAPI_GRO_CB(skb)->free = NAPI_GRO_FREE_STOLEN_HEAD;
 		goto done;
 	} else if (skb_gro_len(p) != pinfo->gso_size)
 		return -E2BIG;
@@ -2949,7 +3050,7 @@ int skb_gro_receive(struct sk_buff **head, struct sk_buff *skb)
 	p = nskb;
 
 merge:
-	p->truesize += skb->truesize - len;
+	delta_truesize += skb->truesize - len;
 	if (offset > headlen) {
 		unsigned int eat = offset - headlen;
 
@@ -2969,7 +3070,7 @@ merge:
 done:
 	NAPI_GRO_CB(p)->count++;
 	p->data_len += len;
-	p->truesize += len;
+	p->truesize += delta_truesize;
 	p->len += len;
 
 	NAPI_GRO_CB(skb)->same_flow = 1;

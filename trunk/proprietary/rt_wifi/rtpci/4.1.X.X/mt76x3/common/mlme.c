@@ -4995,9 +4995,10 @@ BOOLEAN MlmeEnqueueForRecv(
 				if (APMsgTypeSubst(pAd, pFrame, &Machine, &MsgType))
 					break;
 			}
-
+/*
 			DBGPRINT_ERR(("%s(): un-recongnized mgmt->subtype=%d, STA-%02x:%02x:%02x:%02x:%02x:%02x\n", 
 						__FUNCTION__, pFrame->Hdr.FC.SubType, PRINT_MAC(pFrame->Hdr.Addr2)));
+*/
 			return FALSE;
 
 		} while (FALSE);

@@ -37,25 +37,12 @@ function initial(){
 	show_menu(5,2,6);
 	show_footer();
 
-	if (support_5g_11ac()){
-		var o1 = document.form.wl_stream_tx;
-		var o2 = document.form.wl_stream_rx;
-		o1.options[0].text = "1T (433Mbps)";
-		o2.options[0].text = "1R (433Mbps)";
-		o1.options[1].text = "2T (867Mbps)";
-		o2.options[1].text = "2R (867Mbps)";
-		o1.options[2].text = "3T (1300Mbps)";
-		o2.options[2].text = "3R (1300Mbps)";
-		o1.options[3].text = "4T (1733Mbps)";
-		o2.options[3].text = "4R (1733Mbps)";
-	}
-
 	if (typeof(support_5g_wid) === 'function'){
 		wid = support_5g_wid();
 		if (wid==7612){
 			showhide_div("row_vga_clamp", 1);
 			showhide_div("row_ldpc", 1);
-		} else if (wid==7615){
+		} else if (wid==7615 || wid==7915){
 			showhide_div("row_ldpc", 1);
 		}
 	}
@@ -184,10 +171,10 @@ function done_validating(action){
                                             <th width="50%"><#WIFIStreamTX#></th>
                                             <td>
                                                 <select name="wl_stream_tx" class="input">
-                                                    <option value="1" <% nvram_match_x("", "wl_stream_tx", "1", "selected"); %>>1T (150Mbps)</option>
-                                                    <option value="2" <% nvram_match_x("", "wl_stream_tx", "2", "selected"); %>>2T (300Mbps)</option>
-                                                    <option value="3" <% nvram_match_x("", "wl_stream_tx", "3", "selected"); %>>3T (450Mbps)</option>
-                                                    <option value="4" <% nvram_match_x("", "wl_stream_tx", "4", "selected"); %>>4T (600Mbps)</option>
+                                                    <option value="1" <% nvram_match_x("", "wl_stream_tx", "1", "selected"); %>>1T</option>
+                                                    <option value="2" <% nvram_match_x("", "wl_stream_tx", "2", "selected"); %>>2T</option>
+                                                    <option value="3" <% nvram_match_x("", "wl_stream_tx", "3", "selected"); %>>3T</option>
+                                                    <option value="4" <% nvram_match_x("", "wl_stream_tx", "4", "selected"); %>>4T</option>
                                                 </select>
                                             </td>
                                         </tr>
@@ -195,10 +182,10 @@ function done_validating(action){
                                             <th><#WIFIStreamRX#></th>
                                             <td>
                                                 <select name="wl_stream_rx" class="input">
-                                                    <option value="1" <% nvram_match_x("", "wl_stream_rx", "1", "selected"); %>>1R (150Mbps)</option>
-                                                    <option value="2" <% nvram_match_x("", "wl_stream_rx", "2", "selected"); %>>2R (300Mbps)</option>
-                                                    <option value="3" <% nvram_match_x("", "wl_stream_rx", "3", "selected"); %>>3R (450Mbps)</option>
-                                                    <option value="4" <% nvram_match_x("", "wl_stream_rx", "4", "selected"); %>>4R (600Mbps)</option>
+                                                    <option value="1" <% nvram_match_x("", "wl_stream_rx", "1", "selected"); %>>1R</option>
+                                                    <option value="2" <% nvram_match_x("", "wl_stream_rx", "2", "selected"); %>>2R</option>
+                                                    <option value="3" <% nvram_match_x("", "wl_stream_rx", "3", "selected"); %>>3R</option>
+                                                    <option value="4" <% nvram_match_x("", "wl_stream_rx", "4", "selected"); %>>4R</option>
                                                 </select>
                                             </td>
                                         </tr>

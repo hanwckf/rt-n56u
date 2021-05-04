@@ -2,7 +2,7 @@ var wep1, wep2, wep3, wep4;
 
 function automode_hint() {
     var gmode = document.form.rt_gmode.value;
-    if ((gmode == "2" || gmode == "5") &&
+    if ((gmode == "2" || gmode == "5" || gmode == "6") &&
         (document.form.rt_wep_x.value == 1 || document.form.rt_wep_x.value == 2 || document.form.rt_auth_mode.value == "radius" ||
             (document.form.rt_crypto.value.indexOf("tkip") == 0 && !document.form.rt_crypto.disabled))) {
         $("rt_gmode_hint").style.display = "block";
@@ -522,7 +522,7 @@ function insertExtChannelOption() {
     var wmode = document.form.rt_gmode.value;
     var CurrentCh = document.form.rt_channel.value;
     var option_length = document.form.rt_channel.options.length;
-    if ((wmode == "2" || wmode == "3" || wmode == "5") && document.form.rt_HT_BW.value != "0") {
+    if ((wmode == "2" || wmode == "3" || wmode == "5" || wmode == "6") && document.form.rt_HT_BW.value != "0") {
         inputCtrl(document.form.rt_HT_EXTCHA, 1);
         var x = document.form.rt_HT_EXTCHA;
         var length = document.form.rt_HT_EXTCHA.options.length;

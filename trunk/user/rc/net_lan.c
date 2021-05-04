@@ -144,7 +144,7 @@ init_bridge(int is_ap_mode)
 	create_vlan_iface(IFNAME_MAC, INIC_GUEST_VLAN_VID, -1, -1, lan_hwaddr, 1);
 #endif
 
-#if BOARD_2G_IN_SOC
+#if BOARD_2G_IN_SOC || defined (BOARD_MT7915_DBDC)
 #if !defined (USE_RT3352_MII)
 	if (!rt_radio_on || (rt_mode_x == 1 || rt_mode_x == 3))
 	{
@@ -161,7 +161,7 @@ init_bridge(int is_ap_mode)
 		doSystem("ifconfig %s %s", IFNAME_5G_MAIN, "up");
 	}
 #endif
-#else /* BOARD_2G_IN_SOC */
+#else /* BOARD_2G_IN_SOC || defined (BOARD_MT7915_DBDC) */
 #if BOARD_HAS_5G_RADIO
 	if (!wl_radio_on || (wl_mode_x == 1 || wl_mode_x == 3))
 	{
@@ -223,7 +223,7 @@ init_bridge(int is_ap_mode)
 	}
 #endif
 
-#if BOARD_2G_IN_SOC
+#if BOARD_2G_IN_SOC || defined (BOARD_MT7915_DBDC)
 	start_wifi_ap_rt(rt_radio_on);
 	start_wifi_wds_rt(rt_radio_on);
 	start_wifi_apcli_rt(rt_radio_on);
@@ -232,7 +232,7 @@ init_bridge(int is_ap_mode)
 	start_wifi_wds_wl(wl_radio_on);
 	start_wifi_apcli_wl(wl_radio_on);
 #endif
-#else /* BOARD_2G_IN_SOC */
+#else /* BOARD_2G_IN_SOC || defined (BOARD_MT7915_DBDC) */
 #if BOARD_HAS_5G_RADIO
 	start_wifi_ap_wl(wl_radio_on);
 	start_wifi_wds_wl(wl_radio_on);

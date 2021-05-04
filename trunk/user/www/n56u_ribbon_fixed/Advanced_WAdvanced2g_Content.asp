@@ -50,7 +50,7 @@ function initial(){
 		if (wid==7602||wid==7612){
 			showhide_div("row_vga_clamp", 1);
 			showhide_div("row_ldpc", 1);
-		} else if (wid==7615){
+		} else if (wid==7615 || wid==7915){
 			showhide_div("row_ldpc", 1);
 		}
 	}
@@ -76,9 +76,6 @@ function initial(){
 
 	if (support_2g_turbo_qam())
 		showhide_div('row_turbo_qam', 1);
-
-	if (support_2g_airtimefairness())
-		showhide_div('row_airtimefairness', 1);
 
 	load_body();
 
@@ -182,10 +179,10 @@ function done_validating(action){
                                             <th width="50%"><#WIFIStreamTX#></th>
                                             <td>
                                                 <select name="rt_stream_tx" class="input">
-                                                    <option value="1" <% nvram_match_x("", "rt_stream_tx", "1", "selected"); %>>1T (150Mbps)</option>
-                                                    <option value="2" <% nvram_match_x("", "rt_stream_tx", "2", "selected"); %>>2T (300Mbps)</option>
-                                                    <option value="3" <% nvram_match_x("", "rt_stream_tx", "3", "selected"); %>>3T (450Mbps)</option>
-                                                    <option value="4" <% nvram_match_x("", "rt_stream_tx", "4", "selected"); %>>4T (600Mbps)</option>
+                                                    <option value="1" <% nvram_match_x("", "rt_stream_tx", "1", "selected"); %>>1T</option>
+                                                    <option value="2" <% nvram_match_x("", "rt_stream_tx", "2", "selected"); %>>2T</option>
+                                                    <option value="3" <% nvram_match_x("", "rt_stream_tx", "3", "selected"); %>>3T</option>
+                                                    <option value="4" <% nvram_match_x("", "rt_stream_tx", "4", "selected"); %>>4T</option>
                                                 </select>
                                             </td>
                                         </tr>
@@ -193,10 +190,10 @@ function done_validating(action){
                                             <th><#WIFIStreamRX#></th>
                                             <td>
                                                 <select name="rt_stream_rx" class="input">
-                                                    <option value="1" <% nvram_match_x("", "rt_stream_rx", "1", "selected"); %>>1R (150Mbps)</option>
-                                                    <option value="2" <% nvram_match_x("", "rt_stream_rx", "2", "selected"); %>>2R (300Mbps)</option>
-                                                    <option value="3" <% nvram_match_x("", "rt_stream_rx", "3", "selected"); %>>3R (450Mbps)</option>
-                                                    <option value="4" <% nvram_match_x("", "rt_stream_rx", "4", "selected"); %>>4R (600Mbps)</option>
+                                                    <option value="1" <% nvram_match_x("", "rt_stream_rx", "1", "selected"); %>>1R</option>
+                                                    <option value="2" <% nvram_match_x("", "rt_stream_rx", "2", "selected"); %>>2R</option>
+                                                    <option value="3" <% nvram_match_x("", "rt_stream_rx", "3", "selected"); %>>3R</option>
+                                                    <option value="4" <% nvram_match_x("", "rt_stream_rx", "4", "selected"); %>>4R</option>
                                                 </select>
                                             </td>
                                         </tr>
@@ -389,15 +386,6 @@ function done_validating(action){
                                                 <select name="rt_turbo_qam" class="input">
                                                     <option value="0" <% nvram_match_x("","rt_turbo_qam", "0","selected"); %>><#btn_Disable#></option>
                                                     <option value="1" <% nvram_match_x("","rt_turbo_qam", "1","selected"); %>><#btn_Enable#> (*)</option>
-                                                </select>
-                                            </td>
-                                        </tr>
-                                        <tr id="row_airtimefairness" style="display:none">
-                                            <th><#WLANConfig11b_x_rt_airtimefairness#></th>
-                                            <td>
-                                                <select name="rt_airtimefairness" class="input">
-                                                    <option value="0" <% nvram_match_x("","rt_airtimefairness", "0","selected"); %>><#btn_Disable#> (*)</option>
-                                                    <option value="1" <% nvram_match_x("","rt_airtimefairness", "1","selected"); %>><#btn_Enable#></option>
                                                 </select>
                                             </td>
                                         </tr>

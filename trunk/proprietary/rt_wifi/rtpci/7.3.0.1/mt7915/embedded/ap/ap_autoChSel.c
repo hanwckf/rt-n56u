@@ -2596,7 +2596,7 @@ VOID AutoChSelBuildChannelListFor5G(
 
 			pACSChList[ChIdx].CentralChannel = vht_cent_ch_freq(pACSChList[ChIdx].Channel, VHT_BW_80, ch_band);
 		} else if ((cfg_vht_bw == VHT_BW_160)
-				   && vht80_channel_group(pAd, pACSChList[ChIdx].Channel, pwdev)) {
+				   && vht160_channel_group(pAd, pACSChList[ChIdx].Channel, pwdev)) {
 			pACSChList[ChIdx].Bw = BW_160;
 			idx = 0;
 			count = 0;

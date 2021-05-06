@@ -840,7 +840,7 @@ struct nvram_pair router_defaults[] = {
 	{ "vpns_ov_port", "1194" },
 	{ "vpns_ov_mdig", "1" },
 	{ "vpns_ov_ciph", "3" },
-	{ "vpns_ov_clzo", "2" },
+	{ "vpns_ov_compress", "2" },
 	{ "vpns_ov_atls", "0" },
 	{ "vpns_ov_rdgw", "0" },
 	{ "vpnc_ov_mode", "1" },
@@ -850,7 +850,7 @@ struct nvram_pair router_defaults[] = {
 	{ "vpnc_ov_auth", "0" },
 	{ "vpnc_ov_mdig", "1" },
 	{ "vpnc_ov_ciph", "3" },
-	{ "vpnc_ov_clzo", "2" },
+	{ "vpnc_ov_compress", "2" },
 	{ "vpnc_ov_atls", "0" },
 
 #if defined(APP_XTU)

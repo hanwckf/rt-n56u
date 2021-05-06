@@ -88,6 +88,7 @@ static const char *forbidden_list[] = {
 	"auth ",
 	"cipher ",
 	"comp-lzo",
+	"compress",
 	"persist-key",
 	"persist-tun",
 	NULL
@@ -277,30 +278,33 @@ openvpn_add_cipher(FILE *fp, int cipher_idx)
 }
 
 static void
-openvpn_add_lzo(FILE *fp, int clzo_idx, int is_server_mode)
+openvpn_add_compress(FILE *fp, int compress_idx, int is_server_mode)
 {
-	char *clzo_str;
+	char *alg_str;
 
-	switch (clzo_idx)
+	switch (compress_idx)
 	{
 	case 1:
-		/* also use for obtain comp-lzo from server */
-		clzo_str = "no";
+		/* also use for obtain compress from server */
+		alg_str = "";
 		break;
 	case 2:
-		clzo_str = "adaptive";
+		alg_str = " lzo";
 		break;
 	case 3:
-		clzo_str = "yes";
+		alg_str = " lz4";
+		break;
+	case 4:
+		alg_str = " lz4-v2";
 		break;
 	default:
 		return;
 	}
 
-	fprintf(fp, "comp-lzo %s\n", clzo_str);
+	fprintf(fp, "compress%s\n", alg_str);
 
 	if (is_server_mode)
-		fprintf(fp, "push \"comp-lzo %s\"\n", clzo_str);
+		fprintf(fp, "push \"compress%s\"\n", alg_str);
 }
 
 static void
@@ -431,7 +435,7 @@ openvpn_create_server_conf(const char *conf_file, int is_tun)
 
 	openvpn_add_auth(fp, nvram_get_int("vpns_ov_mdig"));
 	openvpn_add_cipher(fp, nvram_get_int("vpns_ov_ciph"));
-	openvpn_add_lzo(fp, nvram_get_int("vpns_ov_clzo"), 1);
+	openvpn_add_compress(fp, nvram_get_int("vpns_ov_compress"), 1);
 
 	i_items = 0;
 	if (i_rdgw) {
@@ -579,7 +583,7 @@ openvpn_create_client_conf(const char *conf_file, int is_tun)
 	}
 	openvpn_add_auth(fp, nvram_get_int("vpnc_ov_mdig"));
 	openvpn_add_cipher(fp, nvram_get_int("vpnc_ov_ciph"));
-	openvpn_add_lzo(fp, nvram_get_int("vpnc_ov_clzo"), 0);
+	openvpn_add_compress(fp, nvram_get_int("vpnc_ov_compress"), 0);
 
 	if (i_auth == 1) {
 		fprintf(fp, "auth-user-pass %s\n", "secret");
@@ -1086,7 +1090,7 @@ ovpn_server_expcli_main(int argc, char **argv)
 	fprintf(fp, "persist-tun\n");
 	openvpn_add_auth(fp, nvram_get_int("vpns_ov_mdig"));
 	openvpn_add_cipher(fp, nvram_get_int("vpns_ov_ciph"));
-	openvpn_add_lzo(fp, nvram_get_int("vpns_ov_clzo"), 0);
+	openvpn_add_compress(fp, nvram_get_int("vpns_ov_compress"), 0);
 	fprintf(fp, "nice %d\n", 0);
 	fprintf(fp, "verb %d\n", 3);
 	fprintf(fp, "mute %d\n", 10);

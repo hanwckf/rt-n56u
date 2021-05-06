@@ -29,6 +29,7 @@ configure:
 	./configure \
 		--prefix=/usr \
 		--enable-openssl \
+		PKG_CONFIG_LIBDIR="$(STAGEDIR)/lib/pkgconfig/" \
 		--host=$(HOST_TARGET) \
 		--build=$(HOST_BUILD) ; \
 	)

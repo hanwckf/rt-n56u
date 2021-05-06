@@ -634,6 +634,8 @@
 			{"ddns_hostname2_x", "", NULL, EVM_RESTART_DDNS},
 			{"ddns_hostname3_x", "", NULL, EVM_RESTART_DDNS},
 			{"ddns_wildcard_x", "", NULL, EVM_RESTART_DDNS},
+			{"ddns2_wildcard_x", "", NULL, EVM_RESTART_DDNS},
+			{"ddns_ipv6", "", NULL, EVM_RESTART_DDNS},
 			{"ddns_cst_svr", "", NULL, EVM_RESTART_DDNS },
 			{"ddns_cst_url", "", NULL, EVM_RESTART_DDNS },
 			{"ddns_period", "", NULL, EVM_RESTART_DDNS },
@@ -641,10 +643,9 @@
 			{"ddns_verbose", "", NULL, EVM_RESTART_DDNS },
 			{"ddns_source", "", NULL, EVM_RESTART_DDNS },
 			{"ddns_checkip", "", NULL, EVM_RESTART_DDNS },
-#if defined (SUPPORT_DDNS_SSL)
+			{"ddns2_checkip", "", NULL, EVM_RESTART_DDNS },
 			{"ddns_ssl", "", NULL, EVM_RESTART_DDNS },
 			{"ddns2_ssl", "", NULL, EVM_RESTART_DDNS },
-#endif
 			{"ddns2_server", "", NULL, EVM_RESTART_DDNS },
 			{"ddns2_hname", "", NULL, EVM_RESTART_DDNS },
 			{"ddns2_user", "", NULL, EVM_RESTART_DDNS },

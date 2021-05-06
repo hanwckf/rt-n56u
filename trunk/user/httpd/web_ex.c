@@ -2310,11 +2310,7 @@ ej_firmware_caps_hook(int eid, webs_t wp, int argc, char **argv)
 #else
 	int has_http_ssl = 0;
 #endif
-#if defined (SUPPORT_DDNS_SSL)
 	int has_ddns_ssl = 1;
-#else
-	int has_ddns_ssl = 0;
-#endif
 #if defined (USE_RT3352_MII)
 	int has_inic_mii = 1;
 #else

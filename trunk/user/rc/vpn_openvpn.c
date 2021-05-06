@@ -977,8 +977,8 @@ int
 ovpn_server_expcli_main(int argc, char **argv)
 {
 	FILE *fp;
-	int i, i_prot, i_atls, rsa_bits, days_valid;
-	const char *p_prot, *wan_addr;
+	int i, i_prot, i_atls, days_valid;
+	const char *p_prot, *wan_addr, *rsa_bits;
 	const char *tmp_ovpn_path = "/tmp/export_ovpn";
 	const char *tmp_ovpn_conf = "/tmp/client.ovpn";
 #if defined (USE_IPV6)
@@ -986,13 +986,13 @@ ovpn_server_expcli_main(int argc, char **argv)
 #endif
 
 	if (argc < 2 || strlen(argv[1]) < 1) {
-		printf("Usage: %s common_name [rsa_bits] [days_valid]\n", argv[0]);
+		printf("Usage: %s common_name [rsa_bits/ec_name] [days_valid]\n", argv[0]);
 		return 1;
 	}
 
-	rsa_bits = 1024;
-	if (argc > 2 && atoi(argv[2]) >= 1024)
-		rsa_bits = atoi(argv[2]);
+	rsa_bits = "1024";
+	if (argc > 2)
+		rsa_bits = argv[2];
 
 	days_valid = 365;
 	if (argc > 3 && atoi(argv[3]) > 0)
@@ -1012,7 +1012,7 @@ ovpn_server_expcli_main(int argc, char **argv)
 	/* Generate client cert and key */
 	doSystem("rm -rf %s", tmp_ovpn_path);
 	setenv("CRT_PATH_CLI", tmp_ovpn_path, 1);
-	doSystem("/usr/bin/openvpn-cert.sh %s -n '%s' -b %d -d %d", "client", argv[1], rsa_bits, days_valid);
+	doSystem("/usr/bin/openvpn-cert.sh %s -n '%s' -b %s -d %d", "client", argv[1], rsa_bits, days_valid);
 	unsetenv("CRT_PATH_CLI");
 
 	i_prot = nvram_get_int("vpns_ov_prot");

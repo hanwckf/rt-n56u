@@ -65,8 +65,15 @@ function initial(){
 		o.remove(2);
 	}
 
-	if (openssl_util_found() && login_safe())
+	if (openssl_util_found() && login_safe()) {
+		if (!support_openssl_ec()) {
+			var o = document.form.vpns_gen_rb;
+			o.remove(3);
+			o.remove(3);
+			o.remove(3);
+		}
 		showhide_div('tbl_vpns_gen', 1);
+	}
 
 	change_vpns_enabled();
 
@@ -290,8 +297,15 @@ function change_vpns_type(){
 		inputCtrl(document.form.vpns_pass_x_0, 0);
 		document.form.vpns_pass_x_0.value = "";
 		
-		if (openssl_util_found() && login_safe() && openvpn_srv_cert_found())
+		if (openssl_util_found() && login_safe() && openvpn_srv_cert_found()) {
+			if (!support_openssl_ec()) {
+				var o = document.form.vpns_exp_rb;
+				o.remove(3);
+				o.remove(3);
+				o.remove(3);
+			}
 			showhide_div('row_vpns_exp', 1);
+		}
 		
 		change_vpns_ov_atls();
 	}else{
@@ -1017,10 +1031,14 @@ function getHash(){
                                         <input id="vpns_gen_cn" type="text" maxlength="32" size="10" style="width: 105px;" placeholder="OpenVPN Server" onKeyPress="return is_string(this,event);"/>
                                     </td>
                                     <td align="left" style="border-top: 0 none; padding-top: 0px;">
-                                        <span class="caption-bold">RSA bits:</span>
-                                        <select id="vpns_gen_rb" class="input" style="width: 85px;">
-                                            <option value="1024">1024 (*)</option>
-                                            <option value="2048">2048</option>
+                                        <span class="caption-bold">Bits:</span>
+                                        <select id="vpns_gen_rb" class="input" style="width: 108px;">
+                                            <option value="1024">RSA 1024 (*)</option>
+                                            <option value="2048">RSA 2048</option>
+                                            <option value="4096">RSA 4096</option>
+                                            <option value="prime256v1">EC P-256</option>
+                                            <option value="secp384r1">EC P-384</option>
+                                            <option value="secp521r1">EC P-521</option>
                                         </select>
                                     </td>
                                     <td align="left" style="border-top: 0 none; padding-top: 0px;">
@@ -1037,10 +1055,14 @@ function getHash(){
                                         <input id="vpns_exp_cn" type="text" maxlength="32" size="10" style="width: 105px;" placeholder="client@ovpn" onKeyPress="return is_string(this,event);"/>
                                     </td>
                                     <td align="left">
-                                        <span class="caption-bold">RSA bits:</span>
-                                        <select id="vpns_exp_rb" class="input" style="width: 85px;">
-                                            <option value="1024">1024 (*)</option>
-                                            <option value="2048">2048</option>
+                                        <span class="caption-bold">Bits:</span>
+                                        <select id="vpns_exp_rb" class="input" style="width: 108px;">
+                                            <option value="1024">RSA 1024 (*)</option>
+                                            <option value="2048">RSA 2048</option>
+                                            <option value="4096">RSA 4096</option>
+                                            <option value="prime256v1">EC P-256</option>
+                                            <option value="secp384r1">EC P-384</option>
+                                            <option value="secp521r1">EC P-521</option>
                                         </select>
                                     </td>
                                     <td align="left">

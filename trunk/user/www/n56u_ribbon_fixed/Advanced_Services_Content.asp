@@ -69,8 +69,15 @@ function initial(){
 		showhide_div('row_https_clist', 0);
 		textarea_https_enabled(0);
 	}else{
-		if (openssl_util_found() && login_safe())
+		if (openssl_util_found() && login_safe()) {
+			if(!support_openssl_ec()) {
+				var o = document.form.https_gen_rb;
+				o.remove(3);
+				o.remove(3);
+				o.remove(3);
+			}
 			showhide_div('row_https_gen', 1);
+		}
 		http_proto_change();
 	}
 	change_crond_enabled();
@@ -371,10 +378,14 @@ function on_ttyd_link(){
                                                 <input id="https_gen_cn" type="text" maxlength="32" size="10" style="width: 105px;" placeholder="my.domain" onKeyPress="return is_string(this,event);"/>
                                             </td>
                                             <td align="left">
-                                                <span class="caption-bold">RSA bits:</span>
-                                                <select id="https_gen_rb" class="input" style="width: 85px;">
-                                                    <option value="1024">1024 (*)</option>
-                                                    <option value="2048">2048</option>
+                                                <span class="caption-bold">Bits:</span>
+                                                <select id="https_gen_rb" class="input" style="width: 108px;">
+                                                    <option value="1024">RSA 1024 (*)</option>
+                                                    <option value="2048">RSA 2048</option>
+                                                    <option value="4096">RSA 4096</option>
+                                                    <option value="prime256v1">EC P-256</option>
+                                                    <option value="secp384r1">EC P-384</option>
+                                                    <option value="secp521r1">EC P-521</option>
                                                 </select>
                                             </td>
                                             <td align="left">

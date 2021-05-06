@@ -380,6 +380,7 @@ OVPN_RdGw=Направлять весь трафик клиента через V
 OVPN_Hint=SSL/TLS сертификат(ы) не найдены!
 OVPN_User=Расширенная конфигурация OpenVPN
 OVPN_Cert=Сертификаты/ключи OpenVPN
+OVPN_NCP_clist=Список разрешённых NCP шифров
 StorageShare=Режим общего доступа:
 StorageShare1=Полный доступ для всех
 StorageShare2=Доступ с учетной записью

@@ -194,6 +194,7 @@ function change_vpnc_type() {
 	showhide_div('row_vpnc_ov_auth', is_ov);
 	showhide_div('row_vpnc_ov_mdig', is_ov);
 	showhide_div('row_vpnc_ov_ciph', is_ov);
+	showhide_div('row_vpnc_ov_ncp_clist', is_ov);
 	showhide_div('row_vpnc_ov_compress', is_ov);
 	showhide_div('row_vpnc_ov_atls', is_ov);
 	showhide_div('row_vpnc_ov_mode', is_ov);
@@ -511,6 +512,12 @@ function getHash(){
                                             <option value="14" <% nvram_match_x("", "vpnc_ov_ciph", "14","selected"); %>>[AES-256-GCM] AES-GCM, 256 bit</option>
                                             <option value="15" <% nvram_match_x("", "vpnc_ov_ciph", "15","selected"); %>>[CHACHA20-POLY1305], 256 bit</option>
                                         </select>
+                                    </td>
+                                </tr>
+                                <tr id="row_vpnc_ov_ncp_clist" style="display:none">
+                                    <th><#OVPN_NCP_clist#></th>
+                                    <td>
+                                        <input type="text" maxlength="256" size="15" name="vpnc_ov_ncp_clist" class="input" style="width: 286px;" value="<% nvram_get_x("", "vpnc_ov_ncp_clist"); %>" onkeypress="return is_string(this,event);"/>
                                     </td>
                                 </tr>
                                 <tr id="row_vpnc_ov_compress" style="display:none">

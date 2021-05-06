@@ -396,6 +396,7 @@ OVPN_RdGw=转发所有客户端流量
 OVPN_Hint=未找到 SSL/TLS 证书!
 OVPN_User=OpenVPN 扩展配置
 OVPN_Cert=证书和密钥
+OVPN_NCP_clist=允许的NCP加密方式列表
 StorageShare=共享访问模式:
 StorageShare1=全部允许
 StorageShare2=账号访问

@@ -1,7 +1,7 @@
 SRC_NAME=tcpdump-4.9.2
 SRC_URL=https://www.tcpdump.org/release/$(SRC_NAME).tar.gz
 
-CFLAGS += -Os -ffunction-sections -fdata-sections -DTCPDUMP_MINI
+CFLAGS += -Os -ffunction-sections -fdata-sections -fvisibility=hidden -DTCPDUMP_MINI
 LDFLAGS += -Wl,--gc-sections
 
 all: download_test extract_test config_test build

@@ -4,8 +4,8 @@ SRC_URL=https://github.com/aria2/aria2/releases/download/release-1.35.0/aria2-1.
 SRC_ARIA_NG_NAME=AriaNg-1.1.7-AllInOne
 SRC_ARIA_NG_URL=https://github.com/mayswind/AriaNg/releases/download/1.1.7/AriaNg-1.1.7-AllInOne.zip
 
-CFLAGS  += -ffunction-sections -fdata-sections
-CXXFLAGS += -ffunction-sections -fdata-sections
+CFLAGS  += -ffunction-sections -fdata-sections -fvisibility=hidden
+CXXFLAGS += -ffunction-sections -fdata-sections -fvisibility-inlines-hidden
 LDFLAGS += -Wl,--gc-sections -static-libstdc++
 
 THISDIR = $(shell pwd)

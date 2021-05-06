@@ -5487,7 +5487,7 @@ VOID PeerPairMsg1Action(
 	pSecConfig->Handshake.WpaState = AS_PTKINIT_NEGOTIATING;
 	pSecConfig->is_eapol_encrypted = pHdr->FC.Wep;
 	WPABuildPairMsg2(pAd, pSecConfig, pEntry);
-	log_time_end(LOG_TIME_CONNECTION, "peer_msg1", DBG_LVL_OFF, &tl);
+	log_time_end(LOG_TIME_CONNECTION, "peer_msg1", DBG_LVL_INFO, &tl);
 }
 
 
@@ -5864,7 +5864,7 @@ VOID PeerPairMsg3Action(
 			pEntry->CCMP_BC_PN[kid] += ((UINT64)pReceiveEapol->KeyDesc.KeyRsc[idx] << (idx*8));
 		pEntry->Init_CCMP_BC_PN_Passed[kid] = FALSE;
 		pEntry->AllowUpdateRSC = FALSE;
-		MTWF_LOG(DBG_CAT_CFG, DBG_SUBCAT_ALL, DBG_LVL_OFF, ("%s(%d): update CCMP_BC_PN to %llu\n",
+		MTWF_LOG(DBG_CAT_CFG, DBG_SUBCAT_ALL, DBG_LVL_INFO, ("%s(%d): update CCMP_BC_PN to %llu\n",
 			__func__, pEntry->wcid, pEntry->CCMP_BC_PN[kid]));
 #ifdef MAC_REPEATER_SUPPORT
 		/* sync PN of ApCli entry as the time rept rekey */
@@ -5889,7 +5889,7 @@ VOID PeerPairMsg3Action(
 
 	pSecConfig->is_eapol_encrypted = pHeader->FC.Wep;
 	WPABuildPairMsg4(pAd, pSecConfig, pEntry);
-	log_time_end(LOG_TIME_CONNECTION, "peer_msg3", DBG_LVL_OFF, &tl);
+	log_time_end(LOG_TIME_CONNECTION, "peer_msg3", DBG_LVL_INFO, &tl);
 }
 
 

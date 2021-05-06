@@ -239,6 +239,7 @@ function textarea_ovpn_enabled(v){
 	inputCtrl(document.form['ovpnsvr.server.crt'], v);
 	inputCtrl(document.form['ovpnsvr.server.key'], v);
 	inputCtrl(document.form['ovpnsvr.ta.key'], v);
+	inputCtrl(document.form['ovpnsvr.stc2.key'], v);
 }
 
 function change_vpns_enabled(){
@@ -284,6 +285,7 @@ function change_vpns_type(){
 	showhide_div('row_vpns_ov_ncp_clist', is_ov);
 	showhide_div('row_vpns_ov_compress', is_ov);
 	showhide_div('row_vpns_ov_atls', is_ov);
+	showhide_div('row_vpns_ov_tcv2', is_ov);
 	showhide_div('row_vpns_ov_rdgw', is_ov);
 	showhide_div('row_vpns_ov_conf', is_ov);
 
@@ -310,6 +312,7 @@ function change_vpns_type(){
 		}
 		
 		change_vpns_ov_atls();
+		change_vpns_ov_tcv2();
 	}else{
 		showhide_div('tab_vpns_acl', 1);
 		
@@ -406,6 +409,16 @@ function change_vpns_ov_atls() {
 	if (!login_safe())
 		v=0;
 	inputCtrl(document.form['ovpnsvr.ta.key'], v);
+
+}
+
+function change_vpns_ov_tcv2() {
+	var v = (document.form.vpns_ov_tcv2.value == "1") ? 1 : 0;
+
+	showhide_div('row_stc2_key', v);
+	if (!login_safe())
+		v=0;
+	inputCtrl(document.form['ovpnsvr.stc2.key'], v);
 }
 
 function markGroupACL(o, c, b) {
@@ -926,6 +939,15 @@ function getHash(){
                                         </select>
                                     </td>
                                 </tr>
+                                <tr id="row_vpns_ov_tcv2" style="display:none" onchange="change_vpns_ov_tcv2();">
+                                    <th><#OVPN_USE_TCV2#></th>
+                                    <td>
+                                        <select name="vpns_ov_tcv2" class="input">
+                                            <option value="0" <% nvram_match_x("", "vpns_ov_tcv2", "0","selected"); %>><#checkbox_No#></option>
+                                            <option value="1" <% nvram_match_x("", "vpns_ov_tcv2", "1","selected"); %>><#OVPN_USE_TCV2_ItemS#></option>
+                                        </select>
+                                    </td>
+                                </tr>
                                 <tr id="row_vpns_ov_conf" style="display:none">
                                     <td colspan="2" style="padding-bottom: 15px;">
                                         <a href="javascript:spoiler_toggle('spoiler_vpns_ov_conf')"><span><#OVPN_User#></span></a>
@@ -1117,8 +1139,14 @@ function getHash(){
                                 </tr>
                                 <tr id="row_ta_key">
                                     <td style="padding-bottom: 0px; border-top: 0 none;">
-                                        <span class="caption-bold">TLS Auth/Crypt Key (ta.key) - secret:</span>
+                                        <span class="caption-bold">TLS Auth/Crypt Key (ta.key/tc.key) - secret:</span>
                                         <textarea rows="4" wrap="off" spellcheck="false" maxlength="8192" class="span12" name="ovpnsvr.ta.key" style="font-family:'Courier New'; font-size:12px;"><% nvram_dump("ovpnsvr.ta.key",""); %></textarea>
+                                    </td>
+                                </tr>
+                                <tr id="row_stc2_key">
+                                    <td style="padding-bottom: 0px; border-top: 0 none;">
+                                        <span class="caption-bold">TLS Crypt v2 Key (stc2.key) - secret:</span>
+                                        <textarea rows="4" wrap="off" spellcheck="false" maxlength="8192" class="span12" name="ovpnsvr.stc2.key" style="font-family:'Courier New'; font-size:12px;"><% nvram_dump("ovpnsvr.stc2.key",""); %></textarea>
                                     </td>
                                 </tr>
                             </table>

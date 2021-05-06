@@ -22,6 +22,7 @@ SERVER_CRT=server.crt
 CLIENT_KEY=client.key
 CLIENT_CRT=client.crt
 TA_KEY=ta.key
+STC2_KEY=stc2.key
 ECPARAM=ecparam.pem
 ## number of bits to use when generate new key
 RSA_BITS=1024
@@ -197,10 +198,13 @@ make_dh() {
   echo_done
 }
 
-make_ta() {
+make_ta_tc2() {
   #
   # $1 --> ta key name
   #
+  # $2 --> server tc2 key name
+  #
+
   if [ ! -x $OPENVPN ] ; then
     echo_process "Skipping TLS Auth/Crypt key. $OPENVPN not found."
     echo_done
@@ -209,12 +213,21 @@ make_ta() {
   if [ -f $1 ] ; then
     echo_process "Skipping TLS Auth/Crypt key. File exists"
     echo_done
-    return 0
+  else
+    echo_process "Creating TLS Auth/Crypt key"
+    $OPENVPN --genkey secret $1 &>/dev/null
+    [ -s $1 ] && chmod 600 $1
+    echo_done
   fi
-  echo_process "Creating TLS Auth/Crypt key"
-  $OPENVPN --genkey --secret $1 &>/dev/null
-  [ -s $1 ] && chmod 600 $1
-  echo_done
+  if [ -f $2 ] ; then
+    echo_process "Skipping TLS Crypt v2 server key. File exists"
+    echo_done
+  else
+    echo_process "Creating TLS Crypt v2 server key"
+    $OPENVPN --genkey tls-crypt-v2-server $2 &>/dev/null
+    [ -s $2 ] && chmod 644 $2
+    echo_done
+  fi
 }
 
 server() {
@@ -233,8 +246,8 @@ server() {
   sign_cert $CA_KEY $CA_CRT server.csr $SERVER_CRT $CERT_DAYS server
   ## Create DH param
   make_dh $DH_BITS
-  ## Create TLS Auth key
-  make_ta $TA_KEY
+  ## Create TLS Auth/Crypt key and TLS Crypt v2 server key
+  make_ta_tc2 $TA_KEY $STC2_KEY
 
   [[ -f "$ECPARAM" ]] && rm -f "$CRT_PATH_SRV/$ECPARAM"
 }

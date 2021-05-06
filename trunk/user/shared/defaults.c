@@ -843,6 +843,7 @@ struct nvram_pair router_defaults[] = {
 	{ "vpns_ov_ncp_clist", DEF_OVPNS_CIPH_LIST },
 	{ "vpns_ov_compress", "2" },
 	{ "vpns_ov_atls", "0" },
+	{ "vpns_ov_tcv2", "0" },
 	{ "vpns_ov_rdgw", "0" },
 	{ "vpnc_ov_mode", "1" },
 	{ "vpnc_ov_cnat", "0" },

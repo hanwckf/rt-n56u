@@ -384,6 +384,7 @@ OVPN_RdGw=Route All Client's Traffic through the VPN?
 OVPN_Hint=SSL/TLS certificate(s) not found!
 OVPN_User=OpenVPN Extended Configuration
 OVPN_Cert=OpenVPN Certificates & Keys
+OVPN_Cipher=Encryption Cipher (deprecated)
 OVPN_NCP_clist=List of Allowed NCP Ciphers
 StorageShare=Share Access Mode:
 StorageShare1=Full access for everyone

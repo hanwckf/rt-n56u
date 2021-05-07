@@ -887,7 +887,7 @@ function getHash(){
                                     </td>
                                 </tr>
                                 <tr id="row_vpns_ov_ciph" style="display:none">
-                                    <th><#VPNS_Ciph#></th>
+                                    <th><#OVPN_Cipher#></th>
                                     <td>
                                         <select name="vpns_ov_ciph" class="input">
                                             <option value="0" <% nvram_match_x("", "vpns_ov_ciph", "0","selected"); %>>[none]</option>

@@ -1958,7 +1958,13 @@ ifeq ($(CONFIG_WIFI_SYSDVT), y)
 EXTRA_CFLAGS += -DVERIFICATION_MODE
 DVT_DIR=$(WIFI_DRV_PATH)/embedded/dvt
 DVT_OBJ_PATH=$(SRC_EMBEDDED_DIR)/dvt
-include $(DVT_DIR)/dvt.mk
+obj_dvt := \
+	$(DVT_OBJ_PATH)/framework_dvt.o\
+	$(DVT_OBJ_PATH)/wrap_dvt.o\
+	$(DVT_OBJ_PATH)/apps_dvt.o\
+	$(DVT_OBJ_PATH)/lp_dvt.o\
+	$(DVT_OBJ_PATH)/txcmdsu_dvt.o\
+	$(DVT_OBJ_PATH)/mucop_dvt.o
 $(DRV_NAME)-objs += $(obj_dvt)
 EXTRA_CFLAGS += -DCONFIG_WIFI_SYSDVT -DTRAFFIC_NOTIFY
 EXTRA_CFLAGS += -I$(DVT_DIR)/include
@@ -1968,7 +1974,9 @@ CONFIG_WIFI_DBG_TXCMD=y
 ifeq ($(CONFIG_WIFI_DBG_TXCMD), y)
 DBG_TXCMD_DIR=$(WIFI_DRV_PATH)/embedded/dbg_txcmd
 DBG_TXCMD_OBJ_PATH=$(SRC_EMBEDDED_DIR)/dbg_txcmd
-include $(DBG_TXCMD_DIR)/dbg_txcmd.mk
+obj_dbg_txcmd := \
+	$(DBG_TXCMD_OBJ_PATH)/dbg_txcmd_framework.o \
+	$(DBG_TXCMD_OBJ_PATH)/dbg_txcmd.o
 $(DRV_NAME)-objs += $(obj_dbg_txcmd)
 EXTRA_CFLAGS += -DCONFIG_WIFI_DBG_TXCMD
 EXTRA_CFLAGS += -I$(DBG_TXCMD_DIR)/include

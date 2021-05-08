@@ -1473,7 +1473,7 @@ static VOID ReceiveBTMQuery(IN PRTMP_ADAPTER pAd,
 	RTMP_SEM_EVENT_UP(&pWNMCtrl->BTMPeerListLock);
 
 	if (IsFound) {
-		MTWF_LOG(DBG_CAT_PROTO, CATPROTO_WNM, DBG_LVL_ERROR,
+		MTWF_LOG(DBG_CAT_PROTO, CATPROTO_WNM, DBG_LVL_INFO,
 			("%s Find peer address in BTMPeerList already\n", __func__));
 		return;
 	}
@@ -1667,7 +1667,7 @@ VOID WaitPeerBTMReqTimeout(
 	PWNM_CTRL pWNMCtrl = NULL;
 	BTM_EVENT_DATA event;
 
-	MTWF_LOG(DBG_CAT_PROTO, CATPROTO_WNM, DBG_LVL_OFF, ("%s \n", __func__));
+	MTWF_LOG(DBG_CAT_PROTO, CATPROTO_WNM, DBG_LVL_INFO, ("%s \n", __func__));
 
 	pAd = BTMPeerEntry->Priv;
 	if (RTMP_TEST_FLAG(pAd, fRTMP_ADAPTER_HALT_IN_PROGRESS

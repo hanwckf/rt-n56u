@@ -1,0 +1,59 @@
+name: Build Padavan for MI-R3P
+
+on:
+  workflow_dispatch:
+  #start by manually
+  #push:
+  #  tags:
+  #    - 'v*'
+  #  branches:
+  #    - main
+  #start by push
+  #schedule:
+  #  - cron: 0 8 * * 5
+  #start by schedule
+  #watch:
+  #  types: [started]
+  #start by click star bottom
+
+jobs:
+  build:
+    runs-on: ubuntu-18.04
+    if: github.event.repository.owner.id == github.event.sender.id
+
+    steps:
+    - name: Checkout
+      uses: actions/checkout@main
+    - name: Initialization environment
+      env:
+        DEBIAN_FRONTEND: noninteractive
+      run: |
+        sudo apt-get update
+        sudo apt-get -y install unzip libtool-bin curl cmake gperf gawk flex bison nano xxd fakeroot \
+        cpio git python-docutils gettext automake autopoint texinfo build-essential help2man \
+        pkg-config zlib1g-dev libgmp3-dev libmpc-dev libmpfr-dev libncurses5-dev libltdl-dev wget
+    - name: Clone source code
+      run: |
+        sudo git clone https://github.com/hanwckf/rt-n56u.git /opt/rt-n56u
+        #cd /opt/rt-n56u
+        #sudo git reset --hard b0509d389381ff9fdb1d49a58ec842ed15a4fbb3
+        #sudo git clone https://github.com/blioild/Padavan_build_h.git /Padavan_build_h
+        #sudo cp -r -f /Padavan_build_h/MI-R3P/rt-n56u/* /opt/rt-n56u/
+        cd /opt/rt-n56u/toolchain-mipsel
+        sh dl_toolchain.sh
+        mkdir /opt/images
+    - name: Build firmware
+      env:
+        TNAME: MI-R3P
+      run: |
+        cd /opt/rt-n56u/trunk
+        sudo touch .config
+        sudo ./clear_tree
+        sudo ./build_firmware_modify $TNAME
+        sudo mv -f images/*.trx /opt/images/
+    - name: Upload firmware
+      uses: actions/upload-artifact@master
+      if: always()
+      with:
+        name: Padavan_MI-R3P
+        path: /opt/images

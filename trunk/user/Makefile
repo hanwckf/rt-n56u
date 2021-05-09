@@ -143,6 +143,7 @@ dir_$(CONFIG_FIRMWARE_INCLUDE_MTR)		+= mtr
 dir_$(CONFIG_FIRMWARE_INCLUDE_SOCAT)	+= socat
 dir_$(CONFIG_FIRMWARE_INCLUDE_SRELAY)	+= srelay
 dir_$(CONFIG_FIRMWARE_INCLUDE_TUNSAFE) += tunsafe
+dir_$(CONFIG_FIRMWARE_INCLUDE_SMARTDNS)		+= smartdns
 ifeq ($(CONFIG_FIRMWARE_INCLUDE_WIREGUARD),y)
 dir_y += wireguard-go
 dir_y += wireguard-tools

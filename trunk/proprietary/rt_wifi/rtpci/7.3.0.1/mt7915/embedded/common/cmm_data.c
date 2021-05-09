@@ -4352,7 +4352,7 @@ VOID dev_rx_ctrl_frm(RTMP_ADAPTER *pAd, RX_BLK *pRxBlk)
 
 #endif
 			} else {
-				MTWF_LOG(DBG_CAT_RX, DBG_SUBCAT_ALL, DBG_LVL_ERROR, ("%s():pEntry(NULL),Cannot found WCID of BAR packet!A1:%02x:%02x:%02x:%02x:%02x:%02x,A2:%02x:%02x:%02x:%02x:%02x:%02x\n",
+				MTWF_LOG(DBG_CAT_RX, DBG_SUBCAT_ALL, DBG_LVL_INFO, ("%s():pEntry(NULL),Cannot found WCID of BAR packet!A1:%02x:%02x:%02x:%02x:%02x:%02x,A2:%02x:%02x:%02x:%02x:%02x:%02x\n",
 						 __func__, PRINT_MAC(pRxBlk->Addr1), PRINT_MAC(pRxBlk->Addr2)));
 			}
 		}

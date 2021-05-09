@@ -3018,7 +3018,7 @@ static VOID ap_peer_disassoc_action(RTMP_ADAPTER *pAd, MLME_QUEUE_ELEM *Elem)
 	MAC_TABLE_ENTRY *pEntry;
 	struct wifi_dev *wdev;
 
-	MTWF_LOG(DBG_CAT_AP, DBG_SUBCAT_ALL, DBG_LVL_OFF, ("ASSOC - 1 receive DIS-ASSOC request\n"));
+	MTWF_LOG(DBG_CAT_AP, DBG_SUBCAT_ALL, DBG_LVL_TRACE, ("ASSOC - 1 receive DIS-ASSOC request\n"));
 
 	if (!PeerDisassocReqSanity(pAd, Elem->Msg, Elem->MsgLen, Addr1, Addr2, &SeqNum, &Reason))
 		return;

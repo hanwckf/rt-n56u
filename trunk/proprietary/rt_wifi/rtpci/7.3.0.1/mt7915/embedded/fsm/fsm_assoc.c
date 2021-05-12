@@ -106,7 +106,7 @@ static VOID assoc_fsm_mlme_assoc_req_action(
 		return;
 	}
 
-	log_time_end(LOG_TIME_CONNECTION, "assoc_req", DBG_LVL_OFF, &tl);
+	log_time_end(LOG_TIME_CONNECTION, "assoc_req", DBG_LVL_INFO, &tl);
 }
 
 /*
@@ -233,7 +233,7 @@ static VOID assoc_fsm_peer_assoc_rsp_action(
 		return;
 	}
 
-	log_time_end(LOG_TIME_CONNECTION, "peer_assoc_rsp", DBG_LVL_OFF, &tl);
+	log_time_end(LOG_TIME_CONNECTION, "peer_assoc_rsp", DBG_LVL_INFO, &tl);
 }
 
 
@@ -477,7 +477,7 @@ static VOID assoc_fsm_peer_reassoc_req_action(
 		return;
 	}
 
-	log_time_end(LOG_TIME_CONNECTION, "peer_reassoc_req", DBG_LVL_OFF, &tl);
+	log_time_end(LOG_TIME_CONNECTION, "peer_reassoc_req", DBG_LVL_INFO, &tl);
 }
 
 

@@ -151,6 +151,8 @@ function check_return_code(){
 		show_alert_block("<#LANHostConfig_x_DDNS_alarm_12#>");
 	else if(this.ddns_return_code == 'unknown_error')
 		show_alert_block("<#LANHostConfig_x_DDNS_alarm_2#>");
+	else if(ddns_return_code == 'inadyn_unsupport')
+		show_alert_block("inadyn does not support register to asuscomm.com");
 
 	this.ddns_return_code = "";
 }

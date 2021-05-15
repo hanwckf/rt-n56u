@@ -16,7 +16,7 @@ user/pppoe user/pppd user/802.1x user/lldt user/u2ec \
 user/networkmap user/inadyn user/vsftpd user/infosvr \
 user/LPRng user/wsdd2 user/lanauth user/mtd_write \
 user/rp-l2tp user/udpxy user/xl2tpd user/xupnpd \
-user/accel-pptpd"
+user/accel-pptpd libs/libtirpc"
 
 for dir in ${DIRS} ; do
 	make -C $dir clean

@@ -1,62 +1,44 @@
-VERSION       = 1.99.15
-NAME          = inadyn
-EXEC          = src/$(NAME)
-RM           ?= rm -f
-SHAREDIR      = $(ROOTDIR)/user/shared
+SRC_NAME = inadyn-2.8.1
+SRC_URL = https://github.com/troglobit/inadyn/releases/download/v2.8.1/inadyn-2.8.1.tar.xz
+THISDIR = $(shell pwd)
 
-PLUGIN_OBJS   = src/plugin.o		plugins/common.o	\
-		plugins/asuscomm.o	plugins/duckdns.o	\
-		plugins/dyndns.o	plugins/changeip.o	\
-		plugins/dnsexit.o	plugins/easydns.o	\
-		plugins/freedns.o	plugins/generic.o	\
-		plugins/sitelutions.o				\
-		plugins/tzo.o		plugins/zoneedit.o	\
-		plugins/zerigo.o	plugins/dhis.o		\
-		plugins/dynv6.o		plugins/dynv6-ipv4.o	\
-		plugins/dtdns.o		plugins/giradns.o	\
-		plugins/duiadns.o	plugins/netassist.o	\
-		plugins/ddnss.o
+all: download_test extract_test config_test
+	$(MAKE) -j$(HOST_NCPU) -C $(SRC_NAME)
 
-BASE_OBJS     = src/main.o	src/ddns.o	src/cache.o	\
-		src/cmd.o	src/os.o	src/error.o	\
-		src/http.o	src/ssl.o	src/tcp.o	\
-		src/ip.o	src/sha1.o	src/base64.o	\
-		src/md5.o
+download_test:
+	( if [ ! -f $(SRC_NAME).tar.xz ]; then \
+		wget -t5 --timeout=20 --no-check-certificate -O $(SRC_NAME).tar.xz $(SRC_URL); \
+	fi )
 
-OBJS          = $(BASE_OBJS) $(PLUGIN_OBJS)
-SRCS          = $(OBJS:.o=.c)
-DEPS          = $(SRCS:.c=.d)
+extract_test:
+	( if [ ! -d $(SRC_NAME) ]; then \
+		tar -xf $(SRC_NAME).tar.xz; \
+		patch -d $(SRC_NAME) -p1 -i ../$(SRC_NAME).patch; \
+	fi )
 
-CFLAGS       += -W -Wall
-CFLAGS       += -D_BSD_SOURCE -D_GNU_SOURCE
-CFLAGS       += -Iinclude -DVERSION=\"$(VERSION)\"
-CFLAGS       += -Iinclude -I$(SHAREDIR)
-CFLAGS       += -ffunction-sections -fdata-sections
+config_test:
+	( if [ -f ./config_done ]; then \
+		echo "the same configuration"; \
+	else \
+		make configure && touch config_done; \
+	fi )
 
-LDFLAGS      += -L$(SHAREDIR) -lshared
-LDFLAGS      += -Wl,--gc-sections
-
-LDLIBS       += -ldl
-
-ifeq ($(CONFIG_FIRMWARE_INCLUDE_DDNS_SSL),y)
-CFLAGS       += -DENABLE_SSL -DCONFIG_OPENSSL
-LDLIBS       += -lssl -lcrypto
-endif
-
-# Pattern rules
-.c.o:
-	$(CC) $(CFLAGS) $(CPPFLAGS) -c -o $@ $<
-
-# Build rules
-all: $(EXEC)
-
-$(EXEC): $(OBJS)
-	$(CC) $(CFLAGS) $(LDFLAGS) -o $@ $(OBJS) $(LDLIBS)
+configure:
+	( cd $(SRC_NAME) ; \
+	autoreconf -fi ; \
+	./configure \
+		--prefix=/usr \
+		--enable-openssl \
+		PKG_CONFIG_LIBDIR="$(STAGEDIR)/lib/pkgconfig/" \
+		--host=$(HOST_TARGET) \
+		--build=$(HOST_BUILD) ; \
+	)
 
 clean:
-	-@$(RM) $(OBJS) $(DEPS) $(EXEC)
+	if [ -f $(SRC_NAME)/Makefile ] ; then \
+		$(MAKE) -C $(SRC_NAME) distclean ; \
+	fi ; \
+	rm -f config_done
 
 romfs:
-	$(ROMFSINST) $(EXEC) /bin/inadyn
-
-
+	$(ROMFSINST) -p +x $(THISDIR)/$(SRC_NAME)/src/inadyn /bin/inadyn

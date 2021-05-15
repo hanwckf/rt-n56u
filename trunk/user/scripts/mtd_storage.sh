@@ -607,6 +607,10 @@ client-to-client
 ### Allow clients with duplicate "Common Name"
 ;duplicate-cn
 
+### Legacy LZO adaptive compression
+;comp-lzo adaptive
+;push "comp-lzo adaptive"
+
 ### Keepalive and timeout
 keepalive 10 60
 
@@ -627,7 +631,7 @@ EOF
 # Please add needed params only!
 
 ### If your server certificates with the nsCertType field set to "server"
-ns-cert-type server
+remote-cert-tls server
 
 ### Process priority level (0..19)
 nice 0

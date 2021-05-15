@@ -36,9 +36,7 @@ var ddns_prov1 = '<% nvram_get_x("","ddns_server_x"); %>';
 var ddns_prov2 = '<% nvram_get_x("","ddns2_server"); %>';
 var ddns_hname = '<% nvram_get_x("","ddns_hostname_x"); %>';
 var ddns_list = [
-	[ 0x01, "WWW.ASUS.COM",         "(asuscomm)", "" ],
 	[ 0x0f, "WWW.DYNDNS.ORG",       "", "https://account.dyn.com/entrance/" ],
-	[ 0x0f, "WWW.TZO.COM",          "", "http://signup.tzo.com" ],
 	[ 0x0f, "WWW.ZONEEDIT.COM",     "", "http://www.zoneedit.com/signUp.html" ],
 	[ 0x01, "WWW.EASYDNS.COM",      "", "https://web.easydns.com/Open_Account/" ],
 	[ 0x0f, "WWW.NO-IP.COM",        "", "http://www.noip.com/newUser.php" ],
@@ -46,11 +44,8 @@ var ddns_list = [
 	[ 0x0f, "WWW.DNSEXIT.COM",      "", "https://www.dnsexit.com/Direct.sv?cmd=signup" ],
 	[ 0x0f, "WWW.CHANGEIP.COM",     "", "https://www.changeip.com/accounts/register.php" ],
 	[ 0x0f, "WWW.SITELUTIONS.COM",  "", "https://sitelutions.com/signup" ],
-	[ 0x0f, "WWW.ZERIGO.COM",       "", "https://www.zerigo.com/managed-dns/" ],
 	[ 0x0f, "WWW.DHIS.ORG",         "", "http://dhis.org/WebEngine.ipo?context=dhis.website.register" ],
-	[ 0x0f, "WWW.NIC.RU",           "(RU-CENTER)", "https://www.nic.ru/dns/service/dns_hosting/dns_master/dynamic_dns.html" ],
 	[ 0x0f, "WWW.DUCKDNS.ORG",      "", "https://www.duckdns.org/" ],
-	[ 0x0f, "WWW.DTDNS.COM",        "", "https://www.dtdns.com/dtsite/register" ],
 	[ 0x0f, "WWW.OVH.COM",          "", "https://www.ovh.com/" ],
 	[ 0x0f, "WWW.LOOPIA.COM",       "", "https://www.loopia.com/loopiadns/" ],
 	[ 0x0f, "WWW.DUIADNS.NET",      "", "https://www.duiadns.net/services" ],
@@ -64,6 +59,17 @@ var ddns_list = [
 	[ 0x0f, "TB.NETASSIST.UA",      "", "http://tb.netassist.ua/reg.php" ],
 	[ 0x0f, "IPV4.NSUPDATE.INFO",   "", "https://nsupdate.info/account/register/" ],
 	[ 0x0f, "FREEDNS.AFRAID.ORG",   "", "http://freedns.afraid.org/signup/" ],
+	[ 0x0f, "FREEMYIP.COM",         "", "https://freemyip.com/" ],
+	[ 0x0f, "SPDYN.DE",             "", "https://spdyn.de/" ],
+	[ 0x0f, "WWW.STRATO.DE",        "", "https://www.strato.de/" ],
+	[ 0x0f, "CLOUDXNS.NET",         "", "https://www.cloudxns.net/" ],
+	[ 0x0f, "3322.ORG",             "", "http://www.pubyun.com/" ],
+	[ 0x0f, "DNSPOD.CN",            "", "https://www.dnspod.cn/" ],
+	[ 0x0f, "DYNU.COM",             "", "https://www.dynu.com/" ],
+	[ 0x0f, "SELFHOST.DE",          "", "https://selfhost.de/cgi-bin/selfhost" ],
+	[ 0x0f, "PDD.YANDEX.RU",        "", "https://connect.yandex.ru/admintools" ],
+	[ 0x0f, "CLOUDFLARE.COM",       "", "https://www.cloudflare.com/products/registrar" ],
+	[ 0x0f, "ORAY.COM",             "", "https://hsk.oray.com/" ],
 	[ 0x01, "CUSTOM",               "(http basic auth)", "" ]
 ];
 
@@ -150,8 +156,7 @@ function change_ddns_server(man)
 	showhide_div("row_ddns_ssl", (e && support_ddns_ssl()));
 	o.disabled = e;
 
-	e = (v == "WWW.EASYDNS.COM") ? 1 : 0;
-	showhide_div("row_ddns_wcard", e);
+	showhide_div("row_ddns_wcard", 1);
 
 	e = (v == "CUSTOM") ? 1 : 0;
 	showhide_div("row_ddns_cst_svr", e);
@@ -170,6 +175,7 @@ function change_ddns2_server(man)
 	showhide_div("row_ddns2_hname", e);
 	showhide_div("row_ddns2_user", e);
 	showhide_div("row_ddns2_pass", e);
+	showhide_div("row_ddns2_wcard", e);
 	showhide_div("row_ddns2_ssl", (e && support_ddns_ssl()));
 	if (man)
 		disable_update();
@@ -179,6 +185,7 @@ function change_ddns_source(man)
 {
 	var e = (document.form.ddns_source.value == "0") ? 1 : 0;
 	showhide_div("row_ddns_checkip", e);
+	showhide_div("row_ddns2_checkip", e);
 	if (man)
 		disable_update();
 }
@@ -224,7 +231,7 @@ function change_ddns_enabled()
 function ddns_init()
 {
 	if (ddns_prov1 == '')
-		ddns_prov1 = "WWW.ASUS.COM";
+		ddns_prov1 = "WWW.DYNDNS.ORG";
 
 	fill_provider_list("ddns_server_x", ddns_prov1, 0x01);
 	fill_provider_list("ddns2_server",  ddns_prov2, 0x02);
@@ -303,6 +310,8 @@ function show_asus_alert(hname)
 		alert("<#LANHostConfig_x_DDNS_alarm_2#>");
 	else if(ddns_return_code =='connect_fail')
 		alert("<#LANHostConfig_x_DDNS_alarm_12#>");
+	else if(ddns_return_code == 'inadyn_unsupport')
+		alert("inadyn does not support register to asuscomm.com");
 }
 
 function openLink(s) {
@@ -533,7 +542,7 @@ function checkDDNSReturnCode(){
                                                 </select>
                                             </td>
                                         </tr>
-                                        <tr id="row_ddns_wcard" style="display:none;">
+                                        <tr id="row_ddns_wcard">
                                             <th><a class="help_tooltip" href="javascript:void(0);" onmouseover="openTooltip(this,24,4);"><#LANHostConfig_x_DDNSWildcard_itemname#></a></th>
                                             <td>
                                                 <select name="ddns_wildcard_x" class="input">
@@ -586,6 +595,15 @@ function checkDDNSReturnCode(){
                                                 </select>
                                             </td>
                                         </tr>
+                                        <tr id="row_ddns2_wcard">
+                                            <th><#LANHostConfig_x_DDNSWildcard_itemname#></a></th>
+                                            <td>
+                                                <select name="ddns2_wildcard_x" class="input">
+                                                    <option value="0" <% nvram_match_x("", "ddns2_wildcard_x", "0","selected"); %>><#checkbox_No#></option>
+                                                    <option value="1" <% nvram_match_x("", "ddns2_wildcard_x", "1","selected"); %>><#checkbox_Yes#></option>
+                                                </select>
+                                            </td>
+                                        </tr>
                                     </table>
 
                                     <table width="100%" cellpadding="4" cellspacing="0" class="table" id="tbl_common" style="display:none;">
@@ -609,17 +627,70 @@ function checkDDNSReturnCode(){
                                                     <option value="0" <% nvram_match_x("", "ddns_checkip", "0","selected"); %>><#DDNS_CheckIP_item0#></option>
                                                     <option value="1" <% nvram_match_x("", "ddns_checkip", "1","selected"); %>>checkip.dyndns.org</option>
                                                     <option value="2" <% nvram_match_x("", "ddns_checkip", "2","selected"); %>>checkip.dyndns.org:8245</option>
-                                                    <option value="3" <% nvram_match_x("", "ddns_checkip", "3","selected"); %>>echo.tzo.com</option>
-                                                    <option value="4" <% nvram_match_x("", "ddns_checkip", "4","selected"); %>>ip.dnsexit.com</option>
-                                                    <option value="5" <% nvram_match_x("", "ddns_checkip", "5","selected"); %>>ip.changeip.com</option>
-                                                    <option value="6" <% nvram_match_x("", "ddns_checkip", "6","selected"); %>>myip.dnsomatic.com</option>
-                                                    <option value="7" <% nvram_match_x("", "ddns_checkip", "7","selected"); %>>ip1.dynupdate.no-ip.com</option>
-                                                    <option value="8" <% nvram_match_x("", "ddns_checkip", "8","selected"); %>>checkip.dns.he.net</option>
-                                                    <option value="9" <% nvram_match_x("", "ddns_checkip", "9","selected"); %>>checkip.zerigo.com</option>
-                                                    <option value="10" <% nvram_match_x("", "ddns_checkip", "10","selected"); %>>checkip.two-dns.de</option>
-                                                    <option value="11" <% nvram_match_x("", "ddns_checkip", "11","selected"); %>>ipv4.wtfismyip.com/text</option>
-                                                    <option value="12" <% nvram_match_x("", "ddns_checkip", "12","selected"); %>>ipv4.nsupdate.info/myip</option>
-                                                    <option value="13" <% nvram_match_x("", "ddns_checkip", "13","selected"); %>>myip.dtdns.com</option>
+                                                    <option value="3" <% nvram_match_x("", "ddns_checkip", "3","selected"); %>>ip.dnsexit.com</option>
+                                                    <option value="4" <% nvram_match_x("", "ddns_checkip", "4","selected"); %>>ip.changeip.com</option>
+                                                    <option value="5" <% nvram_match_x("", "ddns_checkip", "5","selected"); %>>myip.dnsomatic.com</option>
+                                                    <option value="6" <% nvram_match_x("", "ddns_checkip", "6","selected"); %>>ip1.dynupdate.no-ip.com</option>
+                                                    <option value="7" <% nvram_match_x("", "ddns_checkip", "7","selected"); %>>checkip.dns.he.net (dual stack)</option>
+                                                    <option value="8" <% nvram_match_x("", "ddns_checkip", "8","selected"); %>>checkip.two-dns.de</option>
+                                                    <option value="9" <% nvram_match_x("", "ddns_checkip", "9","selected"); %>>ip.3322.net</option>
+                                                    <option value="10" <% nvram_match_x("", "ddns_checkip", "10","selected"); %>>myip.ipip.net/s</option>
+                                                    <option value="11" <% nvram_match_x("", "ddns_checkip", "11","selected"); %>>api.myip.la (dual stack)</option>
+                                                    <option value="12" <% nvram_match_x("", "ddns_checkip", "12","selected"); %>>ipv4.wtfismyip.com/text</option>
+                                                    <option value="13" <% nvram_match_x("", "ddns_checkip", "13","selected"); %>>ipv6.wtfismyip.com/text</option>
+                                                    <option value="14" <% nvram_match_x("", "ddns_checkip", "14","selected"); %>>ipv4.nsupdate.info/myip</option>
+                                                    <option value="15" <% nvram_match_x("", "ddns_checkip", "15","selected"); %>>ipv6.nsupdate.info/myip</option>
+                                                    <option value="16" <% nvram_match_x("", "ddns_checkip", "16","selected"); %>>api-ipv4.ip.sb/ip</option>
+                                                    <option value="17" <% nvram_match_x("", "ddns_checkip", "17","selected"); %>>api-ipv6.ip.sb/ip</option>
+                                                    <option value="18" <% nvram_match_x("", "ddns_checkip", "18","selected"); %>>v4.ident.me</option>
+                                                    <option value="19" <% nvram_match_x("", "ddns_checkip", "19","selected"); %>>v6.ident.me</option>
+                                                    <option value="20" <% nvram_match_x("", "ddns_checkip", "20","selected"); %>>api4.my-ip.io/ip</option>
+                                                    <option value="21" <% nvram_match_x("", "ddns_checkip", "21","selected"); %>>api6.my-ip.io/ip</option>
+                                                    <option value="22" <% nvram_match_x("", "ddns_checkip", "22","selected"); %>>api.ipify.org</option>
+                                                    <option value="23" <% nvram_match_x("", "ddns_checkip", "23","selected"); %>>api6.ipify.org</option>
+                                                    <option value="24" <% nvram_match_x("", "ddns_checkip", "24","selected"); %>>ipv4.duiadns.net</option>
+                                                    <option value="25" <% nvram_match_x("", "ddns_checkip", "25","selected"); %>>ipv6.duiadns.net</option>
+                                                    <option value="26" <% nvram_match_x("", "ddns_checkip", "26","selected"); %>>checkip4.spdyn.de</option>
+                                                    <option value="27" <% nvram_match_x("", "ddns_checkip", "27","selected"); %>>checkip6.spdyn.de</option>
+                                                    <option value="28" <% nvram_match_x("", "ddns_checkip", "28","selected"); %>>v4.ipv6-test.com/api/myip.php</option>
+                                                    <option value="29" <% nvram_match_x("", "ddns_checkip", "29","selected"); %>>v6.ipv6-test.com/api/myip.php</option>
+                                                </select>
+                                            </td>
+                                        </tr>
+                                        <tr id="row_ddns2_checkip" style="display:none;">
+                                            <th><#DDNS2_CheckIP#></th>
+                                            <td>
+                                                <select name="ddns2_checkip" class="input" onchange="disable_update();">
+                                                    <option value="0" <% nvram_match_x("", "ddns2_checkip", "0","selected"); %>><#DDNS_CheckIP_item0#></option>
+                                                    <option value="1" <% nvram_match_x("", "ddns2_checkip", "1","selected"); %>>checkip.dyndns.org</option>
+                                                    <option value="2" <% nvram_match_x("", "ddns2_checkip", "2","selected"); %>>checkip.dyndns.org:8245</option>
+                                                    <option value="3" <% nvram_match_x("", "ddns2_checkip", "3","selected"); %>>ip.dnsexit.com</option>
+                                                    <option value="4" <% nvram_match_x("", "ddns2_checkip", "4","selected"); %>>ip.changeip.com</option>
+                                                    <option value="5" <% nvram_match_x("", "ddns2_checkip", "5","selected"); %>>myip.dnsomatic.com</option>
+                                                    <option value="6" <% nvram_match_x("", "ddns2_checkip", "6","selected"); %>>ip1.dynupdate.no-ip.com</option>
+                                                    <option value="7" <% nvram_match_x("", "ddns2_checkip", "7","selected"); %>>checkip.dns.he.net (dual stack)</option>
+                                                    <option value="8" <% nvram_match_x("", "ddns2_checkip", "8","selected"); %>>checkip.two-dns.de</option>
+                                                    <option value="9" <% nvram_match_x("", "ddns2_checkip", "9","selected"); %>>ip.3322.net</option>
+                                                    <option value="10" <% nvram_match_x("", "ddns2_checkip", "10","selected"); %>>myip.ipip.net/s</option>
+                                                    <option value="11" <% nvram_match_x("", "ddns2_checkip", "11","selected"); %>>api.myip.la (dual stack)</option>
+                                                    <option value="12" <% nvram_match_x("", "ddns2_checkip", "12","selected"); %>>ipv4.wtfismyip.com/text</option>
+                                                    <option value="13" <% nvram_match_x("", "ddns2_checkip", "13","selected"); %>>ipv6.wtfismyip.com/text</option>
+                                                    <option value="14" <% nvram_match_x("", "ddns2_checkip", "14","selected"); %>>ipv4.nsupdate.info/myip</option>
+                                                    <option value="15" <% nvram_match_x("", "ddns2_checkip", "15","selected"); %>>ipv6.nsupdate.info/myip</option>
+                                                    <option value="16" <% nvram_match_x("", "ddns2_checkip", "16","selected"); %>>api-ipv4.ip.sb/ip</option>
+                                                    <option value="17" <% nvram_match_x("", "ddns2_checkip", "17","selected"); %>>api-ipv6.ip.sb/ip</option>
+                                                    <option value="18" <% nvram_match_x("", "ddns2_checkip", "18","selected"); %>>v4.ident.me</option>
+                                                    <option value="19" <% nvram_match_x("", "ddns2_checkip", "19","selected"); %>>v6.ident.me</option>
+                                                    <option value="20" <% nvram_match_x("", "ddns2_checkip", "20","selected"); %>>api4.my-ip.io/ip</option>
+                                                    <option value="21" <% nvram_match_x("", "ddns2_checkip", "21","selected"); %>>api6.my-ip.io/ip</option>
+                                                    <option value="22" <% nvram_match_x("", "ddns2_checkip", "22","selected"); %>>api.ipify.org</option>
+                                                    <option value="23" <% nvram_match_x("", "ddns2_checkip", "23","selected"); %>>api6.ipify.org</option>
+                                                    <option value="24" <% nvram_match_x("", "ddns2_checkip", "24","selected"); %>>ipv4.duiadns.net</option>
+                                                    <option value="25" <% nvram_match_x("", "ddns2_checkip", "25","selected"); %>>ipv6.duiadns.net</option>
+                                                    <option value="26" <% nvram_match_x("", "ddns2_checkip", "26","selected"); %>>checkip4.spdyn.de</option>
+                                                    <option value="27" <% nvram_match_x("", "ddns2_checkip", "27","selected"); %>>checkip6.spdyn.de</option>
+                                                    <option value="28" <% nvram_match_x("", "ddns2_checkip", "28","selected"); %>>v4.ipv6-test.com/api/myip.php</option>
+                                                    <option value="29" <% nvram_match_x("", "ddns2_checkip", "29","selected"); %>>v6.ipv6-test.com/api/myip.php</option>
                                                 </select>
                                             </td>
                                         </tr>
@@ -649,6 +720,15 @@ function checkDDNSReturnCode(){
                                                     <option value="30" <% nvram_match_x("", "ddns_forced", "30","selected"); %>>30 days</option>
                                                 </select>&nbsp;
                                                 <input type="submit" maxlength="15" size="15" class="btn btn-info" style="max-width: 94px;" onclick="return onSubmitApply('ddnsclient');" name="x_DDNSStatus" value="<#LANHostConfig_x_DDNSStatus_buttonname#>"/>
+                                            </td>
+                                        </tr>
+                                        <tr>
+                                            <th><#DDNS_IPv6#></th>
+                                            <td>
+                                                <select name="ddns_ipv6" class="input" onchange="disable_update();">
+                                                    <option value="0" <% nvram_match_x("", "ddns_ipv6", "0","selected"); %>><#checkbox_No#></option>
+                                                    <option value="1" <% nvram_match_x("", "ddns_ipv6", "1","selected"); %>><#checkbox_Yes#></option>
+                                                </select>
                                             </td>
                                         </tr>
                                         <tr>

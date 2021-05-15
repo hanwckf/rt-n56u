@@ -136,7 +136,7 @@ VOID auth_fsm_mlme_auth_req_action(
 		return;
 	}
 
-	log_time_end(LOG_TIME_CONNECTION, "auth_req", DBG_LVL_OFF, &tl);
+	log_time_end(LOG_TIME_CONNECTION, "auth_req", DBG_LVL_INFO, &tl);
 }
 
 static VOID auth_fsm_auth_timeout_action(RTMP_ADAPTER *pAd, MLME_QUEUE_ELEM *Elem)
@@ -248,7 +248,7 @@ static VOID auth_fsm_peer_auth_rsp_at_seq2_action(RTMP_ADAPTER *pAd, MLME_QUEUE_
 				  __func__, wdev ? "OK" : "NULL"));
 		return;
 	}
-	log_time_end(LOG_TIME_CONNECTION, "peer_auth_rsp_at_seq2", DBG_LVL_OFF, &tl);
+	log_time_end(LOG_TIME_CONNECTION, "peer_auth_rsp_at_seq2", DBG_LVL_INFO, &tl);
 }
 
 
@@ -278,7 +278,7 @@ static VOID auth_fsm_peer_auth_rsp_at_seq4_action(RTMP_ADAPTER *pAd, MLME_QUEUE_
 				  __func__, wdev ? "OK" : "NULL"));
 		return;
 	}
-	log_time_end(LOG_TIME_CONNECTION, "peer_auth_rsp_at_seq4", DBG_LVL_OFF, &tl);
+	log_time_end(LOG_TIME_CONNECTION, "peer_auth_rsp_at_seq4", DBG_LVL_INFO, &tl);
 }
 
 
@@ -336,7 +336,7 @@ static VOID auth_fsm_sae_auth_req_action(RTMP_ADAPTER *pAd, MLME_QUEUE_ELEM *Ele
 				  __func__, wdev ? "OK" : "NULL"));
 		return;
 	}
-	log_time_end(LOG_TIME_CONNECTION, "sae_auth_req", DBG_LVL_OFF, &tl);
+	log_time_end(LOG_TIME_CONNECTION, "sae_auth_req", DBG_LVL_INFO, &tl);
 }
 
 
@@ -366,7 +366,7 @@ static VOID auth_fsm_sae_auth_rsp_action(RTMP_ADAPTER *pAd, MLME_QUEUE_ELEM *Ele
 				  __func__, wdev ? "OK" : "NULL"));
 		return;
 	}
-	log_time_end(LOG_TIME_CONNECTION, "sae_auth_rsp", DBG_LVL_OFF, &tl);
+	log_time_end(LOG_TIME_CONNECTION, "sae_auth_rsp", DBG_LVL_INFO, &tl);
 }
 #endif /*DOT11_SAE_SUPPORT */
 

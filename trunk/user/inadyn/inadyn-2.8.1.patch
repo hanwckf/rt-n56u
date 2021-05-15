@@ -1,0 +1,250 @@
+diff -rupwN inadyn-2.8.1-orig/plugins/dnspod.c inadyn-2.8.1/plugins/dnspod.c
+--- inadyn-2.8.1-orig/plugins/dnspod.c	2020-02-16 23:59:28.000000000 +0800
++++ inadyn-2.8.1/plugins/dnspod.c	2021-05-06 00:12:05.266066000 +0800
+@@ -46,10 +46,10 @@ static ddns_system_t plugin = {
+ 	.checkip_ssl  = DYNDNS_MY_IP_SSL,
+ 
+ 	.server_name  = "dnsapi.cn",
+-	.server_url   = ""
++	.server_url   = "/"
+ };
+ 
+-static int fetch_record_id(ddns_t *ctx, ddns_info_t *info, ddns_alias_t *alias, char *domain, char *prefix)
++static int fetch_record_id(ddns_t *ctx, ddns_info_t *info, ddns_alias_t *alias, char *domain, char *prefix, const char *record_type)
+ {
+ 	http_trans_t trans;
+ 	http_t client;
+@@ -62,8 +62,8 @@ static int fetch_record_id(ddns_t *ctx,
+ 
+ 	/* login_token=API_ID,API_TOKEN */
+ 	len = snprintf(buffer, sizeof(buffer),
+-		       "login_token=%s%%2C%s&format=json&domain=%s&length=1&sub_domain=%s",
+-		       info->creds.username, info->creds.password, domain, prefix);
++		       "login_token=%s%%2C%s&format=json&domain=%s&length=1&sub_domain=%s&record_type=%s",
++		       info->creds.username, info->creds.password, domain, prefix, record_type);
+ 	if (len >= (int)sizeof(buffer))
+ 		return -RC_BUFFER_OVERFLOW;
+ 
+@@ -138,14 +138,23 @@ static int fetch_record_id(ddns_t *ctx,
+ 	return -RC_DDNS_INVALID_OPTION;
+ }
+ 
++static const char* get_record_type(const char *address)
++{
++	if (strstr(address, ":"))
++		return "AAAA";
++
++	return "A";
++}
++
+ /*
+  * API_ID = info->creds.username
+  * API_TOKEN = info->creds.password
+  */
+ static int setup(ddns_t *ctx, ddns_info_t *info, ddns_alias_t *alias)
+ {
++	const char *record_type;
+ 	char *tmp;
+-	char buffer[SERVER_NAME_LEN], domain[SERVER_NAME_LEN], prefix[SERVER_NAME_LEN];
++	char buffer[512], domain[SERVER_NAME_LEN], prefix[SERVER_NAME_LEN];
+ 	int record_id;
+ 	int len;
+ 
+@@ -163,7 +172,9 @@ static int setup(ddns_t *ctx, ddns_info_
+ 		strlcpy(prefix, "@", sizeof(prefix));
+ 	}
+ 
+-	record_id = fetch_record_id(ctx, info, alias, domain, prefix);
++	record_type = get_record_type(alias->address);
++
++	record_id = fetch_record_id(ctx, info, alias, domain, prefix, record_type);
+ 	if (record_id <= 0) {
+ 		logit(LOG_ERR, "Record '%s' not found in records list!", prefix);
+ 		if (record_id < 0)
+@@ -174,9 +185,9 @@ static int setup(ddns_t *ctx, ddns_info_
+ 
+ 	logit(LOG_DEBUG, "DNSPod Record: '%s' ID: %u", prefix, record_id);
+ 	len = snprintf(buffer, sizeof(buffer),
+-		       "login_token=%s%%2C%s&format=json&domain=%s&record_id=%d&record_line=%s&value=%s",
++		       "login_token=%s%%2C%s&format=json&domain=%s&sub_domain=%s&record_id=%d&record_line=%s&record_type=%s&value=%s",
+ 		       info->creds.username, info->creds.password,
+-		       domain, record_id, "%E9%BB%98%E8%AE%A4", alias->address);
++		       domain, prefix, record_id, "%E9%BB%98%E8%AE%A4", record_type, alias->address);	/* record_line = DEFAULT */
+ 	if (len >= (int)sizeof(buffer))
+ 		return RC_BUFFER_OVERFLOW;
+ 
+@@ -200,7 +211,7 @@ static int request(ddns_t *ctx, ddns_inf
+ 	post = (char *)info->data;
+ 	len  = strlen(post);
+ 
+-	return snprintf(ctx->request_buf, ctx->request_buflen, DNSPOD_API_REQUEST, "Record.Ddns",
++	return snprintf(ctx->request_buf, ctx->request_buflen, DNSPOD_API_REQUEST, "Record.Modify",
+ 			info->server_name.name, info->user_agent, len, post);
+ }
+ 
+diff -rupwN inadyn-2.8.1-orig/plugins/dyndns.c inadyn-2.8.1/plugins/dyndns.c
+--- inadyn-2.8.1-orig/plugins/dyndns.c	2020-02-16 23:59:28.000000000 +0800
++++ inadyn-2.8.1/plugins/dyndns.c	2021-05-05 23:09:15.999467689 +0800
+@@ -230,6 +230,20 @@ static ddns_system_t dynu = {
+ 	.server_url   = "/nic/update"
+ };
+ 
++static ddns_system_t oray = {
++	.name         = "default@oray.com",
++
++	.request      = (req_fn_t)request,
++	.response     = (rsp_fn_t)response,
++
++	.checkip_name = DYNDNS_MY_IP_SERVER,
++	.checkip_url  = DYNDNS_MY_CHECKIP_URL,
++	.checkip_ssl  = DYNDNS_MY_IP_SSL,
++
++	.server_name  = "ddns.oray.com",
++	.server_url   = "/ph/update"
++};
++
+ static int request(ddns_t *ctx, ddns_info_t *info, ddns_alias_t *alias)
+ {
+ 	return common_request(ctx, info, alias);
+@@ -255,6 +269,7 @@ PLUGIN_INIT(plugin_init)
+ 	plugin_register(&loopia);
+ 	plugin_register(&googledomains);
+ 	plugin_register(&dynu);
++	plugin_register(&oray);
+ }
+ 
+ PLUGIN_EXIT(plugin_exit)
+@@ -272,6 +287,7 @@ PLUGIN_EXIT(plugin_exit)
+ 	plugin_unregister(&loopia);
+ 	plugin_unregister(&googledomains);
+ 	plugin_unregister(&dynu);
++	plugin_unregister(&oray);
+ }
+ 
+ /**
+diff -rupwN inadyn-2.8.1-orig/plugins/netassist.c inadyn-2.8.1/plugins/netassist.c
+--- inadyn-2.8.1-orig/plugins/netassist.c	1970-01-01 08:00:00.000000000 +0800
++++ inadyn-2.8.1/plugins/netassist.c	2021-05-05 23:09:15.999467689 +0800
+@@ -0,0 +1,100 @@
++/* Plugin for tb.netassist.ua IPV6 tunnelbroker
++ *
++ * Copyright (C) 2003-2004  Narcis Ilisei <inarcis2002@hotpop.com>
++ * Copyright (C) 2006       Steve Horbachuk
++ * Copyright (C) 2010-2014  Joachim Nilsson <troglobit@gmail.com>
++ *
++ * This program is free software; you can redistribute it and/or
++ * modify it under the terms of the GNU General Public License
++ * as published by the Free Software Foundation; either version 2
++ * of the License, or (at your option) any later version.
++ *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++ * GNU General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public License
++ * along with this program; if not, visit the Free Software Foundation
++ * website at http://www.gnu.org/licenses/gpl-2.0.html or write to the
++ * Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor,
++ * Boston, MA  02110-1301, USA.
++ */
++
++#include "plugin.h"
++
++/* tb.netassist.ua specific update request format */
++#define NETASSIST_IPV6TB_UPDATE_IP_REQUEST					\
++	"GET %s?"							\
++	"l=%s&"							\
++	"p=%s&"							\
++	"ip=%s "							\
++	"HTTP/1.0\r\n"							\
++	"Host: %s\r\n"							\
++	"User-Agent: %s\r\n\r\n"
++
++static int request  (ddns_t       *ctx,   ddns_info_t *info, ddns_alias_t *alias);
++static int response (http_trans_t *trans, ddns_info_t *info, ddns_alias_t *alias);
++
++static ddns_system_t plugin = {
++	.name         = "ipv6tb@netassist.ua",
++
++	.request      = (req_fn_t)request,
++	.response     = (rsp_fn_t)response,
++
++	.checkip_name = "ipv4.wtfismyip.com",
++	.checkip_url  = "/text",
++
++	.server_name  = "tb.netassist.ua",
++	.server_url   = "/autochangeip.php"
++};
++
++static int request(ddns_t *ctx, ddns_info_t *info, ddns_alias_t *alias)
++{
++	return snprintf(ctx->request_buf, ctx->request_buflen,
++			NETASSIST_IPV6TB_UPDATE_IP_REQUEST,
++			info->server_url,
++			info->creds.username,
++			info->creds.password,
++			alias->address,
++			info->server_name.name,
++			info->user_agent);
++}
++
++/*
++ * tb.netassist.ua specific response validation
++ * 'OK!' and 'is already registered' are the good answers.
++ */
++static int response(http_trans_t *trans, ddns_info_t *info, ddns_alias_t *alias)
++{
++	char *body = trans->rsp_body;
++
++	(void)info;
++	(void)alias;
++
++	DO(http_status_valid(trans->status));
++
++	if (strstr(body, "OK!") ||
++	    strstr(body, "already"))
++		return 0;
++
++	return RC_DDNS_RSP_NOTOK;
++}
++
++PLUGIN_INIT(plugin_init)
++{
++	plugin_register(&plugin);
++}
++
++PLUGIN_EXIT(plugin_exit)
++{
++	plugin_unregister(&plugin);
++}
++
++/**
++ * Local Variables:
++ *  version-control: t
++ *  indent-tabs-mode: t
++ *  c-file-style: "linux"
++ * End:
++ */
+diff -rupwN inadyn-2.8.1-orig/src/Makefile.am inadyn-2.8.1/src/Makefile.am
+--- inadyn-2.8.1-orig/src/Makefile.am	2020-02-16 23:59:28.000000000 +0800
++++ inadyn-2.8.1/src/Makefile.am	2021-05-05 23:09:15.999467689 +0800
+@@ -36,4 +36,5 @@ inadyn_SOURCES  += ../plugins/common.c
+ 		   ../plugins/freemyip.c	../plugins/generic.c		\
+ 		   ../plugins/giradns.c						\
+ 		   ../plugins/sitelutions.c	../plugins/tunnelbroker.c	\
+-		   ../plugins/yandex.c		../plugins/zoneedit.c
++		   ../plugins/yandex.c		../plugins/zoneedit.c		\
++		   ../plugins/netassist.c
+diff -rupwN inadyn-2.8.1-orig/src/openssl.c inadyn-2.8.1/src/openssl.c
+--- inadyn-2.8.1-orig/src/openssl.c	2021-01-31 21:35:51.000000000 +0800
++++ inadyn-2.8.1/src/openssl.c	2021-05-05 23:40:46.872767116 +0800
+@@ -70,7 +70,7 @@ static int verify_callback(int preverify
+ 	}
+ 
+ 	if (!preverify_ok) {
+-		logit(LOG_ERR, "Certificate verification error:num=%d:%s:depth=%d:%s",
++		logit(LOG_INFO, "Certificate verification error:num=%d:%s:depth=%d:%s",
+ 		      err, X509_verify_cert_error_string(err), depth, buf);
+ 		if (broken_rtc && err == X509_V_ERR_CERT_NOT_YET_VALID)
+ 			preverify_ok = 1;

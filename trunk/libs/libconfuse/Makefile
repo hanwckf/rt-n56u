@@ -1,18 +1,17 @@
-SRC_NAME = nano-3.0
-SRC_URL = https://www.nano-editor.org/dist/v3/nano-3.0.tar.gz
-THISDIR = $(shell pwd)
+SRC_NAME=confuse-3.3
+SRC_URL=https://github.com/libconfuse/libconfuse/releases/download/v3.3/confuse-3.3.tar.xz
 
 all: download_test extract_test config_test
 	$(MAKE) -j$(HOST_NCPU) -C $(SRC_NAME)
 
 download_test:
-	( if [ ! -f $(SRC_NAME).tar.gz ]; then \
-		wget -t5 --timeout=20 --no-check-certificate -O $(SRC_NAME).tar.gz $(SRC_URL); \
+	( if [ ! -f $(SRC_NAME).tar.xz ]; then \
+		wget -t5 --timeout=20 --no-check-certificate -O $(SRC_NAME).tar.xz $(SRC_URL); \
 	fi )
 
 extract_test:
 	( if [ ! -d $(SRC_NAME) ]; then \
-		tar -xf $(SRC_NAME).tar.gz; \
+		tar -xf $(SRC_NAME).tar.xz ; \
 	fi )
 
 config_test:
@@ -25,14 +24,14 @@ config_test:
 configure:
 	( cd $(SRC_NAME) ; \
 	./configure \
-		--prefix=/usr \
-		--enable-tiny \
-		--enable-utf8 \
-		--disable-nls \
-		PKG_CONFIG_LIBDIR="$(STAGEDIR)/lib/pkgconfig/" \
+		--disable-examples \
+		--enable-static \
+		--disable-shared \
+		--prefix=$(STAGEDIR) \
 		--host=$(HOST_TARGET) \
 		--build=$(HOST_BUILD) ; \
 	)
+
 
 clean:
 	if [ -f $(SRC_NAME)/Makefile ] ; then \
@@ -40,5 +39,7 @@ clean:
 	fi ; \
 	rm -f config_done
 
+install:
+	$(MAKE) -C $(SRC_NAME) install DESTDIR=""
+
 romfs:
-	$(ROMFSINST) -p +x $(THISDIR)/$(SRC_NAME)/src/nano /usr/bin/nano

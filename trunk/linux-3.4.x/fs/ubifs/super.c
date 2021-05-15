@@ -276,14 +276,12 @@ static void ubifs_i_callback(struct rcu_head *head)
 {
 	struct inode *inode = container_of(head, struct inode, i_rcu);
 	struct ubifs_inode *ui = ubifs_inode(inode);
+	kfree(ui->data);
 	kmem_cache_free(ubifs_inode_slab, ui);
 }
 
 static void ubifs_destroy_inode(struct inode *inode)
 {
-	struct ubifs_inode *ui = ubifs_inode(inode);
-
-	kfree(ui->data);
 	call_rcu(&inode->i_rcu, ubifs_i_callback);
 }
 
@@ -1251,8 +1249,7 @@ static int mount_ubifs(struct ubifs_info *c)
 	if (err)
 		goto out_free;
 
-	sz = ALIGN(c->max_idx_node_sz, c->min_io_size);
-	sz = ALIGN(sz + c->max_idx_node_sz, c->min_io_size);
+	sz = ALIGN(c->max_idx_node_sz, c->min_io_size) * 2;
 	c->cbuf = kmalloc(sz, GFP_NOFS);
 	if (!c->cbuf) {
 		err = -ENOMEM;
@@ -1931,6 +1928,9 @@ static struct ubi_volume_desc *open_ubi(const char *name, int mode)
 	struct ubi_volume_desc *ubi;
 	int dev, vol;
 	char *endptr;
+
+	if (!name || !*name)
+		return ERR_PTR(-EINVAL);
 
 	/* First, try to open using the device node path method */
 	ubi = ubi_open_volume_path(name, mode);

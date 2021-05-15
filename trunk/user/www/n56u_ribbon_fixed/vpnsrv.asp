@@ -61,12 +61,20 @@ function initial(){
 	else
 	if (!support_ipv6() || ip6_service == ''){
 		var o = document.form.vpns_ov_prot;
-		o.remove(2);
-		o.remove(2);
+		for (var i = 0; i < 4; i++) {
+			o.remove(2);
+		}
 	}
 
-	if (openssl_util_found() && login_safe())
+	if (openssl_util_found() && login_safe()) {
+		if (!support_openssl_ec()) {
+			var o = document.form.vpns_gen_rb;
+			for (var i=0;i<5;i++) {
+				o.remove(3);
+			}
+		}
 		showhide_div('tbl_vpns_gen', 1);
+	}
 
 	change_vpns_enabled();
 
@@ -231,6 +239,7 @@ function textarea_ovpn_enabled(v){
 	inputCtrl(document.form['ovpnsvr.server.crt'], v);
 	inputCtrl(document.form['ovpnsvr.server.key'], v);
 	inputCtrl(document.form['ovpnsvr.ta.key'], v);
+	inputCtrl(document.form['ovpnsvr.stc2.key'], v);
 }
 
 function change_vpns_enabled(){
@@ -273,8 +282,10 @@ function change_vpns_type(){
 	showhide_div('row_vpns_ov_port', is_ov);
 	showhide_div('row_vpns_ov_mdig', is_ov);
 	showhide_div('row_vpns_ov_ciph', is_ov);
-	showhide_div('row_vpns_ov_clzo', is_ov);
+	showhide_div('row_vpns_ov_ncp_clist', is_ov);
+	showhide_div('row_vpns_ov_compress', is_ov);
 	showhide_div('row_vpns_ov_atls', is_ov);
+	showhide_div('row_vpns_ov_tcv2', is_ov);
 	showhide_div('row_vpns_ov_rdgw', is_ov);
 	showhide_div('row_vpns_ov_conf', is_ov);
 
@@ -290,10 +301,16 @@ function change_vpns_type(){
 		inputCtrl(document.form.vpns_pass_x_0, 0);
 		document.form.vpns_pass_x_0.value = "";
 		
-		if (openssl_util_found() && login_safe() && openvpn_srv_cert_found())
+		if (openssl_util_found() && login_safe() && openvpn_srv_cert_found()) {
+			if (!support_openssl_ec()) {
+				var o = document.form.vpns_exp_rb;
+				for (var i=0;i<5;i++) o.remove(3);
+			}
 			showhide_div('row_vpns_exp', 1);
+		}
 		
 		change_vpns_ov_atls();
+		change_vpns_ov_tcv2();
 	}else{
 		showhide_div('tab_vpns_acl', 1);
 		
@@ -384,12 +401,22 @@ function change_vpns_vnet_enable(){
 }
 
 function change_vpns_ov_atls() {
-	var v = (document.form.vpns_ov_atls.value == "1") ? 1 : 0;
+	var v = (document.form.vpns_ov_atls.value != "0") ? 1 : 0;
 
 	showhide_div('row_ta_key', v);
 	if (!login_safe())
 		v=0;
 	inputCtrl(document.form['ovpnsvr.ta.key'], v);
+
+}
+
+function change_vpns_ov_tcv2() {
+	var v = (document.form.vpns_ov_tcv2.value == "1") ? 1 : 0;
+
+	showhide_div('row_stc2_key', v);
+	if (!login_safe())
+		v=0;
+	inputCtrl(document.form['ovpnsvr.stc2.key'], v);
 }
 
 function markGroupACL(o, c, b) {
@@ -830,10 +857,12 @@ function getHash(){
                                     <th><#OVPN_Prot#></th>
                                     <td>
                                         <select name="vpns_ov_prot" class="input">
-                                            <option value="0" <% nvram_match_x("", "vpns_ov_prot", "0","selected"); %>>UDP (*)</option>
-                                            <option value="1" <% nvram_match_x("", "vpns_ov_prot", "1","selected"); %>>TCP</option>
+                                            <option value="0" <% nvram_match_x("", "vpns_ov_prot", "0","selected"); %>>UDP over IPv4 (*)</option>
+                                            <option value="1" <% nvram_match_x("", "vpns_ov_prot", "1","selected"); %>>TCP over IPv4</option>
                                             <option value="2" <% nvram_match_x("", "vpns_ov_prot", "2","selected"); %>>UDP over IPv6</option>
                                             <option value="3" <% nvram_match_x("", "vpns_ov_prot", "3","selected"); %>>TCP over IPv6</option>
+                                            <option value="4" <% nvram_match_x("", "vpns_ov_prot", "4","selected"); %>>UDP both</option>
+                                            <option value="5" <% nvram_match_x("", "vpns_ov_prot", "5","selected"); %>>TCP both</option>
                                         </select>
                                     </td>
                                 </tr>
@@ -858,7 +887,7 @@ function getHash(){
                                     </td>
                                 </tr>
                                 <tr id="row_vpns_ov_ciph" style="display:none">
-                                    <th><#VPNS_Ciph#></th>
+                                    <th><#OVPN_Cipher#></th>
                                     <td>
                                         <select name="vpns_ov_ciph" class="input">
                                             <option value="0" <% nvram_match_x("", "vpns_ov_ciph", "0","selected"); %>>[none]</option>
@@ -876,17 +905,25 @@ function getHash(){
                                             <option value="12" <% nvram_match_x("", "vpns_ov_ciph", "12","selected"); %>>[AES-128-GCM] AES-GCM, 128 bit</option>
                                             <option value="13" <% nvram_match_x("", "vpns_ov_ciph", "13","selected"); %>>[AES-192-GCM] AES-GCM, 192 bit</option>
                                             <option value="14" <% nvram_match_x("", "vpns_ov_ciph", "14","selected"); %>>[AES-256-GCM] AES-GCM, 256 bit</option>
+                                            <option value="15" <% nvram_match_x("", "vpns_ov_ciph", "15","selected"); %>>[CHACHA20-POLY1305], 256 bit</option>
                                         </select>
                                     </td>
                                 </tr>
-                                <tr id="row_vpns_ov_clzo" style="display:none">
-                                    <th><#OVPN_CLZO#></th>
+                                <tr id="row_vpns_ov_ncp_clist" style="display:none">
+                                    <th><#OVPN_NCP_clist#></th>
                                     <td>
-                                        <select name="vpns_ov_clzo" class="input">
-                                            <option value="0" <% nvram_match_x("", "vpns_ov_clzo", "0","selected"); %>><#btn_Disable#></option>
-                                            <option value="1" <% nvram_match_x("", "vpns_ov_clzo", "1","selected"); %>><#checkbox_No#></option>
-                                            <option value="2" <% nvram_match_x("", "vpns_ov_clzo", "2","selected"); %>><#OVPN_CLZO_Item2#> (*)</option>
-                                            <option value="3" <% nvram_match_x("", "vpns_ov_clzo", "3","selected"); %>><#OVPN_CLZO_Item3#></option>
+                                        <input type="text" maxlength="256" size="15" name="vpns_ov_ncp_clist" class="input" style="width: 286px;" value="<% nvram_get_x("", "vpns_ov_ncp_clist"); %>" onkeypress="return is_string(this,event);"/>
+                                    </td>
+                                </tr>
+                                <tr id="row_vpns_ov_compress" style="display:none">
+                                    <th><#OVPN_COMPRESS#></th>
+                                    <td>
+                                        <select name="vpns_ov_compress" class="input">
+                                            <option value="0" <% nvram_match_x("", "vpns_ov_compress", "0","selected"); %>><#btn_Disable#></option>
+                                            <option value="1" <% nvram_match_x("", "vpns_ov_compress", "1","selected"); %>><#checkbox_No#></option>
+                                            <option value="2" <% nvram_match_x("", "vpns_ov_compress", "2","selected"); %>><#OVPN_COMPRESS_Item2#> (*)</option>
+                                            <option value="3" <% nvram_match_x("", "vpns_ov_compress", "3","selected"); %>><#OVPN_COMPRESS_Item3#></option>
+                                            <option value="4" <% nvram_match_x("", "vpns_ov_compress", "4","selected"); %>><#OVPN_COMPRESS_Item4#></option>
                                         </select>
                                     </td>
                                 </tr>
@@ -896,6 +933,16 @@ function getHash(){
                                         <select name="vpns_ov_atls" class="input">
                                             <option value="0" <% nvram_match_x("", "vpns_ov_atls", "0","selected"); %>><#checkbox_No#></option>
                                             <option value="1" <% nvram_match_x("", "vpns_ov_atls", "1","selected"); %>><#OVPN_HMAC_Item1#></option>
+                                            <option value="2" <% nvram_match_x("", "vpns_ov_atls", "2","selected"); %>><#OVPN_HMAC_Item2#></option>
+                                        </select>
+                                    </td>
+                                </tr>
+                                <tr id="row_vpns_ov_tcv2" style="display:none" onchange="change_vpns_ov_tcv2();">
+                                    <th><#OVPN_USE_TCV2#></th>
+                                    <td>
+                                        <select name="vpns_ov_tcv2" class="input">
+                                            <option value="0" <% nvram_match_x("", "vpns_ov_tcv2", "0","selected"); %>><#checkbox_No#></option>
+                                            <option value="1" <% nvram_match_x("", "vpns_ov_tcv2", "1","selected"); %>><#OVPN_USE_TCV2_ItemS#></option>
                                         </select>
                                     </td>
                                 </tr>
@@ -1017,10 +1064,16 @@ function getHash(){
                                         <input id="vpns_gen_cn" type="text" maxlength="32" size="10" style="width: 105px;" placeholder="OpenVPN Server" onKeyPress="return is_string(this,event);"/>
                                     </td>
                                     <td align="left" style="border-top: 0 none; padding-top: 0px;">
-                                        <span class="caption-bold">RSA bits:</span>
-                                        <select id="vpns_gen_rb" class="input" style="width: 85px;">
-                                            <option value="1024">1024 (*)</option>
-                                            <option value="2048">2048</option>
+                                        <span class="caption-bold">Bits:</span>
+                                        <select id="vpns_gen_rb" class="input" style="width: 108px;">
+                                            <option value="1024">RSA 1024 (*)</option>
+                                            <option value="2048">RSA 2048</option>
+                                            <option value="4096">RSA 4096</option>
+                                            <option value="prime256v1">EC P-256</option>
+                                            <option value="secp384r1">EC P-384</option>
+                                            <option value="secp521r1">EC P-521</option>
+                                            <option value="ed25519">EC ED25519</option>
+                                            <option value="ed448">EC ED448</option>
                                         </select>
                                     </td>
                                     <td align="left" style="border-top: 0 none; padding-top: 0px;">
@@ -1037,10 +1090,16 @@ function getHash(){
                                         <input id="vpns_exp_cn" type="text" maxlength="32" size="10" style="width: 105px;" placeholder="client@ovpn" onKeyPress="return is_string(this,event);"/>
                                     </td>
                                     <td align="left">
-                                        <span class="caption-bold">RSA bits:</span>
-                                        <select id="vpns_exp_rb" class="input" style="width: 85px;">
-                                            <option value="1024">1024 (*)</option>
-                                            <option value="2048">2048</option>
+                                        <span class="caption-bold">Bits:</span>
+                                        <select id="vpns_exp_rb" class="input" style="width: 108px;">
+                                            <option value="1024">RSA 1024 (*)</option>
+                                            <option value="2048">RSA 2048</option>
+                                            <option value="4096">RSA 4096</option>
+                                            <option value="prime256v1">EC P-256</option>
+                                            <option value="secp384r1">EC P-384</option>
+                                            <option value="secp521r1">EC P-521</option>
+                                            <option value="ed25519">EC ED25519</option>
+                                            <option value="ed448">EC ED448</option>
                                         </select>
                                     </td>
                                     <td align="left">
@@ -1082,8 +1141,14 @@ function getHash(){
                                 </tr>
                                 <tr id="row_ta_key">
                                     <td style="padding-bottom: 0px; border-top: 0 none;">
-                                        <span class="caption-bold">TLS Auth Key (ta.key) - secret:</span>
+                                        <span class="caption-bold">TLS Auth/Crypt Key (ta.key/tc.key) - secret:</span>
                                         <textarea rows="4" wrap="off" spellcheck="false" maxlength="8192" class="span12" name="ovpnsvr.ta.key" style="font-family:'Courier New'; font-size:12px;"><% nvram_dump("ovpnsvr.ta.key",""); %></textarea>
+                                    </td>
+                                </tr>
+                                <tr id="row_stc2_key">
+                                    <td style="padding-bottom: 0px; border-top: 0 none;">
+                                        <span class="caption-bold">TLS Crypt v2 Key (stc2.key) - secret:</span>
+                                        <textarea rows="4" wrap="off" spellcheck="false" maxlength="8192" class="span12" name="ovpnsvr.stc2.key" style="font-family:'Courier New'; font-size:12px;"><% nvram_dump("ovpnsvr.stc2.key",""); %></textarea>
                                     </td>
                                 </tr>
                             </table>

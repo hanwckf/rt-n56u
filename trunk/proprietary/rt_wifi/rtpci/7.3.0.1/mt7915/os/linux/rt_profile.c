@@ -1285,9 +1285,11 @@ void announce_802_3_packet(
 			RtmpOsPktProtocolAssign(pRxPkt);
 
 			if (!whnat_rx_en) {
-				RtmpOsPktNatMagicTag(pRxPkt);
-				if (ra_sw_nat_hook_rx(pRxPkt))
+				FOE_MAGIC_TAG(RTPKT_TO_OSPKT(pRxPkt)) = FOE_MAGIC_EXTIF;
+				if (ra_sw_nat_hook_rx(pRxPkt)) {
+					FOE_MAGIC_TAG(RTPKT_TO_OSPKT(pRxPkt)) = 0;
 					RtmpOsPktRcvHandle(pRxPkt, napi);
+				}
 			} else {
 				if (RTMP_GET_PACKET_TYPE(pRxPkt)
 						== RX_PPE_VALID)

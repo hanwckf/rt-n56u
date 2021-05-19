@@ -284,6 +284,9 @@ init_gpio_leds_buttons(void)
 #if defined (BOARD_CR660x)
 	cpu_gpio_set_pin_direction(14, 1);
 	cpu_gpio_set_pin(14, LED_OFF);
+#elif defined (BOARD_Q20)
+	cpu_gpio_set_pin_direction(14, 1);
+	cpu_gpio_set_pin(14, LED_ON); // set GPIO to low
 #endif
 	cpu_gpio_set_pin_direction(BOARD_GPIO_LED_POWER, 1);
 	LED_CONTROL(BOARD_GPIO_LED_POWER, LED_ON);

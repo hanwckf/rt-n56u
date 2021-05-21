@@ -5528,7 +5528,7 @@ static INT rtmp_chk_rx_err(RTMP_ADAPTER *pAd, RX_BLK *pRxBlk)
 		}
 
 		if (pRxBlk->DeAmsduFail) {
-			MTWF_LOG(DBG_CAT_RX, DBG_SUBCAT_ALL, DBG_LVL_OFF,
+			MTWF_LOG(DBG_CAT_RX, DBG_SUBCAT_ALL, DBG_LVL_INFO,
 					 ("Deammsdu Fail\n, WlanIndex = %d\n", rxd_base->RxD2.RxDWlanIdx));
 			return NDIS_STATUS_FAILURE;
 		}

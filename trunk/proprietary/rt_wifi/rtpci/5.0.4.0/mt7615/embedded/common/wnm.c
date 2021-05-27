@@ -1968,7 +1968,7 @@ error:
 			("%s(): BTMReqTimer is not valid, delete BTMPeerEntry now\n",
 			__func__));
 		RTMPCancelTimer(&BTMPeerEntry->WaitPeerBTMRspTimer, &Cancelled);
-		RTMPReleaseTimer(&BTMPeerEntry->WaitPeerBTMRspTimer, &Cancelled);f
+		RTMPReleaseTimer(&BTMPeerEntry->WaitPeerBTMRspTimer, &Cancelled);
 		RTMP_SEM_EVENT_WAIT(&pWNMCtrl->BTMPeerListLock, Ret);
 		DlListDel(&BTMPeerEntry->List);
 		RTMP_SEM_EVENT_UP(&pWNMCtrl->BTMPeerListLock);

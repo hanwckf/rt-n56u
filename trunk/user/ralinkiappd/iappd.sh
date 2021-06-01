@@ -10,6 +10,8 @@ func_start() {
 	    sysctl -wq net.ipv4.neigh.rai0.delay_first_probe_time=1
 	    sysctl -wq net.ipv4.neigh.ra0.base_reachable_time_ms=10000
 	    sysctl -wq net.ipv4.neigh.ra0.delay_first_probe_time=1
+	    sysctl -wq net.ipv4.neigh.rax0.base_reachable_time_ms=10000
+	    sysctl -wq net.ipv4.neigh.rax0.delay_first_probe_time=1
 	    iptables -A INPUT -i br0 -p tcp --dport 3517 -j ACCEPT
 	    iptables -A INPUT -i br0 -p udp --dport 3517 -j ACCEPT
 }

@@ -88,6 +88,7 @@ VOID FT_FTIE_InsertKhIdSubIE(
 	IN UINT8 KhIdLen)
 {
 	ULONG TempLen;
+	UCHAR TempSubID;
 
 	if (SubId != FT_R0KH_ID && SubId != FT_R1KH_ID) {
 		MTWF_LOG(DBG_CAT_PROTO, CATPROTO_FT, DBG_LVL_ERROR, ("(%s): unknow SubId (%d)\n",
@@ -107,9 +108,10 @@ VOID FT_FTIE_InsertKhIdSubIE(
 		MTWF_LOG(DBG_CAT_PROTO, CATPROTO_FT, DBG_LVL_ERROR, ("(%s): Invalid R0KHID length (%d)\n",
 				 __func__, KhIdLen));
 	}
-
+	
+	TempSubID = (UCHAR)SubId;
 	MakeOutgoingFrame(pFrameBuf,		&TempLen,
-						1,				&SubId,
+						1,				&TempSubID,
 						1,				&KhIdLen,
 						KhIdLen,		(PUCHAR)pKhId,
 						END_OF_ARGS);

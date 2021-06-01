@@ -704,9 +704,6 @@ gen_ralink_config(int is_soc_ap, int is_aband, int disable_autoscan)
 	fprintf(fp, "DfsDedicatedZeroWait=%d\n", 0);
 	fprintf(fp, "DfsZeroWaitDefault=%d\n", 0);
 	fprintf(fp, "KernelRps=%d\n", 0);
-	fprintf(fp, "RRMEnable=1;1;1\n", 0);
-	fprintf(fp, "WNMEnable=1;1;1\n", 0);
-	fprintf(fp, "RoamingEnhance=1;1;1\n",0);
 	fprintf(fp, "MboSupport=%d\n", 0);
 
 #if defined (USE_MT7615_AP) || defined (USE_MT7915_AP)
@@ -1280,7 +1277,16 @@ gen_ralink_config(int is_soc_ap, int is_aband, int disable_autoscan)
 	//HT_AMSDU
 	i_val = nvram_wlan_get_int(is_aband, "HT_AMSDU");
 	fprintf(fp, "HT_AMSDU=%d;%d\n", i_val, i_val);
-
+	fprintf(fp, "RRMEnable=%d;%d\n", 1,1);
+	fprintf(fp, "WNMEnable=%d;%d\n", 1,1);
+	if (is_aband)
+	{fprintf(fp, "FtSupport=%d\n",1);}
+	else
+	{fprintf(fp, "FtSupport=0\n");}
+	fprintf(fp, "FtMdId1=01\n");
+	fprintf(fp, "FtR0khId1=8a7fcc966ed0691ff2809e1f38c15586\n");
+	fprintf(fp, "FtOtd=0\n");
+	fprintf(fp, "FtRic=1\n");
 	//HT_BAWinSize
 	i_val = nvram_wlan_get_int(is_aband, "HT_BAWinSize");
 	if (i_val < 1 || i_val > 256) i_val = 256;

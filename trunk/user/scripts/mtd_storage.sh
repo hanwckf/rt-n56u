@@ -261,7 +261,7 @@ func_fill()
 #modprobe ip_set_bitmap_ip
 #modprobe ip_set_list_set
 #modprobe xt_set
-
+/usr/bin/iappd.sh start
 #drop caches
 sync && echo 3 > /proc/sys/vm/drop_caches
 

@@ -766,7 +766,6 @@ full_restart_lan(void)
 
 	/* force httpd logout */
 	doSystem("killall %s %s", "-SIGUSR1", "httpd");
-	doSystem("/usr/bin/iappd.sh restart");
 }
 
 void

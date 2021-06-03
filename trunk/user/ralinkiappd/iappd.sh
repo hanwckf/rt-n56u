@@ -5,7 +5,11 @@
 
 
 
-start() {
+start() {   if grep -q 'mt76x3_ap' /proc/modules ; then
+	    ralinkiappd -wi rai0         -d 10  &
+	    sysctl -wq net.ipv4.neigh.rai0.base_reachable_time_ms=10000
+	    sysctl -wq net.ipv4.neigh.rai0.delay_first_probe_time=1
+            else
             if grep -q 'rai0' /proc/interrupts; then
 	    ralinkiappd -wi rai0 -wi ra0 -d 10  &
 	    sysctl -wq net.ipv4.neigh.rai0.base_reachable_time_ms=10000
@@ -14,6 +18,7 @@ start() {
 	    ralinkiappd -wi rax0 -wi ra0 -d 10  &
 	    sysctl -wq net.ipv4.neigh.rax0.base_reachable_time_ms=10000
 	    sysctl -wq net.ipv4.neigh.rax0.delay_first_probe_time=1	    
+	    fi
 	    fi
 	    sysctl -wq net.ipv4.neigh.br0.base_reachable_time_ms=10000
 	    sysctl -wq net.ipv4.neigh.br0.delay_first_probe_time=1
@@ -32,11 +37,8 @@ start() {
 stop() {
     pid=`pidof ralinkiappd`
     if [ "$pid" != "" ]; then
-        # terminate ralinkiappd daemon
-        while killall -q ralinkiappd; do
-            usleep 500000
-            killall -q  ralinkiappd
-        done
+        killall -q  ralinkiappd
+ 	sleep 3
     fi
 }
 

@@ -1,21 +1,27 @@
 #!/bin/sh
 
 func_start() {
+	    if grep -q 'rai0' /proc/interrupts; then
 	    ralinkiappd -wi rai0 -wi ra0  &
-	    sleep 2
-	    ralinkiappd -wi rax0 -wi ra0  &
-	    sysctl -wq net.ipv4.neigh.br0.base_reachable_time_ms=10000
-	    sysctl -wq net.ipv4.neigh.br0.delay_first_probe_time=1
 	    sysctl -wq net.ipv4.neigh.rai0.base_reachable_time_ms=10000
 	    sysctl -wq net.ipv4.neigh.rai0.delay_first_probe_time=1
+	    else
+	    ralinkiappd -wi rax0 -wi ra0  &
+	    sysctl -wq net.ipv4.neigh.rax0.base_reachable_time_ms=10000
+	    sysctl -wq net.ipv4.neigh.rax0.delay_first_probe_time=1	    
+	    fi
+	    sysctl -wq net.ipv4.neigh.br0.base_reachable_time_ms=10000
+	    sysctl -wq net.ipv4.neigh.br0.delay_first_probe_time=1
 	    sysctl -wq net.ipv4.neigh.ra0.base_reachable_time_ms=10000
 	    sysctl -wq net.ipv4.neigh.ra0.delay_first_probe_time=1
 	    iptables -A INPUT -i br0 -p tcp --dport 3517 -j ACCEPT
-	    iptables -A INPUT -i br0 -p udp --dport 3517 -j ACCEPT
+	    iptables -A INPUT -i br0 -p udp --dport 3517 -j ACCEPT 
 }
 
 func_stop() {
-            killall -q  ralinkiappd
+            
+             killall -q ralinkiappd
+            
 }
 
 case "$1" in
@@ -29,7 +35,7 @@ stop)
 
 restart)
           func_stop
-	  sleep3
+	  sleep 3
           func_start
             ;;
 

@@ -2050,12 +2050,7 @@ static VOID IAPP_RcvHandlerTcp(
 			return;
 		}
 
-		if (pIappHdr->Version != IAPP_VERSION)
-		{
-			DBGPRINT(RT_DEBUG_TRACE, "iapp> IAPP version not match %d!\n", pIappHdr->Version);
-			//IAPP_HEX_DUMP("Wrong TCP Frame Content: ", pPktBuf, SizeRcvMsg);
-			return; /* version not match */
-		} /* End of if */
+		
 
 		DBGPRINT(RT_DEBUG_TRACE,
 				"iapp> IAPP SysCmd = %d\n", pIappHdr->Command);
@@ -2793,14 +2788,7 @@ static VOID IAPP_RcvHandlerUdp(
 			return;
 		}
 
-		if (pIappHdr->Version != IAPP_VERSION)
-		{
-			DBGPRINT(RT_DEBUG_TRACE, "iapp> IAPP version not match %d!\n",
-					pIappHdr->Version);
-			//IAPP_HEX_DUMP("Wrong UDP Frame Content: ", pPktBuf, SizeRcvMsg);
-			return; /* version not match */
-		} /* End of if */
-
+		
 #if 0
 		//IAPP_HEX_DUMP("UDP Frame Content: ", pPktBuf, SizeRcvMsg);
 #endif

@@ -12,6 +12,7 @@ $(EXEC): $(OBJS)
 romfs:
 	$(ROMFSINST) /sbin/$(EXEC)
 	$(ROMFSINST) -p +x $(THISDIR)/iappd.sh /usr/bin/iappd.sh
+	
 
 clean:
 	rm -f core *.o ralinkiappd

@@ -24,7 +24,7 @@ case "$1" in
 start)
           func_start
             ;;
-
+*)
           echo $"Usage: $0 {start}"
 	  exit 1
 esac

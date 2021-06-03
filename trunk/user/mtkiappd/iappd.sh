@@ -18,28 +18,13 @@ func_start() {
 	    iptables -A INPUT -i br0 -p udp --dport 3517 -j ACCEPT 
 }
 
-func_stop() {
-            
-             killall -q mtkiappd
-            
-}
+
 
 case "$1" in
 start)
           func_start
             ;;
 
-stop)
-          func_stop
-            ;;
-
-restart)
-          func_stop
-	  sleep 3
-          func_start
-            ;;
-
-*)
-          echo $"Usage: $0 {start|stop|restart}"
+          echo $"Usage: $0 {start}"
 	  exit 1
 esac

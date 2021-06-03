@@ -623,7 +623,7 @@ start_services_once(int is_ap_mode)
 #if defined(APP_MENTOHUST)
 	start_mentohust();
 #endif
-	system("/usr/bin/iappd.sh restart");
+	system("/usr/bin/iappd.sh start");
 	return 0;
 }
 

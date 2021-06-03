@@ -763,7 +763,7 @@ full_restart_lan(void)
 
 	/* start ARP network scanner */
 	start_networkmap(1);
-	system("/usr/bin/iappd.sh restart");
+	system("/usr/bin/iappd.sh start");
 	/* force httpd logout */
 	doSystem("killall %s %s", "-SIGUSR1", "httpd");
 }
@@ -996,7 +996,7 @@ udhcpc_lan_bound(char *lan_ifname, int is_renew)
 		create_hosts_lan(lan_ipaddr, lan_domain);
 		
 		lan_up_auto(lan_ifname, lan_gateway, lan_domain);
-		system("/usr/bin/iappd.sh restart");
+		system("/usr/bin/iappd.sh start");
 		logmessage("DHCP LAN Client", "%s, IP: %s/%s, GW: %s, lease time: %d",
 			udhcpc_lan_state, lan_ipaddr, lan_ipmask, lan_gateway, lease_dur);
 		

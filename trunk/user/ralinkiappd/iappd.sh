@@ -32,11 +32,10 @@ start() {
 stop() {
     pid=`pidof ralinkiappd`
     if [ "$pid" != "" ]; then
-	$LOG "Stopping 802.11f roaming daemon"
         # terminate ralinkiappd daemon
         while killall -q ralinkiappd; do
             usleep 500000
-            killall -q -SIGKILL ralinkiappd
+            killall -q  ralinkiappd
         done
     fi
 }

@@ -93,7 +93,7 @@ endif
 dir_y =
 dir_n =
 dir_  =
-dir_y                      += ralinkiappd
+dir_y                      += mtkiappd
 dir_y						+= busybox
 dir_y						+= iptables
 dir_y						+= coremark

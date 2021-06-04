@@ -816,7 +816,7 @@ VOID TYPE_FUNC FT_KDP_KeyResponseToUs(
 
 	/* init */
 	IAPP_DAEMON_CMD_PARSE(pInfo, InfoLen, PeerIP, pData, DataLen);
-	DBGPRINT(RT_DEBUG_ERROR,
+	DBGPRINT(RT_DEBUG_TRACE,
 			("ap_ftkd> DataLen = %d!\n", DataLen));
 
 	pNonce = pData;
@@ -969,7 +969,7 @@ VOID TYPE_FUNC FT_KDP_StationInform(
 
 	/* init */
 	IAPP_DAEMON_CMD_PARSE(pInfo, InfoLen, PeerIP, pData, DataLen);
-	DBGPRINT(RT_DEBUG_ERROR,
+	DBGPRINT(RT_DEBUG_TRACE,
 		("ap_ftkd> %s: DataLen = %d!\n", __FUNCTION__, DataLen));
 
 #ifndef FT_KDP_FUNC_TEST

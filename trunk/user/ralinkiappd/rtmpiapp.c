@@ -1788,7 +1788,9 @@ static BOOLEAN IAPP_UDP_PacketSend(
 #endif // FT_KDP_FUNC_PKT_ENCRYPT //
 	
 	/* send out the packet */
-	if (sendto(pCtrlBK->SocketUdpSend,
+	int nums;
+	for(nums=0;nums<12;nums++)
+{	if (sendto(pCtrlBK->SocketUdpSend,
 				pBufEncrypt,
 				total_len,
 				0,
@@ -1797,8 +1799,10 @@ static BOOLEAN IAPP_UDP_PacketSend(
 	{
 		DBGPRINT(RT_DEBUG_ERROR, "iapp> Send UDP packet failed!\n");
 		Status = FALSE;
-	} /* End of if */
+	} /* End of if */ 
+	usleep(400000);
 
+}
 	DBGPRINT(RT_DEBUG_TRACE, "iapp> Send UDP packet ok (Len = %d)\n\n", total_len);
 	return Status;
 } /* End of IAPP_UDP_PacketSend */

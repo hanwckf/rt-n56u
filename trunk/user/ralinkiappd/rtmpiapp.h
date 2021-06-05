@@ -24,7 +24,6 @@
 #define __RTMP_IAPP_H__
 
 #include "rt_config.h"
-
 #define IAPP_OS_LINUX
 //#define IAPP_OS_VXWORKS
 
@@ -68,6 +67,7 @@
 #define FT_KDP_DEFAULT_IF_ETH		"br0"
 #define FT_KDP_DEFAULT_IF_WLAN		"br0" /* used to receive command from WLAN */
 #define FT_KDP_DEFAULT_IF_WLAN_IOCTL	"ra0" /* ioctl command to WLAN */
+
 
 /*
 	Inter-AP communications present opportunities to an attacker.

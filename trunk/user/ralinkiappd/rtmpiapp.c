@@ -1800,7 +1800,7 @@ static BOOLEAN IAPP_UDP_PacketSend(
 		DBGPRINT(RT_DEBUG_ERROR, "iapp> Send UDP packet failed!\n");
 		Status = FALSE;
 	} /* End of if */ 
-	usleep(10000);
+	usleep(60000);
 
 }
 	DBGPRINT(RT_DEBUG_TRACE, "iapp> Send UDP packet ok (Len = %d)\n\n", total_len);

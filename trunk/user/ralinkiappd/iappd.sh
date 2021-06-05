@@ -1,11 +1,12 @@
 #!/bin/sh
 
 
-
-
-
-
-start() {   if grep -q 'rai0' /proc/interrupts; then
+start() {   if grep -q 'mt76x3_ap' /proc/modules ; then
+	    ralinkiappd -wi rai0           &
+	    sysctl -wq net.ipv4.neigh.rai0.base_reachable_time_ms=10000
+	    sysctl -wq net.ipv4.neigh.rai0.delay_first_probe_time=1
+            else
+	    if grep -q 'rai0' /proc/interrupts; then
 	    ralinkiappd -wi rai0 -wi ra0   &
 	    sysctl -wq net.ipv4.neigh.rai0.base_reachable_time_ms=10000
 	    sysctl -wq net.ipv4.neigh.rai0.delay_first_probe_time=1
@@ -13,6 +14,7 @@ start() {   if grep -q 'rai0' /proc/interrupts; then
 	    ralinkiappd -wi rax0 -wi ra0   &
 	    sysctl -wq net.ipv4.neigh.rax0.base_reachable_time_ms=10000
 	    sysctl -wq net.ipv4.neigh.rax0.delay_first_probe_time=1	    
+	    fi
 	    fi
 	    sysctl -wq net.ipv4.neigh.br0.base_reachable_time_ms=10000
 	    sysctl -wq net.ipv4.neigh.br0.delay_first_probe_time=1

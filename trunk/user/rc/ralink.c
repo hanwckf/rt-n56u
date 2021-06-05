@@ -780,13 +780,13 @@ gen_ralink_config(int is_soc_ap, int is_aband, int disable_autoscan)
 
 	//AutoChannelSelect
 	if (is_aband) {
-#if defined(USE_WID_5G) && (USE_WID_5G==7915)
+#if defined(USE_WID_5G) && (USE_WID_5G==7915 || USE_WID_5G==7615)
 	i_val = (i_channel == 0) ? 3 : 0;
 #else
 	i_val = (i_channel == 0) ? 2 : 0;
 #endif
 	} else {
-#if defined(USE_WID_2G) && (USE_WID_2G==7915)
+#if defined(USE_WID_2G) && (USE_WID_2G==7915 || USE_WID_2G==7615)
 	i_val = (i_channel == 0) ? 3 : 0;
 #else
 	i_val = (i_channel == 0) ? 2 : 0;

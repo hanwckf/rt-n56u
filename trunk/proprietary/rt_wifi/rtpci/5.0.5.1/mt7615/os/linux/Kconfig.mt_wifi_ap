@@ -1,7 +1,3 @@
-config MT7615_AP
-	tristate "MT7615 AP support"
-	select MT_AP_SUPPORT
-
 config MT_AP_SUPPORT
 	tristate "MTK AP support"
 #	depends on NET_RADIO
@@ -37,7 +33,7 @@ config SNIFFER_SUPPORT
 config ANTENNA_CONTROL_SUPPORT
 	bool "Antenna Control"
 	depends on MT_AP_SUPPORT && WIFI_EAP_FEATURE
-	default n
+	default y
 
 config MGMT_TXPWR_CTRL
 	bool "Mgmt TxPower Control"
@@ -129,7 +125,7 @@ config DOT11K_RRM_SUPPORT
 	depends on MT_AP_SUPPORT
 	default n
 
-config MT_INTERWORKING
+config INTERWORKING
 	bool "802.11u Interworking/Gas Support"
         depends on MT_AP_SUPPORT
         default n
@@ -148,19 +144,20 @@ config MAP_R2_VER_SUPPORT
 config OFFCHANNEL_SCAN_FEATURE
         bool "Channel Quality Monitor"
         depends on MT_AP_SUPPORT
-        default n
+        default y
 
 config OCE_SUPPORT
-    bool "Optimized Connectivity Experience Support"
-    depends on MT_AP_SUPPORT
-    depends on CHIP_MT7615E
-    default y
+        bool "Optimized Connectivity Experience Support"
+        depends on MT_AP_SUPPORT
+        depends on CHIP_MT7615E
+        select WAPP_SUPPORT
+        default y
 
 config DPP_FEATURE
-	bool "DPP Support"
-	depends on MT_AP_SUPPORT
+        bool "DPP Support"
+        depends on MT_AP_SUPPORT
 	depends on WIFI_DRIVER
-	default n
+        default n
 
 config ENTERPRISE_AP_SUPPORT
 	bool "Enterprise AP Support"

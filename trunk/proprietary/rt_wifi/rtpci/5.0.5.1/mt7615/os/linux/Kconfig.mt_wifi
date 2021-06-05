@@ -1,21 +1,77 @@
-config WIFI_DRIVER
-	bool
-	default y
-
-config CHIP_MT7615E
-	bool
-	default y
-
 config MT_WIFI
 	tristate "MT WIFI Driver"
 	select WIFI_BASIC_FUNC if MT_WIFI
 
+config MT_WIFI_PATH
+		string
+		depends on MT_WIFI
+		default "mt_wifi"
+
 if MT_WIFI
 menu "WiFi Generic Feature Options"
+choice
+		prompt "EEPROM Type of 1st Card"
+		depends on ! FIRST_IF_NONE
+
+		config FIRST_IF_EEPROM_FLASH
+		bool "FLASH"
+
+		config FIRST_IF_EEPROM_EFUSE
+		bool "EFUSE"
+endchoice
+
+config RT_FIRST_CARD_EEPROM
+		string
+		depends on ! FIRST_IF_NONE
+		default "flash" if FIRST_IF_EEPROM_FLASH
+
+choice
+		prompt "EEPROM Type of 2nd Card"
+		depends on ! SECOND_IF_NONE
+
+		config SECOND_IF_EEPROM_FLASH
+		bool "FLASH"
+
+		config SECOND_IF_EEPROM_PROM
+		bool "EEPROM"
+
+		config SECOND_IF_EEPROM_EFUSE
+		bool "EFUSE"
+
+endchoice
+
+config RT_SECOND_CARD_EEPROM
+		string
+		depends on ! SECOND_IF_NONE
+		default "prom" if SECOND_IF_EEPROM_PROM
+		default "efuse" if SECOND_IF_EEPROM_EFUSE
+		default "flash" if SECOND_IF_EEPROM_FLASH
+
+choice
+		prompt "EEPROM Type of 3th Card"
+		depends on ! THIRD_IF_NONE
+
+		config THIRD_IF_EEPROM_FLASH
+		bool "FLASH"
+
+		config THIRD_IF_EEPROM_PROM
+		bool "EEPROM"
+
+		config THIRD_IF_EEPROM_EFUSE
+		bool "EFUSE"
+
+endchoice
+
+config RT_THIRD_CARD_EEPROM
+		string
+		depends on ! THIRD_IF_NONE
+		default "prom" if THIRD_IF_EEPROM_PROM
+		default "efuse" if THIRD_IF_EEPROM_EFUSE
+		default "flash" if THIRD_IF_EEPROM_FLASH
 	
 config MULTI_INF_SUPPORT
 		bool
-		default y if !RT_FIRST_IF_NONE && !RT_SECOND_IF_NONE
+		default y if !FIRST_IF_NONE && !SECOND_IF_NONE
 		
 config WIFI_BASIC_FUNC
 	bool "Basic Functions"
@@ -70,14 +126,18 @@ config MT_DFS_SUPPORT
         bool "Dynamic Frequency Selection Support"	
         depends on WIFI_DRIVER
         default y
-
-config DPP_SUPPORT
-	bool "DPP Support"
-	depends on WIFI_DRIVER
-	depends on MT_AP_SUPPORT
-	select DOT11W_PMF_SUPPORT
+config MTK_OFFCHANNEL_SCAN_FEATURE
+	bool "Channel Quality Monitor"
+	depends on MTK_WIFI_DRIVER
+	depends on MTK_MT_AP_SUPPORT
 	default n
 
+config MTK_DPP_SUPPORT
+	bool "DPP Support"
+	depends on MTK_WIFI_DRIVER
+	depends on MTK_MT_AP_SUPPORT
+	select DOT11W_PMF_SUPPORT
+	default n
 #config WFA_VHT_R2_PF
 #    bool "WFA VHT R2 Plugfest"
 #    depends on DOT11_VHT_AC
@@ -323,6 +383,47 @@ config FDB_SUPPORT
        depends on WIFI_DRIVER
        default n
 
+choice
+        prompt "PA LNA Type of 1st Card"
+		depends on ! FIRST_IF_NONE
+		
+		config FIRST_IF_EPAELNA
+		bool "ePAeLNA"
+		config FIRST_IF_IPAILNA
+		bool "iPAiLNA"		
+		config FIRST_IF_IPAELNA
+		bool "iPAeLNA"
+#		config FIRST_IF_EPAILNA
+#		bool "ePAiLNA"
+endchoice
+choice
+        prompt "PA LNA Type of 2nd Card"
+		depends on ! SECOND_IF_NONE
+		
+		config SECOND_IF_EPAELNA
+		bool "ePAeLNA"
+		config SECOND_IF_IPAILNA
+		bool "iPAiLNA"		
+		config SECOND_IF_IPAELNA
+		bool "iPAeLNA"
+#		config SECOND_IF_EPAILNA
+#		bool "ePAiLNA"
+endchoice
+choice
+        prompt "PA LNA Type of 3rd Card"
+		depends on ! THIRD_IF_NONE
+		
+		config THIRD_IF_EPAELNA
+		bool "ePAeLNA"
+		config THIRD_IF_IPAILNA
+		bool "iPAiLNA"		
+		config THIRD_IF_IPAELNA
+		bool "iPAeLNA"
+#		config THIRD_IF_EPAILNA
+#		bool "ePAiLNA"
+endchoice
+#### PA_LNA_Type choice END 
+
 #
 # Section for chip architectures
 #
@@ -365,8 +466,30 @@ config RTMP_RBUS_SUPPORT
 endmenu
 
 menu "WiFi Operation Modes"
+	choice
+		prompt "Main Mode"
+		default WIFI_MODE_AP
+
+		config WIFI_MODE_AP
+				tristate "AP"
+				select MT_AP_SUPPORT
+
+		config WIFI_MODE_STA
+				tristate "STA"
+				select MT_STA_SUPPORT
+
+		config WIFI_MODE_BOTH
+				tristate "APSTA"
+				select MT_AP_SUPPORT
+				select MT_STA_SUPPORT
+    endchoice
+
     if WIFI_MODE_AP || WIFI_MODE_BOTH
-		source "drivers/net/wireless/ralink/mt7615_ap/Kconfig"
+		source "drivers/net/wireless/mtk/mt7615e/mt_wifi_ap/Kconfig"
+    endif
+
+    if WIFI_MODE_STA || WIFI_MODE_BOTH
+		source "drivers/net/wireless/mtk/mt7615e/mt_wifi_sta/Kconfig"
     endif
 endmenu	
 

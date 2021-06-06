@@ -714,7 +714,6 @@ gen_ralink_config(int is_soc_ap, int is_aband, int disable_autoscan)
 	fprintf(fp, "TxCmdMode=%d\n", 1);
 	fprintf(fp, "AMSDU_NUM=%d\n", 4);
 	fprintf(fp, "CP_SUPPORT=%d\n", 2);
-	//fprintf(fp, "UAPSDCapable=%d\n", 1);
 	fprintf(fp, "RED_Enable=%d\n", 1);
 #endif
 
@@ -914,6 +913,7 @@ gen_ralink_config(int is_soc_ap, int is_aband, int disable_autoscan)
 	if (i_val) i_val = 1;
 	if (!i_wmm) i_val = 0;
 	fprintf(fp, "APSDCapable=%d\n", i_val);
+	fprintf(fp, "UAPSDCapable=%d\n", i_val);
 
 	//DLSCapable (MBSSID used)
 	fprintf(fp, "DLSCapable=%d;%d\n", 0, 0);

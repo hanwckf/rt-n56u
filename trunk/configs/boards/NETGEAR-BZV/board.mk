@@ -4,5 +4,5 @@
 # NETGEAR-BZV # NETGEAR-BZV   # MT7621  #
 ##################################################################
 
-CFLAGS += -DBOARD_NETGEAR
+CFLAGS += -DBOARD_NETGEAR_BZV
 BOARD_NUM_USB_PORTS=2

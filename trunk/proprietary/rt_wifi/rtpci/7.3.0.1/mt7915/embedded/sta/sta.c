@@ -691,7 +691,8 @@ INT sta_inf_close(struct wifi_dev *wdev)
  * wifi system layer api for ADHOC
  */
 INT adhoc_link_up(struct wifi_dev *wdev, struct _MAC_TABLE_ENTRY *entry)
-{
+{	
+	
 	struct _RTMP_ADAPTER *ad = (struct _RTMP_ADAPTER *) wdev->sys_handle;
 
 	UpdateBeaconHandler(
@@ -715,7 +716,6 @@ INT adhoc_link_up(struct wifi_dev *wdev, struct _MAC_TABLE_ENTRY *entry)
 		MTWF_LOG(DBG_CAT_ALL, DBG_SUBCAT_ALL, DBG_LVL_ERROR,
 				 ("%s(): linkup fail!\n", __func__));
 	}
-
 	return TRUE;
 }
 
@@ -836,8 +836,7 @@ VOID sta_wait_ifdown(STA_ADMIN_CONFIG *pStaCfg)
 
 
 VOID sta_fsm_ops_hook(struct wifi_dev *wdev)
-{
-	sta_cntl_init(wdev);
+{	sta_cntl_init(wdev);
 	sta_auth_init(wdev);
 	sta_assoc_init(wdev);
 }

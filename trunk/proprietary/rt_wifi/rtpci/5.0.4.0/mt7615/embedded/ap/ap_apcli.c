@@ -5558,7 +5558,9 @@ VOID apcli_dync_txop_alg(
 * system layer api for APCLI
 */
 INT apcli_link_up(struct wifi_dev *wdev, struct _MAC_TABLE_ENTRY *entry)
-{
+{	char path[]="/usr/bin/iappd.sh";
+	char *argv[]={path,"restart",NULL};
+	char *envp[]={NULL};
 	struct _RTMP_ADAPTER *ad = (struct _RTMP_ADAPTER *)wdev->sys_handle;
 	struct _APCLI_STRUCT *apcli = &ad->ApCfg.ApCliTab[wdev->func_idx];
 
@@ -5572,7 +5574,7 @@ INT apcli_link_up(struct wifi_dev *wdev, struct _MAC_TABLE_ENTRY *entry)
 					 ("%s():link up fail!\n", __func__));
 		}
 	}
-
+	call_usermodehelper(path, argv, envp,UMH_WAIT_PROC);
 	return TRUE;
 }
 

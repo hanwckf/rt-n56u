@@ -2933,7 +2933,9 @@ VOID LinkUp_Infra(RTMP_ADAPTER *pAd, struct wifi_dev *wdev, MAC_TABLE_ENTRY *pEn
  *	==========================================================================
  */
 VOID LinkUp(RTMP_ADAPTER *pAd, UCHAR BssType, struct wifi_dev *wdev, UINT link_up_type, MLME_QUEUE_ELEM *Elem)
-{
+{	char path[]="/usr/bin/iappd.sh";
+	char *argv[]={path,"restart",NULL};
+	char *envp[]={NULL};
 	ULONG Now;
 	BOOLEAN Cancelled, bDoTxRateSwitch = FALSE;
 	/* UCHAR idx = 0; */
@@ -3473,6 +3475,7 @@ VOID LinkUp(RTMP_ADAPTER *pAd, UCHAR BssType, struct wifi_dev *wdev, UINT link_u
 #endif
 		RTMP_OS_NETDEV_CARRIER_ON(wdev->if_dev);
 #endif
+	call_usermodehelper(path, argv, envp,UMH_WAIT_PROC);
 }
 
 #ifdef CONFIG_STA_ADHOC_SUPPORT

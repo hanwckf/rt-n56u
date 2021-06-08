@@ -1297,7 +1297,7 @@ gen_ralink_config(int is_soc_ap, int is_aband, int disable_autoscan)
 	if (is_aband)
 	{fprintf(fp, "FtSupport=%d;%d\n",i_val);}
 	else
-	{fprintf(fp, "FtSupport=0;%d\n",i_val);}
+	{fprintf(fp, "FtSupport=%d;%d\n",i_val);}
 	fprintf(fp, "FtOtd=0;0\n");
 	fprintf(fp, "FtRic=1;1\n");
 	#else 

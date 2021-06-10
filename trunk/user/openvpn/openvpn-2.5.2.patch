@@ -1,0 +1,11 @@
+--- a/Makefile.am	2021-04-21 12:02:49.000000000 +0800
++++ b/Makefile.am	2021-06-07 22:36:25.028919000 +0800
+@@ -50,7 +50,7 @@ BUILT_SOURCES = \
+ 	config-version.h
+ endif
+ 
+-SUBDIRS = build distro include src sample doc tests
++SUBDIRS = build distro include src
+ 
+ dist_doc_DATA = \
+ 	README \

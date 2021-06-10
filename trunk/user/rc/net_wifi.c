@@ -438,9 +438,9 @@ set_wifi_rssi_threshold(const char* ifname, int is_aband)
 		assocrssi = nvram_get_int("rt_AssocReqRssiThres");
 	}
 
-	if (kickrssi < 0 && kickrssi >= -100)
+	if (kickrssi <= 0 && kickrssi >= -100)
 		doSystem("iwpriv %s set %s=%d", ifname, "KickStaRssiLow", kickrssi);
-	if (assocrssi < 0 && assocrssi >= -100)
+	if (assocrssi <= 0 && assocrssi >= -100)
 		doSystem("iwpriv %s set %s=%d", ifname, "AssocReqRssiThres", assocrssi);
 }
 

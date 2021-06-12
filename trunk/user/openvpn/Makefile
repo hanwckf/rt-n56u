@@ -9,6 +9,7 @@ all: extract_test config_test
 extract_test:
 	( if [ ! -d $(SRC_NAME) ]; then \
 		tar -xf $(SRC_NAME).tar.xz; \
+		patch -d $(SRC_NAME) -p1 < $(SRC_NAME).patch ; \
 	fi )
 
 config_test:
@@ -33,18 +34,13 @@ configure:
 		--disable-selinux \
 		--disable-systemd \
 		--disable-iproute2 \
+		--disable-unit-tests \
 		--disable-management \
-		--disable-socks \
 		--enable-small \
-		--enable-multi \
-		--enable-server \
 		--enable-multihome \
 		--enable-pf \
 		--enable-fragment \
-		--enable-http-proxy \
 		--enable-def-auth \
-		--enable-ssl \
-		--enable-crypto \
 		--enable-lzo \
 		--with-crypto-library=openssl \
 		--with-sysroot=$(STAGEDIR) \

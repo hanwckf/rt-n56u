@@ -1,28 +1,20 @@
 /*
   USB Driver for GSM modems
-
   Copyright (C) 2005  Matthias Urlichs <smurf@smurf.noris.de>
-
   This driver is free software; you can redistribute it and/or modify
   it under the terms of Version 2 of the GNU General Public License as
   published by the Free Software Foundation.
-
   Portions copied from the Keyspan driver by Hugh Blemings <hugh@blemings.org>
-
   History: see the git log.
-
   Work sponsored by: Sigos GmbH, Germany <info@sigos.de>
-
   This driver exists because the "normal" serial driver doesn't work too well
   with GSM modems. Issues:
   - data loss -- one single Receive URB is not nearly enough
   - nonstandard flow (Option devices) control
   - controlling the baud rate doesn't make sense
-
   This driver is named "option" because the most common device it's
   used for is a PC-Card (with an internal OHCI-USB interface, behind
   which the GSM interface sits), made by Option Inc.
-
   Some of the "one port" devices actually exhibit multiple USB instances
   on the USB bus. This is not a bug, these ports are used for different
   device features.
@@ -247,6 +239,7 @@ static void option_instat_callback(struct urb *urb);
 /* These Quectel products use Quectel's vendor ID */
 #define QUECTEL_PRODUCT_EC21			0x0121
 #define QUECTEL_PRODUCT_EC25			0x0125
+#define QUECTEL_PRODUCT_EC200T			0x6026
 
 #define SIERRA_VENDOR_ID			0x1199
 
@@ -1227,6 +1220,7 @@ static const struct usb_device_id option_ids[] = {
 	  .driver_info = (kernel_ulong_t)&net_intf4_blacklist },
 	{ USB_DEVICE(QUECTEL_VENDOR_ID, QUECTEL_PRODUCT_EC25),
 	  .driver_info = (kernel_ulong_t)&net_intf4_blacklist },
+	{ USB_DEVICE_AND_INTERFACE_INFO(QUECTEL_VENDOR_ID, QUECTEL_PRODUCT_EC200T, 0xff, 0, 0) },
 	{ USB_DEVICE_INTERFACE_CLASS(QUALCOMM_VENDOR_ID, 0x9201, 0xff),
 	  .driver_info = (kernel_ulong_t)&net_intf3_blacklist }, /* TS-UM6602 */
 	{ USB_DEVICE_INTERFACE_CLASS(SIERRA_VENDOR_ID, 0x68c0, 0xff),
@@ -1937,6 +1931,7 @@ static const struct usb_device_id option_ids[] = {
 	  .driver_info = (kernel_ulong_t)&net_intf4_blacklist },
 	{ USB_DEVICE(LONGCHEER_VENDOR_ID, ZOOM_PRODUCT_4597) },
 	{ USB_DEVICE(LONGCHEER_VENDOR_ID, IBALL_3_5G_CONNECT) },
+	{ USB_DEVICE(LONGCHEER_VENDOR_ID, 0x9b05) },/*U8300*/
 	{ USB_DEVICE(HAIER_VENDOR_ID, HAIER_PRODUCT_CE100) },
 	{ USB_DEVICE_AND_INTERFACE_INFO(HAIER_VENDOR_ID, HAIER_PRODUCT_CE81B, 0xff, 0xff, 0xff) },
 	{ USB_DEVICE(HAIER_VENDOR_ID, HAIER_PRODUCT_CE682) },
@@ -2085,6 +2080,7 @@ static const struct usb_device_id option_ids[] = {
 	{ USB_DEVICE_AND_INTERFACE_INFO(0x07d1, 0x3e02, 0xff, 0xff, 0xff) }, /* D-Link DWM-156/C1 */
 	{ USB_DEVICE_AND_INTERFACE_INFO(0x07d1, 0x7e11, 0xff, 0xff, 0xff) }, /* D-Link DWM-156/A3 */
 	{ USB_DEVICE_INTERFACE_CLASS(0x2020, 0x4000, 0xff) },                /* OLICARD300 - MT6225 */
+	{ USB_DEVICE_INTERFACE_CLASS(0x2020, 0x2033, 0xff) },                /* BM806U */
 	{ USB_DEVICE(INOVIA_VENDOR_ID, INOVIA_SEW858) },
 	{ USB_DEVICE(INOVIA_VENDOR_ID, INOVIA_TEW120) },
 	{ USB_DEVICE(VIATELECOM_VENDOR_ID, VIATELECOM_PRODUCT_CDS7) },
@@ -2339,4 +2335,3 @@ static int option_send_setup(struct usb_serial_port *port)
 MODULE_AUTHOR(DRIVER_AUTHOR);
 MODULE_DESCRIPTION(DRIVER_DESC);
 MODULE_LICENSE("GPL");
-

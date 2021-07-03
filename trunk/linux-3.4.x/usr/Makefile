@@ -55,15 +55,15 @@ quiet_cmd_initfs = GEN     $@
 
 targets := initramfs_data.cpio.gz initramfs_data.cpio.bz2 initramfs_data.cpio.lzma initramfs_data.cpio.xz initramfs_data.cpio.lzo initramfs_data.cpio
 # do not try to update files included in initramfs
-$(deps_initramfs): ;
+$(deps_initramfs_sane): ;
 
-$(deps_initramfs): klibcdirs
+$(deps_initramfs_sane): klibcdirs
 # We rebuild initramfs_data.cpio if:
 # 1) Any included file is newer then initramfs_data.cpio
 # 2) There are changes in which files are included (added or deleted)
 # 3) If gen_init_cpio are newer than initramfs_data.cpio
 # 4) arguments to gen_initramfs.sh changes
-$(obj)/initramfs_data.cpio$(suffix_y): $(obj)/gen_init_cpio $(deps_initramfs) klibcdirs
+$(obj)/initramfs_data.cpio$(suffix_y): $(obj)/gen_init_cpio $(deps_initramfs_sane) klibcdirs
 	$(Q)$(initramfs) -l $(ramfs-input) > $(obj)/.initramfs_data.cpio.d
 	$(call if_changed,initfs)
 

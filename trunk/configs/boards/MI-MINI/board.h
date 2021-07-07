@@ -1,11 +1,11 @@
-/* Xiaomi Mi Mini */
+/* Xiaomi Mi 3 */
 
-#define BOARD_PID		"MI-MINI"
-#define BOARD_NAME		"MI-MINI"
+#define BOARD_PID		"MI-3"
+#define BOARD_NAME		"MI-3"
 #define BOARD_DESC		"Xiaomi Mi Mini Wireless Router"
 #define BOARD_VENDOR_NAME	"Beijing Xiaomi Technology Co., Ltd."
 #define BOARD_VENDOR_URL	"http://www.mi.com/"
-#define BOARD_MODEL_URL		"http://www.mi.com/miwifimini"
+#define BOARD_MODEL_URL		"http://www.mi.com/miwifi3"
 #define BOARD_BOOT_TIME		25
 #define BOARD_FLASH_TIME	120
 #define BOARD_GPIO_BTN_RESET	30
@@ -13,7 +13,7 @@
 #undef  BOARD_GPIO_LED_ALL
 #undef  BOARD_GPIO_LED_WIFI
 #define BOARD_GPIO_LED_POWER	24	/* 24: blue, 26: yellow, 29: red */
-#define BOARD_GPIO_LED_LAN	29
+#undef  BOARD_GPIO_LED_LAN
 #undef  BOARD_GPIO_LED_WAN
 #define BOARD_GPIO_LED_USB	26
 #undef  BOARD_GPIO_LED_ROUTER

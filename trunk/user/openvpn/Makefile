@@ -1,10 +1,16 @@
-SRC_NAME=openvpn-2.4.x
+SRC_NAME=openvpn-2.5.2
 
-CFLAGS += -ffunction-sections -fdata-sections
+CFLAGS += -ffunction-sections -fdata-sections -fvisibility=hidden
 LDFLAGS += -Wl,--gc-sections
 
-all: config_test
-	$(MAKE) -C $(SRC_NAME)
+all: extract_test config_test
+	$(MAKE) -j$(HOST_NCPU) -C $(SRC_NAME)
+
+extract_test:
+	( if [ ! -d $(SRC_NAME) ]; then \
+		tar -xf $(SRC_NAME).tar.xz; \
+		patch -d $(SRC_NAME) -p1 < $(SRC_NAME).patch ; \
+	fi )
 
 config_test:
 	( if [ -f ./config_done ]; then \
@@ -15,7 +21,7 @@ config_test:
 
 configure:
 	( cd $(SRC_NAME) ; \
-	autoreconf -vi ; \
+	autoreconf -fi ; \
 	IFCONFIG=/sbin/ifconfig \
 	ROUTE=/sbin/route \
 	NETSTAT=/bin/netstat \
@@ -28,26 +34,15 @@ configure:
 		--disable-selinux \
 		--disable-systemd \
 		--disable-iproute2 \
+		--disable-unit-tests \
 		--disable-management \
-		--disable-socks \
 		--enable-small \
-		--enable-multi \
-		--enable-server \
 		--enable-multihome \
 		--enable-pf \
 		--enable-fragment \
-		--enable-http-proxy \
 		--enable-def-auth \
-		--enable-ssl \
-		--enable-crypto \
 		--enable-lzo \
 		--with-crypto-library=openssl \
-		OPENSSL_CRYPTO_CFLAGS="-I$(STAGEDIR)/include" \
-		OPENSSL_CRYPTO_LIBS="-L$(STAGEDIR)/lib -lcrypto" \
-		OPENSSL_SSL_CFLAGS="-I$(STAGEDIR)/include" \
-		OPENSSL_SSL_LIBS="-L$(STAGEDIR)/lib -lssl -lcrypto" \
-		LZO_CFLAGS="-I$(STAGEDIR)/include" \
-		LZO_LIBS="-L$(STAGEDIR)/lib -llzo2" \
 		--with-sysroot=$(STAGEDIR) \
 		--host=$(HOST_TARGET) \
 		--build=$(HOST_BUILD) ; \

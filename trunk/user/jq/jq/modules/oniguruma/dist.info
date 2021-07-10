@@ -1,0 +1,10 @@
+--- This file is part of LuaDist project
+
+name = "onig"
+version = "6.1.3"
+
+desc = "Oniguruma is a regular expressions library."
+author = "K.Kosako"
+license = "BSD"
+url = "https://github.com/kkos/oniguruma"
+maintainer = "K.Kosako"

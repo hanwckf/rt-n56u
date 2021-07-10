@@ -29,6 +29,7 @@ $j(document).ready(function() {
 	init_itoggle('lan_dhcpd_x');
 	init_itoggle('dhcp_static_x', change_dhcp_static_enabled);
 	init_itoggle('dhcp_static_arp');
+	init_itoggle('dhcp_filter_aaa');
 });
 
 </script>
@@ -498,6 +499,27 @@ function changeBgColor(obj, num){
                                     <table width="100%" align="center" cellpadding="4" cellspacing="0" class="table">
                                         <tr>
                                             <th colspan="2" style="background-color: #E3E3E3;"><#t2Advanced#></th>
+                                        </tr>
+										<tr>
+                                            <th width="50%"><a class="help_tooltip" href="javascript:void(0);" onmouseover="openTooltip(this,5,13);">禁止解析IPv6 DNS记录</a></th>
+                                            <td>
+                                                <div class="main_itoggle">
+                                                    <div id="dhcp_filter_aaa_on_of">
+                                                        <input type="checkbox" id="dhcp_filter_aaa_fake" <% nvram_match_x("", "dhcp_filter_aaa", "1", "value=1 checked"); %><% nvram_match_x("", "dhcp_filter_aaa", "0", "value=0"); %>>
+                                                    </div>
+                                                </div>
+
+                                                <div style="position: absolute; margin-left: -10000px;">
+                                                    <input type="radio" value="1" name="dhcp_filter_aaa" id="dhcp_filter_aaa_1" <% nvram_match_x("", "dhcp_filter_aaa", "1", "checked"); %> /><#checkbox_Yes#>
+                                                    <input type="radio" value="0" name="dhcp_filter_aaa" id="dhcp_filter_aaa_0" <% nvram_match_x("", "dhcp_filter_aaa", "0", "checked"); %> /><#checkbox_No#>
+                                                </div>
+                                            </td>
+                                        </tr>
+										<tr>
+                                            <th><a class="help_tooltip" href="javascript:void(0);" onmouseover="openTooltip(this,5,14);">客户端缓存的最小DNS TTL</a></th>
+                                            <td>
+                                                <input type="text" maxlength="15" class="input" size="15" name="dhcp_min_ttl" value="<% nvram_get_x("", "dhcp_min_ttl"); %>" />
+                                            </td>
                                         </tr>
                                         <tr>
                                             <th width="50%"><#DHCP_Verbose#></th>

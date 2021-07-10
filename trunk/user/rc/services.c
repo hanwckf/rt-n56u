@@ -345,6 +345,14 @@ void update_gfwlist(void){
 	eval("/bin/sh","-c","/usr/bin/update_gfwlist.sh force &");
 }
 
+void update_dlink(void){
+	eval("/bin/sh","-c","/usr/bin/update_dlink.sh start &");
+}
+
+void reset_dlink(void){
+	eval("/bin/sh","-c","/usr/bin/update_dlink.sh reset &");
+}
+
 #endif
 
 #if defined(APP_VLMCSD)
@@ -395,6 +403,180 @@ void start_napt66(void){
 			logmessage("napt66","Invalid wan6 ifname!");
 		}
 	}
+}
+#endif
+
+#if defined(APP_KOOLPROXY)
+void stop_koolproxy(void){
+	eval("/usr/bin/koolproxy.sh","stop");
+}
+
+void start_koolproxy(void){
+	int koolproxy_mode = nvram_get_int("koolproxy_enable");
+	if ( koolproxy_mode == 1)
+		eval("/usr/bin/koolproxy.sh","start");
+}
+
+void restart_koolproxy(void){
+	stop_koolproxy();
+	start_koolproxy();
+}
+
+void update_kp(void){
+	eval("/usr/bin/koolproxy.sh","updatekp");
+}
+#endif
+
+#if defined(APP_ADGUARDHOME)
+void stop_adguardhome(void){
+	eval("/usr/bin/adguardhome.sh","stop");
+}
+
+void start_adguardhome(void){
+	int adg_mode = nvram_get_int("adg_enable");
+	if ( adg_mode == 1)
+		eval("/usr/bin/adguardhome.sh","start");
+}
+
+void restart_adguardhome(void){
+	stop_adguardhome();
+	start_adguardhome();
+}
+
+#endif
+
+#if defined(APP_WYY)
+void stop_wyy(void){
+	eval("/usr/bin/unblockmusic.sh","stop");
+}
+
+void start_wyy(void){
+	int wyy_enable = nvram_get_int("wyy_enable");
+	if ( wyy_enable == 1)
+		eval("/usr/bin/unblockmusic.sh","start");
+}
+
+void restart_wyy(void){
+	stop_wyy();
+	start_wyy();
+}
+#endif
+
+#if defined(APP_ZEROTIER)
+void stop_zerotier(void){
+	eval("/usr/bin/zerotier.sh","stop");
+}
+
+void start_zerotier(void){
+	int zerotier_enable = nvram_get_int("zerotier_enable");
+	if ( zerotier_enable == 1)
+		eval("/usr/bin/zerotier.sh","start");
+}
+
+void restart_zerotier(void){
+	stop_zerotier();
+	start_zerotier();
+}
+#endif
+
+#if defined(APP_ADBYBY)
+void stop_adbyby(void){
+	eval("/usr/bin/adbyby.sh","stop");
+}
+
+void start_adbyby(void){
+	int adbyby_mode = nvram_get_int("adbyby_enable");
+	if ( adbyby_mode == 1)
+		eval("/usr/bin/adbyby.sh","start");
+}
+
+void restart_adbyby(void){
+	stop_adbyby();
+	start_adbyby();
+}
+
+void update_adb(void){
+	eval("/usr/bin/adbyby.sh","updateadb");
+}
+#endif
+
+
+#if defined(APP_SMARTDNS)
+void stop_smartdns(void){
+	eval("/usr/bin/smartdns.sh","stop");
+}
+
+void start_smartdns(void){
+	int smartdns_mode = nvram_get_int("sdns_enable");
+	if ( smartdns_mode == 1)
+		eval("/usr/bin/smartdns.sh","start");
+}
+
+void restart_smartdns(void){
+	stop_smartdns();
+	start_smartdns();
+}
+#endif
+
+#if defined(APP_FRP)
+void stop_frp(void){
+	eval("/usr/bin/frp.sh","stop");
+}
+
+void start_frp(void){
+	eval("/usr/bin/frp.sh","start");
+}
+
+void restart_frp(void){
+	stop_frp();
+	start_frp();
+}
+#endif
+
+#if defined(APP_NPC)
+void stop_npc(void){
+	eval("/usr/bin/npc.sh","stop");
+}
+
+void start_npc(void){
+	eval("/usr/bin/npc.sh","start");
+}
+
+void restart_npc(void){
+	stop_npc();
+	start_npc();
+}
+#endif
+
+#if defined(APP_CADDY)
+void stop_caddy(void){
+	eval("/usr/bin/caddy.sh","stop");
+}
+
+void start_caddy(void){
+	eval("/usr/bin/caddy.sh","start");
+}
+
+void restart_caddy(void){
+	stop_caddy();
+	start_caddy();
+}
+#endif
+
+#if defined(APP_ALIDDNS)
+void stop_aliddns(void){
+	eval("/usr/bin/aliddns.sh","stop");
+}
+
+void start_aliddns(void){
+	int aliddns_mode = nvram_get_int("aliddns_enable");
+	if ( aliddns_mode == 1)
+		eval("/usr/bin/aliddns.sh","start");
+}
+
+void restart_aliddns(void){
+    stop_aliddns();
+	start_aliddns();
 }
 #endif
 
@@ -599,22 +781,45 @@ start_services_once(int is_ap_mode)
 #endif
 	}
 
+doSystem("/usr/sbin/skipd -d /etc/storage/db");
+
 #if defined(APP_SCUT)
 	start_scutclient();
 #endif
 #if defined(APP_DNSFORWARDER)
 	start_dnsforwarder();
 #endif
-#if defined(APP_SHADOWSOCKS)
-	start_ss();
-	start_ss_tunnel();
-#endif
+//#if defined(APP_SHADOWSOCKS)
+//	start_ss();
+//	start_ss_tunnel();
+//#endif
 #if defined(APP_TTYD)
 	start_ttyd();
 #endif
+//#if defined(APP_FRP)
+//	start_frp();
+//#endif
+//#if defined(APP_NPC)
+//	start_npc();
+//#endif
 #if defined(APP_VLMCSD)
 	start_vlmcsd();
 #endif
+//#if defined(APP_KOOLPROXY)
+//	start_koolproxy();
+//#endif
+//#if defined(APP_ADBYBY)
+//	start_adbyby();
+//#endif
+//#if defined(APP_ALIDDNS)
+//	start_aliddns();
+//#endif
+//#if defined(APP_SMARTDNS)
+//	start_smartdns();
+//#endif
+//#if defined(APP_CADDY)
+//	start_caddy();
+//#endif
 	start_lltd();
 	start_watchdog_cpu();
 	start_crond();
@@ -654,6 +859,40 @@ stop_services(int stopall)
 #endif
 #if defined(APP_TTYD)
 	stop_ttyd();
+#endif
+#if defined(APP_FRP)
+	stop_frp();
+#endif
+#if defined(APP_NPC)
+	stop_npc();
+#endif
+#if defined(APP_KOOLPROXY)
+	stop_koolproxy();
+#endif
+#if defined(APP_ADGUARDHOME)
+	stop_adguardhome();
+#endif
+#if defined(APP_SHADOWSOCKS)
+	stop_ss();
+	stop_ss_tunnel();
+#endif
+#if defined(APP_ADBYBY)
+	stop_adbyby();
+#endif
+#if defined(APP_WYY)
+	stop_wyy();
+#endif
+#if defined(APP_ZEROTIER)
+	stop_zerotier();
+#endif
+#if defined(APP_ALIDDNS)
+	stop_aliddns();
+#endif
+#if defined(APP_SMARTDNS)
+	stop_smartdns();
+#endif
+#if defined(APP_CADDY)
+	stop_caddy();
 #endif
 	stop_networkmap();
 	stop_lltd();

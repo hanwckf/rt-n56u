@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
-<title><#Web_Title#> - <#menu5_15#></title>
+<title><#Web_Title#> - <#menu5_14_1#></title>
 <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
 <meta http-equiv="Pragma" content="no-cache">
 <meta http-equiv="Expires" content="-1">
@@ -117,7 +117,7 @@ function fill_status(status_code){
                 <div class="row-fluid">
                     <div class="span12">
                         <div class="box well grad_colour_dark_blue">
-                            <h2 class="box_head round_top"><#menu5_15#></h2>
+                            <h2 class="box_head round_top"><#menu5_14#>-<#menu5_14_1#></h2>
                             <div class="round_bottom">
                                 <div class="row-fluid">
                                     <div id="tabMenu" class="submenuBlock"></div>
@@ -125,8 +125,7 @@ function fill_status(status_code){
                                         <tr> <th><#running_status#></th>
                                             <td id="dnsforwarder_status" colspan="3"></td>
                                         </tr>
-
-                                        <tr> <th><#menu5_15_1#></th>
+                                        <tr> <th><#menu5_14_3#></th>
                                             <td>
                                                 <div class="main_itoggle">
                                                 <div id="dns_forwarder_enable_on_of">
@@ -140,19 +139,19 @@ function fill_status(status_code){
                                             </td>
                                         </tr>
 
-                                        <tr> <th width="50%"><#menu5_14_2#></th>
+                                        <tr> <th width="50%"><#menu5_14_4#></th>
                                             <td>
                                                 <input type="text" maxlength="15" class="input" size="15" name="dns_forwarder_bind" style="width: 145px" value="<% nvram_get_x("","dns_forwarder_bind"); %>" onkeypress="return is_ipaddr(this,event);"/>
                                             </td>
                                         </tr>
 
-                                        <tr> <th width="50%"><#menu5_14_3#></th>
+                                        <tr> <th width="50%"><#menu5_14_5#></th>
                                             <td>
                                                 <input type="text" maxlength="5" class="input" size="15" name="dns_forwarder_port" style="width: 145px" value="<% nvram_get_x("", "dns_forwarder_port"); %>">
                                             </td>
                                         </tr>
 
-                                        <tr> <th width="50%"><#menu5_14_4#></th>
+                                        <tr> <th width="50%"><#menu5_14_6#></th>
                                             <td>
                                                 <input type="text" maxlength="64" class="input" size="64" name="dns_forwarder_server" style="width: 145px" value="<% nvram_get_x("", "dns_forwarder_server"); %>">
                                             </td>

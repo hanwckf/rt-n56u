@@ -1,4 +1,4 @@
-
+THISDIR = $(shell pwd)
 all:
 
 clean:
@@ -8,6 +8,8 @@ romfs:
 	$(ROMFSINST) /sbin/dev_init.sh
 	$(ROMFSINST) /sbin/reset_ss.sh
 	$(ROMFSINST) /sbin/mtd_storage.sh
+	$(ROMFSINST) -p +x $(THISDIR)/copyscripts.sh /usr/bin/copyscripts.sh
+	$(ROMFSINST) -p +x $(THISDIR)/autostart.sh /usr/bin/autostart.sh
 ifeq ($(STORAGE_ENABLED),y)
 	$(ROMFSINST) /sbin/automount.sh
 endif
@@ -18,6 +20,7 @@ endif
 ifdef CONFIG_MTD_UBI
 	$(ROMFSINST) /sbin/rwfs2ubi.sh
 endif
+	$(ROMFSINST) /etc_ro/ld.so.conf
 	$(ROMFSINST) /etc_ro/protocols
 	$(ROMFSINST) /etc_ro/services
 	$(ROMFSINST) /etc_ro/profile

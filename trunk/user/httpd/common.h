@@ -92,7 +92,16 @@ typedef u_int8_t u8;
 #define EVM_RESTART_SHADOWSOCKS	(1ULL << 48)
 #define EVM_RESTART_SS_TUNNEL		(1ULL << 49)
 #define EVM_RESTART_MENTOHUST		(1ULL << 50)
-
+#define EVM_RESTART_ADBYBY		    (1ULL << 51)
+#define EVM_RESTART_ALIDDNS		    (1ULL << 52)
+#define EVM_RESTART_SMARTDNS	    (1ULL << 53)
+#define EVM_RESTART_FRP	    (1ULL << 54)
+#define EVM_RESTART_KOOLPROXY		    (1ULL << 55)
+#define EVM_RESTART_CADDY		    (1ULL << 56)
+#define EVM_RESTART_ADGUARDHOME		    (1ULL << 57)
+#define EVM_RESTART_WYY		    (1ULL << 58)
+#define EVM_RESTART_ZEROTIER		    (1ULL << 59)
+#define EVM_RESTART_NPC	    (1ULL << 60)
 #define EVM_RESTART_REBOOT		(1ULL << 62)
 
 #define EVM_BLOCK_UNSAFE		(1ULL << 63) /* special case */
@@ -149,8 +158,19 @@ typedef u_int8_t u8;
 #define EVT_RESTART_VLMCSD		1
 #define EVT_RESTART_SHADOWSOCKS	2
 #define EVT_RESTART_SS_TUNNEL		2
+#define EVT_RESTART_ADBYBY	2
+#define EVT_RESTART_KOOLPROXY	2
 #define EVT_RESTART_DNSFORWARDER	1
 #define EVT_RESTART_MENTOHUST		2
+#define EVT_RESTART_PDNSD		1
+#define EVT_RESTART_ALIDDNS	2
+#define EVT_RESTART_SMARTDNS	1
+#define EVT_RESTART_FRP      	2
+#define EVT_RESTART_NPC      	2
+#define EVT_RESTART_CADDY      	2
+#define EVT_RESTART_ADGUARDHOME      	1
+#define EVT_RESTART_WYY      	2
+#define EVT_RESTART_ZEROTIER     	2
 #define EVT_RESTART_REBOOT		40
 
 struct variable

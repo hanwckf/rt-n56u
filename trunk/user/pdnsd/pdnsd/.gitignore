@@ -1,0 +1,27 @@
+# gitignore patterns for pdnsd
+*~
+*.[oa]
+autom4te.cache/
+.deps
+Makefile
+*.makesave
+/config.h
+/config.log
+/config.status
+/doc/pdnsd.8
+/doc/pdnsd.conf
+/doc/pdnsd.conf.5
+/file-list.base
+/pdnsd.spec
+/pdnsd-*.tar.gz
+/PKGBUILD
+/src/rc/*/pdnsd
+/src/rc/Slackware/rc.pdnsd
+/stamp-h1
+/src/pdnsd
+/src/pdnsd-ctl/pdnsd-ctl
+/src/test/if_up
+/src/test/is_local_addr
+/src/test/random
+/src/test/tping
+TAGS

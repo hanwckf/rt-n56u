@@ -28,7 +28,7 @@
 /* CGI hash table */
 static struct hsearch_data htab;
 
-static void
+void
 unescape(char *s)
 {
 	unsigned int c;

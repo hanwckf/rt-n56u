@@ -45,6 +45,7 @@ CFLAGS += -I$(ROOTDIR)/$(LINUXDIR)/drivers/net/raeth
 endif
 endif
 endif
+OBJS += dbapi.o
 
 all: $(OBJS) Makefile
 	$(CC) -o $(EXEC) $(OBJS) $(LDFLAGS)

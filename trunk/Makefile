@@ -34,7 +34,7 @@ ROOTDIR        = $(shell pwd)
 HOSTCC         = gcc
 ROMFSINST      = $(ROOTDIR)/tools/romfs-inst.sh
 TFTPDIR        = /tftpboot
-PATH          := $(PATH):$(ROOTDIR)/tools
+PATH          := $(PATH):$(ROOTDIR)/tools:$(ROOTDIR)/tools/go/go/bin
 
 VERSIONSTR     = $(CONFIG_VENDOR)/$(CONFIG_PRODUCT) Version $(VERSIONPKG)
 

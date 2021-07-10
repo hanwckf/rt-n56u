@@ -948,7 +948,10 @@ init_router(void)
 		restart_crond();
 	}
 	// system ready
+	nvram_set_int("ntp_ready", 0);
+	system("/usr/bin/copyscripts.sh &");
 	system("/etc/storage/started_script.sh &");
+	system("/usr/bin/autostart.sh &");
 }
 
 /*
@@ -1306,11 +1309,87 @@ handle_notifications(void)
 		{
 			update_gfwlist();
 		}
+		else if (strcmp(entry->d_name, RCN_RESTART_DLINK) == 0)
+		{
+			update_dlink();
+		}
+		else if (strcmp(entry->d_name, RCN_RESTART_REDLINK) == 0)
+		{
+			reset_dlink();
+		}
 #endif
 #if defined(APP_VLMCSD)
 		else if (strcmp(entry->d_name, RCN_RESTART_VLMCSD) == 0)
 		{
 			restart_vlmcsd();
+		}
+#endif
+#if defined(APP_WYY)
+		else if (strcmp(entry->d_name, RCN_RESTART_WYY) == 0)
+		{
+			restart_wyy();
+		}
+#endif
+#if defined(APP_ZEROTIER)
+		else if (strcmp(entry->d_name, RCN_RESTART_ZEROTIER) == 0)
+		{
+			restart_zerotier();
+		}
+#endif
+#if defined(APP_KOOLPROXY)
+		else if (strcmp(entry->d_name, RCN_RESTART_KOOLPROXY) == 0)
+		{
+			restart_koolproxy();
+		}
+		else if (strcmp(entry->d_name, RCN_RESTART_KPUPDATE) == 0)
+		{
+			update_kp();
+		}
+#endif
+#if defined(APP_ADBYBY)
+		else if (strcmp(entry->d_name, RCN_RESTART_ADBYBY) == 0)
+		{
+			restart_adbyby();
+		}
+		else if (strcmp(entry->d_name, RCN_RESTART_UPDATEADB) == 0)
+		{
+			update_adb();
+		}
+#endif
+#if defined(APP_ADGUARDHOME)
+		else if (strcmp(entry->d_name, RCN_RESTART_ADGUARDHOME) == 0)
+		{
+			restart_adguardhome();
+		}
+#endif
+#if defined(APP_SMARTDNS)
+		else if (strcmp(entry->d_name, RCN_RESTART_SMARTDNS) == 0)
+		{
+			restart_smartdns();
+		}
+#endif
+#if defined(APP_FRP)
+		else if (strcmp(entry->d_name, RCN_RESTART_FRP) == 0)
+		{
+			restart_frp();
+		}
+#endif
+#if defined(APP_NPC)
+		else if (strcmp(entry->d_name, RCN_RESTART_NPC) == 0)
+		{
+			restart_npc();
+		}
+#endif
+#if defined(APP_CADDY)
+		else if (strcmp(entry->d_name, RCN_RESTART_CADDY) == 0)
+		{
+			restart_caddy();
+		}
+#endif
+#if defined(APP_ALIDDNS)
+		else if (strcmp(entry->d_name, RCN_RESTART_ALIDDNS) == 0)
+		{
+			restart_aliddns();
 		}
 #endif
 #if defined(APP_DNSFORWARDER)

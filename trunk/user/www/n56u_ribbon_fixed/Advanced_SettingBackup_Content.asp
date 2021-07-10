@@ -85,8 +85,9 @@ function applyRule(){
 
 function restoreNVRAM(){
 	var alert_string = "<#Setting_factorydefault_hint1#>";
-	if(lan_ipaddr != "192.168.1.1")
-		alert_string += "\n<#Setting_factorydefault_iphint#>\n";
+	alert_string += '\n<#Setting_factorydefault_iphint1#>'
+	alert_string += lan_ipaddr;
+	alert_string += '\n<#Setting_factorydefault_iphint2#>'
 	alert_string += "\n<#Setting_factorydefault_hint2#>";
 	if(confirm(alert_string)){
 		document.form.action1.blur();

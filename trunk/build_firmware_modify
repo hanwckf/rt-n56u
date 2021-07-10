@@ -12,46 +12,49 @@ if [ ! -f configs/templates/$1.config ] ; then
 fi
 
 cp -f configs/templates/$1.config .config
-sed -i 's/CONFIG_FIRMWARE_INCLUDE_DNSFORWARDER=y/CONFIG_FIRMWARE_INCLUDE_DNSFORWARDER=n/g' .config
-sed -i 's/CONFIG_FIRMWARE_INCLUDE_MENTOHUST=y/CONFIG_FIRMWARE_INCLUDE_MENTOHUST=n/g' .config
-sed -i 's/CONFIG_FIRMWARE_INCLUDE_SCUTCLIENT=y/CONFIG_FIRMWARE_INCLUDE_SCUTCLIENT=n/g' .config
-sed -i 's/CONFIG_FIRMWARE_INCLUDE_SRELAY=y/CONFIG_FIRMWARE_INCLUDE_SRELAY=n/g' .config
+#sed -i 's/CONFIG_FIRMWARE_INCLUDE_DNSFORWARDER=y/CONFIG_FIRMWARE_INCLUDE_DNSFORWARDER=n/g' .config
+#sed -i 's/CONFIG_FIRMWARE_INCLUDE_MENTOHUST=y/CONFIG_FIRMWARE_INCLUDE_MENTOHUST=n/g' .config
+#sed -i 's/CONFIG_FIRMWARE_INCLUDE_SCUTCLIENT=y/CONFIG_FIRMWARE_INCLUDE_SCUTCLIENT=n/g' .config
+#sed -i 's/CONFIG_FIRMWARE_INCLUDE_SRELAY=y/CONFIG_FIRMWARE_INCLUDE_SRELAY=n/g' .config
 sed -i 's/CONFIG_FIRMWARE_INCLUDE_SHADOWSOCKS=y/CONFIG_FIRMWARE_INCLUDE_SHADOWSOCKS=n/g' .config
 
-##ÒÔÏÂÎª²å¼þÔö¼õÑ¡Ïî,yÎª¼¯³É,nÎª²»¼¯³É,Çë¸ù¾Ý×Ô¼ºÂ·ÓÉµÄFLASH´óÐ¡Ñ¡Ôñ,ÇÐÎð³¬´óÐ¡,²»È»¹Ì¼þË¢Èëºó»áÎÞ·¨Æô¶¯
-##´Ë²å¼þÑ¡ÏîÖ»ÔÚ±¾µØ±àÒëµÄÊ±ºò²Å»áÉúÐ§
-##¿ÆÑ§ÉÏÍø##
-echo "CONFIG_FIRMWARE_INCLUDE_SHADOWSOCKS=n" >> .config #¿ÆÑ§ÉÏÍø²å¼þ£¬Ñ¡ÔñnºóÈ«²¿ÓÐ¹Ø²å¼þ¶¼²»¼¯³É
-echo "CONFIG_FIRMWARE_INCLUDE_V2RAY=n" >> .config #¼¯³Év2rayÖ´ÐÐÎÄ¼þ£¬Èç¹û²»¼¯³É£¬»á´ÓÍøÉÏÏÂÔØÏÂÀ´Ö´ÐÐ£¬²»Ó°ÏìÕý³£Ê¹ÓÃ
-echo "CONFIG_FIRMWARE_INCLUDE_TROJAN=n" >> .config #¼¯³ÉtrojanÖ´ÐÐÎÄ¼þ£¬Èç¹û²»¼¯³É£¬»á´ÓÍøÉÏÏÂÔØÏÂÀ´Ö´ÐÐ£¬²»Ó°ÏìÕý³£Ê¹ÓÃ
-echo "CONFIG_FIRMWARE_INCLUDE_SSOBFS=n" >> .config #simple-obfs»ìÏý²å¼þ
-##¿ÆÑ§ÉÏÍø##
+##ä»¥ä¸‹ä¸ºæ’ä»¶å¢žå‡é€‰é¡¹,yä¸ºé›†æˆ,nä¸ºä¸é›†æˆ,è¯·æ ¹æ®è‡ªå·±è·¯ç”±çš„FLASHå¤§å°é€‰æ‹©,åˆ‡å‹¿è¶…å¤§å°,ä¸ç„¶å›ºä»¶åˆ·å…¥åŽä¼šæ— æ³•å¯åŠ¨
+##æ­¤æ’ä»¶é€‰é¡¹åªåœ¨æœ¬åœ°ç¼–è¯‘çš„æ—¶å€™æ‰ä¼šç”Ÿæ•ˆ
+##ç§‘å­¦ä¸Šç½‘##
+echo "CONFIG_FIRMWARE_INCLUDE_SHADOWSOCKS=y" >> .config #ç§‘å­¦ä¸Šç½‘æ’ä»¶ï¼Œé€‰æ‹©nåŽå…¨éƒ¨æœ‰å…³æ’ä»¶éƒ½ä¸é›†æˆ
+echo "CONFIG_FIRMWARE_INCLUDE_V2RAY=y" >> .config #é›†æˆv2rayæ‰§è¡Œæ–‡ä»¶ï¼Œå¦‚æžœä¸é›†æˆï¼Œä¼šä»Žç½‘ä¸Šä¸‹è½½ä¸‹æ¥æ‰§è¡Œï¼Œä¸å½±å“æ­£å¸¸ä½¿ç”¨
+echo "CONFIG_FIRMWARE_INCLUDE_TROJAN=y" >> .config #é›†æˆtrojanæ‰§è¡Œæ–‡ä»¶ï¼Œå¦‚æžœä¸é›†æˆï¼Œä¼šä»Žç½‘ä¸Šä¸‹è½½ä¸‹æ¥æ‰§è¡Œï¼Œä¸å½±å“æ­£å¸¸ä½¿ç”¨
+echo "CONFIG_FIRMWARE_INCLUDE_SSOBFS=y" >> .config #simple-obfsæ··æ·†æ’ä»¶
+##ç§‘å­¦ä¸Šç½‘##
 
-##¹ã¸æ¹ÜÀí##
-echo "CONFIG_FIRMWARE_INCLUDE_ADBYBY=n" >> .config #adbyby plus+
-echo "CONFIG_FIRMWARE_INCLUDE_KOOLPROXY=n" >> .config #KP¹ã¸æ¹ýÂË
-##¹ã¸æ¹ÜÀí##
+##å¹¿å‘Šç®¡ç†##
+echo "CONFIG_FIRMWARE_INCLUDE_ADBYBY=y" >> .config #adbyby plus+
+echo "CONFIG_FIRMWARE_INCLUDE_KOOLPROXY=y" >> .config #KPå¹¿å‘Šè¿‡æ»¤
+##å¹¿å‘Šç®¡ç†##
 
-##DNS·þÎñ##
-echo "CONFIG_FIRMWARE_INCLUDE_SMARTDNS=n" >> .config #smartdns
-echo "CONFIG_FIRMWARE_INCLUDE_ADGUARDHOME=n" >> .config #adg DNSÈ¥AD
+##DNSæœåŠ¡##
+echo "CONFIG_FIRMWARE_INCLUDE_SMARTDNS=y" >> .config #smartdns
+echo "CONFIG_FIRMWARE_INCLUDE_ADGUARDHOME=y" >> .config #adg DNSåŽ»AD
 
-##DNS·þÎñ##
+##DNSæœåŠ¡##
 
-##ÎÄ¼þ¹ÜÀí##
-echo "CONFIG_FIRMWARE_INCLUDE_CADDY=n" >> .config #ÔÚÏßÎÄ¼þ¹ÜÀí·þÎñ
-echo "CONFIG_FIRMWARE_INCLUDE_CADDYBIN=n" >> .config #¼¯³ÉcadduÖ´ÐÐÎÄ¼þ£¬´ËÎÄ¼þÓÐ13M,Çë×¢Òâ¹Ì¼þ´óÐ¡¡£Èç¹û²»¼¯³É£¬»á´ÓÍøÉÏÏÂÔØÏÂÀ´Ö´ÐÐ£¬²»Ó°ÏìÕý³£Ê¹ÓÃ
-##ÎÄ¼þ¹ÜÀí##
+##æ–‡ä»¶ç®¡ç†##
+echo "CONFIG_FIRMWARE_INCLUDE_CADDY=y" >> .config #åœ¨çº¿æ–‡ä»¶ç®¡ç†æœåŠ¡
+echo "CONFIG_FIRMWARE_INCLUDE_CADDYBIN=n" >> .config #é›†æˆcadduæ‰§è¡Œæ–‡ä»¶ï¼Œæ­¤æ–‡ä»¶æœ‰13M,è¯·æ³¨æ„å›ºä»¶å¤§å°ã€‚å¦‚æžœä¸é›†æˆï¼Œä¼šä»Žç½‘ä¸Šä¸‹è½½ä¸‹æ¥æ‰§è¡Œï¼Œä¸å½±å“æ­£å¸¸ä½¿ç”¨
+##æ–‡ä»¶ç®¡ç†##
 
-##ÒôÀÖ½âËø##
-echo "CONFIG_FIRMWARE_INCLUDE_WYY=n" >> .config #ÍøÒ×ÔÆ½âËø
-echo "CONFIG_FIRMWARE_INCLUDE_WYYBIN=n" >> .config #ÍøÒ×ÔÆ½âËøGO°æ±¾Ö´ÐÐÎÄ¼þ£¨2M¶à£©×¢Òâ¹Ì¼þ³¬´óÐ¡
-##ÒôÀÖ½âËø##
+##éŸ³ä¹è§£é”##
+echo "CONFIG_FIRMWARE_INCLUDE_WYY=y" >> .config #ç½‘æ˜“äº‘è§£é”
+echo "CONFIG_FIRMWARE_INCLUDE_WYYBIN=n" >> .config #ç½‘æ˜“äº‘è§£é”GOç‰ˆæœ¬æ‰§è¡Œæ–‡ä»¶ï¼ˆ2Må¤šï¼‰æ³¨æ„å›ºä»¶è¶…å¤§å°
+##éŸ³ä¹è§£é”##
 
-##ÄÚÍø´©Í¸·þÎñ##
-echo "CONFIG_FIRMWARE_INCLUDE_ZEROTIER=n" >> .config #zerotier ~1.3M
-echo "CONFIG_FIRMWARE_INCLUDE_ALIDDNS=n" >> .config #aliddns
-##ÄÚÍø´©Í¸·þÎñ##
+##å†…ç½‘ç©¿é€æœåŠ¡##
+echo "CONFIG_FIRMWARE_INCLUDE_ZEROTIER=y" >> .config #zerotier ~1.3M
+echo "CONFIG_FIRMWARE_INCLUDE_ALIDDNS=y" >> .config #aliddns
+echo "CONFIG_FIRMWARE_INCLUDE_FRPC=y" >> .config #frpc
+echo "CONFIG_FIRMWARE_INCLUDE_FRPS=n" >> .config #frps
+echo "CONFIG_FIRMWARE_INCLUDE_NPC=y" >> .config #npc
+##å†…ç½‘ç©¿é€æœåŠ¡##
 
 fi
 sed -i 's/CONFIG_FIRMWARE_INCLUDE_OPENSSL_EXE=n/CONFIG_FIRMWARE_INCLUDE_OPENSSL_EXE=y/g' .config

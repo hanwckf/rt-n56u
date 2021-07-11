@@ -23,12 +23,6 @@ Contributors of this project are not responsible for what happens next.
 
 ***
 
-### 特别说明 ###
-* 汉化字典来自：https://github.com/gorden5566/padavan
-* 更新日志：https://www.jianshu.com/p/d76a63a12eae
-
-***
-
 ### 固件特点 ###
 - 使用[gorden5566](https://github.com/gorden5566/padavan)的汉化字典
 - aria2前端更换为[AriaNg](https://github.com/mayswind/AriaNg)
@@ -204,3 +198,12 @@ fakeroot ./build_firmware_modify PSG1218
 - https://www.jianshu.com/p/cb51fb0fb2ac
 - https://www.jianshu.com/p/6b8403cdea46
 
+***
+
+### 特别说明 ###
+* hanwckf源码：https://github.com/hanwckf/rt-n56u
+* chongshengB源码：https://github.com/chongshengB/rt-n56u
+* xumng123源码：https://github.com/xumng123/rt-n56u
+* lean源码: https://github.com/coolsnowwolf/lede
+* 汉化字典来自：https://github.com/gorden5566/padavan
+* hanwckf更新日志：https://www.jianshu.com/p/d76a63a12eae

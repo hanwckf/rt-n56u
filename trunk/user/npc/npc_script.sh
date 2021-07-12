@@ -3,7 +3,7 @@
 killall npc
 mkdir -p /tmp/npc
 tmpconf="/tmp/npc/npc.conf"
-LOGFILE="/tmp/npc/npc.log"
+LOGFILE="/tmp/npc.log"
 
 if [ -f $tmpconf ] ; then 
 	rm $tmpconf
@@ -55,5 +55,5 @@ if [ "$npc_enable" = "1" ] ; then
 		fi
 	fi
 
-	$npc_bin -config=$tmpconf -log_level=$Log_level -log_path=$LOGFILE 2>&1 &
+	$npc_bin -config=$tmpconf -log_level=$Log_level -log_path=$LOGFILE -debug=false 2>&1 &
 fi

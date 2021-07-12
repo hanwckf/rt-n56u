@@ -14,7 +14,7 @@ server_addr = 211.10.10.1
 server_port = 7000
 token = 12345
 
-#log_file = /dev/null
+#log_file = /tmp/frpc.log
 #log_level = info
 #log_max_days = 3
 
@@ -41,7 +41,7 @@ vhost_http_port = 88
 token = 12345
 subdomain_host = frps.com
 max_pool_count = 50
-#log_file = /dev/null
+#log_file = /tmp/frps.log
 #log_level = info
 #log_max_days = 3
 # ====================

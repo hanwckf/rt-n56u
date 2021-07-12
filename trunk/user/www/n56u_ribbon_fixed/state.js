@@ -427,9 +427,11 @@ if (found_app_shadowsocks()){
 }
 if (found_app_frp()){
 	tabtitle[14].push("<#menu5_17_1#>");
+	tabtitle[9].push("<#menu5_17_1#>");
 }
 if (found_app_npc()){
 	tabtitle[14].push("<#menu5_17_2#>");
+	tabtitle[9].push("<#menu5_17_2#>");
 }
 if (found_app_aliddns()){
 	tabtitle[14].push("<#menu5_17_3#>");
@@ -491,9 +493,11 @@ if (found_app_shadowsocks()){
 }
 if (found_app_frp()){
 	tablink[14].push("Advanced_frp.asp");
+	tablink[9].push("Advanced_frp_log.asp");
 }
 if (found_app_npc()){
 	tablink[14].push("Advanced_npc.asp");
+	tablink[9].push("Advanced_npc_log.asp");
 }
 if (found_app_aliddns()){
 	tablink[14].push("Advanced_aliddns.asp");

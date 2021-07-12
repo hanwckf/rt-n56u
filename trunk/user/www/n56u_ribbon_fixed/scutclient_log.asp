@@ -30,8 +30,12 @@ $j(document).ready(function(){
 });
 
 function initial(){
+	var id_menu = 6;
 	show_banner(2);
-	show_menu(5,10,6);
+	if(get_ap_mode()){
+		id_menu = id_menu-4;
+	}
+	show_menu(5,10,id_menu);
 	show_footer();
 }
 </script>

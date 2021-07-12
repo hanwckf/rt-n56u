@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
-<title><#Web_Title#> - <#menu5_7_10#></title>
+<title><#Web_Title#> - <#menu5_17_2#></title>
 <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
 <meta http-equiv="Pragma" content="no-cache">
 <meta http-equiv="Expires" content="-1">
@@ -30,12 +30,18 @@ $j(document).ready(function(){
 });
 
 function initial(){
-	var id_menu = 7;
+	var id_menu = 9;
 	show_banner(2);
 	if(get_ap_mode()){
 		id_menu = id_menu-4;
 	}
 	if(!found_app_scutclient()){
+		id_menu = id_menu-1;
+	}
+	if(!found_app_mentohust()){
+		id_menu = id_menu-1;
+	}
+	if(!found_app_frp()){
 		id_menu = id_menu-1;
 	}
 	show_menu(5,10,id_menu);
@@ -87,14 +93,14 @@ function initial(){
                 <div class="row-fluid">
                     <div class="span12">
                         <div class="box well grad_colour_dark_blue">
-                            <h2 class="box_head round_top"><#menu5_7#> - <#menu5_7_10#></h2>
+                            <h2 class="box_head round_top"><#menu5_7#> - <#menu5_17_2#></h2>
                             <div class="round_bottom">
                                 <div class="row-fluid">
                                     <div id="tabMenu" class="submenuBlock"></div>
                                     <table width="100%" cellpadding="4" cellspacing="0" class="table">
                                         <tr>
                                             <td colspan="3" style="border-top: 0 none; padding-bottom: 0px;">
-                                                <textarea rows="21" class="span12" style="height:377px; font-family:'Courier New', Courier, mono; font-size:13px;" readonly="readonly" wrap="off" id="textarea"><% nvram_dump("mentohust.log",""); %></textarea>
+                                                <textarea rows="21" class="span12" style="height:377px; font-family:'Courier New', Courier, mono; font-size:13px;" readonly="readonly" wrap="off" id="textarea"><% nvram_dump("npc.log",""); %></textarea>
                                             </td>
                                         </tr>
                                         <tr>
@@ -102,7 +108,7 @@ function initial(){
                                                 <input type="button" onClick="location.href=location.href" value="<#CTL_refresh#>" class="btn btn-primary" style="width: 170px">
                                             </td>
                                             <td width="15%" style="text-align: left; padding-bottom: 0px;">
-                                                <input type="button" onClick="location.href='mentohust.log'" value="<#CTL_onlysave#>" class="btn btn-success" style="width: 170px">
+                                                <input type="button" onClick="location.href='npc.log'" value="<#CTL_onlysave#>" class="btn btn-success" style="width: 170px">
                                             </td>
                                         </tr>
                                     </table>

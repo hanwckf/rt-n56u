@@ -33,4 +33,3 @@
 #define BOARD_GPIO_PWR_USB	11
 #define BOARD_GPIO_PWR_USB_ON	1
 #define BOARD_USB_PORT_SWAP	0
-© 2021 GitHub, Inc.

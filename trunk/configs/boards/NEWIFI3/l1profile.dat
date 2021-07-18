@@ -8,4 +8,3 @@ INDEX0_main_ifname=ra0
 INDEX0_ext_ifname=ra
 INDEX0_wds_ifname=wds
 INDEX0_apcli_ifname=apcli
-

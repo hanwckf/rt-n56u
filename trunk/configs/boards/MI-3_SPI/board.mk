@@ -4,5 +4,5 @@
 # MI-3      # Xiaomi MiWiFi 3  # MT7620  #
 ##################################################################
 
-CFLAGS += -DBOARD_MI3SPI
+CFLAGS += -DBOARD_MI3
 BOARD_NUM_USB_PORTS=1

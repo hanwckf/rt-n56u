@@ -1,7 +1,7 @@
 /* Xiaomi Mi 3 */
 
-#define BOARD_PID		"MI3-SPI"
-#define BOARD_NAME		"MI3-SPI"
+#define BOARD_PID		"MI-3"
+#define BOARD_NAME		"MI-3"
 #define BOARD_DESC		"Xiaomi Mi Mini Wireless Router"
 #define BOARD_VENDOR_NAME	"Beijing Xiaomi Technology Co., Ltd."
 #define BOARD_VENDOR_URL	"http://www.mi.com/"

@@ -30,6 +30,7 @@ func_enable_kernel_param()
 {
 	if [ -n "`grep \^\"\# $1 is not set\" $kernel_tf`" ] ; then
 		sed -i "s/\# $1 is not set/$1=y/" $kernel_tf
+	else echo "$1=y" >> $kernel_tf
 	fi
 }
 
@@ -46,6 +47,7 @@ func_enable_busybox_param()
 {
 	if [ -n "`grep \^\"\# $1 is not set\" $busybox_tf`" ] ; then
 		sed -i "s/\# $1 is not set/$1=y/" $busybox_tf
+	else echo "$1=y" >> $busybox_tf
 	fi
 }
 

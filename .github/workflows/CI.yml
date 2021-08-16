@@ -7,9 +7,11 @@ on:
   workflow_dispatch:
     inputs:
       debug_enabled:
-        description: 'Run the build with tmate debugging enabled (https://github.com/marketplace/actions/debugging-with-tmate)'     
-        required: false
-        default: 'no'
+        #description: 'Run the build with tmate debugging enabled (https://github.com/marketplace/actions/debugging-with-tmate)'     
+       # required: false
+       # default: 'no'
+        watch:                                                        # 监视操作
+    types: [started]                                            # 点击 Star 之后
   release:
     types: [published]
 

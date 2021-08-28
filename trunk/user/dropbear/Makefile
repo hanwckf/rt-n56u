@@ -26,6 +26,7 @@ configure:
 	autoreconf -v; \
 	./configure \
 		--prefix=/usr \
+		--disable-harden \
 		--disable-lastlog \
 		--disable-utmp \
 		--disable-utmpx \

@@ -1,6 +1,6 @@
-diff -urw minidlna-1.2.1-ref/config.h.in minidlna-1.2.1/config.h.in
---- minidlna-1.2.1-ref/config.h.in	2017-08-24 21:56:41.000000000 +0300
-+++ minidlna-1.2.1/config.h.in	2018-02-15 16:08:16.949369000 +0300
+diff -urw minidlna-1.3.0-ref/config.h.in minidlna-1.3.0/config.h.in
+--- minidlna-1.3.0-ref/config.h.in	2017-08-24 21:56:41.000000000 +0300
++++ minidlna-1.3.0/config.h.in	2018-02-15 16:08:16.949369000 +0300
 @@ -3,6 +3,9 @@
  /* Define if building universal (internal helper macro) */
  #undef AC_APPLE_UNIVERSAL_BUILD
@@ -11,9 +11,9 @@ diff -urw minidlna-1.2.1-ref/config.h.in minidlna-1.2.1/config.h.in
  /* DB path */
  #undef DEFAULT_DB_PATH
  
-diff -urw minidlna-1.2.1-ref/configure minidlna-1.2.1/configure
---- minidlna-1.2.1-ref/configure	2017-08-24 21:56:41.000000000 +0300
-+++ minidlna-1.2.1/configure	2018-02-15 16:08:12.773369000 +0300
+diff -urw minidlna-1.3.0-ref/configure minidlna-1.3.0/configure
+--- minidlna-1.3.0-ref/configure	2017-08-24 21:56:41.000000000 +0300
++++ minidlna-1.3.0/configure	2018-02-15 16:08:12.773369000 +0300
 @@ -624,6 +624,8 @@
  LTLIBOBJS
  STATIC_LDFLAGS
@@ -114,9 +114,9 @@ diff -urw minidlna-1.2.1-ref/configure minidlna-1.2.1/configure
  if test -z "${TIVO_SUPPORT_TRUE}" && test -z "${TIVO_SUPPORT_FALSE}"; then
    as_fn_error $? "conditional \"TIVO_SUPPORT\" was never defined.
  Usually this means the macro was only invoked conditionally." "$LINENO" 5
-diff -urw minidlna-1.2.1-ref/configure.ac minidlna-1.2.1/configure.ac
---- minidlna-1.2.1-ref/configure.ac	2017-08-24 20:28:25.000000000 +0300
-+++ minidlna-1.2.1/configure.ac	2018-02-15 16:07:42.109369000 +0300
+diff -urw minidlna-1.3.0-ref/configure.ac minidlna-1.3.0/configure.ac
+--- minidlna-1.3.0-ref/configure.ac	2017-08-24 20:28:25.000000000 +0300
++++ minidlna-1.3.0/configure.ac	2018-02-15 16:07:42.109369000 +0300
 @@ -559,6 +559,23 @@
  	]
  )
@@ -141,9 +141,9 @@ diff -urw minidlna-1.2.1-ref/configure.ac minidlna-1.2.1/configure.ac
  AC_MSG_CHECKING([whether to enable generic NETGEAR device support])
  AC_ARG_ENABLE(netgear,
  	[  --enable-netgear        enable generic NETGEAR device support],[
-diff -urw minidlna-1.2.1-ref/icons.c minidlna-1.2.1/icons.c
---- minidlna-1.2.1-ref/icons.c	2017-08-24 20:28:25.000000000 +0300
-+++ minidlna-1.2.1/icons.c	2018-01-11 14:54:20.000000000 +0300
+diff -urw minidlna-1.3.0-ref/icons.c minidlna-1.3.0/icons.c
+--- minidlna-1.3.0-ref/icons.c	2017-08-24 20:28:25.000000000 +0300
++++ minidlna-1.3.0/icons.c	2018-01-11 14:54:20.000000000 +0300
 @@ -18,7 +18,668 @@
   * along with MiniDLNA. If not, see <http://www.gnu.org/licenses/>.
   */
@@ -814,9 +814,9 @@ diff -urw minidlna-1.2.1-ref/icons.c minidlna-1.2.1/icons.c
  /* NG_Icon_48x48.png */
  unsigned char
  png_sm[] =   "\x89\x50\x4e\x47\x0d\x0a\x1a\x0a\x00\x00\x00\x0d\x49\x48\x44\x52\x00\x00\x00\x30\x00\x00\x00\x30"
-diff -urw minidlna-1.2.1-ref/image_utils.c minidlna-1.2.1/image_utils.c
---- minidlna-1.2.1-ref/image_utils.c	2017-08-24 20:28:25.000000000 +0300
-+++ minidlna-1.2.1/image_utils.c	2018-01-12 20:00:24.000000000 +0300
+diff -urw minidlna-1.3.0-ref/image_utils.c minidlna-1.3.0/image_utils.c
+--- minidlna-1.3.0-ref/image_utils.c	2017-08-24 20:28:25.000000000 +0300
++++ minidlna-1.3.0/image_utils.c	2018-01-12 20:00:24.000000000 +0300
 @@ -822,6 +822,7 @@
  	if((data = malloc(row_stride)) == NULL)
  	{
@@ -825,9 +825,9 @@ diff -urw minidlna-1.2.1-ref/image_utils.c minidlna-1.2.1/image_utils.c
  		free(dst.buf);
  		jpeg_destroy_compress(&cinfo);
  		return NULL;
-diff -urw minidlna-1.2.1-ref/libav.h minidlna-1.2.1/libav.h
---- minidlna-1.2.1-ref/libav.h	2017-08-24 20:28:25.000000000 +0300
-+++ minidlna-1.2.1/libav.h	2018-01-12 19:02:17.000000000 +0300
+diff -urw minidlna-1.3.0-ref/libav.h minidlna-1.3.0/libav.h
+--- minidlna-1.3.0-ref/libav.h	2017-08-24 20:28:25.000000000 +0300
++++ minidlna-1.3.0/libav.h	2018-01-12 19:02:17.000000000 +0300
 @@ -211,9 +211,11 @@
  static inline int
  lav_is_thumbnail_stream(AVStream *s, uint8_t **data, int *size)
@@ -841,9 +841,9 @@ diff -urw minidlna-1.2.1-ref/libav.h minidlna-1.2.1/libav.h
  	{
  		if (data)
  			*data = s->attached_pic.data;
-diff -urw minidlna-1.2.1-ref/metadata.c minidlna-1.2.1/metadata.c
---- minidlna-1.2.1-ref/metadata.c	2017-08-24 20:28:25.000000000 +0300
-+++ minidlna-1.2.1/metadata.c	2018-01-12 19:56:37.000000000 +0300
+diff -urw minidlna-1.3.0-ref/metadata.c minidlna-1.3.0/metadata.c
+--- minidlna-1.3.0-ref/metadata.c	2017-08-24 20:28:25.000000000 +0300
++++ minidlna-1.3.0/metadata.c	2018-01-12 19:56:37.000000000 +0300
 @@ -588,6 +588,8 @@
  		/* We might need to verify that the thumbnail is 160x160 or smaller */
  		if( ed->size > 12000 )
@@ -861,9 +861,9 @@ diff -urw minidlna-1.2.1-ref/metadata.c minidlna-1.2.1/metadata.c
  		else
  			thumb = 1;
  	}
-diff -urw minidlna-1.2.1-ref/minidlna.c minidlna-1.2.1/minidlna.c
---- minidlna-1.2.1-ref/minidlna.c	2017-08-24 20:28:25.000000000 +0300
-+++ minidlna-1.2.1/minidlna.c	2018-01-12 19:54:06.000000000 +0300
+diff -urw minidlna-1.3.0-ref/minidlna.c minidlna-1.3.0/minidlna.c
+--- minidlna-1.3.0-ref/minidlna.c	2017-08-24 20:28:25.000000000 +0300
++++ minidlna-1.3.0/minidlna.c	2018-01-12 19:54:06.000000000 +0300
 @@ -338,6 +338,7 @@
  	}
  
@@ -899,9 +899,9 @@ diff -urw minidlna-1.2.1-ref/minidlna.c minidlna-1.2.1/minidlna.c
  			"\t-V print the version number\n",
  			argv[0], pidfilename);
  		return 1;
-diff -urw minidlna-1.2.1-ref/scanner.c minidlna-1.2.1/scanner.c
---- minidlna-1.2.1-ref/scanner.c	2017-08-24 20:28:25.000000000 +0300
-+++ minidlna-1.2.1/scanner.c	2018-01-12 19:32:15.000000000 +0300
+diff -urw minidlna-1.3.0-ref/scanner.c minidlna-1.3.0/scanner.c
+--- minidlna-1.3.0-ref/scanner.c	2017-08-24 20:28:25.000000000 +0300
++++ minidlna-1.3.0/scanner.c	2018-01-12 19:32:15.000000000 +0300
 @@ -718,6 +718,26 @@
  		);
  }
@@ -994,9 +994,9 @@ diff -urw minidlna-1.2.1-ref/scanner.c minidlna-1.2.1/scanner.c
  
  	fill_playlists();
  
-diff -urw minidlna-1.2.1-ref/upnpglobalvars.c minidlna-1.2.1/upnpglobalvars.c
---- minidlna-1.2.1-ref/upnpglobalvars.c	2017-08-24 20:28:25.000000000 +0300
-+++ minidlna-1.2.1/upnpglobalvars.c	2018-01-12 19:09:37.000000000 +0300
+diff -urw minidlna-1.3.0-ref/upnpglobalvars.c minidlna-1.3.0/upnpglobalvars.c
+--- minidlna-1.3.0-ref/upnpglobalvars.c	2017-08-24 20:28:25.000000000 +0300
++++ minidlna-1.3.0/upnpglobalvars.c	2018-01-12 19:09:37.000000000 +0300
 @@ -60,7 +60,7 @@
  struct runtime_vars_s runtime_vars;
  uint32_t runtime_flags = INOTIFY_MASK | TIVO_BONJOUR_MASK;
@@ -1006,9 +1006,9 @@ diff -urw minidlna-1.2.1-ref/upnpglobalvars.c minidlna-1.2.1/upnpglobalvars.c
  
  char uuidvalue[] = "uuid:00000000-0000-0000-0000-000000000000";
  char modelname[MODELNAME_MAX_LEN] = ROOTDEV_MODELNAME;
-diff -urw minidlna-1.2.1-ref/upnpglobalvars.h minidlna-1.2.1/upnpglobalvars.h
---- minidlna-1.2.1-ref/upnpglobalvars.h	2017-08-24 20:28:25.000000000 +0300
-+++ minidlna-1.2.1/upnpglobalvars.h	2018-01-13 17:28:58.000000000 +0300
+diff -urw minidlna-1.3.0-ref/upnpglobalvars.h minidlna-1.3.0/upnpglobalvars.h
+--- minidlna-1.3.0-ref/upnpglobalvars.h	2017-08-24 20:28:25.000000000 +0300
++++ minidlna-1.3.0/upnpglobalvars.h	2018-01-13 17:28:58.000000000 +0300
 @@ -190,15 +190,17 @@
  #define WIDE_LINKS_MASK       0x0040
  #ifdef HAVE_AVAHI
@@ -1029,9 +1029,9 @@ diff -urw minidlna-1.2.1-ref/upnpglobalvars.h minidlna-1.2.1/upnpglobalvars.h
  
  extern const char *pidfilename;
  
-diff -urw minidlna-1.2.1-ref/upnphttp.c minidlna-1.2.1/upnphttp.c
---- minidlna-1.2.1-ref/upnphttp.c	2017-08-24 20:28:25.000000000 +0300
-+++ minidlna-1.2.1/upnphttp.c	2018-01-12 19:08:17.000000000 +0300
+diff -urw minidlna-1.3.0-ref/upnphttp.c minidlna-1.3.0/upnphttp.c
+--- minidlna-1.3.0-ref/upnphttp.c	2017-08-24 20:28:25.000000000 +0300
++++ minidlna-1.3.0/upnphttp.c	2018-01-12 19:08:17.000000000 +0300
 @@ -1053,12 +1053,12 @@
  		n = recv(h->socket, buf, 2048, 0);
  		if(n<0)
@@ -1071,9 +1071,9 @@ diff -urw minidlna-1.2.1-ref/upnphttp.c minidlna-1.2.1/upnphttp.c
  	int pixw = 0, pixh = 0;
  	long long id;
  	int rows=0, chunked, ret;
-diff -urw minidlna-1.2.1-ref/utils.c minidlna-1.2.1/utils.c
---- minidlna-1.2.1-ref/utils.c	2017-08-24 20:28:25.000000000 +0300
-+++ minidlna-1.2.1/utils.c	2018-01-12 19:04:06.000000000 +0300
+diff -urw minidlna-1.3.0-ref/utils.c minidlna-1.3.0/utils.c
+--- minidlna-1.3.0-ref/utils.c	2017-08-24 20:28:25.000000000 +0300
++++ minidlna-1.3.0/utils.c	2018-01-12 19:04:06.000000000 +0300
 @@ -398,6 +398,7 @@
  		ends_with(file, ".mts") || ends_with(file, ".m2ts")  ||
  		ends_with(file, ".m2t") || ends_with(file, ".mkv")   ||

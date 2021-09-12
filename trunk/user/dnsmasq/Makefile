@@ -1,4 +1,4 @@
-SRC_NAME=dnsmasq-2.7x
+SRC_NAME=dnsmasq-2.8x
 THISDIR = $(shell pwd)
 
 COPTS := -DHAVE_BROKEN_RTC -DNO_INOTIFY -DNO_AUTH -DNO_LOOP

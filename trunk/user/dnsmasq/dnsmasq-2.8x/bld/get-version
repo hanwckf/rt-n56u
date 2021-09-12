@@ -1,0 +1,41 @@
+#!/bin/sh
+
+# Determine the version string to build into a binary.
+# When building in the git repository, we can use the output 
+# of "git describe" which gives an unequivocal answer.
+#
+# Failing that, we use the contents of the VERSION file
+# which has a set of references substituted into it by git.
+# If we can find one which matches $v[0-9].* then we assume it's
+# a version-number tag, else we just use the whole string.
+# If there is more than one v[0-9].* tag, sort them and use the
+# first. The insane arguments to the sort command are to ensure
+# that, eg v2.64 comes before v2.63, but v2.63 comes before v2.63rc1
+# and v2.63rc1 comes before v2.63test1
+
+
+# Change directory to the toplevel source directory.
+if test -z "$1" || ! test -d "$1" || ! cd "$1"; then
+    echo "$0: First argument $1 must be toplevel dir." >&2
+    exit 1
+fi
+
+if which git >/dev/null 2>&1 && \
+    ([ -d .git ] || grep '^gitdir:' .git >/dev/null 2>&1) && \
+    git describe >/dev/null 2>&1; then 
+    git describe | sed 's/^v//'
+elif grep '\$Format:%d\$' $1/VERSION >/dev/null 2>&1; then
+    # unsubstituted VERSION, but no git available.
+    echo UNKNOWN
+else
+     vers=`cat $1/VERSION | sed 's/[(), ]/,/ g' | tr ',' '\n' | grep ^v[0-9]`
+
+     if [ $? -eq 0 ]; then
+         echo "${vers}" | sort -k1.2,1.5Vr -k1.6,1.6 -k1.8,1.9Vr -k1.10,1.11Vr | head -n 1 | sed 's/^v//'
+     else
+         cat $1/VERSION
+     fi
+fi
+
+exit 0
+

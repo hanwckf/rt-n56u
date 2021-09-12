@@ -9,8 +9,10 @@ sed -i '/filter-aaaa/d' /etc/storage/dnsmasq/dnsmasq.conf
 	cat >>/etc/storage/dnsmasq/dnsmasq.conf <<EOF
 filter-aaaa
 EOF
-fi
+fi [$min_ttl = 0 ]; then
 sed -i '/min-ttl/d' /etc/storage/dnsmasq/dnsmasq.conf
-cat >>/etc/storage/dnsmasq/dnsmasq.conf <<EOF
-min-ttl=$min_ttl
+ else
+sed -i '/min-ttl/d' /etc/storage/dnsmasq/dnsmasq.conf
+        cat >>/etc/storage/dnsmasq/dnsmasq.conf <<EOF
+min-ttl
 EOF

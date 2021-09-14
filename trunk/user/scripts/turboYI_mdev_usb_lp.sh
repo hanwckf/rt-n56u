@@ -47,8 +47,8 @@ if [ -f $DEVD/product ]; then
         ;;
     esac
     if [ $FIRMWARE ]; then
-        if [ ! -f /var/$FIRMWARE ]; then
-            curl -o /var/$FIRMWARE $HPLJSITE/$FIRMWARE
+        if [ ! -f /etc/storage/$FIRMWARE ]; then
+            curl -o /etc/storage/$FIRMWARE $HPLJSITE/$FIRMWARE
         fi
         if [ -c /dev/$DEVNAME -a $ACTION = 'add' ]; then
            echo "$(date "+%Y-%m-%d %H:%M:%S") : Sending $product firmware to $DEVNAME" > $LOGFILE

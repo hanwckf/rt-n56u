@@ -36,8 +36,8 @@ build_v2ray:
 	)
 
 clean:
-	#rm -rf $(THISDIR)/v2ray.com
-	#rm -rf $(THISDIR)/bin
+	rm -rf $(THISDIR)/v2ray.com
+	rm -rf $(THISDIR)/bin
 
 romfs:
 	$(ROMFSINST) -p +x $(THISDIR)/bin/v2ray /usr/bin/v2ray

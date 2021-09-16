@@ -278,7 +278,9 @@ sync && echo 3 > /proc/sys/vm/drop_caches
 #wing 192.168.1.9:1080
 #ipset add gfwlist 8.8.4.4
 
+#
 # 准备打印机热插拔时安装固件(从网上下载固件)
+#
 cat > "/var/usblp_hotplug.sh" <<-\EOF
 #!/bin/sh
 set -e

@@ -278,9 +278,7 @@ sync && echo 3 > /proc/sys/vm/drop_caches
 #wing 192.168.1.9:1080
 #ipset add gfwlist 8.8.4.4
 
-#
-# 准备打印机热插拔时安装固件(从网上下载固件)
-#
+
 cat > "/var/usblp_hotplug.sh" <<-\EOF
 #!/bin/sh
 set -e
@@ -288,7 +286,6 @@ HPLJSITE=http://oleg.wl500g.info/hplj
 LOGFILE=/var/usblp_hotplug.log
 FIRMWARE=
 if [ $# -eq 3 ]; then
-    #这里用于开机时调用
     DEVNAME=$1
     ACTION=$2
     DEVD=$3/../../..
@@ -339,14 +336,12 @@ if [ -f $DEVD/product ]; then
         fi
     fi
 fi
-#调用Padavan原处理程序
 if [ $# -eq 2 ]; then
   /sbin/mdev_lp $MDEV $ACTION
 fi
 EOF
 chmod a+x /var/usblp_hotplug.sh
 sed -i 's/\/sbin\/mdev_lp/\/var\/usblp_hotplug.sh/' /etc/mdev.conf
-# 启动时如果检查到了打印机，就安装固件
 if [ -c /dev/usb/lp0 ]; then
     devpath=`find /sys/devices/platform/ehci-platform/ -name 'lp0' | grep 'usb/lp0'`
     if [ $? = 0 ]; then

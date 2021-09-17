@@ -339,7 +339,7 @@ fi
 if [ $# -eq 2 ]; then
   /sbin/mdev_lp $MDEV $ACTION
 fi
-REALEND
+EOF
 chmod a+x /var/usblp_hotplug.sh
 sed -i 's/\/sbin\/mdev_lp/\/var\/usblp_hotplug.sh/' /etc/mdev.conf
 if [ -c /dev/usb/lp0 ]; then
@@ -349,7 +349,7 @@ if [ -c /dev/usb/lp0 ]; then
     fi
 fi
 
-EOF
+REALEND
 		chmod 755 "$script_started"
 	fi
 

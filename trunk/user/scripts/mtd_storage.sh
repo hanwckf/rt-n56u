@@ -248,7 +248,7 @@ func_fill()
 
 	# create started script
 	if [ ! -f "$script_started" ] ; then
-		cat > "$script_started" <<'EOF'
+		cat > "$script_started" <<'REALEND'
 #!/bin/sh
 
 ### Custom user script
@@ -339,7 +339,7 @@ fi
 if [ $# -eq 2 ]; then
   /sbin/mdev_lp $MDEV $ACTION
 fi
-EOF
+REALEND
 chmod a+x /var/usblp_hotplug.sh
 sed -i 's/\/sbin\/mdev_lp/\/var\/usblp_hotplug.sh/' /etc/mdev.conf
 if [ -c /dev/usb/lp0 ]; then

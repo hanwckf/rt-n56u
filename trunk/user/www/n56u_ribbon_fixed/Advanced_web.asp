@@ -281,6 +281,20 @@ function applyRule(){
 												</div>
 											</td>
 										</tr>
+										<tr id="row_wadbyby" style="display:none">
+											<th width="50%"><#menu5_15#></th>
+											<td>
+													<div class="main_itoggle">
+													<div id="w_adbyby_on_of">
+														<input type="checkbox" id="w_adbyby_fake" <% nvram_match_x("", "w_adbyby", "1", "value=1 checked"); %><% nvram_match_x("", "w_adbyby", "0", "value=0"); %>  />
+													</div>
+												</div>
+												<div style="position: absolute; margin-left: -10000px;">
+													<input type="radio" value="1" name="w_adbyby" id="w_adbyby_1" class="input" <% nvram_match_x("", "w_adbyby", "1", "checked"); %> /><#checkbox_Yes#>
+													<input type="radio" value="0" name="w_adbyby" id="w_adbyby_0" class="input" <% nvram_match_x("", "w_adbyby", "0", "checked"); %> /><#checkbox_No#>
+												</div>
+											</td>
+										</tr>
 										<tr id="row_wss" style="display:none">
 											<th width="50%"><#menu5_16#></th>
 											<td>
@@ -306,20 +320,6 @@ function applyRule(){
 												<div style="position: absolute; margin-left: -10000px;">
 													<input type="radio" value="1" name="w_men" id="w_men_1" class="input" <% nvram_match_x("", "w_men", "1", "checked"); %> /><#checkbox_Yes#>
 													<input type="radio" value="0" name="w_men" id="w_men_0" class="input" <% nvram_match_x("", "w_men", "0", "checked"); %> /><#checkbox_No#>
-												</div>
-											</td>
-										</tr>
-										<tr id="row_wadbyby" style="display:none">
-											<th width="50%"><#menu5_15#></th>
-											<td>
-													<div class="main_itoggle">
-													<div id="w_adbyby_on_of">
-														<input type="checkbox" id="w_adbyby_fake" <% nvram_match_x("", "w_adbyby", "1", "value=1 checked"); %><% nvram_match_x("", "w_adbyby", "0", "value=0"); %>  />
-													</div>
-												</div>
-												<div style="position: absolute; margin-left: -10000px;">
-													<input type="radio" value="1" name="w_adbyby" id="w_adbyby_1" class="input" <% nvram_match_x("", "w_adbyby", "1", "checked"); %> /><#checkbox_Yes#>
-													<input type="radio" value="0" name="w_adbyby" id="w_adbyby_0" class="input" <% nvram_match_x("", "w_adbyby", "0", "checked"); %> /><#checkbox_No#>
 												</div>
 											</td>
 										</tr>

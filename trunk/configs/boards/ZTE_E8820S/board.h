@@ -8,7 +8,7 @@
 #define BOARD_MODEL_URL		"http://www.ztehome.com.cn/"
 #define BOARD_BOOT_TIME		30
 #define BOARD_FLASH_TIME   	120
-#define BOARD_GPIO_BTN_FN1    10
+#define BOARD_GPIO_BTN_FN1	10
 #define BOARD_GPIO_BTN_RESET	18
 #define BOARD_GPIO_BTN_WPS	8
 #undef  BOARD_GPIO_LED_ALL

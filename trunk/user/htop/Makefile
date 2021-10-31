@@ -24,7 +24,7 @@ config_test:
 
 configure:
 	( cd $(SRC_NAME) ; \
-	./configure \
+	./autogen.sh && ./configure && make \
 		--prefix=/usr \
 		--enable-unicode \
 		HTOP_NCURSESW_CONFIG_SCRIPT="$(STAGEDIR)/bin/ncursesw6-config" \

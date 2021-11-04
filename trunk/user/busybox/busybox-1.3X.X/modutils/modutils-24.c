@@ -53,7 +53,7 @@
  *   New implementation contributed by Richard Henderson <rth@tamu.edu>
  *   Based on original work by Bjorn Ekwall <bj0rn@blox.se>
  *   Restructured (and partly rewritten) by:
- *   Björn Ekwall <bj0rn@blox.se> February 1999
+ *   BjÃ¶rn Ekwall <bj0rn@blox.se> February 1999
  *
  * Licensed under GPLv2 or later, see file LICENSE in this source tree.
  */
@@ -3826,7 +3826,7 @@ int FAST_FUNC bb_init_module_24(const char *m_filename, const char *options)
 		/* Load module into memory and unzip if compressed */
 		image = xmalloc_open_zipped_read_close(m_filename, &image_size);
 		if (!image)
-			return EXIT_FAILURE;
+			return (-errno);
 	}
 
 	m_name = xstrdup(bb_basename(m_filename));
@@ -3857,8 +3857,10 @@ int FAST_FUNC bb_init_module_24(const char *m_filename, const char *options)
 				"\twhile this kernel is version %s",
 				flag_force_load ? "warning: " : "",
 				m_name, m_strversion, uts.release);
-			if (!flag_force_load)
+			if (!flag_force_load) {
+				exit_status = ESRCH;
 				goto out;
+			}
 		}
 	}
 #endif

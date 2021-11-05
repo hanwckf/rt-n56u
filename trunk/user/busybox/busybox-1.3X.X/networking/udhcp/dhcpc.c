@@ -1377,7 +1377,7 @@ int udhcpc_main(int argc UNUSED_PARAM, char **argv)
 	srand(monotonic_us());
 
 	client_data.state = INIT_SELECTING;
-	d4_run_script_deconfig();
+//	d4_run_script_deconfig();
 	packet_num = 0;
 	timeout = 0;
 	lease_remaining = 0;

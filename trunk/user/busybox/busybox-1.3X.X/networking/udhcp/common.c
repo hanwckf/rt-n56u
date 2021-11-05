@@ -69,7 +69,10 @@ const struct dhcp_optflag dhcp_optflags[] = {
 	{ OPTION_STRING                           , 0xd1 }, /* DHCP_PXE_CONF_FILE */
 	{ OPTION_STRING                           , 0xd2 }, /* DHCP_PXE_PATH_PREFIX */
 	{ OPTION_U32                              , 0xd3 }, /* DHCP_REBOOT_TIME   */
+#if ENABLE_FEATURE_UDHCP_RFC5969
 	{ OPTION_6RD                              , 0xd4 }, /* DHCP_6RD           */
+	{ OPTION_6RD                              , 0x96 }, /* DHCP_COMCAST_6RD   */
+#endif
 	{ OPTION_STATIC_ROUTES | OPTION_LIST      , 0xf9 }, /* DHCP_MS_STATIC_ROUTES */
 	{ OPTION_STRING                           , 0xfc }, /* DHCP_WPAD          */
 

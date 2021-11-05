@@ -171,3 +171,11 @@ config FEATURE_UDHCP_8021Q
 	help
 	If selected, both client and server will support passing of VLAN
 	ID and priority via options 132 and 133 as per 802.1Q.
+
+config FEATURE_UDHCP_RFC5969
+	bool "Support for RFC5969 IPv6 Rapid Deployment (6RD)"
+	default y
+	depends on UDHCPC && FEATURE_IPV6
+	help
+	  If selected, client will support passing of 6rd delegated
+	  prefix via option 212, specified in RFC 5969.

@@ -125,7 +125,9 @@ static const uint8_t len_of_option_as_string[] ALIGN1 = {
 	[OPTION_IP              ] = sizeof("255.255.255.255 "),
 	[OPTION_IP_PAIR         ] = sizeof("255.255.255.255 ") * 2,
 	[OPTION_STATIC_ROUTES   ] = sizeof("255.255.255.255/32 255.255.255.255 "),
+#if ENABLE_FEATURE_UDHCP_RFC5969
 	[OPTION_6RD             ] = sizeof("132 128 ffff:ffff:ffff:ffff:ffff:ffff:ffff:ffff 255.255.255.255 "),
+#endif
 	[OPTION_STRING          ] = 1,
 	[OPTION_STRING_HOST     ] = 1,
 #if ENABLE_FEATURE_UDHCP_RFC3397
@@ -296,6 +298,7 @@ static NOINLINE char *xmalloc_optname_optval(const struct dhcp_optitem *opt_item
 
 			return ret;
 		}
+#if ENABLE_FEATURE_UDHCP_RFC5969
 		case OPTION_6RD:
 			/* Option binary format (see RFC 5969):
 			 *  0                   1                   2                   3
@@ -338,6 +341,7 @@ static NOINLINE char *xmalloc_optname_optval(const struct dhcp_optitem *opt_item
 			}
 
 			return ret;
+#endif
 #if ENABLE_FEATURE_UDHCP_RFC3397
 		case OPTION_DNS_STRING:
 			/* unpack option into dest; use ret for prefix (i.e., "optname=") */

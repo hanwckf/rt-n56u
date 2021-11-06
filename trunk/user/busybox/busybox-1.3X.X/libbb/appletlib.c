@@ -694,12 +694,7 @@ static void install_links(const char *busybox, int use_symbolic_links,
 			continue;
 	}
 }
-# elif ENABLE_BUSYBOX
-static void install_links(const char *busybox UNUSED_PARAM,
-		int use_symbolic_links UNUSED_PARAM,
-		char *custom_install_dir UNUSED_PARAM)
-{
-}
+
 # endif
 
 # if ENABLE_BUSYBOX || NUM_APPLETS > 0
@@ -867,7 +862,8 @@ int busybox_main(int argc UNUSED_PARAM, char **argv)
 		return 0;
 	}
 
-	if (ENABLE_FEATURE_INSTALLER && strcmp(argv[1], "--install") == 0) {
+# if ENABLE_FEATURE_INSTALLER
+	if (strcmp(argv[1], "--install") == 0) {
 		int use_symbolic_links;
 		const char *busybox;
 
@@ -890,6 +886,7 @@ int busybox_main(int argc UNUSED_PARAM, char **argv)
 		install_links(busybox, use_symbolic_links, argv[2]);
 		return 0;
 	}
+# endif
 
 	if (strcmp(argv[1], "--help") == 0) {
 		/* "busybox --help [<applet>]" */

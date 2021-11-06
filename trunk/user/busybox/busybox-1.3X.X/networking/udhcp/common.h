@@ -308,6 +308,8 @@ void udhcp_dump_packet(struct dhcp_packet *packet) FAST_FUNC;
 
 /*** Other shared functions ***/
 
+int FAST_FUNC sprint_nip6(char *, const uint8_t *);
+
 /* 2nd param is "uint32_t*" */
 int FAST_FUNC udhcp_str2nip(const char *str, void *arg);
 

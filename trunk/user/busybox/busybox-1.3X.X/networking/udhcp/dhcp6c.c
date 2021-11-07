@@ -130,8 +130,7 @@ int dhcp6c_main(int argc UNUSED_PARAM, char **argv)
 
 	srandom(getpid());
 
-	opt_complementary = "=1" IF_UDHCP_VERBOSE(":vv");
-	opt = getopt32(argv, "fic:D:p:v",
+	opt = getopt32(argv, "^fic:D:p:v" "\0" "=1" IF_UDHCP_VERBOSE("vv"),
 			&client6_config.conffile, &str_D, &G.pid_file
 			IF_UDHCP_VERBOSE(, &dhcp_verbose)
 			);

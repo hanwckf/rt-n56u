@@ -32,6 +32,27 @@
  * Original code taken from wide-dhcpv6-20080615 and converted into
  * a busybox applet by Leonid Lisovskiy <lly@sf.net>
  */
+//config:config DHCP6C
+//config:	bool "DHCPv6 client daemon (dhcp6c)"
+//config:	default n
+//config:	depends on FEATURE_IPV6
+//config:	help
+//config:	  dhcp6c is a DHCPv6 client geared primarily toward embedded systems,
+//config:	  while striving to be fully functional and RFC compliant.
+
+//config:config FEATURE_DHCP6_AUTH
+//config:	bool "Support DHCPv6 messages authentication"
+//config:	default n
+//config:	depends on DHCP6C
+//config:	help
+//config:	  If selected, client will support DHCPv6 messages authentication,
+//config:	  currently HMAC-MD5 only.
+
+//applet:IF_DHCP6C(APPLET(dhcp6c, BB_DIR_SBIN, BB_SUID_DROP))
+
+//kbuild:lib-$(CONFIG_DHCP6C) += dhcp6c_common.o common.o
+//kbuild:lib-$(CONFIG_DHCP6C) += dhcp6c.o dhcp6c_config.o dhcp6c_script.o dhcp6c_ia.o dhcp6c_socket.o
+//kbuild:lib-$(CONFIG_FEATURE_DHCP6_AUTH) += dhcp6c_auth.o
 
 #include <net/if.h>
 #include <syslog.h>

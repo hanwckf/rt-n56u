@@ -75,6 +75,7 @@ static const char udhcpc_longopts[] ALIGN1 =
 	"background\0"     No_argument       "b"
 	)
 	"broadcast\0"      No_argument       "B"
+	"daemon\0"         No_argument       "d"
 	IF_FEATURE_UDHCPC_ARPING("arping\0"	Optional_argument "a")
 	IF_FEATURE_UDHCP_PORT("client-port\0"	Required_argument "P")
 	;
@@ -103,9 +104,11 @@ enum {
 /* The rest has variable bit positions, need to be clever */
 	OPTBIT_B = 18,
 	USE_FOR_MMU(             OPTBIT_b,)
+	USE_FOR_MMU(             OPTBIT_d,)
 	IF_FEATURE_UDHCPC_ARPING(OPTBIT_a,)
 	IF_FEATURE_UDHCP_PORT(   OPTBIT_P,)
 	USE_FOR_MMU(             OPT_b = 1 << OPTBIT_b,)
+	USE_FOR_MMU(             OPT_d = 1 << OPTBIT_d,)
 	IF_FEATURE_UDHCPC_ARPING(OPT_a = 1 << OPTBIT_a,)
 	IF_FEATURE_UDHCP_PORT(   OPT_P = 1 << OPTBIT_P,)
 };
@@ -1184,6 +1187,7 @@ static void client_background(void)
 //usage:     "\n	-A SEC		Wait if lease is not obtained (default 20)"
 //usage:	USE_FOR_MMU(
 //usage:     "\n	-b		Background if lease is not obtained"
+//usage:     "\n	-d		Background after run"
 //usage:	)
 //usage:     "\n	-n		Exit if lease is not obtained"
 //usage:     "\n	-q		Exit after obtaining lease"
@@ -1224,7 +1228,7 @@ int udhcpc_main(int argc UNUSED_PARAM, char **argv)
 	llist_t *list_x = NULL;
 	int tryagain_timeout = 20;
 	int discover_timeout = 3;
-	int discover_retries = 3;
+	int discover_retries = 4;
 	uint32_t server_id = server_id; /* for compiler */
 	uint32_t requested_ip = 0;
 	int packet_num;
@@ -1253,6 +1257,7 @@ int udhcpc_main(int argc UNUSED_PARAM, char **argv)
 		/* O,x: list; -T,-t,-A take numeric param */
 		"CV:F:i:np:qRr:s:T:+t:+SA:+O:*ox:*fB"
 		USE_FOR_MMU("b")
+		USE_FOR_MMU("d")
 		IF_FEATURE_UDHCPC_ARPING("a::")
 		IF_FEATURE_UDHCP_PORT("P:")
 		"v"
@@ -1362,6 +1367,13 @@ int udhcpc_main(int argc UNUSED_PARAM, char **argv)
 	if (!(opt & OPT_f)) {
 		bb_daemonize_or_rexec(0 /* flags */, argv);
 		logmode = LOGMODE_NONE;
+	}
+#else
+	if (!(opt & OPT_f) && (opt & OPT_d) ) {
+		bb_daemonize(0);
+		logmode = LOGMODE_NONE;
+		/* do not background again! */
+		opt = ((opt & ~OPT_b) | OPT_f);
 	}
 #endif
 	if (opt & OPT_S) {

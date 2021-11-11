@@ -278,8 +278,8 @@ HOSTCXXFLAGS	:=
 # We need some generic definitions
 include $(srctree)/scripts/Kbuild.include
 
-HOSTCFLAGS	+= $(call hostcc-option,-Wall -Wstrict-prototypes -O2 -fomit-frame-pointer,)
-HOSTCXXFLAGS	+= -O2
+HOSTCFLAGS	+= $(call hostcc-option,-Wall -Wstrict-prototypes -Os -fomit-frame-pointer,)
+HOSTCXXFLAGS	+= -Os
 
 # For maximum performance (+ possibly random breakage, uncomment
 # the following)

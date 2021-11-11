@@ -85,16 +85,10 @@ pid_t* FAST_FUNC find_pid_by_name(const char *procName)
 	procps_status_t* p = NULL;
 
 	pidList = xzalloc(sizeof(*pidList));
-	while ((p = procps_scan(p, PSSCAN_PID|PSSCAN_COMM|PSSCAN_ARGVN|PSSCAN_EXE))) {
+	while ((p = procps_scan(p, PSSCAN_PID|PSSCAN_COMM|PSSCAN_ARGVN))) {
 		if (comm_match(p, procName)
 		/* or we require argv0 to match (essential for matching reexeced /proc/self/exe)*/
 		 || (p->argv0 && strcmp(bb_basename(p->argv0), procName) == 0)
-		/* or we require /proc/PID/exe link to match */
-		 || (p->exe && strcmp(
-					procName[0] == '/' ? p->exe /* support "pidof /path/to/binary" case too */
-							: bb_basename(p->exe),
-					procName
-					) == 0)
 		) {
 			pidList = xrealloc_vector(pidList, 2, i);
 			pidList[i++] = p->pid;

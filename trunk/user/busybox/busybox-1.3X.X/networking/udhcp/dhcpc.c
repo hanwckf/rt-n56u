@@ -732,6 +732,7 @@ static int bcast_or_ucast(struct dhcp_packet *packet, uint32_t ciaddr, uint32_t 
 static NOINLINE int send_discover(uint32_t requested)
 {
 	struct dhcp_packet packet;
+	static int msgs = 0;
 
 	/* Fill in: op, htype, hlen, cookie, chaddr fields,
 	 * xid field, message type option:
@@ -746,6 +747,7 @@ static NOINLINE int send_discover(uint32_t requested)
 	 */
 	add_client_options(&packet);
 
+	if (msgs++ < 3)
 	bb_simple_info_msg("broadcasting discover");
 	return raw_bcast_from_client_data_ifindex(&packet, INADDR_ANY);
 }
@@ -1401,6 +1403,12 @@ int udhcpc_main(int argc UNUSED_PARAM, char **argv)
 	for (;;) {
 		struct pollfd pfds[2];
 		struct dhcp_packet packet;
+
+		/* When running on a bridge, the ifindex may have changed (e.g. if
+		 * member interfaces were added/removed or if the status of the
+		 * bridge changed).
+		 * Workaround: refresh it here before processing the next packet */
+		udhcp_read_interface(client_data.interface, &client_data.ifindex, NULL, client_data.client_mac, &client_data.client_mtu);
 
 		//bb_error_msg("sockfd:%d, listen_mode:%d", client_data.sockfd, client_data.listen_mode);
 

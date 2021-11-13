@@ -35,7 +35,15 @@ static const struct reject_names reject_table[] = {
 	{"icmp6-port-unreachable", "port-unreach",
 		IP6T_ICMP6_PORT_UNREACH, "ICMPv6 port unreachable"},
 	{"tcp-reset", "tcp-reset",
-		IP6T_TCP_RESET, "TCP RST packet"}
+		IP6T_TCP_RESET, "TCP RST packet"},
+	{"icmp6-policy-fail", "policy-fail",
+		IP6T_ICMP6_POLICY_FAIL, "ICMPv6 policy fail"},
+#if 1 /* compat */
+	{"icmp6-src-addr-policy", "src-addr-policy",
+		IP6T_ICMP6_POLICY_FAIL, "ICMPv6 src addr fails ingress/egress policy"},
+#endif
+	{"icmp6-reject-route", "reject-route",
+		IP6T_ICMP6_REJECT_ROUTE, "ICMPv6 reject route"}
 };
 
 static void

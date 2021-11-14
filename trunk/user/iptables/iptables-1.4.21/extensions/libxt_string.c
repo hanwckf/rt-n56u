@@ -103,6 +103,9 @@ parse_hex_string(const char *s, struct xt_string_info *info)
 	}
 
 	while (i < slen) {
+		if (sindex >= XT_STRING_MAX_PATTERN_SIZE)
+			xtables_error(PARAMETER_PROBLEM,
+				      "STRING too long \"%s\"", s);
 		if (s[i] == '\\' && !hex_f) {
 			literal_f = 1;
 		} else if (s[i] == '\\') {
@@ -159,8 +162,7 @@ parse_hex_string(const char *s, struct xt_string_info *info)
 			info->pattern[sindex] = s[i];
 			i++;
 		}
-		if (++sindex > XT_STRING_MAX_PATTERN_SIZE)
-			xtables_error(PARAMETER_PROBLEM, "STRING too long \"%s\"", s);
+		sindex++;
 	}
 	info->patlen = sindex;
 }

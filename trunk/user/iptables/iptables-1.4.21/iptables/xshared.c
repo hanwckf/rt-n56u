@@ -17,7 +17,6 @@
 #include "xshared.h"
 
 #define XT_LOCK_NAME	"/run/xtables.lock"
-#define BASE_MICROSECONDS	100000
 
 /*
  * Print out any special helps. A user might like to be able to add a --help
@@ -249,13 +248,11 @@ void xs_init_match(struct xtables_match *match)
 
 bool xtables_lock(int wait, struct timeval *wait_interval)
 {
-	struct timeval time_left, wait_time, waited_time;
+	struct timeval time_left, wait_time;
 	int fd, i = 0;
 
 	time_left.tv_sec = wait;
 	time_left.tv_usec = 0;
-	waited_time.tv_sec = 0;
-	waited_time.tv_usec = 0;
 
 	fd = open(XT_LOCK_NAME, O_CREAT, 0600);
 	if (fd < 0)
@@ -264,6 +261,9 @@ bool xtables_lock(int wait, struct timeval *wait_interval)
 	while (1) {
 		if (flock(fd, LOCK_EX | LOCK_NB) == 0)
 			return true;
+		else if (wait >= 0 && timercmp(&time_left, wait_interval, <))
+			return false;
+
 		if (++i % 10 == 0) {
 			if (wait != -1)
 				fprintf(stderr, "Another app is currently holding the xtables lock; "
@@ -279,10 +279,7 @@ bool xtables_lock(int wait, struct timeval *wait_interval)
 		if (wait == -1)
 			continue;
 
-		timeradd(&waited_time, wait_interval, &waited_time);
 		timersub(&time_left, wait_interval, &time_left);
-		if (!timerisset(&time_left))
-			return false;
 	}
 }
 

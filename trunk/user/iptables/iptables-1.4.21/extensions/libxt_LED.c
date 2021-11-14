@@ -53,8 +53,7 @@ static void LED_parse(struct xt_option_call *cb)
 	xtables_option_parse(cb);
 	switch (cb->entry->id) {
 	case O_LED_TRIGGER_ID:
-		strcpy(led->id, "netfilter-");
-		strcat(led->id, cb->arg);
+		snprintf(led->id, sizeof(led->id), "netfilter-%s", cb->arg);
 		break;
 	case O_LED_DELAY:
 		if (strncasecmp(cb->arg, "inf", 3) == 0)

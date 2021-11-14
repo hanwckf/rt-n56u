@@ -23,9 +23,11 @@ iptables-restore \(em Restore IP Tables
 .P
 ip6tables-restore \(em Restore IPv6 Tables
 .SH SYNOPSIS
-\fBiptables\-restore\fP [\fB\-chntvV\fP] [\fB\-M\fP \fImodprobe\fP]
+\fBiptables\-restore\fP [\fB\-chntvV\fP] [\fB\-w\fP \fIsecs\fP]
++[\fB\-W\fP \fIusecs\fP] [\fB\-M\fP \fImodprobe\fP]
 .P
-\fBip6tables\-restore\fP [\fB\-chntvV\fP] [\fB\-M\fP \fImodprobe\fP]
+\fBip6tables\-restore\fP [\fB\-chntvV\fP] [\fB\-w\fP \fIsecs\fP]
++[\fB\-W\fP \fIusecs\fP] [\fB\-M\fP \fImodprobe\fP]
 [\fB\-T\fP \fIname\fP]
 .SH DESCRIPTION
 .PP
@@ -53,6 +55,21 @@ Print additional debug info during ruleset processing.
 .TP
 \fB\-V\fP, \fB\-\-version\fP
 Print the program version number.
+.TP
+\fB\-w\fP, \fB\-\-wait\fP [\fIseconds\fP]
+Wait for the xtables lock.
+To prevent multiple instances of the program from running concurrently,
+an attempt will be made to obtain an exclusive lock at launch.  By default,
+the program will exit if the lock cannot be obtained.  This option will
+make the program wait (indefinitely or for optional \fIseconds\fP) until
+the exclusive lock can be obtained.
+.TP
+\fB\-W\fP, \fB\-\-wait-interval\fP \fImicroseconds\fP
+Interval to wait per each iteration.
+When running latency sensitive applications, waiting for the xtables lock
+for extended durations may not be acceptable. This option will make each
+iteration take the amount of time specified. The default interval is
+1 second. This option only works with \fB\-w\fP.
 .TP
 \fB\-M\fP, \fB\-\-modprobe\fP \fImodprobe_program\fP
 Specify the path to the modprobe program. By default, iptables-restore will

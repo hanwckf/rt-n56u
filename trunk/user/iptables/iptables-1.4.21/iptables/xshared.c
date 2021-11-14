@@ -513,18 +513,6 @@ void add_param_to_argv(char *parsestart, int line)
 		}
 
 		param_buffer[param_len] = '\0';
-
-		/* check if table name specified */
-		if ((param_buffer[0] == '-' &&
-		     param_buffer[1] != '-' &&
-		     strchr(param_buffer, 't')) ||
-		    (!strncmp(param_buffer, "--t", 3) &&
-		     !strncmp(param_buffer, "--table", strlen(param_buffer)))) {
-			xtables_error(PARAMETER_PROBLEM,
-				      "The -t option (seen in line %u) cannot be used in %s.\n",
-				      line, xt_params->program_name);
-		}
-
 		add_argv(param_buffer, 0);
 		param_len = 0;
 	}

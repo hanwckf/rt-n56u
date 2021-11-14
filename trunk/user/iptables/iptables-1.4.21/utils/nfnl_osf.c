@@ -384,7 +384,7 @@ static int osf_load_line(char *buffer, int len, int del)
 
 	nfnl_addattr_l(nmh, sizeof(buf), OSF_ATTR_FINGER, &f, sizeof(struct xt_osf_user_finger));
 
-	return nfnl_talk(nfnlh, nmh, 0, 0, NULL, NULL, NULL);
+	return nfnl_query(nfnlh, nmh);
 }
 
 static int osf_load_entries(char *path, int del)

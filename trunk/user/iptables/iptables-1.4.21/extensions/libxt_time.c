@@ -88,10 +88,10 @@ static void time_init(struct xt_entry_match *m)
 	info->date_stop  = INT_MAX;
 }
 
-static time_t time_parse_date(const char *s, bool end)
+static time_t time_parse_date(const char *s)
 {
 	unsigned int month = 1, day = 1, hour = 0, minute = 0, second = 0;
-	unsigned int year  = end ? 2038 : 1970;
+	unsigned int year;
 	const char *os = s;
 	struct tm tm;
 	time_t ret;
@@ -265,10 +265,10 @@ static void time_parse(struct xt_option_call *cb)
 	xtables_option_parse(cb);
 	switch (cb->entry->id) {
 	case O_DATE_START:
-		info->date_start = time_parse_date(cb->arg, false);
+		info->date_start = time_parse_date(cb->arg);
 		break;
 	case O_DATE_STOP:
-		info->date_stop = time_parse_date(cb->arg, true);
+		info->date_stop = time_parse_date(cb->arg);
 		break;
 	case O_TIME_START:
 		info->daytime_start = time_parse_minutes(cb->arg);

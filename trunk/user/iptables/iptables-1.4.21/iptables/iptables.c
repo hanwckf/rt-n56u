@@ -526,7 +526,6 @@ print_firewall(const struct ipt_entry *fw,
 	const struct xtables_target *target = NULL;
 	const struct xt_entry_target *t;
 	uint8_t flags;
-	char buf[BUFSIZ];
 
 	if (!iptc_is_chain(targname, handle))
 		target = xtables_find_target(targname, XTF_TRY_LOAD);
@@ -595,29 +594,7 @@ print_firewall(const struct ipt_entry *fw,
 		printf(FMT("%-6s ","out %s "), iface);
 	}
 
-	fputc(fw->ip.invflags & IPT_INV_SRCIP ? '!' : ' ', stdout);
-	if (fw->ip.smsk.s_addr == 0L && !(format & FMT_NUMERIC))
-		printf(FMT("%-19s ","%s "), "anywhere");
-	else {
-		if (format & FMT_NUMERIC)
-			strcpy(buf, xtables_ipaddr_to_numeric(&fw->ip.src));
-		else
-			strcpy(buf, xtables_ipaddr_to_anyname(&fw->ip.src));
-		strcat(buf, xtables_ipmask_to_numeric(&fw->ip.smsk));
-		printf(FMT("%-19s ","%s "), buf);
-	}
-
-	fputc(fw->ip.invflags & IPT_INV_DSTIP ? '!' : ' ', stdout);
-	if (fw->ip.dmsk.s_addr == 0L && !(format & FMT_NUMERIC))
-		printf(FMT("%-19s ","-> %s"), "anywhere");
-	else {
-		if (format & FMT_NUMERIC)
-			strcpy(buf, xtables_ipaddr_to_numeric(&fw->ip.dst));
-		else
-			strcpy(buf, xtables_ipaddr_to_anyname(&fw->ip.dst));
-		strcat(buf, xtables_ipmask_to_numeric(&fw->ip.dmsk));
-		printf(FMT("%-19s ","-> %s"), buf);
-	}
+	print_ipv4_addresses(fw, format);
 
 	if (format & FMT_NOTABLE)
 		fputs("  ", stdout);

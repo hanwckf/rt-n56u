@@ -541,7 +541,6 @@ print_firewall(const struct ip6t_entry *fw,
 {
 	const struct xtables_target *target = NULL;
 	const struct xt_entry_target *t;
-	char buf[BUFSIZ];
 
 	if (!ip6tc_is_chain(targname, handle))
 		target = xtables_find_target(targname, XTF_TRY_LOAD);
@@ -609,31 +608,7 @@ print_firewall(const struct ip6t_entry *fw,
 		printf(FMT("%-6s ","out %s "), iface);
 	}
 
-	fputc(fw->ipv6.invflags & IP6T_INV_SRCIP ? '!' : ' ', stdout);
-	if (!memcmp(&fw->ipv6.smsk, &in6addr_any, sizeof in6addr_any)
-	    && !(format & FMT_NUMERIC))
-		printf(FMT("%-19s ","%s "), "anywhere");
-	else {
-		if (format & FMT_NUMERIC)
-			strcpy(buf, xtables_ip6addr_to_numeric(&fw->ipv6.src));
-		else
-			strcpy(buf, xtables_ip6addr_to_anyname(&fw->ipv6.src));
-		strcat(buf, xtables_ip6mask_to_numeric(&fw->ipv6.smsk));
-		printf(FMT("%-19s ","%s "), buf);
-	}
-
-	fputc(fw->ipv6.invflags & IP6T_INV_DSTIP ? '!' : ' ', stdout);
-	if (!memcmp(&fw->ipv6.dmsk, &in6addr_any, sizeof in6addr_any)
-	    && !(format & FMT_NUMERIC))
-		printf(FMT("%-19s ","-> %s"), "anywhere");
-	else {
-		if (format & FMT_NUMERIC)
-			strcpy(buf, xtables_ip6addr_to_numeric(&fw->ipv6.dst));
-		else
-			strcpy(buf, xtables_ip6addr_to_anyname(&fw->ipv6.dst));
-		strcat(buf, xtables_ip6mask_to_numeric(&fw->ipv6.dmsk));
-		printf(FMT("%-19s ","-> %s"), buf);
-	}
+	print_ipv6_addresses(fw, format);
 
 	if (format & FMT_NOTABLE)
 		fputs("  ", stdout);

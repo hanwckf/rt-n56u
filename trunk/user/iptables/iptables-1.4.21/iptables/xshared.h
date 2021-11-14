@@ -113,4 +113,7 @@ bool xs_has_arg(int argc, char *argv[]);
 
 extern const struct xtables_afinfo *afinfo;
 
+void print_ipv4_addresses(const struct ipt_entry *fw, unsigned int format);
+void print_ipv6_addresses(const struct ip6t_entry *fw6, unsigned int format);
+
 #endif /* IPTABLES_XSHARED_H */

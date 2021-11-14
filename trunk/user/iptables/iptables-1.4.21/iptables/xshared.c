@@ -340,3 +340,69 @@ inline bool xs_has_arg(int argc, char *argv[])
 	       argv[optind][0] != '-' &&
 	       argv[optind][0] != '!';
 }
+
+static const char *ipv4_addr_to_string(const struct in_addr *addr,
+				       const struct in_addr *mask,
+				       unsigned int format)
+{
+	static char buf[BUFSIZ];
+
+	if (!mask->s_addr && !(format & FMT_NUMERIC))
+		return "anywhere";
+
+	if (format & FMT_NUMERIC)
+		strncpy(buf, xtables_ipaddr_to_numeric(addr), BUFSIZ - 1);
+	else
+		strncpy(buf, xtables_ipaddr_to_anyname(addr), BUFSIZ - 1);
+	buf[BUFSIZ - 1] = '\0';
+
+	strncat(buf, xtables_ipmask_to_numeric(mask),
+		BUFSIZ - strlen(buf) - 1);
+
+	return buf;
+}
+
+void print_ipv4_addresses(const struct ipt_entry *fw, unsigned int format)
+{
+	fputc(fw->ip.invflags & IPT_INV_SRCIP ? '!' : ' ', stdout);
+	printf(FMT("%-19s ", "%s "),
+	       ipv4_addr_to_string(&fw->ip.src, &fw->ip.smsk, format));
+
+	fputc(fw->ip.invflags & IPT_INV_DSTIP ? '!' : ' ', stdout);
+	printf(FMT("%-19s ", "-> %s"),
+	       ipv4_addr_to_string(&fw->ip.dst, &fw->ip.dmsk, format));
+}
+
+static const char *ipv6_addr_to_string(const struct in6_addr *addr,
+				       const struct in6_addr *mask,
+				       unsigned int format)
+{
+	static char buf[BUFSIZ];
+
+	if (IN6_IS_ADDR_UNSPECIFIED(addr) && !(format & FMT_NUMERIC))
+		return "anywhere";
+
+	if (format & FMT_NUMERIC)
+		strncpy(buf, xtables_ip6addr_to_numeric(addr), BUFSIZ - 1);
+	else
+		strncpy(buf, xtables_ip6addr_to_anyname(addr), BUFSIZ - 1);
+	buf[BUFSIZ - 1] = '\0';
+
+	strncat(buf, xtables_ip6mask_to_numeric(mask),
+		BUFSIZ - strlen(buf) - 1);
+
+	return buf;
+}
+
+void print_ipv6_addresses(const struct ip6t_entry *fw6, unsigned int format)
+{
+	fputc(fw6->ipv6.invflags & IP6T_INV_SRCIP ? '!' : ' ', stdout);
+	printf(FMT("%-19s ", "%s "),
+	       ipv6_addr_to_string(&fw6->ipv6.src,
+				   &fw6->ipv6.smsk, format));
+
+	fputc(fw6->ipv6.invflags & IP6T_INV_DSTIP ? '!' : ' ', stdout);
+	printf(FMT("%-19s ", "-> %s"),
+	       ipv6_addr_to_string(&fw6->ipv6.dst,
+				   &fw6->ipv6.dmsk, format));
+}

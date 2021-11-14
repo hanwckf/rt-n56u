@@ -5,8 +5,6 @@
 #include <xtables.h>
 #include <linux/netfilter_ipv6/ip6t_opts.h>
 
-#define DEBUG		0
-
 enum {
 	O_HBH_LEN = 0,
 	O_HBH_OPTS,
@@ -83,7 +81,7 @@ parse_options(const char *optsstr, uint16_t *opts)
                         opts[i] |= (0x00FF);
 		}
 
-#if DEBUG
+#ifdef DEBUG
 		printf("opts str: %s %s\n", cp, range);
 		printf("opts opt: %04X\n", opts[i]);
 #endif
@@ -92,7 +90,7 @@ parse_options(const char *optsstr, uint16_t *opts)
 
 	free(buffer);
 
-#if DEBUG
+#ifdef DEBUG
 	printf("addr nr: %d\n", i);
 #endif
 

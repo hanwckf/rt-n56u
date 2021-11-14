@@ -8,12 +8,6 @@
 #include <errno.h>
 #include "../iptables/xshared.h"
 
-#ifdef DEBUG
-#define DEBUGP(x, args...) fprintf(stderr, x , ## args)
-#else
-#define DEBUGP(x, args...) 
-#endif
-
 static int
 get_version(unsigned *version)
 {

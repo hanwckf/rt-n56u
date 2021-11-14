@@ -16,12 +16,7 @@
 #include "libiptc/libiptc.h"
 #include "xtables-multi.h"
 #include <xtables.h>
-
-#ifdef DEBUG
-#define DEBUGP(x, args...) fprintf(stderr, x, ## args)
-#else
-#define DEBUGP(x, args...)
-#endif
+#include "xshared.h"
 
 struct xtables_globals iptables_xml_globals = {
 	.option_offset = 0,

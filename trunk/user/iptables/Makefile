@@ -1,4 +1,4 @@
-SRC_NAME=iptables-1.4.16.3
+SRC_NAME=iptables-1.4.21
 
 CFLAGS  += -ffunction-sections -fdata-sections
 LDFLAGS += -Wl,--gc-sections
@@ -16,8 +16,8 @@ config_test:
 	fi )
 
 configure:
-	cp -f $(THISDIR)/$(SRC_NAME)/extensions/disabled/*.* $(THISDIR)/$(SRC_NAME)/extensions
 	( cd $(SRC_NAME) ; \
+	./autogen.sh ; \
 	./configure \
 		--prefix= \
 		--enable-static \

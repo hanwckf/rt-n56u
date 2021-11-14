@@ -1,0 +1,22 @@
+This matches if an open TCP/UDP socket can be found by doing a socket lookup on the
+packet. It matches if there is an established or non\-zero bound listening
+socket (possibly with a non\-local address). The lookup is performed using
+the \fBpacket\fP tuple of TCP/UDP packets, or the original TCP/UDP header
+\fBembedded\fP in an ICMP/ICPMv6 error packet.
+.TP
+\fB\-\-transparent\fP
+Ignore non-transparent sockets.
+.TP
+\fB\-\-nowildcard\fP
+Do not ignore sockets bound to 'any' address.
+The socket match won't accept zero\-bound listeners by default, since
+then local services could intercept traffic that would otherwise be forwarded.
+This option therefore has security implications when used to match traffic being
+forwarded to redirect such packets to local machine with policy routing.
+When using the socket match to implement fully transparent
+proxies bound to non\-local addresses it is recommended to use the \-\-transparent
+option instead.
+.PP
+Example (assuming packets with mark 1 are delivered locally):
+.IP
+\-t mangle \-A PREROUTING \-m socket \-\-transparent \-j MARK \-\-set\-mark 1

@@ -1,0 +1,15 @@
+/ip6tables
+/ip6tables-save
+/ip6tables-restore
+/ip6tables-static
+/iptables
+/iptables.8
+/iptables-extensions.8
+/iptables-extensions.8.tmpl
+/iptables-save
+/iptables-restore
+/iptables-static
+/iptables-xml
+/xtables-multi
+
+/xtables.pc

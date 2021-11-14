@@ -86,7 +86,9 @@ extern void xs_init_target(struct xtables_target *);
 extern void xs_init_match(struct xtables_match *);
 bool xtables_lock(int wait, struct timeval *wait_interval);
 
-void parse_wait_interval(const char *str, struct timeval *wait_interval);
+int parse_wait_time(int argc, char *argv[]);
+void parse_wait_interval(int argc, char *argv[], struct timeval *wait_interval);
+bool xs_has_arg(int argc, char *argv[]);
 
 extern const struct xtables_afinfo *afinfo;
 

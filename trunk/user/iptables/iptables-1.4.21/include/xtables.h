@@ -501,6 +501,17 @@ extern void xtables_save_string(const char *value);
 
 extern void xtables_print_num(uint64_t number, unsigned int format);
 
+extern void xtables_parse_val_mask(struct xt_option_call *cb,
+				   unsigned int *val, unsigned int *mask,
+				   const struct xtables_lmap *lmap);
+
+static inline void xtables_parse_mark_mask(struct xt_option_call *cb,
+					   unsigned int *mark,
+					   unsigned int *mask)
+{
+	xtables_parse_val_mask(cb, mark, mask, NULL);
+}
+
 #if defined(ALL_INCLUSIVE) || defined(NO_SHARED_LIBS)
 #	ifdef _INIT
 #		undef _init

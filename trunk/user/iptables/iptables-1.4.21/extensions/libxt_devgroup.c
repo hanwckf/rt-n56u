@@ -35,49 +35,24 @@ static const char f_devgroups[] = "/etc/iproute2/group";
 /* array of devgroups from f_devgroups[] */
 static struct xtables_lmap *devgroups;
 
-static void devgroup_parse_groupspec(const char *arg, unsigned int *group,
-				     unsigned int *mask)
-{
-	char *end;
-	bool ok;
-
-	ok = xtables_strtoui(arg, &end, group, 0, UINT32_MAX);
-	if (ok && (*end == '/' || *end == '\0')) {
-		if (*end == '/')
-			ok = xtables_strtoui(end + 1, NULL, mask,
-			                     0, UINT32_MAX);
-		else
-			*mask = ~0U;
-		if (!ok)
-			xtables_error(PARAMETER_PROBLEM,
-				      "Bad group value \"%s\"", arg);
-	} else {
-		*group = xtables_lmap_name2id(devgroups, arg);
-		if (*group == -1)
-			xtables_error(PARAMETER_PROBLEM,
-				      "Device group \"%s\" not found", arg);
-		*mask = ~0U;
-	}
-}
-
 static void devgroup_parse(struct xt_option_call *cb)
 {
 	struct xt_devgroup_info *info = cb->data;
-	unsigned int id, mask;
+	unsigned int group, mask;
 
 	xtables_option_parse(cb);
+	xtables_parse_val_mask(cb, &group, &mask, devgroups);
+
 	switch (cb->entry->id) {
 	case O_SRC_GROUP:
-		devgroup_parse_groupspec(cb->arg, &id, &mask);
-		info->src_group = id;
+		info->src_group = group;
 		info->src_mask  = mask;
 		info->flags |= XT_DEVGROUP_MATCH_SRC;
 		if (cb->invert)
 			info->flags |= XT_DEVGROUP_INVERT_SRC;
 		break;
 	case O_DST_GROUP:
-		devgroup_parse_groupspec(cb->arg, &id, &mask);
-		info->dst_group = id;
+		info->dst_group = group;
 		info->dst_mask  = mask;
 		info->flags |= XT_DEVGROUP_MATCH_DST;
 		if (cb->invert)

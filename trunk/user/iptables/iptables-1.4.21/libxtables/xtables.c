@@ -1950,6 +1950,58 @@ void xtables_print_num(uint64_t number, unsigned int format)
 	printf(FMT("%4lluT ","%lluT "), (unsigned long long)number);
 }
 
+void xtables_parse_val_mask(struct xt_option_call *cb,
+			    unsigned int *val, unsigned int *mask,
+			    const struct xtables_lmap *lmap)
+{
+	char *end;
+
+	*mask = ~0U;
+
+	if (!xtables_strtoui(cb->arg, &end, val, 0, UINT32_MAX)) {
+		if (lmap)
+			goto name2val;
+		else
+			goto bad_val;
+	}
+
+	if (*end == '\0')
+		return;
+
+	if (*end != '/') {
+		if (lmap)
+			goto name2val;
+		else
+			goto garbage;
+	}
+
+	if (!xtables_strtoui(end + 1, &end, mask, 0, UINT32_MAX))
+		goto bad_val;
+
+	if (*end == '\0')
+		return;
+
+garbage:
+	xt_params->exit_err(PARAMETER_PROBLEM,
+			"%s: trailing garbage after value "
+			"for option \"--%s\".\n",
+			cb->ext_name, cb->entry->name);
+
+bad_val:
+	xt_params->exit_err(PARAMETER_PROBLEM,
+			"%s: bad integer value for option \"--%s\", "
+			"or out of range.\n",
+			cb->ext_name, cb->entry->name);
+
+name2val:
+	*val = xtables_lmap_name2id(lmap, cb->arg);
+	if ((int)*val == -1)
+		xt_params->exit_err(PARAMETER_PROBLEM,
+			"%s: could not map name %s to an integer value "
+			"for option \"--%s\".\n",
+			cb->ext_name, cb->arg, cb->entry->name);
+}
+
 int kernel_version;
 
 void get_kernel_version(void)

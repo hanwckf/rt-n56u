@@ -432,27 +432,7 @@ static void xtopt_parse_tosmask(struct xt_option_call *cb)
  */
 static void xtopt_parse_markmask(struct xt_option_call *cb)
 {
-	unsigned int mark = 0, mask = ~0U;
-	char *end;
-
-	if (!xtables_strtoui(cb->arg, &end, &mark, 0, UINT32_MAX))
-		xt_params->exit_err(PARAMETER_PROBLEM,
-			"%s: bad mark value for option \"--%s\", "
-			"or out of range.\n",
-			cb->ext_name, cb->entry->name);
-	if (*end == '/' &&
-	    !xtables_strtoui(end + 1, &end, &mask, 0, UINT32_MAX))
-		xt_params->exit_err(PARAMETER_PROBLEM,
-			"%s: bad mask value for option \"--%s\", "
-			"or out of range.\n",
-			cb->ext_name, cb->entry->name);
-	if (*end != '\0')
-		xt_params->exit_err(PARAMETER_PROBLEM,
-			"%s: trailing garbage after value "
-			"for option \"--%s\".\n",
-			cb->ext_name, cb->entry->name);
-	cb->val.mark = mark;
-	cb->val.mask = mask;
+	xtables_parse_mark_mask(cb, &cb->val.mark, &cb->val.mask);
 }
 
 static int xtopt_sysloglvl_compare(const void *a, const void *b)

@@ -34,30 +34,17 @@ static struct xtables_lmap *realms;
 
 static void realm_parse(struct xt_option_call *cb)
 {
-	struct xt_realm_info *realminfo = cb->data;
-	int id;
-	char *end;
+	struct xt_realm_info *ri = cb->data;
+	unsigned int id, mask;
 
 	xtables_option_parse(cb);
-	realminfo->id = strtoul(cb->arg, &end, 0);
-	if (end != cb->arg && (*end == '/' || *end == '\0')) {
-		if (*end == '/')
-			realminfo->mask = strtoul(end+1, &end, 0);
-		else
-			realminfo->mask = 0xffffffff;
-		if (*end != '\0' || end == cb->arg)
-			xtables_error(PARAMETER_PROBLEM,
-				   "Bad realm value \"%s\"", cb->arg);
-	} else {
-		id = xtables_lmap_name2id(realms, cb->arg);
-		if (id == -1)
-			xtables_error(PARAMETER_PROBLEM,
-				   "Realm \"%s\" not found", cb->arg);
-		realminfo->id = id;
-		realminfo->mask = 0xffffffff;
-	}
+	xtables_parse_val_mask(cb, &id, &mask, realms);
+
+	ri->id = id;
+	ri->mask = mask;
+
 	if (cb->invert)
-		realminfo->invert = 1;
+		ri->invert = 1;
 }
 
 static void

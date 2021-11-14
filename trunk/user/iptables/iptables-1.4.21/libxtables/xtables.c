@@ -21,6 +21,7 @@
 #include <fcntl.h>
 #include <inttypes.h>
 #include <netdb.h>
+#include <spawn.h>
 #include <stdarg.h>
 #include <stdbool.h>
 #include <stdio.h>
@@ -343,6 +344,7 @@ int xtables_insmod(const char *modname, const char *modprobe, bool quiet)
 	char *buf = NULL;
 	char *argv[4];
 	int status;
+	pid_t pid;
 
 	/* If they don't explicitly set it, read out of kernel */
 	if (!modprobe) {
@@ -363,18 +365,11 @@ int xtables_insmod(const char *modname, const char *modprobe, bool quiet)
 	 */
 	fflush(stdout);
 
-	switch (vfork()) {
-	case 0:
-		execv(argv[0], argv);
-
-		/* not usually reached */
-		_exit(1);
-	case -1:
+	if (posix_spawn(&pid, argv[0], NULL, NULL, argv, NULL)) {
 		free(buf);
 		return -1;
-
-	default: /* parent */
-		wait(&status);
+	} else {
+		waitpid(pid, &status, 0);
 	}
 
 	free(buf);

@@ -777,6 +777,11 @@ iptables_xml_main(int argc, char *argv[])
 			for (a = 0; a < newargc; a++)
 				DEBUGP("argv[%u]: %s\n", a, newargv[a]);
 
+			if (!chain) {
+				fprintf(stderr, "%s: line %u failed - no chain found\n",
+					prog_name, line);
+				exit(1);
+			}
 			needChain(chain);// Should we explicitly look for -A
 			do_rule(pcnt, bcnt, newargc, newargv, newargvattr);
 

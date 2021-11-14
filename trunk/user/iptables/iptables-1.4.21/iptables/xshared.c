@@ -17,8 +17,6 @@
 #include <math.h>
 #include "xshared.h"
 
-#define XT_LOCK_NAME	"/run/xtables.lock"
-
 /*
  * Print out any special helps. A user might like to be able to add a --help
  * to the commandline, and see expected results. So we call help for all

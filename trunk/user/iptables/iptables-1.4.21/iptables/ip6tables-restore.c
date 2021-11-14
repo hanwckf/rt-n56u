@@ -270,6 +270,11 @@ int ip6tables_restore_main(int argc, char *argv[])
 	}
 	else in = stdin;
 
+	if (!wait_interval.tv_sec && !wait) {
+		fprintf(stderr, "Option --wait-interval requires option --wait\n");
+		exit(1);
+	}
+
 	/* Grab standard input. */
 	while (fgets(buffer, sizeof(buffer), in)) {
 		int ret = 0;

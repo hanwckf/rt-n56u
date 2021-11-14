@@ -140,8 +140,11 @@ iptables_save_main(int argc, char *argv[])
 	init_extensions4();
 #endif
 
-	while ((c = getopt_long(argc, argv, "bcdt:", options, NULL)) != -1) {
+	while ((c = getopt_long(argc, argv, "bcdt:M:", options, NULL)) != -1) {
 		switch (c) {
+		case 'b':
+			fprintf(stderr, "-b/--binary option is not implemented\n");
+			break;
 		case 'c':
 			show_counters = 1;
 			break;

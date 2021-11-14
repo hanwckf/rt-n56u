@@ -22,11 +22,10 @@
 #define DEBUGP(x, args...)
 #endif
 
-static int binary = 0, counters = 0, verbose = 0, noflush = 0;
+static int counters = 0, verbose = 0, noflush = 0;
 
 /* Keeping track of external matches and targets.  */
 static const struct option options[] = {
-	{.name = "binary",   .has_arg = false, .val = 'b'},
 	{.name = "counters", .has_arg = false, .val = 'c'},
 	{.name = "verbose",  .has_arg = false, .val = 'v'},
 	{.name = "test",     .has_arg = false, .val = 't'},
@@ -43,7 +42,7 @@ static void print_usage(const char *name, const char *version) __attribute__((no
 
 static void print_usage(const char *name, const char *version)
 {
-	fprintf(stderr, "Usage: %s [-b] [-c] [-v] [-t] [-h]\n"
+	fprintf(stderr, "Usage: %s [-c] [-v] [-t] [-h]\n"
 			"	   [ --binary ]\n"
 			"	   [ --counters ]\n"
 			"	   [ --verbose ]\n"
@@ -207,7 +206,7 @@ iptables_restore_main(int argc, char *argv[])
 	while ((c = getopt_long(argc, argv, "bcvthnM:T:", options, NULL)) != -1) {
 		switch (c) {
 			case 'b':
-				binary = 1;
+				fprintf(stderr, "-b/--binary option is not implemented\n");
 				break;
 			case 'c':
 				counters = 1;

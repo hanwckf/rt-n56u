@@ -36,7 +36,7 @@ and
 are used to dump the contents of IP or IPv6 Table in easily parseable format
 to STDOUT. Use I/O-redirection provided by your shell to write to a file.
 .TP
-\fB\-M\fP \fImodprobe_program\fP
+\fB\-M\fR, \fB\-\-modprobe\fR \fImodprobe_program\fP
 Specify the path to the modprobe program. By default, iptables-save will
 inspect /proc/sys/kernel/modprobe to determine the executable's path.
 .TP

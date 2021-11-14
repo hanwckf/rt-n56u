@@ -1,3 +1,4 @@
+#include <config.h>
 #include <getopt.h>
 #include <errno.h>
 #include <libgen.h>

@@ -839,6 +839,12 @@ void xtables_register_match(struct xtables_match *me)
 		exit(1);
 	}
 
+	if (me->real_name && strlen(me->real_name) >= XT_EXTENSION_MAXNAMELEN) {
+		fprintf(stderr, "%s: match `%s' has invalid real name\n",
+			xt_params->program_name, me->real_name);
+		exit(1);
+	}
+
 	if (me->family >= NPROTO) {
 		fprintf(stderr,
 			"%s: BUG: match %s has invalid protocol family\n",
@@ -994,6 +1000,12 @@ void xtables_register_target(struct xtables_target *me)
 	if (strlen(me->name) >= XT_EXTENSION_MAXNAMELEN) {
 		fprintf(stderr, "%s: target `%s' has invalid name\n",
 			xt_params->program_name, me->name);
+		exit(1);
+	}
+
+	if (me->real_name && strlen(me->real_name) >= XT_EXTENSION_MAXNAMELEN) {
+		fprintf(stderr, "%s: target `%s' has invalid real name\n",
+			xt_params->program_name, me->real_name);
 		exit(1);
 	}
 

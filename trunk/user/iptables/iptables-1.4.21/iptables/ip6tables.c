@@ -103,6 +103,7 @@ static struct option original_opts[] = {
 	{.name = "out-interface", .has_arg = 1, .val = 'o'},
 	{.name = "verbose",       .has_arg = 0, .val = 'v'},
 	{.name = "wait",          .has_arg = 2, .val = 'w'},
+	{.name = "wait-interval", .has_arg = 2, .val = 'W'},
 	{.name = "exact",         .has_arg = 0, .val = 'x'},
 	{.name = "version",       .has_arg = 0, .val = 'V'},
 	{.name = "help",          .has_arg = 2, .val = 'h'},
@@ -258,7 +259,10 @@ exit_printhelp(const struct xtables_rule_match *matches)
 "				network interface name ([+] for wildcard)\n"
 "  --table	-t table	table to manipulate (default: `filter')\n"
 "  --verbose	-v		verbose mode\n"
-"  --wait	-w [seconds]	wait for the xtables lock\n"
+"  --wait	-w [seconds]	maximum wait to acquire xtables lock before give up\n"
+"  --wait-interval -W [usecs]	wait time to try to acquire xtables lock\n"
+"				interval to wait for xtables lock\n"
+"				default is 1 second\n"
 "  --line-numbers		print line numbers when listing\n"
 "  --exact	-x		expand numbers (display exact values)\n"
 /*"[!] --fragment	-f		match second or further fragments only\n"*/
@@ -1323,6 +1327,10 @@ int do_command6(int argc, char *argv[], char **table,
 
 	int verbose = 0;
 	int wait = 0;
+	struct timeval wait_interval = {
+		.tv_sec	= 1,
+	};
+	bool wait_interval_set = false;
 	const char *chain = NULL;
 	const char *shostnetworkmask = NULL, *dhostnetworkmask = NULL;
 	const char *policy = NULL, *newname = NULL;
@@ -1358,7 +1366,7 @@ int do_command6(int argc, char *argv[], char **table,
 
 	opts = xt_params->orig_opts;
 	while ((cs.c = getopt_long(argc, argv,
-	   "-:A:C:D:R:I:L::S::M:F::Z::N:X::E:P:Vh::o:p:s:d:j:i:bvw::nt:m:xc:g:46",
+	   "-:A:C:D:R:I:L::S::M:F::Z::N:X::E:P:Vh::o:p:s:d:j:i:bvw::W::nt:m:xc:g:46",
 					   opts, NULL)) != -1) {
 		switch (cs.c) {
 			/*
@@ -1614,6 +1622,23 @@ int do_command6(int argc, char *argv[], char **table,
 						"wait seconds not numeric");
 			break;
 
+		case 'W':
+			if (restore) {
+				xtables_error(PARAMETER_PROBLEM,
+					      "You cannot use `-W' from "
+					      "ip6tables-restore");
+			}
+			if (optarg)
+				parse_wait_interval(optarg, &wait_interval);
+			else if (optind < argc &&
+				argv[optind][0] != '-' &&
+				argv[optind][0] != '!')
+				parse_wait_interval(argv[optind++],
+						    &wait_interval);
+
+			wait_interval_set = true;
+			break;
+
 		case 'm':
 			command_match(&cs);
 			break;
@@ -1718,6 +1743,10 @@ int do_command6(int argc, char *argv[], char **table,
 		cs.invert = FALSE;
 	}
 
+	if (!wait && wait_interval_set)
+		xtables_error(PARAMETER_PROBLEM,
+			      "--wait-interval only makes sense with --wait\n");
+
 	if (strcmp(*table, "nat") == 0 &&
 	    ((policy != NULL && strcmp(policy, "DROP") == 0) ||
 	    (cs.jumpto != NULL && strcmp(cs.jumpto, "DROP") == 0)))
@@ -1768,7 +1797,7 @@ int do_command6(int argc, char *argv[], char **table,
 	generic_opt_check(command, cs.options);
 
 	/* Attempt to acquire the xtables lock */
-	if (!restore && !xtables_lock(wait)) {
+	if (!restore && !xtables_lock(wait, &wait_interval)) {
 		fprintf(stderr, "Another app is currently holding the xtables lock. ");
 		if (wait == 0)
 			fprintf(stderr, "Perhaps you want to use the -w option?\n");

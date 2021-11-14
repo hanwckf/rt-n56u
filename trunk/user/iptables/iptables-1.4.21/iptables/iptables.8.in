@@ -369,6 +369,13 @@ the program will exit if the lock cannot be obtained.  This option will
 make the program wait (indefinitely or for optional \fIseconds\fP) until
 the exclusive lock can be obtained.
 .TP
+\fB\-W\fP, \fB\-\-wait-interval\fP \fImicroseconds\fP
+Interval to wait per each iteration.
+When running latency sensitive applications, waiting for the xtables lock
+for extended durations may not be acceptable. This option will make each
+iteration take the amount of time specified. The default interval is
+1 second. This option only works with \fB\-w\fP.
+.TP
 \fB\-n\fP, \fB\-\-numeric\fP
 Numeric output.
 IP addresses and port numbers will be printed in numeric format.

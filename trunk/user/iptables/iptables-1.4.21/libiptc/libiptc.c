@@ -1149,7 +1149,8 @@ static int iptcc_compile_chain(struct xtc_handle *h, STRUCT_REPLACE *repl, struc
 		strcpy(head->name.target.u.user.name, ERROR_TARGET);
 		head->name.target.u.target_size =
 				ALIGN(sizeof(struct xt_error_target));
-		strcpy(head->name.errorname, c->name);
+		strncpy(head->name.errorname, c->name, XT_FUNCTION_MAXNAMELEN);
+		head->name.errorname[XT_FUNCTION_MAXNAMELEN - 1] = '\0';
 	} else {
 		repl->hook_entry[c->hooknum-1] = c->head_offset;
 		repl->underflow[c->hooknum-1] = c->foot_offset;

@@ -33,6 +33,7 @@ static struct timeval wait_interval = {
 static const struct option options[] = {
 	{.name = "counters",      .has_arg = 0, .val = 'c'},
 	{.name = "verbose",       .has_arg = 0, .val = 'v'},
+	{.name = "version",       .has_arg = 0, .val = 'V'},
 	{.name = "test",          .has_arg = 0, .val = 't'},
 	{.name = "help",          .has_arg = 0, .val = 'h'},
 	{.name = "noflush",       .has_arg = 0, .val = 'n'},
@@ -46,13 +47,15 @@ static const struct option options[] = {
 static void print_usage(const char *name, const char *version) __attribute__((noreturn));
 
 #define prog_name iptables_globals.program_name
+#define prog_vers iptables_globals.program_version
 
 static void print_usage(const char *name, const char *version)
 {
-	fprintf(stderr, "Usage: %s [-c] [-v] [-t] [-h] [-W usecs]\n"
+	fprintf(stderr, "Usage: %s [-c] [-v] [-V]  [-t] [-h] [-W usecs]\n"
 			"	   [ --binary ]\n"
 			"	   [ --counters ]\n"
 			"	   [ --verbose ]\n"
+			"	   [ --version]\n"
 			"	   [ --test ]\n"
 			"	   [ --help ]\n"
 			"	   [ --noflush ]\n"
@@ -213,7 +216,7 @@ iptables_restore_main(int argc, char *argv[])
 	init_extensions4();
 #endif
 
-	while ((c = getopt_long(argc, argv, "bcvthnwWM:T:", options, NULL)) != -1) {
+	while ((c = getopt_long(argc, argv, "bcvVthnwWM:T:", options, NULL)) != -1) {
 		switch (c) {
 			case 'b':
 				fprintf(stderr, "-b/--binary option is not implemented\n");
@@ -224,6 +227,9 @@ iptables_restore_main(int argc, char *argv[])
 			case 'v':
 				verbose = 1;
 				break;
+			case 'V':
+				printf("%s v%s\n", prog_name, prog_vers);
+				exit(0);
 			case 't':
 				testing = 1;
 				break;

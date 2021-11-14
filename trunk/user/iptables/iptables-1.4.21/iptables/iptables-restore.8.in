@@ -23,9 +23,9 @@ iptables-restore \(em Restore IP Tables
 .P
 ip6tables-restore \(em Restore IPv6 Tables
 .SH SYNOPSIS
-\fBiptables\-restore\fP [\fB\-chntv\fP] [\fB\-M\fP \fImodprobe\fP]
+\fBiptables\-restore\fP [\fB\-chntvV\fP] [\fB\-M\fP \fImodprobe\fP]
 .P
-\fBip6tables\-restore\fP [\fB\-chntv\fP] [\fB\-M\fP \fImodprobe\fP]
+\fBip6tables\-restore\fP [\fB\-chntvV\fP] [\fB\-M\fP \fImodprobe\fP]
 [\fB\-T\fP \fIname\fP]
 .SH DESCRIPTION
 .PP
@@ -50,6 +50,9 @@ Only parse and construct the ruleset, but do not commit it.
 .TP
 \fB\-v\fP, \fB\-\-verbose\fP
 Print additional debug info during ruleset processing.
+.TP
+\fB\-V\fP, \fB\-\-version\fP
+Print the program version number.
 .TP
 \fB\-M\fP, \fB\-\-modprobe\fP \fImodprobe_program\fP
 Specify the path to the modprobe program. By default, iptables-restore will

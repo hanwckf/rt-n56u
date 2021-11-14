@@ -774,14 +774,6 @@ matchinfo_print(const void *ip, const struct xt_entry_match *match, int numeric,
         	else
 			printf("%lu:%lu", sinfo->expires_min, sinfo->expires_max);
 	}
-
-	if (sinfo->flags & XT_CONNTRACK_DIRECTION) {
-		if (sinfo->invflags & XT_CONNTRACK_DIRECTION)
-			printf(" %sctdir REPLY", optpfx);
-		else
-			printf(" %sctdir ORIGINAL", optpfx);
-	}
-
 }
 
 static void

@@ -318,7 +318,7 @@ void parse_wait_interval(int argc, char *argv[], struct timeval *wait_interval)
 	else if (xs_has_arg(argc, argv))
 		arg = argv[optind++];
 	else
-		return;
+		xtables_error(PARAMETER_PROBLEM, "wait interval value required");
 
 	ret = sscanf(arg, "%u", &usec);
 	if (ret == 1) {

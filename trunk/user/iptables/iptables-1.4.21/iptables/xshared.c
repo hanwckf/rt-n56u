@@ -6,14 +6,15 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <sys/file.h>
 #include <sys/socket.h>
 #include <sys/un.h>
 #include <unistd.h>
+#include <fcntl.h>
 #include <xtables.h>
 #include "xshared.h"
 
-#define XT_SOCKET_NAME "xtables"
-#define XT_SOCKET_LEN 8
+#define XT_LOCK_NAME	"/run/xtables.lock"
 
 /*
  * Print out any special helps. A user might like to be able to add a --help
@@ -245,22 +246,14 @@ void xs_init_match(struct xtables_match *match)
 
 bool xtables_lock(int wait)
 {
-	int i = 0, ret, xt_socket;
-	struct sockaddr_un xt_addr;
-	int waited = 0;
+	int fd, waited = 0, i = 0;
 
-	memset(&xt_addr, 0, sizeof(xt_addr));
-	xt_addr.sun_family = AF_UNIX;
-	strcpy(xt_addr.sun_path+1, XT_SOCKET_NAME);
-	xt_socket = socket(AF_UNIX, SOCK_STREAM, 0);
-	/* If we can't even create a socket, fall back to prior (lockless) behavior */
-	if (xt_socket < 0)
+	fd = open(XT_LOCK_NAME, O_CREAT, 0600);
+	if (fd < 0)
 		return true;
 
 	while (1) {
-		ret = bind(xt_socket, (struct sockaddr*)&xt_addr,
-			   offsetof(struct sockaddr_un, sun_path)+XT_SOCKET_LEN);
-		if (ret == 0)
+		if (flock(fd, LOCK_EX | LOCK_NB) == 0)
 			return true;
 		else if (wait >= 0 && waited >= wait)
 			return false;

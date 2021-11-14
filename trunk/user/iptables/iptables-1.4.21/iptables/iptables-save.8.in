@@ -44,8 +44,11 @@ inspect /proc/sys/kernel/modprobe to determine the executable's path.
 include the current values of all packet and byte counters in the output
 .TP
 \fB\-t\fR, \fB\-\-table\fR \fItablename\fP
-restrict output to only one table. If not specified, output includes all
-available tables.
+restrict output to only one table. If the kernel is configured with automatic
+module loading, an attempt will be made to load the appropriate module for
+that table if it is not already there.
+.br
+If not specified, output includes all available tables.
 .SH BUGS
 None known as of iptables-1.2.1 release
 .SH AUTHORS

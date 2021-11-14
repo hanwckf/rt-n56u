@@ -4,6 +4,7 @@
  * Hervé Eychenne    <rv@wallfire.org>
  */
 #define _BSD_SOURCE 1
+#define _DEFAULT_SOURCE 1
 #define _ISOC99_SOURCE 1
 #include <math.h>
 #include <stdio.h>

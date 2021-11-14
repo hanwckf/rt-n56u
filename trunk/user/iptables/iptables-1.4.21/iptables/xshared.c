@@ -1,4 +1,5 @@
 #include <getopt.h>
+#include <errno.h>
 #include <libgen.h>
 #include <netdb.h>
 #include <stdbool.h>
@@ -258,27 +259,29 @@ bool xtables_lock(int wait, struct timeval *wait_interval)
 	if (fd < 0)
 		return true;
 
+	if (wait == -1) {
+		if (flock(fd, LOCK_EX) == 0)
+			return true;
+
+		fprintf(stderr, "Can't lock %s: %s\n", XT_LOCK_NAME,
+			strerror(errno));
+		return false;
+	}
+
 	while (1) {
 		if (flock(fd, LOCK_EX | LOCK_NB) == 0)
 			return true;
-		else if (wait >= 0 && timercmp(&time_left, wait_interval, <))
+		else if (timercmp(&time_left, wait_interval, <))
 			return false;
 
 		if (++i % 10 == 0) {
-			if (wait != -1)
-				fprintf(stderr, "Another app is currently holding the xtables lock; "
-					"still %lds %ldus time ahead to have a chance to grab the lock...\n",
-					time_left.tv_sec, time_left.tv_usec);
-			else
-				fprintf(stderr, "Another app is currently holding the xtables lock; "
-						"waiting for it to exit...\n");
+			fprintf(stderr, "Another app is currently holding the xtables lock; "
+				"still %lds %ldus time ahead to have a chance to grab the lock...\n",
+				time_left.tv_sec, time_left.tv_usec);
 		}
 
 		wait_time = *wait_interval;
 		select(0, NULL, NULL, NULL, &wait_time);
-		if (wait == -1)
-			continue;
-
 		timersub(&time_left, wait_interval, &time_left);
 	}
 }

@@ -1269,7 +1269,7 @@ static int iptcc_compile_table(struct xtc_handle *h, STRUCT_REPLACE *repl)
 
 /* Allocate handle of given size */
 static struct xtc_handle *
-alloc_handle(const char *tablename, unsigned int size, unsigned int num_rules)
+alloc_handle(STRUCT_GETINFO *infop)
 {
 	struct xtc_handle *h;
 
@@ -1280,14 +1280,14 @@ alloc_handle(const char *tablename, unsigned int size, unsigned int num_rules)
 	}
 	memset(h, 0, sizeof(*h));
 	INIT_LIST_HEAD(&h->chains);
-	strcpy(h->info.name, tablename);
+	strcpy(h->info.name, infop->name);
 
-	h->entries = malloc(sizeof(STRUCT_GET_ENTRIES) + size);
+	h->entries = malloc(sizeof(STRUCT_GET_ENTRIES) + infop->size);
 	if (!h->entries)
 		goto out_free_handle;
 
-	strcpy(h->entries->name, tablename);
-	h->entries->size = size;
+	strcpy(h->entries->name, infop->name);
+	h->entries->size = infop->size;
 
 	return h;
 
@@ -1336,8 +1336,8 @@ retry:
 	DEBUGP("valid_hooks=0x%08x, num_entries=%u, size=%u\n",
 		info.valid_hooks, info.num_entries, info.size);
 
-	if ((h = alloc_handle(info.name, info.size, info.num_entries))
-	    == NULL) {
+	h = alloc_handle(&info);
+	if (h == NULL) {
 		close(sockfd);
 		return NULL;
 	}

@@ -60,6 +60,7 @@ set_parse_v0(int c, char **argv, int invert, unsigned int *flags,
 	case '2':
 		fprintf(stderr,
 			"--set option deprecated, please use --match-set\n");
+		/* fall through */
 	case '1':		/* --match-set <set> <flag>[,<flag> */
 		if (info->u.flags[0])
 			xtables_error(PARAMETER_PROBLEM,
@@ -140,6 +141,7 @@ set_parse_v1(int c, char **argv, int invert, unsigned int *flags,
 	case '2':
 		fprintf(stderr,
 			"--set option deprecated, please use --match-set\n");
+		/* fall through */
 	case '1':		/* --match-set <set> <flag>[,<flag> */
 		if (info->dim)
 			xtables_error(PARAMETER_PROBLEM,
@@ -238,6 +240,7 @@ set_parse_v2(int c, char **argv, int invert, unsigned int *flags,
 	case '2':
 		fprintf(stderr,
 			"--set option deprecated, please use --match-set\n");
+		/* fall through */
 	case '1':		/* --match-set <set> <flag>[,<flag> */
 		if (info->dim)
 			xtables_error(PARAMETER_PROBLEM,
@@ -415,6 +418,7 @@ set_parse_v3(int c, char **argv, int invert, unsigned int *flags,
 	case '2':
 		fprintf(stderr,
 			"--set option deprecated, please use --match-set\n");
+		/* fall through */
 	case '1':		/* --match-set <set> <flag>[,<flag> */
 		if (info->match_set.dim)
 			xtables_error(PARAMETER_PROBLEM,

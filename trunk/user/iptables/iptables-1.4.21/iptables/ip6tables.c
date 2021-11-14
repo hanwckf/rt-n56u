@@ -102,7 +102,7 @@ static struct option original_opts[] = {
 	{.name = "numeric",       .has_arg = 0, .val = 'n'},
 	{.name = "out-interface", .has_arg = 1, .val = 'o'},
 	{.name = "verbose",       .has_arg = 0, .val = 'v'},
-	{.name = "wait",          .has_arg = 0, .val = 'w'},
+	{.name = "wait",          .has_arg = 2, .val = 'w'},
 	{.name = "exact",         .has_arg = 0, .val = 'x'},
 	{.name = "version",       .has_arg = 0, .val = 'V'},
 	{.name = "help",          .has_arg = 2, .val = 'h'},
@@ -258,7 +258,7 @@ exit_printhelp(const struct xtables_rule_match *matches)
 "				network interface name ([+] for wildcard)\n"
 "  --table	-t table	table to manipulate (default: `filter')\n"
 "  --verbose	-v		verbose mode\n"
-"  --wait	-w		wait for the xtables lock\n"
+"  --wait	-w [seconds]	wait for the xtables lock\n"
 "  --line-numbers		print line numbers when listing\n"
 "  --exact	-x		expand numbers (display exact values)\n"
 /*"[!] --fragment	-f		match second or further fragments only\n"*/
@@ -1322,7 +1322,7 @@ int do_command6(int argc, char *argv[], char **table,
 	struct in6_addr *smasks = NULL, *dmasks = NULL;
 
 	int verbose = 0;
-	bool wait = false;
+	int wait = 0;
 	const char *chain = NULL;
 	const char *shostnetworkmask = NULL, *dhostnetworkmask = NULL;
 	const char *policy = NULL, *newname = NULL;
@@ -1358,7 +1358,7 @@ int do_command6(int argc, char *argv[], char **table,
 
 	opts = xt_params->orig_opts;
 	while ((cs.c = getopt_long(argc, argv,
-	   "-:A:C:D:R:I:L::S::M:F::Z::N:X::E:P:Vh::o:p:s:d:j:i:bvwnt:m:xc:g:46",
+	   "-:A:C:D:R:I:L::S::M:F::Z::N:X::E:P:Vh::o:p:s:d:j:i:bvw::nt:m:xc:g:46",
 					   opts, NULL)) != -1) {
 		switch (cs.c) {
 			/*
@@ -1602,7 +1602,16 @@ int do_command6(int argc, char *argv[], char **table,
 					      "You cannot use `-w' from "
 					      "ip6tables-restore");
 			}
-			wait = true;
+			wait = -1;
+			if (optarg) {
+				if (sscanf(optarg, "%i", &wait) != 1)
+					xtables_error(PARAMETER_PROBLEM,
+						"wait seconds not numeric");
+			} else if (optind < argc && argv[optind][0] != '-'
+						 && argv[optind][0] != '!')
+				if (sscanf(argv[optind++], "%i", &wait) != 1)
+					xtables_error(PARAMETER_PROBLEM,
+						"wait seconds not numeric");
 			break;
 
 		case 'm':
@@ -1753,8 +1762,11 @@ int do_command6(int argc, char *argv[], char **table,
 
 	/* Attempt to acquire the xtables lock */
 	if (!restore && !xtables_lock(wait)) {
-		fprintf(stderr, "Another app is currently holding the xtables lock. "
-			"Perhaps you want to use the -w option?\n");
+		fprintf(stderr, "Another app is currently holding the xtables lock. ");
+		if (wait == 0)
+			fprintf(stderr, "Perhaps you want to use the -w option?\n");
+		else
+			fprintf(stderr, "Stopped waiting after %ds.\n", wait);
 		xtables_free_opts(1);
 		exit(RESOURCE_PROBLEM);
 	}

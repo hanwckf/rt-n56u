@@ -361,12 +361,13 @@ For appending, insertion, deletion and replacement, this causes
 detailed information on the rule or rules to be printed. \fB\-v\fP may be
 specified multiple times to possibly emit more detailed debug statements.
 .TP
-\fB\-w\fP, \fB\-\-wait\fP
+\fB\-w\fP, \fB\-\-wait\fP [\fIseconds\fP]
 Wait for the xtables lock.
 To prevent multiple instances of the program from running concurrently,
 an attempt will be made to obtain an exclusive lock at launch.  By default,
 the program will exit if the lock cannot be obtained.  This option will
-make the program wait until the exclusive lock can be obtained.
+make the program wait (indefinitely or for optional \fIseconds\fP) until
+the exclusive lock can be obtained.
 .TP
 \fB\-n\fP, \fB\-\-numeric\fP
 Numeric output.

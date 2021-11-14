@@ -243,10 +243,11 @@ void xs_init_match(struct xtables_match *match)
 		match->init(match->m);
 }
 
-bool xtables_lock(bool wait)
+bool xtables_lock(int wait)
 {
 	int i = 0, ret, xt_socket;
 	struct sockaddr_un xt_addr;
+	int waited = 0;
 
 	memset(&xt_addr, 0, sizeof(xt_addr));
 	xt_addr.sun_family = AF_UNIX;
@@ -261,11 +262,12 @@ bool xtables_lock(bool wait)
 			   offsetof(struct sockaddr_un, sun_path)+XT_SOCKET_LEN);
 		if (ret == 0)
 			return true;
-		else if (wait == false)
+		else if (wait >= 0 && waited >= wait)
 			return false;
 		if (++i % 2 == 0)
 			fprintf(stderr, "Another app is currently holding the xtables lock; "
-				"waiting for it to exit...\n");
+				"waiting (%ds) for it to exit...\n", waited);
+		waited++;
 		sleep(1);
 	}
 }

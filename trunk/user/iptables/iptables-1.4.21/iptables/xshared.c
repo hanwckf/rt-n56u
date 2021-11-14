@@ -406,3 +406,126 @@ void print_ipv6_addresses(const struct ip6t_entry *fw6, unsigned int format)
 	       ipv6_addr_to_string(&fw6->ipv6.dst,
 				   &fw6->ipv6.dmsk, format));
 }
+
+/* global new argv and argc */
+char *newargv[255];
+int newargc = 0;
+
+/* saved newargv and newargc from save_argv() */
+char *oldargv[255];
+int oldargc = 0;
+
+/* arg meta data, were they quoted, frinstance */
+int newargvattr[255];
+
+/* function adding one argument to newargv, updating newargc
+ * returns true if argument added, false otherwise */
+int add_argv(const char *what, int quoted)
+{
+	DEBUGP("add_argv: %s\n", what);
+	if (what && newargc + 1 < ARRAY_SIZE(newargv)) {
+		newargv[newargc] = strdup(what);
+		newargvattr[newargc] = quoted;
+		newargv[++newargc] = NULL;
+		return 1;
+	} else {
+		xtables_error(PARAMETER_PROBLEM,
+			      "Parser cannot handle more arguments\n");
+	}
+}
+
+void free_argv(void)
+{
+	while (newargc)
+		free(newargv[--newargc]);
+	while (oldargc)
+		free(oldargv[--oldargc]);
+}
+
+/* Save parsed rule for comparison with next rule to perform action aggregation
+ * on duplicate conditions.
+ */
+void save_argv(void)
+{
+	unsigned int i;
+
+	while (oldargc)
+		free(oldargv[--oldargc]);
+
+	oldargc = newargc;
+	newargc = 0;
+	for (i = 0; i < oldargc; i++) {
+		oldargv[i] = newargv[i];
+	}
+}
+
+void add_param_to_argv(char *parsestart, int line)
+{
+	int quote_open = 0, escaped = 0, param_len = 0;
+	char param_buffer[1024], *curchar;
+
+	/* After fighting with strtok enough, here's now
+	 * a 'real' parser. According to Rusty I'm now no
+	 * longer a real hacker, but I can live with that */
+
+	for (curchar = parsestart; *curchar; curchar++) {
+		if (quote_open) {
+			if (escaped) {
+				param_buffer[param_len++] = *curchar;
+				escaped = 0;
+				continue;
+			} else if (*curchar == '\\') {
+				escaped = 1;
+				continue;
+			} else if (*curchar == '"') {
+				quote_open = 0;
+				*curchar = '"';
+			} else {
+				param_buffer[param_len++] = *curchar;
+				continue;
+			}
+		} else {
+			if (*curchar == '"') {
+				quote_open = 1;
+				continue;
+			}
+		}
+
+		switch (*curchar) {
+		case '"':
+			break;
+		case ' ':
+		case '\t':
+		case '\n':
+			if (!param_len) {
+				/* two spaces? */
+				continue;
+			}
+			break;
+		default:
+			/* regular character, copy to buffer */
+			param_buffer[param_len++] = *curchar;
+
+			if (param_len >= sizeof(param_buffer))
+				xtables_error(PARAMETER_PROBLEM,
+					      "Parameter too long!");
+			continue;
+		}
+
+		param_buffer[param_len] = '\0';
+
+		/* check if table name specified */
+		if ((param_buffer[0] == '-' &&
+		     param_buffer[1] != '-' &&
+		     strchr(param_buffer, 't')) ||
+		    (!strncmp(param_buffer, "--t", 3) &&
+		     !strncmp(param_buffer, "--table", strlen(param_buffer)))) {
+			xtables_error(PARAMETER_PROBLEM,
+				      "The -t option (seen in line %u) cannot be used in %s.\n",
+				      line, xt_params->program_name);
+		}
+
+		add_argv(param_buffer, 0);
+		param_len = 0;
+	}
+}

@@ -6,8 +6,10 @@ AM_CPPFLAGS = ${regular_CPPFLAGS} -I${top_builddir}/include \
 
 sbin_PROGRAMS =
 pkgdata_DATA =
+man_MANS =
 
 if HAVE_LIBNFNETLINK
+man_MANS += nfnl_osf.8
 sbin_PROGRAMS += nfnl_osf
 pkgdata_DATA += pf.os
 
@@ -23,3 +25,5 @@ if ENABLE_SYNCONF
 sbin_PROGRAMS += nfsynproxy
 nfsynproxy_LDADD = -lpcap
 endif
+
+CLEANFILES = nfnl_osf.8

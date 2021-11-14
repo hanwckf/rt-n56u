@@ -173,7 +173,8 @@ AC_CONFIG_FILES([Makefile extensions/GNUmakefile include/Makefile
 	libiptc/Makefile libiptc/libiptc.pc
 	libiptc/libip4tc.pc libiptc/libip6tc.pc
 	libxtables/Makefile utils/Makefile
-	include/xtables-version.h include/iptables/internal.h])
+	include/xtables-version.h include/iptables/internal.h
+	utils/nfnl_osf.8])
 AC_OUTPUT
 
 

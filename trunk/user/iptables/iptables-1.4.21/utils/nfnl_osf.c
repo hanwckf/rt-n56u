@@ -157,7 +157,6 @@ static void xt_osf_parse_opt(struct xt_osf_opt *opt, __u16 *optnum, char *obuf, 
 	i = 0;
 	while (ptr != NULL && i < olen && *ptr != 0) {
 		val = 0;
-		op = 0;
 		wc = OSF_WSS_PLAIN;
 		switch (obuf[i]) {
 		case 'N':
@@ -344,7 +343,7 @@ static int osf_load_line(char *buffer, int len, int del)
 	pend = xt_osf_strchr(pbeg, OSFPDEL);
 	if (pend) {
 		*pend = '\0';
-		cnt = snprintf(obuf, sizeof(obuf), "%s,", pbeg);
+		snprintf(obuf, sizeof(obuf), "%s,", pbeg);
 		pbeg = pend + 1;
 	}
 
@@ -352,25 +351,23 @@ static int osf_load_line(char *buffer, int len, int del)
 	if (pend) {
 		*pend = '\0';
 		if (pbeg[0] == '@' || pbeg[0] == '*')
-			cnt = snprintf(f.genre, sizeof(f.genre), "%s", pbeg + 1);
+			snprintf(f.genre, sizeof(f.genre), "%s", pbeg + 1);
 		else
-			cnt = snprintf(f.genre, sizeof(f.genre), "%s", pbeg);
+			snprintf(f.genre, sizeof(f.genre), "%s", pbeg);
 		pbeg = pend + 1;
 	}
 
 	pend = xt_osf_strchr(pbeg, OSFPDEL);
 	if (pend) {
 		*pend = '\0';
-		cnt = snprintf(f.version, sizeof(f.version), "%s", pbeg);
+		snprintf(f.version, sizeof(f.version), "%s", pbeg);
 		pbeg = pend + 1;
 	}
 
 	pend = xt_osf_strchr(pbeg, OSFPDEL);
 	if (pend) {
 		*pend = '\0';
-		cnt =
-		    snprintf(f.subtype, sizeof(f.subtype), "%s", pbeg);
-		pbeg = pend + 1;
+		snprintf(f.subtype, sizeof(f.subtype), "%s", pbeg);
 	}
 
 	xt_osf_parse_opt(f.opt, &f.opt_num, obuf, sizeof(obuf));

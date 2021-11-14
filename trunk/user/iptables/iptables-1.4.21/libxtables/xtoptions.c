@@ -282,7 +282,7 @@ static void xtopt_mint_value_to_ptr(struct xt_option_call *cb, void **datap,
 static void xtopt_parse_mint(struct xt_option_call *cb)
 {
 	const struct xt_option_entry *entry = cb->entry;
-	const char *arg = cb->arg;
+	const char *arg;
 	size_t esize = xtopt_esize_by_type(entry->type);
 	const uintmax_t lmax = xtopt_max_by_type(entry->type);
 	void *put = XTOPT_MKPTR(cb);

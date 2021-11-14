@@ -426,7 +426,6 @@ int ip6tables_restore_main(int argc, char *argv[])
 
 		} else if (in_table) {
 			int a;
-			char *ptr = buffer;
 			char *pcnt = NULL;
 			char *bcnt = NULL;
 			char *parsestart;
@@ -436,7 +435,8 @@ int ip6tables_restore_main(int argc, char *argv[])
 
 			if (buffer[0] == '[') {
 				/* we have counters in our input */
-				ptr = strchr(buffer, ']');
+				char *ptr = strchr(buffer, ']');
+
 				if (!ptr)
 					xtables_error(PARAMETER_PROBLEM,
 						   "Bad line %u: need ]\n",

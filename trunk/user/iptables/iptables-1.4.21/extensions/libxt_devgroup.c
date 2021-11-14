@@ -31,16 +31,9 @@ static const struct xt_option_entry devgroup_opts[] = {
 	XTOPT_TABLEEND,
 };
 
-/* array of devgroups from /etc/iproute2/group */
+static const char f_devgroups[] = "/etc/iproute2/group";
+/* array of devgroups from f_devgroups[] */
 static struct xtables_lmap *devgroups;
-
-static void devgroup_init(struct xt_entry_match *match)
-{
-	const char file[] = "/etc/iproute2/group";
-	devgroups = xtables_lmap_init(file);
-	if (devgroups == NULL && errno != ENOENT)
-		fprintf(stderr, "Warning: %s: %s\n", file, strerror(errno));
-}
 
 static void devgroup_parse_groupspec(const char *arg, unsigned int *group,
 				     unsigned int *mask)
@@ -157,7 +150,6 @@ static struct xtables_match devgroup_mt_reg = {
 	.family		= NFPROTO_UNSPEC,
 	.size		= XT_ALIGN(sizeof(struct xt_devgroup_info)),
 	.userspacesize	= XT_ALIGN(sizeof(struct xt_devgroup_info)),
-	.init		= devgroup_init,
 	.help		= devgroup_help,
 	.print		= devgroup_print,
 	.save		= devgroup_save,
@@ -168,5 +160,10 @@ static struct xtables_match devgroup_mt_reg = {
 
 void _init(void)
 {
+	devgroups = xtables_lmap_init(f_devgroups);
+	if (devgroups == NULL && errno != ENOENT)
+		fprintf(stderr, "Warning: %s: %s\n", f_devgroups,
+			strerror(errno));
+
 	xtables_register_match(&devgroup_mt_reg);
 }

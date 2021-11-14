@@ -28,16 +28,9 @@ static const struct xt_option_entry realm_opts[] = {
 	XTOPT_TABLEEND,
 };
 
-/* array of realms from /etc/iproute2/rt_realms */
+static const char f_realms[] = "/etc/iproute2/rt_realms";
+/* array of realms from f_realms[] */
 static struct xtables_lmap *realms;
-
-static void realm_init(struct xt_entry_match *m)
-{
-	const char file[] = "/etc/iproute2/rt_realms";
-	realms = xtables_lmap_init(file);
-	if (realms == NULL && errno != ENOENT)
-		fprintf(stderr, "Warning: %s: %s\n", file, strerror(errno));
-}
 
 static void realm_parse(struct xt_option_call *cb)
 {
@@ -114,7 +107,6 @@ static struct xtables_match realm_mt_reg = {
 	.size		= XT_ALIGN(sizeof(struct xt_realm_info)),
 	.userspacesize	= XT_ALIGN(sizeof(struct xt_realm_info)),
 	.help		= realm_help,
-	.init		= realm_init,
 	.print		= realm_print,
 	.save		= realm_save,
 	.x6_parse	= realm_parse,
@@ -123,5 +115,10 @@ static struct xtables_match realm_mt_reg = {
 
 void _init(void)
 {
+	realms = xtables_lmap_init(f_realms);
+	if (realms == NULL && errno != ENOENT)
+		fprintf(stderr, "Warning: %s: %s\n", f_realms,
+			strerror(errno));
+
 	xtables_register_match(&realm_mt_reg);
 }

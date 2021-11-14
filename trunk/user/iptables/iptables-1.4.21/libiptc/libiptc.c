@@ -1686,7 +1686,8 @@ iptcc_standard_map(struct rule_head *r, int verdict)
 
 static int
 iptcc_map_target(struct xtc_handle *const handle,
-	   struct rule_head *r)
+	   struct rule_head *r,
+	   bool dry_run)
 {
 	STRUCT_ENTRY *e = r->entry;
 	STRUCT_ENTRY_TARGET *t = GET_TARGET(e);
@@ -1731,7 +1732,8 @@ iptcc_map_target(struct xtc_handle *const handle,
 	       0,
 	       FUNCTION_MAXNAMELEN - 1 - strlen(t->u.user.name));
 	r->type = IPTCC_R_MODULE;
-	set_changed(handle);
+	if (!dry_run)
+		set_changed(handle);
 	return 1;
 }
 
@@ -1781,7 +1783,7 @@ TC_INSERT_ENTRY(const IPT_CHAINLABEL chain,
 	memcpy(r->entry, e, e->next_offset);
 	r->counter_map.maptype = COUNTER_MAP_SET;
 
-	if (!iptcc_map_target(handle, r)) {
+	if (!iptcc_map_target(handle, r, false)) {
 		free(r);
 		return 0;
 	}
@@ -1831,7 +1833,7 @@ TC_REPLACE_ENTRY(const IPT_CHAINLABEL chain,
 	memcpy(r->entry, e, e->next_offset);
 	r->counter_map.maptype = COUNTER_MAP_SET;
 
-	if (!iptcc_map_target(handle, r)) {
+	if (!iptcc_map_target(handle, r, false)) {
 		free(r);
 		return 0;
 	}
@@ -1870,7 +1872,7 @@ TC_APPEND_ENTRY(const IPT_CHAINLABEL chain,
 	memcpy(r->entry, e, e->next_offset);
 	r->counter_map.maptype = COUNTER_MAP_SET;
 
-	if (!iptcc_map_target(handle, r)) {
+	if (!iptcc_map_target(handle, r, false)) {
 		DEBUGP("unable to map target of rule for chain `%s'\n", chain);
 		free(r);
 		return 0;
@@ -1976,7 +1978,7 @@ static int delete_entry(const IPT_CHAINLABEL chain, const STRUCT_ENTRY *origfw,
 
 	memcpy(r->entry, origfw, origfw->next_offset);
 	r->counter_map.maptype = COUNTER_MAP_NOMAP;
-	if (!iptcc_map_target(handle, r)) {
+	if (!iptcc_map_target(handle, r, dry_run)) {
 		DEBUGP("unable to map target of rule for chain `%s'\n", chain);
 		free(r);
 		return 0;

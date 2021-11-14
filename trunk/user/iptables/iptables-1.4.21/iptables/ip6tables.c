@@ -1718,6 +1718,13 @@ int do_command6(int argc, char *argv[], char **table,
 		cs.invert = FALSE;
 	}
 
+	if (strcmp(*table, "nat") == 0 &&
+	    ((policy != NULL && strcmp(policy, "DROP") == 0) ||
+	    (cs.jumpto != NULL && strcmp(cs.jumpto, "DROP") == 0)))
+		xtables_error(PARAMETER_PROBLEM,
+			"\nThe \"nat\" table is not intended for filtering, "
+		        "the use of DROP is therefore inhibited.\n\n");
+
 	for (matchp = cs.matches; matchp; matchp = matchp->next)
 		xtables_option_mfcall(matchp->match);
 	if (cs.target != NULL)

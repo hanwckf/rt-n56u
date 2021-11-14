@@ -27,8 +27,12 @@ static void tcpmss_parse(struct xt_option_call *cb)
 	xtables_option_parse(cb);
 	mssinfo->mss_min = cb->val.u16_range[0];
 	mssinfo->mss_max = mssinfo->mss_min;
-	if (cb->nvals == 2)
+	if (cb->nvals == 2) {
 		mssinfo->mss_max = cb->val.u16_range[1];
+		if (mssinfo->mss_max < mssinfo->mss_min)
+			xtables_error(PARAMETER_PROBLEM,
+				      "tcpmss: invalid range given");
+	}
 	if (cb->invert)
 		mssinfo->invert = 1;
 }

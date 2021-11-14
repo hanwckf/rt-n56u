@@ -104,6 +104,10 @@ static void REJECT_print(const void *ip, const struct xt_entry_target *target,
 	for (i = 0; i < ARRAY_SIZE(reject_table); ++i)
 		if (reject_table[i].with == reject->with)
 			break;
+	if (i == ARRAY_SIZE(reject_table))
+		xtables_error(VERSION_PROBLEM,
+			      "unknown reject type %d in ruleset",
+			      reject->with);
 	printf(" reject-with %s", reject_table[i].name);
 }
 
@@ -116,6 +120,10 @@ static void REJECT_save(const void *ip, const struct xt_entry_target *target)
 	for (i = 0; i < ARRAY_SIZE(reject_table); ++i)
 		if (reject_table[i].with == reject->with)
 			break;
+	if (i == ARRAY_SIZE(reject_table))
+		xtables_error(VERSION_PROBLEM,
+			      "unknown reject type %d in ruleset",
+			      reject->with);
 
 	printf(" --reject-with %s", reject_table[i].name);
 }

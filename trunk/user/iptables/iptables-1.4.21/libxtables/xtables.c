@@ -352,6 +352,11 @@ int xtables_insmod(const char *modname, const char *modprobe, bool quiet)
 		modprobe = buf;
 	}
 
+	argv[0] = (char *)modprobe;
+	argv[1] = (char *)modname;
+	argv[2] = quiet ? "-q" : NULL;
+	argv[3] = NULL;
+
 	/*
 	 * Need to flush the buffer, or the child may output it again
 	 * when switching the program thru execv.
@@ -360,19 +365,10 @@ int xtables_insmod(const char *modname, const char *modprobe, bool quiet)
 
 	switch (vfork()) {
 	case 0:
-		argv[0] = (char *)modprobe;
-		argv[1] = (char *)modname;
-		if (quiet) {
-			argv[2] = "-q";
-			argv[3] = NULL;
-		} else {
-			argv[2] = NULL;
-			argv[3] = NULL;
-		}
 		execv(argv[0], argv);
 
 		/* not usually reached */
-		exit(1);
+		_exit(1);
 	case -1:
 		free(buf);
 		return -1;

@@ -438,7 +438,7 @@ int main(int argc, char *argv[])
 				break;
 			default:
 				fprintf(stderr,
-					"Usage: %s -f fingerprints -d <del rules> -h\n",
+					"Usage: %s -f fingerprints [-d]\n",
 					argv[0]);
 				return -1;
 		}

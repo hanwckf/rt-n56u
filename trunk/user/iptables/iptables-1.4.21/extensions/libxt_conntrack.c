@@ -673,20 +673,20 @@ static void
 print_addr(const struct in_addr *addr, const struct in_addr *mask,
            int inv, int numeric)
 {
-	char buf[BUFSIZ];
-
 	if (inv)
 		printf(" !");
 
 	if (mask->s_addr == 0L && !numeric)
-		printf(" %s", "anywhere");
+		printf(" anywhere");
 	else {
 		if (numeric)
-			strcpy(buf, xtables_ipaddr_to_numeric(addr));
+			printf(" %s%s",
+			       xtables_ipaddr_to_numeric(addr),
+			       xtables_ipmask_to_numeric(mask));
 		else
-			strcpy(buf, xtables_ipaddr_to_anyname(addr));
-		strcat(buf, xtables_ipmask_to_numeric(mask));
-		printf(" %s", buf);
+			printf(" %s%s",
+			       xtables_ipaddr_to_anyname(addr),
+			       xtables_ipmask_to_numeric(mask));
 	}
 }
 

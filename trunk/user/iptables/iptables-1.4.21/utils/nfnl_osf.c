@@ -141,7 +141,7 @@ static char *xt_osf_strchr(char *ptr, char c)
 	if (tmp)
 		*tmp = '\0';
 
-	while (tmp && tmp + 1 && isspace(*(tmp + 1)))
+	while (tmp && isspace(*(tmp + 1)))
 		tmp++;
 
 	return tmp;

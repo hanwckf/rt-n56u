@@ -199,7 +199,7 @@ static void recent_print(const void *ip, const struct xt_entry_match *match,
 	if(info->hit_count) printf(" hit_count: %d", info->hit_count);
 	if (info->check_set & XT_RECENT_TTL)
 		printf(" TTL-Match");
-	if(info->name) printf(" name: %s", info->name);
+	printf(" name: %s", info->name);
 	if (info->side == XT_RECENT_SOURCE)
 		printf(" side: source");
 	if (info->side == XT_RECENT_DEST)
@@ -239,7 +239,7 @@ static void recent_save(const void *ip, const struct xt_entry_match *match,
 	if(info->hit_count) printf(" --hitcount %d", info->hit_count);
 	if (info->check_set & XT_RECENT_TTL)
 		printf(" --rttl");
-	if(info->name) printf(" --name %s",info->name);
+	printf(" --name %s",info->name);
 
 	switch(family) {
 	case NFPROTO_IPV4:

@@ -370,7 +370,7 @@ print_chunk(uint32_t chunknum, int numeric)
 
 		for (i = 0; i < ARRAY_SIZE(sctp_chunk_names); ++i)
 			if (sctp_chunk_names[i].chunk_type == chunknum)
-				printf("%s", sctp_chunk_names[chunknum].name);
+				printf("%s", sctp_chunk_names[i].name);
 	}
 }
 

@@ -864,7 +864,7 @@ void xtables_option_parse(struct xt_option_call *cb)
 	 * a *RC option type.
 	 */
 	cb->nvals = 1;
-	if (entry->type <= ARRAY_SIZE(xtopt_subparse) &&
+	if (entry->type < ARRAY_SIZE(xtopt_subparse) &&
 	    xtopt_subparse[entry->type] != NULL)
 		xtopt_subparse[entry->type](cb);
 	/* Exclusion with other flags tested later in finalize. */

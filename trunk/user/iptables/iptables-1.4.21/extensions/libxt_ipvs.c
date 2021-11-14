@@ -126,19 +126,19 @@ static void ipvs_mt_dump_addr(const union nf_inet_addr *addr,
 			      const union nf_inet_addr *mask,
 			      unsigned int family, bool numeric)
 {
-	char buf[BUFSIZ];
-
 	if (family == NFPROTO_IPV4) {
 		if (!numeric && addr->ip == 0) {
 			printf(" anywhere");
 			return;
 		}
 		if (numeric)
-			strcpy(buf, xtables_ipaddr_to_numeric(&addr->in));
+			printf(" %s%s",
+			       xtables_ipaddr_to_numeric(&addr->in),
+			       xtables_ipmask_to_numeric(&mask->in));
 		else
-			strcpy(buf, xtables_ipaddr_to_anyname(&addr->in));
-		strcat(buf, xtables_ipmask_to_numeric(&mask->in));
-		printf(" %s", buf);
+			printf(" %s%s",
+			       xtables_ipaddr_to_anyname(&addr->in),
+			       xtables_ipmask_to_numeric(&mask->in));
 	} else if (family == NFPROTO_IPV6) {
 		if (!numeric && addr->ip6[0] == 0 && addr->ip6[1] == 0 &&
 		    addr->ip6[2] == 0 && addr->ip6[3] == 0) {
@@ -146,11 +146,13 @@ static void ipvs_mt_dump_addr(const union nf_inet_addr *addr,
 			return;
 		}
 		if (numeric)
-			strcpy(buf, xtables_ip6addr_to_numeric(&addr->in6));
+			printf(" %s%s",
+			       xtables_ip6addr_to_numeric(&addr->in6),
+			       xtables_ip6mask_to_numeric(&mask->in6));
 		else
-			strcpy(buf, xtables_ip6addr_to_anyname(&addr->in6));
-		strcat(buf, xtables_ip6mask_to_numeric(&mask->in6));
-		printf(" %s", buf);
+			printf(" %s%s",
+			       xtables_ip6addr_to_anyname(&addr->in6),
+			       xtables_ip6mask_to_numeric(&mask->in6));
 	}
 }
 

@@ -1,8 +1,8 @@
 This target marks packets so that the kernel will log every rule which match 
 the packets as those traverse the tables, chains, rules.
 .PP
-A logging backend, such as ip(6)t_LOG or nfnetlink_log, must be loaded for this
-to be visible.
+A logging backend, such as nf_log_ipv4(6) or nfnetlink_log, must be loaded for
+this to be visible.
 The packets are logged with the string prefix:
 "TRACE: tablename:chainname:type:rulenum " where type can be "rule" for 
 plain rule, "return" for implicit rule at the end of a user defined chain 

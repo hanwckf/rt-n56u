@@ -84,7 +84,28 @@ extern struct xtables_match *load_proto(struct iptables_command_state *);
 extern int subcmd_main(int, char **, const struct subcommand *);
 extern void xs_init_target(struct xtables_target *);
 extern void xs_init_match(struct xtables_match *);
-bool xtables_lock(int wait, struct timeval *wait_interval);
+
+/**
+ * Values for the iptables lock.
+ *
+ * A value >= 0 indicates the lock filedescriptor. Other values are:
+ *
+ * XT_LOCK_UNSUPPORTED : The system does not support locking, execution will
+ * proceed lockless.
+ *
+ * XT_LOCK_BUSY : The lock was held by another process. xtables_lock only
+ * returns this value when |wait| == false. If |wait| == true, xtables_lock
+ * will not return unless the lock has been acquired.
+ *
+ * XT_LOCK_NOT_ACQUIRED : We have not yet attempted to acquire the lock.
+ */
+enum {
+	XT_LOCK_BUSY = -1,
+	XT_LOCK_UNSUPPORTED  = -2,
+	XT_LOCK_NOT_ACQUIRED  = -3,
+};
+extern int xtables_lock(int wait, struct timeval *tv);
+extern void xtables_unlock(int lock);
 
 int parse_wait_time(int argc, char *argv[]);
 void parse_wait_interval(int argc, char *argv[], struct timeval *wait_interval);

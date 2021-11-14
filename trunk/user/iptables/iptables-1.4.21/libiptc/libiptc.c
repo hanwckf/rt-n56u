@@ -1115,8 +1115,9 @@ static inline int iptcc_compile_rule (struct xtc_handle *h, STRUCT_REPLACE *repl
 		STRUCT_STANDARD_TARGET *t;
 		t = (STRUCT_STANDARD_TARGET *)GET_TARGET(r->entry);
 		/* memset for memcmp convenience on delete/replace */
-		memset(t->target.u.user.name, 0, FUNCTION_MAXNAMELEN);
+		memset(t->target.u.user.name, 0, XT_EXTENSION_MAXNAMELEN);
 		strcpy(t->target.u.user.name, STANDARD_TARGET);
+		t->target.u.user.revision = 0;
 		/* Jumps can only happen to builtin chains, so we
 		 * can safely assume that they always have a header */
 		t->verdict = r->jump->head_offset + IPTCB_CHAIN_START_SIZE;
@@ -1676,8 +1677,9 @@ iptcc_standard_map(struct rule_head *r, int verdict)
 		return 0;
 	}
 	/* memset for memcmp convenience on delete/replace */
-	memset(t->target.u.user.name, 0, FUNCTION_MAXNAMELEN);
+	memset(t->target.u.user.name, 0, XT_EXTENSION_MAXNAMELEN);
 	strcpy(t->target.u.user.name, STANDARD_TARGET);
+	t->target.u.user.revision = 0;
 	t->verdict = verdict;
 
 	r->type = IPTCC_R_STANDARD;

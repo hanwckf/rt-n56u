@@ -473,7 +473,7 @@ bool xtables_strtoui(const char *s, char **end, unsigned int *value,
 	bool ret;
 
 	ret = xtables_strtoul(s, end, &v, min, max);
-	if (value != NULL)
+	if (ret && value != NULL)
 		*value = v;
 	return ret;
 }

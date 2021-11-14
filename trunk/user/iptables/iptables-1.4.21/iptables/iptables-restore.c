@@ -44,8 +44,6 @@ static const struct option options[] = {
 	{NULL},
 };
 
-static void print_usage(const char *name, const char *version) __attribute__((noreturn));
-
 #define prog_name iptables_globals.program_name
 #define prog_vers iptables_globals.program_version
 
@@ -63,8 +61,6 @@ static void print_usage(const char *name, const char *version)
 			"	   [ --wait-interval=<usecs>\n"
 			"	   [ --table=<TABLE> ]\n"
 			"	   [ --modprobe=<command>]\n", name);
-
-	exit(1);
 }
 
 static struct xtc_handle *create_handle(const char *tablename)
@@ -236,7 +232,7 @@ iptables_restore_main(int argc, char *argv[])
 			case 'h':
 				print_usage("iptables-restore",
 					    IPTABLES_VERSION);
-				break;
+				exit(0);
 			case 'n':
 				noflush = 1;
 				break;
@@ -252,6 +248,10 @@ iptables_restore_main(int argc, char *argv[])
 			case 'T':
 				tablename = optarg;
 				break;
+			default:
+				fprintf(stderr,
+					"Try `iptables-restore -h' for more information.\n");
+				exit(1);
 		}
 	}
 

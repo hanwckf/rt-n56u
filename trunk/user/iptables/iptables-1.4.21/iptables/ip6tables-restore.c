@@ -47,8 +47,6 @@ static const struct option options[] = {
 	{NULL},
 };
 
-static void print_usage(const char *name, const char *version) __attribute__((noreturn));
-
 #define prog_name ip6tables_globals.program_name
 #define prog_vers ip6tables_globals.program_version
 
@@ -65,8 +63,6 @@ static void print_usage(const char *name, const char *version)
 			"	   [ --wait-interval=<usecs>\n"
 			"	   [ --noflush ]\n"
 			"	   [ --modprobe=<command>]\n", name);
-
-	exit(1);
 }
 
 static struct xtc_handle *create_handle(const char *tablename)
@@ -237,7 +233,7 @@ int ip6tables_restore_main(int argc, char *argv[])
 			case 'h':
 				print_usage("ip6tables-restore",
 					    IPTABLES_VERSION);
-				break;
+				exit(0);
 			case 'n':
 				noflush = 1;
 				break;
@@ -253,6 +249,10 @@ int ip6tables_restore_main(int argc, char *argv[])
 			case 'T':
 				tablename = optarg;
 				break;
+			default:
+				fprintf(stderr,
+					"Try `ip6tables-restore -h' for more information.\n");
+				exit(1);
 		}
 	}
 

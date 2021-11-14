@@ -165,7 +165,7 @@ static void ipvs_mt_dump(const void *ip, const struct xt_ipvs_mtinfo *data,
 	if (data->bitmask & XT_IPVS_PROTO) {
 		if (data->invert & XT_IPVS_PROTO)
 			printf(" !");
-		printf(" %sproto %u", prefix, data->l4proto);
+		printf(" %svproto %u", prefix, data->l4proto);
 	}
 
 	if (data->bitmask & XT_IPVS_VADDR) {

@@ -27,7 +27,7 @@ enum {
 static const struct xt_option_entry ipvs_mt_opts[] = {
 	{.name = "ipvs", .id = O_IPVS, .type = XTTYPE_NONE,
 	 .flags = XTOPT_INVERT},
-	{.name = "vproto", .id = O_VPROTO, .type = XTTYPE_STRING,
+	{.name = "vproto", .id = O_VPROTO, .type = XTTYPE_PROTOCOL,
 	 .flags = XTOPT_INVERT | XTOPT_PUT, XTOPT_POINTER(s, l4proto)},
 	{.name = "vaddr", .id = O_VADDR, .type = XTTYPE_HOSTMASK,
 	 .flags = XTOPT_INVERT},
@@ -69,9 +69,6 @@ static void ipvs_mt_parse(struct xt_option_call *cb)
 
 	xtables_option_parse(cb);
 	switch (cb->entry->id) {
-	case O_VPROTO:
-		data->l4proto = cb->val.protocol;
-		break;
 	case O_VADDR:
 		memcpy(&data->vaddr, &cb->val.haddr, sizeof(cb->val.haddr));
 		memcpy(&data->vmask, &cb->val.hmask, sizeof(cb->val.hmask));

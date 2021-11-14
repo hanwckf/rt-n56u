@@ -119,8 +119,10 @@ struct option *xtables_merge_options(struct option *orig_opts,
 	 * Since @oldopts also has @orig_opts already (and does so at the
 	 * start), skip these entries.
 	 */
-	oldopts += num_oold;
-	num_old -= num_oold;
+	if (oldopts != NULL) {
+		oldopts += num_oold;
+		num_old -= num_oold;
+	}
 
 	merge = malloc(sizeof(*mp) * (num_oold + num_old + num_new + 1));
 	if (merge == NULL)
@@ -139,8 +141,10 @@ struct option *xtables_merge_options(struct option *orig_opts,
 		mp->val += *option_offset;
 
 	/* Third, the old options */
-	memcpy(mp, oldopts, sizeof(*mp) * num_old);
-	mp += num_old;
+	if (oldopts != NULL) {
+		memcpy(mp, oldopts, sizeof(*mp) * num_old);
+		mp += num_old;
+	}
 	xtables_free_opts(0);
 
 	/* Clear trailing entry */

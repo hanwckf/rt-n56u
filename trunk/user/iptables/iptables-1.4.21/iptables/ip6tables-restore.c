@@ -191,7 +191,7 @@ int ip6tables_restore_main(int argc, char *argv[])
 	struct xtc_handle *handle = NULL;
 	char buffer[10240];
 	int c, lock;
-	char curtable[XT_TABLE_MAXNAMELEN + 1];
+	char curtable[XT_TABLE_MAXNAMELEN + 1] = {};
 	FILE *in;
 	int in_table = 0, testing = 0;
 	const char *tablename = NULL;

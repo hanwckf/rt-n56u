@@ -13,7 +13,7 @@ download_test:
 	
 extract_test:
 	( if [ ! -d $(THISDIR)/$(SRC_NAME) ]; then \
-		tar -xf $(SRC_FILE).tar.gz; \
+		unzip -qq $(SRC_NAME).zip; \
 	fi )
 
 config_test:

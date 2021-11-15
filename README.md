@@ -35,6 +35,8 @@ Updating minieap sources to minieap-taiga(From ZenZRyan)
 
 ### 这个分支更新了什么？ ###
 * 更新minieap的软件源，采用来自ZenZRyan的minieap-taiga
+* 更新mentohust版本至最新版本（同步原作者）
+* 更新suctclient版本至最新版本（同步原作者）
 
 ### 固件特点 ###
 - 使用[gorden5566](https://github.com/gorden5566/padavan)的汉化字典

@@ -1,5 +1,5 @@
 SRC_NAME = minieap-taiga-main
-SRC_URL = https://codeload.github.com/ZenZRyan/minieap-taiga/zip/refs/heads/main
+SRC_URL = https://github.com/ZenZRyan/minieap-taiga/archive/refs/heads/main.zip
 THISDIR = $(shell pwd)
 
 all: download_test extract_test

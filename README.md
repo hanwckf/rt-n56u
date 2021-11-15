@@ -23,11 +23,18 @@ Contributors of this project are not responsible for what happens next.
 
 ***
 
+### What does this fork change? ###
+
+Updating minieap sources to minieap-taiga(From ZenZRyan)  
+
 ### 特别说明 ###
 * 汉化字典来自：https://github.com/gorden5566/padavan
 * 更新日志：https://www.jianshu.com/p/d76a63a12eae
 
 ***
+
+### 这个分支更新了什么？ ###
+* 更新minieap的软件源，采用来自ZenZRyan的minieap-taiga
 
 ### 固件特点 ###
 - 使用[gorden5566](https://github.com/gorden5566/padavan)的汉化字典
@@ -39,7 +46,7 @@ Contributors of this project are not responsible for what happens next.
 >- [scutclient](https://github.com/hanwckf/scutclient) ```CONFIG_FIRMWARE_INCLUDE_SCUTCLIENT```
 >- [gdut-drcom](https://github.com/chenhaowen01/gdut-drcom) ```CONFIG_FIRMWARE_INCLUDE_GDUT_DRCOM```
 >- [dogcom](https://github.com/hanwckf/dogcom) ```CONFIG_FIRMWARE_INCLUDE_DOGCOM```
->- [minieap](https://github.com/hanwckf/minieap) ```CONFIG_FIRMWARE_INCLUDE_MINIEAP```
+>- [minieap](https://github.com/ZenZRyan/minieap-taiga) ```CONFIG_FIRMWARE_INCLUDE_MINIEAP```
 >- [njit-client](https://github.com/hanwckf/njit8021xclient) ```CONFIG_FIRMWARE_INCLUDE_NJIT_CLIENT```
 >- [napt66](https://github.com/mzweilin/napt66) ```CONFIG_FIRMWARE_INCLUDE_NAPT66```
 >- [softether-vpnserver](https://github.com/SoftEtherVPN/SoftEtherVPN_Stable) ```CONFIG_FIRMWARE_INCLUDE_SOFTETHERVPN_SERVER```

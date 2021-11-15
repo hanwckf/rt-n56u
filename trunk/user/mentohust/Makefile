@@ -4,10 +4,14 @@ THISDIR = $(shell pwd)
 
 LDFLAGS += -L$(STAGEDIR) -liconv
 
-all: extract_test config_test
+all: download_test extract_test config_test
 	$(MAKE) -C $(SRC_NAME)
 
-
+download_test: 
+	( if [ ! -f $(THISDIR)/$(SRC_NAME).zip ]; then \
+		wget -t5 --timeout=20 --no-check-certificate -O $(SRC_NAME).zip $(SRC_URL); \
+	fi )
+	
 extract_test:
 	( if [ ! -d $(SRC_NAME) ]; then \
 		unzip -qq $(SRC_NAME).zip; \

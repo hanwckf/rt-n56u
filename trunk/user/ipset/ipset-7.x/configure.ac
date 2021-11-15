@@ -325,7 +325,7 @@ fi
 
 AC_MSG_CHECKING([kernel source for ipv6_skip_exthdr args])
 if test -f $ksourcedir/include/net/ipv6.h && \
-   $AWK '/ ipv6_skip_exthdr\(/,/\)/' $ksourcedir/include/net/ipv6.h | $GREP -q 'frag_offp'; then
+   $AWK '/( |\t)ipv6_skip_exthdr\(/,/\)/' $ksourcedir/include/net/ipv6.h | $GREP -q 'frag_offp'; then
 	AC_MSG_RESULT(4 args)
 	AC_SUBST(HAVE_IPV6_SKIP_EXTHDR_ARGS, 4)
 else

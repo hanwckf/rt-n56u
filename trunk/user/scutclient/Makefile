@@ -3,9 +3,14 @@ SRC_NAME := scutclient-master
 SRC_URL = https://codeload.github.com/scutclient/scutclient/zip/refs/heads/master
 THISDIR = $(shell pwd)
 
-all: extract_test config_test
+all: download_test extract_test config_test
 	$(MAKE) -C $(SRC_NAME)/build
 
+download_test: 
+	( if [ ! -f $(THISDIR)/$(SRC_NAME).zip ]; then \
+		wget -t5 --timeout=20 --no-check-certificate -O $(SRC_NAME).zip $(SRC_URL); \
+	fi )
+	
 extract_test:
 	( if [ ! -d $(THISDIR)/$(SRC_NAME) ]; then \
 		tar -xf $(SRC_FILE).tar.gz; \

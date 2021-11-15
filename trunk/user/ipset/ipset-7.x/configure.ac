@@ -333,6 +333,16 @@ else
 	AC_SUBST(HAVE_IPV6_SKIP_EXTHDR_ARGS, 3)
 fi
 
+AC_MSG_CHECKING([kernel source for cond_resched_rcu])
+if test -f $ksourcedir/include/linux/sched.h && \
+   $AWK '/( |\t)cond_resched_rcu\(/,/\)/' $ksourcedir/include/linux/sched.h | $GREP -q 'cond_resched_rcu'; then
+	AC_MSG_RESULT(yes)
+	AC_SUBST(HAVE_COND_RESCHED_RCU, define)
+else
+	AC_MSG_RESULT(no)
+	AC_SUBST(HAVE_COND_RESCHED_RCU, undef)
+fi
+
 AC_MSG_CHECKING([kernel source for bool checkentry function prototype])
 if test -f $ksourcedir/include/linux/netfilter/x_tables.h && \
    $GREP -q 'bool .\*checkentry.' $ksourcedir/include/linux/netfilter/x_tables.h; then

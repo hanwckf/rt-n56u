@@ -1,6 +1,6 @@
 # https://github.com/scutclient/scutclient.git
 SRC_NAME := scutclient-master
-SRC_URL = https://codeload.github.com/scutclient/scutclient/zip/refs/heads/master
+SRC_URL = https://github.com/scutclient/scutclient/archive/refs/heads/master.zip
 THISDIR = $(shell pwd)
 
 all: download_test extract_test config_test

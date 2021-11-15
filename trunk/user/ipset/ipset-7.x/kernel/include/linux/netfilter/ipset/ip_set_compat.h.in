@@ -318,7 +318,11 @@ static inline int nla_put_in6_addr(struct sk_buff *skb, int attrtype,
 static inline __be16 tc_skb_protocol(const struct sk_buff *skb)
 {
 	if (vlan_tx_tag_present(skb))
+#ifdef HAVE_VLAN_PROTO_IN_SK_BUFF
 		return skb->vlan_proto;
+#else
+		return htons(ETH_P_8021Q);
+#endif
 	return skb->protocol;
 }
 #endif

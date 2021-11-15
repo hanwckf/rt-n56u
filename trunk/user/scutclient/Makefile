@@ -1,6 +1,6 @@
-# https://github.com/hanwckf/scutclient.git
-SRC_NAME := scutclient-upstream
-SRC_FILE := scutclient-a58996875c61d0cdf8ec435057befc1c87bd6863
+# https://github.com/scutclient/scutclient.git
+SRC_NAME := scutclient-master
+SRC_URL = https://codeload.github.com/scutclient/scutclient/zip/refs/heads/master
 THISDIR = $(shell pwd)
 
 all: extract_test config_test

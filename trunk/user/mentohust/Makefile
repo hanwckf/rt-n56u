@@ -1,5 +1,5 @@
-SRC_NAME = mentohust-1-master
-#https://github.com/hanwckf/mentohust-1
+SRC_NAME = mentohust-master
+SRC_URL = https://codeload.github.com/HustLion/mentohust/zip/refs/heads/master
 THISDIR = $(shell pwd)
 
 LDFLAGS += -L$(STAGEDIR) -liconv

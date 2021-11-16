@@ -263,10 +263,7 @@ function fill_status(status_code){
 
                                         <tr> <th width="50%"><#menu5_18_16#></th>
                                             <td>
-                                                <select name="mentohust_service" class="input" style="width: 145px;">
-                                                    <option value="0" ><#menu5_18_16_0#></option>
-                                                    <option value="1" ><#menu5_18_16_1#></option>
-                                                </select>
+					    	<input type="text" maxlength="15" class="input" size="15" name="mentohust_service" style="width: 145px" value="<% nvram_get_x("","mentohust_service"); %>" />
                                             </td>
                                         </tr>
 

@@ -37,11 +37,9 @@ function initial(){
 	var o1 = document.form.mentohust_startmode;
 	var o2 = document.form.mentohust_dhcp;
 	var o3 = document.form.mentohust_daemon;
-	var o4 = document.form.mentohust_service;
 	o1.value = '<% nvram_get_x("","mentohust_startmode"); %>';
 	o2.value = '<% nvram_get_x("","mentohust_dhcp"); %>';
 	o3.value = '<% nvram_get_x("","mentohust_daemon"); %>';
-	o4.value = '<% nvram_get_x("","mentohust_service"); %>';
 }
 
 function applyRule(){

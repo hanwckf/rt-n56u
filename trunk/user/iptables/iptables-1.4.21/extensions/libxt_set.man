@@ -43,7 +43,7 @@ packet counter of the element is less than the given value as well.
 If the packet is matched an element in the set, match only if the
 packet counter of the element is greater than the given value as well.
 .TP
-[\fB!\fP] \fB\-bytes\-eq\fP \fIvalue\fP
+[\fB!\fP] \fB\-\-bytes\-eq\fP \fIvalue\fP
 If the packet is matched an element in the set, match only if the
 byte counter of the element matches the given value too.
 .TP

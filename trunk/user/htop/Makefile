@@ -1,18 +1,19 @@
-SRC_NAME = htop-3.0.2
-SRC_URL = https://bintray.com/htop/source/download_file?file_path=htop-3.0.2.tar.gz
-THISDIR = $(shell pwd)
+SRC_NAME = htop
+SRC_VERSION = 3.1.1
+BIN_SOURCE = $(SRC_NAME)-$(SRC_VERSION)
+SRC_URL = https://github.com/htop-dev/htop/archive/refs/tags/$(SRC_VERSION).tar.gz
 
 all: download_test extract_test config_test
-	$(MAKE) -j$(HOST_NCPU) -C $(SRC_NAME)
+	$(MAKE) -j$(HOST_NCPU) -C $(BIN_SOURCE)
 
 download_test:
-	( if [ ! -f $(SRC_NAME).tar.gz ]; then \
-		wget -t5 --timeout=20 --no-check-certificate -O $(SRC_NAME).tar.gz $(SRC_URL); \
+	( if [ ! -f $(BIN_SOURCE).tar.gz ]; then \
+		wget -t5 --timeout=20 --no-check-certificate -O $(BIN_SOURCE).tar.gz $(SRC_URL); \
 	fi )
 
 extract_test:
-	( if [ ! -d $(SRC_NAME) ]; then \
-		tar -xzf $(SRC_NAME).tar.gz; \
+	( if [ ! -d $(BIN_SOURCE) ]; then \
+		tar -xzf $(BIN_SOURCE).tar.gz; \
 	fi )
 
 config_test:
@@ -23,7 +24,8 @@ config_test:
 	fi )
 
 configure:
-	( cd $(SRC_NAME) ; \
+	( cd $(BIN_SOURCE) ; \
+	./autogen.sh ; \
 	./configure \
 		--prefix=/usr \
 		--enable-unicode \
@@ -33,10 +35,10 @@ configure:
 	)
 
 clean:
-	if [ -f $(SRC_NAME)/Makefile ] ; then \
-		$(MAKE) -C $(SRC_NAME) distclean ; \
+	if [ -f $(BIN_SOURCE)/Makefile ] ; then \
+		$(MAKE) -C $(BIN_SOURCE) distclean ; \
 	fi ; \
 	rm -f config_done
 
 romfs:
-	$(ROMFSINST) -p +x $(THISDIR)/$(SRC_NAME)/htop /usr/bin/htop
+	$(ROMFSINST) -p +x $(THISDIR)/$(BIN_SOURCE)/htop /usr/bin/htop

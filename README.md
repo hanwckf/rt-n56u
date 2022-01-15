@@ -10,6 +10,27 @@ This project aims to improve the rt-n56u and other supported devices on the soft
 This project was created in hope to be useful, but comes without warranty or support. Installing it will probably void your warranty. 
 Contributors of this project are not responsible for what happens next.
 
+### How to build this project? ###
+This project uses Github's automatic compilation, you can download the compiled image directly or compile it by yourself.
+# Download compiled image #
+* Go to Actions (https://github.com/ZenZRyan/rt-n56u/actions)
+* Select the latest workflow
+* Find your target and open it in Artifacts
+* Download image
+# Compile by yourself #
+* Need Unix-like environmet (Take Ubuntu for example）
+* sudo apt update
+sudo apt install unzip libtool-bin curl cmake gperf gawk flex bison nano xxd \
+	fakeroot kmod cpio git python3-docutils gettext automake autopoint \
+	texinfo build-essential help2man pkg-config zlib1g-dev libgmp3-dev \
+	libmpc-dev libmpfr-dev libncurses5-dev libltdl-dev wget libc-dev-bin
+* git clone https://github.com/ZenZRyan/rt-n56u.git
+* cd /opt/rt-n56u/toolchain-mipsel
+* ./clean_toolchain && ./build_toolchain #(recommendation)
+or ./dl_toolchain.sh
+* cd /opt/rt-n56u/trunk
+* fakeroot ./build_firmware_modify YOUR TARGET
+* Wait for the end, and the image file in the /trunk/image directory
 ### How do I get set up? ###
 
 * [Get the tools to build the system](https://bitbucket.org/padavan/rt-n56u/wiki/EN/HowToMakeFirmware) or [Download pre-built system image](https://bitbucket.org/padavan/rt-n56u/downloads)

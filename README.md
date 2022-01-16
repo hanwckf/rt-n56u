@@ -68,7 +68,7 @@ or ./dl_toolchain.sh
 # 编译说明 #
 * 本仓库采用Github的自动编译流程，你可以下载自动编译的固件或者自行手动编译
 ### 自动编译 ###
-* 打开本仓库上方的Actions选项卡（https://github.com/ZenZRyan/rt-n56u/actions）
+* 打开本仓库上方的Actions选项卡（https://github.com/ZenZRyan/rt-n56u/actions ）
 * 在Workflow工作流中找到一个最新的工作流
 * 进入工作流之后，在下方的Artifacts中下载编译好的固件包
 * 找到你的设备所支持的固件，刷入即可

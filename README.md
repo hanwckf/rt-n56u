@@ -63,7 +63,7 @@ or ./dl_toolchain.sh
 * 更新suctclient版本至最新版本（同步原作者）
 
 ***
-# 自动编译 #
+# 编译说明 #
 * 本仓库采用Github的自动编译流程，你可以下载自动编译的固件或者自行手动编译
 ### 自动编译 ###
 * 打开本仓库上方的Actions选项卡（https://github.com/ZenZRyan/rt-n56u/actions）

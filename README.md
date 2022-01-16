@@ -9,7 +9,7 @@ Welcome to the rt-n56u project
 This project aims to improve the rt-n56u and other supported devices on the software part, allowing power user to take full control over their hardware.
 This project was created in hope to be useful, but comes without warranty or support. Installing it will probably void your warranty. 
 Contributors of this project are not responsible for what happens next.
-
+***
 # How to build this project? #
 This project uses Github's automatic compilation, you can download the compiled image directly or compile it by yourself.
 ### Download compiled image ###
@@ -31,7 +31,7 @@ or ./dl_toolchain.sh
 * cd /opt/rt-n56u/trunk
 * fakeroot ./build_firmware_modify YOUR TARGET
 * Wait for the end, and the image file in the /trunk/image directory
-
+***
 ### How do I get set up? ###
 
 * [Get the tools to build the system](https://bitbucket.org/padavan/rt-n56u/wiki/EN/HowToMakeFirmware) or [Download pre-built system image](https://bitbucket.org/padavan/rt-n56u/downloads)
@@ -43,11 +43,13 @@ or ./dl_toolchain.sh
 
 * To be completed
 
-***
-
 ### What does this fork change? ###
 
-Updating minieap sources to minieap-taiga(From ZenZRyan)  
+Updating minieap sources to minieap-taiga(From ZenZRyan) 
+Updating mentohust sources
+Updating suctclient
+
+*** 
 
 ### 特别说明 ###
 * 汉化字典来自：https://github.com/gorden5566/padavan

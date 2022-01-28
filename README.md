@@ -20,7 +20,7 @@
 >- 5K-W20 (USB)
 >- OYE-001 (USB)
 >- NEWIFI-MINI (USB)
->- MI-MINI (USB)
+>- MI-R1C (USB)
 >- MI-3 (USB)
 >- MI-R3G (USB)
 >- HC5661A
@@ -31,7 +31,7 @@
 >- MI-4C（已手动更新）
 >- MI-3C（已手动更新）
 >- MI-R4A(已手动添加更新）
->- MI-NANO
+>- MI-R1CL
 >- MZ-R13
 >- MZ-R13P
 >- MZ-R18（USB）

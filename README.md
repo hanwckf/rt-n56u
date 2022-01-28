@@ -16,7 +16,7 @@
 >- YK-L1(L1、L1C、L1W通刷)
 >- PSG712
 >- PSG1208
->- PSG1218
+>- K2
 >- 5K-W20 (USB)
 >- OYE-001 (USB)
 >- NEWIFI-MINI (USB)

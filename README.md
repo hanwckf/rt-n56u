@@ -101,7 +101,7 @@ sh dl_toolchain.sh
 * (可选) 修改机型配置文件
 
 ```shell
-nano /opt/rt-n56u/trunk/configs/templates/PSG1218.config
+nano /opt/rt-n56u/trunk/configs/templates/K2.config
 ```
 
 * 清理代码树并开始编译

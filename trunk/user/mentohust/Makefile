@@ -1,5 +1,5 @@
 SRC_NAME = mentohust-padavan
-SRC_URL = https://github.com/ZenZRyan/mentohust/archive/refs/heads/padavan.zip
+SRC_URL = https://github.com/AutoCONFIG/mentohust/archive/refs/heads/padavan.zip
 THISDIR = $(shell pwd)
 
 LDFLAGS += -L$(STAGEDIR) -liconv

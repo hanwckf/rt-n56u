@@ -191,11 +191,6 @@ ifneq ($(CONFIG_FIRMWARE_INCLUDE_MENTOHUST),y)
 	rm -f $(INSTALLDIR)/www/mentohust_log.asp
 	rm -f $(INSTALLDIR)/www/mentohust_action.asp
 endif
-ifneq ($(CONFIG_FIRMWARE_INCLUDE_MINIEAP),y)
-	rm -f $(INSTALLDIR)/www/minieap.asp
-	rm -f $(INSTALLDIR)/www/minieap_log.asp
-	rm -f $(INSTALLDIR)/www/minieap_action.asp
-endif
 ifneq ($(CONFIG_FIRMWARE_INCLUDE_DNSFORWARDER),y)
 	rm -f $(INSTALLDIR)/www/dns-forwarder.asp
 endif

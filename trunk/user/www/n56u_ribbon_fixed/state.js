@@ -454,7 +454,7 @@ if (found_app_shadowsocks()){
 } else menuL2_title.push("");
 
 if (found_app_mentohust()){
-	menuL2_title.push("mentohust");
+	menuL2_title.push("<#menu5_18#>");
 } else menuL2_title.push("");
 
 if (found_app_minieap()){

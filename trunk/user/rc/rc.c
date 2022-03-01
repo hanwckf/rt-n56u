@@ -1283,6 +1283,16 @@ handle_notifications(void)
 			stop_mentohust();
 		}
 #endif
+#if defined(APP_MINIEAP)
+		else if (strcmp(entry->d_name, RCN_RESTART_MINIEAP) == 0)
+		{
+			restart_minieap();
+		}
+		else if (strcmp(entry->d_name, "stop_minieap") == 0)
+		{
+			stop_minieap();
+		}
+#endif
 #if defined(APP_TTYD)
 		else if (strcmp(entry->d_name, RCN_RESTART_TTYD) == 0)
 		{

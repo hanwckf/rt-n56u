@@ -92,6 +92,7 @@ typedef u_int8_t u8;
 #define EVM_RESTART_SHADOWSOCKS	(1ULL << 48)
 #define EVM_RESTART_SS_TUNNEL		(1ULL << 49)
 #define EVM_RESTART_MENTOHUST		(1ULL << 50)
+#define EVM_RESTART_MINIEAP		(1ULL << 51)
 
 #define EVM_RESTART_REBOOT		(1ULL << 62)
 
@@ -151,6 +152,7 @@ typedef u_int8_t u8;
 #define EVT_RESTART_SS_TUNNEL		2
 #define EVT_RESTART_DNSFORWARDER	1
 #define EVT_RESTART_MENTOHUST		2
+#define EVT_RESTART_MINIEAP			2
 #define EVT_RESTART_REBOOT		40
 
 struct variable

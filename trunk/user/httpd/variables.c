@@ -825,6 +825,32 @@
 	};
 #endif
 
+#if defined (APP_MINIEAP)
+	struct variable variables_minieapConf[] = {
+			{"minieap_enable", "", NULL, EVM_RESTART_MINIEAP},
+			{"minieap_username", "", NULL, EVM_RESTART_MINIEAP},
+			{"minieap_password", "", NULL, EVM_RESTART_MINIEAP},
+			{"minieap_nic", "", NULL, EVM_RESTART_MINIEAP},
+			{"minieap_ip", "", NULL, EVM_RESTART_MINIEAP},
+			{"minieap_mask", "", NULL, EVM_RESTART_MINIEAP},
+			{"minieap_gw", "", NULL, EVM_RESTART_MINIEAP},
+			{"minieap_dns", "", NULL, EVM_RESTART_MINIEAP},
+			{"minieap_pinghost", "", NULL, EVM_RESTART_MINIEAP},
+			{"minieap_timeout", "", NULL, EVM_RESTART_MINIEAP},
+			{"minieap_interval", "", NULL, EVM_RESTART_MINIEAP},
+			{"minieap_restart_wait", "", NULL, EVM_RESTART_MINIEAP},
+			{"minieap_maxfail", "", NULL, EVM_RESTART_MINIEAP},
+			{"minieap_startmode", "", NULL, EVM_RESTART_MINIEAP},
+			{"minieap_dhcp", "", NULL, EVM_RESTART_MINIEAP},
+			{"minieap_daemon", "", NULL, EVM_RESTART_MINIEAP},
+			{"minieap_ver", "", NULL, EVM_RESTART_MINIEAP},
+			{"minieap_datafile", "", NULL, EVM_RESTART_MINIEAP},
+			{"minieap_dhcpscript", "", NULL, EVM_RESTART_MINIEAP},
+			{"minieap_service", "", NULL, EVM_RESTART_MINIEAP},
+			{0,0,0,0}
+	};
+#endif
+
 #if defined(APP_DNSFORWARDER)
 	struct variable variables_dnsforwarderConf[] = {
 			{"dns_forwarder_enable", "", NULL, EVM_RESTART_DNSFORWARDER},
@@ -982,6 +1008,9 @@
 #if defined(APP_MENTOHUST)
 		{"mentohustConf",		variables_mentohustConf},
 #endif
+#if defined(APP_MINIEAP)
+		{"minieapConf",			variables_minieapConf},
+#endif
 #if defined(APP_SHADOWSOCKS)
 		{"ShadowsocksConf",		variables_ShadowsocksConf},
 #endif
@@ -1054,6 +1083,9 @@
 #endif
 #if defined(APP_MENTOHUST)
 		{EVM_RESTART_MENTOHUST,		EVT_RESTART_MENTOHUST,		RCN_RESTART_MENTOHUST,	0},
+#endif
+#if defined(APP_MINIEAP)
+		{EVM_RESTART_MINIEAP,		EVT_RESTART_MINIEAP,		RCN_RESTART_MINIEAP,	0},
 #endif
 #if defined(APP_TTYD)
 		{EVM_RESTART_TTYD,		EVT_RESTART_TTYD,		RCN_RESTART_TTYD,	0},

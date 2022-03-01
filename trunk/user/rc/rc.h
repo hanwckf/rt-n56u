@@ -525,6 +525,12 @@ void stop_mentohust(void);
 void start_mentohust(void);
 void restart_mentohust(void);
 #endif
+#if defined(APP_MINIEAP)
+int is_minieap_run(void);
+void stop_minieap(void);
+void start_minieap(void);
+void restart_minieap(void);
+#endif
 #if defined(APP_TTYD)
 void stop_ttyd(void);
 void start_ttyd(void);

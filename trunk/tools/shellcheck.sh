@@ -5,6 +5,7 @@ TOPDIR="."
 check_dirs="trunk/user/scutclient/scripts \
 	trunk/user/shadowsocks/scripts \
 	trunk/user/mentohust/scripts \
+	trunk/user/minieap/scripts \
 	trunk/user/chnroute/scripts \
 	trunk/user/dns-forwarder \
 	trunk/user/softethervpn \

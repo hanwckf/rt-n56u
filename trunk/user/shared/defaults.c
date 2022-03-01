@@ -532,6 +532,30 @@ struct nvram_pair router_defaults[] = {
 	{ "mentohust_dhcpscript", "" },
 #endif
 
+#if defined(APP_MINIEAP)
+	/* minieap related */
+	{ "minieap_enable", "0" },
+	{ "minieap_username", "" },
+	{ "minieap_password", "" },
+	{ "minieap_nic", "" },
+	{ "minieap_ip", "" },
+	{ "minieap_mask", "" },
+	{ "minieap_gw", "" },
+	{ "minieap_dns", "" },
+	{ "minieap_pinghost", "" },
+	{ "minieap_timeout", "8" },
+	{ "minieap_interval", "30" },
+	{ "minieap_restart_wait", "15" },
+	{ "minieap_maxfail", "0" },
+	{ "minieap_startmode", "1" },
+	{ "minieap_dhcp", "0" },
+	{ "minieap_daemon", "1" },
+	{ "minieap_service", "internet" },
+	{ "minieap_ver", "0.00" },
+	{ "minieap_datafile", "/etc/storage/minieap/" },
+	{ "minieap_dhcpscript", "" },
+#endif
+
 #if defined(APP_TTYD)
 	/* ttyd related */
 	{ "ttyd_enable", "0" },

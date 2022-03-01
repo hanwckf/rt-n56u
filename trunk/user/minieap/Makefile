@@ -1,5 +1,5 @@
-SRC_NAME = minieap-taiga-main
-SRC_URL = https://github.com/AutoCONFIG/minieap-taiga/archive/refs/heads/main.zip
+SRC_NAME = minieap-taiga-padavan
+SRC_URL = https://github.com/AutoCONFIG/minieap-taiga/archive/refs/heads/padavan.zip
 THISDIR = $(shell pwd)
 
 all: download_test extract_test
@@ -18,7 +18,7 @@ extract_test:
 
 romfs:
 	$(ROMFSINST) -p +x $(THISDIR)/$(SRC_NAME)/minieap /usr/bin/minieap
-	$(ROMFSINST) $(THISDIR)/$(SRC_NAME)/minieap.conf /etc_ro/minieap.conf
+	$(ROMFSINST) -p +x $(THISDIR)/scripts/minieap.sh /usr/bin/minieap.sh
 
 clean:
 	if [ -f $(SRC_NAME)/Makefile ] ; then \

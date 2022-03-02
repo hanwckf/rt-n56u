@@ -176,8 +176,8 @@ function fill_status(status_code){
                                         <tr> <th width="50%"><#menu5_19_4#></th>
                                             <td>
                                                 <select name="minieap_module" class="input" style="width: 145px;">
-                                                    <option value="printer" ><#menu5_19_13_0#></option>
-                                                    <option value="rjv3" ><#menu5_19_13_1#></option>
+                                                    <option value="printer" ><#menu5_19_4_0#></option>
+                                                    <option value="rjv3" ><#menu5_19_4_1#></option>
                                                 </select>
                                             </td>
                                         </tr>

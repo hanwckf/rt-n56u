@@ -25,7 +25,6 @@ func_gen_conf(){
 		nvram commit
 	fi
 
-	echo "[MINIEAP]" > $conf_file
 	for c in $minieap_conf_vars; do
 		echo "${c}=" >> $conf_file
 	done

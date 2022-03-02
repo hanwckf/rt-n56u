@@ -268,7 +268,7 @@ function fill_status(status_code){
 
                                         <tr> <th width="50%"><#menu5_19_16#></th>
                                             <td>
-					    	                    <input type="text" maxlength="15" class="input" size="15" name="minieap_version-str" style="width: 145px" value="<% nvram_get_x("","minieap_version-str"); %>" />
+					    	                    <input type="text" maxlength="32" class="input" size="15" name="minieap_version-str" style="width: 145px" value="<% nvram_get_x("","minieap_version-str"); %>" />
                                             </td>
                                         </tr>
 

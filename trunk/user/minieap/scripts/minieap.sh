@@ -29,7 +29,7 @@ func_gen_conf(){
 		echo "${c}=" >> $conf_file
 	done
 
-	local line=2
+	local line=1
 	for c in $minieap_vars; do
 		i="$(nvram get minieap_${c})"
 		if [ -n "${i}" ]; then

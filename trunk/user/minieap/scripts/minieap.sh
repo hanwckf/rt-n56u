@@ -7,11 +7,13 @@ minieap_exec="minieap"
 conf_file="/var/minieap.conf"
 bin_conf_file="/etc/storage/minieap.conf"
 
-minieap_vars="username password nic ip mask gw dns pinghost timeout interval \
-	restart_wait maxfail startmode dhcp daemon ver datafile dhcpscript service"
+minieap_vars="username password nic module daemonize if-impl max-fail max-retries no-auto-reauth \
+	wait-after-fail stage-timeout auth-round pid-file log-file heartbeat eap-bcast-addr dhcp-type service \
+	version-str dhcp-script fake-serial max-dhcp-count"
 
-minieap_conf_vars="Username Password Nic IP Mask Gateway DNS PingHost Timeout EchoInterval \
-	RestartWait MaxFail StartMode DhcpMode DaemonMode Version DataFile DhcpScript Service"
+minieap_conf_vars="username password nic module daemonize if-impl max-fail max-retries no-auto-reauth \
+	wait-after-fail stage-timeout auth-round pid-file log-file heartbeat eap-bcast-addr dhcp-type service \
+	version-str dhcp-script fake-serial max-dhcp-count"
 
 func_log(){
 	logger -st "minieap" "$1"

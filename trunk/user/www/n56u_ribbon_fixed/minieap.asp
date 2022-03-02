@@ -175,19 +175,30 @@ function fill_status(status_code){
 
                                         <tr> <th width="50%"><#menu5_19_4#></th>
                                             <td>
-                                                <input type="text" maxlength="15" class="input" size="15" name="minieap_module" style="width: 145px" value="<% nvram_get_x("","minieap_module"); %>" onkeypress="return is_ipaddr(this,event);"/>
+                                                <select name="minieap_module" class="input" style="width: 145px;">
+                                                    <option value="printer" ><#menu5_19_13_0#></option>
+                                                    <option value="rjv3" ><#menu5_19_13_1#></option>
+                                                </select>
                                             </td>
                                         </tr>
 
                                         <tr> <th width="50%"><#menu5_19_5#></th>
                                             <td>
-                                                <input type="text" maxlength="15" class="input" size="15" name="minieap_daemonize" style="width: 145px" value="<% nvram_get_x("","minieap_daemonize"); %>" onkeypress="return is_ipaddr(this,event);"/>
+                                                <select name="minieap_daemonize" class="input" style="width: 145px;">
+                                                    <option value="0" ><#menu5_19_5_0#></option>
+                                                    <option value="1" ><#menu5_19_5_1#></option>
+                                                    <option value="2" ><#menu5_19_5_2#></option>
+                                                    <option value="3" ><#menu5_19_5_3#></option>
+                                                </select>
                                             </td>
                                         </tr>
 
                                         <tr> <th width="50%"><#menu5_19_6#></th>
                                             <td>
-                                                <input type="text" maxlength="15" class="input" size="15" name="minieap_if-impl" style="width: 145px" value="<% nvram_get_x("","minieap_if-impl"); %>" onkeypress="return is_ipaddr(this,event);"/>
+                                                <select name="minieap_if-impl" class="input" style="width: 145px;">
+                                                    <option value="sockraw" ><#menu5_19_6_0#></option>
+                                                    <option value="libpcap" ><#menu5_19_6_1#></option>
+                                                </select>
                                             </td>
                                         </tr>
 
@@ -201,7 +212,7 @@ function fill_status(status_code){
 
                                         <tr> <th width="50%"><#menu5_19_8#></th>
                                             <td>
-                                                <input type="text" maxlength="15" class="input" size="15" name="minieap_max-retries" style="width: 145px" value="<% nvram_get_x("","minieap_max-retries"); %>" onkeypress="return is_ipaddr(this,event);"/>
+                                                <input type="text" maxlength="3" class="input" size="15" name="minieap_max-retries" style="width: 145px" value="<% nvram_get_x("","minieap_max-retries"); %>" onkeypress="return is_ipaddr(this,event);"/>
                                             </td>
                                         </tr>
 

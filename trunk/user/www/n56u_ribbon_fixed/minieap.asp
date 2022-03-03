@@ -34,16 +34,11 @@ function initial(){
 	show_banner(2);
 	show_menu(5,15,1);
 	show_footer();
-	var o1 = document.form.minieap_module;
-	var o2 = document.form.minieap_daemonize;
-	var o3 = document.form.minieap_if-impl;
-	var o4 = document.form.minieap_eap-bcast-addr;
-	var o5 = document.form.minieap_dhcp-type;
-	o1.value = '<% nvram_get_x("","minieap_module"); %>';
-	o2.value = '<% nvram_get_x("","minieap_daemonize"); %>';
-	o3.value = '<% nvram_get_x("","minieap_if-impl"); %>';
-	o4.value = '<% nvram_get_x("","minieap_eap-bcast-addr"); %>';
-	o5.value = '<% nvram_get_x("","minieap_dhcp-type"); %>';
+	document.form.minieap_module.value = '<% nvram_get_x("","minieap_module"); %>';
+	document.form.minieap_daemonize.value = '<% nvram_get_x("","minieap_daemonize"); %>';
+	document.form.minieap_if-impl.value = '<% nvram_get_x("","minieap_if-impl"); %>';
+	document.form.minieap_eap-bcast-addr.value = '<% nvram_get_x("","minieap_eap-bcast-addr"); %>';
+	document.form.minieap_dhcp-type.value = '<% nvram_get_x("","minieap_dhcp-type"); %>';
 }
 
 function applyRule(){

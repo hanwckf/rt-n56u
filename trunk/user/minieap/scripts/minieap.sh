@@ -20,6 +20,10 @@ func_log(){
 }
 
 func_gen_conf(){
+	if [ -f $conf_file ]; then
+		rm -f $conf_file
+	fi
+
 	if [ -z "$(nvram get minieap_nic)" ]; then
 		nvram set minieap_nic="$(nvram get wan_ifname)"
 		nvram commit

@@ -261,7 +261,7 @@ function fill_status(status_code){
 
                                         <tr> <th width="50%"><#menu5_18_16#></th>
                                             <td>
-					    	<input type="text" maxlength="15" class="input" size="15" name="mentohust_service" style="width: 145px" value="<% nvram_get_x("","mentohust_service"); %>" />
+					    	                    <input type="text" maxlength="15" class="input" size="15" name="mentohust_service" style="width: 145px" value="<% nvram_get_x("","mentohust_service"); %>" />
                                             </td>
                                         </tr>
 

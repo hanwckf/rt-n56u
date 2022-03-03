@@ -39,11 +39,11 @@ function initial(){
 	var o3 = document.form.minieap_if-impl;
 	var o4 = document.form.minieap_eap-bcast-addr;
 	var o5 = document.form.minieap_dhcp-type;
-	o1.value = '<% nvram_get_x("","minieap_module"); %>';
-	o2.value = '<% nvram_get_x("","minieap_daemonize"); %>';
-	o3.value = '<% nvram_get_x("","minieap_if-impl"); %>';
-	o4.value = '<% nvram_get_x("","minieap_eap-bcast-addr"); %>';
-	o5.value = '<% nvram_get_x("","minieap_dhcp-type"); %>';
+	o1.value = '<% nvram_get_x("","mentohust_dhcp"); %>';
+	o2.value = '<% nvram_get_x("","mentohust_dhcp"); %>';
+	o3.value = '<% nvram_get_x("","mentohust_dhcp"); %>';
+	o4.value = '<% nvram_get_x("","mentohust_dhcp"); %>';
+	o5.value = '<% nvram_get_x("","mentohust_dhcp"); %>';
 }
 
 function applyRule(){

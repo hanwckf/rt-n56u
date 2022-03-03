@@ -7,13 +7,13 @@ minieap_exec="minieap"
 conf_file="/var/minieap.conf"
 bin_conf_file="/etc/storage/minieap.conf"
 
-minieap_vars="username password nic module daemonize if-impl max-fail max-retries no-auto-reauth \
-	wait-after-fail stage-timeout auth-round pid-file log-file heartbeat eap-bcast-addr dhcp-type service \
-	version-str dhcp-script fake-serial max-dhcp-count"
+minieap_vars="username password nic module daemonize if_impl max_fail max_retries no_auto_reauth \
+	wait_after_fail stage_timeout auth_round pid_file log_file heartbeat eap_bcast_addr dhcp_type service \
+	version_str dhcp_script fake_serial max_dhcp_count"
 
-minieap_conf_vars="username password nic module daemonize if-impl max-fail max-retries no-auto-reauth \
-	wait-after-fail stage-timeout auth-round pid-file log-file heartbeat eap-bcast-addr dhcp-type service \
-	version-str dhcp-script fake-serial max-dhcp-count"
+minieap_conf_vars="username password nic module daemonize if_impl max_fail max_retries no_auto_reauth \
+	wait_after_fail stage_timeout auth_round pid_file log_file heartbeat eap_bcast_addr dhcp_type service \
+	version_str dhcp_script fake_serial max_dhcp_count"
 
 func_log(){
 	logger -st "minieap" "$1"

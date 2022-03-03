@@ -36,14 +36,14 @@ function initial(){
 	show_footer();
 	var o1 = document.form.minieap_module;
 	var o2 = document.form.minieap_daemonize;
-	var o3 = document.form.minieap_if-impl;
-	var o4 = document.form.minieap_eap-bcast-addr;
-	var o5 = document.form.minieap_dhcp-type;
+	var o3 = document.form.minieap_if_impl;
+	var o4 = document.form.minieap_eap_bcast_addr;
+	var o5 = document.form.minieap_dhcp_type;
 	o1.value = '<% nvram_get_x("","minieap_module"); %>';
 	o2.value = '<% nvram_get_x("","minieap_daemonize"); %>';
-	o3.value = '<% nvram_get_x("","minieap_if-impl"); %>';
-	o4.value = '<% nvram_get_x("","minieap_eap-bcast-addr"); %>';
-	o5.value = '<% nvram_get_x("","minieap_dhcp-type"); %>';
+	o3.value = '<% nvram_get_x("","minieap_if_impl"); %>';
+	o4.value = '<% nvram_get_x("","minieap_eap_bcast_addr"); %>';
+	o5.value = '<% nvram_get_x("","minieap_dhcp_type"); %>';
 }
 
 function applyRule(){
@@ -199,7 +199,7 @@ function fill_status(status_code){
 
                                         <tr> <th width="50%"><#menu5_19_6#></th>
                                             <td>
-                                                <select name="minieap_if-impl" class="input" style="width: 145px;">
+                                                <select name="minieap_if_impl" class="input" style="width: 145px;">
                                                     <option value="sockraw" ><#menu5_19_6_0#></option>
                                                     <option value="libpcap" ><#menu5_19_6_1#></option>
                                                 </select>
@@ -208,7 +208,7 @@ function fill_status(status_code){
 
                                         <tr> <th width="50%"><#menu5_19_7#></th>
                                             <td>
-                                                <input type="text" maxlength="15" class="input" size="15" name="minieap_max-fail" style="width: 145px" value="<% nvram_get_x("","minieap_max-fail"); %>" onkeypress="return is_ipaddr(this,event);"/>
+                                                <input type="text" maxlength="15" class="input" size="15" name="minieap_max_fail" style="width: 145px" value="<% nvram_get_x("","minieap_max_fail"); %>" onkeypress="return is_ipaddr(this,event);"/>
                                             </td>
                                         </tr>
 
@@ -216,25 +216,25 @@ function fill_status(status_code){
 
                                         <tr> <th width="50%"><#menu5_19_8#></th>
                                             <td>
-                                                <input type="text" maxlength="3" class="input" size="15" name="minieap_max-retries" style="width: 145px" value="<% nvram_get_x("","minieap_max-retries"); %>" onkeypress="return is_ipaddr(this,event);"/>
+                                                <input type="text" maxlength="3" class="input" size="15" name="minieap_max_retries" style="width: 145px" value="<% nvram_get_x("","minieap_max_retries"); %>" onkeypress="return is_ipaddr(this,event);"/>
                                             </td>
                                         </tr>
 
                                         <tr> <th width="50%"><#menu5_19_9#></th>
                                             <td>
-                                                <input type="text" maxlength="3" class="input" size="15" name="minieap_no-auto-reauth" style="width: 145px" value="<% nvram_get_x("","minieap_no-auto-reauth"); %>" />
+                                                <input type="text" maxlength="3" class="input" size="15" name="minieap_no_auto_reauth" style="width: 145px" value="<% nvram_get_x("","minieap_no_auto_reauth"); %>" />
                                             </td>
                                         </tr>
 
                                         <tr> <th width="50%"><#menu5_19_10#></th>
                                             <td>
-                                                <input type="text" maxlength="3" class="input" size="15" name="minieap_stage-timeout" style="width: 145px" value="<% nvram_get_x("","minieap_stage-timeout"); %>" />
+                                                <input type="text" maxlength="3" class="input" size="15" name="minieap_stage_timeout" style="width: 145px" value="<% nvram_get_x("","minieap_stage_timeout"); %>" />
                                             </td>
                                         </tr>
 
                                         <tr> <th width="50%"><#menu5_19_11#></th>
                                             <td>
-                                                <input type="text" maxlength="3" class="input" size="15" name="minieap_auth-round" style="width: 145px" value="<% nvram_get_x("","minieap_auth-round"); %>" />
+                                                <input type="text" maxlength="3" class="input" size="15" name="minieap_auth_round" style="width: 145px" value="<% nvram_get_x("","minieap_auth_round"); %>" />
                                             </td>
                                         </tr>
 
@@ -246,7 +246,7 @@ function fill_status(status_code){
 
                                         <tr> <th width="50%"><#menu5_19_13#></th>
                                             <td>
-                                                <select name="minieap_eap-bcast-addr" class="input" style="width: 145px;">
+                                                <select name="minieap_eap_bcast_addr" class="input" style="width: 145px;">
                                                     <option value="0" ><#menu5_19_13_0#></option>
                                                     <option value="1" ><#menu5_19_13_1#></option>
                                                 </select>
@@ -255,7 +255,7 @@ function fill_status(status_code){
 
                                         <tr> <th width="50%"><#menu5_19_14#></th>
                                             <td>
-                                                <select name="minieap_dhcp-type" class="input" style="width: 145px;">
+                                                <select name="minieap_dhcp_type" class="input" style="width: 145px;">
                                                     <option value="0" ><#menu5_19_14_0#></option>
                                                     <option value="1" ><#menu5_19_14_1#></option>
                                                     <option value="2" ><#menu5_19_14_2#></option>
@@ -272,25 +272,25 @@ function fill_status(status_code){
 
                                         <tr> <th width="50%"><#menu5_19_16#></th>
                                             <td>
-					    	                    <input type="text" maxlength="32" class="input" size="15" name="minieap_version-str" style="width: 145px" value="<% nvram_get_x("","minieap_version-str"); %>" />
+					    	                    <input type="text" maxlength="32" class="input" size="15" name="minieap_version_str" style="width: 145px" value="<% nvram_get_x("","minieap_version_str"); %>" />
                                             </td>
                                         </tr>
 
                                         <tr> <th width="50%"><#menu5_19_17#></th>
                                             <td>
-                                                <input type="text" maxlength="64" class="input" size="32" name="minieap_dhcp-script" style="width: 145px" value="<% nvram_get_x("","minieap_dhcp-script"); %>" />
+                                                <input type="text" maxlength="64" class="input" size="32" name="minieap_dhcp_script" style="width: 145px" value="<% nvram_get_x("","minieap_dhcp_script"); %>" />
                                             </td>
                                         </tr>
 
                                         <tr> <th width="50%"><#menu5_19_18#></th>
                                             <td>
-                                                <input type="text" maxlength="24" class="input" size="24" name="minieap_fake-serial" value="<% nvram_get_x("","minieap_fake-serial"); %>" />
+                                                <input type="text" maxlength="24" class="input" size="24" name="minieap_fake_serial" value="<% nvram_get_x("","minieap_fake_serial"); %>" />
                                             </td>
                                         </tr>
 
                                         <tr> <th width="50%"><#menu5_19_19#></th>
                                             <td>
-                                                <input type="text" maxlength="3" class="input" size="15" name="minieap_max-dhcp-count" value="<% nvram_get_x("","minieap_max-dhcp-count"); %>" />
+                                                <input type="text" maxlength="3" class="input" size="15" name="minieap_max_dhcp_count" value="<% nvram_get_x("","minieap_max_dhcp_count"); %>" />
                                             </td>
                                         </tr>
 

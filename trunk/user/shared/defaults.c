@@ -548,7 +548,7 @@ struct nvram_pair router_defaults[] = {
 	{ "minieap_stage_timeout", "5" },
 	{ "minieap_auth_round", "1" },
 	{ "minieap_pid_file", "/var/run/minieap.pid" },
-	{ "minieap_log_file", "/var/log/minieap.log" },
+	{ "minieap_log_file", "/tmp/minieap.log" },
 	{ "minieap_heartbeat", "60" },
 	{ "minieap_eap_bcast_addr", "1" },
 	{ "minieap_dhcp_type", "" },

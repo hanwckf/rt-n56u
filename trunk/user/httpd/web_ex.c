@@ -3828,7 +3828,7 @@ static char mentohust_log_txt[] =
 static void
 do_minieap_log_file(const char *url, FILE *stream)
 {
-	dump_file(stream, "/var/log/minieap.log");
+	dump_file(stream, "/tmp/minieap.log");
 	fputs("\r\n", stream); /* terminator */
 }
 

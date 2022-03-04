@@ -295,6 +295,12 @@ function fill_status(status_code){
                                         </tr>
 
                                         <tr>
+                                            <th colspan="2" style="color:dimgray;"> 
+                                                <center>Supported by 洛 & Powered by MiniEAP-Taiga</center>
+                                            </th>    
+                                        </tr>
+
+                                        <tr>
                                             <td colspan="2">
                                                 <center><input class="btn btn-primary" style="width: 219px" type="button" value="<#CTL_apply#>" onclick="applyRule()" /></center>
                                             </td>

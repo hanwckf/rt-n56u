@@ -28,13 +28,14 @@ echo "CONFIG_FIRMWARE_INCLUDE_SSOBFS=y" >> .config #simple-obfs混淆插件
 ##科学上网##
 
 ##广告管理##
-echo "CONFIG_FIRMWARE_INCLUDE_ADBYBY=y" >> .config #adbyby plus+
-echo "CONFIG_FIRMWARE_INCLUDE_KOOLPROXY=y" >> .config #KP广告过滤
+echo "CONFIG_FIRMWARE_INCLUDE_ADBYBY=n" >> .config #adbyby plus+
+echo "CONFIG_FIRMWARE_INCLUDE_KOOLPROXY=n" >> .config #KP广告过滤
 ##广告管理##
 
 ##DNS服务##
 echo "CONFIG_FIRMWARE_INCLUDE_SMARTDNS=y" >> .config #smartdns
 echo "CONFIG_FIRMWARE_INCLUDE_ADGUARDHOME=y" >> .config #adg DNS去AD
+echo "CONFIG_FIRMWARE_INCLUDE_DNSFORWARDER=n" >> .config #
 
 ##DNS服务##
 
@@ -44,17 +45,22 @@ echo "CONFIG_FIRMWARE_INCLUDE_CADDYBIN=n" >> .config #集成caddu执行文件，
 ##文件管理##
 
 ##音乐解锁##
-echo "CONFIG_FIRMWARE_INCLUDE_WYY=y" >> .config #网易云解锁
+echo "CONFIG_FIRMWARE_INCLUDE_WYY=n" >> .config #网易云解锁
 echo "CONFIG_FIRMWARE_INCLUDE_WYYBIN=n" >> .config #网易云解锁GO版本执行文件（2M多）注意固件超大小
 ##音乐解锁##
 
 ##内网穿透服务##
-echo "CONFIG_FIRMWARE_INCLUDE_ZEROTIER=y" >> .config #zerotier ~1.3M
+echo "CONFIG_FIRMWARE_INCLUDE_ZEROTIER=n" >> .config #zerotier ~1.3M
 echo "CONFIG_FIRMWARE_INCLUDE_ALIDDNS=y" >> .config #aliddns
 echo "CONFIG_FIRMWARE_INCLUDE_FRPC=y" >> .config #frpc
 echo "CONFIG_FIRMWARE_INCLUDE_FRPS=n" >> .config #frps
-echo "CONFIG_FIRMWARE_INCLUDE_NPC=y" >> .config #npc
+echo "CONFIG_FIRMWARE_INCLUDE_NPC=n" >> .config #npc
 ##内网穿透服务##
+
+##认证服务##
+echo "CONFIG_FIRMWARE_INCLUDE_MENTOHUST=n" >> .config #锐捷认证插件，选择n后全部有关插件都不集成
+echo "CONFIG_FIRMWARE_INCLUDE_SCUTCLIENT=n" >> .config
+##认证服务##
 
 fi
 sed -i 's/CONFIG_FIRMWARE_INCLUDE_OPENSSL_EXE=n/CONFIG_FIRMWARE_INCLUDE_OPENSSL_EXE=y/g' .config

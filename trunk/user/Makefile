@@ -218,6 +218,10 @@ endif
 dir_y						+= mtd-utils
 endif
 
+ifeq ($(CONFIG_FIRMWARE_INCLUDE_NGINX),y)
+	dir_y						+= nginx
+endif
+
 all:
 	for i in $(dir_y) ; do \
 		[ ! -d $$i ] || \

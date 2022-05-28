@@ -832,11 +832,12 @@ void reply_query(int fd, int family, time_t now)
       break;
   
   if (!server)
+  {
     if (serveraddr.sa.sa_family == AF_INET ? (serveraddr.in.sin_addr.s_addr != INADDR_ANY && htonl(serveraddr.in.sin_addr.s_addr) != INADDR_LOOPBACK) : (memcmp(&serveraddr.in6.sin6_addr, &in6addr_any, sizeof(in6addr_any)) && memcmp(&serveraddr.in6.sin6_addr, &in6addr_loopback, sizeof(in6addr_loopback))))
-    return;
-
+      return;
+  }
   /* If sufficient time has elapsed, try and expand UDP buffer size again. */
-  if (difftime(now, server->pktsz_reduced) > UDP_TEST_TIME)
+  else if (difftime(now, server->pktsz_reduced) > UDP_TEST_TIME)
     server->edns_pktsz = daemon->edns_pktsz;
 
   hash = hash_questions(header, n, daemon->namebuff);

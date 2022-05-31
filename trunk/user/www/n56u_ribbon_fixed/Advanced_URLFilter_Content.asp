@@ -273,7 +273,7 @@ function done_validating(action){
 
                                     <table width="100%" cellpadding="4" cellspacing="0" class="table" id="tbl_urlf_main" style="display:none">
                                         <tr>
-                                            <th colspan="3" style="background-color: #E3E3E3;"><#menu5_5_2#></th>
+                                            <th colspan="3" style="background-color: rgba(255,255,255,0.2);"><#menu5_5_2#></th>
                                         </tr>
                                         <tr>
                                             <th width="50%"><a class="help_tooltip" href="javascript:void(0);" onmouseover="openTooltip(this,9,1);"><#FirewallConfig_URLActiveDate_itemname#></a></th>

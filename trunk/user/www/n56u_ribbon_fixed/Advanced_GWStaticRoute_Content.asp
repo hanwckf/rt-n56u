@@ -214,7 +214,7 @@ function changeBgColor(obj, num){
 
                                     <table width="100%" align="center" cellpadding="4" cellspacing="0" class="table">
                                         <tr>
-                                            <th colspan="2" style="background-color: #E3E3E3;">
+                                            <th colspan="2" style="background-color: rgba(255,255,255,0.2);">
                                                 <#menu5_2_3#>
                                             </th>
                                         </tr>
@@ -250,7 +250,7 @@ function changeBgColor(obj, num){
 
                                     <table width="100%" align="center" cellpadding="4" cellspacing="0" class="table table-list" id="GWStaticList_Block">
                                         <tr>
-                                            <th colspan="6" style="background-color: #E3E3E3;"><#RouterConfig_GWStatic_groupitemdesc#></th>
+                                            <th colspan="6" style="background-color: rgba(255,255,255,0.2);"><#RouterConfig_GWStatic_groupitemdesc#></th>
                                         </tr>
                                         <tr>
                                             <th width="28%"><a class="help_tooltip" href="javascript:void(0);" onmouseover="openTooltip(this,6,1);"><#RouterConfig_GWStaticIP_itemname#></a></th>

@@ -270,7 +270,7 @@ function done_validating(action){
 
                                     <table width="100%" cellpadding="4" cellspacing="0" class="table">
                                         <tr>
-                                            <th colspan="2" style="background-color: #E3E3E3;"><#menu5_5#></th>
+                                            <th colspan="2" style="background-color: rgba(255,255,255,0.2);"><#menu5_5#></th>
                                         </tr>
                                         <tr>
                                             <th width="50%"><a class="help_tooltip" href="javascript:void(0);" onmouseover="openTooltip(this,8,6);"><#FirewallConfig_FirewallEnable_itemname#></a></th>
@@ -343,7 +343,7 @@ function done_validating(action){
 
                                     <table width="100%" cellpadding="4" cellspacing="0" class="table" id="access_section">
                                         <tr>
-                                            <th colspan="2" style="background-color: #E3E3E3;"><#Adm_Access_WAN#></th>
+                                            <th colspan="2" style="background-color: rgba(255,255,255,0.2);"><#Adm_Access_WAN#></th>
                                         </tr>
                                         <tr id="row_http_wopen">
                                             <th width="50%"><a class="help_tooltip" href="javascript:void(0);" onmouseover="openTooltip(this,8,2);"><#FirewallConfig_x_WanWebEnable_itemname#></a></th>

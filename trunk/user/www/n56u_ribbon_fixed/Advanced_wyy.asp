@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
-<title><#Web_Title#> - 网易云解锁</title>
+<title><#Web_Title#> - <#menu5_19_1#></title>
 <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
 <meta http-equiv="Pragma" content="no-cache">
 <meta http-equiv="Expires" content="-1">
@@ -50,7 +50,7 @@ var clients_info = getclients(1,0);
 var isMenuopen = 0;
 function initial(){
 	show_banner(2);
-	show_menu(5,20,0);
+	show_menu(5,17,1);
 
 	show_footer();
 	showMDHCPList();
@@ -342,7 +342,7 @@ function markGroupMDHCP(o, c, b) {
 				<div class="row-fluid">
 					<div class="span12">
 						<div class="box well grad_colour_dark_blue">
-							<h2 class="box_head round_top">音乐解锁 - 解锁网易云灰色歌曲</h2>
+							<h2 class="box_head round_top"><#menu5_19#> - <#menu5_19_1#></h2>
 							<div class="round_bottom">
 								<div class="row-fluid">
 									<div id="tabMenu" class="submenuBlock"></div>
@@ -446,7 +446,7 @@ function markGroupMDHCP(o, c, b) {
 										</tr>
 										<table width="100%" align="center" cellpadding="4" cellspacing="0" class="table">
 										<tr>
-                                            <th colspan="5" id="GWStatic" style="background-color: #E3E3E3;">例外客户端规则（可以为局域网客户端分别设置不同的例外模式，默认无需设置）</th>
+                                            <th colspan="5" id="GWStatic" style="background-color: rgba(255,255,255,0.2);">例外客户端规则（可以为局域网客户端分别设置不同的例外模式，默认无需设置）</th>
                                         </tr>
                                         <tr>
                                             <th width="25%">

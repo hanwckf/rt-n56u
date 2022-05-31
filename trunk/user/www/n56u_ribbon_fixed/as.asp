@@ -10,12 +10,17 @@
 <link rel="icon" href="images/favicon.png">
 <link rel="stylesheet" type="text/css" href="/bootstrap/css/bootstrap.min.css">
 <link rel="stylesheet" type="text/css" href="/bootstrap/css/main.css">
+<link rel="stylesheet" type="text/css" href="/bootstrap/css/engage.itoggle.css">
 
 <script type="text/javascript" src="/jquery.js"></script>
 <script type="text/javascript" src="/bootstrap/js/bootstrap.min.js"></script>
+<script type="text/javascript" src="/bootstrap/js/engage.itoggle.min.js"></script>
 <script type="text/javascript" src="/state.js"></script>
+<script type="text/javascript" src="/general.js"></script>
+<script type="text/javascript" src="/itoggle.js"></script>
+<script type="text/javascript" src="/client_function.js"></script>
 <script type="text/javascript" src="/popup.js"></script>
-
+<script type="text/javascript" src="/help.js"></script>
 <script>
 var map_code = "";
 
@@ -30,8 +35,8 @@ function show_sitemap(){
 	var l1 = tabtitle.length;
 	var l2 = menuL2_title.length;
 
-	if (l1 > 8) l1 = 8;
-	if (l2 > 8) l2 = 8;
+	if (l1 > 18) l1 = 18;
+	if (l2 > 18) l2 = 18;
 
 	for(var i=0, j=0; i<l1, j<l2;){
 		if(tabtitle[i] == ""){
@@ -47,16 +52,34 @@ function show_sitemap(){
 	}
 
 	l2 = menuL2_title.length;
-	if (l2 > 8) l2 = 8;
+	if (l2 > 18) l2 = 18;
+	
+	if (l2 > 16){
+		showhide_div('row_3_1', true);
+		showhide_div('row_3_2', true);
+		showhide_div('row_4_1', true);
+		showhide_div('row_4_2', true);
+		showhide_div('row_5_1', true);
+		showhide_div('row_5_2', true);
+	}else if(l2 > 12){
+		showhide_div('row_3_1', true);
+		showhide_div('row_3_2', true);
+		showhide_div('row_4_1', true);
+		showhide_div('row_4_2', true);
+	}else if(l2 > 8){
+		showhide_div('row_3_1', true);
+		showhide_div('row_3_2', true);
+	} 
 
 	for(var i=0; i<l2; i++){
-		var k = (i/4 < 1)?0:3;
+		var k = (i-i%4)/4*3;
 		$("menu_body").rows[k].cells[i%4].innerHTML = "<b>" + menuL2_title[i] + "</b>";
 		$("menu_body").rows[k].cells[i%4].className = "head";
+		showhide_div('row_wfrp', true);
 	}
 
 	l1 = tabtitle.length;
-	if (l1 > 8) l1 = 8;
+	if (l1 > 18) l1 = 18;
 
 	for(var l = 0; l < l1; l++){
 		map_code = '<ul class="nav nav-list">\n';
@@ -71,7 +94,7 @@ function show_sitemap(){
 		}
 		map_code += '</ul>\n';
 		
-		var n = (l/4 < 1)?0:3;
+		var n = (l-l%4)/4*3;
 		$("menu_body").rows[n+2].cells[l%4].innerHTML = map_code;
 	}
 }
@@ -167,6 +190,69 @@ function show_sitemap(){
                                                     </tr>
 
                                                     <tr valign="top">
+                                                        <td height="120"></td>
+                                                        <td height="120"></td>
+                                                        <td height="120"></td>
+                                                        <td height="120"></td>
+                                                    </tr>
+
+                                                    <tr id="row_3_1" style="display:none">
+                                                        <td>&nbsp;</td>
+                                                        <td>&nbsp;</td>
+                                                        <td>&nbsp;</td>
+                                                        <td>&nbsp;</td>
+                                                    </tr>
+
+                                                    <tr style="display: none;">
+                                                        <td width="25%">&nbsp;</td>
+                                                        <td width="25%">&nbsp;</td>
+                                                        <td width="25%">&nbsp;</td>
+                                                        <td width="25%">&nbsp;</td>
+                                                    </tr>
+
+                                                    <tr id="row_3_2" style="display:none" valign="top">
+                                                        <td height="120"></td>
+                                                        <td height="120"></td>
+                                                        <td height="120"></td>
+                                                        <td height="120"></td>
+                                                    </tr>
+
+                                                    <tr id="row_4_1" style="display:none">
+                                                        <td>&nbsp;</td>
+                                                        <td>&nbsp;</td>
+                                                        <td>&nbsp;</td>
+                                                        <td>&nbsp;</td>
+                                                    </tr>
+
+                                                    <tr style="display: none;">
+                                                        <td width="25%">&nbsp;</td>
+                                                        <td width="25%">&nbsp;</td>
+                                                        <td width="25%">&nbsp;</td>
+                                                        <td width="25%">&nbsp;</td>
+                                                    </tr>
+
+                                                    <tr id="row_4_2" style="display:none" valign="top">
+                                                        <td height="120"></td>
+                                                        <td height="120"></td>
+                                                        <td height="120"></td>
+                                                        <td height="120"></td>
+                                                    </tr>
+
+                                                    <tr id="row_5_1" style="display:none">
+                                                        <td>&nbsp;</td>
+                                                        <td>&nbsp;</td>
+                                                        <td>&nbsp;</td>
+                                                        <td>&nbsp;</td>
+                                                    </tr>
+
+                                                    <tr style="display: none;">
+                                                        <td width="25%">&nbsp;</td>
+                                                        <td width="25%">&nbsp;</td>
+                                                        <td width="25%">&nbsp;</td>
+                                                        <td width="25%">&nbsp;</td>
+                                                    </tr>
+
+                                                    <tr id="row_5_2" style="display:none" valign="top">
                                                         <td height="120"></td>
                                                         <td height="120"></td>
                                                         <td height="120"></td>

@@ -448,7 +448,7 @@ function changeBgColor(obj, num){
 
                                     <table width="100%" cellpadding="4" cellspacing="0" class="table" id="tbl_lwf_main" style="display:none">
                                         <tr>
-                                            <th colspan="2" style="background-color: #E3E3E3;"><#menu5_5_4#></th>
+                                            <th colspan="2" style="background-color: rgba(255,255,255,0.2);"><#menu5_5_4#></th>
                                         </tr>
                                         <tr>
                                             <th width="50%"><a class="help_tooltip" href="javascript:void(0);" onmouseover="openTooltip(this,10,3);"><#FirewallConfig_LanWanDefaultAct_itemname#></a></th>
@@ -500,7 +500,7 @@ function changeBgColor(obj, num){
 
                                     <table width="100%" cellpadding="4" cellspacing="0" class="table table-list" id="LWFilterList_Block" style="display:none">
                                         <tr>
-                                            <th colspan="6" style="background-color: #E3E3E3;"><#FirewallConfig_LWFilterList_groupitemdesc#></th>
+                                            <th colspan="6" style="background-color: rgba(255,255,255,0.2);"><#FirewallConfig_LWFilterList_groupitemdesc#></th>
                                         </tr>
                                         <tr>
                                             <td><a class="help_tooltip" href="javascript:void(0);" onmouseover="openTooltip(this,18,3);"><#FirewallConfig_LanWanSrcIP_itemname#></a></td>

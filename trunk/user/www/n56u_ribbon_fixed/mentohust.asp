@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
-<title><#Web_Title#> - <#menu5_18#></title>
+<title><#Web_Title#> - <#menu5_13_2#></title>
 <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
 <meta http-equiv="Pragma" content="no-cache">
 <meta http-equiv="Expires" content="-1">
@@ -32,7 +32,7 @@ $j(document).ready(function(){
 
 function initial(){
 	show_banner(2);
-	show_menu(5,14,1);
+	show_menu(5,11,2);
 	show_footer();
 	var o1 = document.form.mentohust_startmode;
 	var o2 = document.form.mentohust_dhcp;
@@ -129,12 +129,12 @@ function fill_status(status_code){
                 <div class="row-fluid">
                     <div class="span12">
                         <div class="box well grad_colour_dark_blue">
-                            <h2 class="box_head round_top"><#menu5_18#></h2>
+                            <h2 class="box_head round_top"><#menu5_13#> - <#menu5_13_2#></h2>
                             <div class="round_bottom">
                                 <div class="row-fluid">
                                     <div id="tabMenu" class="submenuBlock"></div>
                                     <table width="100%" cellpadding="4" cellspacing="0" class="table">
-                                        <tr> <th colspan="2" style="background-color: #E3E3E3;"><#menu5_1_1#></th> </tr>
+                                        <tr> <th colspan="2" style="background-color: rgba(255,255,255,0.2);"><#menu5_1_1#></th> </tr>
 
                                         <tr> <th width="50%"><#InetControl#></th>
                                             <td style="border-top: 0 none;" colspan="2">
@@ -147,7 +147,7 @@ function fill_status(status_code){
                                             <td id="mentohust_status" colspan="3"></td>
                                         </tr>
 
-                                        <tr> <th><#menu5_18_1#></th>
+                                        <tr> <th><#menu5_13_2_1#></th>
                                             <td>
                                                 <div class="main_itoggle">
                                                     <div id="mentohust_enable_on_of">
@@ -162,129 +162,129 @@ function fill_status(status_code){
                                             </td>
                                         </tr>
 
-                                        <tr> <th width="50%"><#menu5_18_2#></th>
+                                        <tr> <th width="50%"><#menu5_13_2_2#></th>
                                             <td>
                                                 <input type="text" maxlength="48" class="input" size="48" name="mentohust_username" style="width: 180px" value="<% nvram_get_x("","mentohust_username"); %>" />
                                             </td>
                                         </tr>
 
-                                        <tr> <th width="50%"><#menu5_18_3#></th>
+                                        <tr> <th width="50%"><#menu5_13_2_3#></th>
                                             <td>
                                                 <input type="password" maxlength="32" class="input" size="32" name="mentohust_password" id="mentohust_password" style="width: 145px" value="<% nvram_get_x("","mentohust_password"); %>" />
                                                 <button style="margin-left: -5px;" class="btn" type="button" onclick="passwordShowHide('mentohust_password')"><i class="icon-eye-close"></i></button>
                                             </td>
                                         </tr>
 
-                                        <tr> <th width="50%"><#menu5_18_4#></th>
+                                        <tr> <th width="50%"><#menu5_13_2_4#></th>
                                             <td>
                                                 <input type="text" maxlength="15" class="input" size="15" name="mentohust_ip" style="width: 145px" value="<% nvram_get_x("","mentohust_ip"); %>" onkeypress="return is_ipaddr(this,event);"/>
                                             </td>
                                         </tr>
 
-                                        <tr> <th width="50%"><#menu5_18_5#></th>
+                                        <tr> <th width="50%"><#menu5_13_2_5#></th>
                                             <td>
                                                 <input type="text" maxlength="15" class="input" size="15" name="mentohust_mask" style="width: 145px" value="<% nvram_get_x("","mentohust_mask"); %>" onkeypress="return is_ipaddr(this,event);"/>
                                             </td>
                                         </tr>
 
-                                        <tr> <th width="50%"><#menu5_18_6#></th>
+                                        <tr> <th width="50%"><#menu5_13_2_6#></th>
                                             <td>
                                                 <input type="text" maxlength="15" class="input" size="15" name="mentohust_gw" style="width: 145px" value="<% nvram_get_x("","mentohust_gw"); %>" onkeypress="return is_ipaddr(this,event);"/>
                                             </td>
                                         </tr>
 
-                                        <tr> <th width="50%"><#menu5_18_7#></th>
+                                        <tr> <th width="50%"><#menu5_13_2_7#></th>
                                             <td>
                                                 <input type="text" maxlength="15" class="input" size="15" name="mentohust_dns" style="width: 145px" value="<% nvram_get_x("","mentohust_dns"); %>" onkeypress="return is_ipaddr(this,event);"/>
                                             </td>
                                         </tr>
 
-                                        <tr> <th colspan="2" style="background-color: #E3E3E3;"><#menu5_18_8_0#></th> </tr>
+                                        <tr> <th colspan="2" style="background-color: rgba(255,255,255,0.2);"><#menu5_13_2_8_0#></th> </tr>
 
-                                        <tr> <th width="50%"><#menu5_18_8#></th>
+                                        <tr> <th width="50%"><#menu5_13_2_8#></th>
                                             <td>
                                                 <input type="text" maxlength="15" class="input" size="15" name="mentohust_pinghost" style="width: 145px" value="<% nvram_get_x("","mentohust_pinghost"); %>" onkeypress="return is_ipaddr(this,event);"/>
                                             </td>
                                         </tr>
 
-                                        <tr> <th width="50%"><#menu5_18_9#></th>
+                                        <tr> <th width="50%"><#menu5_13_2_9#></th>
                                             <td>
                                                 <input type="text" maxlength="3" class="input" size="15" name="mentohust_timeout" style="width: 145px" value="<% nvram_get_x("","mentohust_timeout"); %>" />
                                             </td>
                                         </tr>
 
-                                        <tr> <th width="50%"><#menu5_18_10#></th>
+                                        <tr> <th width="50%"><#menu5_13_2_10#></th>
                                             <td>
                                                 <input type="text" maxlength="3" class="input" size="15" name="mentohust_interval" style="width: 145px" value="<% nvram_get_x("","mentohust_interval"); %>" />
                                             </td>
                                         </tr>
 
-                                        <tr> <th width="50%"><#menu5_18_11#></th>
+                                        <tr> <th width="50%"><#menu5_13_2_11#></th>
                                             <td>
                                                 <input type="text" maxlength="3" class="input" size="15" name="mentohust_restart_wait" style="width: 145px" value="<% nvram_get_x("","mentohust_restart_wait"); %>" />
                                             </td>
                                         </tr>
 
-                                        <tr> <th width="50%"><#menu5_18_12#></th>
+                                        <tr> <th width="50%"><#menu5_13_2_12#></th>
                                             <td>
                                                 <input type="text" maxlength="3" class="input" size="15" name="mentohust_maxfail" style="width: 145px" value="<% nvram_get_x("","mentohust_maxfail"); %>" />
                                             </td>
                                         </tr>
 
-                                        <tr> <th width="50%"><#menu5_18_13#></th>
+                                        <tr> <th width="50%"><#menu5_13_2_13#></th>
                                             <td>
                                                 <select name="mentohust_startmode" class="input" style="width: 145px;">
-                                                    <option value="0" ><#menu5_18_13_0#></option>
-                                                    <option value="1" ><#menu5_18_13_1#></option>
-                                                    <option value="2" ><#menu5_18_13_2#></option>
+                                                    <option value="0" ><#menu5_13_2_13_0#></option>
+                                                    <option value="1" ><#menu5_13_2_13_1#></option>
+                                                    <option value="2" ><#menu5_13_2_13_2#></option>
                                                 </select>
                                             </td>
                                         </tr>
 
-                                        <tr> <th width="50%"><#menu5_18_14#></th>
+                                        <tr> <th width="50%"><#menu5_13_2_14#></th>
                                             <td>
                                                 <select name="mentohust_dhcp" class="input" style="width: 145px;">
-                                                    <option value="0" ><#menu5_18_14_0#></option>
-                                                    <option value="1" ><#menu5_18_14_1#></option>
-                                                    <option value="2" ><#menu5_18_14_2#></option>
-                                                    <option value="3" ><#menu5_18_14_3#></option>
+                                                    <option value="0" ><#menu5_13_2_14_0#></option>
+                                                    <option value="1" ><#menu5_13_2_14_1#></option>
+                                                    <option value="2" ><#menu5_13_2_14_2#></option>
+                                                    <option value="3" ><#menu5_13_2_14_3#></option>
                                                 </select>
                                             </td>
                                         </tr>
 
-                                        <tr> <th width="50%"><#menu5_18_15#></th>
+                                        <tr> <th width="50%"><#menu5_13_2_15#></th>
                                             <td>
                                                 <select name="mentohust_daemon" class="input" style="width: 145px;">
-                                                    <option value="1" ><#menu5_18_15_1#></option>
-                                                    <option value="3" ><#menu5_18_15_3#></option>
+                                                    <option value="1" ><#menu5_13_2_15_1#></option>
+                                                    <option value="3" ><#menu5_13_2_15_3#></option>
                                                 </select>
                                             </td>
                                         </tr>
 
-                                        <tr> <th width="50%"><#menu5_18_16#></th>
+                                        <tr> <th width="50%"><#menu5_13_2_16#></th>
                                             <td>
                                                 <select name="mentohust_service" class="input" style="width: 145px;">
-                                                    <option value="0" ><#menu5_18_16_0#></option>
-                                                    <option value="1" ><#menu5_18_16_1#></option>
+                                                    <option value="0" ><#menu5_13_2_16_0#></option>
+                                                    <option value="1" ><#menu5_13_2_16_1#></option>
                                                 </select>
                                             </td>
                                         </tr>
 
-                                        <tr> <th width="50%"><#menu5_18_17#></th>
+                                        <tr> <th width="50%"><#menu5_13_2_17#></th>
                                             <td>
                                                 <input type="text" maxlength="15" class="input" size="15" name="mentohust_ver" style="width: 145px" value="<% nvram_get_x("","mentohust_ver"); %>" />
                                             </td>
                                         </tr>
 
 
-                                        <tr> <th width="50%"><#menu5_18_18#></th>
+                                        <tr> <th width="50%"><#menu5_13_2_18#></th>
                                             <td>
                                                 <input type="text" maxlength="64" class="input" size="32" name="mentohust_datafile" value="<% nvram_get_x("","mentohust_datafile"); %>" />
                                             </td>
                                         </tr>
 
 
-                                        <tr> <th width="50%"><#menu5_18_19#></th>
+                                        <tr> <th width="50%"><#menu5_13_2_19#></th>
                                             <td>
                                                 <input type="text" maxlength="64" class="input" size="32" name="mentohust_dhcpscript" value="<% nvram_get_x("","mentohust_dhcpscript"); %>" />
                                             </td>

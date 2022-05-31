@@ -540,7 +540,7 @@ function valid_IP_subnet(obj){
 
                                     <table width="100%" cellpadding="4" cellspacing="0" class="table">
                                         <tr>
-                                            <th colspan="2" style="background-color: #E3E3E3;"><#VSAuto#></th>
+                                            <th colspan="2" style="background-color: rgba(255,255,255,0.2);"><#VSAuto#></th>
                                         </tr>
                                         <tr>
                                             <th width="50%"><#UPnP_Enable#></th>
@@ -609,7 +609,7 @@ function valid_IP_subnet(obj){
                                     </table>
                                     <table width="100%" cellpadding="4" cellspacing="0" class="table">
                                         <tr>
-                                            <th colspan="2" style="background-color: #E3E3E3;"><#VSManual#></th>
+                                            <th colspan="2" style="background-color: rgba(255,255,255,0.2);"><#VSManual#></th>
                                         </tr>
                                         <tr>
                                             <th width="50%"><#IPConnection_VServerEnable_itemname#>
@@ -644,7 +644,7 @@ function valid_IP_subnet(obj){
 
                                     <table width="100%" cellpadding="4" cellspacing="0" class="table table-list" id="VSList_Block">
                                         <tr>
-                                            <th colspan="7" style="background-color: #E3E3E3;"><#IPConnection_VSList_title#></th>
+                                            <th colspan="7" style="background-color: rgba(255,255,255,0.2);"><#IPConnection_VSList_title#></th>
                                         </tr>
                                         <tr>
                                             <td><#IPConnection_VServerDescript_itemname#></td>

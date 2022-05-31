@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
-<title><#Web_Title#> - 文件管理</title>
+<title><#Web_Title#> - <#menu5_18_1#></title>
 <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
 <meta http-equiv="Pragma" content="no-cache">
 <meta http-equiv="Expires" content="-1">
@@ -42,7 +42,7 @@ $j(document).ready(function() {
 
 function initial(){
 	show_banner(2);
-	show_menu(5,19);
+	show_menu(5,16,1);
 	show_footer();
 show_caddy_stroage();
 show_caddy_dir();
@@ -186,7 +186,7 @@ if (b=="2"){
 				<div class="row-fluid">
 					<div class="span12">
 						<div class="box well grad_colour_dark_blue">
-							<h2 class="box_head round_top">在线文件管理</h2>
+							<h2 class="box_head round_top"><#menu5_18#> - <#menu5_18_1#></h2>
 							<div class="round_bottom">
 								<div class="row-fluid">
 									<div id="tabMenu" class="submenuBlock"></div>

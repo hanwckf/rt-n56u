@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
-<title><#Web_Title#> - <#menu5_21#></title>
+<title><#Web_Title#> - <#menu5_14_2#></title>
 <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
 <meta http-equiv="Pragma" content="no-cache">
 <meta http-equiv="Expires" content="-1">
@@ -63,11 +63,10 @@ if(m_list.length > 0){
 }
 function initial(){
 	show_banner(2);
-	show_menu(5,16);
+	show_menu(5,12,2);
 	show_footer();
 	showTab(getHash());
 	showMRULESList();
-	showmenu();
 	fill_status(smartdns_status());
 }
 
@@ -154,9 +153,7 @@ function markGroupRULES(o, c, b) {
 	document.form.current_page.value = "Advanced_smartdns.asp#dns";
 	return true;
 }
-function showmenu(){
-showhide_div('adglink', found_app_adguardhome());
-}
+
 function showMRULESList(){
 	var code = '<table width="100%" cellspacing="0" cellpadding="3" class="table table-list">';
 	if(m_list.length == 0)
@@ -254,35 +251,25 @@ function showMRULESList(){
                 <div class="row-fluid">
                     <div class="span12">
                         <div class="box well grad_colour_dark_blue">
-                            <h2 class="box_head round_top"><#menu5_24#> - <#menu5_29#></h2>
+                            <h2 class="box_head round_top"><#menu5_14#> - <#menu5_14_2#></h2>
                             <div class="round_bottom">
-							<div>
-                            <ul class="nav nav-tabs" style="margin-bottom: 10px;">
-                                <li class="active">
-                                    <a href="Advanced_smartdns.asp"><#menu5_24#></a>
-                                </li>
-								 <li id="adglink" style="display:none">
-                                    <a href="Advanced_adguardhome.asp"><#menu5_28#></a>
-                                </li>
-                            </ul>
-                        </div>
-						<div>
-                            <ul class="nav nav-tabs" style="margin-bottom: 10px;">
-                                <li class="active">
-                                    <a id="tab_sm_cfg" href="#cfg">基本设置</a>
-                                </li>
-								 <li>
-                                    <a id="tab_sm_sec" href="#sec">第二服务器</a>
-                                <li>
-								<li>
-                                    <a id="tab_sm_dns" href="#dns">上游服务器</a>
-                                <li>
-                                    <a id="tab_sm_cou" href="#cou">其他设置</a>
-                                </li>
-                            </ul>
-                        </div>
                                 <div class="row-fluid">
                                     <div id="tabMenu" class="submenuBlock"></div>
+                                    <div>
+                                      <ul class="nav nav-tabs" style="margin-bottom: 10px;">
+                                        <li class="active">
+                                            <a id="tab_sm_cfg" href="#cfg">基本设置</a>
+                                        </li>
+                                        <li>
+                                            <a id="tab_sm_sec" href="#sec">第二服务器</a>
+                                        <li>
+                                        <li>
+                                            <a id="tab_sm_dns" href="#dns">上游服务器</a>
+                                        <li>
+                                            <a id="tab_sm_cou" href="#cou">其他设置</a>
+                                        </li>
+                                      </ul>
+                                    </div>
 									<div class="alert alert-info" style="margin: 10px;">SmartDNS是一个本地高性能DNS服务器，支持避免域名污染，支持返回最快IP，支持广告过滤。</br>
 									SmartDNS官方网站:<a href="https://pymumu.github.io/smartdns/">https://pymumu.github.io/smartdns/</a>
 </div>
@@ -293,7 +280,7 @@ function showMRULESList(){
                                             <td id="smartdns_status" colspan="2"></td>
                                         </tr>
 
-                                        <tr> <th><#menu5_21_1#></th>
+                                        <tr> <th><#menu5_14_8#></th>
                                             <td>
                                                 <div class="main_itoggle">
                                                 <div id="sdns_enable_on_of">
@@ -657,7 +644,7 @@ function showMRULESList(){
 												</select>
                                             </td>
                                             </tr>
-											<tr><th colspan="2" style="background-color: #E3E3E3;">指定服务器组可用于单独解析gfwlist,如果不需要配合SS解析gfwlist,可以不填</th></tr>
+											<tr><th colspan="2" style="background-color: rgba(255,255,255,0.2);">指定服务器组可用于单独解析gfwlist,如果不需要配合SS解析gfwlist,可以不填</th></tr>
 											 <tr>
 											 <th>服务器组(留空为不指定):</th>
 										 <td>

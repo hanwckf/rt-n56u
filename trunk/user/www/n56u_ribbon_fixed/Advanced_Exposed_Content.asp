@@ -187,7 +187,7 @@ function done_validating(action){
 
                                     <table width="100%" cellpadding="4" cellspacing="0" class="table">
                                         <tr>
-                                            <th colspan="2" style="background-color: #E3E3E3;"><#IPConnection_BattleNet_sectionname#></th>
+                                            <th colspan="2" style="background-color: rgba(255,255,255,0.2);"><#IPConnection_BattleNet_sectionname#></th>
                                         </tr>
                                         <tr>
                                             <td colspan="2"><div class="alert alert-info" style="margin: 2px;"><#IPConnection_BattleNet_sectiondesc#></div></td>

@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
-<title><#Web_Title#> - 内网穿透</title>
+<title><#Web_Title#> - <#menu5_17_1#></title>
 <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
 <meta http-equiv="Pragma" content="no-cache">
 <meta http-equiv="Expires" content="-1">
@@ -37,13 +37,19 @@ $j(document).ready(function() {
 
 function initial(){
 	show_banner(2);
-	show_menu(5,18);
+	show_menu(5,15,1);
 	show_footer();
+	showmenu();
 
 fill_status(frpc_status());
 fill_status2(frps_status());
 	if (!login_safe())
 		textarea_scripts_enabled(0);
+}
+
+
+function showmenu(){
+showhide_div('npclink', found_app_npc());
 }
 
 function textarea_scripts_enabled(v){
@@ -131,13 +137,12 @@ function done_validating(action){
 					</ul>
 				</div>
 			</div>
-
 			<div class="span9">
 				<!--Body content-->
 				<div class="row-fluid">
 					<div class="span12">
 						<div class="box well grad_colour_dark_blue">
-							<h2 class="box_head round_top">Frp - 内网穿透</h2>
+							<h2 class="box_head round_top"><#menu5_17#> - <#menu5_17_1#></h2>
 							<div class="round_bottom">
 								<div class="row-fluid">
 									<div id="tabMenu" class="submenuBlock"></div>

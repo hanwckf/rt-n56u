@@ -42,6 +42,14 @@ function initial(){
 	if (support_2g_inic_mii())
 		document.form.rt_mode_x.remove(3);
 
+ 	if (typeof(support_2g_wid) === 'function'){
+		wid = support_2g_wid();
+		if (wid==7915){
+			document.form.rt_mode_x.remove(1);
+			document.form.rt_mode_x.remove(1);
+		}
+	}
+
 	showLANIPList();
 
 	change_wireless_bridge();

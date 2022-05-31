@@ -333,7 +333,7 @@ function done_validating(action){
 
                                     <table class="table" id="tbl_modem_base" style="display:none">
                                         <tr>
-                                            <th colspan="2" style="background-color: #E3E3E3;"><#ModemBase#></th>
+                                            <th colspan="2" style="background-color: rgba(255,255,255,0.2);"><#ModemBase#></th>
                                         </tr>
                                         <tr>
                                             <th width="50%"><#ModemType#></th>
@@ -426,7 +426,7 @@ function done_validating(action){
 
                                     <table class="table" id="tbl_modem_dns" style="display:none">
                                         <tr>
-                                            <th colspan="2" style="background-color: #E3E3E3;"><#IPConnection_x_DNSServerEnable_sectionname#></th>
+                                            <th colspan="2" style="background-color: rgba(255,255,255,0.2);"><#IPConnection_x_DNSServerEnable_sectionname#></th>
                                         </tr>
                                         <tr>
                                             <th width="50%"><a class="help_tooltip" href="javascript:void(0);" onmouseover="openTooltip(this,21,5);"><#IPConnection_x_DNSServerEnable_itemname#></a></th>
@@ -465,7 +465,7 @@ function done_validating(action){
 
                                     <table class="table" id="tbl_modem_adv" style="display:none">
                                         <tr>
-                                            <th colspan="2" style="background-color: #E3E3E3;"><#ModemAdv#></th>
+                                            <th colspan="2" style="background-color: rgba(255,255,255,0.2);"><#ModemAdv#></th>
                                         </tr>
                                         <tr>
                                             <th width="50%"><#COM_Port_Node#></th>

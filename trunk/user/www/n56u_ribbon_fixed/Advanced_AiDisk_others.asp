@@ -471,7 +471,7 @@ function done_validating(action){
 
                                     <table id="tbl_smbd" width="100%" cellpadding="4" cellspacing="0" class="table" style="display:none;">
                                         <tr>
-                                            <th colspan="2" style="background-color: #E3E3E3;"><#StorageSMBD#></th>
+                                            <th colspan="2" style="background-color: rgba(255,255,255,0.2);"><#StorageSMBD#></th>
                                         </tr>
                                         <tr>
                                             <th width="50%">
@@ -537,7 +537,7 @@ function done_validating(action){
 
                                     <table id="tbl_ftpd" width="100%" cellpadding="4" cellspacing="0" class="table" style="display:none;">
                                         <tr>
-                                            <th colspan="2" style="background-color: #E3E3E3;"><#StorageFTPD#></th>
+                                            <th colspan="2" style="background-color: rgba(255,255,255,0.2);"><#StorageFTPD#></th>
                                         </tr>
                                         <tr>
                                             <th width="50%">
@@ -599,7 +599,7 @@ function done_validating(action){
 
                                     <table width="100%" id="tbl_nfsd" cellpadding="4" cellspacing="0" class="table" style="display:none;">
                                         <tr>
-                                            <th colspan="2" style="background-color: #E3E3E3;"><#StorageNFSD#></th>
+                                            <th colspan="2" style="background-color: rgba(255,255,255,0.2);"><#StorageNFSD#></th>
                                         </tr>
                                         <tr>
                                             <th width="50%">
@@ -622,7 +622,7 @@ function done_validating(action){
 
                                     <table width="100%" id="tbl_minidlna" cellpadding="4" cellspacing="0" class="table" style="display:none;">
                                         <tr>
-                                            <th colspan="3" style="background-color: #E3E3E3;"><#UPnPMediaServer#></th>
+                                            <th colspan="3" style="background-color: rgba(255,255,255,0.2);"><#UPnPMediaServer#></th>
                                         </tr>
                                         <tr>
                                             <th width="50%">
@@ -732,7 +732,7 @@ function done_validating(action){
 
                                     <table width="100%" id="tbl_itunes" cellpadding="4" cellspacing="0" class="table" style="display:none;">
                                         <tr>
-                                            <th colspan="3" style="background-color: #E3E3E3;"><#StorageFFly#></th>
+                                            <th colspan="3" style="background-color: rgba(255,255,255,0.2);"><#StorageFFly#></th>
                                         </tr>
                                         <tr>
                                             <th width="50%">
@@ -759,7 +759,7 @@ function done_validating(action){
 
                                     <table width="100%" id="tbl_trmd" cellpadding="4" cellspacing="0" class="table" style="display:none;">
                                         <tr>
-                                            <th colspan="3" style="background-color: #E3E3E3;"><#StorageTorrent#></th>
+                                            <th colspan="3" style="background-color: rgba(255,255,255,0.2);"><#StorageTorrent#></th>
                                         </tr>
                                         <tr>
                                             <th width="50%">
@@ -801,7 +801,7 @@ function done_validating(action){
 
                                     <table width="100%" id="tbl_aria" cellpadding="4" cellspacing="0" class="table" style="display:none;">
                                         <tr>
-                                            <th colspan="3" style="background-color: #E3E3E3;"><#StorageAria#></th>
+                                            <th colspan="3" style="background-color: rgba(255,255,255,0.2);"><#StorageAria#></th>
                                         </tr>
                                         <tr>
                                             <th width="50%">

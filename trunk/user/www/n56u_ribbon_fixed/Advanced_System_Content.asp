@@ -309,7 +309,7 @@ function updateDateTime()
 
                                     <table width="100%" cellpadding="4" cellspacing="0" class="table">
                                         <tr>
-                                            <th colspan="2" style="background-color: #E3E3E3;"><#Adm_System_ident#></th>
+                                            <th colspan="2" style="background-color: rgba(255,255,255,0.2);"><#Adm_System_ident#></th>
                                         </tr>
                                         <tr>
                                             <th width="50%">
@@ -341,7 +341,7 @@ function updateDateTime()
 
                                     <table width="100%" cellpadding="4" cellspacing="0" class="table">
                                         <tr>
-                                            <th colspan="2" style="background-color: #E3E3E3;"><#General_x_SystemTime_itemname#></th>
+                                            <th colspan="2" style="background-color: rgba(255,255,255,0.2);"><#General_x_SystemTime_itemname#></th>
                                         </tr>
                                         <tr>
                                             <th width="50%"><a class="help_tooltip"  href="javascript:void(0);" onmouseover="openTooltip(this,11,2)"><#LANHostConfig_x_TimeZone_itemname#></a></th>
@@ -474,7 +474,7 @@ function updateDateTime()
 
                                     <table width="100%" cellpadding="4" cellspacing="0" class="table">
                                         <tr>
-                                            <th colspan="2" style="background-color: #E3E3E3;"><#t2Misc#></th>
+                                            <th colspan="2" style="background-color: rgba(255,255,255,0.2);"><#t2Misc#></th>
                                         </tr>
 										<tr id="reboot_schedule_enable_tr">
 				                        <tr>

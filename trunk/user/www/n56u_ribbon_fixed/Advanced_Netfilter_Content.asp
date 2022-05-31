@@ -155,7 +155,7 @@ function done_validating(action){
 
                                     <table width="100%" cellpadding="4" cellspacing="0" class="table">
                                         <tr>
-                                            <th colspan="2" style="background-color: #E3E3E3;"><#NFilterConfig#></th>
+                                            <th colspan="2" style="background-color: rgba(255,255,255,0.2);"><#NFilterConfig#></th>
                                         </tr>
                                         <tr>
                                             <th><#Enable_NAT#></th>
@@ -231,7 +231,7 @@ function done_validating(action){
 
                                     <table width="100%" cellpadding="4" cellspacing="0" class="table">
                                         <tr>
-                                            <th colspan="2" style="background-color: #E3E3E3;"><#NFilterALG#></th>
+                                            <th colspan="2" style="background-color: rgba(255,255,255,0.2);"><#NFilterALG#></th>
                                         </tr>
                                         <tr>
                                             <th width="50%">FTP ALG (ports)</th>

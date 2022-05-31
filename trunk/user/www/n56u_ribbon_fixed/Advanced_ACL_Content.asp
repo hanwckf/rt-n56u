@@ -294,7 +294,7 @@ function done_validating(action){
 
                                     <table width="100%" align="center" cellpadding="4" cellspacing="0" class="table table-list" id="ACLList_Block">
                                         <tr>
-                                            <th colspan="3" style="background-color: #E3E3E3;"><#FirewallConfig_MFList_groupitemname#></th>
+                                            <th colspan="3" style="background-color: rgba(255,255,255,0.2);"><#FirewallConfig_MFList_groupitemname#></th>
                                         </tr>
                                         <tr>
                                             <th width="35%"><#FirewallConfig_MFhwaddr_itemname#></th>

@@ -50,7 +50,7 @@ function initial(){
 		if (wid==7602||wid==7612){
 			showhide_div("row_vga_clamp", 1);
 			showhide_div("row_ldpc", 1);
-		} else if (wid==7615){
+		} else if (wid==7615 || wid==7915){
 			showhide_div("row_ldpc", 1);
 		}
 	}

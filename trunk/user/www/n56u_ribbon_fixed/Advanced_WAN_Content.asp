@@ -750,7 +750,7 @@ function simplyMAC(fullMAC){
 
                                     <table width="100%" align="center" cellpadding="4" cellspacing="0" class="table" id="tbl_dhcp_sect">
                                         <tr>
-                                            <th id="dhcp_sect_desc" colspan="2" style="background-color: #E3E3E3;"><#IPConnection_ExternalIPAddress_sectionname#></th>
+                                            <th id="dhcp_sect_desc" colspan="2" style="background-color: rgba(255,255,255,0.2);"><#IPConnection_ExternalIPAddress_sectionname#></th>
                                         </tr>
                                         <tr id="row_dhcp_toggle">
                                             <th id="dhcp_auto_desc" width="50%"><#Layer3Forwarding_x_DHCPClient_itemname#></th>
@@ -790,7 +790,7 @@ function simplyMAC(fullMAC){
 
                                     <table width="100%" align="center" cellpadding="4" cellspacing="0" class="table">
                                         <tr>
-                                            <th colspan="2" style="background-color: #E3E3E3;"><#IPConnection_x_DNSServerEnable_sectionname#></th>
+                                            <th colspan="2" style="background-color: rgba(255,255,255,0.2);"><#IPConnection_x_DNSServerEnable_sectionname#></th>
                                         </tr>
                                         <tr id="row_dns_toggle">
                                             <th width="50%"><a class="help_tooltip" href="javascript:void(0);" onmouseover="openTooltip(this,7,12);"><#IPConnection_x_DNSServerEnable_itemname#></a></th>
@@ -829,7 +829,7 @@ function simplyMAC(fullMAC){
 
                                     <table width="100%" align="center" cellpadding="4" cellspacing="0" class="table" id="tbl_vpn_control">
                                         <tr>
-                                            <th colspan="2" style="background-color: #E3E3E3;"><#PPPConnection_UserName_sectionname#></th>
+                                            <th colspan="2" style="background-color: rgba(255,255,255,0.2);"><#PPPConnection_UserName_sectionname#></th>
                                         </tr>
                                         <tr id="row_l2tp_cli" style="display:none">
                                             <th><#PPP_L2TPD#></th>
@@ -968,7 +968,7 @@ function simplyMAC(fullMAC){
 
                                     <table width="100%" cellpadding="4" cellspacing="0" class="table">
                                         <tr>
-                                            <th colspan="2" style="background-color: #E3E3E3;"><#PPPConnection_x_HostNameForISP_sectionname#></th>
+                                            <th colspan="2" style="background-color: rgba(255,255,255,0.2);"><#PPPConnection_x_HostNameForISP_sectionname#></th>
                                         </tr>
                                         <tr id="row_auth_type">
                                             <th><#ISP_Authentication_mode#></th>
@@ -1049,7 +1049,7 @@ function simplyMAC(fullMAC){
 
                                     <table width="100%" align="center" cellpadding="4" cellspacing="0" class="table" id="tbl_viptv_sect" style="display:none">
                                         <tr>
-                                            <th colspan="2" style="background-color: #E3E3E3;"><#MAN_VIPTV_desc#></th>
+                                            <th colspan="2" style="background-color: rgba(255,255,255,0.2);"><#MAN_VIPTV_desc#></th>
                                         </tr>
                                         <tr>
                                             <th width="50%"><#IPConnection_ExternalIPAddress_itemname#></th>
@@ -1067,7 +1067,7 @@ function simplyMAC(fullMAC){
 
                                     <table width="100%" cellpadding="4" cellspacing="0" class="table">
                                         <tr>
-                                            <th colspan="2" style="background-color: #E3E3E3;"><#WAN_Bridge#></th>
+                                            <th colspan="2" style="background-color: rgba(255,255,255,0.2);"><#WAN_Bridge#></th>
                                         </tr>
                                         <tr>
                                             <th><a class="help_tooltip" href="javascript:void(0);" onmouseover="openTooltip(this,7,22);"><#Layer3Forwarding_x_STB_itemname#></a></th>

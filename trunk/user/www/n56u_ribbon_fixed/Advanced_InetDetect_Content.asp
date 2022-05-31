@@ -156,7 +156,7 @@ function done_validating(action){
 
                                     <table width="100%" cellpadding="4" cellspacing="0" class="table">
                                         <tr>
-                                            <th colspan="2" style="background-color: #E3E3E3;"><#InetCheckHosts#></th>
+                                            <th colspan="2" style="background-color: rgba(255,255,255,0.2);"><#InetCheckHosts#></th>
                                         </tr>
                                         <tr>
                                             <th width="50%"><#InetCheckHostIP4#> 1:</th>
@@ -204,7 +204,7 @@ function done_validating(action){
 
                                     <table width="100%" cellpadding="4" cellspacing="0" class="table">
                                         <tr>
-                                            <th colspan="2" style="background-color: #E3E3E3;"><#InetCheckPoll#></th>
+                                            <th colspan="2" style="background-color: rgba(255,255,255,0.2);"><#InetCheckPoll#></th>
                                         </tr>
                                         <tr>
                                             <th width="50%"><#InetCheckPeriod#></th>
@@ -225,7 +225,7 @@ function done_validating(action){
 
                                     <table width="100%" cellpadding="4" cellspacing="0" class="table" id="tbl_di_events">
                                         <tr>
-                                            <th colspan="2" style="background-color: #E3E3E3;"><#InetCheckEvents#></th>
+                                            <th colspan="2" style="background-color: rgba(255,255,255,0.2);"><#InetCheckEvents#></th>
                                         </tr>
                                         <tr>
                                             <th width="50%"><#InetCheckLostDelay#></th>

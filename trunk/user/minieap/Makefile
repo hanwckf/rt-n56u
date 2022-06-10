@@ -1,5 +1,5 @@
 SRC_NAME = minieap-taiga-padavan
-SRC_URL = https://github.com/AutoCONFIG/minieap-taiga/archive/refs/heads/padavan.zip
+SRC_URL = https://github.com/AutoCONFIG/minieap/archive/refs/heads/padavan.zip
 THISDIR = $(shell pwd)
 
 all: download_test extract_test

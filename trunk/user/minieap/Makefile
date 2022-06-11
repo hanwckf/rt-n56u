@@ -1,4 +1,4 @@
-SRC_NAME = minieap-taiga-padavan
+SRC_NAME = minieap-padavan
 SRC_URL = https://github.com/AutoCONFIG/minieap/archive/refs/heads/padavan.zip
 THISDIR = $(shell pwd)
 

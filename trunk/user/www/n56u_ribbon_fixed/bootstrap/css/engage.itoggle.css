@@ -1,0 +1,59 @@
+div.main_itoggle label{margin-bottom: 0px;}
+
+div.main_itoggle input.iT_checkbox_on{
+    display:block !important;
+    float:left;
+    position:relative !important;
+    top:-43px !important;
+    left:100px !important;
+    margin-bottom:-43px;
+}
+
+div.main_itoggle label.ilabel{
+    display:block;
+    font-size:12px;
+    padding-bottom:10px;
+    cursor:pointer;
+}
+
+div.main_itoggle label.itoggle,
+div.main_itoggle label.itoggle span{
+    display: block;
+    width: 93px;
+    height: 27px;
+    /*margin-bottom: 20px;*/
+    background: url(../img/itoggle.png) left bottom no-repeat;
+    cursor:pointer;
+    text-indent:-5000px;
+}
+div.main_itoggle label.itoggle.iToff{
+    /*background-position:right bottom;*/
+}
+div.main_itoggle label.itoggle span{
+    background-position: 0% 0%;
+    margin: 0;
+}
+div.main_itoggle input.iT_checkbox{
+    position:absolute;
+    top:-9999px;
+    left:-9999px;
+}
+
+div.main_itoggle label.disabled span
+{
+    background: url("/bootstrap/img/loading_bg.png") repeat scroll 50% 50% #AAAAAA;
+    text-indent: 0px;
+    opacity: 0.6;
+}
+
+/*	
+	If you want the corners to be
+	transparent, add these two lines
+	to the main block above. Only
+	works on webkit and mozilla browsers
+	For more reliable results, make your
+	own png using the supplied .psd
+	
+	-moz-border-radius:6px;
+	-webkit-border-radius:6px;
+*/

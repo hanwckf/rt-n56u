@@ -103,6 +103,7 @@ control_wan_led_isp_state(int is_wan_up, int is_modem_unit)
 			LED_CONTROL(BOARD_GPIO_LED_WAN, LED_OFF);
 #if defined (BOARD_K2P) || defined (BOARD_PSG1218) || defined (BOARD_MINANO)
 		LED_CONTROL(BOARD_GPIO_LED_WIFI, LED_ON);
+        LED_CONTROL(BOARD_GPIO_LED_POWER, LED_OFF);
 #endif
 	}
 #endif

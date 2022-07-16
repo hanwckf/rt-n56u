@@ -349,6 +349,7 @@ dl_update_leds(void)
 #endif
 #if defined (BOARD_K2P) || defined (BOARD_PSG1218) || defined (BOARD_MINANO)
 	LED_CONTROL(BOARD_GPIO_LED_WIFI, (dl_state) ? LED_OFF : LED_ON);
+	LED_CONTROL(BOARD_GPIO_LED_POWER, LED_OFF);
 #elif defined (BOARD_GPIO_LED_WIFI)
 	LED_CONTROL(BOARD_GPIO_LED_WIFI, LED_ON);
 #endif

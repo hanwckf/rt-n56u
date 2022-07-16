@@ -277,7 +277,7 @@ di_on_timer(void)
 #if defined (BOARD_GPIO_LED_WAN)
 		if (nvram_get_int("front_led_wan") == 3){
 			LED_CONTROL(BOARD_GPIO_LED_WAN, (link_internet) ? LED_ON : LED_OFF);
-#if defined (BOARD_K2P) || defined (BOARD_PSG1218) || defined (BOARD_MI-NANO)
+#if defined (BOARD_K2P) || defined (BOARD_PSG1218) || defined (BOARD_MINANO)
 			LED_CONTROL(BOARD_GPIO_LED_WIFI, (link_internet) ? LED_OFF : LED_ON);
 #endif
 		}

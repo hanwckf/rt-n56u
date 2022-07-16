@@ -14,7 +14,7 @@
 #define BOARD_GPIO_LED_WIFI	11
 #define BOARD_GPIO_LED_POWER	44	/* 11: blue, 37: red, 44: yellow */
 #undef  BOARD_GPIO_LED_LAN
-#undef  BOARD_GPIO_LED_WAN
+#define BOARD_GPIO_LED_WAN  37
 #define BOARD_HAS_5G_11AC	0
 #define BOARD_NUM_ANT_5G_TX	0
 #define BOARD_NUM_ANT_5G_RX	0

@@ -96,7 +96,7 @@ control_wan_led_isp_state(int is_wan_up, int is_modem_unit)
 		LED_CONTROL(BOARD_GPIO_LED_WAN, (is_wan_up && has_link) ? LED_ON : LED_OFF);
 #if defined (BOARD_K2P) || defined (BOARD_PSG1218) || defined (BOARD_MINANO)
 		LED_CONTROL(BOARD_GPIO_LED_WIFI, (is_wan_up && has_link) ? LED_OFF : LED_ON);
-		LED_CONTROL(BOARD_GPIO_LED_POWER, (is_wan_up && has_link) ? LED_OFF : LED_ON);
+		LED_CONTROL(BOARD_GPIO_LED_POWER, LED_OFF);
 #endif
 	} else if (front_led_wan == 3) {
 		if (!is_wan_up)

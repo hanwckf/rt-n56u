@@ -279,6 +279,7 @@ di_on_timer(void)
 			LED_CONTROL(BOARD_GPIO_LED_WAN, (link_internet) ? LED_ON : LED_OFF);
 #if defined (BOARD_K2P) || defined (BOARD_PSG1218) || defined (BOARD_MINANO)
 			LED_CONTROL(BOARD_GPIO_LED_WIFI, (link_internet) ? LED_OFF : LED_ON);
+            LED_CONTROL(BOARD_GPIO_LED_POWER, (link_internet) ? LED_OFF : LED_ON);
 #endif
 		}
 #endif

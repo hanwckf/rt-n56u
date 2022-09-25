@@ -41,7 +41,7 @@
 #include <linux/if_pppox.h>
 #include <linux/ppp_defs.h>
 #include <linux/pci.h>
-
+#include <net/netevent.h>
 #include "ra_nat_compat.h"
 #include "ra_nat.h"
 #include "foe_fdb.h"
@@ -62,7 +62,15 @@
 #endif
 
 #define MAX_IF_HASH_NUM		256	/* must be 2^X */
+struct timer_list hwnat_clear_entry_timer;
+static void hwnat_clear_entry(unsigned long data)
+{
+	printk("HW_NAT work normally\n");
+	RegModifyBits(PPE_FOE_CFG, FWD_CPU_BUILD_ENTRY, 4, 2);
+	//del_timer_sync(&hwnat_clear_entry_timer);
 
+}
+void foe_clear_entry(struct neighbour *neigh);
 static int wifi_offload __read_mostly = 0;
 module_param(wifi_offload, int, S_IRUGO);
 MODULE_PARM_DESC(wifi_offload, "PPE IPv4 NAT offload for wifi/extif");
@@ -2708,7 +2716,87 @@ int PpeEcHandler(int engine_init)
 
 	return 0;
 }
+void foe_clear_entry(struct neighbour *neigh)
+{
+	int hash_index, clear;
+	struct FoeEntry *entry;
+        u32 * daddr = (u32 *)neigh->primary_key;
+	const u8 *addrtmp;
+	u8 mac0,mac1,mac2,mac3,mac4,mac5;
+	u32 dip;
+	dip = (u32)(*daddr);
+	clear = 0;
+	addrtmp = neigh->ha;
+	mac0 = (u8)(*addrtmp);
+	mac1 = (u8)(*(addrtmp+1));
+	mac2 = (u8)(*(addrtmp+2));
+	mac3 = (u8)(*(addrtmp+3));
+	mac4 = (u8)(*(addrtmp+4));
+	mac5 = (u8)(*(addrtmp+5));
+	
+        for (hash_index = 0; hash_index < FOE_4TB_SIZ; hash_index++) {
+		entry = get_foe_entry(hash_index);
+		if(entry->bfib1.state == BIND) {
+			/*printk("before old mac= %x:%x:%x:%x:%x:%x, new_dip=%x\n",
+				entry->ipv4_hnapt.dmac_hi[3],
+				entry->ipv4_hnapt.dmac_hi[2],
+				entry->ipv4_hnapt.dmac_hi[1],
+				entry->ipv4_hnapt.dmac_hi[0],
+				entry->ipv4_hnapt.dmac_lo[1],
+				entry->ipv4_hnapt.dmac_lo[0], entry->ipv4_hnapt.new_dip);
+			*/
+			if (entry->ipv4_hnapt.new_dip == ntohl(dip)) {
+				if ((entry->ipv4_hnapt.dmac_hi[3] != mac0) || 
+				    (entry->ipv4_hnapt.dmac_hi[2] != mac1) || 
+				    (entry->ipv4_hnapt.dmac_hi[1] != mac2) ||
+				    (entry->ipv4_hnapt.dmac_hi[0] != mac3) ||
+				    (entry->ipv4_hnapt.dmac_lo[1] != mac4) ||
+				    (entry->ipv4_hnapt.dmac_lo[0] != mac5)) {
+				    	printk("%s: state=%d\n",__func__,neigh->nud_state);
+				    	RegModifyBits(PPE_FOE_CFG, ONLY_FWD_CPU, 4, 2);
+				    	
+				  	entry->ipv4_hnapt.udib1.state = INVALID;
+					entry->ipv4_hnapt.udib1.time_stamp = RegRead(FOE_TS) & 0xFF;
+					PpeSetCacheEbl();
+					mod_timer(&hwnat_clear_entry_timer, jiffies + 3 * HZ);
+				
+					printk("delete old entry: dip =%x\n", ntohl(dip));
+							
+				    	printk("old mac= %x:%x:%x:%x:%x:%x, dip=%x\n", 
+				    		entry->ipv4_hnapt.dmac_hi[3],
+				    		entry->ipv4_hnapt.dmac_hi[2],
+				    		entry->ipv4_hnapt.dmac_hi[1],
+				    		entry->ipv4_hnapt.dmac_hi[0],
+				    		entry->ipv4_hnapt.dmac_lo[1],
+				    		entry->ipv4_hnapt.dmac_lo[0],
+				    		ntohl(dip));
+				    	printk("new mac= %x:%x:%x:%x:%x:%x, dip=%x\n", mac0, mac1, mac2, mac3, mac4, mac5, ntohl(dip));
 
+				}
+			}
+		}
+	}
+}
+static int wh2_netevent_handler(struct notifier_block *unused,
+                                unsigned long event, void *ptr)
+{
+        struct net_device *dev = NULL;
+        struct neighbour *neigh = NULL;
+
+        switch (event) {
+        case NETEVENT_NEIGH_UPDATE:
+                neigh = ptr;
+                dev = neigh->dev;
+                if (dev)
+			foe_clear_entry(neigh);
+                break;
+        }
+
+        return NOTIFY_DONE;
+}
+static struct notifier_block Hnat_netevent_nb __read_mostly = {
+        .notifier_call = wh2_netevent_handler,
+};
 /*
  * PPE Enabled: GMAC<->PPE<->CPU
  * PPE Disabled: GMAC<->CPU
@@ -2761,7 +2849,9 @@ static int __init PpeInitMod(void)
 
 	printk("Ralink HW NAT %s Module Enabled, FoE Size: %d\n",
 		HW_NAT_MODULE_VER, PpeFoeTblSize);
-
+	register_netevent_notifier(&Hnat_netevent_nb);
+	init_timer(&hwnat_clear_entry_timer);
+	hwnat_clear_entry_timer.function = hwnat_clear_entry;
 	return 0;
 }
 
@@ -2786,6 +2876,7 @@ static void __exit PpeCleanupMod(void)
 
 	/* Release net_device structure of Dest Port */
 	PpeSetDstPort(0);
+	unregister_netevent_notifier(&Hnat_netevent_nb);
 }
 
 module_init(PpeInitMod);

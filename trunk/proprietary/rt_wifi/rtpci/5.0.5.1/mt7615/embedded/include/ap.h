@@ -474,6 +474,11 @@ VOID AP_E2PROM_IOCTL_PostCtrl(RTMP_IOCTL_INPUT_STRUCT *wrq, RTMP_STRING *msg);
 
 VOID IAPP_L2_UpdatePostCtrl(RTMP_ADAPTER *pAd, UINT8 *mac, INT wdev_idx);
 
+BOOLEAN IAPP_L2_Update_Frame_Send(
+	IN PRTMP_ADAPTER	pAd,
+    IN UINT8 *mac_p,
+    IN INT   wdev_idx);
+
 INT rtmp_ap_init(RTMP_ADAPTER *pAd);
 VOID rtmp_ap_exit(RTMP_ADAPTER *pAd);
 

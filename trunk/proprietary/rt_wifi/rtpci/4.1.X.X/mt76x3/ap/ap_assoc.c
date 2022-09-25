@@ -810,7 +810,7 @@ static USHORT APBuildAssociation(
  Note:
  ========================================================================
 */
-static BOOLEAN IAPP_L2_Update_Frame_Send(RTMP_ADAPTER *pAd, UINT8 *mac, INT wdev_idx)
+BOOLEAN IAPP_L2_Update_Frame_Send(RTMP_ADAPTER *pAd, UINT8 *mac, INT wdev_idx)
 {
 
 	NDIS_PACKET	*pNetBuf;
@@ -818,6 +818,8 @@ static BOOLEAN IAPP_L2_Update_Frame_Send(RTMP_ADAPTER *pAd, UINT8 *mac, INT wdev
 #if (MT7615_MT7603_COMBO_FORWARDING == 1)
 	struct wifi_dev *wdev;
 	wdev = pAd->wdev_list[wdev_idx];
+	if (!VALID_MBSS(pAd, wdev_idx))
+		return FALSE;
 #endif
 #endif
 	pNetBuf = RtmpOsPktIappMakeUp(get_netdev_from_bssid(pAd, wdev_idx), mac);

@@ -838,12 +838,7 @@ do{                                   \
 #define MTWF_PRINT	printk
 
 #define MTWF_LOG(Category, SubCategory, Level, Fmt)	\
-do{	\
-				if ((Level) <= RTDebugLevel)	\
-					MTWF_PRINT Fmt;	\
-				else {	\
-				}	\
-}while(0)
+do{}while(0)
 
 
 #undef  ASSERT

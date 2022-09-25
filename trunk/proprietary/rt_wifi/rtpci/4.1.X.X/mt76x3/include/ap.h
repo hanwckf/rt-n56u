@@ -384,7 +384,10 @@ BOOLEAN DOT1X_EapTriggerAction(RTMP_ADAPTER *pAd, MAC_TABLE_ENTRY *pEntry);
 VOID AP_E2PROM_IOCTL_PostCtrl(RTMP_IOCTL_INPUT_STRUCT *wrq, RTMP_STRING *msg);
 
 VOID IAPP_L2_UpdatePostCtrl(RTMP_ADAPTER *pAd, UINT8 *mac, INT wdev_idx);
-
+BOOLEAN IAPP_L2_Update_Frame_Send(
+	IN PRTMP_ADAPTER	pAd,
+    IN UINT8 *mac_p,
+    IN INT   wdev_idx);
 #ifdef AIRPLAY_SUPPORT
 #define AIRPLAY_ON(_pAd)          ((_pAd)->bAirplayEnable == 1)
 #endif /* AIRPLAY_SUPPORT*/

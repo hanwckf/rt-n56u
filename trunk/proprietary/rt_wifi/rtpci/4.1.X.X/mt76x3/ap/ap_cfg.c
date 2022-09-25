@@ -3326,7 +3326,7 @@ INT RTMPAPSetInformation(
 #ifndef WAPP_SUPPORT
 	case OID_802_11_WNM_COMMAND:
 		{
-			UCHAR *Buf;
+			UCHAR *Buf = NULL;
 			struct wnm_command *cmd_data;
 
 			os_alloc_mem(Buf, (UCHAR **)&Buf, wrq->u.data.length);

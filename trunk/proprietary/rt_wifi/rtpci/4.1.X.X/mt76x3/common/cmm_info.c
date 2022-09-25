@@ -3043,9 +3043,7 @@ VOID RTMPIoctlGetSiteSurvey(
 #ifdef MWDS
 	max_len += MWDS_LINE_LEN;
 #endif /* MWDS */
-#ifdef DOT11K_RRM_SUPPORT
-	max_len += BCNREPT_LINE_LEN;
-#endif /* DOT11K_RRM_SUPPORT */
+
 
 #ifdef AIRPLAY_SUPPORT
 		max_len += IS_UNICODE_SSID_LEN;
@@ -3148,9 +3146,7 @@ VOID RTMPIoctlGetSiteSurvey(
 	sprintf(msg+strlen(msg)-1,"%-4s%-5s\n", " WPS", " DPID");
 #endif /* WSC_INCLUDED */
 
-#ifdef DOT11K_RRM_SUPPORT
-	sprintf(msg+strlen(msg)-1, "%-10s\n", " BcnRept");
-#endif /* DOT11K_RRM_SUPPORT */
+
 
 #ifdef MWDS
 	sprintf(msg+strlen(msg)-1,"%-8s\n", " MWDSCap");
@@ -3212,9 +3208,7 @@ VOID RTMPIoctlGetSiteSurvey(
 		else
 			sprintf(msg+strlen(msg), "%-5s\n", " ");
 #endif /* WSC_INCLUDED */
-#ifdef DOT11K_RRM_SUPPORT
-		sprintf(msg+strlen(msg)-1, "%-7s\n", pBss->FromBcnReport ? " YES" : " NO");
-#endif /* DOT11K_RRM_SUPPORT */
+
 #ifndef MWDS
 		/*sprintf(msg+strlen(msg), "%-7s\n", pBss->FromBcnReport ? " YES" : " NO");*/
 #else

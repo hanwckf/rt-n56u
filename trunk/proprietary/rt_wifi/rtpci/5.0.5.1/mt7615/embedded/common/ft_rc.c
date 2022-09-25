@@ -25,8 +25,8 @@
 
 #include "rt_config.h"
 
-
 #define TYPE_FUNC
+
 
 
 
@@ -313,6 +313,8 @@ UINT32 BA_ResourceAllocate(
 
 	BaParm.BAPolicy = IMMED_BA;
 	BaParm.AMSDUSupported = 0;
+	if (pAd->CommonCfg.BACapability.field.AmsduEnable)
+		BaParm.AMSDUSupported = 1;
 	BaParm.TID = AddreqFrame.BaParm.TID;
 	BaParm.BufSize = min(((UCHAR)AddreqFrame.BaParm.BufSize), (UCHAR)pAd->CommonCfg.BACapability.field.RxBAWinLimit);
 

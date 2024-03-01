@@ -3,7 +3,7 @@
 pidfile="/var/sh_mentohust.pid"
 [ -f $pidfile ] && kill -9 "$(cat $pidfile)" || echo "$$" > $pidfile
 
-mentohust_exec="bin_mentohust"
+mentohust_exec="mentohust"
 conf_file="/var/mentohust.conf"
 bin_conf_file="/etc/storage/mentohust.conf"
 

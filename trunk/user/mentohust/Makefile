@@ -1,8 +1,8 @@
-SRC_NAME = mentohust-padavan
-SRC_URL = https://github.com/AutoCONFIG/mentohust/archive/refs/heads/padavan.zip
+SRC_NAME = mentohust-master
+SRC_URL = https://github.com/AutoCONFIG/mentohust-padavan/archive/refs/heads/master.zip
 THISDIR = $(shell pwd)
 
-LDFLAGS += -L$(STAGEDIR) -liconv
+LDFLAGS += -L$(STAGEDIR)
 
 all: download_test extract_test config_test
 	$(MAKE) -C $(SRC_NAME)
@@ -44,6 +44,6 @@ clean:
 	rm -f config_done
 
 romfs:
-	$(ROMFSINST) -p +x $(THISDIR)/$(SRC_NAME)/src/mentohust /usr/bin/bin_mentohust
+	$(ROMFSINST) -p +x $(THISDIR)/$(SRC_NAME)/src/mentohust /usr/bin/mentohust
 	$(ROMFSINST) -p +x $(THISDIR)/scripts/mentohust.sh /usr/bin/mentohust.sh
 

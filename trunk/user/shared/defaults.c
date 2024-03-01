@@ -526,10 +526,37 @@ struct nvram_pair router_defaults[] = {
 	{ "mentohust_startmode", "1" },
 	{ "mentohust_dhcp", "0" },
 	{ "mentohust_daemon", "1" },
-	{ "mentohust_service", "0" },
+	{ "mentohust_service", "" },
 	{ "mentohust_ver", "0.00" },
 	{ "mentohust_datafile", "/etc/storage/mentohust/" },
 	{ "mentohust_dhcpscript", "" },
+#endif
+
+#if defined(APP_MINIEAP)
+	/* minieap related */
+	{ "minieap_enable", "0" },
+	{ "minieap_username", "" },
+	{ "minieap_password", "" },
+	{ "minieap_nic", "" },
+	{ "minieap_module", "rjv3" },
+	{ "minieap_daemonize", "3" },
+	{ "minieap_if_impl", "sockraw" },
+	{ "minieap_max_fail", "3" },
+	{ "minieap_max_retries", "3" },
+	{ "minieap_no_auto_reauth", "0" },
+	{ "minieap_wait_after_fail", "30" },
+	{ "minieap_stage_timeout", "5" },
+	{ "minieap_auth_round", "1" },
+	{ "minieap_pid_file", "/var/run/minieap.pid" },
+	{ "minieap_log_file", "/tmp/minieap.log" },
+	{ "minieap_heartbeat", "60" },
+	{ "minieap_eap_bcast_addr", "1" },
+	{ "minieap_dhcp_type", "" },
+	{ "minieap_service", "internet" },
+	{ "minieap_version_str", "RG-SU For Linux V1.30" },
+	{ "minieap_dhcpscript", "" },
+	{ "minieap_fake_serial", "" },
+	{ "minieap_max_dhcp_count", "3" },
 #endif
 
 #if defined(APP_TTYD)

@@ -1,13 +1,17 @@
-SRC_NAME = mentohust-1-master
-#https://github.com/hanwckf/mentohust-1
+SRC_NAME = mentohust-master
+SRC_URL = https://github.com/AutoCONFIG/mentohust/archive/refs/heads/master.zip
 THISDIR = $(shell pwd)
 
-LDFLAGS += -L$(STAGEDIR) -liconv
+LDFLAGS += -L$(STAGEDIR)
 
-all: extract_test config_test
+all: download_test extract_test config_test
 	$(MAKE) -C $(SRC_NAME)
 
-
+download_test: 
+	( if [ ! -f $(THISDIR)/$(SRC_NAME).zip ]; then \
+		wget -t5 --timeout=20 --no-check-certificate -O $(SRC_NAME).zip $(SRC_URL); \
+	fi )
+	
 extract_test:
 	( if [ ! -d $(SRC_NAME) ]; then \
 		unzip -qq $(SRC_NAME).zip; \
@@ -40,6 +44,6 @@ clean:
 	rm -f config_done
 
 romfs:
-	$(ROMFSINST) -p +x $(THISDIR)/$(SRC_NAME)/src/mentohust /usr/bin/bin_mentohust
+	$(ROMFSINST) -p +x $(THISDIR)/$(SRC_NAME)/src/mentohust /usr/bin/mentohust
 	$(ROMFSINST) -p +x $(THISDIR)/scripts/mentohust.sh /usr/bin/mentohust.sh
 

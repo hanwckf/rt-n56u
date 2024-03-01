@@ -1983,6 +1983,31 @@ static int mentohust_status_hook(int eid, webs_t wp, int argc, char **argv)
 }
 #endif
 
+#if defined (APP_MINIEAP)
+static int minieap_action_hook(int eid, webs_t wp, int argc, char **argv)
+{
+	int needed_seconds = 2;
+	char *action = websGetVar(wp, "connect_action", "");
+
+	if (!strcmp(action, "Reconnect")) {
+		notify_rc(RCN_RESTART_MINIEAP);
+	}
+	else if (!strcmp(action, "Disconnect")) {
+		notify_rc("stop_minieap");
+	}
+
+	websWrite(wp, "<script>restart_needed_time(%d);</script>\n", needed_seconds);
+	return 0;
+}
+
+static int minieap_status_hook(int eid, webs_t wp, int argc, char **argv)
+{
+	int status_code = pids("minieap");
+	websWrite(wp, "function minieap_status() { return %d;}\n", status_code);
+	return 0;
+}
+#endif
+
 #if defined (APP_SHADOWSOCKS)
 static int shadowsocks_action_hook(int eid, webs_t wp, int argc, char **argv)
 {
@@ -2218,6 +2243,11 @@ ej_firmware_caps_hook(int eid, webs_t wp, int argc, char **argv)
 #else
 	int found_app_mentohust = 0;
 #endif
+#if defined(APP_MINIEAP)
+	int found_app_minieap = 1;
+#else
+	int found_app_minieap = 0;
+#endif
 #if defined(APP_TTYD)
 	int found_app_ttyd = 1;
 #else
@@ -2415,7 +2445,8 @@ ej_firmware_caps_hook(int eid, webs_t wp, int argc, char **argv)
 		"function found_app_dnsforwarder() { return %d;}\n"
 		"function found_app_shadowsocks() { return %d;}\n"
 		"function found_app_xupnpd() { return %d;}\n"
-		"function found_app_mentohust() { return %d;}\n",
+		"function found_app_mentohust() { return %d;}\n"
+		"function found_app_minieap() { return %d;}\n",
 		found_utl_hdparm,
 		found_app_ovpn,
 		found_app_dlna,
@@ -2437,7 +2468,8 @@ ej_firmware_caps_hook(int eid, webs_t wp, int argc, char **argv)
 		found_app_dnsforwarder,
 		found_app_shadowsocks,
 		found_app_xupnpd,
-		found_app_mentohust
+		found_app_mentohust,
+		found_app_minieap
 	);
 
 	websWrite(wp,
@@ -3792,6 +3824,21 @@ static char mentohust_log_txt[] =
 
 #endif
 
+#if defined (APP_MINIEAP)
+static void
+do_minieap_log_file(const char *url, FILE *stream)
+{
+	dump_file(stream, "/tmp/minieap.log");
+	fputs("\r\n", stream); /* terminator */
+}
+
+static char minieap_log_txt[] =
+"Content-Disposition: attachment;\r\n"
+"filename=minieap.log"
+;
+
+#endif
+
 struct mime_handler mime_handlers[] = {
 	/* cached javascript files w/o translations */
 	{ "jquery.js", "text/javascript", NULL, NULL, do_file, 0 }, // 2012.06 Eagle23
@@ -3838,6 +3885,9 @@ struct mime_handler mime_handlers[] = {
 #endif
 #if defined(APP_MENTOHUST)
 	{ "mentohust.log", "application/force-download", mentohust_log_txt, NULL, do_mentohust_log_file, 1 },
+#endif
+#if defined(APP_MINIEAP)
+	{ "minieap.log", "application/force-download", minieap_log_txt, NULL, do_minieap_log_file, 1 },
 #endif
 #if defined(APP_OPENVPN)
 	{ "client.ovpn", "application/force-download", NULL, NULL, do_export_ovpn_client, 1 },
@@ -4137,6 +4187,10 @@ struct ej_handler ej_handlers[] =
 #if defined (APP_MENTOHUST)
 	{ "mentohust_action", mentohust_action_hook},
 	{ "mentohust_status", mentohust_status_hook},
+#endif
+#if defined (APP_MINIEAP)
+	{ "minieap_action", minieap_action_hook},
+	{ "minieap_status", minieap_status_hook},
 #endif
 #if defined (APP_SHADOWSOCKS)
 	{ "shadowsocks_action", shadowsocks_action_hook},

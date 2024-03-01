@@ -62,6 +62,7 @@
 #define RCN_RESTART_ARIA		"restart_aria"
 #define RCN_RESTART_SCUT		"restart_scutclient"
 #define RCN_RESTART_MENTOHUST	"restart_mentohust"
+#define RCN_RESTART_MINIEAP     "restart_minieap"
 #define RCN_RESTART_TTYD		"restart_ttyd"
 #define RCN_RESTART_VLMCSD		"restart_vlmcsd"
 #define RCN_RESTART_SHADOWSOCKS	"restart_shadowsocks"

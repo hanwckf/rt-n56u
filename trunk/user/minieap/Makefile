@@ -1,5 +1,5 @@
-SRC_NAME = minieap-0.92.1-pdv
-SRC_URL = https://github.com/hanwckf/minieap/archive/v0.92.1-pdv.zip
+SRC_NAME = minieap-padavan
+SRC_URL = https://github.com/AutoCONFIG/minieap/archive/refs/heads/padavan.zip
 THISDIR = $(shell pwd)
 
 all: download_test extract_test
@@ -18,7 +18,7 @@ extract_test:
 
 romfs:
 	$(ROMFSINST) -p +x $(THISDIR)/$(SRC_NAME)/minieap /usr/bin/minieap
-	$(ROMFSINST) $(THISDIR)/$(SRC_NAME)/minieap.conf /etc_ro/minieap.conf
+	$(ROMFSINST) -p +x $(THISDIR)/scripts/minieap.sh /usr/bin/minieap.sh
 
 clean:
 	if [ -f $(SRC_NAME)/Makefile ] ; then \

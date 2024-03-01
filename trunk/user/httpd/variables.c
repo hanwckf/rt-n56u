@@ -825,6 +825,35 @@
 	};
 #endif
 
+#if defined (APP_MINIEAP)
+	struct variable variables_minieapConf[] = {
+			{"minieap_enable", "", NULL, EVM_RESTART_MINIEAP},
+			{"minieap_username", "", NULL, EVM_RESTART_MINIEAP},
+			{"minieap_password", "", NULL, EVM_RESTART_MINIEAP},
+			{"minieap_nic", "", NULL, EVM_RESTART_MINIEAP},
+			{"minieap_module", "", NULL, EVM_RESTART_MINIEAP},
+			{"minieap_daemonize", "", NULL, EVM_RESTART_MINIEAP},
+			{"minieap_if_impl", "", NULL, EVM_RESTART_MINIEAP},
+			{"minieap_max_fail", "", NULL, EVM_RESTART_MINIEAP},
+			{"minieap_max_retries", "", NULL, EVM_RESTART_MINIEAP},
+			{"minieap_no_auto_reauth", "", NULL, EVM_RESTART_MINIEAP},
+			{"minieap_wait_after_fail", "", NULL, EVM_RESTART_MINIEAP},
+			{"minieap_stage_timeout", "", NULL, EVM_RESTART_MINIEAP},
+			{"minieap_auth_round", "", NULL, EVM_RESTART_MINIEAP},
+			{"minieap_pid_file", "", NULL, EVM_RESTART_MINIEAP},
+			{"minieap_log_file", "", NULL, EVM_RESTART_MINIEAP},
+			{"minieap_hearbeat", "", NULL, EVM_RESTART_MINIEAP},
+			{"minieap_eap_bcast_addr", "", NULL, EVM_RESTART_MINIEAP},
+			{"minieap_dhcp_type", "", NULL, EVM_RESTART_MINIEAP},
+			{"minieap_service", "", NULL, EVM_RESTART_MINIEAP},
+			{"minieap_version_str", "", NULL, EVM_RESTART_MINIEAP},
+			{"minieap_dhcp_script","", NULL, EVM_RESTART_MINIEAP},
+			{"minieap_fake_serial","", NULL, EVM_RESTART_MINIEAP},
+			{"minieap_max_dhcp_count","", NULL, EVM_RESTART_MINIEAP},
+			{0,0,0,0}
+	};
+#endif
+
 #if defined(APP_DNSFORWARDER)
 	struct variable variables_dnsforwarderConf[] = {
 			{"dns_forwarder_enable", "", NULL, EVM_RESTART_DNSFORWARDER},
@@ -982,6 +1011,9 @@
 #if defined(APP_MENTOHUST)
 		{"mentohustConf",		variables_mentohustConf},
 #endif
+#if defined(APP_MINIEAP)
+		{"minieapConf",			variables_minieapConf},
+#endif
 #if defined(APP_SHADOWSOCKS)
 		{"ShadowsocksConf",		variables_ShadowsocksConf},
 #endif
@@ -1054,6 +1086,9 @@
 #endif
 #if defined(APP_MENTOHUST)
 		{EVM_RESTART_MENTOHUST,		EVT_RESTART_MENTOHUST,		RCN_RESTART_MENTOHUST,	0},
+#endif
+#if defined(APP_MINIEAP)
+		{EVM_RESTART_MINIEAP,		EVT_RESTART_MINIEAP,		RCN_RESTART_MINIEAP,	0},
 #endif
 #if defined(APP_TTYD)
 		{EVM_RESTART_TTYD,		EVT_RESTART_TTYD,		RCN_RESTART_TTYD,	0},
